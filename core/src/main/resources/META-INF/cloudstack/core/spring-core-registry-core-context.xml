@@ -262,7 +262,7 @@
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.DumpRegistry" >
         <property name="registries" value="#{registryRegistry.registered}" />
     </bean>
-    
+
     <bean id="registryRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
@@ -276,11 +276,11 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="api.checkers.acl.exclude" />
     </bean>
-    
+
     <bean id="querySelectorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="query.selectors.exclude" />
-    </bean>    
+    </bean>
 
     <bean id="apiCommandsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">

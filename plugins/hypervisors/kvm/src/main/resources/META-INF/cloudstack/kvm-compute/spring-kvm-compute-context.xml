@@ -37,5 +37,5 @@
     <bean id="KVMHAProvider" class="org.apache.cloudstack.kvm.ha.KVMHAProvider">
         <property name="name" value="KVMHAProvider" />
     </bean>
-    
+
 </beans>

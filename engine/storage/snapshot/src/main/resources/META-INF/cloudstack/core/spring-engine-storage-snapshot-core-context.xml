@@ -35,5 +35,5 @@
 
     <bean id="snapshotStateMachineManagerImpl"
         class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />
-    
+
 </beans>

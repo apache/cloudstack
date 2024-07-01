@@ -77,12 +77,12 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -124,7 +124,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<parameters>
@@ -143,8 +143,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -181,7 +181,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -197,7 +197,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -230,8 +230,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -251,8 +251,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Test case 507 - create a private template for stopped vm -->
 	<command>
 		<name>stopVirtualMachine</name>
@@ -264,7 +264,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -294,8 +294,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Test case 508 - create a private template for Running vm  - negative case-->
 	<command>
 		<name>startVirtualMachine</name>
@@ -307,7 +307,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -331,7 +331,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 509 - create a private template for Destroyed vm  - negative case-->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -343,7 +343,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -367,7 +367,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 510 - deploy a vm from the private template-->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -385,7 +385,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -422,7 +422,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 511 - Deploy a vm from the private template created from the vm which was deployed from the private template-->
 	<command>
 		<name>listVolumes</name>
@@ -443,7 +443,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -454,7 +454,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -483,7 +483,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -500,7 +500,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -537,7 +537,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 512 - Try to create 2 templates with the same name for the same account - should be allowed-->
 	<command>
 		<name>createTemplate</name>
@@ -567,7 +567,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -591,8 +591,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 513 - create 2 templates with the same name for different accounts -->
 
 <command>
@@ -654,12 +654,12 @@ under the License.
 				<name>account</name>
 				<param>accountvar1</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid1</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -697,7 +697,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<parameters>
@@ -716,8 +716,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>createNetwork</name>
 		<testcase>	[Creating default network]</testcase>
@@ -754,7 +754,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -770,7 +770,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -803,7 +803,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -814,7 +814,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -834,7 +834,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<usercommand>true</usercommand>
@@ -858,9 +858,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!--  Execute a cleanup -->	
-	
+
+<!--  Execute a cleanup -->
+
 	<command>
 		<name>deleteAccount</name>
 		<testcase>Deleting First Account as a part of cleanup</testcase>
@@ -871,7 +871,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteAccount</name>
 		<testcase>Deleting Second Account as a part of cleanup</testcase>
@@ -882,8 +882,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!-- 	
+
+<!--
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting user as a part of cleanup</testcase>
@@ -894,7 +894,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting user as a part of cleanup</testcase>
@@ -907,5 +907,5 @@ under the License.
 	</command>
 
 -->
-	
+
 </privatetemplates>

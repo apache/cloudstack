@@ -27,10 +27,10 @@
   <parameter name="primary-storage-want-to-add" value="nfs://192.168.56.2/opt/storage/primarynfs"/>
   <parameter name="devcloud-local-storage-uuid" value="cd10cac1-4772-92e5-5da6-c2bc16b1ce1b"/>
   <parameter name="devcloud-host-uuid" value="759ee4c9-a15a-297b-67c6-ac267d8aa429"/>
-  <parameter name="devcloud-secondary-storage" value="nfs://192.168.56.10/opt/storage/secondary"/> 
+  <parameter name="devcloud-secondary-storage" value="nfs://192.168.56.10/opt/storage/secondary"/>
   <parameter name="primary-storage-uuid-want-to-add" value="759ee4c9-a15a-297b-67c6-ac267d8abe29" />
   <parameter name="script-path" value="/Users/minc/dev/cloud-asf" />
-  
+
 
   <parameter name="s3-accesskey" value="OYAZXCAFUC1DAFOXNJWI"/>
   <parameter name="s3-secretkey" value="YHpRtzNDwl12DtrQmwRvdpnf2xK2AeVM30rXxQ=="/>
@@ -40,11 +40,11 @@
 
   <parameter name="image-install-path" value="template/tmpl/1/5/"/>
 
-   
+
   <listeners>
     <listener class-name="org.apache.cloudstack.storage.test.TestNGAop" />
   </listeners>
- 
+
   <test name="integration-tests">
     <packages>
       <package name="org.apache.cloudstack.storage.test"/>

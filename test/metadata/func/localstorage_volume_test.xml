@@ -48,7 +48,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  test case 1027 - try to create a volume in local storage setup (no shared storage) - should fail -->
 	<command>
 		<name>createVolume</name>
@@ -73,11 +73,11 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1032 - try to detach datadisk volume from the Centos vm in local storage setup - should fail -->
 	<command>
 		<name>listVolumes</name>
@@ -98,7 +98,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<testcase>1032</testcase>
@@ -110,9 +110,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
-	
+
+
+
 	<!--  Test case 1034 - try to detach root volume from the Centos vm in local storage setup - should fail -->
 	<command>
 		<name>listVolumes</name>
@@ -133,7 +133,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<testcase>1034</testcase>
@@ -145,9 +145,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-		
-	
-	
-	
+
+
+
+
+
 </volumes>

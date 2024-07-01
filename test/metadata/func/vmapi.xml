@@ -16,11 +16,11 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<vmapi>	
+<vmapi>
 
-<!-- 
+<!--
 		KEEP IN MIND: EXPUNGE INTERVAL, PASSWORD ENABLED TEMPLATE
-	
+
 		STEPS/TEST CASES COVERED:
 		1. Deploy a Virtual Machine in admin account
 		2. Destroy the Virtual Machine
@@ -60,7 +60,7 @@ under the License.
 		36. Try to send reboot command for non-existing vm -ve case
 		37. Try to send start command for non-existing vm -ve case
 		38. Destroy Virtual Machine as part of Clean up
-		
+
 	 -->
 
 
@@ -80,7 +80,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -121,7 +121,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>	[Destroy Virtual Machine]</testcase>
@@ -132,7 +132,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>72  [List the Destroyed Virutal Machine]</testcase>
@@ -147,7 +147,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #92 - verify that you can't start destroyed virtual machine -->
 	<command>
 		<name>startVirtualMachine</name>
@@ -160,7 +160,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #73 - verify that listVm returns nothing when id of non-existing VM is specified -->
 	<command>
 		<name>listVirtualMachines</name>
@@ -176,8 +176,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!-- Test case #74 - verify that listVm returns empty response when account=removedAccount is specified -->	
+
+<!-- Test case #74 - verify that listVm returns empty response when account=removedAccount is specified -->
 
 	<command>
 		<name>createAccount</name>
@@ -223,7 +223,7 @@ under the License.
 			<item getparam="true">
 				<name>name</name>
 				<param>accountname</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -237,7 +237,7 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
@@ -251,7 +251,7 @@ under the License.
 	</command>
 
 
-<!-- 
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -290,7 +290,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 
 	<command>
 		<name>createNetwork</name>
@@ -328,7 +328,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>	[Deploy Virtual Machine in the new Account]</testcase>
@@ -344,7 +344,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -385,7 +385,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deleteUser</name>
 		<testcase>    [Delete User]</testcase>
@@ -395,7 +395,7 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 	<command>
 		<name>deleteAccount</name>
@@ -406,8 +406,8 @@ under the License.
 				<param>accountid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 		<command>
 		<name>listVirtualMachines</name>
 		<testcase>74  [Check that no VMs present under the Account(List VM for a Removed User exercise END)]</testcase>
@@ -423,7 +423,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #77 - verify that you can't enable HA for VM in destroyed state -->
 	<command>
 		<name>updateVirtualMachine</name>
@@ -439,8 +439,8 @@ under the License.
 				<value>true</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<!-- Test case #592 - verify that you can't enable HA for non-existing vm -->
 	<command>
 		<name>updateVirtualMachine</name>
@@ -456,10 +456,10 @@ under the License.
 				<value>true</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
 
-<!-- Test case #79 - verify that you can reset password for VM in stopped state -->	
+
+<!-- Test case #79 - verify that you can reset password for VM in stopped state -->
 	<command>
 		<name>recoverVirtualMachine</name>
 		<testcase>    [Recover the Destroyed VM]</testcase>
@@ -470,7 +470,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase>79-1 [Verify that one can reset password for VM in stopped state]</testcase>
@@ -482,7 +482,7 @@ under the License.
 		</parameters>
 	</command>
 
-<!-- Test case #76 - verify that you can enable HA for VM in stopped state -->	
+<!-- Test case #76 - verify that you can enable HA for VM in stopped state -->
 
 	<command>
 		<name>updateVirtualMachine</name>
@@ -497,10 +497,10 @@ under the License.
 				<value>true</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 
-<!-- Test case #79 - verify that you can reset password for VM in running state -->	
+<!-- Test case #79 - verify that you can reset password for VM in running state -->
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>    [Start Virtual Machine (reset password for VM in running state exercise BEGIN)]</testcase>
@@ -511,7 +511,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase>79-2 [Verify that one can reset password for VM in running state]</testcase>
@@ -522,7 +522,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!-- Test case #76 - verify that you can disable HA for VM in running state -->
 	<command>
@@ -538,9 +538,9 @@ under the License.
 				<value>false</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 <!-- Test case #80 - verify that you can't reset password for VM in destroyed state -->
 		<command>
 		<name>destroyVirtualMachine</name>
@@ -552,7 +552,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase>80  [Verify that one can't reset password for VM in destroyed state]</testcase>
@@ -564,8 +564,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!-- Test case #89 - verify that you can't reboot destroyed VM -->	
+
+<!-- Test case #89 - verify that you can't reboot destroyed VM -->
 	<command>
 		<name>rebootVirtualMachine</name>
 		<testcase>89  [Verify that one can't reboot destroyed VM]</testcase>
@@ -578,7 +578,7 @@ under the License.
 		</parameters>
 	</command>
 
-	
+
 <!-- Test case #81 - resetpassword for virtual machine which was made of template with password disabled - Negative case -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -595,7 +595,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -636,7 +636,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>resetPasswordForVirtualMachine</name>
 		<testcase>81  [Check whether password can be reset on virtual machine made from password disabled VM]</testcase>
@@ -648,7 +648,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #82 - try to change service offering for VM in running state - should fail - Negative case -->
 	<command>
 		<name>changeServiceForVirtualMachine</name>
@@ -677,7 +677,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>changeServiceForVirtualMachine</name>
 		<testcase>83  [Try to change service offering to the one that VM already has -ve case]</testcase>
@@ -693,8 +693,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!-- Test case #90 - try to reboot stopped virtual machine - should fail - Negative case -->
 	<command>
 		<name>rebootVirtualMachine</name>
@@ -707,7 +707,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
+
 
 <!-- Test case #95 - try to recover stopped/running virtual machine - should fail -->
 	<command>
@@ -721,7 +721,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<testcase>    [Start virtual machine]</testcase>
@@ -732,7 +732,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>recoverVirtualMachine</name>
 		<testcase>813 [Try to recover running virtual machine]</testcase>
@@ -763,7 +763,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>		
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -789,8 +789,8 @@ under the License.
 				<param>globalnetworkid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #85 - try to deploy vm and assign it to removed account - should fail - Negative case -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -808,7 +808,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -834,8 +834,8 @@ under the License.
 				<param>networkid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 <!-- Test case #87 - try to send destroy command for non-existing vm - should fail - Negative case -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -848,7 +848,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #88 - try to send reboot command for non-existing vm - should fail - Negative case -->
 	<command>
 		<name>rebootVirtualMachine</name>
@@ -861,7 +861,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!-- Test case #91 - try to send start command for non-existing vm - should fail - Negative case -->
 	<command>
 		<name>startVirtualMachine</name>
@@ -886,6 +886,6 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
-</vmapi>		
+
+
+</vmapi>

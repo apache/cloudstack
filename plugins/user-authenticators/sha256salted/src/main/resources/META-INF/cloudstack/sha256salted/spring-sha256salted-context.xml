@@ -30,5 +30,5 @@
     <bean id="SHA256SaltedUserAuthenticator" class="org.apache.cloudstack.auth.SHA256SaltedUserAuthenticator">
         <property name="name" value="SHA256SALT"/>
     </bean>
-    
+
 </beans>

@@ -29,5 +29,5 @@
 
     <bean id="cloudStackImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.CloudStackImageStoreProviderImpl" />
-    
+
 </beans>

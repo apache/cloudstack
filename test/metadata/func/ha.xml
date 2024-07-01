@@ -33,7 +33,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -74,7 +74,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploy ha enabled vm</testcase>
@@ -90,7 +90,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -131,8 +131,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>updateVirtualMachine</name>
 		<testcase>Update virtual machine</testcase>
@@ -147,7 +147,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Find out hosts ips were vms are running -->
 	<command>
 		<name>listHosts</name>
@@ -165,7 +165,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host with ha enabled machine</testcase>
@@ -201,8 +201,8 @@ under the License.
 				<param>instance_name</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>select instance_name from vm_instance</name>
 		<mysql>true</mysql>
@@ -219,7 +219,7 @@ under the License.
 				<param>instance_name_ha</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
 <!-- Kill both vms-->
 	<command>
@@ -236,8 +236,8 @@ under the License.
 				<param>instance_name</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>killvm.sh</name>
 		<script>true</script>
@@ -252,7 +252,7 @@ under the License.
 				<param>instance_name_ha</param>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!--  Sleep for some time -->
 	<command>
@@ -265,7 +265,7 @@ under the License.
 				<value>300</value>
 			</item>
 		</parameters>
-	</command>	
+	</command>
 
 <!--  Check that vms are running - verify both api and backend  -->
 	<command>
@@ -283,8 +283,8 @@ under the License.
 				<value>Stopped</value>
 			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>List virtual machine with ha enabled</testcase>
@@ -305,7 +305,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host with ha enabled machine</testcase>
@@ -322,7 +322,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvm.sh</name>
 		<script>true</script>
@@ -337,9 +337,9 @@ under the License.
 				<param>instance_name_ha</param>
 			</item>
 		</parameters>
-	</command>					
-		
-			
+	</command>
+
+
 
 <!--  Cleanup section - destroy all the vms -->
 	<command>
@@ -352,7 +352,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy ha enabled vm as a part of cleanup</testcase>
@@ -363,5 +363,5 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-</ha>	
+
+</ha>

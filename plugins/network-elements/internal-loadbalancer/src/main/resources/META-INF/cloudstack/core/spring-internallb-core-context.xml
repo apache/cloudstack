@@ -31,7 +31,7 @@
         class="org.apache.cloudstack.network.element.InternalLoadBalancerElement">
         <property name="name" value="InternalLbVm" />
     </bean>
-    
+
     <bean id="InternalLoadBalancerVMManager" class="org.apache.cloudstack.network.lb.InternalLoadBalancerVMManagerImpl" />
 
 </beans>

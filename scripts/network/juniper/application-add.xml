@@ -20,11 +20,11 @@ under the License.
 <load-configuration>
 <configuration>
 <applications>
-<application>           
-<name>%name%</name>     
-<protocol>%protocol%</protocol>    
+<application>
+<name>%name%</name>
+<protocol>%protocol%</protocol>
 %dest-port-icmp%
-</application>   
+</application>
 </applications>
 </configuration>
 </load-configuration>

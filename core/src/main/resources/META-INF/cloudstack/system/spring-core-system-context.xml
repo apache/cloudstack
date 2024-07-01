@@ -36,7 +36,7 @@
     <property name="listeners">
         <list>
             <!-- Put CallContext listener first because it will open and then close a DB connection.
-                If you put it after the TransactionContextListener, the thread will hold open a DB 
+                If you put it after the TransactionContextListener, the thread will hold open a DB
                 connection for the life of the thread -->
             <bean class="org.apache.cloudstack.context.CallContextListener" />
             <bean class="org.apache.cloudstack.context.LogContextListener" />
@@ -44,8 +44,8 @@
         </list>
     </property>
   </bean>
-  
-  <bean class="org.apache.cloudstack.managed.context.ManagedContextRunnable" factory-method="initializeGlobalContext" 
+
+  <bean class="org.apache.cloudstack.managed.context.ManagedContextRunnable" factory-method="initializeGlobalContext"
     autowire-candidate="false" >
     <constructor-arg><ref bean="ManagedContext"/></constructor-arg>
   </bean>

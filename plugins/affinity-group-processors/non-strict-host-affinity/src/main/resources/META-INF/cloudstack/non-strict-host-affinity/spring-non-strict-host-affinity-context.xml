@@ -33,5 +33,5 @@
         <property name="type" value="non-strict host affinity" />
     </bean>
 
-    
+
 </beans>

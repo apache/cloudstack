@@ -19,7 +19,7 @@ under the License.
 <expunge>
 
 <!--  VOLUMES EXPUNGE SECTION -->
-<!-- 
+<!--
 		STEPS/TEST CASES COVERED:
 		1. Create an Account and a User
 		2. Create a Network for that Account
@@ -28,7 +28,7 @@ under the License.
 		5. Release the IP Address
 		6. Reboot the VM
 		7. Stop the VM
-		8. Start the VM 
+		8. Start the VM
 		9. List Routers
 		10. Stop Router
 		11.	List Router
@@ -38,8 +38,8 @@ under the License.
 		15.	Recover virtual machine
 		16. Verify that vm is recovered
 		17. Delete Account
-		
-	 -->	
+
+	 -->
 	 <command>
 		<name>createAccount</name>
 		<testcase>    [Create the Account and a User for the account]</testcase>
@@ -95,7 +95,7 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
@@ -104,7 +104,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- 
+<!--
 	<command>
 		<name>createUser</name>
 		<testcase>Creating user</testcase>
@@ -145,7 +145,7 @@ under the License.
 		</returnvalue>
 	</command>
 -->
-	
+
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the user</testcase>
@@ -205,7 +205,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!--  Verify that correct vdis get created on the xen host -->	
+<!--  Verify that correct vdis get created on the xen host -->
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -222,7 +222,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -259,7 +259,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>List virtual machines</testcase>
@@ -276,7 +276,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host where vm is running</testcase>
@@ -293,7 +293,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listRouters</name>
 		<testcase>List Routers</testcase>
@@ -326,7 +326,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host where domR is running</testcase>
@@ -342,8 +342,8 @@ under the License.
 				<param>routerhost_ipaddress</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listVolumes</name>
 		<testcase>List data disk vm volume</testcase>
@@ -368,7 +368,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select path from volumes</name>
 		<mysql>true</mysql>
@@ -386,7 +386,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<testcase>List root disk vm volume</testcase>
@@ -411,7 +411,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select path from volumes</name>
 		<mysql>true</mysql>
@@ -429,7 +429,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select path from volumes</name>
 		<mysql>true</mysql>
@@ -463,7 +463,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -478,8 +478,8 @@ under the License.
 				<param>vm_rootvolumepath</param>
 			</item>
 		</parameters>
-	</command>			
-		
+	</command>
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -494,7 +494,7 @@ under the License.
 				<param>router_rootvolumepath</param>
 			</item>
 		</parameters>
-	</command>			
+	</command>
 
 <!--  Destroy vm created from regular template and verify that vm VDI get destroyed by expunge thread-->
 	<command>
@@ -507,7 +507,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listConfigurations</name>
 		<testcase>Getting expunge interval value</testcase>
@@ -524,7 +524,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -535,9 +535,9 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -548,9 +548,9 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -567,7 +567,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -584,8 +584,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Create a volume, delete it and make sure that it get's destroyed right away on the backend -->
 	<command>
 		<name>createVolume</name>
@@ -602,7 +602,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -611,7 +611,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -627,7 +627,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -639,7 +639,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createSnapshot</name>
 		<usercommand>true</usercommand>
@@ -661,7 +661,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select path from volumes</name>
 		<mysql>true</mysql>
@@ -679,7 +679,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -694,8 +694,8 @@ under the License.
 				<param>detached_volumepath</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteVolume</name>
 		<testcase>Delete detached volume</testcase>
@@ -707,7 +707,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -718,9 +718,9 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
-	
+	</command>
+
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -731,8 +731,8 @@ under the License.
 				<param>expunge.interval</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -749,7 +749,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Verify that snapshot vdi was created on the backend -->
 	<command>
 		<name>listvdi.sh</name>
@@ -765,9 +765,9 @@ under the License.
 				<param>snapshotpath</param>
 			</item>
 		</parameters>
-	</command>							
-	
-	
+	</command>
+
+
 <!--  Delete user and make sure that domR volumes/snapshots/templates (private and public) get destroyed on backend -->
 	<command>
 		<name>stopRouter</name>
@@ -778,8 +778,8 @@ under the License.
 				<param>router_id</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting the user</testcase>
@@ -789,8 +789,8 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>			
-	
+	</command>
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -807,7 +807,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -823,10 +823,10 @@ under the License.
 				<param>snapshotpath</param>
 			</item>
 		</parameters>
-	</command>		
-	
-	
-	
+	</command>
+
+
+
 <!--  TEMPLATES EXPUNGE SECTION -->
 <templatesexpunge>
 	<command>
@@ -843,7 +843,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -876,8 +876,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!--  Deploy vm, create private template from the ROOT disk, deploy vm from the new template -->	
+
+<!--  Deploy vm, create private template from the ROOT disk, deploy vm from the new template -->
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -894,7 +894,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -927,7 +927,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -947,7 +947,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<testcase>Stop virtual machine</testcase>
@@ -958,7 +958,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createTemplate</name>
 		<testcase>Create template from root volume</testcase>
@@ -986,8 +986,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<testcase>Deploying virtual machine from the private template</testcase>
@@ -1003,7 +1003,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>privatetemplateid</param>
@@ -1040,7 +1040,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listHosts</name>
 		<testcase>List host where vm is running</testcase>
@@ -1057,7 +1057,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>select install_path from template_spool_ref</name>
 		<mysql>true</mysql>
@@ -1075,7 +1075,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listvdi.sh</name>
 		<script>true</script>
@@ -1091,7 +1091,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroy virtual machine created from the private template</testcase>
@@ -1102,7 +1102,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -1113,8 +1113,8 @@ under the License.
 				<value>240</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listvdi.sh</name>
 		<error>true</error>
@@ -1144,7 +1144,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteTemplate</name>
 		<testcase>Delete private template</testcase>
@@ -1155,7 +1155,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>updateConfiguration</name>
 		<testcase>Updating storage.cleanup.interval</testcase>
@@ -1170,7 +1170,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>ms.sh</name>
 		<script>true</script>
@@ -1202,6 +1202,6 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-</templatesexpunge>							
-	
+</templatesexpunge>
+
 </expunge>

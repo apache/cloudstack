@@ -24,5 +24,5 @@
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
     <bean id="count" class="org.apache.cloudstack.spring.module.factory.ModuleBasedContextFactoryTest.InstantiationCounter" />
-    
+
 </beans>

@@ -47,8 +47,8 @@ under the License.
 				<param>account1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listDomains</name>
 		<parameters>
@@ -67,10 +67,10 @@ under the License.
 				<param>domainlevel1</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
 
-<!--  User who executes second set of commands -->	
+
+<!--  User who executes second set of commands -->
 	<command>
 		<name>listUsers</name>
 		<parameters>
@@ -98,7 +98,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listDomains</name>
 		<parameters>
@@ -118,5 +118,5 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 </pickuser>
