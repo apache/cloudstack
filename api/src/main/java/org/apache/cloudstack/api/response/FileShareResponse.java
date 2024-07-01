@@ -80,6 +80,22 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "size of the file share in GiB")
     private String sizeGB;
 
+    @SerializedName(ApiConstants.DISK_OFFERING_ID)
+    @Param(description = "disk offering for the file share")
+    private String diskOfferingId;
+
+    @SerializedName("diskofferingname")
+    @Param(description = "disk offering for the file share")
+    private String diskOfferingName;
+
+    @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
+    @Param(description = "service offering for the file share")
+    private String serviceOfferingId;
+
+    @SerializedName("serviceofferingname")
+    @Param(description = "service offering for the file share")
+    private String serviceOfferingName;
+
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "Network ID of the fileshare")
     private String networkId;
@@ -236,5 +252,21 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
         if (size != null) {
             this.sizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
         }
+    }
+
+    public void setDiskOfferingId(String diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    public void setDiskOfferingName(String diskOfferingName) {
+        this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setServiceOfferingId(String serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public void setServiceOfferingName(String serviceOfferingName) {
+        this.serviceOfferingName = serviceOfferingName;
     }
 }

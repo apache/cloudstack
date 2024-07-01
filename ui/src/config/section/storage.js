@@ -543,6 +543,20 @@ export default {
 
         },
         {
+          name: 'volumes',
+          resourceType: 'FileShare',
+          show: (record) => { return store.getters.userInfo.roletype === 'Admin' },
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareVolumesTab.vue')))
+
+        },
+        {
+          name: 'instance',
+          resourceType: 'FileShare',
+          show: (record) => { return store.getters.userInfo.roletype === 'Admin' },
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareInstancesTab.vue')))
+
+        },
+        {
           name: 'events',
           resourceType: 'FileShare',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),

@@ -1672,7 +1672,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter || vm.getType() == Type.NetScalerVm) {
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter || vm.getType() == Type.NetScalerVm || vm.getType() == Type.StorageFsVm) {
             vmResponse.setId(vm.getUuid());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setName(vm.getHostName());
@@ -5322,9 +5322,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setStoragePoolName(pool.getName());
 
             }
-        }
 
-        if (vmId != null) {
             List <NetworkVO> networks = networkDao.listGuestNetworksByVmId(vmId);
             if (networks != null) {
                 NetworkVO network = networks.get(0);
@@ -5367,6 +5365,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());
         }
+
+        DiskOffering diskOffering = ApiDBUtils.findDiskOfferingById(fileShare.getDiskOfferingId());
+        response.setDiskOfferingId(diskOffering.getUuid());
+        response.setDiskOfferingName(diskOffering.getName());
+        ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(fileShare.getServiceOfferingId());
+        response.setServiceOfferingId(serviceOffering.getUuid());
+        response.setServiceOfferingName(serviceOffering.getName());
 
         return response;
     }
