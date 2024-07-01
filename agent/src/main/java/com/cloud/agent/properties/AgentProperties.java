@@ -810,6 +810,16 @@ public class AgentProperties{
      */
     public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
 
+    /**
+     * Timeout (in seconds) to wait for the incremental snapshot to complete.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_TIMEOUT = new Property<>("incremental.snapshot.timeout", 10800);
+
+    /**
+     * Timeout (in seconds) to wait for the snapshot reversion to complete.
+     * */
+    public static final Property<Integer> REVERT_SNAPSHOT_TIMEOUT = new Property<>("revert.snapshot.timeout", 10800);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;

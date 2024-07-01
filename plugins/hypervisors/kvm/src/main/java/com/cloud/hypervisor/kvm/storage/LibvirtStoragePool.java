@@ -296,6 +296,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
+    public String getLocalPathFor(String relativePath) {
+        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
+    }
+
+    @Override
     public boolean isPoolSupportHA() {
         return type == StoragePoolType.NetworkFilesystem;
     }

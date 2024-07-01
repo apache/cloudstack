@@ -92,6 +92,8 @@ public interface KVMStoragePool {
 
     public Map<String, String> getDetails();
 
+    String getLocalPathFor(String relativePath);
+
     public boolean isPoolSupportHA();
 
     public String getHearthBeatPath();

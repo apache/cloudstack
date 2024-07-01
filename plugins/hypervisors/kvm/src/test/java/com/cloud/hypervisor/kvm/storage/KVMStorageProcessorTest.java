@@ -33,6 +33,7 @@ import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -100,6 +101,9 @@ public class KVMStorageProcessorTest {
     LibvirtDomainXMLParser libvirtDomainXMLParserMock;
     @Mock
     LibvirtVMDef.DiskDef diskDefMock;
+
+    @Mock
+    Logger loggerMock;
 
 
     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
@@ -173,7 +177,7 @@ public class KVMStorageProcessorTest {
         String snapshotName = "snapshot";
         String expectedResult = String.format("%s%s%s%s%s", path, File.separator, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, File.separator, snapshotName);
 
-        String result = storageProcessor.getSnapshotPathInPrimaryStorage(path, snapshotName);
+        String result = storageProcessor.getSnapshotOrCheckpointPathInPrimaryStorage(path, snapshotName, false);
         Assert.assertEquals(expectedResult, result);
     }
 
@@ -261,15 +265,11 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() throws QemuImgException {
-        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() {
         String errorMessage = "error";
         KVMStoragePool primaryPoolMock = Mockito.mock(KVMStoragePool.class);
         KVMPhysicalDisk baseFileMock = Mockito.mock(KVMPhysicalDisk.class);
         VolumeObjectTO volumeMock = Mockito.mock(VolumeObjectTO.class);
-        QemuImgFile srcFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImgFile destFileMock = Mockito.mock(QemuImgFile.class);
-        QemuImg qemuImgMock = Mockito.mock(QemuImg.class);
 
         Mockito.when(baseFileMock.getPath()).thenReturn("/path/to/baseFile");
         Mockito.when(primaryPoolMock.createFolder(Mockito.anyString())).thenReturn(true);
@@ -280,22 +280,21 @@ public class KVMStorageProcessorTest {
                      Mockito.lenient().doThrow(new QemuImgException(errorMessage)).when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class), Mockito.any(Map.class),
                              Mockito.any(List.class), Mockito.any(QemuImageOptions.class),Mockito.nullable(String.class), Mockito.any(Boolean.class));
              }))) {
-            String test = storageProcessor.convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", volumeMock, 0);
+            String test = storageProcessor.convertBaseFileToSnapshotFileInStorageDir(primaryPoolMock, baseFileMock, "/path/to/snapshot", TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeMock, 0);
             Assert.assertNotNull(test);
         }
     }
 
     @Test
-    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() throws Exception {
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() {
         KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
         String snapshotPath = "snapshotPath";
-        QemuImg qemuImg = Mockito.mock(QemuImg.class);
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstructionWithAnswer(QemuImg.class, invocation -> {
             throw Mockito.mock(LibvirtException.class);
         })) {
-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
             Assert.assertNotNull(result);
         }
     }
@@ -309,7 +308,7 @@ public class KVMStorageProcessorTest {
         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
             Mockito.doNothing().when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
         })) {
-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
+            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
             Assert.assertNull(result);
         }
     }
@@ -486,5 +485,67 @@ public class KVMStorageProcessorTest {
         Mockito.when(diskDefMock.getDiskPath()).thenReturn("diskDef");
         attachOrDetachDeviceTest( false, "vmName", diskDefMock);
         Mockito.verify(domainMock, Mockito.times(1)).detachDevice(Mockito.anyString());
+    }
+
+    @Test
+    public void generateBackupXmlTestNoParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, null, "vda", "path");
+
+        Assert.assertFalse(result.contains("<incremental>"));
+    }
+
+    @Test
+    public void generateBackupXmlTestWithParents() {
+        String result = storageProcessorSpy.generateBackupXml(null, new String[]{"checkpointname"}, "vda", "path");
+
+        Assert.assertTrue(result.contains("<incremental>checkpointname</incremental>"));
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNull() {
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, null, new Pair<>("t", "u"));
+
+        Mockito.verify(kvmStoragePoolMock).createFolder("u");
+    }
+
+    @Test
+    public void createFolderOnCorrectStorageTestSecondaryIsNotNull() {
+        KVMStoragePool secondaryStoragePoolMock = Mockito.mock(KVMStoragePool.class);
+
+        storageProcessorSpy.createFolderOnCorrectStorage(kvmStoragePoolMock, secondaryStoragePoolMock, new Pair<>("t", "u"));
+
+        Mockito.verify(secondaryStoragePoolMock).createFolder("u");
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestNoDisks() throws LibvirtException {
+        storageProcessorSpy.getDiskLabelToSnapshot(new ArrayList<>(), null, Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskHasNoPath() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn(null).when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void getDiskLabelToSnapshotTestDiskPathDoesNotMatch() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("test").when(diskDefMock1).getDiskPath();
+
+        storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+    }
+
+    @Test
+    public void getDiskLabelToSnapshotTestDiskMatches() throws LibvirtException {
+        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+        Mockito.doReturn("Path").when(diskDefMock1).getDiskPath();
+        Mockito.doReturn("vda").when(diskDefMock1).getDiskLabel();
+
+        String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+
+        Assert.assertEquals("vda", result);
     }
 }

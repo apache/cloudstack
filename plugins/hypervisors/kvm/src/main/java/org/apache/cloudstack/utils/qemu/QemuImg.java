@@ -51,6 +51,7 @@ public class QemuImg {
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
     public static final long QEMU_2_10 = 2010000;
+    public static final long QEMU_5_10 = 5010000;
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
@@ -381,6 +382,37 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
+        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+    }
+
+    /**
+     * Converts an image from source to destination.
+     *
+     * This method is a facade for 'qemu-img convert' and converts a disk image or snapshot into a disk image with the specified filename and format.
+     *
+     * @param srcFile
+     *            The source file.
+     * @param destFile
+     *            The destination file.
+     * @param options
+     *            Options for the conversion. Takes a Map<String, String> with key value
+     *            pairs which are passed on to qemu-img without validation.
+     * @param qemuObjects
+     *            Pass qemu Objects to create - see objects in the qemu main page.
+     * @param srcImageOpts
+     *            pass qemu --image-opts to convert.
+     * @param snapshotName
+     *            If it is provided, conversion uses it as parameter.
+     * @param forceSourceFormat
+     *            If true, specifies the source format in the conversion command.
+     * @param keepBitmaps
+     *            If true, copies the bitmaps to the destination image.
+     * @return void
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+                        final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
+                        boolean keepBitmaps) throws QemuImgException {
+
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -428,6 +460,10 @@ public class QemuImg {
                 script.add(srcFile.getFormat().toString());
             }
             script.add(srcFile.getFileName());
+        }
+
+        if (this.version >= QEMU_5_10 && keepBitmaps) {
+            script.add("--bitmaps");
         }
 
         script.add(destFile.getFileName());

@@ -21,13 +21,16 @@ package org.apache.cloudstack.storage.datastore.driver;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.VolumeVO;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -55,6 +58,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -127,6 +131,9 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     TemplateDataFactory templateDataFactory;
     @Inject
     VolumeDataFactory volFactory;
+
+    @Inject
+    private VolumeOrchestrationService volumeOrchestrationService;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -239,9 +246,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         cmd.setBypassHostMaintenance(commandCanBypassHostMaintenance(data));
         CommandResult result = new CommandResult();
         try {
-            EndPoint ep = null;
+            EndPoint ep;
             if (data.getType() == DataObjectType.VOLUME) {
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
+            } else if (data.getType() == DataObjectType.SNAPSHOT) {
+                ep = epSelector.select(data, StorageAction.DELETESNAPSHOT);
             } else {
                 ep = epSelector.select(data);
             }
@@ -351,17 +360,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CreateCmdResult result = null;
         logger.debug("Taking snapshot of "+ snapshot);
         try {
-            SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
-            Object payload = snapshot.getPayload();
-            if (payload != null && payload instanceof CreateSnapshotPayload) {
-                CreateSnapshotPayload snapshotPayload = (CreateSnapshotPayload) payload;
-                snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
-            }
+            SnapshotObjectTO snapshotTO = getAndUpdateSnapshotObjectTO(snapshot);
 
             boolean encryptionRequired = anyVolumeRequiresEncryption(snapshot);
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
             EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
-            Answer answer = null;
+            Answer answer;
 
             logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
@@ -387,6 +391,28 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         }
         callback.complete(result);
     }
+
+    private SnapshotObjectTO getAndUpdateSnapshotObjectTO(SnapshotInfo snapshot) {
+        SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
+        Object payload = snapshot.getPayload();
+        if (payload instanceof CreateSnapshotPayload) {
+            CreateSnapshotPayload snapshotPayload = (CreateSnapshotPayload) payload;
+            snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
+            snapshotTO.setKvmIncrementalSnapshot(snapshotPayload.isKvmIncrementalSnapshot());
+        }
+
+        VolumeObjectTO volumeObjectTO = snapshotTO.getVolume();
+
+        Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = volumeOrchestrationService.getVolumeCheckpointPathsAndImageStoreUrls(volumeObjectTO.getVolumeId(), volumeObjectTO.getHypervisorType());
+        volumeObjectTO.setCheckpointPaths(volumeCheckPointPathsAndImageStoreUrls.first());
+        volumeObjectTO.setCheckpointImageStoreUrls(volumeCheckPointPathsAndImageStoreUrls.second());
+
+        if (snapshot.getImageStore() != null) {
+            snapshotTO.setImageStore(snapshot.getImageStore().getTO());
+        }
+        return snapshotTO;
+    }
+
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
