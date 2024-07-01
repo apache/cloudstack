@@ -38,7 +38,7 @@
           <a-select
             v-model:value="form.zoneid"
             :loading="loading"
-            @change="zone => fetchServiceOfferings(zone), fetchDiskOfferings(zone), fetchNetworks(zone)"
+            @change="zone => onChangeZone(id)"
             :placeholder="apiParams.zoneid.description"
             showSearch
             optionFilterProp="label"
@@ -78,6 +78,49 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="networkid" name="networkid">
+          <template #label>
+            <tooltip-label :title="$t('label.networkid')" :tooltip="apiParams.networkid.description || 'Network'"/>
+          </template>
+          <a-select
+            v-model:value="form.networkid"
+            :loading="loading"
+            :placeholder="apiParams.networkid.description || $t('label.networkid')"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="(network, index) in networks"
+              :value="network.id"
+              :key="index"
+              :label="network.name"> {{ network.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="serviceofferingid" name="serviceofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+          </template>
+          <a-select
+            v-model:value="form.serviceofferingid"
+            :loading="loading"
+            :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="(serviceoffering, index) in serviceofferings"
+              :value="serviceoffering.id"
+              :key="index"
+              :label="serviceoffering.displaytext || serviceoffering.name">
+              {{ serviceoffering.displaytext || serviceoffering.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item ref="diskofferingid" name="diskofferingid">
           <template #label>
             <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
@@ -101,59 +144,34 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="serviceofferingid" name="serviceofferingid">
-          <template #label>
-            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
-          </template>
-          <a-select
-            v-model:value="form.serviceofferingid"
-            :loading="loading"
-            @change="id => onChangeServiceOffering(id)"
-            :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(offering, index) in offerings"
-              :value="offering.id"
-              :key="index"
-              :label="offering.displaytext || offering.name">
-              {{ offering.displaytext || offering.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item ref="networkid" name="networkid">
-          <template #label>
-            <tooltip-label :title="$t('label.networkid')" :tooltip="apiParams.networkid.description || 'Network'"/>
-          </template>
-          <a-select
-            v-model:value="form.networkid"
-            :loading="loading"
-            @change="id => onChangeNetwork(id)"
-            :placeholder="apiParams.networkid.description || $t('label.networkid')"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(network, index) in networks"
-              :value="network.id"
-              :key="index"
-              :label="network.name"> {{ network.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item ref="size" name="size">
-          <template #label>
-            <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
-          </template>
-          <a-input
-            v-model:value="form.size"
-            :placeholder="apiParams.size.description"/>
-        </a-form-item>
+        <span v-if="customDiskOffering">
+          <a-form-item ref="size" name="size">
+            <template #label>
+              <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+            </template>
+            <a-input
+              v-model:value="form.size"
+              :placeholder="apiParams.size.description"/>
+          </a-form-item>
+        </span>
+        <span v-if="isCustomizedDiskIOps">
+          <a-form-item ref="miniops" name="miniops">
+            <template #label>
+              <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
+            </template>
+            <a-input
+              v-model:value="form.miniops"
+              :placeholder="apiParams.miniops.description"/>
+          </a-form-item>
+          <a-form-item ref="maxiops" name="maxiops">
+            <template #label>
+              <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
+            </template>
+            <a-input
+              v-model:value="form.maxiops"
+              :placeholder="apiParams.maxiops.description"/>
+          </a-form-item>
+        </span>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -186,12 +204,10 @@ export default {
   data () {
     return {
       loading: false,
-      snapshotZoneIds: [],
       zones: [],
-      offerings: [],
-      diskofferings: [],
       networks: [],
-      customServiceOffering: false,
+      serviceofferings: [],
+      diskofferings: [],
       customDiskOffering: false,
       isCustomizedDiskIOps: false
     }
@@ -212,10 +228,26 @@ export default {
       this.rules = reactive({
         zoneid: [{ required: true, message: this.$t('message.error.zone') }],
         name: [{ required: true, message: this.$t('label.required') }],
+        networkid: [{ required: true, message: this.$t('label.required') }],
         serviceofferingid: [{ required: true, message: this.$t('label.required') }],
         diskofferingid: [{ required: true, message: this.$t('label.required') }],
-        networkid: [{ required: true, message: this.$t('label.required') }],
-        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }]
+        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
+        miniops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }],
+        maxiops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }]
       })
     },
     fetchData () {
@@ -262,10 +294,8 @@ export default {
         listall: true
       }
       api('listServiceOfferings', params).then(json => {
-        this.offerings = json.listserviceofferingsresponse.serviceoffering || []
-        this.form.serviceofferingid = this.offerings[0].id || ''
-        this.customServiceOffering = this.offerings[0].iscustomized || false
-        this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
+        this.serviceofferings = json.listserviceofferingsresponse.serviceoffering || []
+        this.form.serviceofferingid = this.serviceofferings[0].id || ''
       }).finally(() => {
         this.loading = false
       })
@@ -278,7 +308,7 @@ export default {
       }
       api('listDiskOfferings', params).then(json => {
         this.diskofferings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskeofferingid = this.diskofferings[0].id || ''
+        this.form.diskofferingid = this.diskofferings[0].id || ''
         this.customDiskOffering = this.diskofferings[0].iscustomized || false
         this.isCustomizedDiskIOps = this.diskofferings[0]?.iscustomizediops || false
       }).finally(() => {
@@ -301,17 +331,15 @@ export default {
     closeModal () {
       this.$emit('close-action')
     },
-    onChangeServiceOffering (id) {
-      const offering = this.offerings.filter(x => x.id === id)
-      this.customServiceOffering = offering[0]?.iscustomized || false
-      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
+    onChangeZone (id) {
+      this.fetchServiceOfferings(id)
+      this.fetchDiskOfferings(id)
+      this.fetchNetworks(id)
     },
-    onChangeDiskeOffering (id) {
+    onChangeDiskOffering (id) {
       const diskoffering = this.diskofferings.filter(x => x.id === id)
       this.customDiskOffering = diskoffering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = diskoffering[0]?.iscustomizediops || false
-    },
-    onChangeNetwork (id) {
     },
     handleSubmit (e) {
       e.preventDefault()
