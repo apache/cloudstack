@@ -18,10 +18,7 @@
 //
 package org.apache.cloudstack;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Arrays;
@@ -333,7 +330,29 @@ public class ServerDaemon implements Daemon {
         log.setAppend(true);
         log.setLogTimeZone("GMT");
         log.setLogLatency(true);
+        createRotateFile(logPath);
         return log;
+    }
+
+    private void createRotateFile(File logPath) {
+        String rotatefile = "/etc/logrotate/access";
+        String fileContents = logPath.getAbsolutePath() + " {\n"
+                + "  copytruncate"
+                + "  daily"
+                + "  rotate 14"
+                + "  compress"
+                + "  missingok"
+                + "  create 0644 cloud cloud"
+                + "}";
+        File rotateConfigFile = new File(rotatefile);
+        try {
+            FileWriter fw = new FileWriter(rotateConfigFile);
+            fw.write(fileContents);
+            fw.close();
+        } catch (IOException e) {
+            // log but continue without rotate (for now)
+            LOG.warn("no way to rotate access log, continuing as is");
+        }
     }
 
     private URL getResource(String aResource) {
