@@ -112,8 +112,6 @@ public class ConfigurationManagerImplTest {
     @Mock
     Domain domainMock;
     @Mock
-    DataCenterDao zoneDaoMock;
-    @Mock
     DomainDao domainDaoMock;
     @Mock
     EntityManager entityManagerMock;
@@ -466,14 +464,17 @@ public class ConfigurationManagerImplTest {
         Assert.assertEquals("Invalid scope id provided for the parameter test.config.name", msg);
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test
     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Failure() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
         when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
-        configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.scope().toString());
+
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.scope().toString());
+
+        Assert.assertNotNull(result);
     }
 
     @Test
@@ -487,7 +488,7 @@ public class ConfigurationManagerImplTest {
         Assert.assertNull(msg);
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test
     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Failure() {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
         when(cfg.getScope()).thenReturn(ConfigKey.Scope.Global.toString());
@@ -495,7 +496,10 @@ public class ConfigurationManagerImplTest {
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
-        configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.scope().toString());
+
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.scope().toString());
+
+        Assert.assertNotNull(result);
     }
 
     @Test
