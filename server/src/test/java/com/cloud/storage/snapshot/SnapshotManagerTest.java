@@ -27,13 +27,20 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.Storage;
+import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -49,6 +56,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -176,6 +184,16 @@ public class SnapshotManagerTest {
     @Mock
     DataCenterDao dataCenterDao;
 
+    MockedStatic<ApiDBUtils> apiDBUtilsMock;
+    @Mock
+    ExtractSnapshotCmd extractSnapshotCmdMock;
+    @Mock
+    DataCenterVO dataCenterVOMock;
+    @Mock
+    ImageStoreEntity imageStoreEntityMock;
+    @Mock
+    DataStoreManager dataStoreManagerMock;
+
     SnapshotPolicyVO snapshotPolicyVoInstance;
 
     List<DateUtil.IntervalType> listIntervalTypes = Arrays.asList(DateUtil.IntervalType.values());
@@ -191,6 +209,11 @@ public class SnapshotManagerTest {
     private static final int TEST_SNAPSHOT_POLICY_MAX_SNAPS = 1;
     private static final boolean TEST_SNAPSHOT_POLICY_DISPLAY = true;
     private static final boolean TEST_SNAPSHOT_POLICY_ACTIVE = true;
+    private static final long TEST_ZONE_ID = 7L;
+    private static final long TEST_SNAPSHOTDATASTORE_ID = 7L;
+    private static final String TEST_EXTRACT_URL = "extractUrl";
+    private static final String TEST_SNAPSHOT_PATH = "path";
+    private static final Storage.ImageFormat TEST_VOLUME_FORMAT = Storage.ImageFormat.RAW;
 
     @Before
     public void setup() throws ResourceAllocationException {
@@ -228,10 +251,13 @@ public class SnapshotManagerTest {
 
         snapshotPolicyVoInstance = new SnapshotPolicyVO(TEST_VOLUME_ID, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL,
           TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
+
+        apiDBUtilsMock = Mockito.mockStatic(ApiDBUtils.class);
     }
 
     @After
     public void tearDown() throws Exception {
+        apiDBUtilsMock.close();
         CallContext.unregister();
     }
 
@@ -532,5 +558,109 @@ public class SnapshotManagerTest {
     public void testIsBackupSnapshotToSecondaryForEdgeZone() {
         mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Edge);
         Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
+    }
+
+    private void mockForExtractSnapshotTests() {
+        Mockito.doReturn(TEST_SNAPSHOT_ID).when(extractSnapshotCmdMock).getId();
+        Mockito.doReturn(TEST_ZONE_ID).when(extractSnapshotCmdMock).getZoneId();
+        Mockito.doReturn(false).when(_accountMgr).isRootAdmin(Mockito.anyLong());
+        Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(false);
+
+        Mockito.doReturn(dataCenterVOMock).when(dataCenterDao).findById(TEST_ZONE_ID);
+
+        List<DataStore> dataStores = new ArrayList<>();
+        dataStores.add(imageStoreEntityMock);
+        Mockito.doReturn(dataStores).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+        Mockito.doReturn(TEST_STORAGE_POOL_ID).when(imageStoreEntityMock).getId();
+
+        Mockito.doReturn(snapshotStoreMock).when(snapshotStoreDao).findByStoreSnapshot(DataStoreRole.Image, TEST_STORAGE_POOL_ID, TEST_SNAPSHOT_ID);
+
+        Mockito.doReturn(snapshotInfoMock).when(snapshotFactory).getSnapshot(TEST_SNAPSHOT_ID, imageStoreEntityMock);
+        Mockito.doReturn(TEST_SNAPSHOT_PATH).when(snapshotInfoMock).getPath();
+        Mockito.doReturn(volumeInfoMock).when(snapshotInfoMock).getBaseVolume();
+        Mockito.doReturn(TEST_VOLUME_FORMAT).when(volumeInfoMock).getFormat();
+
+        Mockito.doReturn(TEST_SNAPSHOTDATASTORE_ID).when(snapshotStoreMock).getId();
+        Mockito.doReturn(TEST_EXTRACT_URL).when(imageStoreEntityMock).createEntityExtractUrl(TEST_SNAPSHOT_PATH, TEST_VOLUME_FORMAT, snapshotInfoMock);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void extractSnapshotTestNotRootAdminDisabledExtractionReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(true);
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void extractSnapshotTestNullSnapshotReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(null).when(_snapshotDao).findById(TEST_SNAPSHOT_ID);
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void extractSnapshotTestRemovedSnapshotReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(Mockito.mock(Date.class)).when(snapshotMock).getRemoved();
+        Mockito.doReturn(snapshotMock).when(_snapshotDao).findById(TEST_SNAPSHOT_ID);
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractSnapshotTestNullDataCenterReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(null).when(dataCenterDao).findById(TEST_ZONE_ID);
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void extractSnapshotTestNoZoneStoragesReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(Collections.emptyList()).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test()
+    public void extractSnapshotTestExistingExtractUrlReturnUrl() {
+        mockForExtractSnapshotTests();
+        String extractUrl = "extractUrl";
+        Mockito.doReturn(extractUrl).when(snapshotStoreMock).getExtractUrl();
+
+        Assert.assertEquals(extractUrl, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));
+        Mockito.verify(snapshotSrv, Mockito.never()).syncVolumeSnapshotsToRegionStore(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(snapshotStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void extractSnapshotTestNullSnapshotStoreReturnException() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(null).when(snapshotStoreDao).findByStoreSnapshot(DataStoreRole.Image, TEST_STORAGE_POOL_ID, TEST_SNAPSHOT_ID);
+
+        _snapshotMgr.extractSnapshot(extractSnapshotCmdMock);
+    }
+
+    @Test()
+    public void extractSnapshotTestCreateExtractUrlReturnUrl() {
+        mockForExtractSnapshotTests();
+
+        Assert.assertEquals(TEST_EXTRACT_URL, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));
+        Mockito.verify(snapshotSrv).syncVolumeSnapshotsToRegionStore(TEST_VOLUME_ID, imageStoreEntityMock);
+        Mockito.verify(snapshotStoreDao).update(TEST_SNAPSHOTDATASTORE_ID, snapshotStoreMock);
+    }
+
+    @Test()
+    public void extractSnapshotTestRootAdminDisabledExtractionCreateExtractUrlReturnUrl() {
+        mockForExtractSnapshotTests();
+        Mockito.doReturn(true).when(_accountMgr).isRootAdmin(Mockito.anyLong());
+        Mockito.when(ApiDBUtils.isExtractionDisabled()).thenReturn(true);
+
+        Assert.assertEquals(TEST_EXTRACT_URL, _snapshotMgr.extractSnapshot(extractSnapshotCmdMock));
+        Mockito.verify(snapshotSrv).syncVolumeSnapshotsToRegionStore(TEST_VOLUME_ID, imageStoreEntityMock);
+        Mockito.verify(snapshotStoreDao).update(TEST_SNAPSHOTDATASTORE_ID, snapshotStoreMock);
     }
 }

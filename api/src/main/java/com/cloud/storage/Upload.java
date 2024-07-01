@@ -40,7 +40,7 @@ public interface Upload extends InternalIdentity, Identity {
     }
 
     public static enum Type {
-        VOLUME, TEMPLATE, ISO
+        VOLUME, SNAPSHOT, TEMPLATE, ISO
     }
 
     public static enum Mode {

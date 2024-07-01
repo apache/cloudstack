@@ -93,6 +93,10 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
 -- Add `is_implicit` column to `host_tags` table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
 
+-- Fields related to Snapshot Extraction
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url', 'varchar(2048) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url_created', 'datetime DEFAULT NULL');
+
 -- Webhooks feature
 DROP TABLE IF EXISTS `cloud`.`webhook`;
 CREATE TABLE `cloud`.`webhook` (

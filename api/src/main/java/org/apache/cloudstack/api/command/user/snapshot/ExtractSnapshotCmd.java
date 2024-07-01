@@ -14,9 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.volume;
+package org.apache.cloudstack.api.command.user.snapshot;
 
-
+import com.cloud.event.EventTypes;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -27,17 +29,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.event.EventTypes;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-
-@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {Volume.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ExtractVolumeCmd extends BaseAsyncCmd {
+@APICommand(name = "extractSnapshot", description = "Returns a download URL for extracting a snapshot. It must be in the Backed Up state.", since = "4.20.0",
+        responseObject = ExtractResponse.class, entityType = {Snapshot.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class ExtractSnapshotCmd extends BaseAsyncCmd {
 
 
     /////////////////////////////////////////////////////
@@ -45,22 +43,12 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="the ID of the volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SnapshotResponse.class, required=true, since="4.20.0", description="the ID of the snapshot")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the url to which the volume would be extracted")
-    private String url;
-
-    @Parameter(name = ApiConstants.ZONE_ID,
-               type = CommandType.UUID,
-               entityType = ZoneResponse.class,
-               required = true,
-               description = "the ID of the zone where the volume is located")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, since="4.20.0",
+            description = "the ID of the zone where the snapshot is located")
     private Long zoneId;
-
-    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
-    private String mode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -70,16 +58,8 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return id;
     }
 
-    public String getUrl() {
-        return url;
-    }
-
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public String getMode() {
-        return mode;
     }
 
     /////////////////////////////////////////////////////
@@ -88,7 +68,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Volume;
+        return ApiCommandResourceType.Snapshot;
     }
 
     @Override
@@ -96,37 +76,40 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return getId();
     }
 
+    /**
+     * @return ID of the snapshot to extract, if any. Otherwise returns the ACCOUNT_ID_SYSTEM, so ERROR events will be traceable.
+     */
     @Override
     public long getEntityOwnerId() {
-        Volume volume = _entityMgr.findById(Volume.class, getId());
-        if (volume != null) {
-            return volume.getAccountId();
+        Snapshot snapshot = _entityMgr.findById(Snapshot.class, getId());
+        if (snapshot != null) {
+            return snapshot.getAccountId();
         }
 
-        // invalid id, parent this command to SYSTEM so ERROR events are tracked
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VOLUME_EXTRACT;
+        return EventTypes.EVENT_SNAPSHOT_EXTRACT;
     }
 
     @Override
     public String getEventDescription() {
-        return  "Extraction job";
+        return "Snapshot extraction job";
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
-        String uploadUrl = _volumeService.extractVolume(this);
+        CallContext.current().setEventDetails("Snapshot ID: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
+        String uploadUrl = _snapshotService.extractSnapshot(this);
+        logger.info("Extract URL [{}] of snapshot [{}].", uploadUrl, id);
         if (uploadUrl != null) {
-            ExtractResponse response = _responseGenerator.createVolumeExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+            ExtractResponse response = _responseGenerator.createSnapshotExtractResponse(id, zoneId, getEntityOwnerId(), uploadUrl);
             response.setResponseName(getCommandName());
-            setResponseObject(response);
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract snapshot");
         }
     }
 }
