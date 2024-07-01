@@ -46,6 +46,10 @@ public interface ResourceLimitService {
             "A comma-separated list of tags for host resource limits", true);
     static final ConfigKey<String> ResourceLimitStorageTags = new ConfigKey<>("Advanced", String.class, "resource.limit.storage.tags", "",
             "A comma-separated list of tags for storage resource limits", true);
+    static final ConfigKey<Long> DefaultMaxAccountProjects = new ConfigKey<>("Account Defaults",Long.class,"max.account.projects","10",
+                "The default maximum number of projects that can be created for an account",false);
+    static final ConfigKey<Long> DefaultMaxDomainProjects = new ConfigKey<>("Domain Defaults",Long.class,"max.domain.projects","50",
+                        "The default maximum number of projects that can be created for a domain",false);
 
     static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);
