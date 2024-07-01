@@ -39,7 +39,15 @@ public class ConsoleProxyClientParam {
     private String password;
     private String websocketUrl;
 
+    /**
+     * IP that has generated the console endpoint
+     */
     private String sourceIP;
+
+    /**
+     * IP of the client that has connected to the console
+     */
+    private String clientIp;
 
     private String sessionUuid;
 
@@ -203,5 +211,13 @@ public class ConsoleProxyClientParam {
 
     public void setClientProvidedExtraSecurityToken(String clientProvidedExtraSecurityToken) {
         this.clientProvidedExtraSecurityToken = clientProvidedExtraSecurityToken;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
     }
 }
