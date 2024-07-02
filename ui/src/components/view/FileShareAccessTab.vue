@@ -39,10 +39,10 @@ export default {
 .title {
   font-weight: bold;
   margin-bottom: 14px;
-  font-size: 16px; /* Increased font size */
+  font-size: 14px;
 }
 
 .content {
-  font-size: 16px; /* Increased font size */
+  font-size: 14px;
 }
 </style>

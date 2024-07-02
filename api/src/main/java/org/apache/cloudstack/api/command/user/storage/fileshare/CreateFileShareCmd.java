@@ -62,7 +62,6 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SIZE,
             type = CommandType.LONG,
-            required = true,
             description = "the size of the file share in GiB")
     private Long size;
 
@@ -122,7 +121,11 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public Long getSize() {
-        return (size * 1024 * 1024 * 1024);
+        if (size == null) {
+            return null;
+        } else {
+            return (size * 1024 * 1024 * 1024);
+        }
     }
 
     public Long getZoneId() {

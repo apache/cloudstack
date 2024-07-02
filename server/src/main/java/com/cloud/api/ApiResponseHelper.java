@@ -5293,8 +5293,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(fileShare.getUuid());
         response.setName(fileShare.getName());
         response.setDescription(fileShare.getDescription());
-        response.setSize(fileShare.getSize());
-        response.setSizeGB(fileShare.getSize());
         response.setState(fileShare.getState().toString());
         response.setProvider(fileShare.getFsProviderName());
         response.setPath(FileShare.getFileSharePathFromNameAndUuid(fileShare.getName(), fileShare.getUuid()));
@@ -5369,6 +5367,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         DiskOffering diskOffering = ApiDBUtils.findDiskOfferingById(fileShare.getDiskOfferingId());
         response.setDiskOfferingId(diskOffering.getUuid());
         response.setDiskOfferingName(diskOffering.getName());
+        if (diskOffering.isCustomized() == true) {
+            response.setSize(fileShare.getSize());
+        } else {
+            response.setSize(diskOffering.getDiskSize());
+        }
+        response.setSizeGB(fileShare.getSize());
+
         ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(fileShare.getServiceOfferingId());
         response.setServiceOfferingId(serviceOffering.getUuid());
         response.setServiceOfferingName(serviceOffering.getName());
