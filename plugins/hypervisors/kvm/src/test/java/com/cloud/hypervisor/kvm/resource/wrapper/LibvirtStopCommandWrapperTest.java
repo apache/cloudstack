@@ -17,63 +17,24 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {LibvirtPrepareForMigrationCommandWrapper.class})
-public class LibvirtPrepareForMigrationCommandWrapperTest {
-
-    @Mock
-    LibvirtComputingResource libvirtComputingResourceMock;
-
-    @Mock
-    PrepareForMigrationCommand prepareForMigrationCommandMock;
-
-    @Mock
-    VirtualMachineTO virtualMachineTOMock;
+@PrepareForTest(value = {LibvirtStopCommandWrapper.class})
+public class LibvirtStopCommandWrapperTest {
 
     @Spy
-    LibvirtPrepareForMigrationCommandWrapper libvirtPrepareForMigrationCommandWrapperSpy = new LibvirtPrepareForMigrationCommandWrapper();
-
-    @Test
-    public void createPrepareForMigrationAnswerTestDpdkInterfaceNotEmptyShouldSetParamOnAnswer() {
-        Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
-        dpdkInterfaceMapping.put("Interface", new DpdkTO());
-
-        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock, dpdkInterfaceMapping, libvirtComputingResourceMock,
-                virtualMachineTOMock);
-
-        Assert.assertEquals(prepareForMigrationAnswer.getDpdkInterfaceMapping(), dpdkInterfaceMapping);
-    }
-
-    @Test
-    public void createPrepareForMigrationAnswerTestVerifyThatCpuSharesIsSet() {
-        int cpuShares = 1000;
-        Mockito.doReturn(cpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
-        PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock,null,
-                libvirtComputingResourceMock, virtualMachineTOMock);
-
-        Assert.assertEquals(cpuShares, prepareForMigrationAnswer.getNewVmCpuShares().intValue());
-    }
+    LibvirtStopCommandWrapper wrapper = new LibvirtStopCommandWrapper();
 
     private String getTempFilepath() {
         return String.format("%s/%s.txt", System.getProperty("java.io.tmpdir"), UUID.randomUUID());
@@ -81,7 +42,7 @@ public class LibvirtPrepareForMigrationCommandWrapperTest {
 
     private void runTestRemoveDpdkPortForCommandInjection(String portWithCommand) {
         try {
-            libvirtPrepareForMigrationCommandWrapperSpy.removeDpdkPort(portWithCommand);
+            wrapper.removeDpdkPort(portWithCommand);
             Assert.fail(String.format("Command injection working for portWithCommand: %s", portWithCommand));
         } catch (CloudRuntimeException ignored) {}
     }

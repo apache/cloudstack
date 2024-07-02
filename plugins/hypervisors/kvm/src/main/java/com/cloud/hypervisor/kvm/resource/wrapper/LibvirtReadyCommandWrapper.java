@@ -19,8 +19,12 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ReadyAnswer;
@@ -30,8 +34,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
-
-import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, LibvirtComputingResource> {
@@ -50,12 +52,17 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     }
 
     private boolean hostSupportsUefi(boolean isUbuntuHost) {
-        String cmd = "rpm -qa | grep -i ovmf";
+        int result;
         if (isUbuntuHost) {
-            cmd = "dpkg -l ovmf";
+            s_logger.debug("Running command : dpkg -l ovmf");
+            result = Script.executeCommandForExitValue(Script.getExecutableAbsolutePath("dpkg"), "-l", "ovmf");
+        } else {
+            s_logger.debug("Running command : rpm -qa | grep -i ovmf");
+            List<String[]> commands = new ArrayList<>();
+            commands.add(new String[]{Script.getExecutableAbsolutePath("rpm"), "-qa"});
+            commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), "-i", "ovmf"});
+            result = Script.executePipedCommands(commands, 0).first();
         }
-        s_logger.debug("Running command : " + cmd);
-        int result = Script.runSimpleBashScriptForExitValue(cmd);
         s_logger.debug("Got result : " + result);
         return result == 0;
     }

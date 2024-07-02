@@ -399,6 +399,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    protected void setupIntegrationPortListener(Integer apiPort) {
+        if (apiPort == null || apiPort <= 0) {
+            s_logger.trace(String.format("Skipping setting up listener for integration port as %s is set to %d",
+                    IntegrationAPIPort.key(), apiPort));
+            return;
+        }
+        s_logger.debug(String.format("Setting up integration API service listener on port: %d", apiPort));
+        final ListenerThread listenerThread = new ListenerThread(this, apiPort);
+        listenerThread.start();
+    }
+
     @Override
     public boolean start() {
         Security.addProvider(new BouncyCastleProvider());
@@ -444,10 +455,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         setEncodeApiResponse(EncodeApiResponse.value());
 
-        if (apiPort != null) {
-            final ListenerThread listenerThread = new ListenerThread(this, apiPort);
-            listenerThread.start();
-        }
+        setupIntegrationPortListener(apiPort);
 
         return true;
     }
