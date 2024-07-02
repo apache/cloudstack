@@ -51,10 +51,6 @@ import java.util.concurrent.TimeoutException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.trilead.ssh2.SFTPException;
-import com.trilead.ssh2.SFTPv3Client;
-import com.trilead.ssh2.SFTPv3DirectoryEntry;
-import com.trilead.ssh2.SFTPv3FileAttributes;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -72,6 +68,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
 import org.joda.time.Duration;
 import org.w3c.dom.Document;
@@ -153,6 +150,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 import com.trilead.ssh2.SCPClient;
+import com.trilead.ssh2.SFTPException;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3DirectoryEntry;
+import com.trilead.ssh2.SFTPv3FileAttributes;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Console;
@@ -627,7 +628,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
                 if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host) && !isAlienVm(vm, conn)) {
                     try {
-                        vm.destroy(conn);
+                        destroyVm(vm, conn);
                     } catch (final Exception e) {
                         s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
                         success = false;
@@ -1452,7 +1453,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 vm.setPVBootloader(conn, "pygrub");
                 vm.setPVBootloaderArgs(conn, CitrixHelper.getPVbootloaderArgs(guestOsTypeName));
             } else {
-                vm.destroy(conn);
+                destroyVm(vm, conn, true);
                 throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
             }
         }
@@ -2038,7 +2039,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             final Long domId = vm.getDomid(conn);
             callHostPlugin(conn, "vmopspremium", "forceShutdownVM", "domId", domId.toString());
             vm.powerStateReset(conn);
-            vm.destroy(conn);
+            destroyVm(vm, conn);
         } catch (final Exception e) {
             final String msg = "forceShutdown failed due to " + e.toString();
             s_logger.warn(msg, e);
@@ -3690,7 +3691,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             }
             if (vm.getPowerState(conn) == VmPowerState.HALTED) {
                 try {
-                    vm.destroy(conn);
+                    destroyVm(vm, conn, true);
                 } catch (final Exception e) {
                     s_logger.warn("VM destroy failed due to ", e);
                 }
@@ -5208,7 +5209,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
                 if (vm.getPowerState(conn) == VmPowerState.HALTED) {
                     try {
-                        vm.destroy(conn);
+                        destroyVm(vm, conn, true);
                     } catch (final Exception e) {
                         final String msg = "VM destroy failed due to " + e.toString();
                         s_logger.warn(msg, e);
@@ -5874,5 +5875,24 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             String errMsg = "Could not umount secondary storage " + remoteDir + " on host " + localDir;
             s_logger.warn(errMsg);
         }
+    }
+
+    public boolean isDestroyHaltedVms() {
+        ComparableVersion version = new ComparableVersion(getHost().getProductVersion());
+        if (version.compareTo(new ComparableVersion("8.0")) >= 0) {
+            return false;
+        }
+        return true;
+    }
+
+    public void destroyVm(VM vm, Connection connection, boolean forced) throws XenAPIException, XmlRpcException {
+        if (!isDestroyHaltedVms() && !forced) {
+            return;
+        }
+        vm.destroy(connection);
+    }
+
+    public void destroyVm(VM vm, Connection connection) throws XenAPIException, XmlRpcException {
+        destroyVm(vm, connection, false);
     }
 }
