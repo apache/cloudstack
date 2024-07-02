@@ -18,6 +18,25 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
@@ -34,28 +53,11 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @ResourceWrapper(handles =  ConvertInstanceCommand.class)
 public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<ConvertInstanceCommand, Answer, LibvirtComputingResource> {
@@ -161,7 +163,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
                 String sourceOVFDir = String.format("%s/%s", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
                 s_logger.debug("Cleaning up exported OVA at dir " + sourceOVFDir);
-                Script.runSimpleBashScript("rm -rf " + sourceOVFDir);
+                FileUtil.deletePath(sourceOVFDir);
             }
             if (conversionTemporaryLocation instanceof NfsTO) {
                 s_logger.debug("Cleaning up secondary storage temporary location");
@@ -253,7 +255,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             temporaryStoragePool.deletePhysicalDisk(disk.getName(), Storage.ImageFormat.QCOW2);
         }
         s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
-        Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
+        FileUtil.deleteFiles(temporaryStoragePool.getLocalPath(), temporaryConvertUuid, ".xml");
     }
 
     protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
@@ -356,7 +358,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     protected Pair<String, String> getNfsStoragePoolHostAndPath(KVMStoragePool storagePool) {
         String sourceHostIp = null;
         String sourcePath = null;
-        String storagePoolMountPoint = Script.runSimpleBashScript(String.format("mount | grep %s", storagePool.getLocalPath()));
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{Script.getExecutableAbsolutePath("mount")});
+        commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), storagePool.getLocalPath()});
+        String storagePoolMountPoint = Script.executePipedCommands(commands, 0).second();
         s_logger.debug(String.format("NFS Storage pool: %s - local path: %s, mount point: %s", storagePool.getUuid(), storagePool.getLocalPath(), storagePoolMountPoint));
         if (StringUtils.isNotEmpty(storagePoolMountPoint)) {
             String[] res = storagePoolMountPoint.strip().split(" ");

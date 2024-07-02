@@ -19,6 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
@@ -36,8 +39,8 @@ import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  DeleteVMSnapshotCommand.class)
@@ -96,12 +99,20 @@ public final class LibvirtDeleteVMSnapshotCommandWrapper extends CommandWrapper<
                     PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) rootVolume.getDataStore();
                     KVMPhysicalDisk rootDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(),
                             primaryStore.getUuid(), rootVolume.getPath());
-                    String qemu_img_snapshot = Script.runSimpleBashScript("qemu-img snapshot -l " + rootDisk.getPath() + " | tail -n +3 | awk -F ' ' '{print $2}' | grep ^" + cmd.getTarget().getSnapshotName() + "$");
+                    String qemuImgPath = Script.getExecutableAbsolutePath("qemu-img");
+                    List<String[]> commands = new ArrayList<>();
+                    commands.add(new String[]{qemuImgPath, "snapshot", "-l", sanitizeBashCommandArgument(rootDisk.getPath())});
+                    commands.add(new String[]{Script.getExecutableAbsolutePath("tail"), "-n", "+3"});
+                    commands.add(new String[]{Script.getExecutableAbsolutePath("awk"), "-F", " ", "{print $2}"});
+                    commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), "^" + sanitizeBashCommandArgument(cmd.getTarget().getSnapshotName()) + "$"});
+                    String qemu_img_snapshot = Script.executePipedCommands(commands, 0).second();
                     if (qemu_img_snapshot == null) {
                         s_logger.info("Cannot find snapshot " + cmd.getTarget().getSnapshotName() + " in file " + rootDisk.getPath() + ", return true");
                         return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
                     }
-                    int result = Script.runSimpleBashScriptForExitValue("qemu-img snapshot -d " + cmd.getTarget().getSnapshotName() + " " + rootDisk.getPath());
+                    int result = Script.executeCommandForExitValue(qemuImgPath, "snapshot", "-d",
+                            sanitizeBashCommandArgument(cmd.getTarget().getSnapshotName()),
+                            sanitizeBashCommandArgument(rootDisk.getPath()));
                     if (result != 0) {
                         return new DeleteVMSnapshotAnswer(cmd, false,
                                 "Delete VM Snapshot Failed due to can not remove snapshot from image file " + rootDisk.getPath()  + " : " + result);
