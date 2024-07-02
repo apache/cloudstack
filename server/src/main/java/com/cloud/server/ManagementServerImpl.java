@@ -4037,6 +4037,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateBucketCmd.class);
         cmdList.add(DeleteBucketCmd.class);
         cmdList.add(ListBucketsCmd.class);
+
         return cmdList;
     }
 
@@ -4232,7 +4233,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (type != null) {
             sc.setParameters("type", type);
-        } else {
+        } else if (id == null){
             sc.setParameters("nulltype", VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy);
         }
 

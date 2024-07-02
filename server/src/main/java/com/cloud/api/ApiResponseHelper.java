@@ -43,6 +43,7 @@ import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -89,6 +90,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -213,6 +215,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -490,6 +493,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Inject
     ObjectStoreDao _objectStoreDao;
+
+    @Inject
+    NicDao nicDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1666,7 +1672,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter || vm.getType() == Type.NetScalerVm) {
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter || vm.getType() == Type.NetScalerVm || vm.getType() == Type.StorageFsVm) {
             vmResponse.setId(vm.getUuid());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setName(vm.getHostName());
@@ -5279,5 +5285,99 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public FileShareResponse createFileShareResponse(FileShare fileShare) {
+        FileShareResponse response = new FileShareResponse();
+        response.setId(fileShare.getUuid());
+        response.setName(fileShare.getName());
+        response.setDescription(fileShare.getDescription());
+        response.setState(fileShare.getState().toString());
+        response.setProvider(fileShare.getFsProviderName());
+        response.setPath(FileShare.getFileSharePathFromNameAndUuid(fileShare.getName(), fileShare.getUuid()));
+        response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
+
+        DataCenterVO zone = ApiDBUtils.findZoneById(fileShare.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+
+        Long vmId = fileShare.getVmId();
+        if (vmId != null) {
+            VirtualMachine vm = ApiDBUtils.findVMInstanceById(vmId);
+            if (vm != null) {
+                response.setVirtualMachineId(vm.getUuid());
+
+                List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
+                VolumeVO volume = volumes.get(0);
+                response.setVolumeId(volume.getUuid());
+                response.setVolumeName(volume.getName());
+
+                StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+                response.setStoragePoolId(pool.getUuid());
+                response.setStoragePoolName(pool.getName());
+
+            }
+
+            List <NetworkVO> networks = networkDao.listGuestNetworksByVmId(vmId);
+            if (networks != null) {
+                NetworkVO network = networks.get(0);
+                if (network != null) {
+                    response.setNetworkId(network.getUuid());
+                    response.setNetworkName(network.getName());
+                    NicVO nicVO = nicDao.findByNtwkIdAndInstanceId(network.getId(), vmId);
+                    if (nicVO != null) {
+                        response.setIpAddress(nicVO.getIPv4Address());
+                        NicResponse nicResponse = new NicResponse();
+                        nicResponse.setId(nicVO.getUuid());
+                        nicResponse.setNetworkid(network.getUuid());
+                        nicResponse.setIpaddress(nicVO.getIPv4Address());
+                        nicResponse.setNetworkName(network.getName());
+                        nicResponse.setObjectName("nic");
+                        response.addNic(nicResponse);
+                    }
+                }
+            }
+        }
+
+        Volume vol = ApiDBUtils.findVolumeById(fileShare.getVolumeId());
+        if (vol != null) {
+            response.setVolumeId(vol.getUuid());
+        }
+
+        Account account = ApiDBUtils.findAccountById(fileShare.getAccountId());
+        if (account != null) {
+            response.setAccountName(account.getAccountName());
+        }
+
+        Domain domain = ApiDBUtils.findDomainById(fileShare.getDomainId());
+        if (domain != null) {
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
+
+        Project project = ApiDBUtils.findProjectById(fileShare.getProjectId());
+        if (project != null) {
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        }
+
+        DiskOffering diskOffering = ApiDBUtils.findDiskOfferingById(fileShare.getDiskOfferingId());
+        response.setDiskOfferingId(diskOffering.getUuid());
+        response.setDiskOfferingName(diskOffering.getName());
+        if (diskOffering.isCustomized() == true) {
+            response.setSize(fileShare.getSize());
+        } else {
+            response.setSize(diskOffering.getDiskSize());
+        }
+        response.setSizeGB(fileShare.getSize());
+
+        ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(fileShare.getServiceOfferingId());
+        response.setServiceOfferingId(serviceOffering.getUuid());
+        response.setServiceOfferingName(serviceOffering.getName());
+
+        return response;
     }
 }

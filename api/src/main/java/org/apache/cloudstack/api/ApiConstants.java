@@ -313,6 +313,7 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MOUNT_OPTIONS = "mountoptions";
     public static final String NSX_MODE = "nsxmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
@@ -431,6 +432,7 @@ public class ApiConstants {
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
     public static final String SIZE = "size";
+    public static final String SIZEGB = "sizegb";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";

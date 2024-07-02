@@ -264,4 +264,9 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     public List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId) {
         return null;
     }
+
+    @Override
+    public List<NetworkVO> listGuestNetworksByVmId(long vmId) {
+        return new ArrayList<>();
+    }
 }
