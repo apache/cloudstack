@@ -33,9 +33,11 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -126,6 +129,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             "ca.plugin.root.allow.expired.cert",
             "true",
             "When set to true, it will allow expired client certificate during SSL handshake.", true);
+
+    private static String managementCertificateCustomSAN;
 
 
     ///////////////////////////////////////////////////////////
@@ -365,8 +370,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         if (managementKeyStore != null) {
             return true;
         }
-        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                NetUtils.getAllDefaultNicIps(), getCaValidityDays());
+        List<String> domainNames = new ArrayList<>();
+        domainNames.add(NetUtils.getHostName());
+        domainNames.add(CAManager.CertManagementCustomSubjectAlternativeName.value());
+        final Certificate serverCertificate = issueCertificate(
+                domainNames, NetUtils.getAllDefaultNicIps(), getCaValidityDays());
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
         }
@@ -402,6 +410,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     @Override
     public boolean start() {
+        managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
         return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
     }
 
@@ -455,5 +464,27 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     @Override
     public String getDescription() {
         return "CloudStack's Root CA provider plugin";
+    }
+
+    @Override
+    public boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException {
+        if (!(certificate instanceof X509Certificate)) {
+            return false;
+        }
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+
+        // Check for alternative names
+        Collection<List<?>> altNames = x509Certificate.getSubjectAlternativeNames();
+        if (CollectionUtils.isEmpty(altNames)) {
+            return false;
+        }
+        for (List<?> altName : altNames) {
+            int type = (Integer) altName.get(0);
+            String name = (String) altName.get(1);
+            if (type == GeneralName.dNSName && managementCertificateCustomSAN.equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
