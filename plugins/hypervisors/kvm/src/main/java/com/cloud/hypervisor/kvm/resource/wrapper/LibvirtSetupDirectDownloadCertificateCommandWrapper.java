@@ -18,21 +18,26 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.FileUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  SetupDirectDownloadCertificateCommand.class)
 public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends CommandWrapper<SetupDirectDownloadCertificateCommand, Answer, LibvirtComputingResource> {
@@ -79,9 +84,10 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
      */
     private void importCertificate(String tempCerFilePath, String keyStoreFile, String certificateName, String privatePassword) {
         s_logger.debug("Importing certificate from temporary file to keystore");
-        String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
-        String importCmd = String.format(importCommandFormat, tempCerFilePath, keyStoreFile, certificateName, privatePassword);
-        int result = Script.runSimpleBashScriptForExitValue(importCmd);
+        String keyToolPath = Script.getExecutableAbsolutePath("keytool");
+        int result = Script.executeCommandForExitValue(keyToolPath, "-importcert", "file", tempCerFilePath,
+                "-keystore", keyStoreFile, "-alias", sanitizeBashCommandArgument(certificateName), "-storepass",
+                privatePassword, "-noprompt");
         if (result != 0) {
             s_logger.debug("Certificate " + certificateName + " not imported as it already exist on keystore");
         }
@@ -94,8 +100,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
         String tempCerFilePath = String.format("%s/%s-%s",
                 agentFile.getParent(), temporaryCertFilePrefix, certificateName);
         s_logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
-        int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, tempCerFilePath));
-        if (result != 0) {
+        if (!FileUtil.writeToFile(tempCerFilePath, certificate)) {
             throw new CloudRuntimeException("Could not create the certificate file on path: " + tempCerFilePath);
         }
         return tempCerFilePath;
@@ -104,9 +109,23 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     /**
      * Remove temporary file
      */
-    private void cleanupTemporaryFile(String temporaryFile) {
+    protected void cleanupTemporaryFile(String temporaryFile) {
         s_logger.debug("Cleaning up temporary certificate file");
-        Script.runSimpleBashScript("rm -f " + temporaryFile);
+        if (StringUtils.isBlank(temporaryFile)) {
+            s_logger.debug("Provided temporary certificate file path is empty");
+            return;
+        }
+        try {
+            Path filePath = Paths.get(temporaryFile);
+            if (!Files.exists(filePath)) {
+                s_logger.debug("Temporary certificate file does not exist: " + temporaryFile);
+                return;
+            }
+            Files.delete(filePath);
+        } catch (IOException e) {
+            s_logger.warn(String.format("Error while cleaning up temporary file: %s", temporaryFile));
+            s_logger.debug(String.format("Error while cleaning up temporary file: %s", temporaryFile), e);
+        }
     }
 
     @Override

@@ -18,6 +18,25 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
@@ -34,28 +53,11 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @ResourceWrapper(handles =  ConvertInstanceCommand.class)
 public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<ConvertInstanceCommand, Answer, LibvirtComputingResource> {
@@ -65,7 +67,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
 
-    protected static final String checkIfConversionIsSupportedCommand = "which virt-v2v";
+    protected static final String CONVERSION_BINARY_NAME = "virt-v2v";
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -134,7 +136,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
             s_logger.debug("Cleaning up instance conversion temporary password file");
-            Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
+            FileUtil.deleteFile(temporaryPasswordFilePath);
             if (conversionTemporaryLocation instanceof NfsTO) {
                 s_logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
@@ -204,12 +206,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             temporaryStoragePool.deletePhysicalDisk(disk.getName(), Storage.ImageFormat.QCOW2);
         }
         s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
-        Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
+        FileUtil.deleteFiles(temporaryStoragePool.getLocalPath(), temporaryConvertUuid, ".xml");
     }
 
     protected boolean isInstanceConversionSupportedOnHost() {
-        int exitValue = Script.runSimpleBashScriptForExitValue(checkIfConversionIsSupportedCommand);
-        return exitValue == 0;
+        return com.cloud.utils.StringUtils.isNotBlank(Script.getExecutableAbsolutePath(CONVERSION_BINARY_NAME));
     }
 
     protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
@@ -307,7 +308,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     protected Pair<String, String> getNfsStoragePoolHostAndPath(KVMStoragePool storagePool) {
         String sourceHostIp = null;
         String sourcePath = null;
-        String storagePoolMountPoint = Script.runSimpleBashScript(String.format("mount | grep %s", storagePool.getLocalPath()));
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{Script.getExecutableAbsolutePath("mount")});
+        commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), storagePool.getLocalPath()});
+        String storagePoolMountPoint = Script.executePipedCommands(commands, 0).second();
         if (StringUtils.isNotEmpty(storagePoolMountPoint)) {
             String[] res = storagePoolMountPoint.strip().split(" ");
             res = res[0].split(":");
@@ -350,8 +354,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String passwordFile = String.format("/tmp/vmw-%s", UUID.randomUUID());
         String msg = String.format("Creating a temporary password file for VMware instance %s conversion on: %s", sourceInstance.getInstanceName(), passwordFile);
         s_logger.debug(msg);
-        Script.runSimpleBashScriptForExitValueAvoidLogging(String.format("echo \"%s\" > %s", password, passwordFile));
-        return passwordFile;
+        if (StringUtils.isNotBlank(password) && FileUtil.writeToFile(passwordFile, password)) {
+            return passwordFile;
+        }
+        return null;
     }
 
     private String getConvertInstanceUrl(RemoteInstanceTO sourceInstance) {

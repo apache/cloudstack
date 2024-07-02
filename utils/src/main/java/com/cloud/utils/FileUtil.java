@@ -24,20 +24,23 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SshHelper;
 
 public class FileUtil {
     private static final Logger s_logger = Logger.getLogger(FileUtil.class);
@@ -90,4 +93,43 @@ public class FileUtil {
         }
     }
 
+    public static void deleteFile(String filePath) {
+        Path path = Paths.get(filePath);
+        try {
+            Files.deleteIfExists(path);
+            s_logger.debug(String.format("Deleted file: %s", filePath));
+        } catch (IOException e) {
+            s_logger.error(String.format("Failed to delete file: %s", filePath), e);
+        }
+    }
+
+    public static void deleteFiles(String directory, String prefix, String suffix) {
+        Path dirPath = Paths.get(directory);
+        try (Stream<Path> files = Files.list(dirPath)) {
+            files.filter(file -> file.getFileName().toString().startsWith(prefix) &&
+                            file.getFileName().toString().endsWith(suffix))
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                            s_logger.debug(String.format("Deleted file: %s", file));
+                        } catch (IOException e) {
+                            s_logger.error(String.format("Failed to delete file: %s", file), e);
+                        }
+                    });
+        } catch (IOException e) {
+            s_logger.error(String.format("Error accessing directory: %s", directory), e);
+        }
+    }
+
+    public static boolean writeToFile(String fileName, String content) {
+        Path filePath = Paths.get(fileName);
+        try {
+            Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
+            s_logger.debug(String.format("Successfully wrote to the file: %s", fileName));
+            return true;
+        } catch (IOException e) {
+            s_logger.error(String.format("Error writing to the file: %s", fileName), e);
+        }
+        return false;
+    }
 }
