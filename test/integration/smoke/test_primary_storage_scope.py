@@ -32,7 +32,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
-        self._cleanup = []
+        self.cleanup = []
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.debug(self.services)
@@ -49,11 +49,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPrimaryStorageScope, self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_scope_change(self):
@@ -67,7 +63,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
                                        podid=self.pod.id,
                                        hypervisor=self.cluster1.hypervisortype
                                        )
-        self._cleanup.append(self.cluster2)
+        self.cleanup.append(self.cluster2)
 
         # Create zone-wide storage pool
         self.storage = StoragePool.create(self.apiclient,
@@ -76,7 +72,7 @@ class TestPrimaryStorageScope(cloudstackTestCase):
                                           zoneid=self.zone.id,
                                           hypervisor=self.cluster1.hypervisortype
                                           )
-        self._cleanup.append(self.storage)
+        self.cleanup.append(self.storage)
         self.debug("Created storage pool %s in zone scope", self.storage.id)
 
         # Disable storage pool
