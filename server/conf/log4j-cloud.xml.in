@@ -81,7 +81,7 @@ under the License.
 
    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+      <param name="Threshold" value="OFF"/>
       <layout class="org.apache.log4j.PatternLayout">
          <param name="ConversionPattern" value="%-5p [%c{1.}] (%t:%x) %m%n"/>
       </layout>
@@ -94,11 +94,11 @@ under the License.
    <category name="com.cloud">
      <priority value="DEBUG"/>
    </category>
-   
+
    <category name="org.apache.cloudstack">
      <priority value="DEBUG"/>
    </category
-   
+
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
       <priority value="INFO"/>
@@ -107,7 +107,7 @@ under the License.
    <category name="org">
       <priority value="INFO"/>
    </category>
-   
+
    <category name="net">
      <priority value="INFO"/>
    </category>

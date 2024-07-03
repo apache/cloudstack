@@ -99,6 +99,8 @@ override_dh_auto_install:
 	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
 	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
 
+	install -D -m0644 server/target/conf/cloudstack-management.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-management
+
 	# cloudstack-ui
 	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
@@ -154,6 +156,8 @@ override_dh_auto_install:
 	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
 	install -m0644 packaging/systemd/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
+
+	install -D -m0644 usage/target/transformed/cloudstack-usage.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-usage
 
 	# cloudstack-marvin
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin

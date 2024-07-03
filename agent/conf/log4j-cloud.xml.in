@@ -37,17 +37,17 @@ under the License.
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
       </layout>
    </appender>
-   
+
    <!-- ============================== -->
    <!-- Append messages to the console -->
    <!-- ============================== -->
 
    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+      <param name="Threshold" value="OFF"/>
 
       <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
       </layout>
    </appender>
 
@@ -58,11 +58,11 @@ under the License.
    <category name="com.cloud">
      <priority value="INFO"/>
    </category>
-   
+
    <category name="com.cloud.agent.metrics">
      <priority value="INFO"/>
    </category>
-   
+
    <category name="com.cloud.agent.resource.computing.ComputingResource$StorageMonitorTask">
      <priority value="INFO"/>
    </category>
@@ -75,7 +75,7 @@ under the License.
    <category name="org">
       <priority value="INFO"/>
    </category>
-   
+
    <category name="net">
       <priority value="INFO"/>
    </category>

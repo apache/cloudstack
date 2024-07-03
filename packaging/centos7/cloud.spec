@@ -311,6 +311,7 @@ install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_s
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
 touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
+install -D server/target/conf/cloudstack-management.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-management
 
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
@@ -374,6 +375,7 @@ cp client/target/lib/mysql*jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-usage/lib/
 install -D packaging/systemd/cloudstack-usage.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-usage.service
 install -D packaging/systemd/cloudstack-usage.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-usage
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/usage/
+install -D usage/target/transformed/cloudstack-usage.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-usage
 
 # CLI
 cp -r cloud-cli/cloudtool ${RPM_BUILD_ROOT}%{python_sitearch}/
@@ -618,6 +620,7 @@ pip3 install --upgrade urllib3
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 #%attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-catalina
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-management
 %{_datadir}/%{name}-management/setup/wheel/*.whl
 
 %files agent
@@ -665,6 +668,7 @@ pip3 install --upgrade urllib3
 %files usage
 %attr(0644,root,root) %{_unitdir}/%{name}-usage.service
 %config(noreplace) %{_sysconfdir}/default/%{name}-usage
+%config(noreplace) %attr(0644,root,root) %{_sysconfdir}/logrotate.d/%{name}-usage
 %attr(0644,root,root) %{_datadir}/%{name}-usage/*.jar
 %attr(0644,root,root) %{_datadir}/%{name}-usage/lib/*.jar
 %dir %attr(0770,root,cloud) %{_localstatedir}/log/%{name}/usage
