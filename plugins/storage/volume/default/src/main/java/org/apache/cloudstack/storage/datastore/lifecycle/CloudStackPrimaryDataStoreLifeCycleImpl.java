@@ -64,8 +64,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -74,7 +72,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject

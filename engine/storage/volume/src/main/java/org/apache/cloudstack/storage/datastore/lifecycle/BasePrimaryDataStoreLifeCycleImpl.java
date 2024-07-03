@@ -42,7 +42,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class BasePrimaryDataStoreLifeCycleImpl {
-    private static final Logger logger = LogManager.getLogger(BasePrimaryDataStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     AgentManager agentMgr;

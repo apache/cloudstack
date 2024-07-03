@@ -52,7 +52,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
-    private static final Logger logger = LogManager.getLogger(ScaleIOSDCManagerImpl.class);
+    private Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     AgentManager agentManager;
