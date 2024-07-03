@@ -264,7 +264,7 @@ public class ConfigDriveNetworkElementTest {
         try (MockedStatic<ConfigDriveBuilder> ignored1 = Mockito.mockStatic(ConfigDriveBuilder.class); MockedStatic<CallContext> ignored2 = Mockito.mockStatic(CallContext.class)) {
             Mockito.when(CallContext.current()).thenReturn(callContextMock);
             Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap())).thenReturn("content");
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.any(NicProfile.class), Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap())).thenReturn("content");
 
             final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
             final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);

@@ -113,15 +113,15 @@ public class ConfigDriveBuilderTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void buildConfigDriveTestNoVmData() {
-        ConfigDriveBuilder.buildConfigDrive(null, "teste", "C:", null);
+        ConfigDriveBuilder.buildConfigDrive(null, null, "teste", "C:", null);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void buildConfigDriveTestIoException() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
-            ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
+            ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null);
         }
     }
 
@@ -137,9 +137,9 @@ public class ConfigDriveBuilderTest {
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> "mockIsoDataBase64");
             //force execution of real method
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
 
-            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null);
 
             Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 

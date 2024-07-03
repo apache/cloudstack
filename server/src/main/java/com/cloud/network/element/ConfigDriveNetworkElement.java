@@ -90,7 +90,8 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
-public class ConfigDriveNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider,
+public class ConfigDriveNetworkElement extends AdapterBase implements NetworkElement,
+        UserDataServiceProvider, DhcpServiceProvider, DnsServiceProvider,
         StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine>, NetworkMigrationResponder {
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -197,6 +198,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<>();
         capabilities.put(Service.UserData, null);
+        capabilities.put(Service.Dhcp, new HashMap<>());
+        capabilities.put(Service.Dns, new HashMap<>());
         return capabilities;
     }
 
@@ -224,8 +227,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         return (canHandle(network.getTrafficType())
-                && configureConfigDriveData(profile, nic, dest))
-                && createConfigDriveIso(profile, dest, null);
+                && configureConfigDriveData(profile, nic, dest));
     }
 
     @Override
@@ -342,10 +344,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     configureConfigDriveData(vm, nic, dest);
 
                     // Create the config drive on dest host cache
-                    createConfigDriveIsoOnHostCache(vm, dest.getHost().getId());
+                    createConfigDriveIsoOnHostCache(nic, vm, dest.getHost().getId());
                 } else {
                     vm.setConfigDriveLocation(getConfigDriveLocation(vm.getId()));
-                    addPasswordAndUserdata(network, nic, vm, dest, context);
+                    boolean result = addPasswordAndUserdata(network, nic, vm, dest, context);
+                    if (result) {
+                        createConfigDriveIso(nic, vm, dest, null);
+                    }
                 }
             } catch (InsufficientCapacityException | ResourceUnavailableException e) {
                 logger.error("Failed to add config disk drive due to: ", e);
@@ -398,7 +403,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                         vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(dest.getHost() != null ? dest.getHost().getName() : ""));
                 vm.setVmData(vmData);
                 vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
-                createConfigDriveIso(vm, dest, diskToUse);
+                createConfigDriveIso(nic, vm, dest, diskToUse);
             }
         }
     }
@@ -528,7 +533,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return false;
     }
 
-    private boolean createConfigDriveIsoOnHostCache(VirtualMachineProfile profile, Long hostId) throws ResourceUnavailableException {
+    private boolean createConfigDriveIsoOnHostCache(NicProfile nic, VirtualMachineProfile profile, Long hostId) throws ResourceUnavailableException {
         if (hostId == null) {
             throw new ResourceUnavailableException("Config drive iso creation failed, dest host not available",
                     ConfigDriveNetworkElement.class, 0L);
@@ -540,7 +545,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -590,7 +595,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    private boolean createConfigDriveIso(VirtualMachineProfile profile, DeployDestination dest, DiskTO disk) throws ResourceUnavailableException {
+    public boolean createConfigDriveIso(NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, DiskTO disk) throws ResourceUnavailableException {
         DataStore dataStore = getDatastoreForConfigDriveIso(disk, profile, dest);
 
         final Long agentId = findAgentId(profile, dest, dataStore);
@@ -605,7 +610,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);
@@ -758,4 +763,52 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
+    @Override
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
+            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        // Update nic profile with required information.
+        // Add network checks
+        return true;
+    }
+
+    @Override
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
+            DeployDestination dest,
+            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        return false;
+    }
+
+    @Override
+    public boolean removeDhcpEntry(Network network, NicProfile nic,
+            VirtualMachineProfile vmProfile) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean addDnsEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
+            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean configDnsSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
+            DeployDestination dest,
+            ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean removeDnsSupportForSubnet(Network network) throws ResourceUnavailableException {
+        return true;
+    }
 }

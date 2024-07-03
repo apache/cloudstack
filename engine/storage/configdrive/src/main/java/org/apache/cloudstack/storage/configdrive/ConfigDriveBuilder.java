@@ -22,6 +22,7 @@ import static com.cloud.network.NetworkModel.CONFIGDATA_DIR;
 import static com.cloud.network.NetworkModel.CONFIGDATA_FILE;
 import static com.cloud.network.NetworkModel.PASSWORD_FILE;
 import static com.cloud.network.NetworkModel.USERDATA_FILE;
+import static com.cloud.network.NetworkService.DEFAULT_MTU;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.vm.NicProfile;
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
@@ -108,9 +111,9 @@ public class ConfigDriveBuilder {
      *  This method will build the metadata files required by OpenStack driver. Then, an ISO is going to be generated and returned as a String in base 64.
      *  If vmData is null, we throw a {@link CloudRuntimeException}. Moreover, {@link IOException} are captured and re-thrown as {@link CloudRuntimeException}.
      */
-    public static String buildConfigDrive(List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams) {
-        if (vmData == null) {
-            throw new CloudRuntimeException("No VM metadata provided");
+    public static String buildConfigDrive(NicProfile nic, List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams) {
+        if (vmData == null && nic == null) {
+            throw new CloudRuntimeException("No VM metadata and nic profile provided");
         }
 
         Path tempDir = null;
@@ -122,6 +125,7 @@ public class ConfigDriveBuilder {
             File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
 
             writeVendorAndNetworkEmptyJsonFile(openStackFolder);
+            writeNetworkData(nic, tempDirName, openStackFolder);
             writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
 
             linkUserData(tempDirName);
@@ -212,6 +216,14 @@ public class ConfigDriveBuilder {
     }
 
     /**
+     * First we generate a JSON object using {@link #createJsonObjectWithNic(NicProfile)}, then we write it to a file called "network_data.json".
+     */
+    static void writeNetworkData(NicProfile nic, String tempDirName, File openStackFolder) {
+        JsonObject networkData = createJsonObjectWithNic(nic);
+        writeFile(openStackFolder, "network_data.json", networkData.toString());
+    }
+
+    /**
      *  Writes the following empty JSON files:
      *  <ul>
      *      <li> vendor_data.json
@@ -248,6 +260,97 @@ public class ConfigDriveBuilder {
             createFileInTempDirAnAppendOpenStackMetadataToJsonObject(tempDirName, metaData, dataType, fileName, content, customUserdataParams);
         }
         return metaData;
+    }
+
+    /**
+     * Creates the {@link JsonObject} with NIC's metadata. We expect the JSONObject to have the following entries:
+     */
+    static JsonObject createJsonObjectWithNic(NicProfile nic) {
+        // TODO: Check if we actually need to read the existing file and upsert the data to support multiple networks
+        JsonObject networkData = new JsonObject();
+        JsonArray links = new JsonArray();
+        JsonArray networks = new JsonArray();
+        JsonArray services = new JsonArray();
+
+        if (StringUtils.isNotBlank(nic.getMacAddress())) {
+            JsonObject link = new JsonObject();
+            link.addProperty("ethernet_mac_address", nic.getMacAddress());
+            link.addProperty("id", String.format("eth%d", nic.getDeviceId()));
+            link.addProperty("mtu", nic.getMtu() != null ? nic.getMtu() : DEFAULT_MTU);
+            link.addProperty("type", "phy");
+            links.add(link);
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv4Address())) {
+            JsonObject ipv4Network = new JsonObject();
+            ipv4Network.addProperty("id", String.format("eth%d", nic.getDeviceId()));
+            ipv4Network.addProperty("ip_address", nic.getIPv4Address());
+            ipv4Network.addProperty("link", String.format("eth%d", nic.getDeviceId()));
+            ipv4Network.addProperty("netmask", nic.getIPv4Netmask());
+            ipv4Network.addProperty("network_id", nic.getUuid());
+            ipv4Network.addProperty("type", "ipv4");
+
+            JsonArray ipv4RouteArray = new JsonArray();
+            JsonObject ipv4Route = new JsonObject();
+            ipv4Route.addProperty("gateway", nic.getIPv4Gateway());
+            ipv4Route.addProperty("netmask", "0.0.0.0");
+            ipv4Route.addProperty("network", "0.0.0.0");
+            ipv4RouteArray.add(ipv4Route);
+
+            ipv4Network.add("routes", ipv4RouteArray);
+
+            networks.add(ipv4Network);
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv6Address())) {
+            JsonObject ipv6Network = new JsonObject();
+            ipv6Network.addProperty("id", String.format("eth%d", nic.getDeviceId()));
+            ipv6Network.addProperty("ip_address", nic.getIPv6Address());
+            ipv6Network.addProperty("link", String.format("eth%d", nic.getDeviceId()));
+            ipv6Network.addProperty("netmask", IPv6Network.fromString(nic.getIPv6Cidr()).getNetmask().toString());
+            ipv6Network.addProperty("network_id", nic.getNetworkId());
+            ipv6Network.addProperty("type", "ipv6");
+
+            JsonArray ipv6RouteArray = new JsonArray();
+            JsonObject ipv6Route = new JsonObject();
+            ipv6Route.addProperty("gateway", nic.getIPv6Gateway());
+            ipv6Route.addProperty("netmask", "0");
+            ipv6Route.addProperty("network", "::");
+            ipv6RouteArray.add(ipv6Route);
+
+            ipv6Network.add("routes", ipv6RouteArray);
+
+            networks.add(ipv6Network);
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv4Dns1())) {
+            services.add(getDnsServiceObject(nic.getIPv4Dns1()));
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv4Dns2())) {
+            services.add(getDnsServiceObject(nic.getIPv4Dns2()));
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv6Dns1())) {
+            services.add(getDnsServiceObject(nic.getIPv6Dns1()));
+        }
+
+        if (StringUtils.isNotBlank(nic.getIPv6Dns2())) {
+            services.add(getDnsServiceObject(nic.getIPv6Dns2()));
+        }
+
+        networkData.add("links", links);
+        networkData.add("networks", networks);
+        networkData.add("services", services);
+
+        return networkData;
+    }
+
+    private static JsonObject getDnsServiceObject(String dnsAddress) {
+        JsonObject dnsService = new JsonObject();
+        dnsService.addProperty("address", dnsAddress);
+        dnsService.addProperty("type", "dns");
+        return dnsService;
     }
 
     static void createFileInTempDirAnAppendOpenStackMetadataToJsonObject(String tempDirName, JsonObject metaData, String dataType, String fileName, String content, Map<String, String> customUserdataParams) {
