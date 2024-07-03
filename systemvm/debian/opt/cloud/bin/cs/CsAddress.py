@@ -620,10 +620,22 @@ class CsIP:
     def fw_router_routing(self):
         if self.config.is_vpc() or not self.config.is_routing():
             return
+
+        # Add default rules for INPUT chain
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                 'rule': "iifname lo counter accept"})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
+                                 'rule': "iifname eth2 ct state related,established counter accept"})
+        # Add default rules for FORWARD chain
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth2" oifname "eth0" ct state related,established counter accept'})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth0" oifname "eth0" ct state new counter accept'})
+        self.nft_ipv4_fw.append({'type': "", 'chain': 'FORWARD',
+                   'rule': 'iifname "eth0" oifname "eth0" ct state related,established counter accept'})
+
         if self.get_type() in ["guest"]:
             guestNetworkCidr = self.address['network']
-            self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
-                                     'rule': "iifname lo counter accept"})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
                                      'rule': "iifname %s ct state related,established counter accept" % self.dev})
             self.nft_ipv4_fw.append({'type': "", 'chain': 'INPUT',
@@ -642,10 +654,14 @@ class CsIP:
     def fw_vpcrouter_routing(self):
         if not self.config.is_vpc() or not self.config.is_routing():
             return
-        if self.get_type() in ["guest"]:
-            guestNetworkCidr = self.address['network']
+
+        if self.get_type() in ["public"]:
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname lo counter accept"})
+            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                      'rule': "iifname eth1 ct state related,established counter accept"})
+        if self.get_type() in ["guest"]:
+            guestNetworkCidr = self.address['network']
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname %s ct state related,established counter accept" % self.dev})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
@@ -661,13 +677,13 @@ class CsIP:
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
                                       'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
 
-            # Add default rules for VPC tiers
+            # Add default rules for FORWARD chain for VPC tiers
             self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
-                       'rule': "oifname %s ip daddr %s ct state related,established counter accept" % (self.dev, guestNetworkCidr)})
+                                      'rule': "oifname %s ip daddr %s ct state related,established counter accept" % (self.dev, guestNetworkCidr)})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
-                       'rule': "iifname %s oifname %s ct state new counter accept" % (self.dev, self.dev)})
+                                      'rule': "iifname %s oifname %s ct state new counter accept" % (self.dev, self.dev)})
             self.nft_ipv4_acl.append({'type': "", 'chain': 'FORWARD',
-                       'rule': "iifname %s oifname %s ct state related,established counter accept" % (self.dev, self.dev)})
+                                      'rule': "iifname %s oifname %s ct state related,established counter accept" % (self.dev, self.dev)})
 
 
     def post_config_change(self, method):
