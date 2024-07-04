@@ -179,7 +179,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     private RoutingMode routingMode;
 
     @Column(name = "specify_as_number")
-    private Boolean specifyAsNumber;
+    private Boolean specifyAsNumber = false;
 
     @Override
     public boolean isKeepAliveEnabled() {
