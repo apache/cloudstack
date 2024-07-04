@@ -23,7 +23,7 @@ import time
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
-    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule
+    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template
 from marvin.lib.common import get_domain, get_zone, get_template, list_routers, list_hosts
 from marvin.lib.utils import get_host_credentials, get_process_status
 
@@ -104,7 +104,10 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.hypervisor = testdata.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.template = Template.register(cls.apiclient, cls.services["test_templates"][cls.hypervisor.lower()],
+                                         zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+        cls.template.download(cls.apiclient)
+
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestIpv4Routing")
@@ -176,7 +179,7 @@ class TestIpv4Routing(cloudstackTestCase):
 
     @classmethod
     def message(cls, msg):
-        cls.logger.debug("=== " + str(datetime.datetime.now()) + " " + msg)
+        cls.logger.debug("====== " + str(datetime.datetime.now()) + " " + msg + " ======")
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -280,7 +283,7 @@ class TestIpv4Routing(cloudstackTestCase):
                 self.fail("The nftables rule (%s) should not exist but is found in the VR !!!" % rule["rule"])
             self.message("The nftables rules look good so far.")
 
-    def verifyPingFromRouter(self, router, vm, expected=True, retries=1):
+    def verifyPingFromRouter(self, router, vm, expected=True, retries=2):
         while retries > 0:
             cmd_ping_vm = "ping -c1 -W1 %s" % vm.ipaddress
             try:
@@ -291,14 +294,16 @@ class TestIpv4Routing(cloudstackTestCase):
                     if retries > 0:
                         time.sleep(WAIT_INTERVAL)
                 else:
-                    self.message("packets received, looks good")
+                    self.message("packets are received, looks good")
                     return
             except Exception as ex:
                 self.fail("Failed to ping vm from router: %s" % ex)
         if retries == 0 and expected:
             self.message("Failed to ping vm from router, which is expected to work !!!")
+            time.sleep(600)
         if retries > 0 and not expected:
             self.message("ping vm from router works, however it is unexpected !!!")
+            time.sleep(600)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_zone_subnet(self):

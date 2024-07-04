@@ -655,11 +655,12 @@ class CsIP:
         if not self.config.is_vpc() or not self.config.is_routed():
             return
 
-        if self.get_type() in ["public"]:
-            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
-                                      'rule': "iifname lo counter accept"})
-            self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
-                                      'rule': "iifname eth1 ct state related,established counter accept"})
+        # Add default rules for INPUT chain for VPC
+        self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                  'rule': "iifname lo counter accept"})
+        self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
+                                  'rule': "iifname eth1 ct state related,established counter accept"})
+
         if self.get_type() in ["guest"]:
             guestNetworkCidr = self.address['network']
             self.nft_ipv4_acl.append({'type': "", 'chain': 'INPUT',
