@@ -151,7 +151,7 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
--- Create tables for routing mode
+-- Create tables for static and dynamic routing
 CREATE TABLE `cloud`.`dc_ip4_guest_subnets` (
    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
    `uuid` varchar(40) DEFAULT NULL,
@@ -186,6 +186,6 @@ CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
    CONSTRAINT `uc_ip4_guest_subnet_network_map__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`network_offerings` RENAME COLUMN `nsx_mode` TO `routing_mode`;
-ALTER TABLE `cloud`.`vpc_offerings` RENAME COLUMN `nsx_mode` TO `routing_mode`;
+ALTER TABLE `cloud`.`network_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
+ALTER TABLE `cloud`.`vpc_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
 ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;

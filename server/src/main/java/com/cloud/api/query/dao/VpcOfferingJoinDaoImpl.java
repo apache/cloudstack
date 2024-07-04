@@ -71,7 +71,7 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
             offeringResponse.setZoneId(offeringJoinVO.getZoneUuid());
             offeringResponse.setZone(offeringJoinVO.getZoneName());
             offeringResponse.setForNsx(offeringJoinVO.isForNsx());
-            offeringResponse.setRoutingMode(offeringJoinVO.getRoutingMode());
+            offeringResponse.setNetworkMode(offeringJoinVO.getNetworkMode());
             String protocol = offeringJoinVO.getInternetProtocol();
             if (StringUtils.isEmpty(protocol)) {
                 protocol = NetUtils.InternetProtocol.IPv4.toString();

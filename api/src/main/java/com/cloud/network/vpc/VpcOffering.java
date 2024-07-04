@@ -57,7 +57,7 @@ public interface VpcOffering extends InternalIdentity, Identity {
 
     boolean isForNsx();
 
-    String getRoutingMode();
+    String getNetworkMode();
 
     /**
      * @return service offering id used by VPC virtual router

@@ -107,9 +107,9 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
 
-    @SerializedName(ApiConstants.ROUTING_MODE)
+    @SerializedName(ApiConstants.NETWORK_MODE)
     @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
-    private String routingMode;
+    private String networkMode;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
@@ -235,8 +235,8 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
         this.forTungsten = forTungsten;
     }
 
-    public void setRoutingMode(String routingMode) {
-        this.routingMode = routingMode;
+    public void setNetworkMode(String networkMode) {
+        this.networkMode = networkMode;
     }
 
     public void setIsPersistent(Boolean isPersistent) {

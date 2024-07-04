@@ -85,19 +85,19 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="routingmode" ref="routingmode">
+        <a-form-item name="networkmode" ref="networkmode">
           <template #label>
-            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
+            <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
           </template>
           <a-select
             optionFilterProp="label"
-            v-model:value="form.routingmode"
-            @change="val => { handleForRoutingModeChange(val) }"
+            v-model:value="form.networkmode"
+            @change="val => { handleForNetworkModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.routingmode.description">
-            <a-select-option v-for="(opt) in routingmodes" :key="opt.name" :label="opt.name">
+            :placeholder="apiParams.networkmode.description">
+            <a-select-option v-for="(opt) in networkmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
@@ -128,7 +128,7 @@
         <a-form-item name="distributedrouter" ref="distributedrouter" :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-model:checked="form.distributedrouter" />
         </a-form-item>
-        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked || routingmode === 'ROUTED'">
+        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked || networkmode === 'ROUTED'">
           <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">
@@ -257,8 +257,8 @@ export default {
       sourceNatServiceChecked: false,
       selectedServiceProviderMap: {},
       ipv6NetworkOfferingEnabled: false,
-      routingmode: '',
-      routingmodes: [
+      networkmode: '',
+      networkmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -479,7 +479,7 @@ export default {
         })
       }
       this.supportedServices = []
-      if (this.routingmode === 'ROUTED') {
+      if (this.networkmode === 'ROUTED') {
         services = services.filter(service => {
           return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
         })
@@ -537,8 +537,8 @@ export default {
         this.fetchServiceOfferingData()
       }
     },
-    handleForRoutingModeChange (routingMode) {
-      this.routingmode = routingMode
+    handleForNetworkModeChange (networkMode) {
+      this.networkmode = networkMode
       this.fetchSupportedServiceData()
     },
     fetchServiceOfferingData () {
@@ -595,7 +595,7 @@ export default {
           params.fornsx = true
           params.nsxsupportlb = values.nsxsupportlb
         }
-        params.routingmode = values.routingmode
+        params.networkmode = values.networkmode
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = []

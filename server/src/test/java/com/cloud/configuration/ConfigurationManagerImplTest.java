@@ -440,7 +440,7 @@ public class ConfigurationManagerImplTest {
         NetworkOfferingVO offeringVO = Mockito.mock(NetworkOfferingVO.class);
 
         when(createNetworkOfferingCmd.isForNsx()).thenReturn(true);
-        when(createNetworkOfferingCmd.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.NATTED.name());
+        when(createNetworkOfferingCmd.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED.name());
         when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
         when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());

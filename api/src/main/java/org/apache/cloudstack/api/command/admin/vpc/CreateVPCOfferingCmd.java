@@ -130,11 +130,11 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.16")
     private Boolean enable;
 
-    @Parameter(name = ApiConstants.ROUTING_MODE,
+    @Parameter(name = ApiConstants.NETWORK_MODE,
             type = CommandType.STRING,
             description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
             since = "4.20.0")
-    private String routingMode;
+    private String networkMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -173,8 +173,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return BooleanUtils.isTrue(forNsx);
     }
 
-    public String getRoutingMode() {
-        return routingMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
     public boolean getNsxSupportsLbService() {

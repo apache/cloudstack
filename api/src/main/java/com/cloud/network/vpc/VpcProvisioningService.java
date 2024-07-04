@@ -36,7 +36,7 @@ public interface VpcProvisioningService {
     VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
                                   Map<String, List<String>> serviceProviders,
                                   Map serviceCapabilitystList, NetUtils.InternetProtocol internetProtocol,
-                                  Long serviceOfferingId, Boolean forNsx, String routingMode,
+                                  Long serviceOfferingId, Boolean forNsx, String networkMode,
                                   List<Long> domainIds, List<Long> zoneIds, VpcOffering.State state);
 
     Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);

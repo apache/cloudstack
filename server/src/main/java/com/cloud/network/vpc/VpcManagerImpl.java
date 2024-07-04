@@ -389,7 +389,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.RoutingMode.NATTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NetworkMode.NATTED.name());
 
                 }
 
@@ -407,7 +407,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.RoutingMode.ROUTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NetworkMode.ROUTED.name());
 
                 }
             }
@@ -468,11 +468,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final Boolean forNsx = cmd.isForNsx();
-        final String routingMode = cmd.getRoutingMode();
+        final String networkMode = cmd.getNetworkMode();
         final boolean enable = cmd.getEnable();
 
-        if (routingMode != null && !EnumUtils.isValidEnum(NetworkOffering.RoutingMode.class, routingMode)) {
-            throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.RoutingMode.values()));
+        if (networkMode != null && !EnumUtils.isValidEnum(NetworkOffering.NetworkMode.class, networkMode)) {
+            throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
         }
 
         // check if valid domain
@@ -497,7 +497,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, routingMode,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, networkMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
@@ -505,7 +505,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
-                                         final Boolean forNsx, final String routingMode, List<Long> domainIds, List<Long> zoneIds, State state) {
+                                         final Boolean forNsx, final String networkMode, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
@@ -547,7 +547,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        if (!NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode) && !sourceNatSvc) {
+        if (!NetworkOffering.NetworkMode.ROUTED.name().equals(networkMode) && !sourceNatSvc) {
             logger.debug("Automatically adding source nat service to the list of VPC services");
             svcProviderMap.put(Service.SourceNat, defaultProviders);
         }
@@ -568,7 +568,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
-                        if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)
+                        if (NetworkOffering.NetworkMode.ROUTED.name().equals(networkMode)
                                 && Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)
                                 && Provider.VPCVirtualRouter.equals(provider)) {
                             throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported by VPC in ROUTED mode");
@@ -588,7 +588,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
-        } else if (NetworkOffering.RoutingMode.ROUTED.name().equals(routingMode)) {
+        } else if (NetworkOffering.NetworkMode.ROUTED.name().equals(networkMode)) {
             svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
             redundantRouterService = Service.Gateway;
         }
@@ -599,7 +599,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList, redundantRouterService);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, forNsx, routingMode);
+                redundantRouter, forNsx, networkMode);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -627,7 +627,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, Boolean forNsx, String routingMode) {
+                                              final boolean redundantRouter, Boolean forNsx, String networkMode) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -639,7 +639,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     offering.setState(state);
                 }
                 offering.setForNsx(forNsx);
-                offering.setRoutingMode(routingMode);
+                offering.setNetworkMode(networkMode);
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers

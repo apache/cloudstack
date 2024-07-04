@@ -1388,7 +1388,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             return;
         }
-        if (NetworkOffering.RoutingMode.ROUTED.name().equals(networkOffering.getRoutingMode())
+        if (NetworkOffering.NetworkMode.ROUTED.name().equals(networkOffering.getNetworkMode())
                 && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
             if (cidr != null) {
                 if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -1781,7 +1781,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // assign to network
-        if (NetworkOffering.RoutingMode.ROUTED.name().equals(ntwkOff.getRoutingMode())) {
+        if (NetworkOffering.NetworkMode.ROUTED.name().equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
         }
 

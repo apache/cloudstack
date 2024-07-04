@@ -29,7 +29,7 @@ select
     `vpc_offerings`.`state` AS `state`,
     `vpc_offerings`.`default` AS `default`,
     `vpc_offerings`.`for_nsx` AS `for_nsx`,
-    `vpc_offerings`.`routing_mode` AS `routing_mode`,
+    `vpc_offerings`.`network_mode` AS `network_mode`,
     `vpc_offerings`.`created` AS `created`,
     `vpc_offerings`.`removed` AS `removed`,
     `vpc_offerings`.`service_offering_id` AS `service_offering_id`,

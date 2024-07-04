@@ -2832,8 +2832,8 @@ class NetworkOffering:
             cmd.tags = services["tags"]
         if "internetprotocol" in services:
             cmd.internetprotocol = services["internetprotocol"]
-        if "routingmode" in services:
-            cmd.routingmode = services["routingmode"]
+        if "networkmode" in services:
+            cmd.networkmode = services["networkmode"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -5095,8 +5095,8 @@ class VpcOffering:
                     })
         if "internetprotocol" in services:
             cmd.internetprotocol = services["internetprotocol"]
-        if "routingmode" in services:
-            cmd.routingmode = services["routingmode"]
+        if "networkmode" in services:
+            cmd.networkmode = services["networkmode"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):

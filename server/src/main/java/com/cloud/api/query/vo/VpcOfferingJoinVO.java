@@ -80,8 +80,8 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "for_nsx")
     boolean forNsx = false;
 
-    @Column(name = "routing_mode")
-    String routingMode;
+    @Column(name = "network_mode")
+    String networkMode;
 
     @Column(name = "domain_id")
     private String domainId;
@@ -150,8 +150,8 @@ public class VpcOfferingJoinVO implements VpcOffering {
     }
 
     @Override
-    public String getRoutingMode() {
-        return routingMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
     @Override

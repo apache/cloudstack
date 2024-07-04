@@ -158,11 +158,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
 
-    @Parameter(name = ApiConstants.ROUTING_MODE,
+    @Parameter(name = ApiConstants.NETWORK_MODE,
             type = CommandType.STRING,
             description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
             since = "4.20.0")
-    private String routingMode;
+    private String networkMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
@@ -302,8 +302,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return BooleanUtils.isTrue(forNsx);
     }
 
-    public String getRoutingMode() {
-        return routingMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
     public boolean getNsxSupportsLbService() {

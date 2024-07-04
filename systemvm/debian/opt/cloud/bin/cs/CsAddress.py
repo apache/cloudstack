@@ -343,7 +343,7 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-            if self.get_type() in ['public'] and not self.config.is_routing():
+            if self.get_type() in ['public'] and not self.config.is_routed():
                 self.set_mark()
 
             if 'gateway' in self.address:
@@ -410,7 +410,7 @@ class CsIP:
                                      'rule': 'iifname "eth1" tcp dport 3922 ct state established,new counter accept'})
 
     def setup_router_control(self):
-        if self.config.is_routing():
+        if self.config.is_routed():
             self.setup_router_control_routing()
             return
 
@@ -426,7 +426,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def fw_router(self):
-        if self.config.is_vpc() or self.config.is_routing():
+        if self.config.is_vpc() or self.config.is_routed():
             return
 
         self.fw.append(["mangle", "front", "-A PREROUTING " +
@@ -514,7 +514,7 @@ class CsIP:
         self.fw.append(['', '', '-A NETWORK_STATS -i eth2 ! -o eth0 -p tcp'])
 
     def fw_vpcrouter(self):
-        if not self.config.is_vpc() or self.config.is_routing():
+        if not self.config.is_vpc() or self.config.is_routed():
             return
 
         self.fw.append(["filter", "", "-A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT"])
@@ -618,7 +618,7 @@ class CsIP:
         self.fw.append(["filter", "", "-P FORWARD DROP"])
 
     def fw_router_routing(self):
-        if self.config.is_vpc() or not self.config.is_routing():
+        if self.config.is_vpc() or not self.config.is_routed():
             return
 
         # Add default rules for INPUT chain
@@ -652,7 +652,7 @@ class CsIP:
                                      'rule': "iifname %s ip saddr %s tcp dport 8080 ct state new counter accept" % (self.dev, guestNetworkCidr)})
 
     def fw_vpcrouter_routing(self):
-        if not self.config.is_vpc() or not self.config.is_routing():
+        if not self.config.is_vpc() or not self.config.is_routed():
             return
 
         if self.get_type() in ["public"]:
@@ -773,7 +773,7 @@ class CsIP:
                     elif method == "delete":
                         CsPasswdSvc(self.get_gateway() + "," + self.address['public_ip']).stop()
 
-        if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routing():
+        if self.get_type() == "public" and self.config.is_vpc() and method == "add" and not self.config.is_routed():
             if self.address["source_nat"]:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(

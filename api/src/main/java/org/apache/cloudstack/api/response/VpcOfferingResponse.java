@@ -70,9 +70,9 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "true if vpc offering can be used by NSX networks only")
     private Boolean forNsx;
 
-    @SerializedName(ApiConstants.ROUTING_MODE)
+    @SerializedName(ApiConstants.NETWORK_MODE)
     @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
-    private String routingMode;
+    private String networkMode;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
@@ -150,8 +150,8 @@ public class VpcOfferingResponse extends BaseResponse {
         this.forNsx = forNsx;
     }
 
-    public void setRoutingMode(String routingMode) {
-        this.routingMode = routingMode;
+    public void setNetworkMode(String networkMode) {
+        this.networkMode = networkMode;
     }
 
     public String getZoneId() {

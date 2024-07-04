@@ -539,8 +539,8 @@ export default {
         }).then(json => {
           const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
           resolve(vpcOffering)
-          this.isOfferingNatMode = vpcOffering?.routingmode === 'NATTED' || false
-          this.isOfferingRoutedMode = vpcOffering?.routingmode === 'ROUTED' || false
+          this.isOfferingNatMode = vpcOffering?.networkmode === 'NATTED' || false
+          this.isOfferingRoutedMode = vpcOffering?.networkmode === 'ROUTED' || false
         }).catch(e => {
           reject(e)
         })
@@ -591,7 +591,7 @@ export default {
           this.networkOfferings = filteredOfferings
         }
         if (this.isNsxEnabled) {
-          this.networkOfferings = this.networkOfferings.filter(offering => offering.routingmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {

@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-""" Test for IPv4 Routing mode"""
+""" Test for IPv4 Routed mode"""
 import datetime
 import logging
 import random
@@ -50,9 +50,9 @@ test_vpc_vm = None
 test_network_acl = None
 
 NETWORK_OFFERING = {
-    "name": "Test Network offering - Routing mode",
-    "displaytext": "Test Network offering - Routing mode",
-    "routingmode": "ROUTED",
+    "name": "Test Network offering - Routed mode",
+    "displaytext": "Test Network offering - Routed mode",
+    "networkmode": "ROUTED",
     "guestiptype": "Isolated",
     "supportedservices":
         "Dhcp,Dns,UserData,Firewall",
@@ -68,17 +68,17 @@ NETWORK_OFFERING = {
 }
 
 VPC_OFFERING = {
-    "name": "Test VPC offering - Routing mode",
-    "displaytext": "Test VPC offering - Routing mode",
-    "routingmode": "ROUTED",
+    "name": "Test VPC offering - Routed mode",
+    "displaytext": "Test VPC offering - Routed mode",
+    "networkmode": "ROUTED",
     "supportedservices":
         "Dhcp,Dns,UserData,NetworkACL"
 }
 
 VPC_NETWORK_OFFERING = {
-    "name": "Test VPC Network offering - Routing mode",
-    "displaytext": "Test VPC Network offering - Routing mode",
-    "routingmode": "ROUTED",
+    "name": "Test VPC Network offering - Routed mode",
+    "displaytext": "Test VPC Network offering - Routed mode",
+    "networkmode": "ROUTED",
     "guestiptype": "Isolated",
     "supportedservices":
         "Dhcp,Dns,UserData,NetworkACL",
@@ -127,7 +127,7 @@ class TestIpv4Routing(cloudstackTestCase):
         )
         cls._cleanup.append(cls.service_offering)
 
-        # 3. Create network and vpc offering with routing mode
+        # 3. Create network and vpc offering with routed mode
         cls.network_offering_isolated = NetworkOffering.create(
             cls.apiclient,
             NETWORK_OFFERING
@@ -677,7 +677,7 @@ class TestIpv4Routing(cloudstackTestCase):
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_07_vpc_and_tier_failed_cases(self):
-        """ Test for VPC/tier with Routing mode (some failed cases)"""
+        """ Test for VPC/tier with Routed mode (some failed cases)"""
         """
             # 1. create VPC with Routed mode
             # 2. create network offering with NATTED mode, create vpc tier, it should fail

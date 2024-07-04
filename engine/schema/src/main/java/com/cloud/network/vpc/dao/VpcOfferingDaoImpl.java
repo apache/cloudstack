@@ -88,6 +88,6 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
 
     @Override
     public boolean isRoutedVpc(long offeringId) {
-        return NetworkOffering.RoutingMode.ROUTED.name().equals(findById(offeringId).getRoutingMode());
+        return NetworkOffering.NetworkMode.ROUTED.name().equals(findById(offeringId).getNetworkMode());
     }
 }

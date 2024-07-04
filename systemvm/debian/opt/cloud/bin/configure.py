@@ -416,8 +416,8 @@ class CsAcl(CsDataBag):
             self.nft_ipv4_acl = config.get_nft_ipv4_acl()
 
         def create(self):
-            self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS, self.config.is_routing())
-            self.process("egress", self.egress, self.FIXED_RULES_EGRESS, self.config.is_routing())
+            self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS, self.config.is_routed())
+            self.process("egress", self.egress, self.FIXED_RULES_EGRESS, self.config.is_routed())
 
         def __process_routing_ip4(self, direction, rule_list):
             if not self.cidr:
@@ -574,8 +574,8 @@ class CsAcl(CsDataBag):
             rstr = "counter packets 0 bytes 0 drop"
             self.ipv6_acl.append({'type': "", 'chain': chain, 'rule': rstr})
 
-        def process(self, direction, rule_list, base, is_routing):
-            if is_routing:
+        def process(self, direction, rule_list, base, is_routed):
+            if is_routed:
                 self.__process_routing_ip4(direction, rule_list)
                 self.__process_ip6(direction, rule_list)
                 return
@@ -600,7 +600,7 @@ class CsAcl(CsDataBag):
 
             def __init__(self, direction, acl, rule, config, count):
                 self.count = count
-                if config.is_vpc() and not config.is_routing():
+                if config.is_vpc() and not config.is_routed():
                     self.init_vpc(direction, acl, rule, config)
 
             def init_vpc(self, direction, acl, rule, config):
@@ -647,7 +647,7 @@ class CsAcl(CsDataBag):
                 self.fw.append([self.table, self.count, rstr])
 
     def flushAllIptablesRules(self):
-        if not self.config.is_routing():
+        if not self.config.is_routed():
             return
         # Flush all iptables rules for routing networks, which are replaced by nftables rules
         logging.info("Flush all iptables rules")
@@ -659,7 +659,7 @@ class CsAcl(CsDataBag):
         CsHelper.execute("nft delete table ip mangle")
 
     def flushAllowAllEgressRules(self):
-        if self.config.is_routing():
+        if self.config.is_routed():
             return
         logging.debug("Flush allow 'all' egress firewall rule")
         # Ensure that FW_EGRESS_RULES chain exists
@@ -670,7 +670,7 @@ class CsAcl(CsDataBag):
         CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset destroy")
 
     def flushAllIpv4RoutingRules(self):
-        if not self.config.is_routing():
+        if not self.config.is_routed():
             return
         logging.info("Flush all Routing firewall rules")
         address_family = 'ip'
@@ -680,7 +680,7 @@ class CsAcl(CsDataBag):
             CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def flushAllIpv4RoutingACLRules(self):
-        if not self.config.is_routing():
+        if not self.config.is_routed():
             return
         logging.info("Flush all ACL rules for routing network")
         address_family = 'ip'
@@ -698,7 +698,7 @@ class CsAcl(CsDataBag):
             CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def process(self):
-        if self.config.is_routing() and not self.config.is_vpc():
+        if self.config.is_routed() and not self.config.is_vpc():
             self.add_routing_rules()
             return
 

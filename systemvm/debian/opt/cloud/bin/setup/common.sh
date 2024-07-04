@@ -798,7 +798,7 @@ parse_cmd_line() {
         ip6firewall)
             export IP6_FIREWALL=$VALUE
             ;;
-        is_routing)
+        is_routed)
             export IS_ROUTED=$VALUE
             ;;
         domain)

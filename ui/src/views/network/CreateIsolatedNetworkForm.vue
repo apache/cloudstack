@@ -193,7 +193,7 @@
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-form-item
-            v-if="selectedNetworkOffering && selectedNetworkOffering.routingmode === 'ROUTED'"
+            v-if="selectedNetworkOffering && selectedNetworkOffering.networkmode === 'ROUTED'"
             ref="cidrsize"
             name="cidrsize">
             <template #label>

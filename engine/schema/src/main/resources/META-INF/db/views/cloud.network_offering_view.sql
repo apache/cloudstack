@@ -61,7 +61,7 @@ SELECT
     `network_offerings`.`for_vpc` AS `for_vpc`,
     `network_offerings`.`for_tungsten` AS `for_tungsten`,
     `network_offerings`.`for_nsx` AS `for_nsx`,
-    `network_offerings`.`routing_mode` AS `routing_mode`,
+    `network_offerings`.`network_mode` AS `network_mode`,
     `network_offerings`.`service_package_id` AS `service_package_id`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,

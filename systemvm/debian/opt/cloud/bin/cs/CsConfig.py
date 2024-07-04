@@ -93,8 +93,8 @@ class CsConfig(object):
     def is_router(self):
         return self.cl.get_type() == 'router'
 
-    def is_routing(self):
-        return self.cmdline().idata().get('is_routing', 'false') == 'true'
+    def is_routed(self):
+        return self.cmdline().idata().get('is_routed', 'false') == 'true'
 
     def is_dhcp(self):
         return self.cl.get_type() == 'dhcpsrvr'

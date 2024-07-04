@@ -147,19 +147,19 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="routingmode" ref="routingmode" v-if="guestType === 'isolated'">
+        <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated'">
           <template #label>
-            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
+            <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
           </template>
           <a-select
             optionFilterProp="label"
-            v-model:value="form.routingmode"
-            @change="val => { handleForRoutingModeChange(val) }"
+            v-model:value="form.networkmode"
+            @change="val => { handleForNetworkModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.routingmode.description">
-            <a-select-option v-for="(opt) in routingmodes" :key="opt.name" :label="opt.name">
+            :placeholder="apiParams.networkmode.description">
+            <a-select-option v-for="(opt) in networkmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
@@ -314,7 +314,7 @@
           name="redundantroutercapability"
           ref="redundantroutercapability"
           :label="$t('label.redundantrouter')"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && (sourceNatServiceChecked || routingmode === 'ROUTED') && !isVpcVirtualRouterForAtLeastOneService">
+          v-if="(guestType === 'shared' || guestType === 'isolated') && (sourceNatServiceChecked || networkmode === 'ROUTED') && !isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-model:checked="form.redundantroutercapability" />
         </a-form-item>
         <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked">
@@ -590,8 +590,8 @@ export default {
       zoneLoading: false,
       ipv6NetworkOfferingEnabled: false,
       loading: false,
-      routingmode: '',
-      routingmodes: [
+      networkmode: '',
+      networkmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -717,8 +717,8 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
-      this.routingmode = ''
-      this.form.routingmode = ''
+      this.networkmode = ''
+      this.form.networkmode = ''
       if (val === 'l2') {
         this.form.forvpc = false
         this.form.lbtype = 'publicLb'
@@ -843,7 +843,7 @@ export default {
       var supportedServices = this.supportedServices
       var self = this
       if (!this.forNsx) {
-        if (this.routingmode === 'ROUTED' && this.guestType === 'isolated') {
+        if (this.networkmode === 'ROUTED' && this.guestType === 'isolated') {
           supportedServices = supportedServices.filter(service => {
             return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
           })
@@ -920,8 +920,8 @@ export default {
       }
       this.fetchSupportedServiceData()
     },
-    handleForRoutingModeChange (routingMode) {
-      this.routingmode = routingMode
+    handleForNetworkModeChange (networkMode) {
+      this.networkmode = networkMode
       this.fetchSupportedServiceData()
     },
     handleNsxLbService (supportLb) {
@@ -1045,7 +1045,7 @@ export default {
           params.nsxsupportsinternallb = values.nsxsupportsinternallb
         }
         if (values.guestiptype === 'isolated') {
-          params.routingmode = values.routingmode
+          params.networkmode = values.networkmode
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {

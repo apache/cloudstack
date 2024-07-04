@@ -316,7 +316,7 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
-    public static final String ROUTING_MODE = "routingmode";
+    public static final String NETWORK_MODE = "networkmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";

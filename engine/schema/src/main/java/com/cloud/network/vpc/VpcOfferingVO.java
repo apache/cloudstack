@@ -61,8 +61,8 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "for_nsx")
     boolean forNsx = false;
 
-    @Column(name = "routing_mode")
-    String routingMode;
+    @Column(name = "network_mode")
+    String networkMode;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -158,12 +158,12 @@ public class VpcOfferingVO implements VpcOffering {
         this.forNsx = forNsx;
     }
 
-    public String getRoutingMode() {
-        return routingMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
-    public void setRoutingMode(String routingMode) {
-        this.routingMode =  routingMode;
+    public void setNetworkMode(String networkMode) {
+        this.networkMode =  networkMode;
     }
 
     public void setUniqueName(String uniqueName) {
