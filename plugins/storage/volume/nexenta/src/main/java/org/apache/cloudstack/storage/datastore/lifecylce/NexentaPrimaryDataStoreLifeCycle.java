@@ -33,8 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
@@ -49,7 +47,6 @@ import com.cloud.storage.StoragePoolAutomation;
 public class NexentaPrimaryDataStoreLifeCycle
         extends BasePrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     private DataCenterDao zoneDao;
