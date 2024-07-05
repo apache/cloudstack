@@ -151,6 +151,50 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
-
 -- Quota inject tariff result into subsequent ones
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
+
+ALTER TABLE `cloud`.`async_job` MODIFY `job_result` TEXT CHARACTER SET utf8mb4 COMMENT 'job result info';
+ALTER TABLE `cloud`.`async_job` MODIFY `job_cmd_info` TEXT CHARACTER SET utf8mb4 COMMENT 'command parameter info';
+ALTER TABLE `cloud`.`event` MODIFY `description` VARCHAR(1024) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud_usage`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+
+ALTER TABLE `cloud`.`account` MODIFY `account_name` VARCHAR(100) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'an account name set by the creator of the account, defaults to username for single accounts';
+ALTER TABLE `cloud`.`affinity_group` MODIFY `name` VARCHAR(191) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`autoscale_vmgroups` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name of the autoscale vm group';
+ALTER TABLE `cloud`.`backup_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'backup offering name';
+ALTER TABLE `cloud`.`disk_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`disk_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name';
+ALTER TABLE `cloud`.`disk_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Optional text set by the admin for display purpose only';
+ALTER TABLE `cloud`.`instance_group` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY `description` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'display text for this Kubernetes cluster';
+ALTER TABLE `cloud`.`kubernetes_supported_version` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'the name of this Kubernetes version';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `name` VARCHAR(64) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` VARCHAR(64) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'text to display to users';
+ALTER TABLE `cloud`.`networks` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name for this network';
+ALTER TABLE `cloud`.`networks` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'display text for this network';
+ALTER TABLE `cloud`.`projects` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
+ALTER TABLE `cloud`.`projects` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
+ALTER TABLE `cloud`.`service_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`service_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name for offerings';
+ALTER TABLE `cloud`.`service_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`snapshots` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'snapshot name';
+ALTER TABLE `cloud`.`ssh_keypairs` MODIFY `keypair_name` VARCHAR(256) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the key pair';
+ALTER TABLE `cloud`.`user_vm` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user_vm_details` MODIFY `value` VARCHAR(5120) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`user` MODIFY `firstname` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user` MODIFY `lastname` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user_data` MODIFY `name` VARCHAR(256) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the user data';
+ALTER TABLE `cloud`.`vm_instance` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_snapshots` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_template` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`vm_template` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Description text set by the admin for display purpose only';
+ALTER TABLE `cloud`.`volumes` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'A user specified name for the volume';
+ALTER TABLE `cloud`.`vpc` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'vpc name';
+ALTER TABLE `cloud`.`vpc` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'vpc display text';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'vpc offering name';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `unique_name` VARCHAR(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'unique name of the vpc offering';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'display text';
