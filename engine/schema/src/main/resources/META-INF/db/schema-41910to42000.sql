@@ -151,57 +151,8 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
-CREATE TABLE `cloud`.`storage_fileshare`(
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'ID',
-    `uuid` varchar(40) COMMENT 'UUID',
-    `name` varchar(255) NOT NULL COMMENT 'Name of the file share',
-    `description` varchar(1024) COMMENT 'Description',
-    `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
-    `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
-    `project_id` bigint unsigned NOT NULL COMMENT 'Project ID',
-    `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
-    `state` varchar(12) NOT NULL COMMENT 'State of the file share in the FSM',
-    `endpoint_ip` varchar(40) COMMENT 'IP address of the file share server',
-    `endpoint_path` varchar(255) COMMENT 'Path of the file share',
-    `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
-    `size` bigint unsigned COMMENT 'Size of the file share in bytes',
-    `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
-    `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
-    `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
-    `mount_options` varchar(255) COMMENT 'default mount options to be used while mounting the file share',
-    `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',
-    `disk_offering_id` bigint unsigned COMMENT 'Disk offering used for the volume',
-    `service_offering_id` bigint unsigned COMMENT 'Service offering gor the vm',
-    `update_count` bigint unsigned COMMENT 'Update count for state change',
-    `updated` datetime COMMENT 'date updated',
-    `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime COMMENT 'date removed if not null',
-    PRIMARY KEY (`id`),
-    CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
-    INDEX `i_storage_fileshare__account_id`(`account_id`),
-    INDEX `i_storage_fileshare__project_id`(`project_id`),
-    INDEX `i_storage_fileshare__state`(`state`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 ALTER TABLE `cloud`.`disk_offering`
     ADD COLUMN `fileshare` boolean DEFAULT 0 COMMENT 'offering is for fileshare';
-
-CREATE TABLE `cloud`.`storagefsvm`(
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-    `fileshare_id` bigint unsigned NOT NULL COMMENT 'corresponding file share ID',
-    PRIMARY KEY (`id`),
-    KEY `fk_storage_fileshare__id` (`fileshare_id`),
-    CONSTRAINT `fk_storagefsvm__id` FOREIGN KEY (`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`storagevm_fs_map`(
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `vm_id` bigint unsigned NOT NULL,
-    `fileshare_id` bigint unsigned NOT NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fk_storagevm_fs_map__vm_id` FOREIGN KEY `fk_storagevm_fs_map__vm_id` (`vm_id`) REFERENCES `vm_instance` (`id`)  ON DELETE CASCADE,
-    INDEX `i_storagevm_fs_map__vm_id`(`vm_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- add fileshare support to disk offering view
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
@@ -264,6 +215,55 @@ FROM
     `cloud`.`disk_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`offering_id` = `disk_offering`.`id`
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
 WHERE
-        `disk_offering`.`state`='Active'
+       `disk_offering`.`state`='Active'
 GROUP BY
     `disk_offering`.`id`;
+
+CREATE TABLE `cloud`.`storage_fileshare`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'ID',
+    `uuid` varchar(40) COMMENT 'UUID',
+    `name` varchar(255) NOT NULL COMMENT 'Name of the file share',
+    `description` varchar(1024) COMMENT 'Description',
+    `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
+    `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
+    `project_id` bigint unsigned NOT NULL COMMENT 'Project ID',
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
+    `state` varchar(12) NOT NULL COMMENT 'State of the file share in the FSM',
+    `endpoint_ip` varchar(40) COMMENT 'IP address of the file share server',
+    `endpoint_path` varchar(255) COMMENT 'Path of the file share',
+    `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
+    `size` bigint unsigned COMMENT 'Size of the file share in bytes',
+    `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
+    `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
+    `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
+    `mount_options` varchar(255) COMMENT 'default mount options to be used while mounting the file share',
+    `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',
+    `disk_offering_id` bigint unsigned COMMENT 'Disk offering used for the volume',
+    `service_offering_id` bigint unsigned COMMENT 'Service offering gor the vm',
+    `update_count` bigint unsigned COMMENT 'Update count for state change',
+    `updated` datetime COMMENT 'date updated',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
+    INDEX `i_storage_fileshare__account_id`(`account_id`),
+    INDEX `i_storage_fileshare__project_id`(`project_id`),
+    INDEX `i_storage_fileshare__state`(`state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`storagefsvm`(
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `fileshare_id` bigint unsigned NOT NULL COMMENT 'corresponding file share ID',
+    PRIMARY KEY (`id`),
+    KEY `fk_storage_fileshare__id` (`fileshare_id`),
+    CONSTRAINT `fk_storagefsvm__id` FOREIGN KEY (`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`storagevm_fs_map`(
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `vm_id` bigint unsigned NOT NULL,
+    `fileshare_id` bigint unsigned NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_storagevm_fs_map__vm_id` FOREIGN KEY `fk_storagevm_fs_map__vm_id` (`vm_id`) REFERENCES `vm_instance` (`id`)  ON DELETE CASCADE,
+    INDEX `i_storagevm_fs_map__vm_id`(`vm_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
