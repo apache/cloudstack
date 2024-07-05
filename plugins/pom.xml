@@ -120,7 +120,6 @@
 
         <module>shutdown</module>
 
-        <module>storage/fileshare/simulator</module>
         <module>storage/fileshare/storagefsvm</module>
         <module>storage/image/default</module>
         <module>storage/image/s3</module>

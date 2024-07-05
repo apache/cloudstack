@@ -4393,7 +4393,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         NicProfile nic = getNicProfileForVm(network, requested, vm);
 
         //1) allocate nic (if needed) Always allocate if it is a user vm
-        if (nic == null || vmProfile.getType() == VirtualMachine.Type.User || vmProfile.getType() == Type.StorageFsVm) {
+        if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
 
             boolean isDefaultNic = getNicProfileDefaultNic(requested);
@@ -4405,7 +4405,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             //Update vm_network_map table
-            if (vmProfile.getType() == VirtualMachine.Type.User || vmProfile.getType() == Type.StorageFsVm) {
+            if (vmProfile.getType() == VirtualMachine.Type.User) {
                 final VMNetworkMapVO vno = new VMNetworkMapVO(vm.getId(), network.getId());
                 _vmNetworkMapDao.persist(vno);
             }
