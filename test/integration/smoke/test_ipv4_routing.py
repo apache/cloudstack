@@ -104,9 +104,6 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.hypervisor = testdata.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
-        cls.template = Template.register(cls.apiclient, cls.services["test_templates"][cls.hypervisor.lower()],
-                                         zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
-        cls.template.download(cls.apiclient)
 
         cls._cleanup = []
 
@@ -114,6 +111,12 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
+
+        # 0. register template
+        cls.template = Template.register(cls.apiclient, cls.services["test_templates"][cls.hypervisor.lower()],
+                                         zoneid=cls.zone.id, hypervisor=cls.hypervisor.lower())
+        cls.template.download(cls.apiclient)
+        cls._cleanup.append(cls.template)
 
         # 1. create subnet for zone
         cls.subnet_1 = ZoneIpv4Subnet.create(
@@ -297,13 +300,11 @@ class TestIpv4Routing(cloudstackTestCase):
                     self.message("packets are received, looks good")
                     return
             except Exception as ex:
-                self.fail("Failed to ping vm from router: %s" % ex)
+                self.fail("Failed to ping vm %s from router %s: %s" % (vm.ipaddress, router.name, ex))
         if retries == 0 and expected:
-            self.message("Failed to ping vm from router, which is expected to work !!!")
-            time.sleep(600)
+            self.fail("Failed to ping vm %s from router %s, which is expected to work !!!" % (vm.ipaddress, router.name))
         if retries > 0 and not expected:
-            self.message("ping vm from router works, however it is unexpected !!!")
-            time.sleep(600)
+            self.fail("ping vm %s from router %s works, however it is unexpected !!!" % (vm.ipaddress, router.name))
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
     def test_01_zone_subnet(self):
@@ -840,16 +841,26 @@ class TestIpv4Routing(cloudstackTestCase):
                                  "rule": "ip saddr %s tcp dport 22 accept" % test_network.cidr})
         self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = network_router.publicip + "/32"
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = -1
+        rule["icmpcode"] = -1
+        vpc_acl_rules.append(self.createNetworkAclRule(rule))
+        vpc_router_rules.append({"chain": "eth2_ingress_policy",
+                                 "rule": "ip saddr %s icmp type %s accept" % (network_router.publicip, ICMPv4_ALL_TYPES)})
+        self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
+
         # 5. Create Egress rules in Network ACL for VPC
         rule = {}
         rule["traffictype"] = "Egress"
-        rule["cidrlist"] = test_network.cidr
         rule["protocol"] = "icmp"
         rule["icmptype"] = -1
         rule["icmpcode"] = -1
         vpc_acl_rules.append(self.createNetworkAclRule(rule))
         vpc_router_rules.append({"chain": "eth2_egress_policy",
-                                 "rule": "ip daddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES)})
+                                 "rule": "ip daddr 0.0.0.0/0 icmp type %s accept" % ICMPv4_ALL_TYPES})
         self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
         # 6. Test VM2 in VR1-Network (ping/ssh should succeed)
@@ -885,6 +896,17 @@ class TestIpv4Routing(cloudstackTestCase):
                                      "rule": "ip saddr %s ip daddr 0.0.0.0/0 tcp dport 22 accept" % test_vpc.cidr})
         self.verifyNftablesRulesInRouter(network_router, network_router_rules)
 
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = vpc_router.publicip + "/32"
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = -1
+        rule["icmpcode"] = -1
+        network_routing_firewall_rules.append(self.createIpv4RoutingFirewallRule(rule))
+        network_router_rules.append({"chain": "fw_chain_ingress",
+                                     "rule": "ip saddr %s ip daddr 0.0.0.0/0 icmp type %s accept" % (vpc_router.publicip, ICMPv4_ALL_TYPES)})
+        self.verifyNftablesRulesInRouter(network_router, network_router_rules)
+
         # 9. Test VM2 in VR1-Network (ping/ssh should succeed)
         self.verifyPingFromRouter(network_router, test_vpc_vm, expected=True)
         # 10. Test VM1 in VR2-VPC (ping/ssh should succeed)
@@ -900,7 +922,10 @@ class TestIpv4Routing(cloudstackTestCase):
                                "rule": "ip saddr %s tcp dport 22 accept" % test_network.cidr,
                                "exists": False}
         vpc_router_rules[4] = {"chain": "eth2_egress_policy",
-                               "rule": "ip daddr %s icmp type %s accept" % (test_network.cidr, ICMPv4_ALL_TYPES),
+                               "rule": "ip daddr 0.0.0.0/0 icmp type %s accept" % ICMPv4_ALL_TYPES,
+                               "exists": False}
+        vpc_router_rules[5] = {"chain": "eth2_ingress_policy",
+                               "rule": "ip saddr %s icmp type %s accept" % (network_router.publicip, ICMPv4_ALL_TYPES),
                                "exists": False}
         self.verifyNftablesRulesInRouter(vpc_router, vpc_router_rules)
 
@@ -912,6 +937,9 @@ class TestIpv4Routing(cloudstackTestCase):
                                    "exists": False}
         network_router_rules[3] = {"chain": "fw_chain_ingress",
                                    "rule": "ip saddr %s ip daddr 0.0.0.0/0 tcp dport 22 accept" % test_vpc.cidr,
+                                   "exists": False}
+        network_router_rules[4] = {"chain": "fw_chain_ingress",
+                                   "rule": "ip saddr %s ip daddr 0.0.0.0/0 icmp type %s accept" % (vpc_router.publicip, ICMPv4_ALL_TYPES),
                                    "exists": False}
         self.verifyNftablesRulesInRouter(network_router, network_router_rules)
 
