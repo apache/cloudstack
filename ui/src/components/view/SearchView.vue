@@ -66,7 +66,8 @@
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading"
-                    @input="onchange($event, field.name)">
+                    @input="onchange($event, field.name)"
+                    @change="onSelectFieldChange(field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
@@ -240,6 +241,11 @@ export default {
   methods: {
     onchange: async function (event, fieldname) {
       this.fetchDynamicFieldData(fieldname, event.target.value)
+    },
+    onSelectFieldChange (fieldname) {
+      if (fieldname === 'domainid') {
+        this.fetchDynamicFieldData('account')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -563,6 +569,9 @@ export default {
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
         }
+        if (accountIndex > -1) {
+          this.fields[accountIndex].loading = false
+        }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
         }
@@ -584,7 +593,9 @@ export default {
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
         }
-        this.fillFormFieldValues()
+        if (Array.isArray(arrayField)) {
+          this.fillFormFieldValues()
+        }
       })
     },
     initFormFieldData () {
@@ -595,6 +606,9 @@ export default {
       this.fetchDynamicFieldData(arrayField)
     },
     sortArray (data, key = 'name') {
+      if (!data) {
+        return []
+      }
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
         if (a[key] > b[key]) { return 1 }
@@ -644,7 +658,11 @@ export default {
     },
     fetchAccounts (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listAccounts', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        const params = { listAll: true, showicon: true, keyword: searchKeyword }
+        if (this.form.domainid) {
+          params.domainid = this.form.domainid
+        }
+        api('listAccounts', params).then(json => {
           const account = json.listaccountsresponse.account
           resolve({
             type: 'account',
