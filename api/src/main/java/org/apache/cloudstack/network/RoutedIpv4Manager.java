@@ -20,6 +20,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
@@ -46,12 +47,20 @@ import java.util.List;
 
 public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
-    ConfigKey<Integer> RoutedIPv4NetworkMaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
-            "routed.ipv4.network.max.cidr.size", "30", "The maximum value of the cidr size for isolated networks in ROUTED mode",
+    ConfigKey<Integer> RoutedNetworkIPv4MaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.network.ipv4.max.cidr.size", "30", "The maximum value of the cidr size for isolated networks in ROUTED mode",
             true, ConfigKey.Scope.Account);
 
-    ConfigKey<Integer> RoutedIPv4NetworkMinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
-            "routed.ipv4.network.min.cidr.size", "24", "The minimum value of the cidr size for isolated networks in ROUTED mode",
+    ConfigKey<Integer> RoutedNetworkIPv4MinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.network.ipv4.min.cidr.size", "24", "The minimum value of the cidr size for isolated networks in ROUTED mode",
+            true, ConfigKey.Scope.Account);
+
+    ConfigKey<Integer> RoutedVpcIPv4MaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.ipv4.vpc.max.cidr.size", "29", "The maximum value of the cidr size for VPC in ROUTED mode",
+            true, ConfigKey.Scope.Account);
+
+    ConfigKey<Integer> RoutedVpcIPv4MinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
+            "routed.ipv4.vpc.min.cidr.size", "23", "The minimum value of the cidr size for VPC in ROUTED mode",
             true, ConfigKey.Scope.Account);
 
     ConfigKey<Boolean> RoutedIPv4NetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
@@ -92,9 +101,11 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     // Methods for internal calls
     void getOrCreateIpv4SubnetForGuestNetwork(Network network, String networkCidr);
 
+    Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
+
     void getOrCreateIpv4SubnetForVpc(Vpc vpc, String networkCidr);
 
-    Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize);
+    Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForVpc(Vpc vpc, Integer vpcCidrSize);
 
     void assignIpv4SubnetToNetwork(String cidr, long networkId);
 
@@ -119,4 +130,5 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean isRoutedVpc(Vpc vpc);
 
+    boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering);
 }

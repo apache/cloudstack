@@ -62,13 +62,24 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="cidr" ref="cidr">
+        <a-form-item name="cidr" ref="cidr" v-if="selectedVpcOffering && (selectedVpcOffering.networkmode !== 'ROUTED' || isAdmin())">
           <template #label>
             <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           </template>
           <a-input
             v-model:value="form.cidr"
             :placeholder="apiParams.cidr.description"/>
+        </a-form-item>
+        <a-form-item
+          v-if="selectedVpcOffering && selectedVpcOffering.networkmode === 'ROUTED'"
+          ref="cidrsize"
+          name="cidrsize">
+          <template #label>
+            <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+          </template>
+          <a-input
+            v-model:value="form.cidrsize"
+            :placeholder="apiParams.cidrsize.description"/>
         </a-form-item>
         <a-form-item name="networkdomain" ref="networkdomain">
           <template #label>
@@ -180,6 +191,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -240,12 +252,14 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
-        cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
     async fetchData () {
       this.fetchZones()
+    },
+    isAdmin () {
+      return isAdmin()
     },
     fetchPublicMtuForZone () {
       api('listConfigurations', {
@@ -337,6 +351,23 @@ export default {
             continue
           }
           params[key] = input
+        }
+        if (this.selectedVpcOffering.networkmode === 'ROUTED') {
+          if ((values.cidr === undefined || values.cidr === '') && (values.cidrsize === undefined || values.cidrsize === '')) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr.or.cidrsize')
+            })
+            return
+          }
+        } else {
+          if (values.cidr === undefined || values.cidr === '') {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr')
+            })
+            return
+          }
         }
         this.loading = true
         const title = this.$t('label.add.vpc')

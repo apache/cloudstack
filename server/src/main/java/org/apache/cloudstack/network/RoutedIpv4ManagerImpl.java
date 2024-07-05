@@ -35,7 +35,9 @@ import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
@@ -109,6 +111,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     AccountManager accountManager;
     @Inject
     VpcOfferingDao vpcOfferingDao;
+    @Inject
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     @Override
     public String getConfigComponentName() {
@@ -118,7 +122,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
-                RoutedIPv4NetworkMaxCidrSize, RoutedIPv4NetworkMinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled
+                RoutedNetworkIPv4MaxCidrSize, RoutedNetworkIPv4MinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled,
+                RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize
         };
     }
 
@@ -434,6 +439,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         String subnet = cmd.getSubnet();
         String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
+        Long vpcId = cmd.getVpcId();
 
         SearchCriteria sc = ipv4GuestSubnetNetworkMapDao.createSearchCriteria();
         if (id != null) {
@@ -455,6 +461,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         if (networkId != null) {
             sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);
+        }
+        if (vpcId != null) {
+            sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
         }
         if (keyword != null) {
             sc.addAnd("subnet", SearchCriteria.Op.LIKE, keyword);
@@ -513,8 +522,26 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize) {
+        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
+        if (subnet != null) {
+            return subnet;
+        }
+        return createIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
+    }
+
+    @Override
     public void getOrCreateIpv4SubnetForVpc(Vpc vpc, String networkCidr) {
         getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(networkCidr, vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId());
+    }
+
+    @Override
+    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForVpc(Vpc vpc, Integer vpcCidrSize) {
+        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId(), vpcCidrSize);
+        if (subnet != null) {
+            return subnet;
+        }
+        return createIpv4SubnetForAccount(vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId(), vpcCidrSize);
     }
 
     private void getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(String networkCidr, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
@@ -571,15 +598,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return null;
     }
 
-    @Override
-    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize) {
-        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
-        if (subnet != null) {
-            return subnet;
-        }
-        return createIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
-    }
-
     private void checkConflicts(List<Ipv4GuestSubnetNetworkMapVO> subnetsForNetwork, String networkCidr) {
         for (Ipv4GuestSubnetNetworkMapVO subnetForNetwork : subnetsForNetwork) {
             if (NetUtils.isNetworksOverlap(subnetForNetwork.getSubnet(), networkCidr)) {
@@ -596,15 +614,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
             throw new CloudRuntimeException("CIDR auto-allocation is disabled for this account");
         }
-
-        Integer maxCidrSize = RoutedIPv4NetworkMaxCidrSize.valueIn(accountId);
-        if (networkCidrSize > maxCidrSize) {
-            throw new CloudRuntimeException(String.format("networkCidrSize (%s) is greater than the max cidr size (%s)", networkCidrSize, maxCidrSize));
-        }
-        Integer minCidrSize = RoutedIPv4NetworkMinCidrSize.valueIn(accountId);
-        if (networkCidrSize < minCidrSize) {
-            throw new CloudRuntimeException(String.format("networkCidrSize (%s) is smaller than the min cidr size (%s)", networkCidrSize, minCidrSize));
-        }
     }
 
     private List<DataCenterIpv4GuestSubnetVO> getZoneSubnetsForAccount(long domainId, long accountId, long zoneId) {
@@ -617,7 +626,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private Ipv4GuestSubnetNetworkMap getIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
-        validateNetworkCidrSize(accountId, networkCidrSize);
         List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
         // find an allocated subnet
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
@@ -630,7 +638,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
-        validateNetworkCidrSize(accountId, networkCidrSize);
         List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
             try {
@@ -910,5 +917,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public boolean isRoutedVpc(Vpc vpc) {
         return NetworkOffering.NetworkMode.ROUTED.name().equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getNetworkMode());
+    }
+
+    @Override
+    public boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering) {
+        return NetworkOffering.NetworkMode.ROUTED.name().equals(vpcOffering.getNetworkMode())
+                && vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null;
     }
 }

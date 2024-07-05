@@ -64,6 +64,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
@@ -1083,7 +1084,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
-                         final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
+                         final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
+                         final Integer cidrSize) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1111,6 +1113,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
             throw ex;
         }
+
+        // Validate VPC cidr/cidrsize
+        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
 
         final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
@@ -1153,13 +1158,60 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         checkVpcDns(vpcOff, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
+        // validate network domain
+        if (!NetUtils.verifyDomainName(networkDomain)) {
+            throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
+                    + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', " + "the digits '0' through '9', "
+                    + "and the hyphen ('-'); can't start or end with \"-\"");
+        }
+
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
         vpc.setPublicMtu(publicMtu);
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
+        if (vpc.getCidr() == null && cidrSize != null) {
+            // Allocate a CIDR for VPC
+            Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
+            if (subnet != null) {
+                vpc.setCidr(subnet.getSubnet());
+            } else {
+                throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+            }
+        }
+
         return createVpc(displayVpc, vpc);
+    }
+
+    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
+        if (ObjectUtils.allNull(cidr, cidrSize)) {
+            throw new InvalidParameterValueException("VPC cidr or cidr size must be specified");
+        }
+        if (ObjectUtils.allNotNull(cidr, cidrSize)) {
+            throw new InvalidParameterValueException("VPC cidr and cidr size are mutually exclusive");
+        }
+        if (routedIpv4Manager.isVpcVirtualRouterGateway(vpcOffering)) {
+            if (cidr != null) {
+                if (!_accountMgr.isRootAdmin(caller.getId())) {
+                    throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of VPC with ROUTED mode");
+                }
+                return;
+            }
+            // verify VPC cidrsize
+            Integer maxCidrSize = routedIpv4Manager.RoutedVpcIPv4MaxCidrSize.valueIn(accountId);
+            if (cidrSize > maxCidrSize) {
+                throw new InvalidParameterValueException("VPC cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
+            }
+            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            if (cidrSize < minCidrSize) {
+                throw new InvalidParameterValueException("VPC cidr size cannot be smaller than minimum cidr size " + minCidrSize);
+            }
+        } else {
+            if (cidrSize != null) {
+                throw new InvalidParameterValueException("VPC cidr size is only applicable on VPC with Routed mode");
+            }
+        }
     }
 
     @Override
@@ -1167,7 +1219,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize());
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForNsx(vpc);
@@ -1217,21 +1269,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected Vpc createVpc(final Boolean displayVpc, final VpcVO vpc) {
         final String cidr = vpc.getCidr();
-        // Validate CIDR
-        if (!NetUtils.isValidIp4Cidr(cidr)) {
-            throw new InvalidParameterValueException("Invalid CIDR specified " + cidr);
-        }
+        if (cidr != null) {
+            // Validate CIDR
+            if (!NetUtils.isValidIp4Cidr(cidr)) {
+                throw new InvalidParameterValueException("Invalid CIDR specified " + cidr);
+            }
 
-        // cidr has to be RFC 1918 complient
-        if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
-            throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant");
-        }
-
-        // validate network domain
-        if (!NetUtils.verifyDomainName(vpc.getNetworkDomain())) {
-            throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
-                    + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', " + "the digits '0' through '9', "
-                    + "and the hyphen ('-'); can't start or end with \"-\"");
+            // cidr has to be RFC 1918 complient
+            if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
+                throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant");
+            }
         }
 
         // get or create Ipv4 subnet for ROUTED VPC

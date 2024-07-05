@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -155,6 +156,8 @@ public class VpcManagerImplTest {
     FirewallRulesDao firewallDao;
     @Mock
     NetworkACLVO networkACLVOMock;
+    @Mock
+    RoutedIpv4Manager routedIpv4Manager;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -212,6 +215,7 @@ public class VpcManagerImplTest {
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
         manager._networkAclDao = networkACLDaoMock;
+        manager.routedIpv4Manager = routedIpv4Manager;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
         overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "false");
@@ -479,7 +483,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], null, null, null, true, 1500);
+                    ip4Dns[0], null, null, null, true, 1500, null);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -491,7 +495,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500);
+                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }

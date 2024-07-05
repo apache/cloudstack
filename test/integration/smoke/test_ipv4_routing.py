@@ -571,7 +571,7 @@ class TestIpv4Routing(cloudstackTestCase):
         isolated_network.delete(self.apiclient)
         self.cleanup.remove(isolated_network)
 
-        # 4. List subnet for network by networkid, it should be removed
+        # 4. List subnet for network by network cidr, it should be removed
         network_cidr = subnets[0].subnet
         subnets = Ipv4SubnetForGuestNetwork.list(
             self.apiclient,
@@ -585,13 +585,64 @@ class TestIpv4Routing(cloudstackTestCase):
         )
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
-    def test_05_isolated_network_with_routed_mode(self):
+    def test_05_create_vpc_routed_mode_with_cidrsize(self):
+        """ Test for Routed VPC with cidrsize"""
+        """
+            # 1. Create VPC with cidrsize
+            # 2. List subnet for network by vpcid
+            # 3. Delete the VPC
+            # 4. List subnet for network by vpcid, it should be removed
+        """
+        self.message("Running test_05_create_vpc_routed_mode_with_cidrsize")
+
+        # 1. Create VPC with cidrsize
+        del self.services["vpc"]["cidr"]
+        vpc = VPC.create(self.apiclient,
+                         self.services["vpc"],
+                         vpcofferingid=self.vpc_offering.id,
+                         zoneid=self.zone.id,
+                         cidrsize=26,
+                         start=False
+                         )
+        self.cleanup.append(vpc)
+
+        # 2. List subnet for network by networkid
+        subnets = Ipv4SubnetForGuestNetwork.list(
+            self.apiclient,
+            vpcid=vpc.id
+        )
+        self.assertEqual(
+            isinstance(subnets, list) and len(subnets) == 1
+            and subnets[0].vpcid == vpc.id and subnets[0].state == "Allocated",
+            True,
+            "The subnet should be created for vpc %s" % vpc.name
+        )
+
+        # 3. Delete the VPC
+        vpc.delete(self.apiclient)
+        self.cleanup.remove(vpc)
+
+        # 4. List subnet for network by vpc cidr, it should be removed
+        vpc_cidr = subnets[0].subnet
+        subnets = Ipv4SubnetForGuestNetwork.list(
+            self.apiclient,
+            subnet=vpc_cidr
+        )
+        self.assertEqual(
+            isinstance(subnets, list) and len(subnets) == 1
+            and not subnets[0].vpcid and subnets[0].state == "Free",
+            True,
+            "The subnet should be created for vpc %s" % vpc.name
+        )
+
+    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    def test_06_isolated_network_with_routed_mode(self):
         """ Test for Isolated Network with Routed mode"""
         """
             # 1. Create Isolated network
             # 2. Create VM in the network
         """
-        self.message("Running test_05_isolated_network_with_routed_mode")
+        self.message("Running test_06_isolated_network_with_routed_mode")
 
         # 1. Create Isolated network
         global test_network
@@ -621,7 +672,7 @@ class TestIpv4Routing(cloudstackTestCase):
         self._cleanup.append(test_network_vm)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
-    def test_06_vpc_and_tier_with_routed_mode(self):
+    def test_07_vpc_and_tier_with_routed_mode(self):
         """ Test for VPC/tier with Routed mode"""
         """
             # 1. Create VPC
@@ -629,7 +680,7 @@ class TestIpv4Routing(cloudstackTestCase):
             # 3. Create VPC tier with Network ACL in the VPC
             # 4. Create VM in the VPC tier
         """
-        self.message("Running test_06_vpc_and_tier_with_routed_mode")
+        self.message("Running test_07_vpc_and_tier_with_routed_mode")
 
         # 1. Create VPC
         self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".0.0/22"
@@ -682,7 +733,7 @@ class TestIpv4Routing(cloudstackTestCase):
         self._cleanup.append(test_vpc_vm)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
-    def test_07_vpc_and_tier_failed_cases(self):
+    def test_08_vpc_and_tier_failed_cases(self):
         """ Test for VPC/tier with Routed mode (some failed cases)"""
         """
             # 1. create VPC with Routed mode
@@ -690,7 +741,7 @@ class TestIpv4Routing(cloudstackTestCase):
             # 3. create vpc tier not in the vpc cidr, it should fail
         """
 
-        self.message("Running test_07_vpc_and_tier_failed_cases")
+        self.message("Running test_08_vpc_and_tier_failed_cases")
 
         # 1. Create VPC
         self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".8.0/22"
@@ -745,7 +796,7 @@ class TestIpv4Routing(cloudstackTestCase):
             self.message("Failed to create vpc network due to %s, which is expected behaviour" % ex)
 
     @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
-    def test_08_connectivity_between_network_and_vpc_tier(self):
+    def test_09_connectivity_between_network_and_vpc_tier(self):
         """ Test for connectivity between VMs in the Isolated Network and VPC/tier"""
         """
             # 0. Get static routes of Network/VPC
@@ -769,7 +820,7 @@ class TestIpv4Routing(cloudstackTestCase):
             # 14. Test VM1 in VR2-VPC (ping/ssh should fail)
 
         """
-        self.message("Running test_08_connectivity_between_network_and_vpc_tier")
+        self.message("Running test_09_connectivity_between_network_and_vpc_tier")
 
         # 0. Get static routes of Network/VPC
         network_ip4routes = []

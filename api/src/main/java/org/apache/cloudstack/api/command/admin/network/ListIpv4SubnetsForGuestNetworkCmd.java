@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 
@@ -69,6 +70,13 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
             description = "UUID of network to which the IPv4 subnet is associated to.")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.VPC_ID,
+            type = CommandType.UUID,
+            entityType = VpcResponse.class,
+            description = "UUID of VPC to which the IPv4 subnet is associated to.")
+    private Long vpcId;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +99,10 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     @Override
