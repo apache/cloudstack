@@ -30,11 +30,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
+import com.google.gson.JsonParser;
 import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.MapUtils;
@@ -51,9 +54,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import javax.inject.Inject;
+
 public class ConfigDriveBuilder {
 
     protected static Logger LOGGER = LogManager.getLogger(ConfigDriveBuilder.class);
+    @Inject
+    NetworkModel _networkModel;
 
     /**
      * This is for mocking the File class. We cannot mock the File class directly because Mockito uses it internally.
@@ -84,7 +91,7 @@ public class ConfigDriveBuilder {
 
     /**
      *  Read the content of a {@link File} and convert it to a String in base 64.
-     *  We expect the content of the file to be encoded using {@link StandardCharsets#US_ASC}
+     *  We expect the content of the file to be encoded using {@link StandardCharsets#US_ASCII}
      */
     public static String fileToBase64String(File isoFile) throws IOException {
         byte[] encoded = Base64.encodeBase64(FileUtils.readFileToByteArray(isoFile));
@@ -111,7 +118,7 @@ public class ConfigDriveBuilder {
      *  This method will build the metadata files required by OpenStack driver. Then, an ISO is going to be generated and returned as a String in base 64.
      *  If vmData is null, we throw a {@link CloudRuntimeException}. Moreover, {@link IOException} are captured and re-thrown as {@link CloudRuntimeException}.
      */
-    public static String buildConfigDrive(NicProfile nic, List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams) {
+    public static String buildConfigDrive(NicProfile nic, List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams, List<Network.Service> supportedServices) {
         if (vmData == null && nic == null) {
             throw new CloudRuntimeException("No VM metadata and nic profile provided");
         }
@@ -124,11 +131,13 @@ public class ConfigDriveBuilder {
 
             File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
 
-            writeVendorAndNetworkEmptyJsonFile(openStackFolder);
-            writeNetworkData(nic, tempDirName, openStackFolder);
-            writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
+            writeVendorEmptyJsonFile(openStackFolder);
+            writeNetworkData(nic, supportedServices, openStackFolder);
+            if (supportedServices.contains(Network.Service.UserData)) {
+                writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
 
-            linkUserData(tempDirName);
+                linkUserData(tempDirName);
+            }
 
             return generateAndRetrieveIsoAsBase64Iso(isoFileName, driveLabel, tempDirName);
         } catch (IOException e) {
@@ -215,27 +224,70 @@ public class ConfigDriveBuilder {
         writeFile(openStackFolder, "meta_data.json", metaData.toString());
     }
 
-    /**
-     * First we generate a JSON object using {@link #createJsonObjectWithNic(NicProfile)}, then we write it to a file called "network_data.json".
-     */
-    static void writeNetworkData(NicProfile nic, String tempDirName, File openStackFolder) {
-        JsonObject networkData = createJsonObjectWithNic(nic);
-        writeFile(openStackFolder, "network_data.json", networkData.toString());
+    static JsonObject getExistingNetworkData(File openStackFolder) {
+        if (openStackFolder.exists()) {
+            File networkDataFile = getFile(openStackFolder.getAbsolutePath(), "network_data.json");
+            if (networkDataFile.exists()) {
+                try {
+                    String networkDataFileContent = FileUtils.readFileToString(networkDataFile, com.cloud.utils.StringUtils.getPreferredCharset());
+                    if (StringUtils.isNotBlank(networkDataFileContent)) {
+                        return new JsonParser().parse(networkDataFileContent).getAsJsonObject();
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to read existing network data file: {}", networkDataFile.getAbsolutePath(), e);
+                }
+            }
+        }
+        return new JsonObject();
     }
 
     /**
-     *  Writes the following empty JSON files:
-     *  <ul>
-     *      <li> vendor_data.json
-     *      <li> network_data.json
-     *  </ul>
-     *
-     *  If the folder does not exist and we cannot create it, we throw a {@link CloudRuntimeException}.
+     * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      */
-    static void writeVendorAndNetworkEmptyJsonFile(File openStackFolder) {
+    static void writeNetworkData(NicProfile nic, List<Network.Service> supportedServices, File openStackFolder) {
+        JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedServices);
+        JsonObject existingNetworkData = getExistingNetworkData(openStackFolder);
+
+        JsonObject finalNetworkData = new JsonObject();
+        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "links", "id", "type");
+        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "networks", "id", "type");
+        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "services", "address", "type");
+
+        writeFile(openStackFolder, "network_data.json", existingNetworkData.toString());
+    }
+
+    static void mergeJsonArraysAndUpdateObject(JsonObject finalObject, JsonObject obj1, JsonObject obj2, String memberName, String keyPart1, String keyPart2) {
+        JsonArray existingMembers = obj1.has(memberName) ? obj1.get(memberName).getAsJsonArray() : new JsonArray();
+        JsonArray newMembers = obj2.has(memberName) ? obj2.get(memberName).getAsJsonArray() : new JsonArray();
+
+        if (existingMembers.size() > 0 || newMembers.size() > 0) {
+            JsonArray finalMembers = new JsonArray();
+            Set<String> idSet = new HashSet<>();
+            for (JsonElement element : existingMembers.getAsJsonArray()) {
+                JsonObject elementObject = element.getAsJsonObject();
+                String key = String.format("%s-%s", elementObject.get(keyPart1).getAsString(), elementObject.get(keyPart2).getAsString());
+                idSet.add(key);
+                finalMembers.add(element);
+            }
+            for (JsonElement element : newMembers.getAsJsonArray()) {
+                JsonObject elementObject = element.getAsJsonObject();
+                String key = String.format("%s-%s", elementObject.get(keyPart1).getAsString(), elementObject.get(keyPart2).getAsString());
+                if (!idSet.contains(key)) {
+                    finalMembers.add(element);
+                }
+            }
+            finalObject.add(memberName, finalMembers);
+        }
+    }
+
+    /**
+     *  Writes an empty JSON file named vendor_data.json in openStackFolder
+     *
+     *  If the folder does not exist, and we cannot create it, we throw a {@link CloudRuntimeException}.
+     */
+    static void writeVendorEmptyJsonFile(File openStackFolder) {
         if (openStackFolder.exists() || openStackFolder.mkdirs()) {
             writeFile(openStackFolder, "vendor_data.json", "{}");
-            writeFile(openStackFolder, "network_data.json", "{}");
         } else {
             throw new CloudRuntimeException("Failed to create folder " + openStackFolder);
         }
@@ -263,15 +315,39 @@ public class ConfigDriveBuilder {
     }
 
     /**
-     * Creates the {@link JsonObject} with NIC's metadata. We expect the JSONObject to have the following entries:
+     * Creates the {@link JsonObject} using @param nic's metadata. We expect the JSONObject to have the following entries:
+     * <ul>
+     *     <li> links </li>
+     *     <li> networks </li>
+     *     <li> services </li>
+     * </ul>
      */
-    static JsonObject createJsonObjectWithNic(NicProfile nic) {
-        // TODO: Check if we actually need to read the existing file and upsert the data to support multiple networks
+    static JsonObject getNetworkDataJsonObjectForNic(NicProfile nic, List<Network.Service> supportedServices) {
         JsonObject networkData = new JsonObject();
-        JsonArray links = new JsonArray();
-        JsonArray networks = new JsonArray();
-        JsonArray services = new JsonArray();
 
+        if (supportedServices.contains(Network.Service.Dhcp)) {
+            JsonArray links = getLinksJsonArrayForNic(nic);
+            JsonArray networks = getNetworksJsonArrayForNic(nic);
+            if (links.size() > 0) {
+                networkData.add("links", links);
+            }
+            if (networks.size() > 0) {
+                networkData.add("networks", networks);
+            }
+        }
+
+        if (supportedServices.contains(Network.Service.Dns)) {
+            JsonArray services = getServicesJsonArrayForNic(nic);
+            if (services.size() > 0) {
+                networkData.add("services", services);
+            }
+        }
+
+        return networkData;
+    }
+
+    static JsonArray getLinksJsonArrayForNic(NicProfile nic) {
+        JsonArray links = new JsonArray();
         if (StringUtils.isNotBlank(nic.getMacAddress())) {
             JsonObject link = new JsonObject();
             link.addProperty("ethernet_mac_address", nic.getMacAddress());
@@ -280,7 +356,11 @@ public class ConfigDriveBuilder {
             link.addProperty("type", "phy");
             links.add(link);
         }
+        return links;
+    }
 
+    static JsonArray getNetworksJsonArrayForNic(NicProfile nic) {
+        JsonArray networks = new JsonArray();
         if (StringUtils.isNotBlank(nic.getIPv4Address())) {
             JsonObject ipv4Network = new JsonObject();
             ipv4Network.addProperty("id", String.format("eth%d", nic.getDeviceId()));
@@ -322,7 +402,11 @@ public class ConfigDriveBuilder {
 
             networks.add(ipv6Network);
         }
+        return networks;
+    }
 
+    static JsonArray getServicesJsonArrayForNic(NicProfile nic) {
+        JsonArray services = new JsonArray();
         if (StringUtils.isNotBlank(nic.getIPv4Dns1())) {
             services.add(getDnsServiceObject(nic.getIPv4Dns1()));
         }
@@ -338,12 +422,7 @@ public class ConfigDriveBuilder {
         if (StringUtils.isNotBlank(nic.getIPv6Dns2())) {
             services.add(getDnsServiceObject(nic.getIPv6Dns2()));
         }
-
-        networkData.add("links", links);
-        networkData.add("networks", networks);
-        networkData.add("services", services);
-
-        return networkData;
+        return services;
     }
 
     private static JsonObject getDnsServiceObject(String dnsAddress) {

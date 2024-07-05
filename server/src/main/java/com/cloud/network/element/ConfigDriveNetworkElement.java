@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -545,7 +546,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, getSupportedServicesByElementForNetwork(nic.getNetworkId()));
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -595,6 +596,21 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
+    private List<Network.Service> getSupportedServicesByElementForNetwork(Long networkId) {
+
+        List<Network.Service> supportedServices = new ArrayList<>();
+        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.Dns, getProvider())) {
+            supportedServices.add(Service.Dns);
+        }
+        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.UserData, getProvider())) {
+            supportedServices.add(Service.UserData);
+        }
+        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.Dhcp, getProvider())) {
+            supportedServices.add(Service.Dhcp);
+        }
+        return supportedServices;
+    }
+
     public boolean createConfigDriveIso(NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, DiskTO disk) throws ResourceUnavailableException {
         DataStore dataStore = getDatastoreForConfigDriveIso(disk, profile, dest);
 
@@ -610,7 +626,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
+        List<Service> supportedServices = getSupportedServicesByElementForNetwork(nic.getNetworkId());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(
+                nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);
