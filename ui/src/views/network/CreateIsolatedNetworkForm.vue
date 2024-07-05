@@ -173,6 +173,7 @@
               :placeholder="apiParams.externalid.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="gateway"
             name="gateway">
             <template #label>
@@ -183,6 +184,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="netmask"
             name="netmask">
             <template #label>
@@ -397,6 +399,9 @@ export default {
       this.allowSettingMTU()
     },
     allowSettingMTU () {
+    },
+    isAdmin () {
+      return isAdmin()
     },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()

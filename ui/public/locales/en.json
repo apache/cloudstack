@@ -245,7 +245,7 @@
 "label.add.intermediate.certificate": "Add intermediate certificate",
 "label.add.internal.lb": "Add internal LB",
 "label.add.ip.range": "Add IP range",
-"label.add.ipv4.subnet": "Add IPv4 subnet for Routing networks",
+"label.add.ipv4.subnet": "Add IPv4 subnet for Routed networks",
 "label.add.ip.v6.prefix": "Add IPv6 prefix",
 "label.add.isolated.network": "Add isolated Network",
 "label.add.kubernetes.cluster": "Add Kubernetes cluster",
