@@ -126,7 +126,7 @@
                     :filter-option="filterOption"
                     style="width: 100%;"
                     @select="getAccounts"
-                    :dropdownMatchSelectWidth="400"
+                    :dropdownMatchSelectWidth="false"
                   />
                 </a-form-item>
               </a-col>
@@ -154,7 +154,7 @@
                 :placeholder="$t('label.account')"
                 :filter-option="filterOption"
                 :disabled="form.isRecursive"
-                :dropdownMatchSelectWidth="400"
+                :dropdownMatchSelectWidth="false"
                 @select="selectAccount"
               />
             </a-form-item>
@@ -605,9 +605,11 @@ export default {
     },
     listUsageRecords () {
       this.tableLoading = true
+      this.loading = true
       var params = this.getParams()
       if (!(params.startdate && params.enddate)) {
         this.tableLoading = false
+        this.loading = false
         return
       }
       api('listUsageRecords', params).then(json => {
@@ -619,6 +621,7 @@ export default {
         this.$notifyError(error)
       }).finally(f => {
         this.tableLoading = false
+        this.loading = false
       })
     },
     getUsageTypes () {
