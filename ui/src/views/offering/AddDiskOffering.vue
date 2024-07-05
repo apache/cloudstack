@@ -42,7 +42,10 @@
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
-        <a-form-item name="storagetype" ref="storagetype">
+        <a-form-item :label="$t('FileShare')" v-show="isAdmin()" name="fileshare" ref="fileshare">
+          <a-switch v-model:checked="form.fileshare" :checked="fileshare" @change="val => { fileshare = val }" />
+        </a-form-item>
+        <a-form-item v-if="!form.fileshare" name="storagetype" ref="storagetype">
           <template #label>
             <tooltip-label :title="$t('label.storagetype')" :tooltip="apiParams.storagetype.description"/>
           </template>
@@ -369,7 +372,8 @@ export default {
         qostype: '',
         ispublic: this.isPublic,
         disksizestrictness: this.disksizestrictness,
-        encryptdisk: this.encryptdisk
+        encryptdisk: this.encryptdisk,
+        fileshare: this.fileshare
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -499,7 +503,8 @@ export default {
           provisioningType: values.provisioningtype,
           customized: values.customdisksize,
           disksizestrictness: values.disksizestrictness,
-          encrypt: values.encryptdisk
+          encrypt: values.encryptdisk,
+          fileshare: values.fileshare
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize

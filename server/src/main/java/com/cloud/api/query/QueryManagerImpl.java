@@ -3421,6 +3421,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String storageType = cmd.getStorageType();
         DiskOffering.State state = cmd.getState();
         final Long vmId = cmd.getVirtualMachineId();
+        Boolean fileShare = cmd.getFileShare();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
@@ -3541,6 +3542,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
+        if (fileShare != null) {
+            diskOfferingSearch.and("fileshare", diskOfferingSearch.entity().getFileShare(), Op.EQ);
+        }
+
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
 
         sc.setParameters("computeOnly", false);
@@ -3609,6 +3614,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!isRootAdmin) {
                 accountMgr.checkAccess(account, null, false, vm);
             }
+        }
+
+        if (fileShare != null) {
+            sc.setParameters("fileshare", fileShare);
         }
 
         Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);

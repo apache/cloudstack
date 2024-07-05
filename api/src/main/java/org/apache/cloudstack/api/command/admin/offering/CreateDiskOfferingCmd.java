@@ -164,6 +164,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, required=false, description = "Volumes using this offering should be encrypted", since = "4.18")
     private Boolean encrypt;
 
+    @Parameter(name = ApiConstants.FILESHARE, type = CommandType.BOOLEAN, required=false, description = "Disk offering is meant for File shares", since = "4.20")
+    private Boolean fileShare;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
     private Map details;
 
@@ -318,6 +321,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public boolean getDiskSizeStrictness() {
         return diskSizeStrictness != null ? diskSizeStrictness : false;
+    }
+
+    public Boolean getFileShare() {
+        return fileShare;
     }
 
     /////////////////////////////////////////////////////

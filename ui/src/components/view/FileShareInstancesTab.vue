@@ -77,6 +77,9 @@ export default {
   },
   methods: {
     fetchInstances () {
+      if (!this.resource.virtualmachineid) {
+        return
+      }
       this.instanceLoading = true
       this.loading = true
       var params = {

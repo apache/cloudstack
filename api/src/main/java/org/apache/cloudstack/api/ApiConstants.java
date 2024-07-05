@@ -1142,6 +1142,8 @@ public class ApiConstants {
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
+    public static final String FILESHARE = "fileshare";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).

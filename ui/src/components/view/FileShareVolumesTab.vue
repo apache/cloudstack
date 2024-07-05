@@ -95,6 +95,9 @@ export default {
   },
   methods: {
     fetchVolumes () {
+      if (!this.resource.virtualmachineid) {
+        return
+      }
       this.volumeLoading = true
       this.loading = true
       var params = {

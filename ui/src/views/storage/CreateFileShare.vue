@@ -304,7 +304,8 @@ export default {
       this.loading = true
       var params = {
         zoneid: zoneId,
-        listall: true
+        listall: true,
+        fileShare: true
       }
       api('listDiskOfferings', params).then(json => {
         this.diskofferings = json.listdiskofferingsresponse.diskoffering || []

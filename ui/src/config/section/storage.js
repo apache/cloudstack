@@ -526,7 +526,7 @@ export default {
     },
     {
       name: 'fileshare',
-      title: 'label.fileshare',
+      title: 'label.fileshares',
       icon: 'file-text-outlined',
       permission: ['listFileShares'],
       columns: ['name', 'state', 'sizegb', 'storage', 'provider', 'networkname', 'account'],
