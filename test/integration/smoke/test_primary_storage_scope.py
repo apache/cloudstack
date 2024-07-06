@@ -32,46 +32,48 @@ class TestPrimaryStorageScope(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
-        self._cleanup = []
+        self.cleanup = []
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
         self.pod = get_pod(self.apiclient, self.zone.id)
-        self.debug("here")
         self.debug(self.services)
         self.cluster1 = list_clusters(self.apiclient)[0]
-        self.debug("here1")
         self.debug(self.cluster1)
+        if (self.cluster1 == None):
+            cloudstackTestCase.skipTest(self, "Cluster not found. Skipping test.")
+        if (self.cluster1.hypervisortype not in ['KVM', 'VMware', 'Simulator']):
+            cloudstackTestCase.skipTest(self, "Supported hypervisors (KVM, VMware, Simulator) not found. Skipping test.")
         self.cluster = {
             'clustername': 'C0_testScope',
             'clustertype': 'CloudManaged'
         }
+        return
+
+    def tearDown(self):
+        super(TestPrimaryStorageScope, self).tearDown()
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_01_primary_storage_scope_change(self):
+        """Test primary storage pool scope change
+        """
+
+        # Create cluster
         self.cluster2 = Cluster.create(self.apiclient,
                                        self.cluster,
                                        zoneid=self.zone.id,
                                        podid=self.pod.id,
                                        hypervisor=self.cluster1.hypervisortype
                                        )
-        self._cleanup.append(self.cluster2)
+        self.cleanup.append(self.cluster2)
+
+        # Create zone-wide storage pool
         self.storage = StoragePool.create(self.apiclient,
                                           self.services["nfs"],
                                           scope = 'ZONE',
                                           zoneid=self.zone.id,
                                           hypervisor=self.cluster1.hypervisortype
                                           )
-        self._cleanup.append(self.storage)
+        self.cleanup.append(self.storage)
         self.debug("Created storage pool %s in zone scope", self.storage.id)
-        return
-
-    def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_01_primary_storage_scope_change(self):
-        """Test primary storage pool scope change
-        """
 
         # Disable storage pool
         cmd = updateStoragePool.updateStoragePoolCmd()
