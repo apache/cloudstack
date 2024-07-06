@@ -149,9 +149,9 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
                 param.setClientProvidedExtraSecurityToken(queryMap.get("extra"));
             }
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
-            logger.debug("Viewer has been created successfully.");
+            logger.info("Viewer has been created successfully [session UUID: {}, client IP: {}].", sessionUuid, clientIp);
         } catch (Exception e) {
-            logger.error("Failed to create viewer due to {}.", e.getMessage(), e);
+            logger.error("Failed to create viewer [session UUID: {}, client IP: {}] due to {}.", sessionUuid, clientIp, e.getMessage(), e);
             return;
         } finally {
             if (viewer == null) {
@@ -161,34 +161,34 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
     }
 
     private boolean checkSessionSourceIp(final Session session, final String sourceIP, String sessionSourceIP) throws IOException {
-        logger.debug("Verifying session source IP.");
-        logger.info("Get websocket connection request from remote IP : " + sessionSourceIP);
+        logger.info("Verifying session source IP {} from WebSocket connection request.", sessionSourceIP);
         if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || !sessionSourceIP.equals(sourceIP))) {
             logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
             session.disconnect();
             return false;
         }
-        logger.debug("Session source IP has been verified successfully.");
+        logger.debug("Session source IP {} has been verified successfully.", sessionSourceIP);
         return true;
     }
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) throws IOException, InterruptedException {
-        logger.debug("Closing WebSocket session.");
+        String sessionSourceIp = session.getRemoteAddress().getAddress().getHostAddress();
+        logger.debug("Closing WebSocket session [source IP: {}, status code: {}].", sessionSourceIp, statusCode);
         if (viewer != null) {
             ConsoleProxy.removeViewer(viewer);
         }
-        logger.debug("WebSocket session closed successfully.");
+        logger.debug("WebSocket session [source IP: {}, status code: {}] closed successfully.", sessionSourceIp, statusCode);
     }
 
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
-        logger.trace("Sending client frame of {} bytes.", f.getPayloadLength());
+        logger.trace("Sending client [ID: {}] frame of {} bytes.", viewer.getClientId(), f.getPayloadLength());
         viewer.sendClientFrame(f);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        logger.error("Error on WebSocket.", cause);
+        logger.error("Error on WebSocket [client ID: {}, session UUID: {}].", cause, viewer.getClientId(), viewer.getSessionUuid());
     }
 }
