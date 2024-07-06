@@ -177,19 +177,19 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
      */
     private void authenticateToVNCServer(String clientSourceIp) throws IOException {
         if (client.isVncOverWebSocketConnection()) {
-            logger.debug("Skipping authentication to VNC server since WebSocket protocol is being used.");
+            logger.debug("Authentication skipped for client [{}] [IP: {}] to VNC server due to WebSocket protocol usage.", clientId, clientSourceIp);
             return;
         }
 
         if (!client.isVncOverNioSocket()) {
-            logger.debug("Authenticating to VNC server.");
+            logger.debug("Authenticating client [{}] [IP: {}] to VNC server.", clientId, clientSourceIp);
             String ver = client.handshake();
             session.getRemote().sendBytes(ByteBuffer.wrap(ver.getBytes(), 0, ver.length()));
 
             byte[] b = client.authenticateTunnel(getClientHostPassword());
             session.getRemote().sendBytes(ByteBuffer.wrap(b, 0, 4));
         } else {
-            logger.debug("Authenticating to VNC server through NIO Socket.");
+            logger.debug("Authenticating client [{}] [IP: {}] to VNC server through NIO Socket.", clientId, clientSourceIp);
             authenticateVNCServerThroughNioSocket();
         }
         logger.debug("Client [{}] [IP: {}] has been authenticated successfully to VNC server.", clientId, clientSourceIp);
