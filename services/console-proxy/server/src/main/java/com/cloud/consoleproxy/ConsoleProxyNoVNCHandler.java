@@ -163,7 +163,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
     private boolean checkSessionSourceIp(final Session session, final String sourceIP, String sessionSourceIP) throws IOException {
         logger.info("Verifying session source IP {} from WebSocket connection request.", sessionSourceIP);
         if (ConsoleProxy.isSourceIpCheckEnabled && (sessionSourceIP == null || !sessionSourceIP.equals(sourceIP))) {
-            logger.warn("Failed to access console as the source IP to request the console is " + sourceIP);
+            logger.warn("Failed to access console as the source IP to request the console is {}.", sourceIP);
             session.disconnect();
             return false;
         }
