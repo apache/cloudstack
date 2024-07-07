@@ -505,6 +505,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     ObjectStoreDao _objectStoreDao;
     @Inject
     VpcOfferingDao vpcOfferingDao;
+    @Inject
+    ASNumberDao asNumberDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2742,7 +2744,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesSent(bytesSent);
 
         if (networkOfferingDao.isRoutedNetwork(network.getNetworkOfferingId())) {
-            response.setIpv4Routing(Network.Routing.Static.toString());
+            ASNumberVO asn = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+            if (asn != null) {
+                response.setIpv4Routing(Network.Routing.Dynamic.toString());
+            } else {
+                response.setIpv4Routing(Network.Routing.Static.toString());
+            }
             response.setIpv4Routes(new LinkedHashSet<>());
             List<IPAddressVO> ips = userIpAddressDao.listByAssociatedNetwork(network.getId(), true);
             for (IpAddress ip : ips) {
