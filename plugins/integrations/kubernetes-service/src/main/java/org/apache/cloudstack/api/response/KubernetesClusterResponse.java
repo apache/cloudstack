@@ -135,6 +135,14 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "keypair details")
     private String keypair;
 
+    @SerializedName(ApiConstants.CNI_CONFIG_ID)
+    @Param(description = "ID of CNI Configuration associated with the cluster")
+    private String cniConfigId;
+
+    @SerializedName(ApiConstants.CNI_CONFIG_NAME)
+    @Param(description = "Name of CNI Configuration associated with the cluster")
+    private String cniConfigName;
+
     @Deprecated(since = "4.16")
     @SerializedName(ApiConstants.MASTER_NODES)
     @Param(description = "the master nodes count for the Kubernetes cluster. This parameter is deprecated, please use 'controlnodes' parameter.")
@@ -498,5 +506,13 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setClusterType(KubernetesCluster.ClusterType clusterType) {
         this.clusterType = clusterType;
+    }
+
+    public void setCniConfigId(String cniConfigId) {
+        this.cniConfigId = cniConfigId;
+    }
+
+    public void setCniConfigName(String cniConfigName) {
+        this.cniConfigName = cniConfigName;
     }
 }

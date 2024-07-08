@@ -63,7 +63,9 @@ import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.template.TemplateApiService;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmService;
@@ -255,6 +257,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected AffinityGroupDao affinityGroupDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    protected UserDataDao userDataDao;
     @Inject
     protected VMTemplateDao templateDao;
     @Inject
@@ -705,6 +709,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setServiceOfferingName(offering.getName());
         }
 
+        Long cniConfigId = kubernetesCluster.getCniConfigId();
+        if (Objects.nonNull(cniConfigId)) {
+            UserDataVO cniConfig = userDataDao.findById(cniConfigId);
+            response.setCniConfigId(cniConfig.getUuid());
+            response.setCniConfigName(cniConfig.getName());
+        }
         setNodeTypeServiceOfferingResponse(response, WORKER, kubernetesCluster.getWorkerServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, CONTROL, kubernetesCluster.getControlServiceOfferingId());
         setNodeTypeServiceOfferingResponse(response, ETCD, kubernetesCluster.getEtcdServiceOfferingId());

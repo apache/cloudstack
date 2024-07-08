@@ -132,6 +132,9 @@
           <div v-else-if="item === 'usersource'">
             {{ $t(getUserSourceLabel(dataResource[item])) }}
           </div>
+          <div v-else-if="$route.meta.name === 'kubernetes' && item === 'cniconfigname'">
+              <router-link :to="{ path: '/cniconfiguration/' + dataResource.cniconfigurationid }">{{ dataResource.cniconfigname }}</router-link>
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>

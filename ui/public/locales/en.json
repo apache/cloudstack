@@ -2650,6 +2650,7 @@
 "label.usersecretkey": "Secret Key",
 "label.create.bucket": "Create Bucket",
 "label.cniconfiguration": "CNI Configuration",
+"label.cniconfigname": "Associated CNI Configuration",
 "label.cniconfigparams": "CNI Configuration parameters",
 "message.acquire.ip.failed": "Failed to acquire IP.",
 "message.action.acquire.ip": "Please confirm that you want to acquire new IP.",

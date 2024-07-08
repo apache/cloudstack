@@ -115,6 +115,7 @@ public class ApiConstants {
     public static final String CNI_CONFIG = "cniconfig";
     public static final String CNI_CONFIG_ID = "cniconfigurationid";
     public static final String CNI_CONFIG_DETAILS = "cniconfigdetails";
+    public static final String CNI_CONFIG_NAME = "cniconfigname";
     public static final String COMPONENT = "component";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
