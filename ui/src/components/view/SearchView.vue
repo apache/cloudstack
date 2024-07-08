@@ -66,12 +66,13 @@
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading"
-                    @input="onchange($event, field.name)">
+                    @input="onchange($event, field.name)"
+                    @change="onSelectFieldChange(field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id"
-                      :label="$t(opt.path || opt.name)">
+                      :value="['account'].includes(field.name) ? opt.name : opt.id"
+                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -85,7 +86,7 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.path || opt.name) }}
+                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -240,6 +241,11 @@ export default {
   methods: {
     onchange: async function (event, fieldname) {
       this.fetchDynamicFieldData(fieldname, event.target.value)
+    },
+    onSelectFieldChange (fieldname) {
+      if (fieldname === 'domainid') {
+        this.fetchDynamicFieldData('account')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -563,6 +569,9 @@ export default {
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
         }
+        if (accountIndex > -1) {
+          this.fields[accountIndex].loading = false
+        }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
         }
@@ -584,7 +593,9 @@ export default {
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
         }
-        this.fillFormFieldValues()
+        if (Array.isArray(arrayField)) {
+          this.fillFormFieldValues()
+        }
       })
     },
     initFormFieldData () {
@@ -595,6 +606,9 @@ export default {
       this.fetchDynamicFieldData(arrayField)
     },
     sortArray (data, key = 'name') {
+      if (!data) {
+        return []
+      }
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
         if (a[key] > b[key]) { return 1 }
@@ -644,8 +658,15 @@ export default {
     },
     fetchAccounts (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listAccounts', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
-          const account = json.listaccountsresponse.account
+        const params = { listAll: true, isrecursive: false, showicon: true, keyword: searchKeyword }
+        if (this.form.domainid) {
+          params.domainid = this.form.domainid
+        }
+        api('listAccounts', params).then(json => {
+          var account = json.listaccountsresponse.account
+          if (this.form.domainid) {
+            account = account.filter(a => a.domainid === this.form.domainid)
+          }
           resolve({
             type: 'account',
             data: account
