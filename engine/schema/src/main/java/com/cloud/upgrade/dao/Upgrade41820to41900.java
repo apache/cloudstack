@@ -34,8 +34,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate {
-    final static Logger LOG = Logger.getLogger(Upgrade41810to41900.class);
+public class Upgrade41820to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+    final static Logger LOG = Logger.getLogger(Upgrade41820to41900.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     private static final String ACCOUNT_DETAILS = "account_details";
@@ -48,7 +48,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.18.1.0", "4.19.0.0"};
+        return new String[] {"4.18.2.0", "4.19.0.0"};
     }
 
     @Override
@@ -63,7 +63,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41810to41900.sql";
+        final String scriptFile = "META-INF/db/schema-41820to41900.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -82,7 +82,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41810to41900-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41820to41900-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
