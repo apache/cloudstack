@@ -19,7 +19,10 @@ package com.cloud.dc;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -49,6 +52,8 @@ public class BGPServiceImpl implements BGPService {
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_AS_RANGE_CREATE, eventDescription = "creating AS Range", create = true)
     public ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber) {
         DataCenterVO zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
@@ -102,6 +107,7 @@ public class BGPServiceImpl implements BGPService {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_AS_NUMBER_RELEASE, eventDescription = "Releasing AS Number")
     public boolean releaseASNumber(long zoneId, long asNumber) {
         ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
         if (asNumberVO == null) {
@@ -124,6 +130,8 @@ public class BGPServiceImpl implements BGPService {
     }
 
     @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_AS_RANGE_DELETE, eventDescription = "Deleting AS Range")
     public boolean deleteASRange(long id) {
         final ASNumberRange asRange = asNumberRangeDao.findById(id);
         if (asRange == null) {
