@@ -84,7 +84,9 @@
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)">
+          <div
+            v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)
+            || (item === 'allocated' && ['publicip'].includes($route.meta.name) && dataResource[item])">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
           <div v-else-if="$route.meta.name === 'userdata' && item === 'userdata'">
