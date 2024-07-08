@@ -42,7 +42,9 @@ import javax.inject.Inject;
 import com.cloud.dc.ASNumber;
 import com.cloud.dc.ASNumberRange;
 import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -495,6 +497,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     VlanDetailsDao vlanDetailsDao;
     @Inject
     private ASNumberRangeDao asNumberRangeDao;
+    @Inject
+    private ASNumberDao asNumberDao;
     @Inject
     ObjectStoreDao _objectStoreDao;
 
@@ -2498,7 +2502,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         response.setReservedIpRange(reservation);
-
+        ASNumberVO asNumberVO = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+        if (Objects.nonNull(asNumberVO)) {
+            response.setAsNumberId(asNumberVO.getUuid());
+            response.setAsNumber(asNumberVO.getAsNumber());
+        }
         // return vlan information only to Root admin
         if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();

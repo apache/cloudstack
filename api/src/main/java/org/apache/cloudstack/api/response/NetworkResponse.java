@@ -135,6 +135,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "The vlan of the network. This parameter is visible to ROOT admins only")
     private String vlan;
 
+    @SerializedName(ApiConstants.AS_NUMBER_ID)
+    @Param(description = "UUID of AS NUMBER")
+    private String asNumberId;
+
+    @SerializedName(ApiConstants.AS_NUMBER)
+    @Param(description = "AS NUMBER")
+    private long asNumber;
+
     @SerializedName(ApiConstants.ACL_TYPE)
     @Param(description = "acl type - access type to the network")
     private String aclType;
@@ -413,6 +421,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setVlan(String vlan) {
         this.vlan = vlan;
+    }
+
+    public void setAsNumber(long asNumber) {
+        this.asNumber = asNumber;
+    }
+
+    public void setAsNumberId(String asNumberId) {
+        this.asNumberId = asNumberId;
     }
 
     public void setIsSystem(Boolean isSystem) {
