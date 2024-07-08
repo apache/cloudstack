@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -110,6 +111,16 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 
     @Override

@@ -47,5 +47,5 @@ echo "new mysql server is started on port "$PORT
 echo $db
 
 echo "commands ...."
-echo "to connect(from local host): mysql -h 127.0.0.1 -P "$PORT 
+echo "to connect(from local host): mysql -h 127.0.0.1 -P "$PORT
 echo "to stop: mysqladmin -S /tmp/mysql"$PORT"/mysqld.sock shutdown -u root"

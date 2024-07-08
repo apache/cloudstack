@@ -611,7 +611,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
             with same subnet and vlan"""
 
         # Steps,
-        #  1. create two different accouts
+        #  1. create two different accounts
         #  2. create account specific shared networks in both accounts with same subnet and vlan id
 
         # Validations,

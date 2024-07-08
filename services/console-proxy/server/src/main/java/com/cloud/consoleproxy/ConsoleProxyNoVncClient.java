@@ -16,6 +16,12 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import com.cloud.utils.net.NetUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketException;
+import org.eclipse.jetty.websocket.api.extensions.Frame;
+
 import java.awt.Image;
 import java.io.IOException;
 import java.net.URI;
@@ -23,12 +29,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketException;
-import org.eclipse.jetty.websocket.api.extensions.Frame;
 
 import com.cloud.consoleproxy.vnc.NoVncClient;
 
@@ -285,6 +287,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
                 logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
+                ConsoleProxy.ensureRoute(NetUtils.extractHost(websocketUrl));
                 client.connectToWebSocket(websocketUrl, session);
             } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
                     && !tunnelSession.isEmpty()) {
