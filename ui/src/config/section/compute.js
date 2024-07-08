@@ -963,10 +963,13 @@ export default {
           label: 'label.remove.user.data',
           message: 'message.please.confirm.remove.user.data',
           dataView: true,
-          args: ['id', 'account', 'domainid'],
+          args: ['id', 'account', 'domainid', 'projectid'],
           mapping: {
             id: {
               value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -981,7 +984,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                id: x, account: data[0].account, domainid: data[0].domainid
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }
@@ -1040,10 +1046,13 @@ export default {
           label: 'label.remove.user.data',
           message: 'message.please.confirm.remove.user.data',
           dataView: true,
-          args: ['id', 'account', 'domainid'],
+          args: ['id', 'account', 'domainid', 'projectid'],
           mapping: {
             id: {
               value: (record, params) => { return record.id }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -1058,7 +1067,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                id: x, account: data[0].account, domainid: data[0].domainid
+                id: x,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }

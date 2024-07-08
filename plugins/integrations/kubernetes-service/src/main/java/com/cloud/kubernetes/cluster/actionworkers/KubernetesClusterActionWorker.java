@@ -750,7 +750,7 @@ public class KubernetesClusterActionWorker {
             try {
                 Thread.sleep(5 * 1000L);
             } catch (InterruptedException ie) {
-                LOGGER.error(String.format("Error while attempting to taint nodes on Kubernetes cluster: %s", kubernetesCluster.getName()), ie);
+                logger.error(String.format("Error while attempting to taint nodes on Kubernetes cluster: %s", kubernetesCluster.getName()), ie);
             }
             retryCounter++;
         }

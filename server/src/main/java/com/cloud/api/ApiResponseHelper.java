@@ -5416,7 +5416,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
             response.setAsNumberRange(rangeText);
         } else {
-            s_logger.info("is null for as number: "+ asn.getAsNumber());
+            logger.info("is null for as number: "+ asn.getAsNumber());
         }
         response.setAllocated(asn.getAllocatedTime());
         response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");

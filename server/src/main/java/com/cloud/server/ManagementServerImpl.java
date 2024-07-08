@@ -4999,7 +4999,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return caller;
     }
 
-    private SSHKeyPair createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
+    private SSHKeyPair  createAndSaveSSHKeyPair(final String name, final String fingerprint, final String publicKey, final String privateKey, final Account owner) {
         final SSHKeyPairVO newPair = new SSHKeyPairVO();
 
         newPair.setAccountId(owner.getAccountId());
