@@ -28,7 +28,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.command.admin.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;

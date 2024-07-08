@@ -17,7 +17,7 @@
 package com.cloud.dc;
 
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.command.admin.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 
 import java.util.List;
 

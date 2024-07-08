@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.bgp;
+package org.apache.cloudstack.api.command.user.bgp;
 
 import com.cloud.dc.ASNumber;
 import com.cloud.dc.BGPService;
@@ -24,6 +24,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -43,6 +44,7 @@ import java.util.List;
 @APICommand(name = "listASNumbers",
         description = "List Autonomous Systems Numbers",
         responseObject = ASNumberResponse.class,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         since = "4.20.0")
 public class ListASNumbersCmd extends BaseListCmd {
 
