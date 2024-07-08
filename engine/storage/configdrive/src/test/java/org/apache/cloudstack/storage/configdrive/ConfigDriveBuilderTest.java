@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.network.Network;
+import com.cloud.vm.NicProfile;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -51,11 +52,11 @@ import com.google.gson.JsonObject;
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigDriveBuilderTest {
 
-    private static List<Network.Service> supportedServices;
+    private static Map<Long, List<Network.Service>> supportedServices;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        supportedServices = List.of(Network.Service.UserData, Network.Service.Dhcp, Network.Service.Dns);
+        supportedServices = Map.of(1L, List.of(Network.Service.UserData, Network.Service.Dhcp, Network.Service.Dns));
     }
 
     @Test
@@ -145,10 +146,14 @@ public class ConfigDriveBuilderTest {
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData((Mockito.anyString()))).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> "mockIsoDataBase64");
-            //force execution of real method
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices)).thenCallRealMethod();
 
-            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices);
+            NicProfile mockedNicProfile = Mockito.mock(NicProfile.class);
+            Mockito.when(mockedNicProfile.getId()).thenReturn(1L);
+
+            //force execution of real method
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(List.of(mockedNicProfile), new ArrayList<>(), "teste", "C:", null, supportedServices)).thenCallRealMethod();
+
+            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(List.of(mockedNicProfile), new ArrayList<>(), "teste", "C:", null, supportedServices);
 
             Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 

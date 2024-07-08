@@ -170,6 +170,8 @@ public class ConfigDriveNetworkElementTest {
         when(_dcDao.findById(DATACENTERID)).thenReturn(dataCenterVO);
         when(_domainDao.findById(DOMAINID)).thenReturn(domainVO);
         doReturn(nic).when(_networkModel).getDefaultNic(VMID);
+        doReturn(List.of(nic)).when(_networkModel).getNics(VMID);
+        doReturn(nicp).when(_networkModel).getNicProfile(virtualMachine, NETWORK_ID, null);
         when(_serviceOfferingDao.findByIdIncludingRemoved(VMID, SOID)).thenReturn(serviceOfferingVO);
         when(_guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
         when(_guestOSCategoryDao.findById(Mockito.anyLong())).thenReturn(guestOSCategoryVo);
@@ -292,7 +294,7 @@ public class ConfigDriveNetworkElementTest {
     public void testCreateConfigDriveIso() throws Exception {
         try (MockedStatic<ConfigDriveBuilder> ignored1 = Mockito.mockStatic(ConfigDriveBuilder.class); MockedStatic<CallContext> ignored2 = Mockito.mockStatic(CallContext.class)) {
             Mockito.when(CallContext.current()).thenReturn(callContextMock);
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.any(NicProfile.class), Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.anyList())).thenReturn("content");
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.anyList(), Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.anyMap())).thenReturn("content");
 
             final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
             when(agentManager.easySend(Mockito.anyLong(), Mockito.any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);

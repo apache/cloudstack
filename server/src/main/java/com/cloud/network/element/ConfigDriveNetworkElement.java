@@ -546,7 +546,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, getSupportedServicesByElementForNetwork(nic.getNetworkId()));
+        List<? extends Nic> nics = _networkModel.getNics(nic.getVirtualMachineId());
+        List<NicProfile> nicProfiles = getNicProfilesForNic(profile.getVirtualMachine(), nics);
+        final Map<Long, List<Service>> supportedServices = getSupportedServicesByElementForNetwork(nicProfiles);
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(nicProfiles, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -596,18 +599,31 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    private List<Network.Service> getSupportedServicesByElementForNetwork(Long networkId) {
+    private List<NicProfile> getNicProfilesForNic(VirtualMachine vm, List<? extends Nic> nics) {
+        List<NicProfile> nicProfiles = new ArrayList<>();
+        for (Nic nic: nics) {
+            nicProfiles.add(_networkModel.getNicProfile(vm, nic.getNetworkId(), null));
+        }
+        return nicProfiles;
+    }
 
-        List<Network.Service> supportedServices = new ArrayList<>();
-        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.Dns, getProvider())) {
-            supportedServices.add(Service.Dns);
+    private Map<Long, List<Network.Service>> getSupportedServicesByElementForNetwork(List<NicProfile> nics) {
+
+        Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
+        for (NicProfile nic: nics) {
+            ArrayList<Network.Service> serviceList = new ArrayList<>();
+            if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, getProvider())) {
+                serviceList.add(Service.Dns);
+            }
+            if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.UserData, getProvider())) {
+                serviceList.add(Service.UserData);
+            }
+            if (_networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, getProvider())) {
+                serviceList.add(Service.Dhcp);
+            }
+            supportedServices.put(nic.getId(), serviceList);
         }
-        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.UserData, getProvider())) {
-            supportedServices.add(Service.UserData);
-        }
-        if (_networkModel.isProviderSupportServiceInNetwork(networkId, Service.Dhcp, getProvider())) {
-            supportedServices.add(Service.Dhcp);
-        }
+
         return supportedServices;
     }
 
@@ -626,9 +642,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        List<Service> supportedServices = getSupportedServicesByElementForNetwork(nic.getNetworkId());
+        List<? extends Nic> nics = _networkModel.getNics(profile.getId());
+        List<NicProfile> nicProfiles = getNicProfilesForNic(profile.getVirtualMachine(), nics);
+        final Map<Long, List<Service>> supportedServices = getSupportedServicesByElementForNetwork(nicProfiles);
         final String isoData = ConfigDriveBuilder.buildConfigDrive(
-                nic, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
+                nicProfiles, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);

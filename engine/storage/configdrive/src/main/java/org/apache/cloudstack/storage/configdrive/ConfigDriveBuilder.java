@@ -118,8 +118,8 @@ public class ConfigDriveBuilder {
      *  This method will build the metadata files required by OpenStack driver. Then, an ISO is going to be generated and returned as a String in base 64.
      *  If vmData is null, we throw a {@link CloudRuntimeException}. Moreover, {@link IOException} are captured and re-thrown as {@link CloudRuntimeException}.
      */
-    public static String buildConfigDrive(NicProfile nic, List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams, List<Network.Service> supportedServices) {
-        if (vmData == null && nic == null) {
+    public static String buildConfigDrive(List<NicProfile> nics, List<String[]> vmData, String isoFileName, String driveLabel, Map<String, String> customUserdataParams, Map<Long, List<Network.Service>> supportedServices) {
+        if (vmData == null && nics == null) {
             throw new CloudRuntimeException("No VM metadata and nic profile provided");
         }
 
@@ -132,11 +132,14 @@ public class ConfigDriveBuilder {
             File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
 
             writeVendorEmptyJsonFile(openStackFolder);
-            writeNetworkData(nic, supportedServices, openStackFolder);
-            if (supportedServices.contains(Network.Service.UserData)) {
-                writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
+            writeNetworkData(nics, supportedServices, openStackFolder);
+            for (NicProfile nic: nics) {
+                if (supportedServices.get(nic.getId()).contains(Network.Service.UserData)) {
+                    writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
 
-                linkUserData(tempDirName);
+                    linkUserData(tempDirName);
+                    break;
+                }
             }
 
             return generateAndRetrieveIsoAsBase64Iso(isoFileName, driveLabel, tempDirName);
@@ -244,21 +247,24 @@ public class ConfigDriveBuilder {
     /**
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      */
-    static void writeNetworkData(NicProfile nic, List<Network.Service> supportedServices, File openStackFolder) {
-        JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedServices);
-        JsonObject existingNetworkData = getExistingNetworkData(openStackFolder);
+    static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
 
         JsonObject finalNetworkData = new JsonObject();
-        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "links", "id", "type");
-        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "networks", "id", "type");
-        mergeJsonArraysAndUpdateObject(finalNetworkData, existingNetworkData, networkData, "services", "address", "type");
+        for (NicProfile nic: nics) {
+            List<Network.Service> supportedService = supportedServices.get(nic.getId());
+            JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
 
-        writeFile(openStackFolder, "network_data.json", existingNetworkData.toString());
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "links", "id", "type");
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "networks", "id", "type");
+            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "services", "address", "type");
+        }
+
+        writeFile(openStackFolder, "network_data.json", finalNetworkData.toString());
     }
 
-    static void mergeJsonArraysAndUpdateObject(JsonObject finalObject, JsonObject obj1, JsonObject obj2, String memberName, String keyPart1, String keyPart2) {
-        JsonArray existingMembers = obj1.has(memberName) ? obj1.get(memberName).getAsJsonArray() : new JsonArray();
-        JsonArray newMembers = obj2.has(memberName) ? obj2.get(memberName).getAsJsonArray() : new JsonArray();
+    static void mergeJsonArraysAndUpdateObject(JsonObject finalObject, JsonObject newObj, String memberName, String keyPart1, String keyPart2) {
+        JsonArray existingMembers = finalObject.has(memberName) ? finalObject.get(memberName).getAsJsonArray() : new JsonArray();
+        JsonArray newMembers = newObj.has(memberName) ? newObj.get(memberName).getAsJsonArray() : new JsonArray();
 
         if (existingMembers.size() > 0 || newMembers.size() > 0) {
             JsonArray finalMembers = new JsonArray();
