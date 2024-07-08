@@ -22,7 +22,7 @@
 -- Added in CLOUDSTACK-9340: General DB optimization, 4 cases:
 
 ----- 1) Incorrect PRIMARY key
-ALTER TABLE `cloud`.`ovs_tunnel_network` 
+ALTER TABLE `cloud`.`ovs_tunnel_network`
 DROP PRIMARY KEY,
 ADD PRIMARY KEY (`id`),
 DROP INDEX `id` ,
