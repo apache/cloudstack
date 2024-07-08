@@ -1203,7 +1203,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (cidrSize > maxCidrSize) {
                 throw new InvalidParameterValueException("VPC cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
             }
-            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            Integer minCidrSize = routedIpv4Manager.RoutedVpcIPv4MinCidrSize.valueIn(accountId);
             if (cidrSize < minCidrSize) {
                 throw new InvalidParameterValueException("VPC cidr size cannot be smaller than minimum cidr size " + minCidrSize);
             }
