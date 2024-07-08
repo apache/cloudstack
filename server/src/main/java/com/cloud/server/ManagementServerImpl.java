@@ -520,6 +520,7 @@ import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.userdata.BaseRegisterUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListCniConfigurationCmd;
@@ -4035,6 +4036,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(LinkUserDataToTemplateCmd.class);
         cmdList.add(RegisterCniConfigurationCmd.class);
         cmdList.add(ListCniConfigurationCmd.class);
+        cmdList.add(DeleteCniConfigurationCmd.class);
 
         //object store APIs
         cmdList.add(AddObjectStoragePoolCmd.class);
@@ -4831,6 +4833,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         annotationDao.removeByEntityType(AnnotationService.EntityType.USER_DATA.name(), userData.getUuid());
 
         return userDataDao.remove(userData.getId());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DELETE_CNI_CONFIG, eventDescription = "CNI Configuration deletion")
+    public boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd) {
+        return deleteUserData(cmd);
     }
 
     @Override

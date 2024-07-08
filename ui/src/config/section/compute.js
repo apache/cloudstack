@@ -1041,10 +1041,10 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
         },
         {
-          api: 'deleteUserData',
+          api: 'deleteCniConfiguration',
           icon: 'delete-outlined',
-          label: 'label.remove.user.data',
-          message: 'message.please.confirm.remove.user.data',
+          label: 'label.remove.cni.configuration',
+          message: 'message.please.confirm.remove.cni.configuration',
           dataView: true,
           args: ['id', 'account', 'domainid', 'projectid'],
           mapping: {

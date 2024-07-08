@@ -59,6 +59,7 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
@@ -387,6 +388,14 @@ public interface ManagementService {
      */
     boolean deleteUserData(DeleteUserDataCmd cmd);
 
+    /**
+     * Deletes a userdata.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return True on success. False otherwise.
+     */
+    boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd);
     /**
      * Search registered key pairs for the logged in user.
      *
