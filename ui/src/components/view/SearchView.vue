@@ -658,12 +658,15 @@ export default {
     },
     fetchAccounts (searchKeyword) {
       return new Promise((resolve, reject) => {
-        const params = { listAll: true, showicon: true, keyword: searchKeyword }
+        const params = { listAll: true, isrecursive: false, showicon: true, keyword: searchKeyword }
         if (this.form.domainid) {
           params.domainid = this.form.domainid
         }
         api('listAccounts', params).then(json => {
-          const account = json.listaccountsresponse.account
+          var account = json.listaccountsresponse.account
+          if (this.form.domainid) {
+            account = account.filter(a => a.domainid === this.form.domainid)
+          }
           resolve({
             type: 'account',
             data: account
