@@ -4878,26 +4878,34 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_USER_DATA, eventDescription = "registering userdata", async = true)
-    public UserData registerUserData(final BaseRegisterUserDataCmd cmd) {
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configration", async = true)
+    public UserData registerCniConfigration(RegisterCniConfigurationCmd cmd) {
         final Account owner = getOwner(cmd);
         checkForUserDataByName(cmd, owner);
         final String name = cmd.getName();
 
-        boolean forCks = false;
-        String userdata = null;
-        if (cmd instanceof RegisterUserDataCmd) {
-            userdata = ((RegisterUserDataCmd) cmd).getUserData();
-            checkForUserData(((RegisterUserDataCmd) cmd), owner);
-        } else {
-            userdata = ((RegisterCniConfigurationCmd) cmd).getCniConfig();
-            forCks = true;
-        }
+        String userdata = cmd.getCniConfig();
         final String params = cmd.getParams();
 
         userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
-        return createAndSaveUserData(name, userdata, params, owner, forCks);
+        return createAndSaveUserData(name, userdata, params, owner, true);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_USER_DATA, eventDescription = "registering userdata", async = true)
+    public UserData registerUserData(final RegisterUserDataCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        final String name = cmd.getName();
+
+        String userdata = cmd.getUserData();
+        checkForUserData(cmd, owner);
+        final String params = cmd.getParams();
+
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
+
+        return createAndSaveUserData(name, userdata, params, owner, false);
     }
 
     /**

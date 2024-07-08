@@ -57,7 +57,7 @@ public class RegisterCniConfigurationCmd extends BaseRegisterUserDataCmd {
 
     @Override
     public void execute() {
-        UserData result = _mgr.registerUserData(this);
+        UserData result = _mgr.registerCniConfigration(this);
         UserDataResponse response = _responseGenerator.createUserDataResponse(result);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.CNI_CONFIG);
