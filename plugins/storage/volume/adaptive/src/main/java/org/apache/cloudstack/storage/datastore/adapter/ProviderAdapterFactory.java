@@ -19,6 +19,10 @@ package org.apache.cloudstack.storage.datastore.adapter;
 import java.util.Map;
 
 public interface ProviderAdapterFactory {
+    /** Name of the provider */
     public String getProviderName();
+    /** create a new instance of a provider adapter */
     public ProviderAdapter create(String url, Map<String, String> details);
+    /** returns true if this type of adapter can directly attach snapshots to hosts */
+    public Object canDirectAttachSnapshot();
 }

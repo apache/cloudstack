@@ -559,4 +559,16 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         ref.setDisplay(display);
         update(ref.getId(), ref);
     }
+
+    @Override
+    public int expungeBySnapshotList(final List<Long> snapshotIds, final Long batchSize) {
+        if (CollectionUtils.isEmpty(snapshotIds)) {
+            return 0;
+        }
+        SearchBuilder<SnapshotDataStoreVO> sb = createSearchBuilder();
+        sb.and("snapshotIds", sb.entity().getSnapshotId(), SearchCriteria.Op.IN);
+        SearchCriteria<SnapshotDataStoreVO> sc = sb.create();
+        sc.setParameters("snapshotIds", snapshotIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

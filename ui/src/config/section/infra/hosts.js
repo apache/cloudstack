@@ -74,12 +74,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'istagarule', 'oscategoryid'],
-      mapping: {
-        oscategoryid: {
-          api: 'listOsCategories'
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
     },
     {
       api: 'provisionCertificate',
@@ -150,6 +146,7 @@ export default {
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
+      post: true,
       args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
       mapping: {
         hostid: {
