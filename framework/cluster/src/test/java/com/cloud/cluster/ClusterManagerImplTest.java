@@ -14,19 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.cluster;
 
-import java.rmi.RemoteException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
+@RunWith(MockitoJUnitRunner.class)
+public class ClusterManagerImplTest {
+    @InjectMocks
+    ClusterManagerImpl clusterManager = new ClusterManagerImpl();
 
-import com.cloud.utils.component.Adapter;
-
-public interface ClusterServiceAdapter extends Adapter {
-    final ConfigKey<Integer> ClusterMessageTimeOut = new ConfigKey<Integer>(Integer.class, "cluster.message.timeout.seconds", "Advance", "300",
-        "Time (in seconds) to wait before a inter-management server message post times out.", true);
-
-    public ClusterService getPeerService(String strPeer) throws RemoteException;
-
-    public int getServicePort();
+    @Test
+    public void testGetSelfNodeIP() {
+        String ip = "1.2.3.4";
+        ReflectionTestUtils.setField(clusterManager, "_clusterNodeIP", ip);
+        Assert.assertEquals(ip, clusterManager.getSelfNodeIP());
+    }
 }

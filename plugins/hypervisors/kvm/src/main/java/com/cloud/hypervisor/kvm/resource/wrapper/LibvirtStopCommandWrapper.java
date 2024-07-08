@@ -23,28 +23,27 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
-import com.cloud.utils.Pair;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import org.libvirt.LibvirtException;
+import com.cloud.utils.Pair;
+import com.cloud.utils.ssh.SshHelper;
 
 @ResourceWrapper(handles =  StopCommand.class)
 public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand, Answer, LibvirtComputingResource> {
@@ -121,10 +120,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                     Map<String, DpdkTO> dpdkInterfaceMapping = command.getDpdkInterfaceMapping();
                     if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                         for (DpdkTO to : dpdkInterfaceMapping.values()) {
-                            String portToRemove = to.getPort();
-                            String cmd = String.format("ovs-vsctl del-port %s", portToRemove);
-                            s_logger.debug("Removing DPDK port: " + portToRemove);
-                            Script.runSimpleBashScript(cmd);
+                            removeDpdkPort(to.getPort());
                         }
                     }
                 } else {
