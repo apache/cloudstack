@@ -52,6 +52,7 @@ authenciation
 authenitcation
 authenitication
 availiability
+avialable
 bais
 beacause
 beacuse
@@ -78,6 +79,7 @@ chould
 clenup
 cliente
 clinet
+cluser
 cna
 collison
 comman
@@ -90,6 +92,7 @@ conectix
 confg
 configruation
 configuable
+conneciton
 connexion
 constrait
 constraits
@@ -103,7 +106,6 @@ controll
 convienient
 convinience
 coputer
-copyied
 correcponding
 correspoding
 correspoonds
@@ -216,7 +218,6 @@ fillled
 findout
 fisrt
 fo
-followin
 folowing
 fowarding
 frist
@@ -285,8 +286,6 @@ isnt
 ist
 klunky
 lable
-lates
-lenght
 leve
 lief
 limite
@@ -353,7 +352,6 @@ parms
 parralels
 particualr
 passowrd
-passsed
 perfromed
 permissble
 physcial
@@ -405,6 +403,7 @@ reserverd
 reseted
 reseting
 resorce
+responser
 resposne
 resturns
 retreive
@@ -440,6 +439,7 @@ shoul
 shoule
 sie
 signle
+simplier
 singature
 skiping
 snaphsot
@@ -466,7 +466,6 @@ sucessfully
 suiteable
 suppots
 suppport
-suppposed
 syncronous
 syste
 tage
@@ -484,6 +483,7 @@ thorugh
 throught
 ths
 tipically
+transction
 tring
 trough
 tyoe
@@ -492,7 +492,6 @@ ues
 unavailibility
 uncommited
 uncompressible
-underfined
 uneccessarily
 unexepected
 unexpect
