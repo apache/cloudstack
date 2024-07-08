@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.configdrive;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 import java.io.File;
@@ -27,17 +28,22 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.MockedConstruction;
@@ -514,5 +520,221 @@ public class ConfigDriveBuilderTest {
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
             Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
         }
+    }
+
+    @Test
+    public void testWriteNetworkData() throws Exception {
+        // Setup
+        NicProfile nicp = mock(NicProfile.class);
+        Mockito.when(nicp.getId()).thenReturn(1L);
+
+        Mockito.when(nicp.getMacAddress()).thenReturn("00:00:00:00:00:00");
+        Mockito.when(nicp.getMtu()).thenReturn(2000);
+
+        Mockito.when(nicp.getIPv4Address()).thenReturn("172.31.0.10");
+        Mockito.when(nicp.getDeviceId()).thenReturn(1);
+        Mockito.when(nicp.getIPv4Netmask()).thenReturn("255.255.255.0");
+        Mockito.when(nicp.getUuid()).thenReturn("NETWORK UUID");
+        Mockito.when(nicp.getIPv4Gateway()).thenReturn("172.31.0.1");
+
+
+        Mockito.when(nicp.getIPv6Address()).thenReturn("2001:db8:0:1234:0:567:8:1");
+        Mockito.when(nicp.getIPv6Cidr()).thenReturn("2001:db8:0:1234:0:567:8:1/64");
+        Mockito.when(nicp.getIPv6Gateway()).thenReturn("2001:db8:0:1234:0:567:8::1");
+
+        Mockito.when(nicp.getIPv4Dns1()).thenReturn("8.8.8.8");
+        Mockito.when(nicp.getIPv4Dns2()).thenReturn("1.1.1.1");
+        Mockito.when(nicp.getIPv6Dns1()).thenReturn("2001:4860:4860::8888");
+        Mockito.when(nicp.getIPv6Dns2()).thenReturn("2001:4860:4860::8844");
+
+
+        List<Network.Service> services1 = Arrays.asList(Network.Service.Dhcp, Network.Service.Dns);
+
+        Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
+        supportedServices.put(1L, services1);
+
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        File openStackFolder = folder.newFolder("openStack");
+
+        // Expected JSON structure
+        String expectedJson = "{" +
+                "  \"links\": [" +
+                "    {" +
+                "      \"ethernet_mac_address\": \"00:00:00:00:00:00\"," +
+                "      \"id\": \"eth1\"," +
+                "      \"mtu\": 2000," +
+                "      \"type\": \"phy\"" +
+                "    }" +
+                "  ]," +
+                "  \"networks\": [" +
+                "    {" +
+                "      \"id\": \"eth1\"," +
+                "      \"ip_address\": \"172.31.0.10\"," +
+                "      \"link\": \"eth1\"," +
+                "      \"netmask\": \"255.255.255.0\"," +
+                "      \"network_id\": \"NETWORK UUID\"," +
+                "      \"type\": \"ipv4\"," +
+                "      \"routes\": [" +
+                "        {" +
+                "          \"gateway\": \"172.31.0.1\"," +
+                "          \"netmask\": \"0.0.0.0\"," +
+                "          \"network\": \"0.0.0.0\"" +
+                "        }" +
+                "      ]" +
+                "    }," +
+                "    {" +
+                "      \"id\": \"eth1\"," +
+                "      \"ip_address\": \"2001:db8:0:1234:0:567:8:1\"," +
+                "      \"link\": \"eth1\"," +
+                "      \"netmask\": \"64\"," +
+                "      \"network_id\": \"NETWORK UUID\"," +
+                "      \"type\": \"ipv6\"," +
+                "      \"routes\": [" +
+                "        {" +
+                "          \"gateway\": \"2001:db8:0:1234:0:567:8::1\"," +
+                "          \"netmask\": \"0\"," +
+                "          \"network\": \"::\"" +
+                "        }" +
+                "      ]" +
+                "    }" +
+                "  ]," +
+                "  \"services\": [" +
+                "    {" +
+                "      \"address\": \"8.8.8.8\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"1.1.1.1\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"2001:4860:4860::8888\"," +
+                "      \"type\": \"dns\"" +
+                "    }," +
+                "    {" +
+                "      \"address\": \"2001:4860:4860::8844\"," +
+                "      \"type\": \"dns\"" +
+                "    }" +
+                "  ]" +
+                "}";
+
+        // Action
+        ConfigDriveBuilder.writeNetworkData(Arrays.asList(nicp), supportedServices, openStackFolder);
+
+        // Verify
+        File networkDataFile = new File(openStackFolder, "network_data.json");
+        String content = FileUtils.readFileToString(networkDataFile, StandardCharsets.UTF_8);
+        JsonObject actualJson = new JsonParser().parse(content).getAsJsonObject();
+        JsonObject expectedJsonObject = new JsonParser().parse(expectedJson).getAsJsonObject();
+
+        Assert.assertEquals(expectedJsonObject, actualJson);
+        folder.delete();
+    }
+
+    @Test
+    public void testWriteNetworkDataEmptyJson() throws Exception {
+        // Setup
+        NicProfile nicp = mock(NicProfile.class);
+        Mockito.when(nicp.getId()).thenReturn(1L);
+
+        List<Network.Service> services1 = Collections.emptyList();
+
+        Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
+        supportedServices.put(1L, services1);
+
+        TemporaryFolder folder = new TemporaryFolder();
+        folder.create();
+        File openStackFolder = folder.newFolder("openStack");
+
+        // Expected JSON structure
+        String expectedJson = "{}";
+
+        // Action
+        ConfigDriveBuilder.writeNetworkData(Arrays.asList(nicp), supportedServices, openStackFolder);
+
+        // Verify
+        File networkDataFile = new File(openStackFolder, "network_data.json");
+        String content = FileUtils.readFileToString(networkDataFile, StandardCharsets.UTF_8);
+        JsonObject actualJson = new JsonParser().parse(content).getAsJsonObject();
+        JsonObject expectedJsonObject = new JsonParser().parse(expectedJson).getAsJsonObject();
+
+        Assert.assertEquals(expectedJsonObject, actualJson);
+        folder.delete();
+    }
+
+    @Test
+    public void testMergeJsonArraysAndUpdateObjectWithEmptyObjects() {
+        JsonObject finalObject = new JsonObject();
+        JsonObject newObj = new JsonObject();
+        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
+        Assert.assertEquals("{}", finalObject.toString());
+    }
+
+    @Test
+    public void testMergeJsonArraysAndUpdateObjectWithNewMembersAdded() {
+        JsonObject finalObject = new JsonObject();
+
+        JsonObject newObj = new JsonObject();
+        JsonArray newMembers = new JsonArray();
+        JsonObject newMember = new JsonObject();
+        newMember.addProperty("id", "eth0");
+        newMember.addProperty("type", "phy");
+        newMembers.add(newMember);
+        newObj.add("links", newMembers);
+
+        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
+        Assert.assertEquals(1, finalObject.getAsJsonArray("links").size());
+        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}]}").getAsJsonObject();
+        Assert.assertEquals(expectedObj, finalObject);
+    }
+
+    @Test
+    public void testMergeJsonArraysAndUpdateObjectWithDuplicateMembersIgnored() {
+        JsonObject finalObject = new JsonObject();
+        JsonArray existingMembers = new JsonArray();
+        JsonObject existingMember = new JsonObject();
+        existingMember.addProperty("id", "eth0");
+        existingMember.addProperty("type", "phy");
+        existingMembers.add(existingMember);
+        finalObject.add("links", existingMembers);
+
+        JsonObject newObj = new JsonObject();
+        newObj.add("links", existingMembers); // same as existingMembers for duplication
+
+        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
+        Assert.assertEquals(1, finalObject.getAsJsonArray("links").size());
+        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}]}").getAsJsonObject();
+        Assert.assertEquals(expectedObj, finalObject);
+    }
+
+    @Test
+    public void testMergeJsonArraysAndUpdateObjectWithDifferentMembers() {
+        JsonObject finalObject = new JsonObject();
+
+        JsonArray newMembers = new JsonArray();
+        JsonObject newMember = new JsonObject();
+        newMember.addProperty("id", "eth0");
+        newMember.addProperty("type", "phy");
+        newMembers.add(newMember);
+        finalObject.add("links", newMembers);
+
+        JsonObject newObj = new JsonObject();
+        newMembers = new JsonArray();
+        newMember = new JsonObject();
+        newMember.addProperty("id", "eth1");
+        newMember.addProperty("type", "phy");
+        newMembers.add(newMember);
+        newObj.add("links", newMembers);
+
+        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
+        Assert.assertEquals(2, finalObject.getAsJsonArray("links").size());
+        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}, {'id': 'eth1', 'type': 'phy'}]}").getAsJsonObject();
+        Assert.assertEquals(expectedObj, finalObject);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMergeJsonArraysAndUpdateObjectWithNullObjects() {
+        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(null, null, "services", "id", "type");
     }
 }

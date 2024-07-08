@@ -37,7 +37,6 @@ import java.util.Set;
 
 import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
-import com.google.gson.JsonParser;
 import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.MapUtils;
@@ -54,13 +53,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import javax.inject.Inject;
-
 public class ConfigDriveBuilder {
 
     protected static Logger LOGGER = LogManager.getLogger(ConfigDriveBuilder.class);
-    @Inject
-    NetworkModel _networkModel;
 
     /**
      * This is for mocking the File class. We cannot mock the File class directly because Mockito uses it internally.
@@ -227,23 +222,6 @@ public class ConfigDriveBuilder {
         writeFile(openStackFolder, "meta_data.json", metaData.toString());
     }
 
-    static JsonObject getExistingNetworkData(File openStackFolder) {
-        if (openStackFolder.exists()) {
-            File networkDataFile = getFile(openStackFolder.getAbsolutePath(), "network_data.json");
-            if (networkDataFile.exists()) {
-                try {
-                    String networkDataFileContent = FileUtils.readFileToString(networkDataFile, com.cloud.utils.StringUtils.getPreferredCharset());
-                    if (StringUtils.isNotBlank(networkDataFileContent)) {
-                        return new JsonParser().parse(networkDataFileContent).getAsJsonObject();
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to read existing network data file: {}", networkDataFile.getAbsolutePath(), e);
-                }
-            }
-        }
-        return new JsonObject();
-    }
-
     /**
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      */
@@ -394,7 +372,7 @@ public class ConfigDriveBuilder {
             ipv6Network.addProperty("ip_address", nic.getIPv6Address());
             ipv6Network.addProperty("link", String.format("eth%d", nic.getDeviceId()));
             ipv6Network.addProperty("netmask", IPv6Network.fromString(nic.getIPv6Cidr()).getNetmask().toString());
-            ipv6Network.addProperty("network_id", nic.getNetworkId());
+            ipv6Network.addProperty("network_id", nic.getUuid());
             ipv6Network.addProperty("type", "ipv6");
 
             JsonArray ipv6RouteArray = new JsonArray();
