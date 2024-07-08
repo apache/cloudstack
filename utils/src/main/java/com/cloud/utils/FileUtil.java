@@ -24,23 +24,41 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SshHelper;
+
 public class FileUtil {
     private static final Logger s_logger = Logger.getLogger(FileUtil.class);
+
+    private static boolean deleteFileOrDirectory(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory()) {
+            File[] files = fileOrDirectory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (!deleteFileOrDirectory(file)) {
+                        s_logger.trace(String.format("Failed to delete file: %s", file.getAbsoluteFile()));
+                        return false;
+                    }
+                }
+            }
+        }
+        return fileOrDirectory.delete();
+    }
 
     public static void copyfile(File source, File destination) throws IOException {
         FileUtils.copyFile(source, destination);
@@ -90,4 +108,49 @@ public class FileUtil {
         }
     }
 
+    public static void deletePath(String path) {
+        if (StringUtils.isBlank(path)) {
+            return;
+        }
+        File fileOrDirectory = new File(path);
+        if (!fileOrDirectory.exists()) {
+            return;
+        }
+        boolean result = deleteFileOrDirectory(fileOrDirectory);
+        if (result) {
+            s_logger.debug(String.format("Deleted path: %s", path));
+        } else  {
+            s_logger.error(String.format("Failed to delete path: %s", path));
+        }
+    }
+
+    public static void deleteFiles(String directory, String prefix, String suffix) {
+        Path dirPath = Paths.get(directory);
+        try (Stream<Path> files = Files.list(dirPath)) {
+            files.filter(file -> file.getFileName().toString().startsWith(prefix) &&
+                            file.getFileName().toString().endsWith(suffix))
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                            s_logger.debug(String.format("Deleted file: %s", file));
+                        } catch (IOException e) {
+                            s_logger.error(String.format("Failed to delete file: %s", file), e);
+                        }
+                    });
+        } catch (IOException e) {
+            s_logger.error(String.format("Error accessing directory: %s", directory), e);
+        }
+    }
+
+    public static boolean writeToFile(String fileName, String content) {
+        Path filePath = Paths.get(fileName);
+        try {
+            Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
+            s_logger.debug(String.format("Successfully wrote to the file: %s", fileName));
+            return true;
+        } catch (IOException e) {
+            s_logger.error(String.format("Error writing to the file: %s", fileName), e);
+        }
+        return false;
+    }
 }

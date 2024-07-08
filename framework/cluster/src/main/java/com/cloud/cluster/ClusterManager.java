@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.cluster;
 
-import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.management.ManagementServerHost;
 
 import com.cloud.utils.component.Manager;
 
@@ -76,6 +76,8 @@ public interface ClusterManager extends Manager {
      * @return A {code}Long.toString({code}{@see getManagementNodeId()}{code}){code} representation of the PID of the management server process.
      */
     String getSelfPeerName();
+
+    String getSelfNodeIP();
 
     long getManagementNodeId();
 
