@@ -23,6 +23,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -52,9 +53,11 @@ public class ReleaseASNumberCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = bgpService.releaseASNumber(zoneId, asNumber);
+            Pair<Boolean, String> resultPair = bgpService.releaseASNumber(zoneId, asNumber);
+            Boolean result = resultPair.first();
             if (!result) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Cannot release AS Number %s", asNumber));
+                String details = resultPair.second();
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Cannot release AS Number %s: %s", asNumber, details));
             }
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setDisplayText(String.format("AS Number %s is released successfully", asNumber));

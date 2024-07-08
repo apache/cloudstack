@@ -19,6 +19,10 @@ package com.cloud.dc;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.utils.Pair;
@@ -47,6 +51,10 @@ public class BGPServiceImpl implements BGPService {
     private ASNumberRangeDao asNumberRangeDao;
     @Inject
     private ASNumberDao asNumberDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
 
     public BGPServiceImpl() {
     }
@@ -106,19 +114,35 @@ public class BGPServiceImpl implements BGPService {
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 
+    private Pair<Boolean, String> logAndReturnErrorMessage(String msg) {
+        LOGGER.error(msg);
+        return new Pair<>(false, msg);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AS_NUMBER_RELEASE, eventDescription = "Releasing AS Number")
-    public boolean releaseASNumber(long zoneId, long asNumber) {
+    public Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber) {
         ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
         if (asNumberVO == null) {
-            String msg = String.format("Cannot find AS Number %s on zone %s", asNumber, zoneId);
-            LOGGER.error(msg);
-            throw new InvalidParameterException(msg);
+            return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zoneId));
         }
         if (!asNumberVO.isAllocated()) {
-            String msg = String.format("The AS Number %s is not allocated to any network on zone %s, ignoring release", asNumber, zoneId);
-            LOGGER.debug(msg);
-            return false;
+            LOGGER.debug(String.format("The AS Number %s is not allocated to any network on zone %s, ignoring release", asNumber, zoneId));
+            return new Pair<>(true, "");
+        }
+        Long networkId = asNumberVO.getNetworkId();
+        if (networkId != null) {
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                return logAndReturnErrorMessage(String.format("Cannot find a network with ID %s which acquired the AS number %s", networkId, asNumber));
+            }
+            NetworkOfferingVO offering = networkOfferingDao.findById(network.getNetworkOfferingId());
+            if (offering == null) {
+                return logAndReturnErrorMessage(String.format("Cannot find a network offering with ID %s", network.getNetworkOfferingId()));
+            }
+            if (offering.isSpecifyAsNumber()) {
+                return logAndReturnErrorMessage(String.format("Cannot release the AS number %s as it is acquired by a network that requires AS number", asNumber));
+            }
         }
         LOGGER.debug(String.format("Releasing AS Number %s on zone %s from previous allocation", asNumber, zoneId));
         asNumberVO.setAllocated(false);
@@ -126,7 +150,9 @@ public class BGPServiceImpl implements BGPService {
         asNumberVO.setDomainId(null);
         asNumberVO.setAccountId(null);
         asNumberVO.setNetworkId(null);
-        return asNumberDao.update(asNumberVO.getId(), asNumberVO);
+        boolean update = asNumberDao.update(asNumberVO.getId(), asNumberVO);
+        String msg = update ? "OK" : "Could not update database record for AS number";
+        return new Pair<>(update, msg);
     }
 
     @Override
