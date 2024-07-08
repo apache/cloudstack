@@ -276,7 +276,7 @@ class TestIpv4Routing(cloudstackTestCase):
         for rule in rules:
             cmd = "nft list chain ip %s %s" % (table, rule["chain"])
             res = self.run_command_in_router(router, cmd)
-            if not "exists" in rule or rule["exists"]:
+            if "exists" not in rule or rule["exists"]:
                 exists = True
             else:
                 exists = False
