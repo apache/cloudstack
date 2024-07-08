@@ -660,8 +660,8 @@ public class Script implements Callable<String> {
         return executable;
     }
 
-    private static Script getScriptForCommandRun(String... command) {
-        Script s = new Script(command[0], 0);
+    private static Script getScriptForCommandRun(long timeout, String... command) {
+        Script s = new Script(command[0], timeout);
         if (command.length > 1) {
             for (int i = 1; i < command.length; ++i) {
                 s.add(command[i]);
@@ -670,12 +670,16 @@ public class Script implements Callable<String> {
         return s;
     }
 
+    private static Script getScriptForCommandRun(String... command) {
+        return getScriptForCommandRun(0, command);
+    }
+
     public static String executeCommand(String... command) {
         return runScript(getScriptForCommandRun(command));
     }
 
     public static int executeCommandForExitValue(long timeout, String... command) {
-        return runScriptForExitValue(getScriptForCommandRun(command));
+        return runScriptForExitValue(getScriptForCommandRun(timeout, command));
     }
 
     public static int executeCommandForExitValue(String... command) {
