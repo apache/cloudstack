@@ -28,16 +28,24 @@ public class ConvertInstanceCommand extends Command {
     private Hypervisor.HypervisorType destinationHypervisorType;
     private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
+    private String templateDirOnConversionLocation;
+    private boolean checkConversionSupport;
+    private boolean exportOvfToConversionLocation;
+    private int threadsCountToExportOvf = 0;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
-                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation) {
+                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation,
+                                  String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
+        this.templateDirOnConversionLocation = templateDirOnConversionLocation;
+        this.checkConversionSupport = checkConversionSupport;
+        this.exportOvfToConversionLocation = exportOvfToConversionLocation;
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -54,6 +62,26 @@ public class ConvertInstanceCommand extends Command {
 
     public DataStoreTO getConversionTemporaryLocation() {
         return conversionTemporaryLocation;
+    }
+
+    public String getTemplateDirOnConversionLocation() {
+        return templateDirOnConversionLocation;
+    }
+
+    public boolean getCheckConversionSupport() {
+        return checkConversionSupport;
+    }
+
+    public boolean getExportOvfToConversionLocation() {
+        return exportOvfToConversionLocation;
+    }
+
+    public int getThreadsCountToExportOvf() {
+        return threadsCountToExportOvf;
+    }
+
+    public void setThreadsCountToExportOvf(int threadsCountToExportOvf) {
+        this.threadsCountToExportOvf = threadsCountToExportOvf;
     }
 
     @Override

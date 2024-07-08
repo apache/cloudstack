@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -130,9 +131,9 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
         ScaleIOGatewayClientConnectionPool pool = mock(ScaleIOGatewayClientConnectionPool.class);
         scaleIOGatewayClientConnectionPoolMocked.when(() -> ScaleIOGatewayClientConnectionPool.getInstance()).thenReturn(pool);
-        when(pool.getClient(1L, storagePoolDetailsDao)).thenReturn(client);
+        lenient().when(pool.getClient(1L, storagePoolDetailsDao)).thenReturn(client);
 
-        when(client.haveConnectedSdcs()).thenReturn(true);
+        lenient().when(client.haveConnectedSdcs()).thenReturn(true);
 
         final ZoneScope scope = new ZoneScope(1L);
 
