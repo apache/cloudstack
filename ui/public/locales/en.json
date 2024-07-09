@@ -1860,7 +1860,7 @@
 "label.routerip": "IPv4 address for the VR in this Network.",
 "label.routeripv6": "IPv6 address for the VR in this Network.",
 "label.resourcegroup": "Resource group",
-"label.routing.mode": "Routing mode",
+"label.routingmode": "Routing mode",
 "label.routing.policy": "Routing policy",
 "label.routing.policy.terms": "Routing policy terms",
 "label.routing.policy.terms.then": "Routing policy terms then",

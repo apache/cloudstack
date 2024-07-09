@@ -95,7 +95,7 @@
         </a-form-item>
         <a-form-item name="routingmode" ref="routingmode">
           <template #label>
-            <tooltip-label :title="$t('label.routing.mode')" />
+            <tooltip-label :title="$t('label.routingmode')" />
           </template>
           <a-radio-group
             v-model:value="form.routingmode"
