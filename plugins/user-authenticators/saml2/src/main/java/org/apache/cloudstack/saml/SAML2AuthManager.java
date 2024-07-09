@@ -70,7 +70,7 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Integer> SAMLTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "saml2.timeout", "1800",
             "SAML2 IDP Metadata refresh interval in seconds, minimum value is set to 300", true);
 
-    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "false",
+    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "true",
             "Whether SAML2 signature must be checked, when enforced and when the SAML response does not have a signature would lead to login exception", true);
 
     public SAMLProviderMetadata getSPMetadata();
