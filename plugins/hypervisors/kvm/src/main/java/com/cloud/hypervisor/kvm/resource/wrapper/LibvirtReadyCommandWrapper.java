@@ -19,7 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
@@ -32,7 +34,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
-
 
 @ResourceWrapper(handles =  ReadyCommand.class)
 public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyCommand, Answer, LibvirtComputingResource> {
@@ -50,13 +51,18 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     }
 
     private boolean hostSupportsUefi(boolean isUbuntuHost) {
-        String cmd = "rpm -qa | grep -i ovmf";
         int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_SCRIPT_TIMEOUT) * 1000; // Get property value & convert to milliseconds
+        int result;
         if (isUbuntuHost) {
-            cmd = "dpkg -l ovmf";
+            logger.debug("Running command : [dpkg -l ovmf] with timeout : " + timeout + " ms");
+            result = Script.executeCommandForExitValue(timeout, Script.getExecutableAbsolutePath("dpkg"), "-l", "ovmf");
+        } else {
+            logger.debug("Running command : [rpm -qa | grep -i ovmf] with timeout : " + timeout + " ms");
+            List<String[]> commands = new ArrayList<>();
+            commands.add(new String[]{Script.getExecutableAbsolutePath("rpm"), "-qa"});
+            commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), "-i", "ovmf"});
+            result = Script.executePipedCommands(commands, timeout).first();
         }
-        logger.debug("Running command : [" + cmd + "] with timeout : " + timeout + " ms");
-        int result = Script.runSimpleBashScriptForExitValue(cmd, timeout, false);
         logger.debug("Got result : " + result);
         return result == 0;
     }

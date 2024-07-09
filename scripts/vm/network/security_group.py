@@ -1102,7 +1102,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
 
         changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
 
-        if not 1 in changes:
+        if 1 not in changes:
             logging.debug("Rules already programmed for vm " + vm_name)
             return True
 

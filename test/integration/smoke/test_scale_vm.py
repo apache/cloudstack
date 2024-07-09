@@ -221,7 +221,7 @@ class TestScaleVm(cloudstackTestCase):
             result = str(
                 sshClient.execute("service vmware-tools status")).lower()
             self.debug("and result is: %s" % result)
-            if not "running" in result:
+            if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
         res = None
@@ -355,7 +355,7 @@ class TestScaleVm(cloudstackTestCase):
             result = str(
                 sshClient.execute("service vmware-tools status")).lower()
             self.debug("and result is: %s" % result)
-            if not "running" in result:
+            if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
 
@@ -464,7 +464,7 @@ class TestScaleVm(cloudstackTestCase):
             result = str(
                 sshClient.execute("service vmware-tools status")).lower()
             self.debug("and result is: %s" % result)
-            if not "running" in result:
+            if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
 
@@ -555,7 +555,7 @@ class TestScaleVm(cloudstackTestCase):
             result = str(
                 sshClient.execute("service vmware-tools status")).lower()
             self.debug("and result is: %s" % result)
-            if not "running" in result:
+            if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
         res = None
@@ -700,7 +700,7 @@ class TestScaleVm(cloudstackTestCase):
             result = str(
                 sshClient.execute("service vmware-tools status")).lower()
             self.debug("and result is: %s" % result)
-            if not "running" in result:
+            if "running" not in result:
                 self.skipTest("Skipping scale VM operation because\
                     VMware tools are not installed on the VM")
         res = None
