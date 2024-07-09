@@ -300,15 +300,27 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 (destVolumeObjectTO.getPath() != null ? destVolumeObjectTO.getPath() : UUID.randomUUID().toString());
 
         try {
-            storagePoolManager.connectPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath, srcDetails);
+            KVMStoragePool sourceStoragePool = storagePoolManager.getStoragePool(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid());
+
+            if (!sourceStoragePool.connectPhysicalDisk(srcPath, srcDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect source volume on hypervisor", srcPath);
+            }
 
             KVMPhysicalDisk srcPhysicalDisk = storagePoolManager.getPhysicalDisk(srcPrimaryDataStore.getPoolType(), srcPrimaryDataStore.getUuid(), srcPath);
+            if (srcPhysicalDisk == null) {
+                return new MigrateVolumeAnswer(command, false, "Unable to get handle to source volume on hypervisor", srcPath);
+            }
 
             KVMStoragePool destPrimaryStorage = storagePoolManager.getStoragePool(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid());
 
-            storagePoolManager.connectPhysicalDisk(destPrimaryDataStore.getPoolType(), destPrimaryDataStore.getUuid(), destPath, destDetails);
+            if (!destPrimaryStorage.connectPhysicalDisk(destPath, destDetails)) {
+                return new MigrateVolumeAnswer(command, false, "Unable to connect destination volume on hypervisor", srcPath);
+            }
 
-            storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            KVMPhysicalDisk newDiskCopy = storagePoolManager.copyPhysicalDisk(srcPhysicalDisk, destPath, destPrimaryStorage, command.getWaitInMillSeconds());
+            if (newDiskCopy == null) {
+                return new MigrateVolumeAnswer(command, false, "Copy command failed to return handle to copied physical disk", destPath);
+            }
         }
         catch (Exception ex) {
             return new MigrateVolumeAnswer(command, false, ex.getMessage(), null);

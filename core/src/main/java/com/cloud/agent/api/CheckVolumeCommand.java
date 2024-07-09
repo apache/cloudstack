@@ -21,7 +21,6 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.StorageFilerTO;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class CheckVolumeCommand extends Command {
 
     String srcFile;

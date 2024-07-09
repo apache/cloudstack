@@ -58,14 +58,30 @@ public class KubernetesServiceHelperImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testCheckVmCanBeDestroyedInCluster() {
+    public void testCheckVmCanBeDestroyedInCloudManagedCluster() {
         UserVm vm = Mockito.mock(UserVm.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
         Mockito.when(map.getClusterId()).thenReturn(1L);
         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
-        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(Mockito.mock(KubernetesClusterVO.class));
+        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+        kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+    }
+
+    @Test
+    public void testCheckVmCanBeDestroyedInExternalManagedCluster() {
+        UserVm vm = Mockito.mock(UserVm.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
+        KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(map.getClusterId()).thenReturn(1L);
+        Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
+        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
     }
 }

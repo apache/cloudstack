@@ -178,6 +178,17 @@
             <a-input v-model:value="form.path" :placeholder="$t('message.path.description')"/>
           </a-form-item>
         </div>
+        <div
+          v-if="form.protocol === 'nfs' &&
+            ((form.scope === 'zone' && (form.hypervisor === 'KVM' || form.hypervisor === 'Simulator')) ||
+             (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
+            <template #label>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.mount.options.description')"/>
+            </template>
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.mount.options.description')" />
+          </a-form-item>
+        </div>
         <div v-if="form.protocol === 'SMB'">
           <a-form-item :label="$t('label.smbusername')" name="smbUsername" ref="smbUsername">
             <a-input v-model:value="form.smbUsername"/>
@@ -794,6 +805,9 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
+          if (values.nfsMountOpts) {
+            params['details[0].nfsmountopts'] = values.nfsMountOpts
+          }
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
@@ -865,7 +879,7 @@ export default {
           url = values.flashArrayURL
         }
 
-        if (values.provider === 'Linstor') {
+        if (values.provider === 'Linstor' || values.protocol === 'Linstor') {
           url = this.linstorURL(server)
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup

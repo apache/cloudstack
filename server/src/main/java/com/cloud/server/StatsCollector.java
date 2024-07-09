@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.lang.management.ManagementFactory;
@@ -113,9 +114,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.StatsCollector.AbstractStatsCollector;
-import com.cloud.server.StatsCollector.AutoScaleMonitor;
-import com.cloud.server.StatsCollector.StorageCollector;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -1670,7 +1668,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
                 List<DataStore> stores = _dataStoreMgr.listImageStores();
-                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<Long, StorageStats>();
+                ConcurrentHashMap<Long, StorageStats> storageStats = new ConcurrentHashMap<>();
                 for (DataStore store : stores) {
                     if (store.getUri() == null) {
                         continue;
@@ -1690,7 +1688,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         logger.trace("HostId: " + storeId + " Used: " + toHumanReadableSize(((StorageStats)answer).getByteUsed()) + " Total Available: " + toHumanReadableSize(((StorageStats)answer).getCapacityBytes()));
                     }
                 }
-                _storageStats = storageStats;
+                updateStorageStats(storageStats);
                 ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
                 List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
@@ -1739,6 +1737,19 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             } catch (Throwable t) {
                 logger.error("Error trying to retrieve storage stats", t);
             }
+        }
+
+        private void updateStorageStats(ConcurrentHashMap<Long, StorageStats> storageStats) {
+            for (Long storeId : storageStats.keySet()) {
+                if (_storageStats.containsKey(storeId)
+                        && (_storageStats.get(storeId).getCapacityBytes() == 0l
+                        || _storageStats.get(storeId).getCapacityBytes() != storageStats.get(storeId).getCapacityBytes())) {
+                        // get add to DB rigorously
+                        _storageManager.updateImageStoreStatus(storeId, null, null, storageStats.get(storeId).getCapacityBytes());
+                }
+            }
+            // if in _storageStats and not in storageStats it gets discarded
+            _storageStats = storageStats;
         }
     }
 
@@ -1950,7 +1961,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         logger.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        vmStatsDao.removeAllByTimestampLessThan(limit);
+        vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -1969,7 +1980,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         logger.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        volumeStatsDao.removeAllByTimestampLessThan(limit);
+        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**

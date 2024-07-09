@@ -334,7 +334,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void validateEndDateOnCreatingNewQuotaTariffTestSetValidEndDate() {
         Date startDate = DateUtils.addDays(date, -100);
-        Date endDate = DateUtils.addMilliseconds(new Date(), 1);
+        Date endDate = DateUtils.addMinutes(new Date(), 1);
 
         quotaResponseBuilderSpy.validateEndDateOnCreatingNewQuotaTariff(quotaTariffVoMock, startDate, endDate);
         Mockito.verify(quotaTariffVoMock).setEndDate(Mockito.any(Date.class));

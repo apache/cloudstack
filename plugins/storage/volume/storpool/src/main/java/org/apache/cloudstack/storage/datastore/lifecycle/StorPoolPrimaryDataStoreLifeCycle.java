@@ -38,8 +38,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
@@ -61,9 +59,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class StorPoolPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
-
+public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     protected PrimaryDataStoreHelper dataStoreHelper;
     @Inject
