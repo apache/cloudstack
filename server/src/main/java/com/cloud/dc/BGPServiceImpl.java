@@ -61,7 +61,7 @@ public class BGPServiceImpl implements BGPService {
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_AS_RANGE_CREATE, eventDescription = "creating AS Range", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_AS_RANGE_CREATE, eventDescription = "AS Range creation")
     public ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber) {
         DataCenterVO zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
