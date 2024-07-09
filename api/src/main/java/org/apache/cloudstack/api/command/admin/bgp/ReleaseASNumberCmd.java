@@ -53,7 +53,7 @@ public class ReleaseASNumberCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Pair<Boolean, String> resultPair = bgpService.releaseASNumber(zoneId, asNumber);
+            Pair<Boolean, String> resultPair = bgpService.releaseASNumber(zoneId, asNumber, false);
             Boolean result = resultPair.first();
             if (!result) {
                 String details = resultPair.second();

@@ -26,6 +26,6 @@ public interface BGPService {
     ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber);
     List<ASNumberRange> listASNumberRanges(Long zoneId);
     Pair<List<ASNumber>, Integer> listASNumbers(ListASNumbersCmd cmd);
-    Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber);
+    Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isReleaseNetworkDestroy);
     boolean deleteASRange(long id);
 }

@@ -3405,7 +3405,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 ASNumberVO asNumber = asNumberDao.findByZoneAndNetworkId(zone.getId(), networkId);
                                 if (asNumber != null) {
                                     logger.debug(String.format("Releasing AS number %s from network %s", asNumber.getAsNumber(), networkId));
-                                    bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber());
+                                    bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber(), true);
                                 }
                             }
 

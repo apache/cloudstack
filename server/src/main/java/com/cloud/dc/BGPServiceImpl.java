@@ -121,7 +121,7 @@ public class BGPServiceImpl implements BGPService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AS_NUMBER_RELEASE, eventDescription = "Releasing AS Number")
-    public Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber) {
+    public Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isDestroyNetworkOperation) {
         ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
         if (asNumberVO == null) {
             return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zoneId));
@@ -131,7 +131,7 @@ public class BGPServiceImpl implements BGPService {
             return new Pair<>(true, "");
         }
         Long networkId = asNumberVO.getNetworkId();
-        if (networkId != null) {
+        if (!isDestroyNetworkOperation && networkId != null) {
             NetworkVO network = networkDao.findById(networkId);
             if (network == null) {
                 return logAndReturnErrorMessage(String.format("Cannot find a network with ID %s which acquired the AS number %s", networkId, asNumber));
