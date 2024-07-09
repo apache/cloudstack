@@ -375,7 +375,7 @@ def list_zonespods(host):
 	x = [ (zonename,podname)
 		for pod in dom.childNodes[0].childNodes
 		for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ]
-		for zonename in  [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
+		for zonename in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
 		]
 	return x
 
