@@ -529,8 +529,8 @@ export default {
       title: 'label.fileshares',
       icon: 'file-text-outlined',
       permission: ['listFileShares'],
-      columns: ['name', 'state', 'sizegb', 'storage', 'provider', 'networkname', 'account'],
-      details: ['id', 'name', 'description', 'state', 'sizegb', 'networkname', 'ipaddress', 'provider', 'protocol', 'account', 'domain', 'created'],
+      columns: ['name', 'state', 'sizegb', 'storage', 'account'],
+      details: ['id', 'name', 'description', 'state', 'sizegb', 'ipaddress', 'provider', 'protocol', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',

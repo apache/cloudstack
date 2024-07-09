@@ -250,7 +250,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setSizeGB(Long sizeGB) {
         if (size != null) {
-            this.sizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
+            this.sizeGB = String.format("%d GiB", sizeGB);
         }
     }
 

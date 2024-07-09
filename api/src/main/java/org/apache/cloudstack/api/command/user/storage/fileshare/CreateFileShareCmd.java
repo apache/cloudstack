@@ -121,11 +121,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public Long getSize() {
-        if (size == null) {
-            return null;
-        } else {
-            return (size * 1024 * 1024 * 1024);
-        }
+        return size;
     }
 
     public Long getZoneId() {

@@ -26,7 +26,7 @@
     >
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'name'" :name="text">
-          <router-link :to="{ path: '/systemvm/' + record.id }">{{ record.name }}</router-link>
+          <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
         </template>
         <template v-if="column.key === 'status'">
           <status class="status" :text="record.state" displayText />
@@ -84,11 +84,10 @@ export default {
       this.loading = true
       var params = {
         id: this.resource.virtualmachineid,
-        systemvmtype: 'storagefsvm',
         listall: true
       }
-      api('listSystemVms', params).then(json => {
-        this.virtualmachines = json.listsystemvmsresponse.systemvm || []
+      api('listVirtualMachines', params).then(json => {
+        this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
         this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       }).finally(() => {
         this.loading = false

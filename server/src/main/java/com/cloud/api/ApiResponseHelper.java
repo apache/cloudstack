@@ -5309,35 +5309,30 @@ public class ApiResponseHelper implements ResponseGenerator {
             VirtualMachine vm = ApiDBUtils.findVMInstanceById(vmId);
             if (vm != null) {
                 response.setVirtualMachineId(vm.getUuid());
-
                 List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
                 VolumeVO volume = volumes.get(0);
                 response.setVolumeId(volume.getUuid());
                 response.setVolumeName(volume.getName());
 
                 StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-                response.setStoragePoolId(pool.getUuid());
-                response.setStoragePoolName(pool.getName());
-
+                if (pool != null) {
+                    response.setStoragePoolId(pool.getUuid());
+                    response.setStoragePoolName(pool.getName());
+                }
             }
 
-            List <NetworkVO> networks = networkDao.listGuestNetworksByVmId(vmId);
-            if (networks != null) {
-                NetworkVO network = networks.get(0);
-                if (network != null) {
-                    response.setNetworkId(network.getUuid());
-                    response.setNetworkName(network.getName());
-                    NicVO nicVO = nicDao.findByNtwkIdAndInstanceId(network.getId(), vmId);
-                    if (nicVO != null) {
-                        response.setIpAddress(nicVO.getIPv4Address());
-                        NicResponse nicResponse = new NicResponse();
-                        nicResponse.setId(nicVO.getUuid());
-                        nicResponse.setNetworkid(network.getUuid());
-                        nicResponse.setIpaddress(nicVO.getIPv4Address());
-                        nicResponse.setNetworkName(network.getName());
-                        nicResponse.setObjectName("nic");
-                        response.addNic(nicResponse);
-                    }
+            final List<NicVO> nics = nicDao.listByVmId(vmId);
+            if (nics.size() > 0) {
+               for (NicVO nicVO : nics) {
+                   final NetworkVO network = networkDao.findById(nicVO.getNetworkId());
+                   response.setIpAddress(nicVO.getIPv4Address());
+                   NicResponse nicResponse = new NicResponse();
+                   nicResponse.setId(nicVO.getUuid());
+                   nicResponse.setNetworkid(network.getUuid());
+                   nicResponse.setIpaddress(nicVO.getIPv4Address());
+                   nicResponse.setNetworkName(network.getName());
+                   nicResponse.setObjectName("nic");
+                   response.addNic(nicResponse);
                 }
             }
         }
