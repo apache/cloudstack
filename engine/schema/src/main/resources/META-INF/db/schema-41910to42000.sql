@@ -159,8 +159,8 @@ CREATE TABLE `cloud`.`dc_ip4_guest_subnets` (
    `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
    `domain_id` bigint unsigned DEFAULT NULL COMMENT 'domain the subnet belongs to',
    `account_id` bigint unsigned DEFAULT NULL COMMENT 'owner of this subnet',
-   `created` datetime default NULL,
-   `removed` datetime default NULL,
+   `created` datetime DEFAULT NULL,
+   `removed` datetime DEFAULT NULL,
    PRIMARY KEY (`id`),
    CONSTRAINT `fk_dc_ip4_guest_subnets__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
    CONSTRAINT `fk_dc_ip4_guest_subnets__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
@@ -176,9 +176,9 @@ CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
    `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which subnet is associated to',
    `vpc_id` bigint(20) unsigned DEFAULT NULL COMMENT 'VPC which subnet is associated to',
    `state` varchar(255) NOT NULL COMMENT 'state of the subnet',
-   `allocated` datetime default NULL,
-   `created` datetime default NULL,
-   `removed` datetime default NULL,
+   `allocated` datetime DEFAULT NULL,
+   `created` datetime DEFAULT NULL,
+   `removed` datetime DEFAULT NULL,
    PRIMARY KEY (`id`),
    CONSTRAINT `fk_ip4_guest_subnet_network_map__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `dc_ip4_guest_subnets`(`id`),
    CONSTRAINT `fk_ip4_guest_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
@@ -236,3 +236,30 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','specify_as_numbe
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','routing_mode', 'varchar(10) COMMENT "routing mode for the offering"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','specify_as_number', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "specify AS number when using dynamic routing"');
+
+-- Tables for Dynamic Routing
+CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peers` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `ip4_address` varchar(40) DEFAULT NULL COMMENT 'IPv4 address of the BGP peer',
+    `ip6_address` varchar(40) DEFAULT NULL COMMENT 'IPv6 address of the BGP peer',
+    `as_number` bigint unsigned NOT NULL COMMENT 'AS number of the BGP peer',
+    `password` bigint unsigned DEFAULT NULL COMMENT 'Password of the BGP peer',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_bgp_peers__uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40) DEFAULT NULL,
+    `bgp_peer_id` bigint(20) unsigned COMMENT 'id of the BGP peer',
+    `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which BGP peer is associated to',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_bgp_peer_network_map__bgp_peer_id` FOREIGN KEY (`bgp_peer_id`) REFERENCES `bgp_peers`(`id`),
+    CONSTRAINT `fk_bgp_peer_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+    CONSTRAINT `uc_bgp_peer_network_map__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
