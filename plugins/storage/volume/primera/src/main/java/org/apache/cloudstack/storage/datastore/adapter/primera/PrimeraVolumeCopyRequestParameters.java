@@ -35,7 +35,7 @@ public class PrimeraVolumeCopyRequestParameters {
     private String snapCPG = null;
     private Boolean skipZero = null;
     private Boolean saveSnapshot = null;
-    /** 1=HIGH, 2=MED, 3=LOW */
+    // 1=HIGH, 2=MED, 3=LOW
     private Integer priority = null;
     public String getDestVolume() {
         return destVolume;

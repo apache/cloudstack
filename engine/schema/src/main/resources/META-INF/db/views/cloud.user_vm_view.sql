@@ -74,6 +74,7 @@ SELECT
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
     `vm_template`.`type` AS `template_type`,
+    `vm_template`.`format` AS `template_format`,
     `vm_template`.`display_text` AS `template_display_text`,
     `vm_template`.`enable_password` AS `password_enabled`,
     `iso`.`id` AS `iso_id`,
@@ -195,7 +196,7 @@ FROM
         LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
         AND ISNULL(`vpc`.`removed`))))
-        LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
+        LEFT JOIN `user_ip_address` FORCE INDEX(`fk_user_ip_address__vm_id`) ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
         AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)

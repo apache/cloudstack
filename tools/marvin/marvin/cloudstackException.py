@@ -88,7 +88,7 @@ class CloudstackAclException():
     @staticmethod
     def verifyErrorCodeinException(e,errorCode):
         errorString = " errorCode: " + errorCode
-        if  errorString in str(e):
+        if errorString in str(e):
             return True
         else:
             return False
