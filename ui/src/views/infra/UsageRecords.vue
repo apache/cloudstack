@@ -614,8 +614,8 @@ export default {
       }
       api('listUsageRecords', params).then(json => {
         if (json && json.listusagerecordsresponse) {
-          this.usageRecords = json.listusagerecordsresponse.usagerecord
-          this.totalUsageRecords = json.listusagerecordsresponse.count
+          this.usageRecords = json?.listusagerecordsresponse?.usagerecord || []
+          this.totalUsageRecords = json?.listusagerecordsresponse?.count || 0
           let count = 1
           for (var record of this.usageRecords) {
             // Set id to ensure a unique value of rowKey to avoid duplicates
