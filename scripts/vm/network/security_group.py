@@ -938,7 +938,7 @@ def cleanup_rules():
                 vmpresent = False
 
                 for vm in vmsInHost:
-                    if vm_name  in vm:
+                    if vm_name in vm:
                         vmpresent = True
                         break
 
@@ -958,7 +958,7 @@ def cleanup_rules():
                 vm_name = chain
                 vmpresent = False
                 for vm in vmsInHost:
-                    if vm_name  in vm:
+                    if vm_name in vm:
                         vmpresent = True
                         break
 
