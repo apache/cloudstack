@@ -616,9 +616,10 @@ export default {
         if (json && json.listusagerecordsresponse) {
           this.usageRecords = json.listusagerecordsresponse.usagerecord
           this.totalUsageRecords = json.listusagerecordsresponse.count
+          let count = 1
           for (var record of this.usageRecords) {
             // Set id to ensure a unique value of rowKey to avoid duplicates
-            record.id = record.usageid + '-' + record.usagetype + '-' + record.startdate + '-' + record.enddate + '-' + record.rawusage + '-' + record.description
+            record.id = count++
           }
         }
       }).catch(error => {
