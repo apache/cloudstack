@@ -93,22 +93,6 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item name="routingmode" ref="routingmode">
-          <template #label>
-            <tooltip-label :title="$t('label.routingmode')" />
-          </template>
-          <a-radio-group
-            v-model:value="form.routingmode"
-            buttonStyle="solid"
-            @change="selected => { routingMode = selected.target.value }">
-            <a-radio-button value="static">
-              {{ $t('label.static') }}
-            </a-radio-button>
-            <a-radio-button value="dynamic">
-              {{ $t('label.dynamic') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
         <a-row :gutter="12" v-if="!forNsx">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
@@ -163,16 +147,6 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="specifyasnumber" ref="specifyasnumber">
-              <template #label>
-                <tooltip-label :title="$t('label.specifyasnumber')"/>
-              </template>
-              <a-switch v-model:checked="form.specifyasnumber" />
-            </a-form-item>
-          </a-col>
-        </a-row>
         <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated'">
           <template #label>
             <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
@@ -190,6 +164,32 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="routingmode" ref="routingmode" v-if="networkmode === 'ROUTED' || internetProtocolValue === 'ipv6' || internetProtocolValue === 'dualstack'">
+          <template #label>
+            <tooltip-label :title="$t('label.routing.mode')" />
+          </template>
+          <a-radio-group
+            v-model:value="form.routingmode"
+            buttonStyle="solid"
+            @change="selected => { routingMode = selected.target.value }">
+            <a-radio-button value="static">
+              {{ $t('label.static') }}
+            </a-radio-button>
+            <a-radio-button value="dynamic">
+              {{ $t('label.dynamic') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="specifyasnumber" ref="specifyasnumber">
+              <template #label>
+                <tooltip-label :title="$t('label.specifyasnumber')"/>
+              </template>
+              <a-switch v-model:checked="form.specifyasnumber" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="userdatal2" ref="userdatal2" :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
           <a-switch v-model:checked="form.userdatal2" />
         </a-form-item>
