@@ -292,7 +292,7 @@ public class UserVmManagerTest {
 
         lenient().when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
-        // UserContext.current().setEventDetails("VM Id: "+getId());
+        // UserContext.current().setEventDetails("VM ID: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
