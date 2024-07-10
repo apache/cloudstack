@@ -51,14 +51,13 @@ function generateRouterMap (section) {
       icon: section.icon,
       docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
       searchFilters: section.searchFilters,
-      related: section.related
+      related: section.related,
+      section: true
     },
     component: shallowRef(RouteView)
   }
 
   if (section.children && section.children.length > 0) {
-    map.redirect = '/' + section.children[0].name
-    map.meta.permission = section.children[0].permission
     map.children = []
     for (const child of section.children) {
       if ('show' in child && !child.show()) {
@@ -75,6 +74,7 @@ function generateRouterMap (section) {
           icon: child.icon,
           docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
+          getApiToCall: child.getApiToCall,
           resourceType: child.resourceType,
           filters: child.filters,
           params: child.params ? child.params : {},

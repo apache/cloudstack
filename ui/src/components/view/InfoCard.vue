@@ -140,6 +140,12 @@
             <status class="status" :text="resource.resourcestate" displayText/>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
+          <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.success ? 'success' : 'error'"/>
+          </div>
+        </div>
 
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
@@ -290,10 +296,20 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
-          <div class="resource-detail-item__label">{{ $t('label.disksize') }}</div>
+          <div class="resource-detail-item__label" v-if="$route.meta.name === 'backup'">{{ $t('label.size') }}</div>
+          <div class="resource-detail-item__label" v-else>{{ $t('label.disksize') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
             <span style="width: 100%;" v-if="$route.meta.name === 'vm' && resource.volumes">{{ (resource.volumes.reduce((total, item) => total += item.size, 0) / (1024 * 1024 * 1024.0)).toFixed(2) }} GB Storage</span>
+            <span style="width: 100%;" v-else-if="$route.meta.name === 'backup'">
+              {{ $bytesToHumanReadableSize(resource.size) }}
+              <a-tooltip placement="right">
+                <template #title>
+                  {{ resource.size }} bytes
+                </template>
+                <QuestionCircleOutlined />
+              </a-tooltip>
+            </span>
             <span style="width: 100%;" v-else-if="resource.sizegb || resource.size">{{ resource.sizegb || (resource.size/1024.0) }}</span>
           </div>
           <div style="margin-left: 25px; margin-top: 5px" v-if="resource.diskkbsread && resource.diskkbswrite && resource.diskioread && resource.diskiowrite">
@@ -469,11 +485,12 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.publicip">
-          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
-            <copy-label :label="resource.publicip"/>
+            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+            <copy-label v-else :label="resource.publicip" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -510,15 +527,15 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <SaveOutlined v-else />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+            <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.isoid">
-          <div class="resource-detail-item__label">{{ $t('label.iso') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <UsbOutlined v-else />
@@ -660,6 +677,22 @@
             <block-outlined v-else />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.payloadurl">
+          <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
+          <div class="resource-detail-item__details">
+          <link-outlined/>
+            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
+            <span v-else>{{ resource.payloadurl }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.webhookid">
+          <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
+          <div class="resource-detail-item__details">
+            <node-index-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
+            <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">

@@ -78,7 +78,6 @@ public enum Config {
             "30000",
             "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
             null),
-    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -918,16 +917,6 @@ public enum Config {
             "1",
             "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
             null),
-    VmAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.allocation.algorithm",
-            "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null,
-            ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed"),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
@@ -1557,14 +1546,6 @@ public enum Config {
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth(
-            "Project Defaults",
-            ManagementServer.class,
-            String.class,
-            "project.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails",
-            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,

@@ -696,6 +696,13 @@ public class AgentProperties{
     public static final Property<Boolean> DEVELOPER = new Property<>("developer", false);
 
     /**
+     * If set to "true", the agent will register for libvirt domain events, allowing for immediate updates on crashed or unexpectedly
+     * stopped VMs. Experimental, requires agent restart.
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> LIBVIRT_EVENTS_ENABLED = new Property<>("libvirt.events.enabled", false);
+
+    /**
      * Can only be used if developer = true. This property is used to define the local bridge name and private network name.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
@@ -744,7 +751,7 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
-     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Enable verbose mode for virt-v2v Instance Conversion from VMware to KVM
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
@@ -795,6 +802,13 @@ public class AgentProperties{
      * Default value: <code>null</code>
      */
     public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
+
+    /**
+     * Implicit host tags
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
 
     public static class Property <T>{
         private String name;

@@ -35,6 +35,8 @@ Environment=JAVA_PID=$$
 ExecStart=/bin/sh -ec '/usr/bin/java -Dpid=${JAVA_PID} $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS'
 Restart=always
 RestartSec=10s
+StandardOutput=append:/var/log/cloudstack/usage/usage.out
+StandardError=append:/var/log/cloudstack/usage/usage.err
 
 [Install]
 WantedBy=multi-user.target

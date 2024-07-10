@@ -86,7 +86,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -169,6 +168,7 @@ import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -247,11 +247,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private String _storageNetmask;
     private String _storageGateway;
     private String _nfsVersion;
-    private final List<String> nfsIps = new ArrayList<String>();
+    private final List<String> nfsIps = new ArrayList<>();
     protected String _parent = "/mnt/SecStorage";
     final private String _tmpltpp = "template.properties";
     protected String createTemplateFromSnapshotXenScript;
-    private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<String, UploadEntity>();
+    private HashMap<String, UploadEntity> uploadEntityStateMap = new HashMap<>();
     private String _ssvmPSK = null;
     private long processTimeout;
 
@@ -2330,15 +2330,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return null;
         }
-        Script command = new Script("/bin/bash", logger);
         String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -I OUTPUT -o " + intf + " -d " + destCidr + " -p tcp -m state --state NEW -m tcp  -j ACCEPT");
+        String rule =  String.format("-o %s -d %s -p tcp -m state --state NEW -m tcp -j ACCEPT", intf, destCidr);
+        String errMsg = String.format("Error in allowing outgoing to %s", destCidr);
 
-        String result = command.execute();
+        logger.info("Adding rule if required: {}", rule);
+        String result = IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN, true, rule, errMsg);
         if (result != null) {
-            logger.warn("Error in allowing outgoing to " + destCidr + ", err=" + result);
-            return "Error in allowing outgoing to " + destCidr + ", err=" + result;
+            return result;
         }
 
         addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
@@ -2875,13 +2874,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (result != null) {
             logger.warn("Error in starting sshd service err=" + result);
         }
-        command = new Script("/bin/bash", logger);
-        command.add("-c");
-        command.add("iptables -I INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT");
-        result = command.execute();
-        if (result != null) {
-            logger.warn("Error in opening up ssh port err=" + result);
-        }
+        String rule = "-i eth1 -p tcp -m state --state NEW -m tcp --dport 3922 -j ACCEPT";
+        IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN, true, rule, "Error in opening up ssh port");
     }
 
     private void addRouteToInternalIpOrCidr(String localgw, String eth1ip, String eth1mask, String destIpOrCidr) {
@@ -3106,9 +3100,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             extraOpts.append(name + "=" + nvp.getValue() + ",");
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.error("extraOpts now " + extraOpts);
-        }
+        String extraOptions = extraOpts.toString();
+        logger.debug("extraOpts now {}", ()->StringUtils.cleanString(extraOptions));
 
         if (!foundUser || !foundPswd) {
             String errMsg = "Missing user and password from URI. Make sure they" + "are in the query string and separated by '&'.  E.g. "
@@ -3116,7 +3109,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        return extraOpts.toString();
+        return extraOptions;
     }
 
     protected boolean mountExists(String localRootPath, URI uri) {

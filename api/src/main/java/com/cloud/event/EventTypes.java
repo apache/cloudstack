@@ -29,9 +29,9 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 
@@ -316,6 +316,8 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_IMPORT = "VOLUME.IMPORT";
+    public static final String EVENT_VOLUME_UNMANAGE = "VOLUME.UNMANAGE";
     public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
@@ -449,6 +451,7 @@ public class EventTypes {
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
+    public static final String EVENT_CHANGE_STORAGE_POOL_SCOPE = "CHANGE.STORAGE.POOL.SCOPE";
 
     // VPN
     public static final String EVENT_REMOTE_ACCESS_VPN_CREATE = "VPN.REMOTE.ACCESS.CREATE";
@@ -719,6 +722,8 @@ public class EventTypes {
 
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+    //Purge resources
+    public static final String EVENT_PURGE_EXPUNGED_RESOURCES = "PURGE.EXPUNGED.RESOURCES";
 
     // OBJECT STORE
     public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
@@ -998,6 +1003,7 @@ public class EventTypes {
         // Primary storage pool
         entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
+        entityEventDetails.put(EVENT_CHANGE_STORAGE_POOL_SCOPE, StoragePool.class);
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class);
@@ -1191,6 +1197,10 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
     }
 
+    public static boolean isNetworkEvent(String eventType) {
+        return EVENT_NETWORK_CREATE.equals(eventType) || EVENT_NETWORK_DELETE.equals(eventType) ||
+                EVENT_NETWORK_UPDATE.equals(eventType);
+    }
     public static String getEntityForEvent(String eventName) {
         Object entityClass = entityEventDetails.get(eventName);
         if (entityClass == null) {
@@ -1218,5 +1228,13 @@ public class EventTypes {
         }
 
         return null;
+    }
+
+    public static boolean isVpcEvent(String eventType) {
+        return EventTypes.EVENT_VPC_CREATE.equals(eventType) || EventTypes.EVENT_VPC_DELETE.equals(eventType);
+    }
+
+    public static void addEntityEventDetail(String event, Class<?> clazz) {
+        entityEventDetails.put(event, clazz);
     }
 }

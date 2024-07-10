@@ -79,6 +79,7 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
 
         <module>ha-planners/skip-heurestics</module>
 
@@ -100,7 +101,6 @@
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
-        <module>network-elements/juniper-contrail</module>
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
@@ -231,6 +231,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/juniper-contrail</module>
             </modules>
         </profile>
         <profile>

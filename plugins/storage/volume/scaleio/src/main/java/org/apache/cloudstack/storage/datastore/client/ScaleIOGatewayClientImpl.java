@@ -1004,6 +1004,17 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         return new ArrayList<>();
     }
 
+    @Override
+    public List<Volume> listVolumesMappedToSdc(String sdcId) {
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "SDC id cannot be null");
+
+        Volume[] volumes = get("/instances/Sdc::" + sdcId + "/relationships/Volume", Volume[].class);
+        if (volumes != null) {
+            return Arrays.asList(volumes);
+        }
+        return new ArrayList<>();
+    }
+
     ///////////////////////////////////////////////
     //////////////// SDC APIs /////////////////////
     ///////////////////////////////////////////////
@@ -1060,6 +1071,21 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         }
 
         return null;
+    }
+
+    @Override
+    public int getConnectedSdcsCount() {
+        List<Sdc> sdcs = listSdcs();
+        int connectedSdcsCount = 0;
+        if(sdcs != null) {
+            for (Sdc sdc : sdcs) {
+                if (MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
+                    connectedSdcsCount++;
+                }
+            }
+        }
+
+        return connectedSdcsCount;
     }
 
     @Override
