@@ -15,13 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.network.dao;
-
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.network.BgpPeerVO;
+package com.cloud.network.rules;
 
 import java.util.List;
 
-public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
-    List<BgpPeerVO> listByNetworkId(long networkId);
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
+
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.router.VirtualRouter;
+
+public class BgpPeersRules extends RuleApplier {
+
+    private final List<? extends BgpPeer> bgpPeers;
+
+    public BgpPeersRules(final List<? extends BgpPeer> bgpPeers) {
+        super(null);
+        this.bgpPeers = bgpPeers;
+    }
+
+    public List<? extends BgpPeer> getBgpPeers() {
+        return bgpPeers;
+    }
+
+    @Override
+    public boolean accept(final NetworkTopologyVisitor visitor, final VirtualRouter router) throws ResourceUnavailableException {
+        _router = router;
+
+        return visitor.visit(this);
+    }
 }

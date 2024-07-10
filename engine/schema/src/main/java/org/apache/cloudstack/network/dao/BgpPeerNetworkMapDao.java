@@ -26,8 +26,8 @@ public interface BgpPeerNetworkMapDao extends GenericDao<BgpPeerNetworkMapVO, Lo
 
     void persist(long bgpPeerId, List<Long> networks);
 
-    List<Long> listNetworksByBgpPeerId(long bgpPeerId);
+    BgpPeerNetworkMapVO findByBgpPeerIdAndNetworkId(long bgpPeerId, long networkId);
 
-    List<Long> listBgpPeersByNetworkId(long networkId);
+    List<BgpPeerNetworkMapVO> listByNetworkId(long networkId);
 
 }

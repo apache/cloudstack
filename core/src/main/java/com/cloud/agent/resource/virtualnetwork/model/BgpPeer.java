@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,98 +15,80 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.network;
+package com.cloud.agent.resource.virtualnetwork.model;
 
-import java.util.Date;
-import java.util.UUID;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import com.cloud.utils.db.GenericDao;
-
-@Entity
-@Table(name = "bgp_peers")
-public class BgpPeerVO implements BgpPeer {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    long id;
-
-    @Column(name = "uuid")
-    private String uuid;
-
-    @Column(name = "ip4_address")
+public class BgpPeer {
+    private Long peerId;
     private String ip4Address;
-
-    @Column(name = "ip6_address")
     private String ip6Address;
-
-    @Column(name = "as_number")
     private Long asNumber;
-
-    @Column(name = "password")
     private String password;
+    private Long networkId;
+    private String ip4Cidr;
+    private String ip6Cidr;
 
-    @Column(name = GenericDao.CREATED_COLUMN)
-    private Date created;
-
-    @Column(name= GenericDao.REMOVED_COLUMN)
-    private Date removed;
-
-    protected BgpPeerVO() {
-        uuid = UUID.randomUUID().toString();
+    public BgpPeer() {
+        // Empty constructor for (de)serialization
     }
 
-    public BgpPeerVO(String ip4Address, String ip6Address, Long asNumber, String password) {
+    public BgpPeer(Long peerId, String ip4Address, String ip6Address, Long asNumber, String password, Long networkId, String ip4Cidr, String ip6Cidr) {
+        this.peerId = peerId;
         this.ip4Address = ip4Address;
         this.ip6Address = ip6Address;
         this.asNumber = asNumber;
         this.password = password;
-        uuid = UUID.randomUUID().toString();
+        this.networkId = networkId;
+        this.ip4Cidr = ip4Cidr;
+        this.ip6Cidr = ip6Cidr;
     }
 
-    @Override
-    public long getId() {
-        return id;
-    }
-
-    @Override
-    public String getUuid() {
-        return uuid;
-    }
-
-    @Override
     public String getIp4Address() {
         return ip4Address;
     }
 
-    @Override
+    public void setIp4Address(String ip4Address) {
+        this.ip4Address = ip4Address;
+    }
+
     public String getIp6Address() {
         return ip6Address;
     }
 
-    @Override
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
+
     public Long getAsNumber() {
         return asNumber;
     }
 
-    @Override
+    public void setAsNumber(Long asNumber) {
+        this.asNumber = asNumber;
+    }
+
     public String getPassword() {
         return password;
     }
 
-    public Date getCreated() {
-        return created;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
-    public Date getRemoved() {
-        return removed;
+    public String getIp4Cidr() {
+        return ip4Cidr;
+    }
+
+    public void setIp4Cidr(String ip4Cidr) {
+        this.ip4Cidr = ip4Cidr;
+    }
+
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
+
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
     }
 }

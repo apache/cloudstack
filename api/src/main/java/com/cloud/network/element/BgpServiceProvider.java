@@ -14,14 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.network.element;
 
-package org.apache.cloudstack.network.dao;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.BgpPeer;
 
 import java.util.List;
 
-public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
-    List<BgpPeerVO> listByNetworkId(long networkId);
+public interface BgpServiceProvider extends NetworkElement {
+
+    boolean applyBgpPeers(Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException;
+
 }

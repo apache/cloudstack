@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -119,7 +120,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider, BgpServiceProvider {
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
@@ -1392,5 +1393,28 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
             _routerDao.persist(router);
         }
+    }
+
+    @Override
+    public boolean applyBgpPeers(Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
+        boolean result = true;
+
+        final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+
+        if (CollectionUtils.isEmpty(routers)) {
+            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+        }
+
+        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        for (final DomainRouterVO domainRouterVO : routers) {
+            if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+
+            result = result && networkTopology.applyBgpPeers(network, bgpPeers, domainRouterVO);
+        }
+        return result;
     }
 }

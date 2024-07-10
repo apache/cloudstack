@@ -256,6 +256,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
     `uuid` varchar(40) DEFAULT NULL,
     `bgp_peer_id` bigint(20) unsigned COMMENT 'id of the BGP peer',
     `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which BGP peer is associated to',
+    `state` varchar(40) DEFAULT NULL,
     `created` datetime DEFAULT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),

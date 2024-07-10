@@ -42,6 +42,7 @@ from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
+from cs.CsBgpPeers import CsBgpPeers
 
 ICMP_TYPE_ANY = "{ echo-reply, destination-unreachable, source-quench, redirect, echo-request, time-exceeded, \
     parameter-problem, timestamp-request, timestamp-reply, info-request, info-reply, address-mask-request, \
@@ -1622,6 +1623,7 @@ def main(argv):
     config.address().process()
 
     databag_map = OrderedDict([("guest_network",       {"process_iptables": True,  "executor": [CsVpcGuestNetwork("guestnetwork", config)]}),
+                               ("bgp_peers",           {"process_iptables": False,  "executor": [CsBgpPeers("bgppeers", config)]}),
                                ("ip_aliases",          {"process_iptables": True,  "executor": []}),
                                ("vm_password",         {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
                                ("vm_metadata",         {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),

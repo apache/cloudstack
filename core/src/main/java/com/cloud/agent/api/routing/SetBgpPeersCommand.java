@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,14 +15,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.network.dao;
-
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.network.BgpPeerVO;
+package com.cloud.agent.api.routing;
 
 import java.util.List;
 
-public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
-    List<BgpPeerVO> listByNetworkId(long networkId);
+import org.apache.cloudstack.network.BgpPeerTO;
+
+public class SetBgpPeersCommand extends NetworkElementCommand {
+    BgpPeerTO[] bpgPeers;
+
+    protected SetBgpPeersCommand() {
+    }
+
+    public SetBgpPeersCommand(List<BgpPeerTO> bpgPeers) {
+        this.bpgPeers = bpgPeers.toArray(new BgpPeerTO[bpgPeers.size()]);
+    }
+
+    public BgpPeerTO[] getBpgPeers() {
+        return bpgPeers;
+    }
 }

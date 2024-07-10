@@ -17,14 +17,42 @@
 
 package org.apache.cloudstack.network.dao;
 
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
+import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.util.List;
 
 @Component
 @DB
 public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements BgpPeerDao {
+    protected SearchBuilder<BgpPeerVO> NetworkIdSearch;
 
+    @Inject
+    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+
+    @PostConstruct
+    public void init() {
+        final SearchBuilder<BgpPeerNetworkMapVO> networkSearchBuilder = bgpPeerNetworkMapDao.createSearchBuilder();
+        networkSearchBuilder.and("networkId", networkSearchBuilder.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkIdSearch = createSearchBuilder();
+        NetworkIdSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getBgpPeerId(),
+                NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        NetworkIdSearch.done();
+    }
+
+    @Override
+    public List<BgpPeerVO> listByNetworkId(long networkId) {
+        SearchCriteria<BgpPeerVO> sc = NetworkIdSearch.create();
+        sc.setJoinParameters("network", "networkId", networkId);
+        return listBy(sc);
+    }
 }

@@ -293,4 +293,6 @@
   <bean id="ipv4GuestSubnetNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.Ipv4GuestSubnetNetworkMapDaoImpl" />
   <bean id="ASNumberDaoImpl" class="com.cloud.dc.dao.ASNumberDaoImpl" />
   <bean id="ASNumberRangeDaoImpl" class="com.cloud.dc.dao.ASNumberRangeDaoImpl" />
+  <bean id="BgpPeerDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerDaoImpl" />
+  <bean id="BgpPeerNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerNetworkMapDaoImpl" />
 </beans>

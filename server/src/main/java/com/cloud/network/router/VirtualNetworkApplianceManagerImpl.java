@@ -65,7 +65,10 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -344,6 +347,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject private ManagementServer mgr;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    BgpPeerDao bgpPeerDao;
+    @Inject
+    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -2469,6 +2476,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId);
         final List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
         final List<FirewallRule> ipv6firewallRules = new ArrayList<>();
+        final List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(guestNetworkId);
 
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
@@ -2494,6 +2502,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
         if (!ipv6firewallRules.isEmpty()) {
             _commandSetupHelper.createIpv6FirewallRulesCommands(ipv6firewallRules, router, cmds, guestNetworkId);
+        }
+
+        // Apply BGP peers
+        if (!bgpPeers.isEmpty()) {
+            _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetworkId);
         }
 
         if (publicIps != null && !publicIps.isEmpty()) {

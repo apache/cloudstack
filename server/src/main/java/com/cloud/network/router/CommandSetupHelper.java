@@ -31,6 +31,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.BgpPeerTO;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,7 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetBgpPeersCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
@@ -209,7 +212,6 @@ public class CommandSetupHelper {
     Ipv6Service ipv6Service;
     @Inject
     VirtualRouterProviderDao vrProviderDao;
-
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
@@ -1411,5 +1413,34 @@ public class CommandSetupHelper {
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
             cmds.addCommand("updateNetwork", cmd);
         }
+    }
+
+    public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Long guestNetworkId) {
+        List<NetworkVO> guestNetworks = new ArrayList<>();
+        if (guestNetworkId != null) {
+            final NetworkVO network = _networkDao.findById(guestNetworkId);
+            guestNetworks.add(network);
+        } else {
+            final List<NicVO> nics = _nicDao.listByVmId(router.getId());
+            for (final NicVO nic : nics) {
+                final NetworkVO network = _networkDao.findById(nic.getNetworkId());
+                if (network.getTrafficType() == TrafficType.Guest) {
+                    guestNetworks.add(network);
+                }
+            }
+        }
+        List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
+        for (BgpPeer bgpPeer: bgpPeers) {
+            for (NetworkVO network : guestNetworks) {
+                bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(),
+                        bgpPeer.getAsNumber(), bgpPeer.getPassword(), network.getId(), network.getCidr(), network.getIp6Cidr()));
+            }
+        }
+        final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand("bgpPeersCommand", cmd);
     }
 }

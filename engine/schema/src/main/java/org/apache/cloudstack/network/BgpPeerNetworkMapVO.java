@@ -40,6 +40,9 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     @Column(name = "network_id")
     private long networkId;
 
+    @Column(name = "state")
+    private BgpPeer.State state;
+
     /**
      * There should never be a public constructor for this class. Since it's
      * only here to define the table for the DAO class.
@@ -65,4 +68,7 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
         return networkId;
     }
 
+    public BgpPeer.State getState() {
+        return state;
+    }
 }

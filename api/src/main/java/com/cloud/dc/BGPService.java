@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.dc;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 
@@ -29,4 +31,6 @@ public interface BGPService {
     boolean allocateASNumber(long zoneId, Long asNumber, Long networkId, Long vpcId);
     Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isReleaseNetworkDestroy);
     boolean deleteASRange(long id);
+
+    boolean applyBgpPeers(Network network, boolean continueOnError) throws ResourceUnavailableException;
 }

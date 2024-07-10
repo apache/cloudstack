@@ -1747,6 +1747,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             success = false;
         }
 
+        // apply BGP settings
+        if (!bgpService.applyBgpPeers(network, false)) {
+            logger.warn("Failed to apply bpg peers as a part of network id {} restart", networkId);
+            success = false;
+        }
+
+
         // apply static nat
         if (!_rulesMgr.applyStaticNatsForNetwork(networkId, false, caller)) {
             logger.warn("Failed to apply static nats a part of network id {} restart", networkId);

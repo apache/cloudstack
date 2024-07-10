@@ -21,8 +21,14 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.BgpServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
@@ -43,6 +49,9 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +85,14 @@ public class BGPServiceImpl implements BGPService {
     private AccountDao accountDao;
     @Inject
     private DomainDao domainDao;
+    @Inject
+    NetworkServiceMapDao ntwkSrvcDao;
+    @Inject
+    NetworkModel networkModel;
+    @Inject
+    BgpPeerDao bgpPeerDao;
+    @Inject
+    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
 
     public BGPServiceImpl() {
     }
@@ -333,6 +350,19 @@ public class BGPServiceImpl implements BGPService {
                     startASNumber, endASNumber, zoneId, e.getMessage());
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean applyBgpPeers(Network network, boolean continueOnError) throws ResourceUnavailableException {
+        final String gatewayProviderStr = ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Network.Service.Gateway);
+        if (gatewayProviderStr != null) {
+            NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
+            if (provider != null && provider instanceof BgpServiceProvider) {
+                List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(network.getId());
+                return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
+            }
         }
         return true;
     }

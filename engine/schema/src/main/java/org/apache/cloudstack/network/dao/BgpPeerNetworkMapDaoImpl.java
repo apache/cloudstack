@@ -16,16 +16,13 @@
 // under the License.
 package org.apache.cloudstack.network.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -36,9 +33,6 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerIdSearch;
     protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerNetworkSearch;
-
-    @Inject
-    protected NetworkDao _networkDao;
 
     public BgpPeerNetworkMapDaoImpl() {
     }
@@ -74,29 +68,18 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
     }
 
     @Override
-    public List<Long> listNetworksByBgpPeerId(long bgpPeerId) {
+    public BgpPeerNetworkMapVO findByBgpPeerIdAndNetworkId(long bgpPeerId, long networkId) {
         SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
         sc.setParameters("bgpPeerId", bgpPeerId);
-
-        List<BgpPeerNetworkMapVO> results = search(sc, null);
-        List<Long> networks = new ArrayList<Long>(results.size());
-        for (BgpPeerNetworkMapVO result : results) {
-            networks.add(result.getNetworkId());
-        }
-        return networks;
+        sc.setParameters("networkId", networkId);
+        return findOneBy(sc, null);
     }
 
     @Override
-    public List<Long> listBgpPeersByNetworkId(long networkId) {
+    public List<BgpPeerNetworkMapVO> listByNetworkId(long networkId) {
         SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
         sc.setParameters("networkId", networkId);
 
-        List<BgpPeerNetworkMapVO> results = search(sc, null);
-        List<Long> bgpPeers = new ArrayList<>(results.size());
-        for (BgpPeerNetworkMapVO result : results) {
-            bgpPeers.add(result.getBgpPeerId());
-        }
-        return bgpPeers;
+        return search(sc, null);
     }
-
 }
