@@ -402,7 +402,7 @@ public class UserVmManagerTest {
         serviceOfferingIdField.setAccessible(true);
         serviceOfferingIdField.set(cmd, 1L);
 
-        //UserContext.current().setEventDetails("VM Id: "+getId());
+        //UserContext.current().setEventDetails("VM ID: "+getId());
         //Account account = (Account) new AccountVO("testaccount", 1L, "networkdomain", (short) 0, 1);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
         //UserContext.registerContext(1, account, null, true);
