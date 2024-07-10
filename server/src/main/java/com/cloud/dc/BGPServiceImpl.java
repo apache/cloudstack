@@ -107,10 +107,11 @@ public class BGPServiceImpl implements BGPService {
         Long asNumberRangeId = cmd.getAsNumberRangeId();
         Integer asNumber = cmd.getAsNumber();
         Boolean allocated = cmd.getAllocated();
+        Long networkId = cmd.getNetworkId();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
         Pair<List<ASNumberVO>, Integer> pair = asNumberDao.searchAndCountByZoneOrRangeOrAllocated(zoneId, asNumberRangeId,
-                asNumber, allocated, startIndex, pageSizeVal);
+                asNumber, networkId, allocated, startIndex, pageSizeVal);
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 

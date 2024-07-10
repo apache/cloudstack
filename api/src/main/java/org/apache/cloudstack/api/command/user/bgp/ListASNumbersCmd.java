@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import javax.inject.Inject;
@@ -64,6 +65,10 @@ public class ListASNumbersCmd extends BaseListCmd {
             description = "to indicate if the AS number is allocated to any network")
     private Boolean allocated;
 
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
+            description = "the network id")
+    private Long networkId;
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -77,6 +82,10 @@ public class ListASNumbersCmd extends BaseListCmd {
     }
 
     public Integer getAsNumber() { return asNumber; }
+
+    public Long getNetworkId() {
+        return networkId;
+    }
 
     @Inject
     private BGPService bgpService;
