@@ -756,7 +756,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Override
     public String getEventDescription() {
         if(getStartVm()) {
-            return "starting Vm. VM Id: " + getEntityUuid();
+            return "starting VM. VM Id: " + getEntityUuid();
         }
         return "deploying Vm. VM Id: " + getEntityUuid();
     }
