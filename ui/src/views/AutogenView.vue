@@ -211,6 +211,11 @@
                 :pagination="true"
                 style="overflow-y: auto"
               >
+                <template #bodyCell="{ column, text }">
+                  <template v-if="column.key === 'allocated' && ['asnumbers', 'publicip'].includes($route.meta.name)">
+                    {{ $toLocaleDate(text) }}
+                  </template>
+                </template>
               </a-table>
             </div>
             <br v-if="currentAction.paramFields.length > 0"/>
