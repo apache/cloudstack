@@ -529,6 +529,7 @@ export default {
       title: 'label.fileshares',
       icon: 'file-text-outlined',
       permission: ['listFileShares'],
+      resourceType: 'FileShare',
       columns: ['name', 'state', 'sizegb', 'storage', 'account'],
       details: ['id', 'name', 'description', 'state', 'sizegb', 'ipaddress', 'provider', 'protocol', 'account', 'domain', 'created'],
       tabs: [
@@ -540,7 +541,6 @@ export default {
           name: 'access',
           resourceType: 'FileShare',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareAccessTab.vue')))
-
         },
         {
           name: 'volumes',
@@ -579,7 +579,6 @@ export default {
           docHelp: 'adminguide/object_storage.html#update-bucket',
           label: 'label.update.fileshare',
           dataView: true,
-          popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue'))),
           show: (record) => { return record.state !== 'Destroyed' }
         },
@@ -591,7 +590,6 @@ export default {
           dataView: true,
           show: (record) => { return record.state !== 'Destroyed' },
           groupAction: true,
-          popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]

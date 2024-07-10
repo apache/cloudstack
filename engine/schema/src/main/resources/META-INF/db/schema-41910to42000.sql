@@ -267,3 +267,60 @@ CREATE TABLE `cloud`.`storagevm_fs_map`(
     CONSTRAINT `fk_storagevm_fs_map__vm_id` FOREIGN KEY `fk_storagevm_fs_map__vm_id` (`vm_id`) REFERENCES `vm_instance` (`id`)  ON DELETE CASCADE,
     INDEX `i_storagevm_fs_map__vm_id`(`vm_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP VIEW IF EXISTS `cloud`.`storage_fileshare_view`;
+CREATE VIEW `cloud`.`storage_fileshare_view` AS
+SELECT
+    `storage_fileshare`.`id` AS `id`,
+    `storage_fileshare`.`uuid` AS `uuid`,
+    `storage_fileshare`.`name` AS `name`,
+    `storage_fileshare`.`description` AS `description`,
+    `storage_fileshare`.`state` AS `state`,
+    `storage_fileshare`.`fs_provider_name` AS `provider`,
+    `storage_fileshare`.`size` AS `size`,
+    `zone`.`uuid` AS `zone_uuid`,
+    `zone`.`name` AS `zone_name`,
+    `instance`.`id` AS `instance_id`,
+    `instance`.`uuid` AS `instance_uuid`,
+    `instance`.`name` AS `instance_name`,
+    `volumes`.`uuid` AS `volume_uuid`,
+    `volumes`.`name` AS `volume_name`,
+    `storage_pool`.`uuid` AS `pool_uuid`,
+    `storage_pool`.`name` AS `pool_name`,
+    `account`.`account_name` AS `account_name`,
+    `project`.`uuid` AS `project_uuid`,
+    `project`.`name` AS `project_name`,
+    `domain`.`uuid` AS `domain_uuid`,
+    `domain`.`name` AS `domain_name`,
+    `service_offering`.`uuid` AS `service_offering_uuid`,
+    `service_offering`.`name` AS `service_offering_name`,
+    `disk_offering`.`uuid` AS `disk_offering_uuid`,
+    `disk_offering`.`name` AS `disk_offering_name`,
+    `disk_offering`.`disk_size` AS `disk_offering_size`,
+    `disk_offering`.`customized` AS `disk_offering_custom`,
+    GROUP_CONCAT(DISTINCT(nics.uuid) ORDER BY nics.id) AS nic_uuid,
+    GROUP_CONCAT(DISTINCT(nics.ip4_address) ORDER BY nics.id) AS ip_address
+FROM
+    `cloud`.`storage_fileshare`
+        LEFT JOIN
+    `cloud`.`data_center` AS `zone` ON `storage_fileshare`.`data_center_id` = `zone`.`id`
+        LEFT JOIN
+    `cloud`.`vm_instance` AS `instance` ON `storage_fileshare`.`vm_id` = `instance`.`id`
+        LEFT JOIN
+    `cloud`.`volumes` AS `volumes` ON `instance`.`id` = `volumes`.`instance_id` AND `volumes`.`volume_type` = 'datadisk'
+        LEFT JOIN
+    `cloud`.`storage_pool` AS `storage_pool` ON `volumes`.`pool_id` = `storage_pool`.`id`
+        LEFT JOIN
+    `cloud`.`nics` AS `nics` ON `storage_fileshare`.`vm_id` = `nics`.`instance_id`
+        LEFT JOIN
+    `cloud`.`account` AS `account` ON `storage_fileshare`.`account_id` = `account`.`id`
+        LEFT JOIN
+    `cloud`.`projects` AS `project` ON `storage_fileshare`.`project_id` = `project`.`id`
+        LEFT JOIN
+    `cloud`.`domain` AS `domain` ON `storage_fileshare`.`domain_id` = `domain`.`id`
+        LEFT JOIN
+    `cloud`.`service_offering` AS `service_offering` ON `storage_fileshare`.`service_offering_id` = `service_offering`.`id`
+        LEFT JOIN
+    `cloud`.`disk_offering` AS `disk_offering` ON `storage_fileshare`.`disk_offering_id` = `disk_offering`.`id`
+GROUP BY
+    `storage_fileshare`.`id`;

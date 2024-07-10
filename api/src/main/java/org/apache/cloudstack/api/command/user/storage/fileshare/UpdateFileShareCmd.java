@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,6 +24,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
@@ -30,12 +32,24 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "updateFileShare", responseObject= FileShareResponse.class, description = "Update a File Share.. ",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class UpdateFileShareCmd extends BaseCmd {
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+
+@APICommand(name = "updateFileShare",
+        responseObject= FileShareResponse.class,
+        description = "Update a File Share.. ",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
+
+    @Inject
+    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,7 +119,12 @@ public class UpdateFileShareCmd extends BaseCmd {
     public void execute() {
         FileShare fileShare = fileShareService.updateFileShare(this);
         if (fileShare != null) {
-            FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
+            ResponseObject.ResponseView respView = getResponseView();
+            Account caller = CallContext.current().getCallingAccount();
+            if (accountService.isRootAdmin(caller.getId())) {
+                respView = ResponseObject.ResponseView.Full;
+            }
+            FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);
             response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
             response.setResponseName(getCommandName());
             setResponseObject(response);

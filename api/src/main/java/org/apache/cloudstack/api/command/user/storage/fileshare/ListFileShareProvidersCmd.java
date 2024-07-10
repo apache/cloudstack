@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.FileShareProviderResponse;
@@ -29,8 +30,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.storage.fileshare.FileShareProvider;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-@APICommand(name = "listFileShareProviders", responseObject = FileShareProviderResponse.class,
-        description = "Lists all available file share providers.", requestHasSensitiveInfo = false, since = "4.20.0")
+@APICommand(name = "listFileShareProviders",
+        responseObject = FileShareProviderResponse.class,
+        description = "Lists all available file share providers.",
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListFileShareProvidersCmd extends BaseListCmd {
 
     @Inject

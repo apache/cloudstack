@@ -16,16 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -35,9 +32,15 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listFileShares", responseObject= FileShareResponse.class, description = "Lists File Shares by.. ",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class ListFileSharesCmd extends BaseListCmd {
+@APICommand(name = "listFileShares",
+        responseObject= FileShareResponse.class,
+        description = "Lists File Shares by.. ",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class ListFileSharesCmd extends BaseListCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -81,19 +84,8 @@ public class ListFileSharesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends FileShare>, Integer> fileShares = fileShareService.searchForFileShares(this);
-
-        ListResponse<FileShareResponse> response = new ListResponse<FileShareResponse>();
-        List<FileShareResponse> fileShareResponses = new ArrayList<FileShareResponse>();
-        for (FileShare fileShare : fileShares.first()) {
-            FileShareResponse fileShareResponse = _responseGenerator.createFileShareResponse(fileShare);
-            response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
-            fileShareResponses.add(fileShareResponse);
-        }
-
-        response.setResponses(fileShareResponses, fileShares.second());
+        ListResponse<FileShareResponse> response = fileShareService.searchForFileShares(getResponseView(), this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
 }

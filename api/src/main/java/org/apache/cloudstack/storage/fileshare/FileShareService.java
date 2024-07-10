@@ -22,12 +22,14 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
+import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
 public interface FileShareService extends PluggableService {
 
@@ -47,7 +49,7 @@ public interface FileShareService extends PluggableService {
 
     FileShare initializeFileShare(Long fileShareId);
 
-    Pair<List<? extends FileShare>, Integer> searchForFileShares(ListFileSharesCmd cmd);
+    ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd);
 
     FileShare updateFileShare(UpdateFileShareCmd cmd);
 

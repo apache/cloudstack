@@ -20,6 +20,10 @@ import javax.inject.Inject;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,12 +42,21 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-@APICommand(name = "createFileShare", responseObject= FileShareResponse.class, description = "Creates a new file share of specified size and disk offering and attached to the given guest network",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
+@APICommand(name = "createFileShare",
+        responseObject= FileShareResponse.class,
+        description = "Creates a new file share of specified size and disk offering and attached to the given guest network",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
+
+    @Inject
+    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -199,7 +212,12 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
         fileShare = fileShareService.initializeFileShare(this.getEntityId());
         if (fileShare != null) {
-            FileShareResponse response = _responseGenerator.createFileShareResponse(fileShare);
+            ResponseObject.ResponseView respView = getResponseView();
+            Account caller = CallContext.current().getCallingAccount();
+            if (accountService.isRootAdmin(caller.getId())) {
+                respView = ResponseObject.ResponseView.Full;
+            }
+            FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);
             response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
             response.setResponseName(getCommandName());
             setResponseObject(response);

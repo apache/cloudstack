@@ -552,5 +552,5 @@ public interface ResponseGenerator {
 
     BucketResponse createBucketResponse(Bucket bucket);
 
-    FileShareResponse createFileShareResponse(FileShare fileShare);
+    FileShareResponse createFileShareResponse(ResponseView view, FileShare fileShare);
 }

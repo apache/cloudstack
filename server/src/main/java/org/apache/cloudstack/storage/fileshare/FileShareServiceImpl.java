@@ -21,21 +21,30 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareProvidersCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RemoveFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
+import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.dao.FileShareDao;
 import org.apache.cloudstack.storage.fileshare.FileShare.Event;
+import org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDao;
+import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -51,6 +60,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Inject
     private FileShareDao fileShareDao;
+
+    @Inject
+    private FileShareJoinDao fileShareJoinDao;
 
     protected List<FileShareProvider> fileShareProviders;
 
@@ -162,10 +174,36 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return fileShare;
     }
 
-    @Override
-    public Pair<List<? extends FileShare>, Integer> searchForFileShares(ListFileSharesCmd cmd) {
+    private Pair<List<Long>, Integer> searchForFileSharesIdsAndCount(ListFileSharesCmd cmd) {
+        Filter searchFilter = new Filter(FileShareVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Pair<List<FileShareVO>, Integer> result = fileShareDao.searchAndCount(cmd.getId(), cmd.getAccountId(), cmd.getNetworkId(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        return new Pair<List<? extends FileShare>, Integer>(result.first(), result.second());
+        List<Long> idsArray = result.first().stream().map(FileShareVO::getId).collect(Collectors.toList());
+        return new Pair<List<Long>, Integer>(idsArray, result.second());
+    }
+
+    private Pair<List<FileShareJoinVO>, Integer> searchForFileSharesInternal(ListFileSharesCmd cmd) {
+        Pair<List<Long>, Integer> fileShareIds = searchForFileSharesIdsAndCount(cmd);
+        if (fileShareIds.second() == 0) {
+            return new Pair<List<FileShareJoinVO>, Integer>(null, 0);
+        }
+
+        List<FileShareJoinVO> fileShares = fileShareJoinDao.searchByIds(fileShareIds.first().toArray(new Long[0]));
+        return new Pair<List<FileShareJoinVO>, Integer>(fileShares, fileShareIds.second());
+    }
+
+    @Override
+    public ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd) {
+        Pair<List<FileShareJoinVO>, Integer> result = searchForFileSharesInternal(cmd);
+        ListResponse<FileShareResponse> response = new ListResponse<>();
+
+        Account caller = CallContext.current().getCallingAccount();
+        if (accountMgr.isRootAdmin(caller.getId())) {
+            respView = ResponseObject.ResponseView.Full;
+        }
+        List<FileShareResponse> fileShareResponses = fileShareJoinDao.createFileShareResponses(respView, result.first().toArray(new FileShareJoinVO[result.first().size()]));
+
+        response.setResponses(fileShareResponses, result.second());
+        return response;
     }
 
     @Override
