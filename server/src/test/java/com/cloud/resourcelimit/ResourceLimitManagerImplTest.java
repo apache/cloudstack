@@ -521,7 +521,6 @@ public class ResourceLimitManagerImplTest extends TestCase {
     public void testSpecificLimitForDomainProjects() {
         DomainVO domain = Mockito.mock(DomainVO.class);
         Mockito.when(domain.getId()).thenReturn(2L);
-        Mockito.when(domain.getParent()).thenReturn(null);
 
         ResourceLimitVO limit = new ResourceLimitVO();
         limit.setMax(100L);
