@@ -552,6 +552,9 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             logger.error("error removing old cloud_usage records for interval: " + days);
         } finally {
             txn.close();
+            // switch back to VMOPS_DB
+            TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            swap.close();
         }
     }
 
