@@ -375,7 +375,7 @@ def list_zonespods(host):
 	x = [ (zonename,podname)
 		for pod in dom.childNodes[0].childNodes
 		for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ]
-		for zonename in  [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
+		for zonename in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
 		]
 	return x
 
@@ -433,7 +433,7 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNi
 	if guid != None:
 		confopts['guid'] = guid
 	else:
-		if not "guid" in confopts:
+		if "guid" not in confopts:
 			stderr("Generating GUID for this Agent")
 			confopts['guid'] = uuidgen().stdout.strip()
 
@@ -491,7 +491,7 @@ def setup_consoleproxy_config(configfile, host, zone, pod):
 	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
 	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
 
-	if not "guid" in confopts:
+	if "guid" not in confopts:
 		stderr("Generating GUID for this Console Proxy")
 		confopts['guid'] = uuidgen().stdout.strip()
 

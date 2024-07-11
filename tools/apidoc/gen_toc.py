@@ -145,6 +145,7 @@ known_categories = {
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
+    'StorageScope' : 'Storage Pool',
     'updateStorageCapabilities' : 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
@@ -274,7 +275,10 @@ known_categories = {
     'deleteBucket': 'Object Store',
     'listBuckets': 'Object Store',
     'listVmsForImport': 'Virtual Machine',
-    'importVm': 'Virtual Machine'
+    'importVm': 'Virtual Machine',
+    'Webhook': 'Webhook',
+    'Webhooks': 'Webhook',
+    'purgeExpungedResources': 'Resource'
 }
 
 

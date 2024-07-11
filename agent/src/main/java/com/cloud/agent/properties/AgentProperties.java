@@ -751,7 +751,7 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
-     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Enable verbose mode for virt-v2v Instance Conversion from VMware to KVM
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
@@ -802,6 +802,13 @@ public class AgentProperties{
      * Default value: <code>null</code>
      */
     public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
+
+    /**
+     * Implicit host tags
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
 
     public static class Property <T>{
         private String name;

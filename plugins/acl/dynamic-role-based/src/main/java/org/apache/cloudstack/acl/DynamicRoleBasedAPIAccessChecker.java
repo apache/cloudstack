@@ -120,7 +120,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
-            logger.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
+            }
             return true;
         }
 

@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_tags` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 -- Insert storage tags from storage_pool_details
-INSERT INTO `cloud`.`storage_pool_tags` (pool_id, tag) SELECT pool_id, 
+INSERT INTO `cloud`.`storage_pool_tags` (pool_id, tag) SELECT pool_id,
 name FROM `cloud`.`storage_pool_details` WHERE value = 'true';
 
 -- Alter view storage_pool_view
@@ -227,7 +227,7 @@ ALTER TABLE `cloud`.`vm_snapshots` ADD CONSTRAINT `fk_vm_snapshots_service_offer
 INSERT INTO `cloud`.`vm_snapshot_details` (vm_snapshot_id, name, value)
 SELECT s.id, d.name, d.value
 FROM `cloud`.`user_vm_details` d JOIN `cloud`.`vm_instance` v ON (d.vm_id = v.id)
-JOIN `cloud`.`service_offering` o ON (v.service_offering_id = o.id) 
+JOIN `cloud`.`service_offering` o ON (v.service_offering_id = o.id)
 JOIN `cloud`.`vm_snapshots` s ON (s.service_offering_id = o.id AND s.vm_id = v.id)
 WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
 (d.name = 'cpuNumber' OR d.name = 'cpuSpeed' OR d.name = 'memory');
