@@ -1704,6 +1704,8 @@
 "label.publicnetwork": "Public Network",
 "label.publicport": "Public port",
 "label.purgeresources": "Purge Resources",
+"label.purge.usage.records.success": "Successfuly purged usage records",
+"label.purge.usage.records.error": "Failed while purging usage records",
 "label.purpose": "Purpose",
 "label.qostype": "QoS type",
 "label.quickview": "Quick view",
