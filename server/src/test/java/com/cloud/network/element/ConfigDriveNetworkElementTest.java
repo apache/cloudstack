@@ -61,6 +61,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -149,6 +150,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private AgentManager agentManager;
     @Mock private CallContext callContextMock;
     @Mock private DomainVO domainVO;
+    @Mock private NetworkOrchestrationService _networkOrchestrationService;
 
     @Spy @InjectMocks
     private ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
@@ -170,8 +172,6 @@ public class ConfigDriveNetworkElementTest {
         when(_dcDao.findById(DATACENTERID)).thenReturn(dataCenterVO);
         when(_domainDao.findById(DOMAINID)).thenReturn(domainVO);
         doReturn(nic).when(_networkModel).getDefaultNic(VMID);
-        doReturn(List.of(nic)).when(_networkModel).getNics(VMID);
-        doReturn(nicp).when(_networkModel).getNicProfile(virtualMachine, NETWORK_ID, null);
         when(_serviceOfferingDao.findByIdIncludingRemoved(VMID, SOID)).thenReturn(serviceOfferingVO);
         when(_guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
         when(_guestOSCategoryDao.findById(Mockito.anyLong())).thenReturn(guestOSCategoryVo);

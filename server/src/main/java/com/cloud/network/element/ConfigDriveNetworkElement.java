@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -111,6 +112,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
     NetworkModel _networkModel;
+    @Inject
+    NetworkOrchestrationService _networkOrchestrationService;
     @Inject
     GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
@@ -546,8 +549,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        List<? extends Nic> nics = _networkModel.getNics(nic.getVirtualMachineId());
-        List<NicProfile> nicProfiles = getNicProfilesForNic(profile.getVirtualMachine(), nics);
+        List<NicProfile> nicProfiles = _networkOrchestrationService.getNicProfiles(nic.getVirtualMachineId(), profile.getHypervisorType());
         final Map<Long, List<Service>> supportedServices = getSupportedServicesByElementForNetwork(nicProfiles);
         final String isoData = ConfigDriveBuilder.buildConfigDrive(nicProfiles, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
@@ -599,14 +601,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return true;
     }
 
-    private List<NicProfile> getNicProfilesForNic(VirtualMachine vm, List<? extends Nic> nics) {
-        List<NicProfile> nicProfiles = new ArrayList<>();
-        for (Nic nic: nics) {
-            nicProfiles.add(_networkModel.getNicProfile(vm, nic.getNetworkId(), null));
-        }
-        return nicProfiles;
-    }
-
     private Map<Long, List<Network.Service>> getSupportedServicesByElementForNetwork(List<NicProfile> nics) {
 
         Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
@@ -642,8 +636,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        List<? extends Nic> nics = _networkModel.getNics(profile.getId());
-        List<NicProfile> nicProfiles = getNicProfilesForNic(profile.getVirtualMachine(), nics);
+        List<NicProfile> nicProfiles = _networkOrchestrationService.getNicProfiles(nic.getVirtualMachineId(), profile.getHypervisorType());
         final Map<Long, List<Service>> supportedServices = getSupportedServicesByElementForNetwork(nicProfiles);
         final String isoData = ConfigDriveBuilder.buildConfigDrive(
                 nicProfiles, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);

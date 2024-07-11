@@ -23,6 +23,7 @@ import static com.cloud.network.NetworkModel.CONFIGDATA_FILE;
 import static com.cloud.network.NetworkModel.PASSWORD_FILE;
 import static com.cloud.network.NetworkModel.USERDATA_FILE;
 import static com.cloud.network.NetworkService.DEFAULT_MTU;
+import static org.apache.cloudstack.storage.configdrive.ConfigDriveUtils.mergeJsonArraysAndUpdateObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -130,6 +130,9 @@ public class ConfigDriveBuilder {
             writeNetworkData(nics, supportedServices, openStackFolder);
             for (NicProfile nic: nics) {
                 if (supportedServices.get(nic.getId()).contains(Network.Service.UserData)) {
+                    if (vmData == null) {
+                        throw new CloudRuntimeException("No VM metadata provided");
+                    }
                     writeVmMetadata(vmData, tempDirName, openStackFolder, customUserdataParams);
 
                     linkUserData(tempDirName);
@@ -226,42 +229,23 @@ public class ConfigDriveBuilder {
      * First we generate a JSON object using {@link #getNetworkDataJsonObjectForNic(NicProfile, List)}, then we write it to a file called "network_data.json".
      */
     static void writeNetworkData(List<NicProfile> nics, Map<Long, List<Network.Service>> supportedServices, File openStackFolder) {
-
         JsonObject finalNetworkData = new JsonObject();
-        for (NicProfile nic: nics) {
-            List<Network.Service> supportedService = supportedServices.get(nic.getId());
-            JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
+        if (needForGeneratingNetworkData(supportedServices)) {
+            for (NicProfile nic : nics) {
+                List<Network.Service> supportedService = supportedServices.get(nic.getId());
+                JsonObject networkData = getNetworkDataJsonObjectForNic(nic, supportedService);
 
-            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "links", "id", "type");
-            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "networks", "id", "type");
-            mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "services", "address", "type");
+                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "links", "id", "type");
+                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "networks", "id", "type");
+                mergeJsonArraysAndUpdateObject(finalNetworkData, networkData, "services", "address", "type");
+            }
         }
 
         writeFile(openStackFolder, "network_data.json", finalNetworkData.toString());
     }
 
-    static void mergeJsonArraysAndUpdateObject(JsonObject finalObject, JsonObject newObj, String memberName, String keyPart1, String keyPart2) {
-        JsonArray existingMembers = finalObject.has(memberName) ? finalObject.get(memberName).getAsJsonArray() : new JsonArray();
-        JsonArray newMembers = newObj.has(memberName) ? newObj.get(memberName).getAsJsonArray() : new JsonArray();
-
-        if (existingMembers.size() > 0 || newMembers.size() > 0) {
-            JsonArray finalMembers = new JsonArray();
-            Set<String> idSet = new HashSet<>();
-            for (JsonElement element : existingMembers.getAsJsonArray()) {
-                JsonObject elementObject = element.getAsJsonObject();
-                String key = String.format("%s-%s", elementObject.get(keyPart1).getAsString(), elementObject.get(keyPart2).getAsString());
-                idSet.add(key);
-                finalMembers.add(element);
-            }
-            for (JsonElement element : newMembers.getAsJsonArray()) {
-                JsonObject elementObject = element.getAsJsonObject();
-                String key = String.format("%s-%s", elementObject.get(keyPart1).getAsString(), elementObject.get(keyPart2).getAsString());
-                if (!idSet.contains(key)) {
-                    finalMembers.add(element);
-                }
-            }
-            finalObject.add(memberName, finalMembers);
-        }
+    static boolean needForGeneratingNetworkData(Map<Long, List<Network.Service>> supportedServices) {
+        return supportedServices.values().stream().anyMatch(services -> services.contains(Network.Service.Dhcp) || services.contains(Network.Service.Dns));
     }
 
     /**
@@ -309,22 +293,18 @@ public class ConfigDriveBuilder {
     static JsonObject getNetworkDataJsonObjectForNic(NicProfile nic, List<Network.Service> supportedServices) {
         JsonObject networkData = new JsonObject();
 
-        if (supportedServices.contains(Network.Service.Dhcp)) {
-            JsonArray links = getLinksJsonArrayForNic(nic);
-            JsonArray networks = getNetworksJsonArrayForNic(nic);
-            if (links.size() > 0) {
-                networkData.add("links", links);
-            }
-            if (networks.size() > 0) {
-                networkData.add("networks", networks);
-            }
+        JsonArray links = getLinksJsonArrayForNic(nic);
+        JsonArray networks = getNetworksJsonArrayForNic(nic);
+        if (links.size() > 0) {
+            networkData.add("links", links);
+        }
+        if (networks.size() > 0) {
+            networkData.add("networks", networks);
         }
 
-        if (supportedServices.contains(Network.Service.Dns)) {
-            JsonArray services = getServicesJsonArrayForNic(nic);
-            if (services.size() > 0) {
-                networkData.add("services", services);
-            }
+        JsonArray services = getServicesJsonArrayForNic(nic);
+        if (services.size() > 0) {
+            networkData.add("services", services);
         }
 
         return networkData;

@@ -1798,7 +1798,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                      final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         element.prepare(network, profile, vmProfile, dest, context);
         if (vmProfile.getType() == Type.User && element.getProvider() != null) {
-            boolean buildConfigDrive = false;
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) && element instanceof DhcpServiceProvider) {
                 final DhcpServiceProvider sp = (DhcpServiceProvider) element;
@@ -1810,7 +1809,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (!sp.addDhcpEntry(network, profile, vmProfile, dest, context)) {
                     return false;
                 }
-                buildConfigDrive = true;
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider()) && element instanceof DnsServiceProvider) {
@@ -1823,7 +1821,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (!sp.addDnsEntry(network, profile, vmProfile, dest, context)) {
                     return false;
                 }
-                buildConfigDrive = true;
             }
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)
                     && _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider()) && element instanceof UserDataServiceProvider) {
@@ -1831,9 +1828,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (!sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context)) {
                     return false;
                 }
-                buildConfigDrive = true;
             }
-            if (buildConfigDrive && element instanceof ConfigDriveNetworkElement) {
+            if (element instanceof ConfigDriveNetworkElement && ((
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider())
+            ) || (
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider())
+            ) || (
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider())
+            ))) {
                 final ConfigDriveNetworkElement sp = (ConfigDriveNetworkElement) element;
                 return sp.createConfigDriveIso(profile, vmProfile, dest, null);
             }
@@ -4445,23 +4450,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<NicProfile> getNicProfiles(final VirtualMachine vm) {
-        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+    public List<NicProfile> getNicProfiles(final Long vmId, HypervisorType hypervisorType) {
+        final List<NicVO> nics = _nicDao.listByVmId(vmId);
         final List<NicProfile> profiles = new ArrayList<NicProfile>();
 
         if (nics != null) {
             for (final Nic nic : nics) {
                 final NetworkVO network = _networksDao.findById(nic.getNetworkId());
-                final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+                final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmId);
 
                 final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
-                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(hypervisorType, network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
         }
         return profiles;
+    }
+
+    @Override
+    public List<NicProfile> getNicProfiles(final VirtualMachine vm) {
+        return getNicProfiles(vm.getId(), vm.getHypervisorType());
     }
 
     @Override

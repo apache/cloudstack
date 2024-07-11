@@ -36,7 +36,6 @@ import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.vm.NicProfile;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -636,8 +635,6 @@ public class ConfigDriveBuilderTest {
     public void testWriteNetworkDataEmptyJson() throws Exception {
         // Setup
         NicProfile nicp = mock(NicProfile.class);
-        Mockito.when(nicp.getId()).thenReturn(1L);
-
         List<Network.Service> services1 = Collections.emptyList();
 
         Map<Long, List<Network.Service>> supportedServices = new HashMap<>();
@@ -661,80 +658,5 @@ public class ConfigDriveBuilderTest {
 
         Assert.assertEquals(expectedJsonObject, actualJson);
         folder.delete();
-    }
-
-    @Test
-    public void testMergeJsonArraysAndUpdateObjectWithEmptyObjects() {
-        JsonObject finalObject = new JsonObject();
-        JsonObject newObj = new JsonObject();
-        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
-        Assert.assertEquals("{}", finalObject.toString());
-    }
-
-    @Test
-    public void testMergeJsonArraysAndUpdateObjectWithNewMembersAdded() {
-        JsonObject finalObject = new JsonObject();
-
-        JsonObject newObj = new JsonObject();
-        JsonArray newMembers = new JsonArray();
-        JsonObject newMember = new JsonObject();
-        newMember.addProperty("id", "eth0");
-        newMember.addProperty("type", "phy");
-        newMembers.add(newMember);
-        newObj.add("links", newMembers);
-
-        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
-        Assert.assertEquals(1, finalObject.getAsJsonArray("links").size());
-        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}]}").getAsJsonObject();
-        Assert.assertEquals(expectedObj, finalObject);
-    }
-
-    @Test
-    public void testMergeJsonArraysAndUpdateObjectWithDuplicateMembersIgnored() {
-        JsonObject finalObject = new JsonObject();
-        JsonArray existingMembers = new JsonArray();
-        JsonObject existingMember = new JsonObject();
-        existingMember.addProperty("id", "eth0");
-        existingMember.addProperty("type", "phy");
-        existingMembers.add(existingMember);
-        finalObject.add("links", existingMembers);
-
-        JsonObject newObj = new JsonObject();
-        newObj.add("links", existingMembers); // same as existingMembers for duplication
-
-        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
-        Assert.assertEquals(1, finalObject.getAsJsonArray("links").size());
-        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}]}").getAsJsonObject();
-        Assert.assertEquals(expectedObj, finalObject);
-    }
-
-    @Test
-    public void testMergeJsonArraysAndUpdateObjectWithDifferentMembers() {
-        JsonObject finalObject = new JsonObject();
-
-        JsonArray newMembers = new JsonArray();
-        JsonObject newMember = new JsonObject();
-        newMember.addProperty("id", "eth0");
-        newMember.addProperty("type", "phy");
-        newMembers.add(newMember);
-        finalObject.add("links", newMembers);
-
-        JsonObject newObj = new JsonObject();
-        newMembers = new JsonArray();
-        newMember = new JsonObject();
-        newMember.addProperty("id", "eth1");
-        newMember.addProperty("type", "phy");
-        newMembers.add(newMember);
-        newObj.add("links", newMembers);
-
-        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(finalObject, newObj, "links", "id", "type");
-        Assert.assertEquals(2, finalObject.getAsJsonArray("links").size());
-        JsonObject expectedObj = new JsonParser().parse("{'links': [{'id': 'eth0', 'type': 'phy'}, {'id': 'eth1', 'type': 'phy'}]}").getAsJsonObject();
-        Assert.assertEquals(expectedObj, finalObject);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testMergeJsonArraysAndUpdateObjectWithNullObjects() {
-        ConfigDriveBuilder.mergeJsonArraysAndUpdateObject(null, null, "services", "id", "type");
     }
 }
