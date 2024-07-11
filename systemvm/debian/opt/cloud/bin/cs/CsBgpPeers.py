@@ -95,13 +95,15 @@ class CsBgpPeers(CsDataBag):
                     self.frr_conf.add(" neighbor {} password {}".format(ip6_peer['ip4_address'], ip6_peer['peer_password']))
             if self.peers[as_number]['ip4_peers']:
                 self.frr_conf.add(" address-family ipv4 unicast")
-                for ip4_peer in self.peers[as_number]['ip4_peers']:
-                    self.frr_conf.add("  network {}".format(ip4_peer['guest_ip4_cidr']))
+                ip4_cidrs = set({ip4_peer['guest_ip4_cidr'] for ip4_peer in self.peers[as_number]['ip4_peers']})
+                for ip4_cidr in ip4_cidrs:
+                    self.frr_conf.add("  network {}".format(ip4_cidr))
                 self.frr_conf.add(" exit-address-family")
             if self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" address-family ipv6 unicast")
-                for ip6_peer in self.peers[as_number]['ip6_peers']:
-                    self.frr_conf.add("  network {}".format(ip6_peer['guest_ip6_cidr']))
+                ip6_cidrs = set({ip6_peer['guest_ip6_cidr'] for ip6_peer in self.peers[as_number]['ip6_peers']})
+                for ip6_cidr in ip6_cidrs:
+                    self.frr_conf.add("  network {}".format(ip6_cidr))
                 self.frr_conf.add(" exit-address-family")
 
     def _post_set(self):
