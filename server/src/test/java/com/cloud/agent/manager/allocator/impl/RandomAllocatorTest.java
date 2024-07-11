@@ -21,14 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -57,9 +55,6 @@ public class RandomAllocatorTest {
     @Mock
     ResourceManager resourceManagerMock;
 
-    @Mock
-    CapacityManager capacityManagerMock;
-
     private final Host.Type type = Host.Type.Routing;
 
     private final Long clusterId = 1L;
@@ -71,8 +66,6 @@ public class RandomAllocatorTest {
     private final List<HostVO> emptyList = new ArrayList<>();
 
     private final String hostTag = "hostTag";
-
-    private final String templateTag = "templateTag";
 
     private final HostVO host1 = Mockito.mock(HostVO.class);
 
@@ -106,32 +99,32 @@ public class RandomAllocatorTest {
         // No template tagged host
         ArrayList<HostVO> noTemplateTaggedHosts = new ArrayList<>(Arrays.asList(host1, host2));
         Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(new ArrayList<>());
-        randomAllocator.retainHostsWithMatchingTags(noTemplateTaggedHosts, type, id, id, id, offeringTag, templateTag);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTaggedHosts, type, id, id, id, offeringTag, templateTag);
         Assert.assertTrue(CollectionUtils.isEmpty(noTemplateTaggedHosts));
 
         // Different template tagged host
         ArrayList<HostVO> differentTemplateTaggedHost = new ArrayList<>(Arrays.asList(host1, host2));
         HostVO host3 = Mockito.mock(HostVO.class);
         Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(List.of(host3));
-        randomAllocator.retainHostsWithMatchingTags(differentTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(differentTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
         Assert.assertTrue(CollectionUtils.isEmpty(differentTemplateTaggedHost));
 
         // Matching template tagged host
         ArrayList<HostVO> matchingTemplateTaggedHost = new ArrayList<>(Arrays.asList(host1, host2));
         Mockito.when(hostDao.listByHostTag(type, id, id, id, templateTag)).thenReturn(List.of(host1));
-        randomAllocator.retainHostsWithMatchingTags(matchingTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(matchingTemplateTaggedHost, type, id, id, id, offeringTag, templateTag);
         Assert.assertFalse(CollectionUtils.isEmpty(matchingTemplateTaggedHost));
         Assert.assertEquals(1, matchingTemplateTaggedHost.size());
 
         // No template tag
         ArrayList<HostVO> noTemplateTag = new ArrayList<>(Arrays.asList(host1, host2));
-        randomAllocator.retainHostsWithMatchingTags(noTemplateTag, type, id, id, id, offeringTag, null);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noTemplateTag, type, id, id, id, offeringTag, null);
         Assert.assertFalse(CollectionUtils.isEmpty(noTemplateTag));
         Assert.assertEquals(2, noTemplateTag.size());
 
         // No offering tag
         ArrayList<HostVO> noOfferingTag = new ArrayList<>(Arrays.asList(host1, host2));
-        randomAllocator.retainHostsWithMatchingTags(noOfferingTag, type, id, id, id, null, templateTag);
+        randomAllocator.retainHostsMatchingServiceOfferingAndTemplateTags(noOfferingTag, type, id, id, id, null, templateTag);
         Assert.assertFalse(CollectionUtils.isEmpty(noOfferingTag));
         Assert.assertEquals(1, noOfferingTag.size());
     }
@@ -219,54 +212,6 @@ public class RandomAllocatorTest {
 
         Assert.assertEquals(1, suitableHosts.size());
         Assert.assertEquals(host2, suitableHosts.get(0));
-    }
-
-    @Test
-    public void hostHasCpuCapabilityAndCapacityTestHostHasCpuCapabilityAndCpuCapacityShouldReturnTrue() {
-        Boolean hasCpuCapability = true;
-        Boolean hasCpuCapacity = true;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        boolean result = randomAllocator.hostHasCpuCapabilityAndCapacity(true, serviceOffering, host1);
-
-        Assert.assertTrue(result);
-    }
-
-    @Test
-    public void hostHasCpuCapabilityAndCapacityTestHostHasCpuCapabilityButNoCpuCapacityShouldReturnFalse() {
-        Boolean hasCpuCapability = true;
-        Boolean hasCpuCapacity = false;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        boolean result = randomAllocator.hostHasCpuCapabilityAndCapacity(true, serviceOffering, host1);
-
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void hostHasCpuCapabilityAndCapacityTestHostDoesNotHaveCpuCapabilityButHasCpuCapacityShouldReturnFalse() {
-        Boolean hasCpuCapability = false;
-        Boolean hasCpuCapacity = true;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        boolean result = randomAllocator.hostHasCpuCapabilityAndCapacity(true, serviceOffering, host1);
-
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void hostHasCpuCapabilityAndCapacityTestHostDoesNotHaveCpuCapabilityAndCpuCapacityShouldReturnFalse() {
-        Boolean hasCpuCapability = false;
-        Boolean hasCpuCapacity = false;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        boolean result = randomAllocator.hostHasCpuCapabilityAndCapacity(true, serviceOffering, host1);
-
-        Assert.assertFalse(result);
     }
 
     @Test
