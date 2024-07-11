@@ -25,16 +25,16 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -45,7 +45,6 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
@@ -57,8 +56,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -69,9 +66,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
  */
 @Component
-public class FirstFitAllocator extends AdapterBase implements HostAllocator {
-    @Inject
-    protected HostDao _hostDao = null;
+public class FirstFitAllocator extends BaseAllocator {
     @Inject
     HostDetailsDao _hostDetailsDao = null;
     @Inject
@@ -87,14 +82,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
-    CapacityManager _capacityMgr;
-    @Inject
     CapacityDao _capacityDao;
     @Inject
     UserVmDetailsDao _userVmDetailsDao;
 
     boolean _checkHvm = true;
-    protected String _allocationAlgorithm = "random";
+
+    protected AllocationAlgorithm allocationAlgorithm = AllocationAlgorithm.random;
 
 
     @Override
@@ -146,11 +140,11 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (haVmTag != null) {
-            clusterHosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
+            clusterHosts.retainAll(hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
         } else if (ObjectUtils.allNull(hostTagOnOffering, hostTagOnTemplate)) {
             clusterHosts.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
         } else {
-            retainHostsMatchingServiceOfferingAndTemplateTags(clusterHosts, hostTagOnTemplate, hostTagOnOffering, type, clusterId, podId, dcId);
+            retainHostsMatchingServiceOfferingAndTemplateTags(clusterHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
         }
 
         filterHostsWithUefiEnabled(type, vmProfile, clusterId, podId, dcId, clusterHosts);
@@ -161,41 +155,11 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
     }
 
-    protected void addHostsBasedOnTagRules(String hostTagOnOffering, List<HostVO> clusterHosts) {
-        List<HostVO> hostsWithTagRules = _hostDao.findHostsWithTagRuleThatMatchComputeOfferingTags(hostTagOnOffering);
-
-        if (CollectionUtils.isEmpty(hostsWithTagRules)) {
-            logger.info("No hosts found with tag rules matching the compute offering tag [{}].", hostTagOnOffering);
-            return;
-        }
-
-        logger.info("Found hosts %s with tag rules matching the compute offering tag [{}].", hostsWithTagRules, hostTagOnOffering);
-        clusterHosts.addAll(hostsWithTagRules);
-    }
-
-    protected void retainHostsMatchingServiceOfferingAndTemplateTags(List<HostVO> clusterHosts, String hostTagOnTemplate, String hostTagOnOffering, Type type, Long clusterId,
-                                                                     Long podId, long dcId) {
-        boolean hasSvcOfferingTag = hostTagOnOffering != null;
-        boolean hasTemplateTag = hostTagOnTemplate != null;
-
-        if (hasSvcOfferingTag) {
-            logger.debug("Looking for hosts having the tag [{}] specified in the Service Offering.", hostTagOnOffering);
-            clusterHosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
-            logger.debug("Hosts with Service Offering tag [{}] are {}.", hostTagOnOffering, clusterHosts);
-        }
-
-        if (hasTemplateTag) {
-            logger.debug("Looking for hosts having the tag [{}] specified in the Template.", hostTagOnTemplate);
-            clusterHosts.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
-            logger.debug("Hosts with Template tag [{}] are {}.", hostTagOnTemplate, clusterHosts);
-        }
-    }
-
     /**
      * Add all hosts to the avoid set that were not considered during the allocation
      */
     protected void addHostsToAvoidSet(Type type, ExcludeList avoid, Long clusterId, Long podId, long dcId, List<HostVO> suitableHosts) {
-        List<HostVO> allHostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
+        List<HostVO> allHostsInCluster = hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
 
         allHostsInCluster.removeAll(suitableHosts);
 
@@ -220,7 +184,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         logger.info("Guest VM is requested with Custom[UEFI] Boot Type enabled.");
 
-        List<HostVO> hostsMatchingUefiTag = _hostDao.listByHostCapability(type, clusterId, podId, dcId, Host.HOST_UEFI_ENABLE);
+        List<HostVO> hostsMatchingUefiTag = hostDao.listByHostCapability(type, clusterId, podId, dcId, Host.HOST_UEFI_ENABLE);
 
         logger.debug("Hosts with UEFI enabled are {}.", hostsMatchingUefiTag);
         clusterHosts.retainAll(hostsMatchingUefiTag);
@@ -228,16 +192,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
     protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                     boolean considerReservedCapacity, Account account) {
-        switch (_allocationAlgorithm) {
-            case "random":
-            case "userconcentratedpod_random":
-                // Shuffle this so that we don't check the hosts in the same order.
+
+        switch (allocationAlgorithm) {
+            case random:
+            case userconcentratedpod_random:
                 Collections.shuffle(hosts);
                 break;
-            case "userdispersing":
+            case userdispersing:
                 hosts = reorderHostsByNumberOfVms(plan, hosts, account);
                 break;
-            case "firstfitleastconsumed":
+            case firstfitleastconsumed:
                 hosts = reorderHostsByCapacity(plan, hosts);
                 break;
         }
@@ -251,7 +215,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         return suitableHosts;
     }
-
 
     protected List<Host> checkHostsCompatibilities(ServiceOffering offering, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> suitableHosts = new ArrayList<>();
@@ -267,8 +230,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 continue;
             }
 
-            if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", () -> host);
+            if (capacityManager.checkIfHostReachMaxGuestLimit(host)) {
+                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.", () ->  host);
                 avoid.addHost(host.getId());
                 continue;
             }
@@ -277,35 +240,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 continue;
             }
 
-            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-            if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
-                logger.debug("Found a suitable host, adding to list host [{}].", () -> host);
+            if (hostHasCpuCapabilityAndCapacity(considerReservedCapacity, offering, host)) {
                 suitableHosts.add(host);
-            } else {
-                logger.debug("Not using host {}; host has cpu capability? {}, host has capacity? {}.", () -> host, cpuCapabilityAndCapacity::first, cpuCapabilityAndCapacity::second);
-                avoid.addHost(host.getId());
+                continue;
             }
-        }
-        return suitableHosts;
-    }
-
-
-    /**
-     * Adds hosts with CPU capability and CPU capacity to the suitable hosts list. Otherwise, the host is added to the avoid list.
-     */
-    protected void addHostToSuitableHostIfHasCpuCapacityAndCpuCapability(ServiceOffering offering, ExcludeList avoid, boolean considerReservedCapacity, Host host, List<Host> suitableHosts) {
-        logger.debug("Looking for CPU frequency {} MHz and RAM {} MB.", () -> offering.getCpu() * offering.getSpeed(), () -> offering.getRamSize());
-        Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-        Boolean hasCpuCapability = cpuCapabilityAndCapacity.first();
-        Boolean hasCpuCapacity = cpuCapabilityAndCapacity.second();
-
-        if (hasCpuCapability && hasCpuCapacity) {
-            logger.debug("Found a suitable host, adding to list host [{}].", () -> host);
-            suitableHosts.add(host);
-        } else {
-            logger.debug("Not using host {}; host has cpu capability? {}, host has capacity? {}.", () -> host, () -> hasCpuCapability, () -> hasCpuCapacity);
             avoid.addHost(host.getId());
         }
+        return suitableHosts;
     }
 
     protected boolean offeringRequestedVGpuAndHostDoesNotHaveIt(ServiceOffering offering, ExcludeList avoid, Host host) {
@@ -560,7 +501,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {
-                _allocationAlgorithm = allocationAlgorithm;
+                this.allocationAlgorithm = EnumUtils.getEnum(AllocationAlgorithm.class, allocationAlgorithm);
             }
             String value = configs.get("xenserver.check.hvm");
             _checkHvm = value == null || Boolean.parseBoolean(value);

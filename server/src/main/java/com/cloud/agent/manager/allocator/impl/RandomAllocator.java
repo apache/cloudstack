@@ -23,33 +23,23 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-public class RandomAllocator extends AdapterBase implements HostAllocator {
-    @Inject
-    private HostDao _hostDao;
+public class RandomAllocator extends BaseAllocator {
     @Inject
     private ResourceManager _resourceMgr;
-    @Inject
-    private CapacityManager capacityManager;
 
     protected List<Host> findSuitableHosts(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                          boolean considerReservedCapacity) {
@@ -103,21 +93,6 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         return suitableHosts;
     }
 
-
-    protected boolean hostHasCpuCapabilityAndCapacity(boolean considerReservedCapacity, ServiceOffering offering, Host host) {
-        Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-        Boolean hasCpuCapability = cpuCapabilityAndCapacity.first();
-        Boolean hasCpuCapacity = cpuCapabilityAndCapacity.second();
-
-        if (hasCpuCapability && hasCpuCapacity) {
-            logger.debug("Host {} has enough CPU capability and CPU capacity.", host);
-            return true;
-        }
-
-        logger.debug("Not using host [{}]. Does the host have cpu capability? {}. Does the host have capacity? {}.", () -> host, () -> hasCpuCapability, () -> hasCpuCapacity);
-        return false;
-    }
-
     /**
      * @return all computing hosts, regardless of whether they support routing.
      */
@@ -132,36 +107,16 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         }
 
         if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
-            retainHostsWithMatchingTags(availableHosts, type, clusterId, podId, dcId, offeringHostTag, templateTag);
+            retainHostsMatchingServiceOfferingAndTemplateTags(availableHosts, type, clusterId, podId, dcId, offeringHostTag, templateTag);
         } else {
-            List<HostVO> hostsWithNoRuleTag = _hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
+            List<HostVO> hostsWithNoRuleTag = hostDao.listAllHostsThatHaveNoRuleTag(type, clusterId, podId, dcId);
             logger.debug("Retaining hosts {} because they do not have rule tags.", hostsWithNoRuleTag);
             availableHosts.retainAll(hostsWithNoRuleTag);
         }
 
-        List<HostVO> hostsWithTagRuleThatMatchComputeOfferingTags = _hostDao.findHostsWithTagRuleThatMatchComputeOfferingTags(offeringHostTag);
-        logger.debug("Adding hosts {} to the available pool hosts because they match the compute offering's tag.", hostsWithTagRuleThatMatchComputeOfferingTags, offeringHostTag);
-        availableHosts = ListUtils.union(availableHosts, hostsWithTagRuleThatMatchComputeOfferingTags);
+        addHostsBasedOnTagRules(offeringHostTag, availableHosts);
 
         return availableHosts;
-    }
-
-    protected void retainHostsWithMatchingTags(List<HostVO> availableHosts, Type type, long dcId, Long podId, Long clusterId, String offeringHostTag, String templateTag) {
-        logger.debug("Hosts {} will be checked for template and host tags compatibility.", availableHosts);
-
-        if (offeringHostTag != null) {
-            List<HostVO> hostsWithHostTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, offeringHostTag);
-            logger.debug("Retaining hosts {} because they match the offering host tag {}.", hostsWithHostTag, offeringHostTag);
-            availableHosts.retainAll(hostsWithHostTag);
-        }
-
-        if (templateTag != null) {
-            List<HostVO> hostsWithTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, templateTag);
-            logger.debug("Retaining hosts {} because they match the template tag {}.", hostsWithTemplateTag, offeringHostTag);
-            availableHosts.retainAll(hostsWithTemplateTag);
-        }
-
-        logger.debug("Remaining hosts after template tag and host tags validations are {}.", availableHosts);
     }
 
     @Override

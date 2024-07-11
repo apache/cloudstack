@@ -17,7 +17,6 @@
 package com.cloud.agent.manager.allocator.impl;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.Host;
@@ -30,7 +29,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -59,9 +57,6 @@ public class FirstFitAllocatorTest {
 
     @Mock
     UserVmDetailsDao userVmDetailsDaoMock;
-
-    @Mock
-    CapacityManager capacityManagerMock;
 
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
@@ -215,98 +210,12 @@ public class FirstFitAllocatorTest {
         List<HostVO> allUpAndEnabledHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
 
         Mockito.doReturn(allUpAndEnabledHosts).when(resourceManagerMock).listAllUpAndEnabledHosts(Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doNothing().when(firstFitAllocatorSpy).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+        Mockito.doNothing().when(firstFitAllocatorSpy).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
         Mockito.doNothing().when(firstFitAllocatorSpy).filterHostsWithUefiEnabled(Mockito.any(Host.Type.class), Mockito.any(VirtualMachineProfile.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyList());
         Mockito.doNothing().when(firstFitAllocatorSpy).addHostsBasedOnTagRules(Mockito.anyString(), Mockito.anyList());
         firstFitAllocatorSpy.retrieveHosts(virtualMachineProfile, type, emptyList, clusterId, podId, dcId, hostTag, templateTag);
 
-        Mockito.verify(firstFitAllocatorSpy, Mockito.times(1)).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
-    }
-
-    @Test
-    public void addHostsBasedOnTagRulesTestHostsWithTagRuleIsEmptyShouldNotAddToSuitableHosts() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2));
-
-        Mockito.doReturn(emptyList).when(hostDaoMock).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.anyString());
-        firstFitAllocatorSpy.addHostsBasedOnTagRules(hostTag, suitableHosts);
-
-        Assert.assertEquals(2, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-        Assert.assertEquals(host2, suitableHosts.get(1));
-    }
-
-    @Test
-    public void addHostsBasedOnTagRulesTestHostsWithTagRuleIsNotEmptyShouldAddToSuitableHosts() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2));
-        List<HostVO> hostsMatchingRuleTag = new ArrayList<>(Arrays.asList(host3));
-
-        Mockito.doReturn(hostsMatchingRuleTag).when(hostDaoMock).findHostsWithTagRuleThatMatchComputeOfferingTags(Mockito.anyString());
-        firstFitAllocatorSpy.addHostsBasedOnTagRules(hostTag, suitableHosts);
-
-        Assert.assertEquals(3, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-        Assert.assertEquals(host2, suitableHosts.get(1));
-        Assert.assertEquals(host3, suitableHosts.get(2));
-    }
-
-    @Test
-    public void retainHostsMatchingServiceOfferingAndTemplateTagsTestHasServiceOfferingTagShouldRetainHostsWithServiceOfferingTag() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        List<HostVO> hostsWithMathingTags = new ArrayList<>(Arrays.asList(host1, host3));
-        String hostTagOnTemplate = "hostTagOnTemplate";
-        String hostTagOnOffering = null;
-
-        Mockito.doReturn(hostsWithMathingTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-        firstFitAllocatorSpy.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, hostTagOnTemplate, hostTagOnOffering, type, clusterId, podId, dcId);
-
-        Assert.assertEquals(2, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-        Assert.assertEquals(host3, suitableHosts.get(1));
-    }
-
-    @Test
-    public void retainHostsMatchingServiceOfferingAndTemplateTagsTestHasServiceOfferingTagAndHasHostTagOnTemplateShouldRetainHostsWithServiceOfferingTagAndTemplateTag() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        List<HostVO> hostsWithMathingServiceTags = new ArrayList<>(Arrays.asList(host1, host3));
-        List<HostVO> hostsWithMathingTemplateTags = new ArrayList<>(Arrays.asList(host1, host2));
-        String hostTagOnTemplate = "hostTagOnTemplate";
-        String hostTagOnOffering = "hostTagOnOffering";
-
-        Mockito.doReturn(hostsWithMathingTemplateTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-        Mockito.doReturn(hostsWithMathingServiceTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-        firstFitAllocatorSpy.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, hostTagOnTemplate, hostTagOnOffering, type, clusterId, podId, dcId);
-
-        Assert.assertEquals(1, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-    }
-
-    @Test
-    public void retainHostsMatchingServiceOfferingAndTemplateTagsTestHasHostTagOnTemplateShouldRetainHostsWithTemplateTag() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        List<HostVO> hostsWithMathingServiceTags = new ArrayList<>(Arrays.asList(host1, host3));
-        String hostTagOnTemplate = null;
-        String hostTagOnOffering = "hostTagOnOffering";
-
-        Mockito.doReturn(hostsWithMathingServiceTags).when(hostDaoMock).listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-        firstFitAllocatorSpy.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, hostTagOnTemplate, hostTagOnOffering, type, clusterId, podId, dcId);
-
-        Assert.assertEquals(2, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-        Assert.assertEquals(host3, suitableHosts.get(1));
-    }
-
-    @Test
-    public void retainHostsMatchingServiceOfferingAndTemplateTagsTestNoServiceTagAndNoTemplateTagShouldHaveAllSuitableHosts() {
-        List<HostVO> suitableHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-        String hostTagOnTemplate = null;
-        String hostTagOnOffering = null;
-
-        firstFitAllocatorSpy.retainHostsMatchingServiceOfferingAndTemplateTags(suitableHosts, hostTagOnTemplate, hostTagOnOffering, type, clusterId, podId, dcId);
-
-        Assert.assertEquals(3, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-        Assert.assertEquals(host2, suitableHosts.get(1));
-        Assert.assertEquals(host3, suitableHosts.get(2));
+        Mockito.verify(firstFitAllocatorSpy, Mockito.times(1)).retainHostsMatchingServiceOfferingAndTemplateTags(Mockito.anyList(), Mockito.any(Host.Type.class), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
@@ -396,71 +305,6 @@ public class FirstFitAllocatorTest {
         Assert.assertEquals(2, suitableHosts.size());
         Assert.assertEquals(host2, suitableHosts.get(0));
         Assert.assertEquals(host3, suitableHosts.get(1));
-    }
-
-    @Test
-    public void addHostToSuitableHostIfHasCpuCapacityAndCpuCapabilityTestHostHasCapacityAndCapabilityShouldBeAddedToSuitableHosts() {
-        List<Host> suitableHosts = new ArrayList<>();
-        Boolean hasCpuCapability = true;
-        Boolean hasCpuCapacity = true;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        firstFitAllocatorSpy.addHostToSuitableHostIfHasCpuCapacityAndCpuCapability(serviceOffering, excludeList, considerReservedCapacity, host1, suitableHosts);
-
-        Assert.assertEquals(1, suitableHosts.size());
-        Assert.assertEquals(host1, suitableHosts.get(0));
-    }
-
-    @Test
-    public void addHostToSuitableHostIfHasCpuCapacityAndCpuCapabilityTestHostDoesNotHaveCapacityAndCapabilityShouldBeAddedToTheAvoidList() {
-        List<Host> suitableHosts = new ArrayList<>();
-        Boolean hasCpuCapability = true;
-        Boolean hasCpuCapacity = false;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(1L).when(host1).getId();
-        Mockito.doCallRealMethod().when(excludeList).addHost(Mockito.anyLong());
-        Mockito.doCallRealMethod().when(excludeList).getHostsToAvoid();
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        firstFitAllocatorSpy.addHostToSuitableHostIfHasCpuCapacityAndCpuCapability(serviceOffering, excludeList, considerReservedCapacity, host1, suitableHosts);
-
-        Assert.assertEquals(1, excludeList.getHostsToAvoid().size());
-        Assert.assertTrue(excludeList.getHostsToAvoid().contains(1L));
-    }
-
-    @Test
-    public void addHostToSuitableHostIfHasCpuCapacityAndCpuCapabilityTestHostHasCapacityButNoCapabilityShouldBeAddedToTheAvoidList() {
-        List<Host> suitableHosts = new ArrayList<>();
-        Boolean hasCpuCapability = false;
-        Boolean hasCpuCapacity = true;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(1L).when(host1).getId();
-        Mockito.doCallRealMethod().when(excludeList).addHost(Mockito.anyLong());
-        Mockito.doCallRealMethod().when(excludeList).getHostsToAvoid();
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        firstFitAllocatorSpy.addHostToSuitableHostIfHasCpuCapacityAndCpuCapability(serviceOffering, excludeList, considerReservedCapacity, host1, suitableHosts);
-
-        Assert.assertEquals(1, excludeList.getHostsToAvoid().size());
-        Assert.assertTrue(excludeList.getHostsToAvoid().contains(1L));
-    }
-
-    @Test
-    public void addHostToSuitableHostIfHasCpuCapacityAndCpuCapabilityTestHostDoesNotHaveCapacityNoCapabilityShouldBeAddedToTheAvoidList() {
-        List<Host> suitableHosts = new ArrayList<>();
-        Boolean hasCpuCapability = false;
-        Boolean hasCpuCapacity = false;
-        Pair<Boolean, Boolean> pair = new Pair<>(hasCpuCapability, hasCpuCapacity);
-
-        Mockito.doReturn(1L).when(host1).getId();
-        Mockito.doCallRealMethod().when(excludeList).addHost(Mockito.anyLong());
-        Mockito.doCallRealMethod().when(excludeList).getHostsToAvoid();
-        Mockito.doReturn(pair).when(capacityManagerMock).checkIfHostHasCpuCapabilityAndCapacity(Mockito.any(Host.class), Mockito.any(ServiceOffering.class), Mockito.anyBoolean());
-        firstFitAllocatorSpy.addHostToSuitableHostIfHasCpuCapacityAndCpuCapability(serviceOffering, excludeList, considerReservedCapacity, host1, suitableHosts);
-
-        Assert.assertEquals(1, excludeList.getHostsToAvoid().size());
-        Assert.assertTrue(excludeList.getHostsToAvoid().contains(1L));
     }
 
     @Test
