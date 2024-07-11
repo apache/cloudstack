@@ -2476,7 +2476,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId);
         final List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
         final List<FirewallRule> ipv6firewallRules = new ArrayList<>();
-        final List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(guestNetworkId);
 
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
@@ -2505,7 +2504,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         // Apply BGP peers
-        if (!bgpPeers.isEmpty()) {
+        final Network guestNetwork = _networkDao.findById(guestNetworkId);
+        if (routedIpv4Manager.isDynamicRoutedNetwork(guestNetwork)) {
+            final List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(guestNetworkId);
             _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetworkId);
         }
 
@@ -2591,7 +2592,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             createApplyLoadBalancingRulesCommands(cmds, router, provider, guestNetworkId);
         }
         // Reapply dhcp and dns configuration.
-        final Network guestNetwork = _networkDao.findById(guestNetworkId);
         if (guestNetwork.getGuestType() == GuestType.Shared && _networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             final Map<Network.Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(
                     _networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId()), Service.Dhcp);

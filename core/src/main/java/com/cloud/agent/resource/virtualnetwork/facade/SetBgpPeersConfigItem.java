@@ -19,32 +19,22 @@
 
 package com.cloud.agent.resource.virtualnetwork.facade;
 
-import java.util.LinkedList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetBgpPeersCommand;
 import com.cloud.agent.resource.virtualnetwork.ConfigItem;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
-import com.cloud.agent.resource.virtualnetwork.model.BgpPeer;
 import com.cloud.agent.resource.virtualnetwork.model.BgpPeers;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
-import org.apache.cloudstack.network.BgpPeerTO;
 
 public class SetBgpPeersConfigItem extends AbstractConfigItemFacade {
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final SetBgpPeersCommand command = (SetBgpPeersCommand) cmd;
-
-        final LinkedList<BgpPeer> peers = new LinkedList<>();
-
-        for (final BgpPeerTO peer : command.getBpgPeers()) {
-            peers.add(new BgpPeer(peer.getPeerId(), peer.getIp4Address(), peer.getIp6Address(), peer.getAsNumber(), peer.getPassword(),
-                    peer.getNetworkId(), peer.getIp4Cidr(), peer.getIp6Cidr()));
-        }
-
-        return generateConfigItems(new BgpPeers(peers));
+        return generateConfigItems(new BgpPeers(Arrays.asList(command.getBpgPeers())));
     }
 
     @Override

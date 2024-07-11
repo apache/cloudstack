@@ -23,6 +23,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.springframework.stereotype.Component;
@@ -43,6 +44,7 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     public void init() {
         final SearchBuilder<BgpPeerNetworkMapVO> networkSearchBuilder = bgpPeerNetworkMapDao.createSearchBuilder();
         networkSearchBuilder.and("networkId", networkSearchBuilder.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        networkSearchBuilder.and("state", networkSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getBgpPeerId(),
                 NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -53,6 +55,7 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     public List<BgpPeerVO> listByNetworkId(long networkId) {
         SearchCriteria<BgpPeerVO> sc = NetworkIdSearch.create();
         sc.setJoinParameters("network", "networkId", networkId);
+        sc.setJoinParameters("network", "state", BgpPeer.State.Active);
         return listBy(sc);
     }
 }

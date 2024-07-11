@@ -19,25 +19,27 @@
 
 package com.cloud.agent.resource.virtualnetwork.model;
 
+import org.apache.cloudstack.network.BgpPeerTO;
+
 import java.util.List;
 
 public class BgpPeers extends ConfigBase {
-    private List<BgpPeer> peers;
+    private List<BgpPeerTO> peers;
 
     public BgpPeers() {
         super(ConfigBase.BGP_PEERS);
     }
 
-    public BgpPeers(List<BgpPeer> bgpPeers) {
+    public BgpPeers(List<BgpPeerTO> bgpPeers) {
         super(ConfigBase.BGP_PEERS);
         this.peers = bgpPeers;
     }
 
-    public List<BgpPeer> getPeers() {
+    public List<BgpPeerTO> getPeers() {
         return peers;
     }
 
-    public void setPeers(List<BgpPeer> bgpPeers) {
+    public void setPeers(List<BgpPeerTO> bgpPeers) {
         this.peers = bgpPeers;
     }
 }

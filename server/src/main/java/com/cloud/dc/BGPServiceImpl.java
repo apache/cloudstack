@@ -50,8 +50,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
-import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,7 +92,7 @@ public class BGPServiceImpl implements BGPService {
     @Inject
     BgpPeerDao bgpPeerDao;
     @Inject
-    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    RoutedIpv4Manager routedIpv4Manager;
 
     public BGPServiceImpl() {
     }
@@ -356,6 +356,9 @@ public class BGPServiceImpl implements BGPService {
 
     @Override
     public boolean applyBgpPeers(Network network, boolean continueOnError) throws ResourceUnavailableException {
+        if (!routedIpv4Manager.isDynamicRoutedNetwork(network)) {
+            return true;
+        }
         final String gatewayProviderStr = ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Network.Service.Gateway);
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);

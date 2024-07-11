@@ -74,9 +74,11 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
@@ -212,6 +214,8 @@ public class CommandSetupHelper {
     Ipv6Service ipv6Service;
     @Inject
     VirtualRouterProviderDao vrProviderDao;
+    @Inject
+    ASNumberDao asNumberDao;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
@@ -1417,7 +1421,7 @@ public class CommandSetupHelper {
 
     public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Long guestNetworkId) {
         List<NetworkVO> guestNetworks = new ArrayList<>();
-        if (guestNetworkId != null) {
+        if (router.getVpcId() == null && guestNetworkId != null) {
             final NetworkVO network = _networkDao.findById(guestNetworkId);
             guestNetworks.add(network);
         } else {
@@ -1430,11 +1434,15 @@ public class CommandSetupHelper {
             }
         }
         List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
-        for (BgpPeer bgpPeer: bgpPeers) {
-            for (NetworkVO network : guestNetworks) {
-                bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(),
-                        bgpPeer.getAsNumber(), bgpPeer.getPassword(), network.getId(), network.getCidr(), network.getIp6Cidr()));
+        for (NetworkVO network : guestNetworks) {
+            ASNumberVO networkAsNumber = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+            if (networkAsNumber != null) {
+                for (BgpPeer bgpPeer: bgpPeers) {
+                    bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
+                            network.getId(), networkAsNumber.getAsNumber(), network.getCidr(), network.getIp6Cidr()));
+                }
             }
+
         }
         final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));

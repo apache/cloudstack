@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peers` (
     `ip4_address` varchar(40) DEFAULT NULL COMMENT 'IPv4 address of the BGP peer',
     `ip6_address` varchar(40) DEFAULT NULL COMMENT 'IPv6 address of the BGP peer',
     `as_number` bigint unsigned NOT NULL COMMENT 'AS number of the BGP peer',
-    `password` bigint unsigned DEFAULT NULL COMMENT 'Password of the BGP peer',
+    `password` varchar(255) DEFAULT NULL COMMENT 'Password of the BGP peer',
     `created` datetime DEFAULT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),

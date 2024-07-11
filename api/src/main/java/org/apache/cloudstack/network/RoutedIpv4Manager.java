@@ -128,6 +128,8 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean isRoutedNetwork(Network network);
 
+    boolean isDynamicRoutedNetwork(Network network);
+
     boolean isRoutedVpc(Vpc vpc);
 
     boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering);

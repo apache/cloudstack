@@ -18,23 +18,26 @@ package org.apache.cloudstack.network;
 
 public class BgpPeerTO {
     Long peerId;
+    Long peerAsNumber;
     String ip4Address;
     String ip6Address;
-    Long asNumber;
-    String password;
+    String peerPassword;
     Long networkId;
-    String ip4Cidr;
-    String ip6Cidr;
+    Long networkAsNumber;
+    String guestIp4Cidr;
+    String guestIp6Cidr;
 
-    public BgpPeerTO(Long peerId, String ip4Address, String ip6Address, Long asNumber, String password, Long networkId, String ip4Cidr, String ip6Cidr) {
+    public BgpPeerTO(Long peerId, String ip4Address, String ip6Address, Long peerAsNumber, String peerPassword,
+                     Long networkId, Long networkAsNumber, String guestIp4Cidr, String guestIp6Cidr) {
         this.peerId = peerId;
         this.ip4Address = ip4Address;
         this.ip6Address = ip6Address;
-        this.asNumber = asNumber;
-        this.password = password;
+        this.peerAsNumber = peerAsNumber;
+        this.peerPassword = peerPassword;
         this.networkId = networkId;
-        this.ip4Cidr = ip4Cidr;
-        this.ip6Cidr = ip6Cidr;
+        this.networkAsNumber = networkAsNumber;
+        this.guestIp4Cidr = guestIp4Cidr;
+        this.guestIp6Cidr = guestIp6Cidr;
     }
 
     public Long getPeerId() {
@@ -49,23 +52,23 @@ public class BgpPeerTO {
         return ip6Address;
     }
 
-    public Long getAsNumber() {
-        return asNumber;
+    public Long getPeerAsNumber() {
+        return peerAsNumber;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPeerPassword() {
+        return peerPassword;
     }
 
     public Long getNetworkId() {
         return networkId;
     }
 
-    public String getIp4Cidr() {
-        return ip4Cidr;
+    public String getGuestIp4Cidr() {
+        return guestIp4Cidr;
     }
 
-    public String getIp6Cidr() {
-        return ip6Cidr;
+    public String getGuestIp6Cidr() {
+        return guestIp6Cidr;
     }
 }
