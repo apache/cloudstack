@@ -22,8 +22,11 @@
 # E224 Tab after operator
 # E227 Missing whitespace around bitwise or shift operator
 # E242 Tab after ','
+# E271 Multiple spaces after keyword
+# E272 Multiple spaces before keyword
 # E273 Tab after keyword
 # E274 Tab before keyword
+# E713 Test for membership should be 'not in'
 # E742 Do not define classes named 'I', 'O', or 'l'
 # E743 Do not define functions named 'I', 'O', or 'l'
 # E901 SyntaxError or IndentationError
@@ -37,4 +40,4 @@
 exclude =
     .git,
     venv
-select = E112,E113,E133,E223,E224,E227,E242,E273,E274,E742,E743,E901,E902,W291,W292,W293,W391
+select = E112,E113,E133,E223,E224,E227,E242,E271,E272,E273,E274,E713,E742,E743,E901,E902,W291,W292,W293,W391

@@ -325,8 +325,10 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    handleParamUpdate (e) {
-      this.$refs.dispatchview.timedTestWebhookDelivery()
+    handleParamUpdate () {
+      setTimeout(() => {
+        this.$refs.dispatchview.timedTestWebhookDelivery()
+      }, 1)
     },
     handleScopeChange (e) {
       if (['Domain', 'Local'].includes(this.form.scope)) {

@@ -21,8 +21,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareStorageClientAnswer;
 import com.cloud.agent.api.PrepareStorageClientCommand;
@@ -35,15 +33,13 @@ import com.cloud.utils.Ternary;
 @ResourceWrapper(handles = PrepareStorageClientCommand.class)
 public class LibvirtPrepareStorageClientCommandWrapper extends CommandWrapper<PrepareStorageClientCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPrepareStorageClientCommandWrapper.class);
-
     @Override
     public Answer execute(PrepareStorageClientCommand cmd, LibvirtComputingResource libvirtComputingResource) {
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         Ternary<Boolean, Map<String, String>, String> prepareStorageClientResult = storagePoolMgr.prepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails());
         if (!prepareStorageClientResult.first()) {
             String msg = prepareStorageClientResult.third();
-            s_logger.debug("Unable to prepare storage client, due to: " + msg);
+            logger.debug("Unable to prepare storage client, due to: " + msg);
             return new PrepareStorageClientAnswer(cmd, false, msg);
         }
         Map<String, String> details = prepareStorageClientResult.second();
