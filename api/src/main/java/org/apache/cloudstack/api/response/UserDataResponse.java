@@ -46,6 +46,14 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
     private String domain;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the userdata owner")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the userdata owner")
+    private String projectName;
+
     @SerializedName(ApiConstants.USER_DATA) @Param(description="base64 encoded userdata content")
     private String userData;
 
@@ -124,5 +132,13 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

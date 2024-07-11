@@ -4690,8 +4690,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UserDataResponse createUserDataResponse(UserData userData) {
         UserDataResponse response = new UserDataResponse(userData.getUuid(), userData.getName(), userData.getUserData(), userData.getParams());
         Account account = ApiDBUtils.findAccountById(userData.getAccountId());
-        response.setAccountId(account.getUuid());
-        response.setAccountName(account.getAccountName());
+        if (account.getType() == Account.Type.PROJECT) {
+            Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getAccountId());
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+            response.setAccountId(account.getUuid());
+        }
         Domain domain = ApiDBUtils.findDomainById(userData.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
