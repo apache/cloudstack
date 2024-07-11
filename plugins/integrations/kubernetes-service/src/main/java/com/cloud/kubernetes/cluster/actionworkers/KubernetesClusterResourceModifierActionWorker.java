@@ -524,7 +524,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     firewallRule.getSourcePortEnd() == CLUSTER_API_PORT) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
-                logger.debug(String.format("The API firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId()));
+                logger.debug("The API firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId());
                 break;
             }
         }
@@ -538,7 +538,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
-                logger.debug(String.format("The SSH firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId()));
+                logger.debug("The SSH firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId());
                 break;
             }
         }
@@ -552,7 +552,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 for (PortForwardingRuleVO pfRule : pfRules) {
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
-                        logger.debug(String.format("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId()));
+                        logger.debug("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId());
                         break;
                     }
                 }
