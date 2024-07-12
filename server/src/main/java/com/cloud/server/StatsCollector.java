@@ -67,6 +67,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.Level;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -1834,13 +1835,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         String readableTotalCapacity = NumbersUtil.toReadableSize((long) totalCapacity);
         String readableUsedCapacity = NumbersUtil.toReadableSize((long) usedCapacity);
 
-        logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
-
+        logger.printf(Level.DEBUG, "Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100);
         if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
 
-        logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        logger.printf(Level.WARN, "Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100);
         return false;
     }
 
