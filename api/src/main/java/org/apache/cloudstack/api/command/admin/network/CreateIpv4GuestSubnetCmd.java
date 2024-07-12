@@ -32,10 +32,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @APICommand(name = "createIpv4SubnetForZone",
@@ -110,8 +106,7 @@ public class CreateIpv4GuestSubnetCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    public void execute() {
         DataCenterIpv4GuestSubnet result = routedIpv4Manager.createDataCenterIpv4GuestSubnet(this);
         if (result != null) {
             DataCenterIpv4SubnetResponse response = routedIpv4Manager.createDataCenterIpv4SubnetResponse(result);

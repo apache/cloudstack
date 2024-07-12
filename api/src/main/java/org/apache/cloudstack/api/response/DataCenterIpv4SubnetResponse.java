@@ -41,7 +41,7 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
     @Param(description = "id of zone to which the IPv4 subnet belongs to." )
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_ID)
+    @SerializedName(ApiConstants.ZONE_NAME)
     @Param(description = "name of zone to which the IPv4 subnet belongs to." )
     private String zoneName;
 

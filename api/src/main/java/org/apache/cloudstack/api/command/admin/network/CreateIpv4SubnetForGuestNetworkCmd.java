@@ -28,10 +28,6 @@ import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 
@@ -93,8 +89,7 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+    public void execute() {
         Ipv4GuestSubnetNetworkMap result = routedIpv4Manager.createIpv4SubnetForGuestNetwork(this);
         if (result != null) {
             Ipv4SubnetForGuestNetworkResponse response = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(result);
