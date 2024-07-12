@@ -53,19 +53,26 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+import org.apache.cloudstack.api.command.admin.network.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.ListBgpPeersCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.user.network.routing.CreateRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.routing.DeleteRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.routing.ListRoutingFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.network.routing.UpdateRoutingFirewallRuleCmd;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -73,6 +80,8 @@ import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnetVO;
 import org.apache.cloudstack.datacenter.dao.DataCenterIpv4GuestSubnetDao;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap.State;
+import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.dao.Ipv4GuestSubnetNetworkMapDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
@@ -113,6 +122,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     VpcOfferingDao vpcOfferingDao;
     @Inject
     VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @Inject
+    BgpPeerDao bgpPeerDao;
+    @Inject
+    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
 
     @Override
     public String getConfigComponentName() {
@@ -143,6 +156,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         cmdList.add(ListRoutingFirewallRulesCmd.class);
         cmdList.add(UpdateRoutingFirewallRuleCmd.class);
         cmdList.add(DeleteRoutingFirewallRuleCmd.class);
+        cmdList.add(CreateBgpPeerCmd.class);
+        cmdList.add(DeleteBgpPeerCmd.class);
+        cmdList.add(ListBgpPeersCmd.class);
+        cmdList.add(UpdateBgpPeerCmd.class);
+        cmdList.add(DedicateBgpPeerCmd.class);
+        cmdList.add(ReleaseDedicatedBgpPeerCmd.class);
         return cmdList;
     }
 
@@ -932,5 +951,259 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
                 && vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null;
+    }
+
+    @Override
+    public BgpPeer createBgpPeer(CreateBgpPeerCmd createBgpPeerCmd) {
+        Long zoneId = createBgpPeerCmd.getZoneId();
+        Long asNumber = createBgpPeerCmd.getAsNumber();
+        String ip4Address = createBgpPeerCmd.getIp4Address();
+        String ip6Address = createBgpPeerCmd.getIp6Address();
+        String password = createBgpPeerCmd.getPassword();
+
+        if (ObjectUtils.allNull(ip4Address, ip6Address)) {
+            throw new InvalidParameterValueException("At least one of IPv4 and IPv6 address must be specified.");
+        }
+
+        if (ip4Address != null) {
+            if (!NetUtils.isValidIp4(ip4Address)) {
+                throw new InvalidParameterValueException("IPv4 address is not valid.");
+            }
+            if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, asNumber, ip4Address, null) != null) {
+                throw new InvalidParameterValueException("There is already a BGP peer with same IPv4 address and AS number in the zone.");
+            }
+        }
+
+        if (ip6Address != null) {
+            if (!NetUtils.isValidIp6(ip6Address)) {
+                throw new InvalidParameterValueException("IPv6 address is not valid.");
+            }
+            if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, asNumber, null, ip6Address) != null) {
+                throw new InvalidParameterValueException("There is already a BGP peer with same IPv6 address and AS number in the zone.");
+            }
+        }
+
+        Long domainId = createBgpPeerCmd.getDomainId();
+        final Long projectId = createBgpPeerCmd.getProjectId();
+        final String accountName = createBgpPeerCmd.getAccountName();
+
+        Long accountId = null;
+        if (accountName != null || projectId != null) {
+            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+        }
+        if (accountId != null) {
+            Account account = accountManager.getAccount(accountId);
+            domainId = account.getDomainId();
+        }
+
+        BgpPeerVO bgpPeerVO = new BgpPeerVO(zoneId, ip4Address, ip6Address, asNumber, password);
+        if (domainId != null) {
+            bgpPeerVO.setDomainId(domainId);
+        }
+        if (accountId != null) {
+            bgpPeerVO.setAccountId(accountId);
+        }
+        bgpPeerVO = bgpPeerDao.persist(bgpPeerVO);
+        return bgpPeerVO;
+    }
+
+    @Override
+    public BgpPeerResponse createBgpPeerResponse(BgpPeer bgpPeer) {
+        BgpPeerResponse response = new BgpPeerResponse();
+        response.setCreated(bgpPeer.getCreated());
+        response.setAsNumber(String.valueOf(bgpPeer.getAsNumber()));
+        response.setId(bgpPeer.getUuid());
+        response.setIp4Address(bgpPeer.getIp4Address());
+        response.setIp6Address(bgpPeer.getIp6Address());
+
+        DataCenter zone = ApiDBUtils.findZoneById(bgpPeer.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+
+        if (bgpPeer.getDomainId() != null) {
+            Domain domain = ApiDBUtils.findDomainById(bgpPeer.getDomainId());
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+            }
+        }
+
+        if (bgpPeer.getAccountId() != null) {
+            Account account = ApiDBUtils.findAccountById(bgpPeer.getAccountId());
+            if (account != null) {
+                if (account.getType() == Account.Type.PROJECT) {
+                    // find the project
+                    Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                    response.setProjectId(project.getUuid());
+                    response.setProjectName(project.getName());
+                } else {
+                    response.setAccountName(account.getAccountName());
+                }
+            }
+        }
+
+        return response;
+    }
+
+    @Override
+    public boolean deleteBgpPeer(DeleteBgpPeerCmd deleteBgpPeerCmd) {
+        // check if BGP peer is in use
+        Long bgpPeerId = deleteBgpPeerCmd.getId();
+        List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listByBgpPeerId(bgpPeerId);
+        if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
+            throw new InvalidParameterValueException(String.format("The BGP peer is being used by %s guest networks.", usedBgpPeers.size()));
+        }
+
+        bgpPeerDao.remove(bgpPeerId);
+        return true;
+    }
+
+    @Override
+    public BgpPeer updateBgpPeer(UpdateBgpPeerCmd updateBgpPeerCmd) {
+        Long bgpPeerId = updateBgpPeerCmd.getId();
+        Long newAsNumber = updateBgpPeerCmd.getAsNumber();
+        String newIp4Address = updateBgpPeerCmd.getIp4Address();
+        String newIp6Address = updateBgpPeerCmd.getIp6Address();
+        String password = updateBgpPeerCmd.getPassword();
+
+        BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
+        if (bgpPeerVO == null) {
+            throw new InvalidParameterValueException(String.format("Invalid BGP peer ID: %s", bgpPeerId));
+        }
+
+        Long zoneId = bgpPeerVO.getDataCenterId();
+
+        boolean isAsNumberChanged = (newAsNumber != null) && (newAsNumber != bgpPeerVO.getAsNumber());
+        if (!isAsNumberChanged) {
+            newAsNumber = bgpPeerVO.getAsNumber();
+        }
+        boolean isIp4AddressChanged = (newIp4Address != null) && (newIp4Address != bgpPeerVO.getIp4Address());
+        if (!isIp4AddressChanged) {
+            newIp4Address = bgpPeerVO.getIp4Address();
+        }
+        boolean isIp6AddressChanged = (newIp6Address != null) && (newIp6Address != bgpPeerVO.getIp6Address());
+        if (!isIp6AddressChanged) {
+            newIp6Address = bgpPeerVO.getIp6Address();
+        }
+
+        if (isIp4AddressChanged) {
+            if (!NetUtils.isValidIp4(newIp4Address)) {
+                throw new InvalidParameterValueException("new IPv4 address is not valid.");
+            }
+        }
+        if (isIp6AddressChanged) {
+            if (!NetUtils.isValidIp6(newIp6Address)) {
+                throw new InvalidParameterValueException("new IPv6 address is not valid.");
+            }
+        }
+        if (isIp4AddressChanged || isAsNumberChanged) {
+            if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, newIp4Address, null) != null) {
+                throw new InvalidParameterValueException("There is already a BGP peer with same IPv4 address and AS number in the zone.");
+            }
+        }
+        if (isIp6AddressChanged || isAsNumberChanged) {
+            if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, null, newIp6Address) != null) {
+                throw new InvalidParameterValueException("There is already a BGP peer with same IPv6 address and AS number in the zone.");
+            }
+        }
+
+        // update via bgpPeerDao
+        bgpPeerVO.setAsNumber(newAsNumber);
+        bgpPeerVO.setIp4Address(newIp4Address);
+        bgpPeerVO.setIp6Address(newIp6Address);
+        if (password != null) {
+            bgpPeerVO.setPassword(password);
+        }
+        bgpPeerDao.update(bgpPeerId, bgpPeerVO);
+
+        return bgpPeerDao.findById(bgpPeerId);
+    }
+
+    @Override
+    public BgpPeer dedicateBgpPeer(DedicateBgpPeerCmd dedicateBgpPeerCmd) {
+        final Long id = dedicateBgpPeerCmd.getId();
+        Long domainId = dedicateBgpPeerCmd.getDomainId();
+        final Long projectId = dedicateBgpPeerCmd.getProjectId();
+        final String accountName = dedicateBgpPeerCmd.getAccountName();
+
+        BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
+        if (bgpPeerVO == null) {
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+        }
+        Long accountId = null;
+        if (accountName != null || projectId != null) {
+            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+        }
+        if (accountId != null) {
+            Account account = accountManager.getAccount(accountId);
+            domainId = account.getDomainId();
+        }
+
+        // Check if the BGP peer is used by other domain or account
+        if (domainId != null) {
+            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedByOtherDomains(id, domainId);
+            if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
+                throw new InvalidParameterValueException(String.format("The subnet is being used by %s guest networks of other domains.", usedBgpPeers.size()));
+            }
+        }
+        if (accountId != null) {
+            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedByOtherAccounts(id, accountId);
+            if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
+                throw new InvalidParameterValueException(String.format("The subnet is being used by %s guest networks of other accounts.", usedBgpPeers.size()));
+            }
+        }
+
+        // update domain_id or account_id via dataCenterIpv4GuestSubnetDao to Mark the subnet as dedicated
+        bgpPeerVO.setDomainId(domainId);
+        bgpPeerVO.setAccountId(accountId);
+        bgpPeerDao.update(id, bgpPeerVO);
+        return bgpPeerDao.findById(id);
+    }
+
+    @Override
+    public BgpPeer releaseDedicatedBgpPeer(ReleaseDedicatedBgpPeerCmd releaseDedicatedBgpPeerCmd) {
+        final Long id = releaseDedicatedBgpPeerCmd.getId();
+        BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
+        if (bgpPeerVO == null) {
+            throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
+        }
+
+        // update domain_id and account_id to null via bgpPeerDao, to release the dedication
+        bgpPeerVO.setDomainId(null);
+        bgpPeerVO.setAccountId(null);
+        bgpPeerDao.update(id, bgpPeerVO);
+        return bgpPeerDao.findById(id);
+    }
+
+    @Override
+    public List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd) {
+        Long id = listBgpPeersCmd.getId();
+        Long zoneId = listBgpPeersCmd.getZoneId();
+        String asNumber = listBgpPeersCmd.getAsNumber();
+        Long domainId = listBgpPeersCmd.getDomainId();
+        Long projectId = listBgpPeersCmd.getProjectId();
+        String accountName = listBgpPeersCmd.getAccountName();
+
+        SearchCriteria sc = bgpPeerDao.createSearchCriteria();
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        if (zoneId != null) {
+            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+        if (asNumber != null) {
+            sc.addAnd("subnet", SearchCriteria.Op.EQ, asNumber);
+        }
+        if (domainId != null) {
+            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        }
+        if (accountName != null || projectId != null) {
+            Long accountId= accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        // search via bgpPeerDao
+        return bgpPeerDao.search(sc, null);
     }
 }

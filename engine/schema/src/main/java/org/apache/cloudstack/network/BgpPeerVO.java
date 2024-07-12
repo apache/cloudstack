@@ -41,6 +41,9 @@ public class BgpPeerVO implements BgpPeer {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "data_center_id")
+    private long dataCenterId;
+
     @Column(name = "ip4_address")
     private String ip4Address;
 
@@ -53,6 +56,12 @@ public class BgpPeerVO implements BgpPeer {
     @Column(name = "password")
     private String password;
 
+    @Column(name = "domain_id")
+    Long domainId;
+
+    @Column(name = "account_id")
+    Long accountId;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -63,12 +72,13 @@ public class BgpPeerVO implements BgpPeer {
         uuid = UUID.randomUUID().toString();
     }
 
-    public BgpPeerVO(String ip4Address, String ip6Address, Long asNumber, String password) {
+    public BgpPeerVO(long dcId, String ip4Address, String ip6Address, Long asNumber, String password) {
+        this();
+        this.dataCenterId = dcId;
         this.ip4Address = ip4Address;
         this.ip6Address = ip6Address;
         this.asNumber = asNumber;
         this.password = password;
-        uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -82,8 +92,21 @@ public class BgpPeerVO implements BgpPeer {
     }
 
     @Override
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
+
+    public void setDataCenterId(long dataCenterId) {
+        this.dataCenterId = dataCenterId;
+    }
+
+    @Override
     public String getIp4Address() {
         return ip4Address;
+    }
+
+    public void setIp4Address(String ip4Address) {
+        this.ip4Address = ip4Address;
     }
 
     @Override
@@ -91,9 +114,17 @@ public class BgpPeerVO implements BgpPeer {
         return ip6Address;
     }
 
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
+
     @Override
     public Long getAsNumber() {
         return asNumber;
+    }
+
+    public void setAsNumber(Long asNumber) {
+        this.asNumber = asNumber;
     }
 
     @Override
@@ -101,6 +132,29 @@ public class BgpPeerVO implements BgpPeer {
         return password;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    @Override
     public Date getCreated() {
         return created;
     }

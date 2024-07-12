@@ -28,6 +28,11 @@ public interface BgpPeerNetworkMapDao extends GenericDao<BgpPeerNetworkMapVO, Lo
 
     BgpPeerNetworkMapVO findByBgpPeerIdAndNetworkId(long bgpPeerId, long networkId);
 
+    List<BgpPeerNetworkMapVO> listByBgpPeerId(long bgpPeerId);
+
     List<BgpPeerNetworkMapVO> listByNetworkId(long networkId);
 
+    List<BgpPeerNetworkMapVO> listUsedByOtherDomains(long bgpPeerId, Long domainId);
+
+    List<BgpPeerNetworkMapVO> listUsedByOtherAccounts(long bgpPeerId, Long accountId);
 }

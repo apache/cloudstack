@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
 import org.apache.cloudstack.storage.object.Bucket;
@@ -758,6 +759,11 @@ public class EventTypes {
     public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE = "ROUTING.IPV4.FIREWALL.RULE.CREATE";
     public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE = "ROUTING.IPV4.FIREWALL.RULE.UPDATE";
     public static final String EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE = "ROUTING.IPV4.FIREWALL.RULE.DELETE";
+    public static final String EVENT_BGP_PEER_CREATE = "BGP.PEER.CREATE";
+    public static final String EVENT_BGP_PEER_UPDATE = "BGP.PEER.UPDATE";
+    public static final String EVENT_BGP_PEER_DELETE = "BGP.PEER.DELETE";
+    public static final String EVENT_BGP_PEER_DEDICATE = "BGP.PEER.DEDICATE";
+    public static final String EVENT_BGP_PEER_RELEASE = "BGP.PEER.RELEASE";
 
     static {
 
@@ -1226,6 +1232,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE, FirewallRule.class);
         entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE, FirewallRule.class);
         entityEventDetails.put(EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE, FirewallRule.class);
+        entityEventDetails.put(EVENT_BGP_PEER_CREATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_UPDATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_DELETE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_DEDICATE, BgpPeer.class);
+        entityEventDetails.put(EVENT_BGP_PEER_RELEASE, BgpPeer.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

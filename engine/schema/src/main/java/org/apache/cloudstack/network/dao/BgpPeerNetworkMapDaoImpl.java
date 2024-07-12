@@ -19,7 +19,11 @@ package org.apache.cloudstack.network.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.utils.db.JoinBuilder;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +37,10 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerIdSearch;
     protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerNetworkSearch;
+    protected SearchBuilder<BgpPeerNetworkMapVO> DomainAccountNeqSearch;
+
+    @Inject
+    NetworkDao networkDao;
 
     public BgpPeerNetworkMapDaoImpl() {
     }
@@ -47,6 +55,15 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
         BgpPeerNetworkSearch.and("bgpPeerId", BgpPeerNetworkSearch.entity().getBgpPeerId(), SearchCriteria.Op.EQ);
         BgpPeerNetworkSearch.and("networkId", BgpPeerNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         BgpPeerNetworkSearch.done();
+
+        final SearchBuilder<NetworkVO> networkSearchBuilder = networkDao.createSearchBuilder();
+        networkSearchBuilder.and("domainId", networkSearchBuilder.entity().getDomainId(), SearchCriteria.Op.NEQ);
+        networkSearchBuilder.and("accountId", networkSearchBuilder.entity().getAccountId(), SearchCriteria.Op.NEQ);
+        DomainAccountNeqSearch = createSearchBuilder();
+        DomainAccountNeqSearch.and("bgpPeerId", DomainAccountNeqSearch.entity().getBgpPeerId(), SearchCriteria.Op.EQ);
+        DomainAccountNeqSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getId(),
+                DomainAccountNeqSearch.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        DomainAccountNeqSearch.done();
 
     }
 
@@ -76,10 +93,34 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
     }
 
     @Override
+    public List<BgpPeerNetworkMapVO> listByBgpPeerId(long bgpPeerId) {
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
+        sc.setParameters("bgpPeerId", bgpPeerId);
+
+        return search(sc, null);
+    }
+
+    @Override
     public List<BgpPeerNetworkMapVO> listByNetworkId(long networkId) {
         SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
         sc.setParameters("networkId", networkId);
 
         return search(sc, null);
+    }
+
+    @Override
+    public List<BgpPeerNetworkMapVO> listUsedByOtherDomains(long bgpPeerId, Long domainId) {
+        SearchCriteria<BgpPeerNetworkMapVO> sc = DomainAccountNeqSearch.create();
+        sc.setParameters("bgpPeerId", bgpPeerId);
+        sc.setJoinParameters("network", "domainId", domainId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<BgpPeerNetworkMapVO> listUsedByOtherAccounts(long bgpPeerId, Long accountId) {
+        SearchCriteria<BgpPeerNetworkMapVO> sc = DomainAccountNeqSearch.create();
+        sc.setParameters("bgpPeerId", bgpPeerId);
+        sc.setJoinParameters("network", "accountId", accountId);
+        return listBy(sc);
     }
 }

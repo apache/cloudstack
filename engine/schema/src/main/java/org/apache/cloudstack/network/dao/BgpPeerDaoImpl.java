@@ -36,6 +36,7 @@ import java.util.List;
 @DB
 public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements BgpPeerDao {
     protected SearchBuilder<BgpPeerVO> NetworkIdSearch;
+    protected SearchBuilder<BgpPeerVO> AllFieldsSearch;
 
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
@@ -49,6 +50,15 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         NetworkIdSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getBgpPeerId(),
                 NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         NetworkIdSearch.done();
+
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("zoneId", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("asNumber", AllFieldsSearch.entity().getAsNumber(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ip4Address", AllFieldsSearch.entity().getIp4Address(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ip6Address", AllFieldsSearch.entity().getIp6Address(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
     }
 
     @Override
@@ -57,5 +67,19 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         sc.setJoinParameters("network", "networkId", networkId);
         sc.setJoinParameters("network", "state", BgpPeer.State.Active);
         return listBy(sc);
+    }
+
+    @Override
+    public BgpPeerVO findByZoneAndAsNumberAndAddress(long zoneId, Long asNumber, String ip4Address, String ip6Address) {
+        SearchCriteria<BgpPeerVO> sc = AllFieldsSearch.create();
+        sc.setParameters( "zoneId", zoneId);
+        sc.setParameters( "asNumber", asNumber);
+        if (ip4Address != null) {
+            sc.setParameters( "ip4Address", ip4Address);
+        }
+        if (ip6Address != null) {
+            sc.setParameters( "ip6Address", ip6Address);
+        }
+        return findOneBy(sc);
     }
 }

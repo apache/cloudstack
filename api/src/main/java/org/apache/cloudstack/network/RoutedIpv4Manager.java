@@ -25,18 +25,25 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
+import org.apache.cloudstack.api.command.admin.network.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.ListBgpPeersCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.user.network.routing.CreateRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.routing.ListRoutingFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.network.routing.UpdateRoutingFirewallRuleCmd;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
@@ -133,4 +140,18 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     boolean isRoutedVpc(Vpc vpc);
 
     boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering);
+
+    BgpPeer createBgpPeer(CreateBgpPeerCmd createBgpPeerCmd);
+
+    BgpPeerResponse createBgpPeerResponse(BgpPeer result);
+
+    boolean deleteBgpPeer(DeleteBgpPeerCmd deleteBgpPeerCmd);
+
+    BgpPeer updateBgpPeer(UpdateBgpPeerCmd updateBgpPeerCmd);
+
+    BgpPeer dedicateBgpPeer(DedicateBgpPeerCmd dedicateBgpPeerCmd);
+
+    BgpPeer releaseDedicatedBgpPeer(ReleaseDedicatedBgpPeerCmd releaseDedicatedBgpPeerCmd);
+
+    List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd);
 }

@@ -20,11 +20,19 @@ package org.apache.cloudstack.network;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Date;
+
 public interface BgpPeer extends Identity, InternalIdentity {
+
+    Long getDomainId();
+
+    Long getAccountId();
 
     enum State {
         Active, Revoke
     }
+
+    long getDataCenterId();
 
     String getIp4Address();
 
@@ -33,4 +41,6 @@ public interface BgpPeer extends Identity, InternalIdentity {
     Long getAsNumber();
 
     String getPassword();
+
+    Date getCreated();
 }

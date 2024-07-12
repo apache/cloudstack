@@ -24,4 +24,6 @@ import java.util.List;
 
 public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
     List<BgpPeerVO> listByNetworkId(long networkId);
+
+    BgpPeerVO findByZoneAndAsNumberAndAddress(long zoneId, Long asNumber, String ip4Address, String ip6Address);
 }

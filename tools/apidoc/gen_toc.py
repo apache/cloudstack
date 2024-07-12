@@ -280,6 +280,7 @@ known_categories = {
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
     'purgeExpungedResources': 'Resource',
+    'BgpPeer': 'BGP Peer',
     'createASNRange': 'AS Number Range',
     'listASNRange': 'AS Number Range',
     'deleteASNRange': 'AS Number Range',
