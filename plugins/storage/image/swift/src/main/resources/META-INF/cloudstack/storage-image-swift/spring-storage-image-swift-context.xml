@@ -29,5 +29,5 @@
 
     <bean id="swiftImageStoreProviderImpl"
         class="org.apache.cloudstack.storage.datastore.provider.SwiftImageStoreProviderImpl" />
-    
+
 </beans>

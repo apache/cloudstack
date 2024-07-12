@@ -28,5 +28,5 @@
                       >
 
     <bean id="consoleProxyAlertAdapter" class="com.cloud.alert.ConsoleProxyAlertAdapter" />
-    
+
 </beans>

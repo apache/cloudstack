@@ -34,5 +34,5 @@
     <bean id="StorageCacheReplacementAlgorithm"
         class="org.apache.cloudstack.storage.cache.manager.StorageCacheReplacementAlgorithmLRU" />
 
-    
+
 </beans>

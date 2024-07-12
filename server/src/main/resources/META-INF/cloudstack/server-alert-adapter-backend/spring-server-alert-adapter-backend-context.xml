@@ -28,5 +28,5 @@
                       >
 
     <bean id="clusterAlertAdapter" class="com.cloud.alert.ClusterAlertAdapter" />
-    
+
 </beans>

@@ -30,7 +30,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deleteZone</name>
 		<parameters>
@@ -70,7 +70,7 @@ under the License.
             </item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createVlanIpRange</name>
 		<parameters>
@@ -104,7 +104,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createPod</name>
 		<parameters>
@@ -166,7 +166,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>updateConfiguration</name>
 		<parameters>

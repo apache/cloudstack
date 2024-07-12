@@ -36,7 +36,7 @@
     </property>
   </bean>
 
-  <bean id="TestConfiguration" 
+  <bean id="TestConfiguration"
     class="com.cloud.storage.dao.StoragePoolDaoTestConfiguration" />
   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" >
     <property name="requiredParameterValue" value="false" />
