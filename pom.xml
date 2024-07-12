@@ -1013,6 +1013,7 @@
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
+                            <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>

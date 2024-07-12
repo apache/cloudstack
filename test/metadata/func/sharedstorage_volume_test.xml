@@ -78,12 +78,12 @@ under the License.
 				<name>account</name>
 				<param>accountvar</param>
 			</item>
-		</parameters>		
+		</parameters>
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
 				<param>userid</param>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -126,7 +126,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<parameters>
@@ -145,7 +145,7 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
+	</command>
 
 	<command>
 		<name>createNetwork</name>
@@ -200,7 +200,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -208,7 +208,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -224,7 +224,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -233,7 +233,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -248,7 +248,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -257,7 +257,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -273,7 +273,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!--  Test case 1029 - attach volume to stopped vm -->
 	<command>
@@ -286,7 +286,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -301,7 +301,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -310,7 +310,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -326,8 +326,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1030 - verify that type of the volume is DATADISK always-->
 	<command>
 		<name>createVolume</name>
@@ -344,7 +344,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item>
@@ -352,9 +352,9 @@ under the License.
 				<value>DATADISK</value>
 			</item>
 		</returnvalue>
-	</command>	
-	
-	
+	</command>
+
+
 <!--  Test case 1031 - verify that you can detach DataDisk from the vm-->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -371,7 +371,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -379,7 +379,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -395,7 +395,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -404,7 +404,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -424,7 +424,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -458,7 +458,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -471,8 +471,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1035 - attach 5 volumes to Running vm-->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -489,7 +489,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>		
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -497,7 +497,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -513,7 +513,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -522,7 +522,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -537,7 +537,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -546,7 +546,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -561,7 +561,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -570,7 +570,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -585,7 +585,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -594,7 +594,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -609,7 +609,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -618,7 +618,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -633,7 +633,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -642,7 +642,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -657,7 +657,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -672,7 +672,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -687,7 +687,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -702,7 +702,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -732,7 +732,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 1037 - stop and start the vm after attaching 5 volumes to it -->
 	<command>
 		<name>stopVirtualMachine</name>
@@ -745,7 +745,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -757,8 +757,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1039 - try to attach 6th volume to the vm - should fail -->
 	<command>
 		<name>createVolume</name>
@@ -774,7 +774,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -783,7 +783,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -800,7 +800,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!--  Test case 1038 - destroy the vm and make sure that all attached volumes got destroyed -->
 	<command>
@@ -813,8 +813,8 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>listVolumes</name>
 		<empty>true</empty>
@@ -830,8 +830,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1040 - detach all data disks from the vm and reboot -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -848,7 +848,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -856,7 +856,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -872,7 +872,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -881,7 +881,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -901,7 +901,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -912,7 +912,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -924,7 +924,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 1041 - detach all disks from the vm and stop/start -->
 	<command>
 		<name>stopVirtualMachine</name>
@@ -936,7 +936,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -967,7 +967,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -975,7 +975,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -991,7 +991,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1000,7 +1000,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<parameters>
@@ -1020,7 +1020,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -1032,7 +1032,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<empty>true</empty>
@@ -1048,7 +1048,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 1045 - detach volume from Stopped vm -->
 	<command>
 		<name>attachVolume</name>
@@ -1064,7 +1064,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -1075,7 +1075,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -1087,7 +1087,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVolumes</name>
 		<empty>true</empty>
@@ -1103,7 +1103,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 1046 - try to attach the same volume twice -->
 	<command>
 		<name>deployVirtualMachine</name>
@@ -1120,7 +1120,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -1128,7 +1128,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -1144,7 +1144,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1153,7 +1153,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -1169,7 +1169,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -1177,7 +1177,7 @@ under the License.
 			<item getparam="true">
 			    <name>account</name>
 				<param>accountvar</param>
-			</item>	
+			</item>
 			<item>
 			    <name>domainid</name>
 				<value>1</value>
@@ -1193,7 +1193,7 @@ under the License.
 			<item getparam="true">
 				<name>networkids</name>
 				<param>networkid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1202,7 +1202,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -1217,7 +1217,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1226,7 +1226,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -1241,7 +1241,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -1258,7 +1258,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Try to attach volume to destroyed vm - negative case-->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -1270,7 +1270,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>createVolume</name>
 		<usercommand>true</usercommand>
@@ -1285,7 +1285,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 		</parameters>
 		<returnvalue>
 			<item setparam="true">
@@ -1294,7 +1294,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachVolume</name>
 		<usercommand>true</usercommand>
@@ -1311,7 +1311,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Try to detach volume from the vm in Destroyed state - negative case -->
 	<command>
 		<name>listVolumes</name>
@@ -1332,7 +1332,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -1343,7 +1343,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>detachVolume</name>
 		<usercommand>true</usercommand>
@@ -1356,9 +1356,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
-<!--  Execute cleanup -->	
+
+
+<!--  Execute cleanup -->
 	<command>
 		<name>deleteAccount</name>
 		<testcase>Deleting Account as a part of cleanup</testcase>
