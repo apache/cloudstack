@@ -1044,6 +1044,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        response.setObjectName("bgppeer");
         return response;
     }
 
@@ -1098,12 +1099,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 throw new InvalidParameterValueException("new IPv6 address is not valid.");
             }
         }
-        if (isIp4AddressChanged || isAsNumberChanged) {
+        if (newIp4Address != null) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, newIp4Address, null) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv4 address and AS number in the zone.");
             }
         }
-        if (isIp6AddressChanged || isAsNumberChanged) {
+        if (newIp6Address != null) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, null, newIp6Address) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv6 address and AS number in the zone.");
             }

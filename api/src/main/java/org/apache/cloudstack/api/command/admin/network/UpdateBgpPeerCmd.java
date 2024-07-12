@@ -60,7 +60,6 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.AS_NUMBER,
             type = CommandType.LONG,
-            required = true,
             description = "The AS number of the Bgp Peer.")
     private Long asNumber;
 

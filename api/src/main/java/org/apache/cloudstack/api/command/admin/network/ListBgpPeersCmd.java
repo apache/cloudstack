@@ -37,7 +37,7 @@ import org.apache.cloudstack.network.BgpPeer;
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
-        authorized = {RoleType.Admin})
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
 public class ListBgpPeersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ID,
