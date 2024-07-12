@@ -59,7 +59,7 @@
               tooltipPlacement="bottom"
               :tooltip="$t('label.add.account')"
               icon="user-add-outlined"
-              @onClick="() => handleOpenAddAccountModal(record)"
+              @onClick="() => handleOpenAddAccountForIpv4GuestSubnetModal(record)"
               :disabled="!('dedicateIpv4GuestSubnetForZone' in $store.getters.apis)" />
             <tooltip-button
               v-if="record.domain"
@@ -68,7 +68,7 @@
               icon="user-delete-outlined"
               type="primary"
               :danger="true"
-              @onClick="() => handleRemoveAccount(record.id)"
+              @onClick="() => handleRemoveAccountFromIpv4GuestSubnet(record.id)"
               :disabled="!('releaseIpv4GuestSubnetForZone' in $store.getters.apis)" />
             <tooltip-button
               tooltipPlacement="bottom"
@@ -107,12 +107,12 @@
     </a-pagination>
 
     <a-modal
-      :visible="accountModal"
+      :visible="accountForIpv4GuestSubnetModal"
       v-if="selectedItem"
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="accountModal = false">
+      @cancel="accountForIpv4GuestSubnetModal = false">
       <div>
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}</div>
@@ -125,28 +125,28 @@
       </div>
 
       <div :span="24" class="action-button">
-        <a-button @click="accountModal = false">{{ $t('label.close') }}</a-button>
+        <a-button @click="accountForIpv4GuestSubnetModal = false">{{ $t('label.close') }}</a-button>
       </div>
     </a-modal>
 
     <a-modal
-      v-if="addAccountModal"
+      v-if="addAccountForIpv4GuestSubnetModal"
       :zIndex="1001"
       :closable="true"
       :maskClosable="false"
-      :visible="addAccountModal"
+      :visible="addAccountForIpv4GuestSubnetModal"
       :title="$t('label.add.account')"
       :footer="null"
-      @cancel="addAccountModal = false">
-      <a-spin :spinning="domainsLoading" v-ctrl-enter="handleAddAccount">
+      @cancel="addAccountForIpv4GuestSubnetModal = false">
+      <a-spin :spinning="domainsLoading" v-ctrl-enter="handleAddAccountForIpv4GuestSubnet">
         <div style="margin-bottom: 10px;">
           <div class="list__label">{{ $t('label.account') }}:</div>
-          <a-input v-model:value="addAccount.account" v-focus="true"></a-input>
+          <a-input v-model:value="addAccountForIpv4GuestSubnet.account" v-focus="true"></a-input>
         </div>
         <div>
           <div class="list__label">{{ $t('label.domain') }}:</div>
           <a-select
-            v-model:value="addAccount.domain"
+            v-model:value="addAccountForIpv4GuestSubnet.domain"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -162,8 +162,8 @@
         </div>
 
         <div :span="24" class="action-button">
-          <a-button @click="addAccountModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleAddAccount">{{ $t('label.ok') }}</a-button>
+          <a-button @click="addAccountForIpv4GuestSubnetModal = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddAccountForIpv4GuestSubnet">{{ $t('label.ok') }}</a-button>
         </div>
       </a-spin>
     </a-modal>
@@ -190,9 +190,9 @@
         </a-form-item>
         <div class="form__item">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
-          <a-switch v-model:checked="showAccountFields" @change="handleShowAccountFields" />
+          <a-switch v-model:checked="showAccountForIpv4GuestSubnetFields" @change="handleShowAccountForIpv4GuestSubnetFields" />
         </div>
-        <div v-if="showAccountFields" style="margin-top: 20px;">
+        <div v-if="showAccountForIpv4GuestSubnetFields" style="margin-top: 20px;">
           <div v-html="$t('label.ipv4.subnet.set.reservation.desc')"></div><br>
           <a-spin :spinning="domainsLoading">
             <a-form-item name="account" ref="account" :label="$t('label.account')" class="form__item">
@@ -218,7 +218,7 @@
         </div>
 
         <div :span="24" class="action-button">
-          <a-button @click="addIpv4SubnetModal = false; showAccountFields = false">{{ $t('label.cancel') }}</a-button>
+          <a-button @click="addIpv4SubnetModal = false; showAccountForIpv4GuestSubnetFields = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleAddIpv4Subnet">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
@@ -412,10 +412,10 @@ export default {
       pageSize: 10,
       selectedItem: null,
       ipv4Subnets: [],
-      showAccountFields: false,
-      accountModal: false,
-      addAccountModal: false,
-      addAccount: {
+      showAccountForIpv4GuestSubnetFields: false,
+      accountForIpv4GuestSubnetModal: false,
+      addAccountForIpv4GuestSubnetModal: false,
+      addAccountForIpv4GuestSubnet: {
         account: null,
         domain: null
       },
@@ -425,6 +425,7 @@ export default {
       updateIpv4SubnetModal: false,
       ipv4SubnetPage: 1,
       ipv4SubnetPageSize: 10,
+      ipv4SubnetsTotal: 0,
       ipv4SubnetColumns: [
         {
           title: this.$t('label.subnet'),
@@ -541,7 +542,7 @@ export default {
       }).then(response => {
         this.domains = response.listdomainsresponse.domain ? response.listdomainsresponse.domain : []
         if (this.domains.length > 0) {
-          this.addAccount.domain = this.domains[0].id
+          this.addAccountForIpv4GuestSubnet.domain = this.domains[0].id
           this.ipv4SubnetForm.domain = this.domains[0].id
         }
       }).catch(error => {
@@ -696,50 +697,90 @@ export default {
         this.fetchIpv6PrefixData()
       })
     },
-    handleAddAccount () {
+    handleAddAccountForIpv4GuestSubnet () {
       if (this.domainsLoading) return
       this.domainsLoading = true
 
       if (this.addIpv4SubnetModal === true) {
-        this.addAccountModal = false
+        this.addAccountForIpv4GuestSubnetModal = false
         return
       }
 
       var params = {
         id: this.selectedItem.id,
         zoneid: this.selectedItem.zoneid,
-        domainid: this.addAccount.domain
+        domainid: this.addAccountForIpv4GuestSubnet.domain
       }
 
-      if (this.addAccount.account) {
-        params.account = this.addAccount.account
+      if (this.addAccountForIpv4GuestSubnet.account) {
+        params.account = this.addAccountForIpv4GuestSubnet.account
       }
 
-      api('dedicateIpv4GuestSubnetForZone', params).catch(error => {
+      api('dedicateIpv4GuestSubnetForZone', params).then(response => {
+        this.$pollJob({
+          jobId: response.dedicateipv4guestsubnetforzoneresponse.jobid,
+          title: this.$t('label.dedicate.ipv4.subnet'),
+          successMessage: this.$t('message.success.dedicate.ipv4.subnet'),
+          successMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          },
+          errorMessage: this.$t('error.dedicate.ipv4.subnet.failed'),
+          errorMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          }
+        })
+      }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.addAccountModal = false
+        this.addAccountForIpv4GuestSubnetModal = false
         this.domainsLoading = false
-        this.fetchData()
+        this.fetchZoneIpv4Subnet()
       })
     },
-    handleRemoveAccount (id) {
+    handleRemoveAccountFromIpv4GuestSubnet (id) {
       this.componentLoading = true
-      api('releaseIpv4GuestSubnetForZone', { id }).catch(error => {
+      api('releaseIpv4GuestSubnetForZone', { id }).then(response => {
+        this.$pollJob({
+          jobId: response.releaseipv4guestsubnetforzoneresponse.jobid,
+          title: this.$t('label.release.dedicated.ipv4.subnet'),
+          successMessage: this.$t('message.success.release.dedicated.ipv4.subnet'),
+          successMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          },
+          errorMessage: this.$t('error.release.dedicate.ipv4.subnet'),
+          errorMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneIpv4Subnet()
+          }
+        })
+      }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.fetchData()
+        this.fetchZoneIpv4Subnet()
       })
     },
-    handleOpenAddAccountModal (item) {
+    handleOpenAddAccountForIpv4GuestSubnetModal (item) {
       if (!this.addIpv4SubnetModal) {
         this.selectedItem = item
       }
-      this.addAccountModal = true
+      this.addAccountForIpv4GuestSubnetModal = true
       this.fetchDomains()
     },
-    handleShowAccountFields () {
-      if (this.showAccountFields) {
+    handleShowAccountForIpv4GuestSubnetFields () {
+      if (this.showAccountForIpv4GuestSubnetFields) {
         this.fetchDomains()
       }
     },
@@ -763,7 +804,7 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
-        this.fetchData()
+        this.fetchZoneIpv4Subnet()
       })
     },
     handleAddIpv4Subnet (e) {
@@ -772,16 +813,33 @@ export default {
         const values = toRaw(this.ipv4SubnetForm)
         this.componentLoading = true
         this.addIpv4SubnetModal = false
-        this.showAccountFields = false
+        this.showAccountForIpv4GuestSubnetFields = false
         var params = {
           zoneId: this.resource.zoneid,
           subnet: values.subnet,
           domainid: values.domain,
           account: values.account
         }
-        api('createIpv4SubnetForZone', params).then(() => {
-          this.$notification.success({
-            message: this.$t('message.success.add.ipv4.subnet')
+        api('createIpv4SubnetForZone', params).then(response => {
+          this.$pollJob({
+            jobId: response.createipv4subnetforzoneresponse.jobid,
+            title: this.$t('label.add.ipv4.subnet'),
+            description: values.subnet,
+            successMessage: this.$t('message.success.add.ipv4.subnet'),
+            successMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            },
+            errorMessage: this.$t('message.add.failed'),
+            errorMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            }
           })
         }).catch(error => {
           this.$notification.error({
@@ -791,7 +849,7 @@ export default {
           })
         }).finally(() => {
           this.componentLoading = false
-          this.fetchData()
+          this.fetchZoneIpv4Subnet()
         })
       }).catch(error => {
         this.ipv4SubnetFormRef.value.scrollToField(error.errorFields[0].name)
@@ -808,31 +866,48 @@ export default {
           id: this.selectedItem.id,
           subnet: values.subnet
         }
-        api('updateIpv4GuestSubnetForZone', params).then(() => {
-          this.$notification.success({
-            message: this.$t('message.success.update.ipv4.subnet')
+        api('updateIpv4GuestSubnetForZone', params).then(response => {
+          this.$pollJob({
+            jobId: response.updateipv4guestsubnetforzoneresponse.jobid,
+            title: this.$t('label.update.ipv4.subnet'),
+            description: values.subnet,
+            successMessage: this.$t('message.success.update.ipv4.subnet'),
+            successMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            },
+            errorMessage: this.$t('message.update.failed'),
+            errorMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.componentLoading = false
+              this.fetchZoneIpv4Subnet()
+            }
           })
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updatevlanIpv4Subnetresponse?.errortext || error.response.data.errorresponse.errortext,
+            description: error.response.data.updateipv4guestsubnetforzoneresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {
           this.componentLoading = false
-          this.fetchData()
+          this.fetchZoneIpv4Subnet()
         })
       })
     },
     changeIpv4SubnetPage (page, pageSize) {
       this.ipv4SubnetPage = page
       this.ipv4SubnetPageSize = pageSize
-      this.fetchData()
+      this.fetchZoneIpv4Subnet()
     },
     changeIpv4SubnetPageSize (currentPage, pageSize) {
       this.ipv4SubnetPage = currentPage
       this.ipv4SubnetPageSize = pageSize
-      this.fetchData()
+      this.fetchZoneIpv4Subnet()
     }
   }
 }
