@@ -488,6 +488,13 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
     }
 
     @Override
+    public void purgeToken(SAMLTokenVO token) {
+        if (token != null) {
+            _samlTokenDao.remove(token.getId());
+        }
+    }
+
+    @Override
     public void expireTokens() {
         _samlTokenDao.expireTokens();
     }
