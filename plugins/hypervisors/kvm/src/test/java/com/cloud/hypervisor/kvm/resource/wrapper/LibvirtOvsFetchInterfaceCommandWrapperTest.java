@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Spy;
@@ -62,9 +63,13 @@ public class LibvirtOvsFetchInterfaceCommandWrapperTest {
                             break;
                         };
                     }
+                    if (StringUtils.isNotBlank(interfaceName) && StringUtils.isNotBlank(ipAddress)) {
+                        break;
+                    }
                 }
             }
         } catch (SocketException ignored) {}
+        Assume.assumeTrue(StringUtils.isNotBlank(interfaceName));
         Ternary<String, String, String> result = null;
         try {
             result = wrapper.getInterfaceDetails(interfaceName);
