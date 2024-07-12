@@ -66,12 +66,13 @@
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading"
-                    @input="onchange($event, field.name)">
+                    @input="onchange($event, field.name)"
+                    @change="onSelectFieldChange(field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id"
-                      :label="$t(opt.path || opt.name)">
+                      :value="['account'].includes(field.name) ? opt.name : opt.id"
+                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -85,7 +86,10 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.path || opt.name) }}
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
+                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -154,14 +158,17 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   props: {
     searchFilters: {
@@ -206,13 +213,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
-      this.isFiltered = false
-      this.searchFilters.some(item => {
-        if (this.searchParams[item]) {
-          this.isFiltered = true
-          return true
-        }
-      })
+      this.updateIsFiltered()
     }
   },
   mounted () {
@@ -220,6 +221,7 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+    this.updateIsFiltered()
   },
   computed: {
     styleSearch () {
@@ -240,6 +242,11 @@ export default {
   methods: {
     onchange: async function (event, fieldname) {
       this.fetchDynamicFieldData(fieldname, event.target.value)
+    },
+    onSelectFieldChange (fieldname) {
+      if (fieldname === 'domainid') {
+        this.fetchDynamicFieldData('account')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -285,7 +292,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -317,6 +324,13 @@ export default {
           this.fields[typeIndex].opts = this.fetchRoleTypes()
           this.fields[typeIndex].loading = false
         }
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('state')) {
@@ -397,6 +411,9 @@ export default {
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+      let managementServerIdIndex = -1
+      let serviceOfferingIndex = -1
+      let diskOfferingIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -464,6 +481,24 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
+      if (arrayField.includes('serviceofferingid')) {
+        serviceOfferingIndex = this.fields.findIndex(item => item.name === 'serviceofferingid')
+        this.fields[serviceOfferingIndex].loading = true
+        promises.push(await this.fetchServiceOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('diskofferingid')) {
+        diskOfferingIndex = this.fields.findIndex(item => item.name === 'diskofferingid')
+        this.fields[diskOfferingIndex].loading = true
+        promises.push(await this.fetchDiskOfferings(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -525,6 +560,27 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
+
+        if (serviceOfferingIndex > -1) {
+          const serviceOfferings = response.filter(item => item.type === 'serviceofferingid')
+          if (serviceOfferings && serviceOfferings.length > 0) {
+            this.fields[serviceOfferingIndex].opts = this.sortArray(serviceOfferings[0].data)
+          }
+        }
+
+        if (diskOfferingIndex > -1) {
+          const diskOfferings = response.filter(item => item.type === 'diskofferingid')
+          if (diskOfferings && diskOfferings.length > 0) {
+            this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -534,6 +590,9 @@ export default {
         }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
+        }
+        if (accountIndex > -1) {
+          this.fields[accountIndex].loading = false
         }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
@@ -550,7 +609,18 @@ export default {
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
         }
-        this.fillFormFieldValues()
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
+        }
+        if (serviceOfferingIndex > -1) {
+          this.fields[serviceOfferingIndex].loading = false
+        }
+        if (diskOfferingIndex > -1) {
+          this.fields[diskOfferingIndex].loading = false
+        }
+        if (Array.isArray(arrayField)) {
+          this.fillFormFieldValues()
+        }
       })
     },
     initFormFieldData () {
@@ -561,6 +631,9 @@ export default {
       this.fetchDynamicFieldData(arrayField)
     },
     sortArray (data, key = 'name') {
+      if (!data) {
+        return []
+      }
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
         if (a[key] > b[key]) { return 1 }
@@ -610,8 +683,15 @@ export default {
     },
     fetchAccounts (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listAccounts', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
-          const account = json.listaccountsresponse.account
+        const params = { listAll: true, isrecursive: false, showicon: true, keyword: searchKeyword }
+        if (this.form.domainid) {
+          params.domainid = this.form.domainid
+        }
+        api('listAccounts', params).then(json => {
+          var account = json.listaccountsresponse.account
+          if (this.form.domainid) {
+            account = account.filter(a => a.domainid === this.form.domainid)
+          }
           resolve({
             type: 'account',
             data: account
@@ -699,6 +779,32 @@ export default {
         })
       })
     },
+    fetchServiceOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
+          resolve({
+            type: 'serviceofferingid',
+            data: serviceOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchDiskOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const diskOfferings = json.listdiskofferingsresponse.diskoffering
+          resolve({
+            type: 'diskofferingid',
+            data: diskOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchAlertTypes () {
       if (this.alertTypes.length > 0) {
         return new Promise((resolve, reject) => {
@@ -756,6 +862,19 @@ export default {
           })
         })
       }
+    },
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
     },
     fetchGuestNetworkTypes () {
       const types = []
@@ -877,9 +996,30 @@ export default {
       }
       return types
     },
+    fetchScope () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhooks') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
     fetchState () {
+      var state = []
       if (this.apiName.includes('listVolumes')) {
-        return [
+        state = [
           {
             id: 'Allocated',
             name: 'label.allocated'
@@ -906,7 +1046,7 @@ export default {
           }
         ]
       } else if (this.apiName.includes('listKubernetesClusters')) {
-        return [
+        state = [
           {
             id: 'Created',
             name: 'label.created'
@@ -956,8 +1096,19 @@ export default {
             name: 'label.error'
           }
         ]
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
       }
-      return []
+      return state
     },
     fetchEntityType () {
       const entityType = []
@@ -1052,6 +1203,13 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
     }
   }
 }

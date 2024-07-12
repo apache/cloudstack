@@ -39,6 +39,7 @@ SELECT
     `volumes`.`path` AS `path`,
     `volumes`.`chain_info` AS `chain_info`,
     `volumes`.`external_uuid` AS `external_uuid`,
+    `volumes`.`encrypt_format` AS `encrypt_format`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,
     `account`.`account_name` AS `account_name`,

@@ -78,7 +78,6 @@ public enum Config {
             "30000",
             "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
             null),
-    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -1556,14 +1555,6 @@ DefaultMaxAccountProjects(
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth(
-            "Project Defaults",
-            ManagementServer.class,
-            String.class,
-            "project.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails",
-            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,

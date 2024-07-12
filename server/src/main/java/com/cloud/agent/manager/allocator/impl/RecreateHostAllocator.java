@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -73,7 +74,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     public List<Host> allocateTo(VirtualMachineProfile vm, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
 
         List<Host> hosts = super.allocateTo(vm, plan, type, avoid, returnUpTo);
-        if (hosts != null && !hosts.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(hosts)) {
             return hosts;
         }
 

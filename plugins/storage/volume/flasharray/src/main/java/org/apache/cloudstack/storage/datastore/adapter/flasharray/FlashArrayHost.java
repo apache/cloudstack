@@ -14,16 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.kubernetes.cluster;
 
-import org.apache.cloudstack.acl.ControlledEntity;
+package org.apache.cloudstack.storage.datastore.adapter.flasharray;
 
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.Adapter;
+import java.util.List;
 
-public interface KubernetesClusterHelper extends Adapter {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    ControlledEntity findByUuid(String uuid);
-    ControlledEntity findByVmId(long vmId);
-    void checkVmCanBeDestroyed(UserVm userVm);
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class FlashArrayHost {
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public List<String> getWwns() {
+        return wwns;
+    }
+    public void setWwns(List<String> wwns) {
+        this.wwns = wwns;
+    }
+    @JsonProperty("name")
+    private String name;
+    @JsonProperty("wwns")
+    private List<String> wwns;
+
 }

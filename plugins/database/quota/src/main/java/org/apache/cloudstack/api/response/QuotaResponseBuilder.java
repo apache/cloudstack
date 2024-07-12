@@ -20,6 +20,7 @@ import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
@@ -71,6 +72,13 @@ public interface QuotaResponseBuilder {
     QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd);
 
     boolean deleteQuotaTariff(String quotaTariffUuid);
+
+    /**
+     * Lists the preset variables for the usage type informed in the command.
+     * @param cmd used to retrieve the Quota usage type parameter.
+     * @return the response consisting of a {@link List} of the preset variables and their descriptions.
+     */
+    List<QuotaPresetVariablesItemResponse> listQuotaPresetVariables(QuotaPresetVariablesListCmd cmd);
 
     Pair<QuotaEmailConfigurationVO, Double> configureQuotaEmail(QuotaConfigureEmailCmd cmd);
 

@@ -24,6 +24,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -430,6 +431,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod, AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod};
+        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod,
+                AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod,
+                CertManagementCustomSubjectAlternativeName
+        };
+    }
+
+    @Override
+    public boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException {
+        return getConfiguredCaProvider().isManagementCertificate(certificate);
     }
 }

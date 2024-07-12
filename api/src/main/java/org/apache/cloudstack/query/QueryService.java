@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
@@ -89,6 +90,7 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -125,9 +127,8 @@ public interface QueryService {
     static final ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
             "If false, templates of this domain will not show up in the list templates of other domains.", true, ConfigKey.Scope.Domain);
 
-    ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "return.vm.stats.on.vm.list", "true",
-            "If false, changes the listVirtualMachines default details to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp], so that the VMs' stats" +
-                    " are not returned by default when listing VMs; only when the 'stats' or 'all' detail is informed.", true, ConfigKey.Scope.Global);
+    ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "true",
+            "Determines whether VM stats should be returned when details are not explicitly specified in listVirtualMachines API request. When false, details default to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]. When true, all details are returned including 'stats'.", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
@@ -140,6 +141,8 @@ public interface QueryService {
     ListResponse<InstanceGroupResponse> searchForVmGroups(ListVMGroupsCmd cmd);
 
     ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd);
+
+    ListResponse<VirtualMachineResponse> listAffectedVmsForStorageScopeChange(ListAffectedVmsForStorageScopeChangeCmd cmd);
 
     ListResponse<SecurityGroupResponse> searchForSecurityGroups(ListSecurityGroupsCmd cmd);
 
