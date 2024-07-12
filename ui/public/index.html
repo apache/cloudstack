@@ -58,8 +58,8 @@
     fetch('./config.json')
       .then(response => response.json())
       .then(data => {
-        document.getElementById("favicon").setAttribute("href", data.loginPageFavicon);
-        document.getElementById("title").innerHTML = data.loginPageTitle;
+        document.getElementById("favicon").setAttribute("href", data.loginFavicon);
+        document.getElementById("title").innerHTML = data.loginTitle;
       }).catch((err) => {});
   </script>
 </html>
