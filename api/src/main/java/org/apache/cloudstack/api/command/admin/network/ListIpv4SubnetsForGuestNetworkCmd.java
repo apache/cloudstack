@@ -112,7 +112,6 @@ public class ListIpv4SubnetsForGuestNetworkCmd extends BaseListCmd {
         List<Ipv4SubnetForGuestNetworkResponse> subnetResponses = new ArrayList<>();
         for (Ipv4GuestSubnetNetworkMap subnet : subnets) {
             Ipv4SubnetForGuestNetworkResponse subnetResponse = routedIpv4Manager.createIpv4SubnetForGuestNetworkResponse(subnet);
-            subnetResponse.setObjectName("ipv4subnetforguestnetwork");
             subnetResponses.add(subnetResponse);
         }
 

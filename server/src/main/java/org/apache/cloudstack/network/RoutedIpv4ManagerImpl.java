@@ -218,6 +218,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        response.setObjectName("zoneipv4subnet");
         return response;
     }
 
@@ -513,6 +514,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 response.setZoneName(zone.getName());
             }
         }
+        response.setObjectName("ipv4subnetforguestnetwork");
         return response;
     }
 

@@ -109,7 +109,6 @@ public class ListIpv4GuestSubnetsCmd extends BaseListCmd {
         List<DataCenterIpv4SubnetResponse> subnetResponses = new ArrayList<>();
         for (DataCenterIpv4GuestSubnet subnet : subnets) {
             DataCenterIpv4SubnetResponse subnetResponse = routedIpv4Manager.createDataCenterIpv4SubnetResponse(subnet);
-            subnetResponse.setObjectName("zoneipv4subnet");
             subnetResponses.add(subnetResponse);
         }
 
