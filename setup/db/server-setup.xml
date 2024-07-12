@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?> 
+<?xml version="1.0" encoding="ISO-8859-1"?>
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -36,11 +36,11 @@ under the License.
       <internalDns1>4.2.2.2</internalDns1>
       <internalDns2>4.2.2.2</internalDns2>
       <netmask>255.255.255.0</netmask>
-      <vnet>560-579</vnet>      
+      <vnet>560-579</vnet>
       <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
       <networktype>Advanced</networktype>
     </zone>
-  </zones> 
+  </zones>
 
   <physicalNetworks>
 	 <physicalNetwork>
@@ -49,7 +49,7 @@ under the License.
       <vnet>1075-1089</vnet>
     </physicalNetwork>
   </physicalNetworks>
-  
+
   <physicalNetworkServiceProviders>
     <physicalNetworkServiceProvider>
       <id>1</id>
@@ -83,7 +83,7 @@ under the License.
     ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
     as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
     to 192.168.1.150 specify as <ipAddressRange>192.168.1.1-192.168.1.150</ipAddressRange>
-    
+
     At the moment there is no way to specify a different netmask for each pod.  The netmask
     is controlled by the private.net.mask parameter further down this file.
    -->
@@ -91,12 +91,12 @@ under the License.
     <pod>
       <id>1</id>
       <name>NM</name>
-      <zoneId>1</zoneId> 
+      <zoneId>1</zoneId>
       <gateway>10.91.28.1</gateway>
       <cidr>10.91.28.0/24</cidr>
       <ipAddressRange>10.91.28.160-10.91.28.179</ipAddressRange>
     </pod>
-  </pods> --> 
+  </pods> -->
 <!--
 <storagePools>
 <storagePool>
@@ -109,7 +109,7 @@ under the License.
 </storagePools>
 -->
 
-<!--  
+<!--
 <secondaryStorages>
 <secondaryStorage>
 <zoneId>1</zoneId>
@@ -130,7 +130,7 @@ under the License.
       <ipAddressRange>10.91.30.160-10.91.30.179</ipAddressRange>
     </vlan>
   </vlans>-->
-<!--    
+<!--
     <vlan>
       <zoneId>1</zoneId>
       <vlanId>31</vlanId>
@@ -203,7 +203,7 @@ under the License.
 
   <!--
     This is the user section.  Use this to create users for your fresh setup.
-    
+
     * firstname/lastname are optional parameters
     * id and email, however, are *required*
   -->
@@ -217,12 +217,12 @@ under the License.
       <email>admin@mailprovider.com</email>
     </user>
   </users>
-  
+
   <!--
     This is the configuration section.  It contains various configuration settings
     unrelated between each other, but influencing the operation of the cloud.
   -->
-  
+
   <configurationEntries>
     <!--
     The default.zone parameter controls in which zone machines are created by default,
@@ -256,14 +256,14 @@ under the License.
     The instance.name parameter is tacked to the end of the names of the VMs you create.
     So, for example, with the TEST value as it ships by default, your VMs would be named:
     i-X-Y-TEST, where X is the account ID and Y is the serially incrementing VM ID.
-    -->    
+    -->
     <configuration>
       <name>instance.name</name>
       <value>TEST</value>
     </configuration>
     <!--
     The integration.api.port parameter controls on which port the REST API listens.
-    -->    
+    -->
     <configuration>
       <name>integration.api.port</name>
       <value>8096</value>
@@ -272,7 +272,7 @@ under the License.
     The memory.capacity.threshold is a percentage value (e.g. 0.85 is 85%).  Whenever
     the Percent Used memory in a pod exceeds this threshold, our software will alert
     you.
-    -->    
+    -->
     <configuration>
       <name>memory.capacity.threshold</name>
       <value>0.85</value>
@@ -349,7 +349,7 @@ under the License.
     either a load balancer if clustering is used, or the management server if a single
     server is installed.  If the port to use is 80, the ":8080" portion of the
     value below can be removed.
-    
+
     In the vast majority of cases, all you need to change is the host, from example.com
     to whatever IP address or host name of your management server / load balancer.
     -->
@@ -360,11 +360,11 @@ under the License.
 
     <!--
     The following two throttling parameters are expressed in Mb/s (mega*bits* per second).
-    
+
     Each value is the default limit for each user (as a whole) in terms of served bandwidth
     rate.  To be more precise: users' downloads to their VMs are *not* limited; these
     parameters govern the limits of outbound traffic.
-    
+
     The first one is the overall limit.  The second limit applies only to multicast traffic.
     -->
     <configuration>
@@ -415,7 +415,7 @@ under the License.
       <value>false</value>
     </configuration>
 
-    <!-- 
+    <!--
         The following are for configuring alerts and a proper email (where system
         alerts will be sent to) and smtp server needs to be
         configured before enabling this feature.

@@ -28,5 +28,5 @@
                       >
 
     <bean id="secondaryStorageVmAlertAdapter" class="com.cloud.alert.SecondaryStorageVmAlertAdapter" />
-    
+
 </beans>

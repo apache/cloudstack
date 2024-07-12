@@ -32,7 +32,7 @@
 
     <bean id="storageSystemSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.StorageSystemSnapshotStrategy" />
-        
+
     <bean id="cephSnapshotStrategy"
         class="org.apache.cloudstack.storage.snapshot.CephSnapshotStrategy" />
 
