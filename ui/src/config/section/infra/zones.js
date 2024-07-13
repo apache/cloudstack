@@ -78,8 +78,10 @@ export default {
   }, {
     name: 'asnumber',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue')))
-  },
-  {
+  }, {
+    name: 'bgp.peers',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue')))
+  }, {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
     show: (record) => { return record.isEdge !== true }

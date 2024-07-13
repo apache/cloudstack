@@ -425,6 +425,7 @@
 "label.based.on.role.id.or.type": "Creates a role based on either role id or type.",
 "label.basic": "Basic",
 "label.bcfdeviceid": "ID",
+"label.bgp.peers": "BGP Peers",
 "label.bigswitch.controller.address": "BigSwitch BCF controller address",
 "label.bladeid": "Blade ID",
 "label.blades": "Blades",
