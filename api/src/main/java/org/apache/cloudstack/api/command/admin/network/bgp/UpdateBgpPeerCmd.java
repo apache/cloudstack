@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -32,14 +32,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "releaseBgpPeer",
-        description = "Releases an existing dedicated Bgp Peer.",
+@APICommand(name = "updateBgpPeer",
+        description = "Updates an existing Bgp Peer.",
         responseObject = BgpPeerResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class ReleaseDedicatedBgpPeerCmd extends BaseAsyncCmd {
+public class UpdateBgpPeerCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,30 +48,66 @@ public class ReleaseDedicatedBgpPeerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BgpPeerResponse.class, required = true, description = "Id of the Bgp Peer")
     private Long id;
 
+    @Parameter(name = ApiConstants.IP_ADDRESS,
+            type = CommandType.STRING,
+            description = "The IPv4 address of the Bgp Peer.")
+    private String ip4Address;
+
+    @Parameter(name = ApiConstants.IP6_ADDRESS,
+            type = CommandType.STRING,
+            description = "The IPv6 address of the Bgp Peer.")
+    private String ip6Address;
+
+    @Parameter(name = ApiConstants.AS_NUMBER,
+            type = CommandType.LONG,
+            description = "The AS number of the Bgp Peer.")
+    private Long asNumber;
+
+    @Parameter(name = ApiConstants.PASSWORD,
+            type = CommandType.STRING,
+            description = "The password of the Bgp Peer.")
+    private String password;
+
     public Long getId() {
         return id;
     }
 
+    public String getIp4Address() {
+        return ip4Address;
+    }
+
+    public String getIp6Address() {
+        return ip6Address;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_BGP_PEER_RELEASE;
+        return EventTypes.EVENT_BGP_PEER_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Releasing a dedicated Bgp Peer " + getId();
+        return "Updating Bgp Peer " + getId();
     }
 
     @Override
     public void execute() {
         try {
-            BgpPeer result = routedIpv4Manager.releaseDedicatedBgpPeer(this);
+            BgpPeer result = routedIpv4Manager.updateBgpPeer(this);
             if (result != null) {
                 BgpPeerResponse response = routedIpv4Manager.createBgpPeerResponse(result);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release Bgp Peer:" + getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Bgp Peer:" + getId());
             }
         } catch (InvalidParameterValueException ex) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());

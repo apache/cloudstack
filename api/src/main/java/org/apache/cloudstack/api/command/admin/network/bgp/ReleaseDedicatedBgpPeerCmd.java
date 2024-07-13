@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -25,21 +25,21 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.network.BgpPeer;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteBgpPeer",
-        description = "Deletes an existing Bgp Peer.",
-        responseObject = SuccessResponse.class,
+@APICommand(name = "releaseBgpPeer",
+        description = "Releases an existing dedicated Bgp Peer.",
+        responseObject = BgpPeerResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class DeleteBgpPeerCmd extends BaseAsyncCmd {
+public class ReleaseDedicatedBgpPeerCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -54,24 +54,24 @@ public class DeleteBgpPeerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_BGP_PEER_DELETE;
+        return EventTypes.EVENT_BGP_PEER_RELEASE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Deleting Bgp Peer " + getId();
+        return "Releasing a dedicated Bgp Peer " + getId();
     }
 
     @Override
     public void execute() {
         try {
-            boolean result = routedIpv4Manager.deleteBgpPeer(this);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
+            BgpPeer result = routedIpv4Manager.releaseDedicatedBgpPeer(this);
+            if (result != null) {
+                BgpPeerResponse response = routedIpv4Manager.createBgpPeerResponse(result);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Bgp Peer:" + getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release Bgp Peer:" + getId());
             }
         } catch (InvalidParameterValueException ex) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());

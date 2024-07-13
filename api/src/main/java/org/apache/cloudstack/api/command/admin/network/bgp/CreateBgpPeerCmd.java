@@ -15,38 +15,45 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.BgpPeer;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateBgpPeer",
-        description = "Updates an existing Bgp Peer.",
+@APICommand(name = "createBgpPeer",
+        description = "Creates a Bgp Peer for a zone.",
         responseObject = BgpPeerResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class UpdateBgpPeerCmd extends BaseAsyncCmd {
+public class CreateBgpPeerCmd extends BaseAsyncCmd {
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BgpPeerResponse.class, required = true, description = "Id of the Bgp Peer")
-    private Long id;
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required = true,
+            description = "UUID of the zone which the Bgp Peer belongs to.",
+            validations = {ApiArgValidator.PositiveNumber})
+    private Long zoneId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS,
             type = CommandType.STRING,
@@ -60,6 +67,7 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.AS_NUMBER,
             type = CommandType.LONG,
+            required = true,
             description = "The AS number of the Bgp Peer.")
     private Long asNumber;
 
@@ -68,8 +76,22 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
             description = "The password of the Bgp Peer.")
     private String password;
 
-    public Long getId() {
-        return id;
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the Bgp Peer")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "project who will own the Bgp Peer")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning the Bgp Peer")
+    private Long domainId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     public String getIp4Address() {
@@ -80,45 +102,51 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
         return ip6Address;
     }
 
-    public Long getAsNumber() {
-        return asNumber;
-    }
-
     public String getPassword() {
         return password;
     }
 
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_BGP_PEER_UPDATE;
+        return EventTypes.EVENT_BGP_PEER_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Updating Bgp Peer " + getId();
+        return "Creating Bgp Peer " + getAsNumber() + " for zone=" + getZoneId();
     }
 
     @Override
     public void execute() {
-        try {
-            BgpPeer result = routedIpv4Manager.updateBgpPeer(this);
-            if (result != null) {
-                BgpPeerResponse response = routedIpv4Manager.createBgpPeerResponse(result);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Bgp Peer:" + getId());
-            }
-        } catch (InvalidParameterValueException ex) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());
-        } catch (CloudRuntimeException ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        BgpPeer result = routedIpv4Manager.createBgpPeer(this);
+        if (result != null) {
+            BgpPeerResponse response = routedIpv4Manager.createBgpPeerResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Bgp Peer.");
         }
-
     }
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
+
 }
