@@ -73,6 +73,9 @@ export default {
     name: 'physical.network',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
+    name: 'ipv4.subnets',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/Ipv4GuestSubnetsTab.vue')))
+  }, {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
     show: (record) => { return record.isEdge !== true }

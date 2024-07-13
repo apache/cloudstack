@@ -19,7 +19,7 @@
   <a-spin :spinning="componentLoading">
     <a-button
       :disabled="!('createIpv4SubnetForZone' in $store.getters.apis)"
-      type="dashed"
+      type="primary"
       style="margin-bottom: 20px; width: 100%"
       @click="handleOpenAddIpv4SubnetModal">
       <template #icon><plus-outlined /></template>
@@ -254,127 +254,6 @@
     </a-modal>
     <br>
     <br>
-
-    <a-button
-      :disabled="!('createGuestNetworkIpv6Prefix' in $store.getters.apis)"
-      type="dashed"
-      style="margin-bottom: 20px; width: 100%"
-      @click="handleOpenAddIpv6PrefixForm()">
-      <template #icon><plus-outlined /></template>
-      {{ $t('label.add.ip.v6.prefix') }}
-    </a-button>
-    <a-table
-      style="overflow-y: auto"
-      size="small"
-      :columns="ipv6Columns"
-      :dataSource="ipv6Prefixes"
-      :rowKey="record => record.id + record.prefix"
-      :pagination="false"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'allocated'">
-          {{ record.usedsubnets + '/' + record.totalsubnets }}
-        </template>
-        <template v-if="column.key === 'actions'">
-          <div class="actions">
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.delete.ip.v6.prefix')"
-              type="primary"
-              icon="delete-outlined"
-              :danger="true"
-              @click="handleDeleteIpv6Prefix(record)"
-              :disabled="!('deleteGuestNetworkIpv6Prefix' in $store.getters.apis)" />
-          </div>
-        </template>
-      </template>
-    </a-table>
-    <br>
-    <br>
-
-    <a-button
-      :disabled="!('createNetwork' in $store.getters.apis)"
-      type="dashed"
-      style="margin-bottom: 20px; width: 100%"
-      @click="handleOpenShowCreateForm">
-      <template #icon><plus-outlined /></template>
-      {{ $t('label.add.guest.network') }}
-    </a-button>
-
-    <a-table
-      size="small"
-      style="overflow-y: auto"
-      :columns="columns"
-      :dataSource="items"
-      :rowKey="record => record.id"
-      :pagination="false"
-    >
-      <template #bodyCell="{ column, text, record }">
-        <template v-if="column.key === 'name'">
-          <resource-icon v-if="record.icon" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
-          <apartment-outlined v-else style="margin-right: 5px"/>
-          <router-link :to="{ path: '/guestnetwork/' + record.id }">
-            {{ text }}
-          </router-link>
-        </template>
-      </template>
-    </a-table>
-    <a-pagination
-      class="row-element pagination"
-      size="small"
-      :current="page"
-      :pageSize="pageSize"
-      :total="total"
-      :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-      :pageSizeOptions="['10', '20', '40', '80', '100']"
-      @change="changePage"
-      @showSizeChange="changePageSize"
-      showSizeChanger>
-      <template #buildOptionText="props">
-        <span>{{ props.value }} / {{ $t('label.page') }}</span>
-      </template>
-    </a-pagination>
-
-    <a-modal
-      v-if="showCreateForm"
-      :visible="showCreateForm"
-      :title="$t('label.add.guest.network')"
-      :closable="true"
-      :maskClosable="false"
-      :footer="null"
-      @cancel="showCreateForm = false"
-      centered
-      width="auto">
-      <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>
-    </a-modal>
-
-    <a-modal
-      :visible="addIpv6PrefixModal"
-      :title="$t('Add IPv6 Prefix')"
-      :maskClosable="false"
-      :footer="null"
-      @cancel="handleCloseAddIpv6PrefixForm()"
-      centered
-      v-ctrl-enter="handleAddIpv6Prefix">
-      <a-form
-        :ref="formRef"
-        :model="form"
-        :rules="rules"
-        @submit="handleAddIpv6Prefix"
-        layout="vertical"
-        class="form"
-      >
-        <a-form-item name="prefix" ref="prefix" :label="$t('label.prefix')" class="form__item">
-          <a-input v-model:value="form.prefix" />
-        </a-form-item>
-
-        <div :span="24" class="action-button">
-          <a-button @click="handleCloseAddIpv6PrefixForm()">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleAddIpv6Prefix">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-modal>
-
   </a-spin>
 </template>
 
@@ -405,11 +284,6 @@ export default {
   data () {
     return {
       componentLoading: false,
-      items: [],
-      total: 0,
-      showCreateForm: false,
-      page: 1,
-      pageSize: 10,
       selectedIpv4GuestSubnet: null,
       ipv4Subnets: [],
       showAccountForIpv4GuestSubnetFields: false,
@@ -444,50 +318,7 @@ export default {
           title: this.$t('label.actions'),
           width: '20%'
         }
-      ],
-      columns: [
-        {
-          key: 'name',
-          title: this.$t('label.name'),
-          dataIndex: 'name'
-        },
-        {
-          title: this.$t('label.type'),
-          dataIndex: 'type'
-        },
-        {
-          title: this.$t('label.vlan'),
-          dataIndex: 'vlan'
-        },
-        {
-          title: this.$t('label.broadcasturi'),
-          dataIndex: 'broadcasturi'
-        },
-        {
-          title: this.$t('label.cidr'),
-          dataIndex: 'cidr'
-        },
-        {
-          title: this.$t('label.ip6cidr'),
-          dataIndex: 'ip6cidr'
-        }
-      ],
-      ipv6Prefixes: [],
-      ipv6Columns: [
-        {
-          title: this.$t('label.prefix'),
-          dataIndex: 'prefix'
-        },
-        {
-          key: 'allocated',
-          title: this.$t('label.allocated')
-        },
-        {
-          key: 'actions',
-          title: this.$t('label.actions')
-        }
-      ],
-      addIpv6PrefixModal: false
+      ]
     }
   },
   beforeCreate () {
@@ -512,13 +343,6 @@ export default {
     }
   },
   methods: {
-    initForm () {
-      this.formRef = ref()
-      this.form = reactive({})
-      this.rules = reactive({
-        prefix: [{ required: true, message: this.$t('label.required') }]
-      })
-    },
     initAddIpv4SubnetForm () {
       this.ipv4SubnetFormRef = ref()
       this.ipv4SubnetForm = reactive({
@@ -552,27 +376,12 @@ export default {
       })
     },
     fetchData () {
-      api('listNetworks', {
-        zoneid: this.resource.zoneid,
-        physicalnetworkid: this.resource.id,
-        showicon: true,
-        page: this.page,
-        pagesize: this.pageSize
-      }).then(response => {
-        this.items = response?.listnetworksresponse?.network || []
-        this.total = response?.listnetworksresponse?.count || 0
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.componentLoading = false
-      })
       this.fetchZoneIpv4Subnet()
-      this.fetchIpv6PrefixData()
     },
     fetchZoneIpv4Subnet () {
       this.componentLoading = true
       api('listIpv4GuestSubnetsForZone', {
-        zoneid: this.resource.zoneid,
+        zoneid: this.resource.id,
         showicon: true,
         page: this.ipv4SubnetPage,
         pagesize: this.ipv4SubnetPageSize
@@ -583,118 +392,6 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
-      })
-    },
-    fetchIpv6PrefixData () {
-      api('listGuestNetworkIpv6Prefixes', {
-        zoneid: this.resource.zoneid,
-        page: this.page,
-        pagesize: this.pageSize
-      }).then(response => {
-        this.ipv6Prefixes = response?.listguestnetworkipv6prefixesresponse?.guestnetworkipv6prefix || []
-        this.total = response?.listguestnetworkipv6prefixesresponse?.count || 0
-      }).catch(error => {
-        console.log(error)
-        this.$notifyError(error)
-      }).finally(() => {
-      })
-    },
-    handleOpenShowCreateForm () {
-      this.showCreateForm = true
-    },
-    closeAction () {
-      this.showCreateForm = false
-    },
-    handleOpenAddIpv6PrefixForm () {
-      this.initForm()
-      this.addIpv6PrefixModal = true
-    },
-    handleCloseAddIpv6PrefixForm () {
-      this.formRef.value.resetFields()
-      this.addIpv6PrefixModal = false
-    },
-    changePage (page, pageSize) {
-      this.page = page
-      this.pageSize = pageSize
-      this.fetchData()
-    },
-    changePageSize (currentPage, pageSize) {
-      this.page = currentPage
-      this.pageSize = pageSize
-      this.fetchData()
-    },
-    handleAddIpv6Prefix (e) {
-      if (this.componentLoading) return
-      this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
-
-        this.componentLoading = true
-        this.addIpv6PrefixModal = false
-        var params = {
-          zoneid: this.resource.zoneid,
-          prefix: values.prefix
-        }
-        api('createGuestNetworkIpv6Prefix', params).then(response => {
-          this.$pollJob({
-            jobId: response.createguestnetworkipv6prefixresponse.jobid,
-            title: this.$t('label.add.ip.v6.prefix'),
-            description: values.prefix,
-            successMessage: this.$t('message.success.add.ip.v6.prefix'),
-            successMethod: () => {
-              this.componentLoading = false
-              this.fetchData()
-            },
-            errorMessage: this.$t('message.add.failed'),
-            errorMethod: () => {
-              this.componentLoading = false
-              this.fetchData()
-            },
-            loadingMessage: this.$t('message.add.ip.v6.prefix.processing'),
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            catchMethod: () => {
-              this.componentLoading = false
-              this.fetchData()
-            }
-          })
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.componentLoading = false
-          this.fetchData()
-        })
-      }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
-      })
-    },
-    handleDeleteIpv6Prefix (prefix) {
-      this.componentLoading = true
-      api('deleteGuestNetworkIpv6Prefix', { id: prefix.id }).then(response => {
-        this.$pollJob({
-          jobId: response.deleteguestnetworkipv6prefixresponse.jobid,
-          title: this.$t('label.delete.ip.v6.prefix'),
-          description: prefix.prefix,
-          successMessage: this.$t('message.ip.v6.prefix.deleted') + ' ' + prefix.prefix,
-          successMethod: () => {
-            this.componentLoading = false
-            this.fetchIpv6PrefixData()
-          },
-          errorMessage: this.$t('message.delete.failed'),
-          errorMethod: () => {
-            this.componentLoading = false
-            this.fetchIpv6PrefixData()
-          },
-          loadingMessage: this.$t('message.delete.ip.v6.prefix.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => {
-            this.componentLoading = false
-            this.fetchIpv6PrefixData()
-          }
-        })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.componentLoading = false
-        this.fetchIpv6PrefixData()
       })
     },
     handleAddAccountForIpv4GuestSubnet () {
@@ -815,7 +512,7 @@ export default {
         this.addIpv4SubnetModal = false
         this.showAccountForIpv4GuestSubnetFields = false
         var params = {
-          zoneId: this.resource.zoneid,
+          zoneId: this.resource.id,
           subnet: values.subnet,
           domainid: values.domain,
           account: values.account
