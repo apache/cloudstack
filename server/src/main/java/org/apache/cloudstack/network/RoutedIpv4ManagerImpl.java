@@ -1077,15 +1077,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         Long zoneId = bgpPeerVO.getDataCenterId();
 
         boolean isAsNumberChanged = (newAsNumber != null) && (newAsNumber != bgpPeerVO.getAsNumber());
-        if (!isAsNumberChanged) {
+        boolean isIp4AddressChanged = (newIp4Address != null) && (newIp4Address != bgpPeerVO.getIp4Address());
+        boolean isIp6AddressChanged = (newIp6Address != null) && (newIp6Address != bgpPeerVO.getIp6Address());
+        if (newAsNumber == null) {
             newAsNumber = bgpPeerVO.getAsNumber();
         }
-        boolean isIp4AddressChanged = (newIp4Address != null) && (newIp4Address != bgpPeerVO.getIp4Address());
-        if (!isIp4AddressChanged) {
+        if (newIp4Address == null) {
             newIp4Address = bgpPeerVO.getIp4Address();
         }
-        boolean isIp6AddressChanged = (newIp6Address != null) && (newIp6Address != bgpPeerVO.getIp6Address());
-        if (!isIp6AddressChanged) {
+        if (newIp6Address == null) {
             newIp6Address = bgpPeerVO.getIp6Address();
         }
 
@@ -1099,12 +1099,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 throw new InvalidParameterValueException("new IPv6 address is not valid.");
             }
         }
-        if (newIp4Address != null) {
+        if (isAsNumberChanged || isIp4AddressChanged) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, newIp4Address, null) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv4 address and AS number in the zone.");
             }
         }
-        if (newIp6Address != null) {
+        if (isAsNumberChanged || isIp6AddressChanged) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, null, newIp6Address) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv6 address and AS number in the zone.");
             }
