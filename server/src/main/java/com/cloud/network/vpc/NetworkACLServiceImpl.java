@@ -325,8 +325,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd createNetworkACLCmd) {
         Long aclId = createAclListIfNeeded(createNetworkACLCmd);
 
-        Integer sourcePortStart = createNetworkACLCmd.getSourcePortStart();
-        Integer sourcePortEnd = createNetworkACLCmd.getSourcePortEnd();
+        Integer sourcePortStart = createNetworkACLCmd.getPublicStartPort();
+        Integer sourcePortEnd = createNetworkACLCmd.getPublicEndPort();
         String protocol = createNetworkACLCmd.getProtocol();
         List<String> sourceCidrList = createNetworkACLCmd.getSourceCidrList();
         Integer icmpCode = createNetworkACLCmd.getIcmpCode();
