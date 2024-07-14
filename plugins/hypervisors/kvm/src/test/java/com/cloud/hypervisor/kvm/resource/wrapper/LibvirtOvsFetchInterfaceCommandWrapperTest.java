@@ -52,8 +52,7 @@ public class LibvirtOvsFetchInterfaceCommandWrapperTest {
             while(interfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = interfaces.nextElement();
                 if (networkInterface.getInetAddresses().hasMoreElements() &&
-                        (networkInterface.getName().startsWith("eth") ||
-                                networkInterface.getName().startsWith("wl"))) {
+                        networkInterface.getName().matches("^(eth|wl|en).*")) {
                     interfaceName = networkInterface.getName();
                     Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
                     while(addresses.hasMoreElements()) {
