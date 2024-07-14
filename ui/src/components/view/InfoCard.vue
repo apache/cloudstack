@@ -551,12 +551,19 @@
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
+        <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
-            <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
+            <div v-if="resource.rootdiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
+            </div>
+            <span v-if="resource.rootdiskofferingid && resource.datadiskofferingid">&nbsp;|&nbsp;</span>
+            <div v-if="resource.datadiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.datadiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.datadiskofferingid }">{{ resource.datadiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.datadiskofferingdisplaytext }}</span>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">

@@ -80,6 +80,7 @@ import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -151,6 +152,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setDescription(tariff.getDescription());
         response.setId(tariff.getUuid());
         response.setRemoved(tariff.getRemoved());
+        response.setPosition(tariff.getPosition());
         return response;
     }
 
@@ -414,6 +416,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
         Date now = new Date();
+        Integer position = cmd.getPosition();
 
         warnQuotaTariffUpdateDeprecatedFields(cmd);
 
@@ -428,7 +431,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         currentQuotaTariff.setRemoved(now);
 
         QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
-                activationRule);
+                activationRule, position);
         _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
@@ -449,7 +452,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected QuotaTariffVO persistNewQuotaTariff(QuotaTariffVO currentQuotaTariff, String name, int usageType, Date startDate, Long entityOwnerId, Date endDate, Double value,
-            String description, String activationRule) {
+            String description, String activationRule, Integer position) {
 
         QuotaTariffVO newQuotaTariff = getNewQuotaTariffObject(currentQuotaTariff, name, usageType);
 
@@ -461,6 +464,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         validateValueOnCreatingNewQuotaTariff(newQuotaTariff, value);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setDescription, description);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setActivationRule, activationRule);
+        validatePositionOnCreatingNewQuotaTariff(newQuotaTariff, position);
 
         _quotaTariffDao.addQuotaTariff(newQuotaTariff);
         return newQuotaTariff;
@@ -480,6 +484,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         newQuotaTariff.setName(name);
         return newQuotaTariff;
     }
+
+    protected void validatePositionOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Integer position) {
+        if (position != null) {
+            newQuotaTariff.setPosition(position);
+        }
+    }
+
 
     protected void validateStringsOnCreatingNewQuotaTariff(Consumer<String> method, String value){
         if (value != null) {
@@ -663,6 +674,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Double value = cmd.getValue();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
+        Integer position = ObjectUtils.defaultIfNull(cmd.getPosition(), 1);
 
         QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
 
@@ -675,7 +687,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     "Please, inform a date in the future or do not pass the parameter to use the current date and time.", startDate));
         }
 
-        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule, position);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
 

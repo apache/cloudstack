@@ -24,7 +24,7 @@
     </a-alert>
     <a-radio-group
       v-if="migrateVmWithVolumeAllowed"
-      :defaultValue="migrateMode"
+      v-model:value="migrateMode"
       @change="e => { handleMigrateModeChange(e.target.value) }">
       <a-radio class="radio-style" :value="1">
         {{ $t('label.migrate.instance.single.storage') }}
