@@ -84,6 +84,14 @@ public class ASNumberResponse extends BaseResponse {
     @Param(description = "Network Name")
     private String associatedNetworkName;
 
+    @SerializedName((ApiConstants.VPC_ID))
+    @Param(description = "VPC ID")
+    private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "VPC Name")
+    private String vpcName;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "Created Date")
     private Date created;
@@ -201,6 +209,14 @@ public class ASNumberResponse extends BaseResponse {
 
     public void setAssociatedNetworkName(String associatedNetworkName) {
         this.associatedNetworkName = associatedNetworkName;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public Date getCreated() {

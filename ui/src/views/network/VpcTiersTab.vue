@@ -629,6 +629,9 @@ export default {
         if (this.isNsxEnabled) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.nsxmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
+        if (this.resource.asnumberid) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.routingmode === 'Dynamic')
+        }
         this.fetchZoneASNumbers()
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {

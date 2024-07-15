@@ -20,6 +20,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
@@ -37,7 +38,9 @@ public interface VpcProvisioningService {
                                   Map<String, List<String>> serviceProviders,
                                   Map serviceCapabilitystList, NetUtils.InternetProtocol internetProtocol,
                                   Long serviceOfferingId, Boolean forNsx, String mode,
-                                  List<Long> domainIds, List<Long> zoneIds, VpcOffering.State state);
+                                  List<Long> domainIds, List<Long> zoneIds, VpcOffering.State state,
+                                  NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber);
+
 
     Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);
 

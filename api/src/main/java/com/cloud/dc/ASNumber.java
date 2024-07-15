@@ -32,6 +32,7 @@ public interface ASNumber extends InfrastructureEntity, InternalIdentity, Identi
     Date getAllocatedTime();
     boolean isAllocated();
     Long getNetworkId();
+    Long getVpcId();
     Date getCreated();
     Date getRemoved();
 }

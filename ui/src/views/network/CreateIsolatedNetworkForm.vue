@@ -416,7 +416,7 @@ export default {
       return isAdminOrDomainAdmin()
     },
     isASNumberRequired () {
-      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering.routingmode && this.selectedNetworkOffering.routingmode.toLowerCase() === 'dynamic'
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering?.routingmode.toLowerCase() === 'dynamic'
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)

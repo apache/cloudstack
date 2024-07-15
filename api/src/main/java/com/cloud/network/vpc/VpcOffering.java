@@ -18,6 +18,7 @@ package com.cloud.network.vpc;
 
 import java.util.Date;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -79,4 +80,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Date getRemoved();
 
     Date getCreated();
+
+    NetworkOffering.RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }

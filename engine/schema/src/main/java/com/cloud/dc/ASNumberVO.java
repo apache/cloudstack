@@ -66,6 +66,9 @@ public class ASNumberVO implements ASNumber {
     @Column(name = "network_id")
     private Long networkId;
 
+    @Column(name = "vpc_id")
+    private Long vpcId;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -162,5 +165,13 @@ public class ASNumberVO implements ASNumber {
     @Override
     public Date getCreated() {
         return created;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
     }
 }

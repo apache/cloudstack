@@ -141,7 +141,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     @SerializedName(ApiConstants.AS_NUMBER)
     @Param(description = "AS NUMBER")
-    private long asNumber;
+    private Long asNumber;
 
     @SerializedName(ApiConstants.ACL_TYPE)
     @Param(description = "acl type - access type to the network")

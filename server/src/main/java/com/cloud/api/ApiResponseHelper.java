@@ -2502,11 +2502,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         response.setReservedIpRange(reservation);
-        ASNumberVO asNumberVO = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
-        if (Objects.nonNull(asNumberVO)) {
-            response.setAsNumberId(asNumberVO.getUuid());
-            response.setAsNumber(asNumberVO.getAsNumber());
-        }
         // return vlan information only to Root admin
         if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();
@@ -2553,6 +2548,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsPersistent(networkOffering.isPersistent());
             if (Network.GuestType.Isolated.equals(network.getGuestType()) && network.getVpcId() == null) {
                 response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
+            }
+            ASNumberVO asNumberVO = networkOffering.isForVpc() ?
+                    asNumberDao.findByZoneAndVpcId(network.getDataCenterId(), network.getVpcId()) :
+                    asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+            if (Objects.nonNull(asNumberVO)) {
+                response.setAsNumberId(asNumberVO.getUuid());
+                response.setAsNumber(asNumberVO.getAsNumber());
             }
         }
 
@@ -3399,7 +3401,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setUsesDistributedRouter(vpc.usesDistributedRouter());
         response.setRedundantRouter(vpc.isRedundant());
         response.setRegionLevelVpc(vpc.isRegionLevelVpc());
-
+        ASNumberVO asNumberVO = asNumberDao.findByZoneAndVpcId(vpc.getZoneId(), vpc.getId());
+        if (Objects.nonNull(asNumberVO)) {
+            response.setAsNumberId(asNumberVO.getUuid());
+            response.setAsNumber(asNumberVO.getAsNumber());
+        }
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service,Set<Provider>>entry : serviceProviderMap.entrySet()) {
@@ -5335,7 +5341,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAsNumberRange(rangeText);
         response.setAllocated(asn.getAllocatedTime());
         response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");
-        if (asn.getNetworkId() != null) {
+        if (asn.getVpcId() != null) {
+            VpcVO vpc = ApiDBUtils.findVpcById(asn.getVpcId());
+            response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
+        } else if (asn.getNetworkId() != null) {
             NetworkVO network = ApiDBUtils.findNetworkById(asn.getNetworkId());
             response.setAssociatedNetworkId(network.getUuid());
             response.setAssociatedNetworkName(network.getName());

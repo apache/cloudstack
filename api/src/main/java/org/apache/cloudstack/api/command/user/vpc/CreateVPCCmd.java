@@ -117,6 +117,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the VPC tiers")
+    private Long asNumber;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -187,6 +190,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
     }
 
     /////////////////////////////////////////////////////

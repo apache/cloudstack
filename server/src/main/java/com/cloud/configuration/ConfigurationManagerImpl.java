@@ -6420,7 +6420,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return offering;
     }
 
-    protected NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
+    public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
         NetworkOffering.RoutingMode routingMode = null;
         if (routingModeString != null) {
             try {
@@ -6431,7 +6431,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (IllegalArgumentException e) {
                 String msg = String.format("Invalid value %s for Routing Mode, Supported values: %s, %s.",
                         routingModeString, Static, Dynamic);
-                logger.error(msg, e);
                 throw new InvalidParameterValueException(msg);
             }
         }
@@ -6611,6 +6610,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (specifyAsNumber && Dynamic != routingMode) {
             String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && Objects.nonNull(forVpc) && forVpc) {
+            String msg = "SpecifyAsNumber cannot be set for VPC network tiers. It needs to be defined at VPC level";
             logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
@@ -6939,6 +6944,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final Boolean isTagged = cmd.isTagged();
         final Boolean forVpc = cmd.getForVpc();
+        final String routingMode = cmd.getRoutingMode();
 
         if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
@@ -7010,6 +7016,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // basic zone, and shouldn't display networkOfferings
                 return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
+        }
+
+        if (routingMode != null && EnumUtils.isValidEnumIgnoreCase(NetworkOffering.RoutingMode.class, routingMode)) {
+            sc.addAnd("routingMode", SearchCriteria.Op.EQ, routingMode);
         }
 
         // Don't return system network offerings to the user

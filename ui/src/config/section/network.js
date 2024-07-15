@@ -211,7 +211,7 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'asnumber', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',
@@ -861,7 +861,7 @@ export default {
       icon: 'partition-outlined',
       permission: ['listASNumbers'],
       filters: ['all', 'allocatedonly', 'free'],
-      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'allocated', 'account', 'domain', 'zonename'],
+      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
       searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
       resourceType: 'ASNumber',
       actions: [

@@ -33,6 +33,7 @@ public interface ASNumberDao extends GenericDao<ASNumberVO, Long> {
     List<ASNumberVO> listAllocatedByASRange(Long asRangeId);
 
     ASNumberVO findByZoneAndNetworkId(long zoneId, long networkId);
+    ASNumberVO findByZoneAndVpcId(long zoneId, long vpcId);
 
     int removeASRangeNumbers(long rangeId);
 }

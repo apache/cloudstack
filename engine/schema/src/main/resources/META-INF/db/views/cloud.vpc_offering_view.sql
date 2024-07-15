@@ -37,6 +37,8 @@ select
     `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
     `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
     `vpc_offerings`.`sort_key` AS `sort_key`,
+    `vpc_offerings`.`routing_mode` AS `routing_mode`,
+    `vpc_offerings`.`specify_as_number` AS `specify_as_number`,
     group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
     group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
     group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,

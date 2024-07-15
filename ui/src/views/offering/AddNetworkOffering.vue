@@ -163,7 +163,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="routingMode === 'dynamic'">
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyasnumber" ref="specifyasnumber">
               <template #label>
@@ -1057,7 +1057,9 @@ export default {
         if (values.forvpc === true) {
           params.forvpc = true
         }
-        params.specifyasnumber = values.specifyasnumber
+        if (!values.forVpc) {
+          params.specifyasnumber = values.specifyasnumber
+        }
         params.routingmode = values.routingmode
         if (values.fornsx === true) {
           params.fornsx = true

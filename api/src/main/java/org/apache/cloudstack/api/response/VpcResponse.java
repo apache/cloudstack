@@ -156,6 +156,14 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "the second IPv6 DNS for the VPC", since = "4.18.0")
     private String ipv6Dns2;
 
+    @SerializedName(ApiConstants.AS_NUMBER_ID)
+    @Param(description = "UUID of AS NUMBER")
+    private String asNumberId;
+
+    @SerializedName(ApiConstants.AS_NUMBER)
+    @Param(description = "AS NUMBER")
+    private long asNumber;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -296,5 +304,13 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setIpv6Dns2(String ipv6Dns2) {
         this.ipv6Dns2 = ipv6Dns2;
+    }
+
+    public void setAsNumber(long asNumber) {
+        this.asNumber = asNumber;
+    }
+
+    public void setAsNumberId(String asNumberId) {
+        this.asNumberId = asNumberId;
     }
 }

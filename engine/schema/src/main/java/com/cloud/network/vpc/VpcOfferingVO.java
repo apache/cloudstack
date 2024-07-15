@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -84,6 +85,13 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Column(name = "sort_key")
     int sortKey;
+
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private NetworkOffering.RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
 
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -226,4 +234,21 @@ public class VpcOfferingVO implements VpcOffering {
         return sortKey;
     }
 
+    @Override
+    public NetworkOffering.RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(NetworkOffering.RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    @Override
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
+    }
 }

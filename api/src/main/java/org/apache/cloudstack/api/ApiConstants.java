@@ -692,6 +692,8 @@ public class ApiConstants {
     public static final String ASSOCIATED_NETWORK = "associatednetwork";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
+    public static final String ASSOCIATED_VPC_ID = "associatedvpcid";
+    public static final String ASSOCIATED_VPC_NAME = "associatedvpcname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";

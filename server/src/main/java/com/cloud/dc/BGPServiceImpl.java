@@ -23,6 +23,11 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.event.ActionEvent;
@@ -38,11 +43,13 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +65,10 @@ public class BGPServiceImpl implements BGPService {
     private ASNumberDao asNumberDao;
     @Inject
     private NetworkDao networkDao;
+    @Inject
+    private VpcDao vpcDao;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
     @Inject
@@ -145,6 +156,66 @@ public class BGPServiceImpl implements BGPService {
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 
+    @Override
+    public boolean allocateASNumber(long zoneId, Long asNumber, Long networkId, Long vpcId) {
+        ASNumberVO asNumberVO = isOfferingSpecifyAsNumber(networkId, vpcId) ?
+                asNumberDao.findByAsNumber(asNumber) :
+                asNumberDao.findOneByAllocationStateAndZone(zoneId, false);
+        if (asNumberVO == null || asNumberVO.getDataCenterId() != zoneId) {
+            LOGGER.error(String.format("Cannot find AS number %s on zone with ID %s", asNumber, zoneId));
+            return false;
+        }
+        long accountId, domainId;
+        String netName;
+        if (Objects.nonNull(vpcId)) {
+            VpcVO vpc = vpcDao.findById(vpcId);
+            if (vpc == null) {
+                LOGGER.error(String.format("Cannot find VPC with ID %s", vpcId));
+                return false;
+            }
+            accountId = vpc.getAccountId();
+            domainId = vpc.getDomainId();
+            netName = vpc.getName();
+        } else {
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                LOGGER.error(String.format("Cannot find network with ID %s", networkId));
+                return false;
+            }
+            accountId = network.getAccountId();
+            domainId = network.getDomainId();
+            netName = network.getName();
+        }
+
+        LOGGER.debug(String.format("Allocating the AS Number %s to %s %s on zone %s", asNumber,
+                (Objects.nonNull(vpcId) ? "VPC" : "network"), netName, zoneId));
+        asNumberVO.setAllocated(true);
+        asNumberVO.setAllocatedTime(new Date());
+        if (Objects.nonNull(vpcId)) {
+            asNumberVO.setVpcId(vpcId);
+        } else {
+            asNumberVO.setNetworkId(networkId);
+        }
+        asNumberVO.setAccountId(accountId);
+        asNumberVO.setDomainId(domainId);
+        return asNumberDao.update(asNumberVO.getId(), asNumberVO);
+    }
+
+    private boolean isOfferingSpecifyAsNumber(Long networkId, Long vpcId) {
+        if (Objects.nonNull(vpcId)) {
+            VpcVO vpc = vpcDao.findById(vpcId);
+            if (vpc == null) {
+                throw new CloudRuntimeException(String.format("Cannot find VPC with ID %s", vpcId));
+            }
+            VpcOfferingVO vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+            return NetworkOffering.RoutingMode.Dynamic == vpcOffering.getRoutingMode() && BooleanUtils.toBoolean(vpcOffering.isSpecifyAsNumber());
+        } else {
+            NetworkVO network = networkDao.findById(networkId);
+            NetworkOfferingVO networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+            return NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode() && BooleanUtils.toBoolean(networkOffering.isSpecifyAsNumber());
+        }
+    }
+
     private Pair<Boolean, String> logAndReturnErrorMessage(String msg) {
         LOGGER.error(msg);
         return new Pair<>(false, msg);
@@ -162,7 +233,30 @@ public class BGPServiceImpl implements BGPService {
             return new Pair<>(true, "");
         }
         Long networkId = asNumberVO.getNetworkId();
-        if (!isDestroyNetworkOperation && networkId != null) {
+        Long vpcId = asNumberVO.getVpcId();
+        if (!isDestroyNetworkOperation) {
+            Pair<Boolean, String> checksResult = performReleaseASNumberChecks(networkId, vpcId, asNumber);
+            if (checksResult != null) {
+                return checksResult;
+            }
+        }
+        LOGGER.debug(String.format("Releasing AS Number %s on zone %s from previous allocation", asNumber, zoneId));
+        asNumberVO.setAllocated(false);
+        asNumberVO.setAllocatedTime(null);
+        asNumberVO.setDomainId(null);
+        asNumberVO.setAccountId(null);
+        if (vpcId != null) {
+            asNumberVO.setVpcId(null);
+        } else {
+            asNumberVO.setNetworkId(null);
+        }
+        boolean update = asNumberDao.update(asNumberVO.getId(), asNumberVO);
+        String msg = update ? "OK" : "Could not update database record for AS number";
+        return new Pair<>(update, msg);
+    }
+
+    private Pair<Boolean, String> performReleaseASNumberChecks(Long networkId, Long vpcId, long asNumber) {
+        if (networkId != null) {
             NetworkVO network = networkDao.findById(networkId);
             if (network == null) {
                 return logAndReturnErrorMessage(String.format("Cannot find a network with ID %s which acquired the AS number %s", networkId, asNumber));
@@ -174,16 +268,20 @@ public class BGPServiceImpl implements BGPService {
             if (offering.isSpecifyAsNumber()) {
                 return logAndReturnErrorMessage(String.format("Cannot release the AS number %s as it is acquired by a network that requires AS number", asNumber));
             }
+        } else if (vpcId != null) {
+            VpcVO vpc = vpcDao.findById(vpcId);
+            if (vpc == null) {
+                return logAndReturnErrorMessage(String.format("Cannot find a VPC with ID %s which acquired the AS number %s", vpcId, asNumber));
+            }
+            VpcOfferingVO vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+            if (vpcOffering == null) {
+                return logAndReturnErrorMessage(String.format("Cannot find a VPC offering with ID %s", vpc.getVpcOfferingId()));
+            }
+            if (vpcOffering.isSpecifyAsNumber()) {
+                return logAndReturnErrorMessage(String.format("Cannot release the AS number %s as it is acquired by a VPC that requires AS number", asNumber));
+            }
         }
-        LOGGER.debug(String.format("Releasing AS Number %s on zone %s from previous allocation", asNumber, zoneId));
-        asNumberVO.setAllocated(false);
-        asNumberVO.setAllocatedTime(null);
-        asNumberVO.setDomainId(null);
-        asNumberVO.setAccountId(null);
-        asNumberVO.setNetworkId(null);
-        boolean update = asNumberDao.update(asNumberVO.getId(), asNumberVO);
-        String msg = update ? "OK" : "Could not update database record for AS number";
-        return new Pair<>(update, msg);
+        return null;
     }
 
     @Override
