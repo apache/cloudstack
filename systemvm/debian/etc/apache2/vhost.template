@@ -39,8 +39,8 @@
         Allow from 127.0.0.0/255.0.0.0 ::1/128
     </Directory>
 
-    # Include HTTP configuration **IF SET**
-    IncludeOptional /etc/apache2/http.conf
+	# Include CORS configuration **IF SET**
+	IncludeOptional /etc/apache2/cors.conf
 
 </VirtualHost>
 
@@ -86,8 +86,8 @@
 		Allow from 127.0.0.0/255.0.0.0 ::1/128
 	</Directory>
 
-	# Include HTTPS configuration **IF SET**
-	IncludeOptional /etc/apache2/https.conf
+	# Include CORS configuration **IF SET**
+	IncludeOptional /etc/apache2/cors.conf
 
 	#   SSL Engine Switch:
 	#   Enable/Disable SSL for this virtual host.
