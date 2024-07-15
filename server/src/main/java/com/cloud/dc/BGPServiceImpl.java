@@ -19,12 +19,16 @@ package com.cloud.dc;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -33,6 +37,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -55,6 +60,10 @@ public class BGPServiceImpl implements BGPService {
     private NetworkDao networkDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private DomainDao domainDao;
 
     public BGPServiceImpl() {
     }
@@ -108,10 +117,31 @@ public class BGPServiceImpl implements BGPService {
         Integer asNumber = cmd.getAsNumber();
         Boolean allocated = cmd.getAllocated();
         Long networkId = cmd.getNetworkId();
+        String accountName = cmd.getAccount();
+        Long domainId = cmd.getDomainId();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
+
+        Account userAccount = null;
+        Domain domain = null;
+        final Account caller = CallContext.current().getCallingAccount();
+        if (Objects.nonNull(accountName)) {
+            if (domainId != null) {
+                userAccount = accountDao.findActiveAccount(accountName, domainId);
+                domain = domainDao.findById(domainId);
+            } else {
+                userAccount = accountDao.findActiveAccount(accountName, caller.getDomainId());
+                domain = domainDao.findById(caller.getDomainId());
+            }
+        }
+
+        if (Objects.nonNull(accountName) && Objects.isNull(userAccount)) {
+            throw new InvalidParameterException(String.format("Failed to find user Account: %s", accountName));
+        }
+
         Pair<List<ASNumberVO>, Integer> pair = asNumberDao.searchAndCountByZoneOrRangeOrAllocated(zoneId, asNumberRangeId,
-                asNumber, networkId, allocated, startIndex, pageSizeVal);
+                asNumber, networkId, allocated, Objects.nonNull(userAccount) ? userAccount.getId() : null,
+                Objects.nonNull(domain) ? domain.getId() : null, startIndex, pageSizeVal);
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 

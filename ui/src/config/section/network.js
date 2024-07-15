@@ -862,7 +862,7 @@ export default {
       permission: ['listASNumbers'],
       filters: ['all', 'allocatedonly', 'free'],
       columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'allocated', 'account', 'domain', 'zonename'],
-      searchFilters: ['zoneid', 'associatednetworkid'],
+      searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
       resourceType: 'ASNumber',
       actions: [
         {

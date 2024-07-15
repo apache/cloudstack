@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -69,6 +71,14 @@ public class ListASNumbersCmd extends BaseListCmd {
             description = "the network id")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, entityType = AccountResponse.class,
+            description = "account name")
+    private String account;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "domain id")
+    private Long domainId;
+
     public Long getZoneId() {
         return zoneId;
     }
@@ -85,6 +95,14 @@ public class ListASNumbersCmd extends BaseListCmd {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Inject
@@ -104,7 +122,7 @@ public class ListASNumbersCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (Exception e) {
-            String msg = String.format("Error listing AS Numbers for the range %s on the zone %s: %s", asNumberRangeId, zoneId, e.getMessage());
+            String msg = String.format("Error listing AS Numbers, due to: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
         }
 

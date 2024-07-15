@@ -36,12 +36,15 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         asNumberSearch.and("isAllocated", asNumberSearch.entity().isAllocated(), SearchCriteria.Op.EQ);
         asNumberSearch.and("asNumber", asNumberSearch.entity().getAsNumber(), SearchCriteria.Op.EQ);
         asNumberSearch.and("networkId", asNumberSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        asNumberSearch.and("accountId", asNumberSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        asNumberSearch.and("domainId", asNumberSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         asNumberSearch.done();
     }
 
     @Override
     public Pair<List<ASNumberVO>, Integer> searchAndCountByZoneOrRangeOrAllocated(Long zoneId, Long asnRangeId,
                                                                                   Integer asNumber, Long networkId, Boolean allocated,
+                                                                                  Long accountId, Long domainId,
                                                                                   Long startIndex, Long pageSizeVal) {
         SearchCriteria<ASNumberVO> sc = asNumberSearch.create();
         if (zoneId != null) {
@@ -58,6 +61,12 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         }
         if (asNumber != null) {
             sc.setParameters("asNumber", asNumber);
+        }
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
         }
         Filter searchFilter = new Filter(ASNumberVO.class, "id", true, startIndex, pageSizeVal);
         return searchAndCount(sc, searchFilter);
