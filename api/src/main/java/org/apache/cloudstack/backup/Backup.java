@@ -132,6 +132,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     }
 
     long getVmId();
+    long getBackupOfferingId();
     String getExternalId();
     String getType();
     String getDate();
