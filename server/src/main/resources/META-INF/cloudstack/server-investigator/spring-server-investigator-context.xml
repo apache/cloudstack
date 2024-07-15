@@ -42,5 +42,5 @@
     <bean id="ManagementIPSystemVMInvestigator" class="com.cloud.ha.ManagementIPSystemVMInvestigator">
         <property name="name" value="ManagementIPSysVMInvestigator" />
     </bean>
-    
+
 </beans>

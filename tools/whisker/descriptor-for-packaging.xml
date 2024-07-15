@@ -865,7 +865,7 @@ EXHIBIT A -Mozilla Public License.
      The Original Code is ${PROJECT}.
 
      The Initial Developer of the Original Code is ${INITIAL_DEVELOPER}.
-     Portions created by ${INITIAL_DEVELOPER} are Copyright (C) 
+     Portions created by ${INITIAL_DEVELOPER} are Copyright (C)
      ${INITIAL_DEVELOPER_COPYRIGHT}. All Rights Reserved.
 
      Contributor(s): ${CONTRIBUTORS}.
@@ -888,9 +888,9 @@ EXHIBIT A -Mozilla Public License.
 
             </text>
         </license>
-        <license 
-            name='Bouncy Castle adaptation of MIT X11 License' 
-            id='bouncy.mit' 
+        <license
+            name='Bouncy Castle adaptation of MIT X11 License'
+            id='bouncy.mit'
             url='http://www.bouncycastle.org/licence.html'>
             <text>
 Please note: our license is an adaptation of the MIT X11 License and should be
@@ -917,7 +917,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
             </text>
         </license>
-        <license name='The MIT License (MIT)' id='MIT' 
+        <license name='The MIT License (MIT)' id='MIT'
             url='http://opensource.org/licenses/mit-license.php'>
             <text>
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -939,9 +939,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
             </text>
         </license>
-        <license 
-            name='Eclipse Distribution License Version 1.0' 
-            id='EclipseDistributionLicense1' 
+        <license
+            name='Eclipse Distribution License Version 1.0'
+            id='EclipseDistributionLicense1'
             url='http://www.eclipse.org/org/documents/edl-v10.php'>
             <text>
 Eclipse Distribution License Version 1.0
@@ -973,7 +973,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </text>
         </license>
-        <license name='MIT License' id='MIT' 
+        <license name='MIT License' id='MIT'
             url='http://www.opensource.org/licenses/mit-license.php'>
             <text>
 Permission is hereby granted, free  of charge, to any person obtaining
@@ -1066,7 +1066,7 @@ SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
   3. Neither the name of the copyright holders nor the names of its
      contributors may be used to endorse or promote products derived from
      this software without specific prior written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -1080,7 +1080,7 @@ SOFTWARE, EVEN IF ADVISED  OF THE POSSIBILITY OF SUCH DAMAGE.
   THE POSSIBILITY OF SUCH DAMAGE.
             </text>
         </license>
-        <license name='BSD (3-clause)' id ='BSD3Clause' 
+        <license name='BSD (3-clause)' id ='BSD3Clause'
             url='http://www.opensource.org/licenses/BSD-3-Clause'>
                 <template>
                     <parameter-name>organisation</parameter-name>
@@ -1396,23 +1396,23 @@ any resulting litigation.
             url='https://fisheye.codehaus.org/browse/xstream/trunk/LICENSE.txt?hb=true'>
             <text>
 (BSD Style License)
- 
+
 Copyright (c) 2003-2006, Joe Walnes Copyright (c) 2006-2011, XStream Committers
 All rights reserved.
- 
+
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
- 
+
 Redistributions of source code must retain the above copyright notice, this list
 of conditions and the following disclaimer. Redistributions in binary form must
 reproduce the above copyright notice, this list of conditions and the following
 disclaimer in the documentation and/or other materials provided with the
 distribution.
- 
+
 Neither the name of XStream nor the names of its contributors may be used to
 endorse or promote products derived from this software without specific prior
 written permission.
- 
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -1429,7 +1429,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             name='ANTLR 2 License'
             id='antlr2'
             url='http://www.antlr2.org/license.html'>
-            <text>                
+            <text>
 ANTLR 2 License
 
 We reserve no legal rights to the ANTLR--it is fully in the public domain. An
@@ -1461,25 +1461,25 @@ that the following conditions are met:
 1. Redistributions of source code must retain copyright
    statements and notices.  Redistributions must also contain a
    copy of this document.
- 
+
 2. Redistributions in binary form must reproduce the
    above copyright notice, this list of conditions and the
    following disclaimer in the documentation and/or other
    materials provided with the distribution.
- 
+
 3. The name "DOM4J" must not be used to endorse or promote
    products derived from this Software without prior written
    permission of MetaStuff, Ltd.  For written permission,
    please contact dom4j-info@metastuff.com.
- 
+
 4. Products derived from this Software may not be called "DOM4J"
    nor may "DOM4J" appear in their names without prior written
    permission of MetaStuff, Ltd. DOM4J is a registered
    trademark of MetaStuff, Ltd.
- 
-5. Due credit should be given to the DOM4J Project - 
+
+5. Due credit should be given to the DOM4J Project -
    http://www.dom4j.org
- 
+
 THIS SOFTWARE IS PROVIDED BY METASTUFF, LTD. AND CONTRIBUTORS
 ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
 NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -1494,9 +1494,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
             </text>
         </license>
-        <license 
-            name='Apache License, Version 2' 
-            id='ApacheLicenseVersion2' 
+        <license
+            name='Apache License, Version 2'
+            id='ApacheLicenseVersion2'
             url='http://www.apache.org/licenses/LICENSE-2.0.txt'>
             <text>
                                  Apache License
@@ -1737,7 +1737,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE. 
+THE SOFTWARE.
         </notice>
         <notice id='codec'>
 Apache Commons Codec
@@ -1747,7 +1747,7 @@ This product includes software developed by
 The Apache Software Foundation (http://www.apache.org/).
 
 --------------------------------------------------------------------------------
-src/test/org/apache/commons/codec/language/DoubleMetaphoneTest.java contains 
+src/test/org/apache/commons/codec/language/DoubleMetaphoneTest.java contains
 test data from http://aspell.sourceforge.net/test/batch0.tab.
 
 Copyright (C) 2002 Kevin Atkinson (kevina@gnu.org). Verbatim copying
@@ -1808,13 +1808,13 @@ Date: Thu May 12 15:04:36 2011 -0400
         <notice id='jasypt.notice'>
 
    Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1826,29 +1826,29 @@ Date: Thu May 12 15:04:36 2011 -0400
 
 
 
-This distribution includes cryptographic software.  The country in 
-which you currently reside may have restrictions on the import, 
-possession, use, and/or re-export to another country, of 
-encryption software.  BEFORE using any encryption software, please 
+This distribution includes cryptographic software.  The country in
+which you currently reside may have restrictions on the import,
+possession, use, and/or re-export to another country, of
+encryption software.  BEFORE using any encryption software, please
 check your country's laws, regulations and policies concerning the
-import, possession, or use, and re-export of encryption software, to 
+import, possession, or use, and re-export of encryption software, to
 see if this is permitted.  See http://www.wassenaar.org/ for more
 information.
 
 The U.S. Government Department of Commerce, Bureau of Industry and
-Security (BIS), has classified this software as Export Commodity 
+Security (BIS), has classified this software as Export Commodity
 Control Number (ECCN) 5D002.C.1, which includes information security
 software using or performing cryptographic functions with asymmetric
-algorithms.  The form and manner of this distribution makes it 
-eligible for export under the License Exception ENC Technology 
-Software Unrestricted (TSU) exception (see the BIS Export 
-Administration Regulations, Section 740.13) for both object code and 
+algorithms.  The form and manner of this distribution makes it
+eligible for export under the License Exception ENC Technology
+Software Unrestricted (TSU) exception (see the BIS Export
+Administration Regulations, Section 740.13) for both object code and
 source code.
 
-The following provides more details on the cryptographic software 
+The following provides more details on the cryptographic software
 used (note that this software is not included in the distribution):
 
-  * The PBE Encryption facilities require the Java Cryptography 
+  * The PBE Encryption facilities require the Java Cryptography
     extensions: http://java.sun.com/javase/technologies/security/.
 
 ---------------------------------
@@ -1863,39 +1863,39 @@ ICU License - ICU 1.8.1 and later
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright (c) 1995-2006 International Business Machines 
+Copyright (c) 1995-2006 International Business Machines
 Corporation and others
 
 All rights reserved.
 
-Permission is hereby granted, free of charge, to any 
-person obtaining a copy of this software and associated 
-documentation files (the "Software"), to deal in the 
-Software without restriction, including without limitation 
-the rights to use, copy, modify, merge, publish, 
-distribute, and/or sell copies of the Software, and to 
-permit persons to whom the Software is furnished to do so, 
-provided that the above copyright notice(s) and this 
-permission notice appear in all copies of the Software and 
-that both the above copyright notice(s) and this 
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish,
+distribute, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so,
+provided that the above copyright notice(s) and this
+permission notice appear in all copies of the Software and
+that both the above copyright notice(s) and this
 permission notice appear in supporting documentation.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
-KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO 
-EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN 
-THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL 
-INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES 
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
-WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
-TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO
+EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN
+THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
 USE OR PERFORMANCE OF THIS SOFTWARE.
 
-Except as contained in this notice, the name of a copyright 
-holder shall not be used in advertising or otherwise to 
-promote the sale, use or other dealings in this Software 
-without prior written authorization of the copyright holder. 
+Except as contained in this notice, the name of a copyright
+holder shall not be used in advertising or otherwise to
+promote the sale, use or other dealings in this Software
+without prior written authorization of the copyright holder.
         </notice>
         <notice id='jquery.md5.notice'>
 jQuery MD5 Plugin 1.2.1
@@ -1960,9 +1960,9 @@ the following is provided for informational purposes only, and you should look
 to the Redistributor's license for terms and conditions of use.
 
 Foundation Dependencies ASM EclipseLink JPA ANTLR Java Persistence API (JPA) 2.0
-EARLY ACCESS EclipseLink MOXy Java Architecture for XML Binding (JAXB) 
-Java Mail Java Activation Framework Streaming API for XML (StAX) 
-EclipseLink SDO Service Data Objects (SDO) 
+EARLY ACCESS EclipseLink MOXy Java Architecture for XML Binding (JAXB)
+Java Mail Java Activation Framework Streaming API for XML (StAX)
+EclipseLink SDO Service Data Objects (SDO)
 Utilities Java Connector Xerces WSDL4J 1.6.2 ASM v1.5.3
 
 The EclipseLink Project includes ASM for the purpose of byte code weaving. The
@@ -2019,17 +2019,17 @@ EclipseLink Project to enable the MOXY component's implementation of JAXB.
 
 JAXB Libraries:
 
-/jlib/moxy/javax.xml.bind_2.1.12.v20090708-1500.jar 
+/jlib/moxy/javax.xml.bind_2.1.12.v20090708-1500.jar
 /jlib/moxy/jaxb-impl.jar
 /jlib/moxy/jaxb.xjc.jar
 
 Java Persistence (JPA) 2.0:
 
-The Java Persistence API used is available in the Maven central repository 
+The Java Persistence API used is available in the Maven central repository
 under the "org.eclipse.persistence" groupId. This jar is being shipped as
-an OSGi bundle and is required for compilation of some container based 
-functionality. The JAR "javax.persistence" is distributed under Eclipse 
-Public License v1.0 and Eclipse Distribution License v. 1.0 licenses. 
+an OSGi bundle and is required for compilation of some container based
+functionality. The JAR "javax.persistence" is distributed under Eclipse
+Public License v1.0 and Eclipse Distribution License v. 1.0 licenses.
 EclipseLink is the Java Persistence (JPA) 2.0 Reference Implementation
 (JSR 317).
 
@@ -2114,7 +2114,7 @@ This product also includes schemas and specification developed by:
 - the W3C consortium (http://www.w3c.org)
 
 This product also includes WS-* schemas developed by International
-Business Machines Corporation, Microsoft Corporation, BEA Systems, 
+Business Machines Corporation, Microsoft Corporation, BEA Systems,
 TIBCO Software, SAP AG, Sonic Software, and VeriSign
 
 This product also includes a WSDL developed by salesforce.com
@@ -2139,7 +2139,7 @@ This software includes the Jaxen XPath library
 
 ================================================================================
  Copyright 2003-2006 The Werken Company. All Rights Reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are
  met:
@@ -2152,7 +2152,7 @@ This software includes the Jaxen XPath library
     documentation and/or other materials provided with the distribution.
 
   * Neither the name of the Jaxen Project nor the names of its
-    contributors may be used to endorse or promote products derived 
+    contributors may be used to endorse or promote products derived
     from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
@@ -2194,7 +2194,7 @@ This product includes software developed by
 The Apache Software Foundation (http://www.apache.org/).
 
 This product also includes software developed by :
-   
+
   - IBM Corporation (http://www.ibm.com),
       WSDL4J was the initial code contribution for the Apache Woden
       project and some of the WSDL4J design and code has been reused.
@@ -2219,7 +2219,7 @@ The Apache Software Foundation (http://www.apache.org/).
 Portions of this software were originally based on the following:
   - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
   - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
-  - voluntary contributions made by Paul Eng on behalf of the 
+  - voluntary contributions made by Paul Eng on behalf of the
     Apache Software Foundation that were originally developed at iClick, Inc.,
     software copyright (c) 1999.
            </notice>
@@ -2267,14 +2267,14 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
         </notice>
     </notices>
     <organisations>
-        <organisation 
-            id='apache.org' 
-            name='The Apache Software Foundation' 
-            url='http://www.apache.org/'/>  
-        <organisation 
-            id='apache.org.2' 
-            name='The Apache Software Foundation' 
-            url='http://www.apache.org/'/>  
+        <organisation
+            id='apache.org'
+            name='The Apache Software Foundation'
+            url='http://www.apache.org/'/>
+        <organisation
+            id='apache.org.2'
+            name='The Apache Software Foundation'
+            url='http://www.apache.org/'/>
         <organisation
             id='person:Clinton.Begin'
             name='Clinton Begin'
@@ -2310,15 +2310,15 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
         <organisation
             id='ibm.com'
             name='IBM Corp'
-            url='http://www.ibm.com/' />   
+            url='http://www.ibm.com/' />
         <organisation
             id='xstream.codehaus.com'
             name='XStream Committers'
-            url='http://xstream.codehaus.org/' />       
+            url='http://xstream.codehaus.org/' />
         <organisation
             id='jetty.codehaus.com'
             name='Jetty Committers'
-            url='http://jetty.codehaus.org/jetty/' />       
+            url='http://jetty.codehaus.org/jetty/' />
         <organisation
             id='distcomplab.emory'
             name='Distributed Computing Laboratory at Emory University'
@@ -2337,7 +2337,7 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             url='http://stilbuero.de' />
         <organisation
             id='person:george.mcginley.smith'
-            name='George McGinley Smith' 
+            name='George McGinley Smith'
             url='' />
         <organisation
             id='person:sebastian.tschan'
@@ -2358,7 +2358,7 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             name='Ole Laursen' url='' />
         <organisation
             id='iola.dk'
-            name='IOLA' 
+            name='IOLA'
             url='http://www.iola.dk/' />
         <organisation
             id='person:brian.medendorp'
@@ -2451,7 +2451,7 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
     </primary-notice>
-    <primary-organisation id='apache.org'/> 
+    <primary-organisation id='apache.org'/>
     <within dir='systemvm/debian/etc/apache2'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
@@ -2766,7 +2766,7 @@ Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
         </with-license>
         <with-license id='CPL1'>
             <copyright-notice>
-Copyright (c) IBM Corp 2006 
+Copyright (c) IBM Corp 2006
             </copyright-notice>
             <by-organisation id='ibm.com'>
                 <resource name='cloud-wsdl4j-1.6.2.jar' source='http://sourceforge.net/projects/wsdl4j/' />
