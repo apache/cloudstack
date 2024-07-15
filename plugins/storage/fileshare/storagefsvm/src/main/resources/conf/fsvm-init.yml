@@ -1,0 +1,123 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+write_files:
+  - path: /usr/local/bin/add-partition
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+
+      log "Running add script"
+
+      # Variables
+      PARTITION="$1"
+      MOUNT_POINT="/mnt/datadisk"
+
+      sudo mkdir -p "$MOUNT_POINT"
+
+      sudo mkfs.ext4 "$PARTITION"
+
+      log "Formatted Partition $PARTITION with EXT4 Filesystem."
+
+      FS_INFO=$(sudo blkid "$PARTITION")
+      UUID=$(echo "$FS_INFO" | grep -oP "UUID=\"\K[^\"]+")
+      TYPE=$(echo "$FS_INFO" | grep -oP "TYPE=\"\K[^\"]+")
+
+      if [ -z "$UUID" ] || [ -z "$TYPE" ]; then
+        log "Failed to retrieve UUID or TYPE for $PARTITION"
+        exit 1
+      fi
+
+      sudo sh -c "echo 'UUID=$UUID $MOUNT_POINT $TYPE defaults 0 2' >> /etc/fstab"
+
+      log "Added fstab entry."
+
+      sudo mount -a
+
+      if mountpoint -q "$MOUNT_POINT"; then
+        log "$PARTITION is successfully mounted on $MOUNT_POINT"
+      else
+        log "Failed to mount $PARTITION on $MOUNT_POINT"
+        exit 1
+      fi
+
+      log "Finished running add script."
+
+  - path: /usr/local/bin/resize-partition
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+      log "Running resize script."
+      PARTITION="$1"
+      sudo resize2fs "$PARTITION"
+      log "Finished running resize script."
+
+  - path: /usr/local/bin/fsvm-setup
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+      
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+  
+      BLOCK_DEVICE="vdb"
+      PARTITION="/dev/$BLOCK_DEVICE"
+      ADD_PARTITION_FILE="/usr/local/bin/add-partition"
+      RESIZE_PARTITION_FILE="/usr/local/bin/resize-partition"
+  
+      UDEV_ADD_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"add\", SUBSYSTEM==\"block\", RUN+=\"$ADD_PARTITION_FILE /dev/%k\""
+      UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"change\", SUBSYSTEM==\"block\", RUN+=\"$RESIZE_PARTITION_FILE /dev/%k\""
+      
+      # Add udev rules
+      sudo sh -c "echo '$UDEV_RESIZE_RULE' >> /etc/udev/rules.d/99-resize-partition.rules"
+  
+      if [ ! -b "$PARTITION" ]; then
+        log "Partition $PARTITION does not exist. Adding udev rule for adding the partition"
+        sudo sh -c "echo '$UDEV_ADD_RULE' >> /etc/udev/rules.d/99-add-partition.rules"
+      else
+        log "Partition $PARTITION already exists. Running the $ADD_PARTITION_FILE script"
+        $ADD_PARTITION_FILE "$PARTITION"
+      fi
+  
+      log "Udev rules added."
+  
+      # Reload udev rules
+      udevadm control --reload-rules
+      udevadm trigger
+  
+      log "Script execution finished successfully."
+
+runcmd:
+  - echo "test" > test
+  - /usr/local/bin/fsvm-setup
