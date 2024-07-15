@@ -181,14 +181,16 @@
   </div>
 </template>
 <script>
+
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
-  name: 'CreateFileSHare',
+  name: 'CreateFileShare',
   mixins: [mixinForm],
   props: {
     resource: {
@@ -203,6 +205,11 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
+      owner: {
+        projectid: store.getters.project?.id,
+        domainid: store.getters.project?.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project?.id ? null : store.getters.userInfo.account
+      },
       loading: false,
       zones: [],
       networks: [],
@@ -291,7 +298,13 @@ export default {
       this.loading = true
       var params = {
         zoneid: zoneId,
-        listall: true
+        listall: true,
+        domainid: this.owner.domainid
+      }
+      if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      } else {
+        params.account = this.owner.account
       }
       api('listServiceOfferings', params).then(json => {
         this.serviceofferings = json.listserviceofferingsresponse.serviceoffering || []
@@ -305,7 +318,13 @@ export default {
       var params = {
         zoneid: zoneId,
         listall: true,
-        fileShare: true
+        fileShare: true,
+        domainid: this.owner.domainid
+      }
+      if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      } else {
+        params.account = this.owner.account
       }
       api('listDiskOfferings', params).then(json => {
         this.diskofferings = json.listdiskofferingsresponse.diskoffering || []
@@ -320,7 +339,13 @@ export default {
       this.loading = true
       var params = {
         zoneid: zoneId,
-        listall: true
+        canusefordeploy: true,
+        domainid: this.owner.domainid
+      }
+      if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      } else {
+        params.account = this.owner.account
       }
       api('listNetworks', params).then(json => {
         this.networks = json.listnetworksresponse.network || []
