@@ -113,7 +113,9 @@ class CsDhcp(CsDataBag):
                 if (self.config.is_vpc() or self.config.is_router()) and ('is_vr_guest_gateway' in gn.data and gn.data['is_vr_guest_gateway']):
                   if gateway in dns_list:
                     dns_list.remove(gateway)
-                  if gn.data['router_guest_ip'] != ip:
+                  if gn.data['router_guest_ip'] != gn.data['router_guest_gateway']:
+                    dns_list.insert(0, gn.data['router_guest_ip'])
+                  else:
                     dns_list.insert(0, ip)
                 elif self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
