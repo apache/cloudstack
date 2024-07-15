@@ -150,74 +150,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_tags` (
 INSERT INTO `cloud`.`storage_pool_tags` (pool_id, tag) SELECT pool_id,
 name FROM `cloud`.`storage_pool_details` WHERE value = 'true';
 
--- Alter view storage_pool_view
-CREATE OR REPLACE
-VIEW `storage_pool_view` AS
-    SELECT
-        `storage_pool`.`id` AS `id`,
-        `storage_pool`.`uuid` AS `uuid`,
-        `storage_pool`.`name` AS `name`,
-        `storage_pool`.`status` AS `status`,
-        `storage_pool`.`path` AS `path`,
-        `storage_pool`.`pool_type` AS `pool_type`,
-        `storage_pool`.`host_address` AS `host_address`,
-        `storage_pool`.`created` AS `created`,
-        `storage_pool`.`removed` AS `removed`,
-        `storage_pool`.`capacity_bytes` AS `capacity_bytes`,
-        `storage_pool`.`capacity_iops` AS `capacity_iops`,
-        `storage_pool`.`scope` AS `scope`,
-        `storage_pool`.`hypervisor` AS `hypervisor`,
-        `storage_pool`.`storage_provider_name` AS `storage_provider_name`,
-        `cluster`.`id` AS `cluster_id`,
-        `cluster`.`uuid` AS `cluster_uuid`,
-        `cluster`.`name` AS `cluster_name`,
-        `cluster`.`cluster_type` AS `cluster_type`,
-        `data_center`.`id` AS `data_center_id`,
-        `data_center`.`uuid` AS `data_center_uuid`,
-        `data_center`.`name` AS `data_center_name`,
-        `data_center`.`networktype` AS `data_center_type`,
-        `host_pod_ref`.`id` AS `pod_id`,
-        `host_pod_ref`.`uuid` AS `pod_uuid`,
-        `host_pod_ref`.`name` AS `pod_name`,
-        `storage_pool_tags`.`tag` AS `tag`,
-        `op_host_capacity`.`used_capacity` AS `disk_used_capacity`,
-        `op_host_capacity`.`reserved_capacity` AS `disk_reserved_capacity`,
-        `async_job`.`id` AS `job_id`,
-        `async_job`.`uuid` AS `job_uuid`,
-        `async_job`.`job_status` AS `job_status`,
-        `async_job`.`account_id` AS `job_account_id`
-    FROM
-        ((((((`storage_pool`
-        LEFT JOIN `cluster` ON ((`storage_pool`.`cluster_id` = `cluster`.`id`)))
-        LEFT JOIN `data_center` ON ((`storage_pool`.`data_center_id` = `data_center`.`id`)))
-        LEFT JOIN `host_pod_ref` ON ((`storage_pool`.`pod_id` = `host_pod_ref`.`id`)))
-        LEFT JOIN `storage_pool_tags` ON (((`storage_pool_tags`.`pool_id` = `storage_pool`.`id`))))
-        LEFT JOIN `op_host_capacity` ON (((`storage_pool`.`id` = `op_host_capacity`.`host_id`)
-            AND (`op_host_capacity`.`capacity_type` IN (3 , 9)))))
-        LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `storage_pool`.`id`)
-            AND (`async_job`.`instance_type` = 'StoragePool')
-            AND (`async_job`.`job_status` = 0))));
-
--- Alter view image_store_view
-CREATE OR REPLACE
-VIEW `image_store_view` AS
-    SELECT
-        `image_store`.`id` AS `id`,
-        `image_store`.`uuid` AS `uuid`,
-        `image_store`.`name` AS `name`,
-        `image_store`.`image_provider_name` AS `image_provider_name`,
-        `image_store`.`protocol` AS `protocol`,
-        `image_store`.`url` AS `url`,
-        `image_store`.`scope` AS `scope`,
-        `image_store`.`role` AS `role`,
-        `image_store`.`removed` AS `removed`,
-        `data_center`.`id` AS `data_center_id`,
-        `data_center`.`uuid` AS `data_center_uuid`,
-        `data_center`.`name` AS `data_center_name`
-    FROM
-        (`image_store`
-        LEFT JOIN `data_center` ON ((`image_store`.`data_center_id` = `data_center`.`id`)));
-
 -- Add service_offering_id column to vm_snapshots table
 ALTER TABLE `cloud`.`vm_snapshots` ADD COLUMN `service_offering_id` BIGINT(20) UNSIGNED NOT NULL COMMENT '' AFTER `domain_id`;
 UPDATE `cloud`.`vm_snapshots` s JOIN `cloud`.`vm_instance` v ON v.id = s.vm_id SET s.service_offering_id = v.service_offering_id;
@@ -231,9 +163,6 @@ JOIN `cloud`.`service_offering` o ON (v.service_offering_id = o.id)
 JOIN `cloud`.`vm_snapshots` s ON (s.service_offering_id = o.id AND s.vm_id = v.id)
 WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
 (d.name = 'cpuNumber' OR d.name = 'cpuSpeed' OR d.name = 'memory');
-
--- CLOUDSTACK-9827: Storage tags stored in multiple places
-DROP VIEW IF EXISTS `cloud`.`storage_tag_view`;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`guest_os_details` (
   `id` bigint unsigned NOT NULL auto_increment,
