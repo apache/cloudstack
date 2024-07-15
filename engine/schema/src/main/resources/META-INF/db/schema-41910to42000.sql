@@ -324,3 +324,6 @@ FROM
     `cloud`.`disk_offering` AS `disk_offering` ON `storage_fileshare`.`disk_offering_id` = `disk_offering`.`id`
 GROUP BY
     `storage_fileshare`.`id`;
+
+-- Quota inject tariff result into subsequent ones
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');

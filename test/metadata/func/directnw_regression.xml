@@ -18,10 +18,10 @@ under the License.
 -->
 <sanity>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
-	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
 	<!-- Test case #   - Create the Account and a User -->
-	
+
 	<command>
 		<name>createAccount</name>
 		<testcase>    [Create the Account and a User for the account]</testcase>
@@ -59,7 +59,7 @@ under the License.
 				<value>password</value>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
@@ -164,11 +164,11 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #5 - listUsers command -->
 	<command>
-		
+
 		<name>listUsers</name>
 		<testcase>  5 [List the Created User in (3)]</testcase>
 		<parameters>
@@ -177,7 +177,7 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
@@ -222,14 +222,14 @@ under the License.
 			<item>
 				<name>domain</name>
 				<value>ROOT</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
-	
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
-	
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
 	<!-- Test case # 3 - Create a User -->
-	
+
 	<command>
 		<name>createUser</name>
 		<testcase>  3 [Create User Command]</testcase>
@@ -261,9 +261,9 @@ under the License.
 			<item>
 				<name>email</name>
 				<value>nimbus-user@gmail.com</value>
-			</item>			
+			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item setparam="true">
 				<name>id</name>
@@ -312,7 +312,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #950 - listAccounts -->
 	<command>
@@ -324,7 +324,7 @@ under the License.
 				<param>accountname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item getparam="true">
 				<name>id</name>
@@ -429,7 +429,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #6 - updateUser command -->
 	<command>
@@ -473,7 +473,7 @@ under the License.
 				<param>usersecretkey</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item getparam="true">
 				<name>id</name>
@@ -534,7 +534,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #5 - listUsers command -->
 	<command>
@@ -606,11 +606,11 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case lockUser command -->
 	<!-- LOCK USER COMMAND IS NO LONGER USED. IT IS BEING COMMENTED FOR RECORDS -->
-	<!-- 
+	<!--
 	<command>
 		<name>lockUser</name>
 		<testcase>    [Lock the User created in (3)]</testcase>
@@ -681,7 +681,7 @@ under the License.
 	</command>
 -->
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #428 - disableUser command -->
 	<command>
@@ -753,7 +753,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #9 - enableUser command -->
 	<command>
@@ -825,7 +825,7 @@ under the License.
 		</returnvalue>
 	</command>
 
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case # - lockAccount command -->
 	<command>
@@ -945,7 +945,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>locked</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -963,7 +963,7 @@ under the License.
 			<item>
 				<name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</parameters>
 		<returnvalue>
 			<item getparam="true">
@@ -1065,7 +1065,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>enabled</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1189,7 +1189,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>disabled</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1207,7 +1207,7 @@ under the License.
 			<item>
 				<name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</parameters>
 		<returnvalue>
 			<item getparam="true">
@@ -1309,7 +1309,7 @@ under the License.
 			<item>
 				<name>state</name>
 				<value>enabled</value>
-			</item>						
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1325,7 +1325,7 @@ under the License.
 				<param>domainname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item getparam="true">
 				<name>name</name>
@@ -1366,7 +1366,7 @@ under the License.
 				<param>domainname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalue>
 			<item getparam="true">
 				<name>id</name>
@@ -1414,7 +1414,7 @@ under the License.
 				<param>newdomainname</param>
 			</item>
 		</parameters>
-		
+
 		<returnvalues>
 			<item getparam="true">
 				<name>id</name>
@@ -1456,7 +1456,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		
+
 		<returnvalues list="true">
 			<name>domain</name>
 			<element>0</element>
@@ -1486,8 +1486,8 @@ under the License.
 			</item>
 		</returnvalues>
 	</command>
-	
-<!-- ----------------------------------------------------------------------------------------------------------------------------- -->	
+
+<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
 
 	<!-- Test case #654 - deleteDomain command -->
 	<command>
@@ -1503,7 +1503,7 @@ under the License.
 				<value>true</value>
 			</item>
 		</parameters>
-		
+
 		<returnvalues>
 			<item>
 				<name>success</name>
@@ -1528,7 +1528,7 @@ under the License.
 				<value>1</value>
 			</item>
 		</parameters>
-		
+
 		<returnvalue list="true">
 			<name>template</name>
 			<element>0</element>
@@ -1586,7 +1586,7 @@ under the License.
 			</item>
 			<item setparam="true">
 				<name>size</name>
-				<param>debian50templatesize</param>				
+				<param>debian50templatesize</param>
 			</item>
 			<item>
 				<name>account</name>
@@ -1619,7 +1619,7 @@ under the License.
 			<item>
 				<name>domainid</name>
 				<value>1</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1829,7 +1829,7 @@ under the License.
 			<item>
 				<name>offerha</name>
 				<value>false</value>
-			</item>			
+			</item>
 		</returnvalue>
 	</command>
 
@@ -1867,7 +1867,7 @@ under the License.
 				<name>vlan</name>
 			</item>
 			<item>
-				<name>guestcidraddress</name>				
+				<name>guestcidraddress</name>
 			</item>
 			<item>
 				<name>networktype</name>
