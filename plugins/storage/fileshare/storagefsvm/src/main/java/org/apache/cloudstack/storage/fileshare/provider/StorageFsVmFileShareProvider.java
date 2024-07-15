@@ -17,16 +17,27 @@
 
 package org.apache.cloudstack.storage.fileshare.provider;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.cloudstack.storage.fileshare.FileShareProvider;
 import org.apache.cloudstack.storage.fileshare.lifecycle.StorageFsVmFileShareLifeCycle;
 
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 
-public class StorageFsVmFileShareProvider extends AdapterBase implements FileShareProvider {
+public class StorageFsVmFileShareProvider extends AdapterBase implements FileShareProvider, Configurable {
     protected String name = String.valueOf(FileShareProviderType.STORAGEFSVM);
+    protected int _defaultRamSize = 512;
+    protected int _defaultCpuMHz = 500;
     protected FileShareLifeCycle lifecycle;
+
+    @Inject
+    private ConfigurationDao configDao;
 
     @Override
     public String getName() {
@@ -36,10 +47,22 @@ public class StorageFsVmFileShareProvider extends AdapterBase implements FileSha
     @Override
     public void configure() {
         lifecycle = ComponentContext.inject(StorageFsVmFileShareLifeCycle.class);
+        int ramSize = NumbersUtil.parseInt(configDao.getValue("storagefsvm.ram.size"), _defaultRamSize);
+        int cpuMHz = NumbersUtil.parseInt(configDao.getValue("storagefsvm.cpu.mhz"), _defaultCpuMHz);
     }
 
     @Override
     public FileShareLifeCycle getFileShareLifeCycle() {
         return lifecycle;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return "";
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[0];
     }
 }

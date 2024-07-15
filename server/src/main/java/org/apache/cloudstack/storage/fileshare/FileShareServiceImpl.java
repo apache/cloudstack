@@ -194,14 +194,18 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd) {
         Pair<List<FileShareJoinVO>, Integer> result = searchForFileSharesInternal(cmd);
-        ListResponse<FileShareResponse> response = new ListResponse<>();
+        List<FileShareResponse> fileShareResponses = null;
 
         Account caller = CallContext.current().getCallingAccount();
         if (accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseObject.ResponseView.Full;
         }
-        List<FileShareResponse> fileShareResponses = fileShareJoinDao.createFileShareResponses(respView, result.first().toArray(new FileShareJoinVO[result.first().size()]));
 
+        if (result.second() > 0) {
+            fileShareResponses = fileShareJoinDao.createFileShareResponses(respView, result.first().toArray(new FileShareJoinVO[result.first().size()]));
+        }
+
+        ListResponse<FileShareResponse> response = new ListResponse<>();
         response.setResponses(fileShareResponses, result.second());
         return response;
     }

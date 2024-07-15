@@ -21,7 +21,7 @@ import com.cloud.utils.component.Adapter;
 public interface FileShareProvider extends Adapter {
 
     enum FileShareProviderType {
-        SIMULATOR, STORAGEFSVM
+        STORAGEFSVM
     }
 
     void configure();
