@@ -1391,7 +1391,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ObjectUtils.allNotNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("network cidr and cidr size are mutually exclusive");
         }
-        if (NetworkOffering.NetworkMode.ROUTED.name().equals(networkOffering.getNetworkMode())
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
             if (cidr != null) {
                 if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -1784,7 +1784,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // assign to network
-        if (NetworkOffering.NetworkMode.ROUTED.name().equals(ntwkOff.getNetworkMode())) {
+        if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
         }
 

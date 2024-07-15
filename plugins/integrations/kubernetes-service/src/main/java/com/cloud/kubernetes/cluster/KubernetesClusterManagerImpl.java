@@ -1999,7 +1999,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
         if (forNsx) {
-            defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED.name());
+            defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
             defaultKubernetesServiceNetworkOffering.setForNsx(true);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);

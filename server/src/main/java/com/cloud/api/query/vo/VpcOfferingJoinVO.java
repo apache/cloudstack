@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -81,7 +82,7 @@ public class VpcOfferingJoinVO implements VpcOffering {
     boolean forNsx = false;
 
     @Column(name = "network_mode")
-    String networkMode;
+    NetworkOffering.NetworkMode networkMode;
 
     @Column(name = "domain_id")
     private String domainId;
@@ -150,7 +151,7 @@ public class VpcOfferingJoinVO implements VpcOffering {
     }
 
     @Override
-    public String getNetworkMode() {
+    public NetworkOffering.NetworkMode getNetworkMode() {
         return networkMode;
     }
 

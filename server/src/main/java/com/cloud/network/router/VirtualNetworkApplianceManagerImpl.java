@@ -2142,7 +2142,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final StringBuilder buf = new StringBuilder();
 
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
-        boolean ipv4Routed = NetworkOffering.NetworkMode.ROUTED.name().equals(offering.getNetworkMode());
+        boolean ipv4Routed = NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode());
         if (ipv4Routed) {
             buf.append(" is_routed=true");
         }

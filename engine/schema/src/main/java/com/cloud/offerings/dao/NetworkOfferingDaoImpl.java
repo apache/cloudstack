@@ -295,6 +295,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
 
     @Override
     public boolean isRoutedNetwork(long offeringId) {
-        return NetworkOffering.NetworkMode.ROUTED.name().equals(findById(offeringId).getNetworkMode());
+        return NetworkOffering.NetworkMode.ROUTED.equals(findById(offeringId).getNetworkMode());
     }
 }

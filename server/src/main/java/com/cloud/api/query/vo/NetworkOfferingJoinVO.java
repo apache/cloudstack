@@ -161,7 +161,7 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     boolean forNsx;
 
     @Column(name = "network_mode")
-    String networkMode;
+    NetworkMode networkMode;
 
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
@@ -365,11 +365,11 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     }
 
     @Override
-    public String getNetworkMode() {
+    public NetworkMode getNetworkMode() {
         return networkMode;
     }
 
-    public void setNetworkMode(String networkMode) {
+    public void setNetworkMode(NetworkMode networkMode) {
         this.networkMode = networkMode;
     }
 

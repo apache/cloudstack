@@ -1231,7 +1231,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultNatNSXNetworkOffering.setPublicLb(publicLB);
         defaultNatNSXNetworkOffering.setInternalLb(!publicLB);
         defaultNatNSXNetworkOffering.setForNsx(true);
-        defaultNatNSXNetworkOffering.setNetworkMode(networkMode.name());
+        defaultNatNSXNetworkOffering.setNetworkMode(networkMode);
         defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNatNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatNSXNetworkOffering);
 

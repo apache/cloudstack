@@ -102,7 +102,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean isForNsx();
 
-    String getNetworkMode();
+    NetworkMode getNetworkMode();
 
     TrafficType getTrafficType();
 

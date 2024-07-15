@@ -906,24 +906,24 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public boolean isVirtualRouterGateway(NetworkOffering networkOffering) {
-        return NetworkOffering.NetworkMode.ROUTED.name().equals(networkOffering.getNetworkMode())
+        return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VirtualRouter)
                 || networkOfferingServiceMapDao.canProviderSupportServiceInNetworkOffering(networkOffering.getId(), Service.Gateway, Provider.VPCVirtualRouter);
     }
 
     @Override
     public boolean isRoutedNetwork(Network network) {
-        return NetworkOffering.NetworkMode.ROUTED.name().equals(networkOfferingDao.findById(network.getNetworkOfferingId()).getNetworkMode());
+        return NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingDao.findById(network.getNetworkOfferingId()).getNetworkMode());
     }
 
     @Override
     public boolean isRoutedVpc(Vpc vpc) {
-        return NetworkOffering.NetworkMode.ROUTED.name().equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getNetworkMode());
+        return NetworkOffering.NetworkMode.ROUTED.equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getNetworkMode());
     }
 
     @Override
     public boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering) {
-        return NetworkOffering.NetworkMode.ROUTED.name().equals(vpcOffering.getNetworkMode())
+        return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
                 && vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Service.Gateway.getName(), Provider.VPCVirtualRouter.getName(), vpcOffering.getId()) != null;
     }
 }

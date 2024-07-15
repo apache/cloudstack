@@ -125,7 +125,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
-        if (NetworkOffering.NetworkMode.ROUTED.name().equals(offering.getNetworkMode()) && !offering.isForVpc()) {
+        if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode()) && !offering.isForVpc()) {
             if (userSpecified.getCidr() != null) {
                 routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
             } else {

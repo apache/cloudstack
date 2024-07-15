@@ -2392,7 +2392,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
         response.setForTungsten(offering.isForTungsten());
         response.setForNsx(offering.isForNsx());
-        response.setNetworkMode(offering.getNetworkMode());
+        if (offering.getNetworkMode() != null) {
+            response.setNetworkMode(offering.getNetworkMode().name());
+        }
         response.setServices(serviceResponses);
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());

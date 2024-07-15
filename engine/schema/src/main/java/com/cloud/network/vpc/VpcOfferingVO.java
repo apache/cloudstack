@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -62,7 +63,7 @@ public class VpcOfferingVO implements VpcOffering {
     boolean forNsx = false;
 
     @Column(name = "network_mode")
-    String networkMode;
+    NetworkOffering.NetworkMode networkMode;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -158,11 +159,11 @@ public class VpcOfferingVO implements VpcOffering {
         this.forNsx = forNsx;
     }
 
-    public String getNetworkMode() {
+    public NetworkOffering.NetworkMode getNetworkMode() {
         return networkMode;
     }
 
-    public void setNetworkMode(String networkMode) {
+    public void setNetworkMode(NetworkOffering.NetworkMode networkMode) {
         this.networkMode =  networkMode;
     }
 
