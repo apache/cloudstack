@@ -363,7 +363,7 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(network.getId());
+                List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
                 return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
             }
         }

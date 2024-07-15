@@ -45,7 +45,7 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     public void init() {
         final SearchBuilder<BgpPeerNetworkMapVO> networkSearchBuilder = bgpPeerNetworkMapDao.createSearchBuilder();
         networkSearchBuilder.and("networkId", networkSearchBuilder.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        networkSearchBuilder.and("state", networkSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
+        networkSearchBuilder.and("state", networkSearchBuilder.entity().getState(), SearchCriteria.Op.IN);
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getBgpPeerId(),
                 NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -62,10 +62,10 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     }
 
     @Override
-    public List<BgpPeerVO> listByNetworkId(long networkId) {
+    public List<BgpPeerVO> listNonRevokeByNetworkId(long networkId) {
         SearchCriteria<BgpPeerVO> sc = NetworkIdSearch.create();
         sc.setJoinParameters("network", "networkId", networkId);
-        sc.setJoinParameters("network", "state", BgpPeer.State.Active);
+        sc.setJoinParameters("network", "state", BgpPeer.State.Active, BgpPeer.State.Add);
         return listBy(sc);
     }
 

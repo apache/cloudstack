@@ -38,7 +38,7 @@ import com.cloud.user.Account;
         description = "Creates a Bgp Peer for a zone.",
         responseObject = BgpPeerResponse.class,
         since = "4.20.0",
-        requestHasSensitiveInfo = false,
+        requestHasSensitiveInfo = true,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
 public class CreateBgpPeerCmd extends BaseAsyncCmd {

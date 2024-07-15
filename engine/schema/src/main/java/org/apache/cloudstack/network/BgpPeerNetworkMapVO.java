@@ -53,6 +53,7 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     public BgpPeerNetworkMapVO(long bgpPeerId, long networkId) {
         this.bgpPeerId = bgpPeerId;
         this.networkId = networkId;
+        this.state = BgpPeer.State.Add;
     }
 
     @Override
@@ -70,5 +71,9 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
 
     public BgpPeer.State getState() {
         return state;
+    }
+
+    public void setState(BgpPeer.State state) {
+        this.state = state;
     }
 }

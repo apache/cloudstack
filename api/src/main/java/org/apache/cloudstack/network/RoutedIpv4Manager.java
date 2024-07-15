@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DeleteBgpPeerCmd;
@@ -154,4 +155,6 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     BgpPeer releaseDedicatedBgpPeer(ReleaseDedicatedBgpPeerCmd releaseDedicatedBgpPeerCmd);
 
     List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd);
+
+    Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd);
 }

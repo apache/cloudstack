@@ -18,17 +18,20 @@
 package org.apache.cloudstack.network;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.dc.BGPService;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallManager;
@@ -62,6 +65,7 @@ import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DeleteBgpPeerCmd;
@@ -126,6 +130,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     BgpPeerDao bgpPeerDao;
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    @Inject
+    NetworkDao networkDao;
+    @Inject
+    BGPService bgpService;
 
     @Override
     public String getConfigComponentName() {
@@ -162,6 +170,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         cmdList.add(UpdateBgpPeerCmd.class);
         cmdList.add(DedicateBgpPeerCmd.class);
         cmdList.add(ReleaseDedicatedBgpPeerCmd.class);
+        cmdList.add(ChangeBgpPeersForNetworkCmd.class);
         return cmdList;
     }
 
@@ -1206,5 +1215,76 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         // search via bgpPeerDao
         return bgpPeerDao.search(sc, null);
+    }
+
+    @Override
+    public Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd) {
+        Long networkId = changeBgpPeersForNetworkCmd.getNetworkId();
+        List<Long> bgpPeerIds = changeBgpPeersForNetworkCmd.getBgpPeerIds();
+
+        Network network = networkDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException(String.format("Invalid network ID: %s", network));
+        }
+        for (Long bgpPeerId : bgpPeerIds) {
+            BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
+            if (bgpPeerVO == null) {
+                throw new InvalidParameterValueException(String.format("Invalid BGP peer ID: %s", bgpPeerId));
+            }
+        }
+        final List<Long> bgpPeerIdsToBeAdded = new ArrayList<>(bgpPeerIds);
+        List<BgpPeerNetworkMapVO> bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+        for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+            Long bgpPeerId = bgpPeerNetworkMapVO.getBgpPeerId();
+            if (bgpPeerIdsToBeAdded.contains(bgpPeerId)) {
+                bgpPeerIdsToBeAdded.remove(bgpPeerId);
+            } else {
+                bgpPeerNetworkMapVO.setState(BgpPeer.State.Revoke);
+                bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+            }
+        }
+
+        for (Long bgpPeedId : bgpPeerIdsToBeAdded) {
+            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, networkId));
+        }
+
+        boolean result = true;
+        try {
+            result = bgpService.applyBgpPeers(network, false);
+        } catch (ResourceUnavailableException ex) {
+            logger.error("Unable to apply BGP peers due to : " + ex.getMessage());
+            result = false;
+        }
+        if (result) {
+            logger.info("Succeed to apply BGP peers, updating state");
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+            for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+                if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapVO.setState(BgpPeer.State.Active);
+                    bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+                } else if (BgpPeer.State.Revoke.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapDao.remove(bgpPeerNetworkMapVO.getId());
+                }
+            }
+        } else {
+            logger.info("Failed to apply BGP peers, rolling back to original state");
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+            for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+                if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapDao.remove(bgpPeerNetworkMapVO.getId());
+                } else if (BgpPeer.State.Revoke.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapVO.setState(BgpPeer.State.Add);
+                    bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+                }
+            }
+            try {
+                bgpService.applyBgpPeers(network, false);
+            } catch (ResourceUnavailableException ex) {
+                logger.error("Unable to apply BGP peers after rollback due to : " + ex.getMessage());
+            }
+            return null;
+        }
+
+        return networkDao.findById(networkId);
     }
 }

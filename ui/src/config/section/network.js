@@ -197,6 +197,16 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'changeBgpPeersForNetwork',
+          icon: 'swap-outlined',
+          label: 'label.change.bgp.peers',
+          dataView: true,
+          show: (record) => { return ['Dynamic'].includes(record.ip4routing) },
+          args: ['bgppeerids'],
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeer'))),
+          popup: true
         }
       ]
     },

@@ -764,6 +764,7 @@ public class EventTypes {
     public static final String EVENT_BGP_PEER_DELETE = "BGP.PEER.DELETE";
     public static final String EVENT_BGP_PEER_DEDICATE = "BGP.PEER.DEDICATE";
     public static final String EVENT_BGP_PEER_RELEASE = "BGP.PEER.RELEASE";
+    public static final String EVENT_NETWORK_BGP_PEER_UPDATE = "NETWORK.BGP.PEER.UPDATE";
 
     static {
 

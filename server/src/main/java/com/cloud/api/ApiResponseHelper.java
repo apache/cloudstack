@@ -76,6 +76,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
@@ -211,6 +212,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.network.dao.BgpPeerDao;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -507,6 +511,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     VpcOfferingDao vpcOfferingDao;
     @Inject
     ASNumberDao asNumberDao;
+    @Inject
+    BgpPeerDao bgpPeerDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -2755,6 +2763,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (IpAddress ip : ips) {
                 Ipv4RouteResponse route = new Ipv4RouteResponse(network.getCidr(), ip.getAddress().addr());
                 response.addIpv4Route(route);
+            }
+
+            List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+            for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
+                BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
+                response.addBgpPeer(bgpPeerResponse);
             }
         }
 

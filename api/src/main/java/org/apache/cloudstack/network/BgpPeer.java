@@ -29,7 +29,7 @@ public interface BgpPeer extends Identity, InternalIdentity {
     Long getAccountId();
 
     enum State {
-        Active, Revoke
+        Active, Add, Revoke
     }
 
     long getDataCenterId();

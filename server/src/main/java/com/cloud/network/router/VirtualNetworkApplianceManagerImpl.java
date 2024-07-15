@@ -2506,7 +2506,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Apply BGP peers
         final Network guestNetwork = _networkDao.findById(guestNetworkId);
         if (routedIpv4Manager.isDynamicRoutedNetwork(guestNetwork)) {
-            final List<BgpPeerVO> bgpPeers = bgpPeerDao.listByNetworkId(guestNetworkId);
+            final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(guestNetworkId);
             _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetworkId);
         }
 

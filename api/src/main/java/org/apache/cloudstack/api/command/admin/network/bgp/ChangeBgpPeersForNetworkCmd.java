@@ -17,97 +17,83 @@
 
 package org.apache.cloudstack.api.command.admin.network.bgp;
 
+import com.cloud.network.Network;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
-import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateBgpPeer",
-        description = "Updates an existing Bgp Peer.",
+import java.util.List;
+
+@APICommand(name = "changeBgpPeersForNetwork",
+        description = "Change the BGP peers for a network.",
         responseObject = BgpPeerResponse.class,
         since = "4.20.0",
-        requestHasSensitiveInfo = true,
+        requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class UpdateBgpPeerCmd extends BaseAsyncCmd {
+public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = BgpPeerResponse.class, required = true, description = "Id of the Bgp Peer")
-    private Long id;
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            required = true,
+            description = "UUID of the network which the Bgp Peers are associated to.",
+            validations = {ApiArgValidator.PositiveNumber})
+    private Long networkId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS,
-            type = CommandType.STRING,
-            description = "The IPv4 address of the Bgp Peer.")
-    private String ip4Address;
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            required = true,
+            description = "Ids of the Bgp Peer")
+    private List<Long> bgpPeerIds;
 
-    @Parameter(name = ApiConstants.IP6_ADDRESS,
-            type = CommandType.STRING,
-            description = "The IPv6 address of the Bgp Peer.")
-    private String ip6Address;
-
-    @Parameter(name = ApiConstants.AS_NUMBER,
-            type = CommandType.LONG,
-            description = "The AS number of the Bgp Peer.")
-    private Long asNumber;
-
-    @Parameter(name = ApiConstants.PASSWORD,
-            type = CommandType.STRING,
-            description = "The password of the Bgp Peer.")
-    private String password;
-
-    public Long getId() {
-        return id;
+    public Long getNetworkId() {
+        return networkId;
     }
 
-    public String getIp4Address() {
-        return ip4Address;
-    }
-
-    public String getIp6Address() {
-        return ip6Address;
-    }
-
-    public Long getAsNumber() {
-        return asNumber;
-    }
-
-    public String getPassword() {
-        return password;
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_BGP_PEER_UPDATE;
+        return EventTypes.EVENT_NETWORK_BGP_PEER_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Updating Bgp Peer " + getId();
+        return "Changing Bgp Peers for network " + getNetworkId();
     }
 
     @Override
     public void execute() {
         try {
-            BgpPeer result = routedIpv4Manager.updateBgpPeer(this);
+            Network result = routedIpv4Manager.changeBgpPeersForNetwork(this);
             if (result != null) {
-                BgpPeerResponse response = routedIpv4Manager.createBgpPeerResponse(result);
+                NetworkResponse response = _responseGenerator.createNetworkResponse(getResponseView(), result);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Bgp Peer:" + getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to change BGP Peers for network");
             }
         } catch (InvalidParameterValueException ex) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());

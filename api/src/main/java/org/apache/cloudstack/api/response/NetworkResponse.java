@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -330,6 +331,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.IPV4_ROUTES)
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.20.0")
     private Set<Ipv4RouteResponse> ipv4Routes;
+
+    @SerializedName(ApiConstants.BGP_PEERS)
+    @Param(description = "The BGP peers for the network", since = "4.20.0")
+    private Set<BgpPeerResponse> bgpPeers;
 
     public NetworkResponse() {}
 
@@ -669,6 +674,17 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
+    }
+
+    public void setBgpPeers(Set<BgpPeerResponse> bgpPeers) {
+        this.bgpPeers = bgpPeers;
+    }
+
+    public void addBgpPeer(BgpPeerResponse bgpPeer) {
+        if (this.bgpPeers == null) {
+            this.setBgpPeers(new LinkedHashSet<>());
+        }
+        this.bgpPeers.add(bgpPeer);
     }
 
     public Integer getPublicMtu() {
