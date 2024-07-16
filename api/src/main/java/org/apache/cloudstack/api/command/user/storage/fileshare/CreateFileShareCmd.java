@@ -205,7 +205,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkId(), this.getSize());
+        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkId(), this.getDiskOfferingId(), this.getSize());
         if (fileShare == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
         }

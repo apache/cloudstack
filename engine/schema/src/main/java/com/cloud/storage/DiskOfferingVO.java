@@ -592,7 +592,8 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSizeStrictness = diskSizeStrictness;
     }
 
-    public boolean getFileShare() {
+    @Override
+    public boolean isFileShare() {
         return fileShare;
     }
 

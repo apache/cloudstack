@@ -153,4 +153,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     boolean getEncrypt();
 
     void setEncrypt(boolean encrypt);
+
+    boolean isFileShare();
 }

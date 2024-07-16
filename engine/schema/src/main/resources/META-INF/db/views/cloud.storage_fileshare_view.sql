@@ -46,6 +46,7 @@ SELECT
     `service_offering`.`name` AS `service_offering_name`,
     `disk_offering`.`uuid` AS `disk_offering_uuid`,
     `disk_offering`.`name` AS `disk_offering_name`,
+    `disk_offering`.`display_text` AS `disk_offering_display_text`,
     `disk_offering`.`disk_size` AS `disk_offering_size`,
     `disk_offering`.`customized` AS `disk_offering_custom`,
     GROUP_CONCAT(DISTINCT(nics.uuid) ORDER BY nics.id) AS nic_uuid,
@@ -71,6 +72,6 @@ FROM
         LEFT JOIN
     `cloud`.`service_offering` AS `service_offering` ON `storage_fileshare`.`service_offering_id` = `service_offering`.`id`
         LEFT JOIN
-    `cloud`.`disk_offering` AS `disk_offering` ON `storage_fileshare`.`disk_offering_id` = `disk_offering`.`id`
+    `cloud`.`disk_offering` AS `disk_offering` ON `volumes`.`disk_offering_id` = `disk_offering`.`id`
 GROUP BY
     `storage_fileshare`.`id`;

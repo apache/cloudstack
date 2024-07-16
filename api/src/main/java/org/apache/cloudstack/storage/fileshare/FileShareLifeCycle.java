@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.fileshare;
 import com.cloud.utils.Pair;
 
 public interface FileShareLifeCycle {
-    Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId, Long size);
+    Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size);
 
     boolean initializeFileShare(FileShare fileShare);
 

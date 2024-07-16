@@ -88,6 +88,10 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "disk offering for the file share")
     private String diskOfferingName;
 
+    @SerializedName("diskofferingdisplaytext")
+    @Param(description = "disk offering display text for the file share")
+    private String diskOfferingDisplayText;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "service offering for the file share")
     private String serviceOfferingId;
@@ -260,6 +264,10 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setDiskOfferingName(String diskOfferingName) {
         this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setDiskOfferingDisplayText(String diskOfferingDisplayText) {
+        this.diskOfferingDisplayText = diskOfferingDisplayText;
     }
 
     public void setServiceOfferingId(String serviceOfferingId) {

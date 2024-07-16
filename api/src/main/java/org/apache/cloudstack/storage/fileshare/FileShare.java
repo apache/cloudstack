@@ -156,8 +156,6 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
     FileSystemType getFsType();
 
-    Long getDiskOfferingId();
-
     Long getServiceOfferingId();
 
     Date getUpdated();

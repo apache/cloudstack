@@ -115,6 +115,9 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
     @Column(name = "disk_offering_name")
     private String diskOfferingName;
 
+    @Column(name = "disk_offering_display_text")
+    private String diskOfferingDisplayText;
+
     @Column(name = "disk_offering_size")
     private long diskOfferingSize;
 
@@ -230,6 +233,10 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     public String getDiskOfferingName() {
         return diskOfferingName;
+    }
+
+    public String getDiskOfferingDisplayText() {
+        return diskOfferingDisplayText;
     }
 
     public long getDiskOfferingSize() {

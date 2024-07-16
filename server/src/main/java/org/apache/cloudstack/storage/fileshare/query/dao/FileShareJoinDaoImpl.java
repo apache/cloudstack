@@ -111,6 +111,7 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
 
         response.setDiskOfferingId(fileShare.getDiskOfferingUuid());
         response.setDiskOfferingName(fileShare.getDiskOfferingName());
+        response.setDiskOfferingDisplayText(fileShare.getDiskOfferingDisplayText());
         if (fileShare.isDiskOfferingCustom() == true) {
             response.setSize(fileShare.getSize());
         } else {

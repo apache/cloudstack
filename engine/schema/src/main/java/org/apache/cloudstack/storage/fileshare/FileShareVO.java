@@ -92,9 +92,6 @@ public class FileShareVO implements FileShare {
     @Enumerated(value = EnumType.STRING)
     private FileSystemType fsType;
 
-    @Column(name = "disk_offering_id")
-    private Long diskOfferingId;
-
     @Column(name = "service_offering_id")
     private Long serviceOfferingId;
 
@@ -118,8 +115,7 @@ public class FileShareVO implements FileShare {
     }
 
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId,
-                       String fsProviderName, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId,
-                       Long serviceOfferingId) {
+                       String fsProviderName, Protocol protocol, String mountOptions, FileSystemType fsType, Long serviceOfferingId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -131,7 +127,6 @@ public class FileShareVO implements FileShare {
         this.state = State.Allocated;
         this.mountOptions = mountOptions;
         this.fsType = fsType;
-        this.diskOfferingId = diskOfferingId;
         this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
     }
@@ -239,11 +234,6 @@ public class FileShareVO implements FileShare {
     @Override
     public FileSystemType getFsType() {
         return fsType;
-    }
-
-    @Override
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
     }
 
     @Override

@@ -139,8 +139,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Account owner = accountMgr.getActiveAccountById(ownerId);
         FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, 0,
                                                 cmd.getZoneId(), cmd.getFileShareProviderName(), null,
-                                                cmd.getMountOptions(), FileShare.FileSystemType.EXT4, cmd.getDiskOfferingId(),
-                                                cmd.getServiceOfferingId());
+                                                cmd.getMountOptions(), FileShare.FileSystemType.EXT4, cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
         return fileShare;
     }
@@ -148,13 +147,13 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_DEPLOY, eventDescription = "Deploying fileshare", async = true)
-    public FileShare deployFileShare(Long fileShareId, Long networkId, Long size) {
+    public FileShare deployFileShare(Long fileShareId, Long networkId, Long diskOfferingId, Long size) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
 
         stateTransitTo(fileShare, Event.DeployRequested);
-        Pair<String, Long> endpoint = lifeCycle.deployFileShare(fileShare, networkId, size);
+        Pair<String, Long> endpoint = lifeCycle.deployFileShare(fileShare, networkId, diskOfferingId, size);
         fileShare.setEndpointIp(endpoint.first());
         fileShare.setVmId(endpoint.second());
         fileShareDao.update(fileShare.getId(), fileShare);
