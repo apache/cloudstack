@@ -2834,6 +2834,8 @@ class NetworkOffering:
             cmd.internetprotocol = services["internetprotocol"]
         if "networkmode" in services:
             cmd.networkmode = services["networkmode"]
+        if "routingmode" in services:
+            cmd.routingmode = services["routingmode"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -3552,7 +3554,7 @@ class Network:
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
                externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
-               sourcenatipaddress=None, cidrsize=None):
+               sourcenatipaddress=None, cidrsize=None, **kwargs):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3640,6 +3642,7 @@ class Network:
             cmd.privatemtu = privatemtu
         if sourcenatipaddress:
             cmd.sourcenatipaddress = sourcenatipaddress
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -3692,6 +3695,13 @@ class Network:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listNetworks(cmd))
+
+    def changeBgpPeers(self, apiclient, bgppeerids):
+        cmd = changeBgpPeersForNetwork.changeBgpPeersForNetworkCmd()
+        cmd.networkid = self.id
+        if bgppeerids is not None:
+            cmd.bgppeerids = bgppeerids
+        return (apiclient.changeBgpPeersForNetwork(cmd))
 
 
 class NetworkACL:
@@ -7446,3 +7456,86 @@ class RoutingFirewallRule:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         apiclient.updateRoutingFirewallRule(cmd)
+
+
+class ASNRange:
+    """Manage ASN range for Guest Network"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, startasn, endasn, **kwargs):
+        """Create ASN range for Guest Network"""
+        cmd = createASNRange.createASNRangeCmd()
+        cmd.zoneid = zoneid
+        cmd.startasn = startasn
+        cmd.endasn = endasn
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return ASNRange(apiclient.createASNRange(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listASNRanges.listASNRangesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listASNRanges(cmd)
+
+    def delete(self, apiclient):
+        """Delete ASN range for Guest Network"""
+        cmd = deleteASNRange.deleteASNRangeCmd()
+        cmd.id = self.id
+        apiclient.deleteASNRange(cmd)
+
+
+class BgpPeer:
+    """Manage BGP Peers for Zone"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, asnumber, **kwargs):
+        """Create BGP Peer"""
+        cmd = createBgpPeer.createBgpPeerCmd()
+        cmd.zoneid = zoneid
+        cmd.asnumber = asnumber
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return BgpPeer(apiclient.createBgpPeer(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listBgpPeers.listBgpPeersCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listBgpPeers(cmd)
+
+    def delete(self, apiclient):
+        """Delete BGP Peer"""
+        cmd = deleteBgpPeer.deleteBgpPeerCmd()
+        cmd.id = self.id
+        apiclient.deleteBgpPeer(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update BGP Peer"""
+
+        cmd = updateBgpPeer.updateBgpPeerCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateBgpPeer(cmd)
+
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate BGP Peer"""
+
+        cmd = dedicateBgpPeer.dedicateBgpPeerCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return BgpPeer(apiclient.dedicateBgpPeer(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release BGP Peer"""
+
+        cmd = releaseBgpPeer.releaseBgpPeerCmd()
+        cmd.id = self.id
+        return apiclient.releaseBgpPeer(cmd)

@@ -23,7 +23,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "bgp_peer_network_map")
@@ -43,6 +46,12 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     @Column(name = "state")
     private BgpPeer.State state;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    @Column(name= GenericDao.REMOVED_COLUMN)
+    private Date removed;
+
     /**
      * There should never be a public constructor for this class. Since it's
      * only here to define the table for the DAO class.
@@ -50,10 +59,10 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     protected BgpPeerNetworkMapVO() {
     }
 
-    public BgpPeerNetworkMapVO(long bgpPeerId, long networkId) {
+    public BgpPeerNetworkMapVO(long bgpPeerId, long networkId, BgpPeer.State state) {
         this.bgpPeerId = bgpPeerId;
         this.networkId = networkId;
-        this.state = BgpPeer.State.Add;
+        this.state = state;
     }
 
     @Override
@@ -75,5 +84,13 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
 
     public void setState(BgpPeer.State state) {
         this.state = state;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getRemoved() {
+        return removed;
     }
 }

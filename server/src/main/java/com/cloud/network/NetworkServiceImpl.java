@@ -1519,6 +1519,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
         Integer networkCidrSize = cmd.getCidrSize();
+        List<Long> bgpPeerIds = cmd.getBgpPeerIds();
 
         // Validate network offering id
         NetworkOffering ntwkOff = getAndValidateNetworkOffering(networkOfferingId);
@@ -1700,6 +1701,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
 
+        // Validate BGP peers
+        routedIpv4Manager.validateBgpPeers(owner, ntwkOff, zone.getId(), bgpPeerIds);
+
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value
             if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
@@ -1793,6 +1797,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff)) {
             bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+        }
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            routedIpv4Manager.persistBgpPeersForGuestNetwork(network.getId(), bgpPeerIds);
         }
 
         // if the network offering has persistent set to true, implement the network

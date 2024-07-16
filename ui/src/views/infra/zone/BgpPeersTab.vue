@@ -521,9 +521,25 @@ export default {
     },
     handleDeleteBgpPeer (id) {
       this.componentLoading = true
-      api('deleteBgpPeer', { id }).then(() => {
-        this.$notification.success({
-          message: this.$t('message.success.delete.bgp.peer')
+      api('deleteBgpPeer', { id }).then(response => {
+        this.$pollJob({
+          jobId: response.deletebgppeerresponse.jobid,
+          title: this.$t('label.delete.bgp.peer'),
+          successMessage: this.$t('message.success.delete.bgp.peer'),
+          successMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          },
+          errorMessage: this.$t('message.delete.failed'),
+          errorMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          }
         })
       }).catch(error => {
         this.$notifyError(error)

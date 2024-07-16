@@ -24,7 +24,7 @@ import java.util.List;
 
 public interface BgpPeerNetworkMapDao extends GenericDao<BgpPeerNetworkMapVO, Long> {
 
-    void persist(long bgpPeerId, List<Long> networks);
+    void persist(long networkId, List<Long> bgpPeerIds);
 
     BgpPeerNetworkMapVO findByBgpPeerIdAndNetworkId(long bgpPeerId, long networkId);
 
@@ -35,4 +35,6 @@ public interface BgpPeerNetworkMapDao extends GenericDao<BgpPeerNetworkMapVO, Lo
     List<BgpPeerNetworkMapVO> listUsedByOtherDomains(long bgpPeerId, Long domainId);
 
     List<BgpPeerNetworkMapVO> listUsedByOtherAccounts(long bgpPeerId, Long accountId);
+
+    int removeByNetworkId(long networkId);
 }

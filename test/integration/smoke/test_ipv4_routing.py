@@ -23,7 +23,8 @@ import time
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
-    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template
+    Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template, ASNRange, \
+    BgpPeer
 from marvin.lib.common import get_domain, get_zone, list_routers, list_hosts
 from marvin.lib.utils import get_host_credentials, get_process_status
 
@@ -38,6 +39,7 @@ SUBNET_2_PREFIX = SUBNET_PREFIX + str(random.randrange(151, 199))
 
 VPC_CIDR_PREFIX = "172.31"  # .0 to .16
 NETWORK_CIDR_PREFIX = VPC_CIDR_PREFIX + ".100"
+NETWORK_CIDR_PREFIX_DYNAMIC = VPC_CIDR_PREFIX + ".101"
 
 MAX_RETRIES = 30
 WAIT_INTERVAL = 5
@@ -48,6 +50,15 @@ test_vpc = None
 test_vpc_tier = None
 test_vpc_vm = None
 test_network_acl = None
+
+START_ASN = 888800
+END_ASN = 888888
+ASN_1 = 888891
+ASN_2 = 888892
+IP4_ADDR_1 = "10.0.53.10"
+IP4_ADDR_2 = "10.0.53.11"
+PASSWORD_1 = "testpassword1"
+PASSWORD_2 = "testpassword2"
 
 NETWORK_OFFERING = {
     "name": "Test Network offering - Routed mode",
@@ -92,6 +103,24 @@ VPC_NETWORK_OFFERING = {
     }
 }
 
+NETWORK_OFFERING_DYNAMIC = {
+    "name": "Test Network offering - Dynamic Routed mode",
+    "displaytext": "Test Network offering - Dynamic Routed mode",
+    "networkmode": "ROUTED",
+    "routingmode": "Dynamic",
+    "guestiptype": "Isolated",
+    "supportedservices":
+        "Dhcp,Dns,UserData,Firewall",
+    "traffictype": "GUEST",
+    "availability": "Optional",
+    "egress_policy": "true",
+    "serviceProviderList": {
+        "Dhcp": "VirtualRouter",
+        "Dns": "VirtualRouter",
+        "UserData": "VirtualRouter",
+        "Firewall": "VirtualRouter"
+    }
+}
 
 class TestIpv4Routing(cloudstackTestCase):
 
@@ -118,13 +147,22 @@ class TestIpv4Routing(cloudstackTestCase):
         cls.template.download(cls.apiclient)
         cls._cleanup.append(cls.template)
 
-        # 1. create subnet for zone
+        # 1.1 create subnet for zone
         cls.subnet_1 = ZoneIpv4Subnet.create(
             cls.apiclient,
             zoneid=cls.zone.id,
             subnet=SUBNET_1_PREFIX + ".0/24"
         )
         cls._cleanup.append(cls.subnet_1)
+
+        # 1.2 create ASN range for zone
+        cls.asnrange = ASNRange.create(
+            cls.apiclient,
+            zoneid=cls.zone.id,
+            startasn=START_ASN,
+            endasn=END_ASN
+        )
+        cls._cleanup.append(cls.asnrange)
 
         # 2. Create small service offering
         cls.service_offering = ServiceOffering.create(
@@ -134,6 +172,7 @@ class TestIpv4Routing(cloudstackTestCase):
         cls._cleanup.append(cls.service_offering)
 
         # 3. Create network and vpc offering with routed mode
+        # 3.1 Network offering for static routing
         cls.network_offering_isolated = NetworkOffering.create(
             cls.apiclient,
             NETWORK_OFFERING
@@ -141,6 +180,7 @@ class TestIpv4Routing(cloudstackTestCase):
         cls._cleanup.append(cls.network_offering_isolated)
         cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
 
+        # 3.2 VPC offering for static routing
         cls.vpc_offering = VpcOffering.create(
             cls.apiclient,
             VPC_OFFERING
@@ -148,12 +188,21 @@ class TestIpv4Routing(cloudstackTestCase):
         cls._cleanup.append(cls.vpc_offering)
         cls.vpc_offering.update(cls.apiclient, state='Enabled')
 
+        # 3.3 VPC tier offering for static routing
         cls.vpc_network_offering = NetworkOffering.create(
             cls.apiclient,
             VPC_NETWORK_OFFERING
         )
         cls._cleanup.append(cls.vpc_network_offering)
         cls.vpc_network_offering.update(cls.apiclient, state='Enabled')
+
+        # 3.4 Network offering for dynamic routing
+        cls.network_offering_dynamic = NetworkOffering.create(
+            cls.apiclient,
+            NETWORK_OFFERING_DYNAMIC
+        )
+        cls._cleanup.append(cls.network_offering_dynamic)
+        cls.network_offering_dynamic.update(cls.apiclient, state='Enabled')
 
         # 4. Create sub-domain
         cls.sub_domain = Domain.create(
@@ -305,6 +354,20 @@ class TestIpv4Routing(cloudstackTestCase):
             self.fail("Failed to ping vm %s from router %s, which is expected to work !!!" % (vm.ipaddress, router.name))
         if retries > 0 and not expected:
             self.fail("ping vm %s from router %s works, however it is unexpected !!!" % (vm.ipaddress, router.name))
+
+    def verifyFrrConf(self, router, configs):
+        for config in configs:
+            cmd = "cat /etc/frr/frr.conf | grep '%s'" % (config["config"])
+            res = self.run_command_in_router(router, cmd)
+            if "exists" not in config or config["exists"]:
+                exists = True
+            else:
+                exists = False
+            if exists and not config["config"] in res:
+                self.fail("The frr config (%s) should exist but is not found in the VR !!!" % config["config"])
+            if not exists and config["config"] in res:
+                self.fail("The frr config (%s) should not exist but is found in the VR !!!" % config["config"])
+            self.message("The frr config look good so far.")
 
     @attr(tags=['advanced'], required_hardware=False)
     def test_01_zone_subnet(self):
@@ -998,3 +1061,235 @@ class TestIpv4Routing(cloudstackTestCase):
         self.verifyPingFromRouter(network_router, test_vpc_vm, expected=False)
         # 14. Test VM1 in VR2-VPC (ping/ssh should fail)
         self.verifyPingFromRouter(vpc_router, test_network_vm, expected=False)
+
+    @attr(tags=['advanced'], required_hardware=False)
+    def test_10_bgp_peers(self):
+        """ Test for BGP peers"""
+        """
+            # 1. Create bgppeer
+            # 2. List bgppeer
+            # 3. Update bgppeer
+            # 4. dedicate bgppeer to domain
+            # 5. released dedicated bgppeer
+            # 6. dedicate bgppeer to sub-domain/account
+            # 7. released dedicated bgppeer
+            # 8. delete bgppeer
+        """
+        self.message("Running test_10_bgp_peers")
+        # 1. Create bgp peer
+        bgppeer_1 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_1,
+            ipaddress=IP4_ADDR_1
+        )
+        self.cleanup.append(bgppeer_1)
+        # 2. List bgp peer
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list),
+            True,
+            "List bgppeers for zone should return a valid list"
+        )
+        self.assertEqual(
+            len(bgppeers) == 1,
+            True,
+            "The number of bgp peers (%s) should be equal to 1" % (len(bgppeers))
+        )
+        self.assertEqual(
+            bgppeers[0].asnumber == str(ASN_1) and bgppeers[0].ipaddress == IP4_ADDR_1,
+            True,
+            "The asnumber of bgp peer (%s) should be equal to %s, the ip address (%s) should be %s"
+            % (bgppeers[0].asnumber, ASN_1, bgppeers[0].ipaddress, IP4_ADDR_1)
+        )
+        # 3. Update bgp peer
+        bgppeer_1.update(
+            self.apiclient,
+            asnumber=ASN_2,
+            ipaddress=IP4_ADDR_2
+        )
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list) and len(bgppeers) == 1
+            and bgppeers[0].asnumber == str(ASN_2) and bgppeers[0].ipaddress == IP4_ADDR_2,
+            True,
+            "The asnumber of bgp peer (%s) should be equal to %s, the ip address (%s) should be %s"
+            % (bgppeers[0].asnumber, ASN_2, bgppeers[0].ipaddress, IP4_ADDR_2)
+        )
+        # 4. dedicate bgp peer to domain
+        BgpPeer.dedicate(
+            self.apiclient,
+            id=bgppeer_1.id,
+            domainid=self.domain.id
+        )
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list) and len(bgppeers) == 1 and bgppeers[0].domainid == self.domain.id,
+            True,
+            "The bgppeer should be dedicated to domain %s" % self.domain.id
+        )
+        # 5. released dedicated bgp peer
+        bgppeer_1.release(
+            self.apiclient
+        )
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list) and len(bgppeers) == 1 and not bgppeers[0].domainid,
+            True,
+            "The bgp peer should not be dedicated to domain %s" % self.domain.id
+        )
+        # 6. dedicate bgp peer to sub-domain/account
+        BgpPeer.dedicate(
+            self.apiclient,
+            id=bgppeer_1.id,
+            domainid=self.sub_domain.id,
+            account=self.regular_user.name
+        )
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list) and len(bgppeers) == 1
+            and bgppeers[0].domainid == self.sub_domain.id and bgppeers[0].account == self.regular_user.name,
+            True,
+            "The bgp peer should be dedicated to account %s" % self.regular_user.name
+        )
+        # 7. released dedicated bgp peer
+        bgppeer_1.release(
+            self.apiclient
+        )
+        bgppeers = BgpPeer.list(
+            self.apiclient,
+            id=bgppeer_1.id
+        )
+        self.assertEqual(
+            isinstance(bgppeers, list) and len(bgppeers) == 1 and not bgppeers[0].domainid,
+            True,
+            "The bgppeer should not be dedicated to account %s" % self.regular_user.name
+        )
+        # 8. delete bgp peer
+        bgppeer_1.delete(
+            self.apiclient
+        )
+        self.cleanup.remove(bgppeer_1)
+
+    @attr(tags=['advanced'], required_hardware=False)
+    def test_11_isolated_network_with_dynamic_routed_mode(self):
+        """ Test for Isolated Network with Dynamic Routed mode"""
+        """
+            # 1. Create Isolated network with bgp_peer_1
+            # 2. Create VM in the network
+            # 3. Verify frr.conf in network VR
+            # 4. Update network BGP peers (to bgp_peer_1 and bgp_peer_2)
+            # 5. Verify frr.conf in network VR
+            # 6. Update network BGP peers (to null)
+            # 7. Verify frr.conf in network VR
+        """
+        self.message("Running test_11_isolated_network_with_dynamic_routed_mode")
+
+        # 1. Create bgp peers
+        bgppeer_1 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_1,
+            ipaddress=IP4_ADDR_1,
+            password=PASSWORD_1
+        )
+        self.cleanup.append(bgppeer_1)
+
+        bgppeer_2 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_2,
+            ipaddress=IP4_ADDR_2,
+            password=PASSWORD_2
+        )
+        self.cleanup.append(bgppeer_2)
+
+        # 1. Create Isolated network with Dynamic routing
+        test_network_dynamic = Network.create(
+            self.apiclient,
+            self.services["network"],
+            networkofferingid=self.network_offering_dynamic.id,
+            zoneid=self.zone.id,
+            domainid=self.sub_domain.id,
+            accountid=self.regular_user.name,
+            gateway=NETWORK_CIDR_PREFIX_DYNAMIC + ".1",
+            netmask="255.255.255.0",
+            bgppeerids=bgppeer_1.id
+        )
+        self.cleanup.append(test_network_dynamic)
+
+        # 2. Create VM in the network
+        test_network_dynamic_vm = VirtualMachine.create(
+            self.regular_user_apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            domainid=self.sub_domain.id,
+            accountid=self.regular_user.name,
+            networkids=test_network_dynamic.id,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id)
+        self.cleanup.append(test_network_dynamic_vm)
+
+        network_router = self.get_router(networkid=test_network_dynamic.id)
+
+        # 3. Verify frr.conf in network VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "network %s" % test_network_dynamic.cidr,
+                        "exists": True}]
+        self.verifyFrrConf(network_router, frr_configs)
+
+        # 4. Update network BGP peers (to bgp_peer_1 and bgp_peer_2)
+        test_network_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[bgppeer_1.id, bgppeer_2.id]
+        )
+
+        # 5. Verify frr.conf in network VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": True},
+                       {"config": "network %s" % test_network_dynamic.cidr,
+                        "exists": True}]
+        self.verifyFrrConf(network_router, frr_configs)
+
+        # 6. Update network BGP peers (to null)
+        test_network_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[]
+        )
+
+        # 7. Verify frr.conf in network VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": False},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": False},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": False},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": False},
+                       {"config": "network %s" % test_network_dynamic.cidr,
+                        "exists": False}]
+        self.verifyFrrConf(network_router, frr_configs)

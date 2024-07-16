@@ -951,6 +951,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 && NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode());
     }
 
+    public boolean isDynamicRoutedNetwork(NetworkOffering networkOffering) {
+        return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
+                && NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode());
+    }
+
     @Override
     public boolean isRoutedVpc(Vpc vpc) {
         return NetworkOffering.NetworkMode.ROUTED.equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getNetworkMode());
@@ -1224,15 +1229,19 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Network network = networkDao.findById(networkId);
         if (network == null) {
-            throw new InvalidParameterValueException(String.format("Invalid network ID: %s", network));
+            throw new InvalidParameterValueException(String.format("Invalid network ID: %s", networkId));
         }
-        for (Long bgpPeerId : bgpPeerIds) {
-            BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
-            if (bgpPeerVO == null) {
-                throw new InvalidParameterValueException(String.format("Invalid BGP peer ID: %s", bgpPeerId));
-            }
+
+        Account owner = accountManager.getAccount(network.getAccountId());
+        NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
+        validateBgpPeers(owner, networkOffering, network.getDataCenterId(), bgpPeerIds);
+
+        final List<Long> bgpPeerIdsToBeAdded;
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            bgpPeerIdsToBeAdded = new ArrayList<>(bgpPeerIds);
+        } else {
+            bgpPeerIdsToBeAdded = new ArrayList<>();
         }
-        final List<Long> bgpPeerIdsToBeAdded = new ArrayList<>(bgpPeerIds);
         List<BgpPeerNetworkMapVO> bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
         for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
             Long bgpPeerId = bgpPeerNetworkMapVO.getBgpPeerId();
@@ -1245,7 +1254,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         for (Long bgpPeedId : bgpPeerIdsToBeAdded) {
-            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, networkId));
+            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, networkId, BgpPeer.State.Add));
         }
 
         boolean result = true;
@@ -1286,5 +1295,40 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         return networkDao.findById(networkId);
+    }
+
+    @Override
+    public void validateBgpPeers(Account owner, NetworkOffering networkOffering, Long zoneId, List<Long> bgpPeerIds) {
+        if (CollectionUtils.isEmpty(bgpPeerIds)) {
+            return;
+        }
+        if (!isDynamicRoutedNetwork(networkOffering)) {
+            throw new InvalidParameterValueException("The network does not support Dynamic routing");
+        }
+        for (Long bgpPeerId : bgpPeerIds) {
+            BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
+            if (bgpPeerVO == null) {
+                throw new InvalidParameterValueException(String.format("Invalid BGP peer ID: %s", bgpPeerId));
+            }
+            if (bgpPeerVO.getDataCenterId() != zoneId) {
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different zone", bgpPeerId));
+            }
+            if (bgpPeerVO.getDomainId() != null && bgpPeerVO.getDomainId().equals(owner.getDomainId())) {
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different domain", bgpPeerId));
+            }
+            if (bgpPeerVO.getAccountId() != null && bgpPeerVO.getAccountId().equals(owner.getAccountId())) {
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different account", bgpPeerId));
+            }
+        }
+    }
+
+    @Override
+    public void persistBgpPeersForGuestNetwork(long networkId, List<Long> bgpPeerIds) {
+        bgpPeerNetworkMapDao.persist(networkId, bgpPeerIds);
+    }
+
+    @Override
+    public void releaseBgpPeersForGuestNetwork(long networkId) {
+        bgpPeerNetworkMapDao.removeByNetworkId(networkId);
     }
 }

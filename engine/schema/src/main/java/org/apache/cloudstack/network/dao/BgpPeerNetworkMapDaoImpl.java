@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.JoinBuilder;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,6 @@ import com.cloud.utils.db.TransactionLegacy;
 @Component
 public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO, Long> implements BgpPeerNetworkMapDao {
 
-    protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerIdSearch;
     protected SearchBuilder<BgpPeerNetworkMapVO> BgpPeerNetworkSearch;
     protected SearchBuilder<BgpPeerNetworkMapVO> DomainAccountNeqSearch;
 
@@ -47,10 +47,6 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     @PostConstruct
     public void init() {
-        BgpPeerIdSearch = createSearchBuilder();
-        BgpPeerIdSearch.and("bgpPeerId", BgpPeerIdSearch.entity().getBgpPeerId(), SearchCriteria.Op.EQ);
-        BgpPeerIdSearch.done();
-
         BgpPeerNetworkSearch = createSearchBuilder();
         BgpPeerNetworkSearch.and("bgpPeerId", BgpPeerNetworkSearch.entity().getBgpPeerId(), SearchCriteria.Op.EQ);
         BgpPeerNetworkSearch.and("networkId", BgpPeerNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -68,16 +64,16 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
     }
 
     @Override
-    public void persist(long bgpPeerId, List<Long> networks) {
+    public void persist(long networkId, List<Long> bgpPeerIds) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
-        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
-        sc.setParameters("bgpPeerId", bgpPeerId);
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerNetworkSearch.create();
+        sc.setParameters("networkId", networkId);
         expunge(sc);
 
-        for (Long networkId : networks) {
-            BgpPeerNetworkMapVO vo = new BgpPeerNetworkMapVO(bgpPeerId, networkId);
+        for (Long bgpPeerId : bgpPeerIds) {
+            BgpPeerNetworkMapVO vo = new BgpPeerNetworkMapVO(bgpPeerId, networkId, BgpPeer.State.Active);
             persist(vo);
         }
 
@@ -86,7 +82,7 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     @Override
     public BgpPeerNetworkMapVO findByBgpPeerIdAndNetworkId(long bgpPeerId, long networkId) {
-        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerNetworkSearch.create();
         sc.setParameters("bgpPeerId", bgpPeerId);
         sc.setParameters("networkId", networkId);
         return findOneBy(sc, null);
@@ -94,7 +90,7 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     @Override
     public List<BgpPeerNetworkMapVO> listByBgpPeerId(long bgpPeerId) {
-        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerNetworkSearch.create();
         sc.setParameters("bgpPeerId", bgpPeerId);
 
         return search(sc, null);
@@ -102,7 +98,7 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
 
     @Override
     public List<BgpPeerNetworkMapVO> listByNetworkId(long networkId) {
-        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerIdSearch.create();
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerNetworkSearch.create();
         sc.setParameters("networkId", networkId);
 
         return search(sc, null);
@@ -122,5 +118,13 @@ public class BgpPeerNetworkMapDaoImpl extends GenericDaoBase<BgpPeerNetworkMapVO
         sc.setParameters("bgpPeerId", bgpPeerId);
         sc.setJoinParameters("network", "accountId", accountId);
         return listBy(sc);
+    }
+
+    @Override
+    public int removeByNetworkId(long networkId) {
+        SearchCriteria<BgpPeerNetworkMapVO> sc = BgpPeerNetworkSearch.create();
+        sc.setParameters("networkId", networkId);
+
+        return remove(sc);
     }
 }

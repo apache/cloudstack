@@ -3396,6 +3396,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         } else {
                             // commit transaction only when ips and vlans for the network are released successfully
 
+                            routedIpv4Manager.releaseBgpPeersForGuestNetwork(networkId);
                             routedIpv4Manager.releaseIpv4SubnetForGuestNetwork(networkId);
                             ipv6Service.releaseIpv6SubnetForNetwork(networkId);
                             ipv6Service.removePublicIpv6PlaceholderNics(networkFinal);

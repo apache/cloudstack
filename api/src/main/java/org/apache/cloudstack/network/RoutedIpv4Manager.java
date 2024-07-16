@@ -22,6 +22,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
@@ -157,4 +158,10 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd);
 
     Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd);
+
+    void validateBgpPeers(Account owner, NetworkOffering networkOffering, Long zoneId, List<Long> bgpPeerIds);
+
+    void persistBgpPeersForGuestNetwork(long networkId, List<Long> bgpPeerIds);
+
+    void releaseBgpPeersForGuestNetwork(long networkId);
 }

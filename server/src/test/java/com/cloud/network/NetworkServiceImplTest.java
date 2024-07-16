@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -208,6 +209,9 @@ public class NetworkServiceImplTest {
 
     @Mock
     private IpAddressManager ipAddressManagerMock;
+
+    @Mock
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Mock
     private Ip ipMock;

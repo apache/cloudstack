@@ -62,8 +62,7 @@ public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCm
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = BgpPeerResponse.class,
-            required = true,
-            description = "Ids of the Bgp Peer")
+            description = "Ids of the Bgp Peer. If it is empty, all BGP peers will be unlinked.")
     private List<Long> bgpPeerIds;
 
     public Long getNetworkId() {
