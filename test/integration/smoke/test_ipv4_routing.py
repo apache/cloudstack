@@ -122,6 +122,23 @@ NETWORK_OFFERING_DYNAMIC = {
     }
 }
 
+VPC_NETWORK_OFFERING_DYNAMIC = {
+    "name": "Test VPC Network offering - Dynamic Routed mode",
+    "displaytext": "Test VPC Network offering - Dynamic Routed mode",
+    "networkmode": "ROUTED",
+    "routingmode": "Dynamic",
+    "guestiptype": "Isolated",
+    "supportedservices":
+        "Dhcp,Dns,UserData,NetworkACL",
+    "traffictype": "GUEST",
+    "availability": "Optional",
+    "serviceProviderList": {
+        "Dhcp": "VpcVirtualRouter",
+        "Dns": "VpcVirtualRouter",
+        "UserData": "VpcVirtualRouter",
+        "NetworkACL": "VpcVirtualRouter"
+    }
+}
 class TestIpv4Routing(cloudstackTestCase):
 
     @classmethod
@@ -203,6 +220,14 @@ class TestIpv4Routing(cloudstackTestCase):
         )
         cls._cleanup.append(cls.network_offering_dynamic)
         cls.network_offering_dynamic.update(cls.apiclient, state='Enabled')
+
+        # 3.5 VPC Network offering for dynamic routing
+        cls.vpc_network_offering_dynamic = NetworkOffering.create(
+            cls.apiclient,
+            VPC_NETWORK_OFFERING_DYNAMIC
+        )
+        cls._cleanup.append(cls.vpc_network_offering_dynamic)
+        cls.vpc_network_offering_dynamic.update(cls.apiclient, state='Enabled')
 
         # 4. Create sub-domain
         cls.sub_domain = Domain.create(
@@ -1293,3 +1318,136 @@ class TestIpv4Routing(cloudstackTestCase):
                        {"config": "network %s" % test_network_dynamic.cidr,
                         "exists": False}]
         self.verifyFrrConf(network_router, frr_configs)
+
+
+    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    def test_12_vpc_and_tier_with_dynamic_routed_mode(self):
+        """ Test for VPC/tier with Dynamic Routed mode"""
+        """
+            # 1. Create bgp peers
+            # 2. Create VPC
+            # 3. Create Network ACL (egress = Deny, ingress = Deny)
+            # 4. Create VPC tier with Network ACL in the VPC
+            # 5. Create VM in the VPC tier
+            # 6. Verify frr.conf in VPC VR
+            # 7. Update network BGP peers (to bgp_peer_1 and bgp_peer_2)
+            # 8. Verify frr.conf in VPC VR
+            # 9. Update network BGP peers (to null)
+            # 10. Verify frr.conf in VPC VR
+        """
+        self.message("Running test_12_vpc_and_tier_with_dynamic_routed_mode")
+
+        # 1. Create bgp peers
+        bgppeer_1 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_1,
+            ipaddress=IP4_ADDR_1,
+            password=PASSWORD_1
+        )
+        self.cleanup.append(bgppeer_1)
+
+        bgppeer_2 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_2,
+            ipaddress=IP4_ADDR_2,
+            password=PASSWORD_2
+        )
+        self.cleanup.append(bgppeer_2)
+
+        # 2. Create VPC
+        self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".8.0/22"
+        test_vpc_dynamic = VPC.create(self.apiclient,
+                                      self.services["vpc"],
+                                      vpcofferingid=self.vpc_offering.id,
+                                      zoneid=self.zone.id,
+                                      domainid=self.sub_domain.id,
+                                      account=self.regular_user.name,
+                                      start=False
+                                      )
+        self.cleanup.append(test_vpc_dynamic)
+
+        # 3. Create Network ACL (egress = Deny, ingress = Deny)
+        test_network_acl_dynamic = NetworkACLList.create(self.apiclient,
+                                                         services={},
+                                                         name="test-network-acl-dynamic",
+                                                         description="test-network-acl-dynamic",
+                                                         vpcid=test_vpc_dynamic.id
+                                                         )
+
+        # 4. Create VPC tier with Network ACL in the VPC
+        test_vpc_tier_dynamic = Network.create(self.regular_user_apiclient,
+                                               self.services["network"],
+                                               networkofferingid=self.vpc_network_offering_dynamic.id,
+                                               zoneid=self.zone.id,
+                                               domainid=self.sub_domain.id,
+                                               accountid=self.regular_user.name,
+                                               vpcid=test_vpc_dynamic.id,
+                                               gateway=VPC_CIDR_PREFIX + ".8.1",
+                                               netmask="255.255.255.0",
+                                               bgppeerids=bgppeer_1.id,
+                                               aclid=test_network_acl_dynamic.id
+                                               )
+        self.cleanup.append(test_vpc_tier_dynamic)
+
+        # 5. Create VM in the VPC tier
+        test_vpc_vm_dynamic = VirtualMachine.create(
+            self.regular_user_apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            domainid=self.sub_domain.id,
+            accountid=self.regular_user.name,
+            networkids=test_vpc_tier_dynamic.id,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id)
+        self.cleanup.append(test_vpc_vm_dynamic)
+
+        vpc_router = self.get_router(vpcid=test_vpc_dynamic.id)
+
+        # 6. Verify frr.conf in VPC VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "network %s" % test_vpc_tier_dynamic.cidr,
+                        "exists": True}]
+        self.verifyFrrConf(vpc_router, frr_configs)
+
+        # 7. Update network BGP peers (to bgp_peer_1 and bgp_peer_2)
+        test_vpc_tier_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[bgppeer_1.id, bgppeer_2.id]
+        )
+
+        # 8. Verify frr.conf in VPC VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": True},
+                       {"config": "network %s" % test_vpc_tier_dynamic.cidr,
+                        "exists": True}]
+        self.verifyFrrConf(vpc_router, frr_configs)
+
+        # 9. Update network BGP peers (to null)
+        test_vpc_tier_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[]
+        )
+
+        # 10. Verify frr.conf in VPC VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": False},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": False},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": False},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": False},
+                       {"config": "network %s" % test_vpc_tier_dynamic.cidr,
+                        "exists": False}]
+        self.verifyFrrConf(vpc_router, frr_configs)
