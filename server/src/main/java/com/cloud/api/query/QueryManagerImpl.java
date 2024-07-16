@@ -3526,9 +3526,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 diskOfferingSearch.or("customized", diskOfferingSearch.entity().isCustomized(), Op.EQ);
                 diskOfferingSearch.cp();
             }
-            if (currentDiskOffering.isFileShare()) {
-                diskOfferingSearch.and("fileShare", diskOfferingSearch.entity().isFileShare(), Op.EQ);
-            }
             diskOfferingSearch.and("idNEQ", diskOfferingSearch.entity().getId(), Op.NEQ);
             diskOfferingSearch.and("diskSizeStrictness", diskOfferingSearch.entity().getDiskSizeStrictness(), Op.EQ);
         }
@@ -3545,9 +3542,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
-        if (fileShare != null) {
-            diskOfferingSearch.and("fileShare", diskOfferingSearch.entity().isFileShare(), Op.EQ);
-        }
+        diskOfferingSearch.and("fileShare", diskOfferingSearch.entity().isFileShare(), Op.EQ);
 
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
 
@@ -3591,6 +3586,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.setParameters("useLocalStorage", true);
             }
         }
+
+        sc.setParameters("fileShare", false);
 
         if (volumeId != null) {
             if (!currentDiskOffering.isComputeOnly() && currentDiskOffering.getDiskSizeStrictness()) {

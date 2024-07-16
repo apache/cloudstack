@@ -64,7 +64,7 @@ write_files:
         log "Failed to mount $PARTITION on $MOUNT_POINT"
         exit 1
       fi
-      
+
       if [ ! -d "$EXPORT_DIR" ]; then
         log "Creating export directory..."
         sudo mkdir -p "$EXPORT_DIR"
@@ -78,10 +78,10 @@ write_files:
         echo "$EXPORT_ENTRY" | sudo tee -a /etc/exports > /dev/null
       fi
       sudo exportfs -ra
-  
+
       log "Restarting NFS server..."
       sudo systemctl restart nfs-kernel-server
-  
+
       log "NFS share created successfully."
       log "Finished running add script."
 
