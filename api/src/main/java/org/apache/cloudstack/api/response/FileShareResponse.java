@@ -248,9 +248,9 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
         this.provider = provider;
     }
 
-    public void setSizeGB(Long sizeGB) {
+    public void setSizeGB(Long size) {
         if (size != null) {
-            this.sizeGB = String.format("%d GiB", sizeGB);
+            this.sizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
 

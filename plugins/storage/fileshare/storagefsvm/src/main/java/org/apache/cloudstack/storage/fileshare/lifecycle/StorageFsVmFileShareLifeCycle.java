@@ -102,7 +102,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     }
 
     @Override
-    public Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId) {
+    public Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId, Long size) {
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
 
         Long zoneId = fileShare.getDataCenterId();
@@ -122,7 +122,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         DiskOfferingVO diskOffering = diskOfferingDao.findById(fileShare.getDiskOfferingId());
         Long diskSize = 0L;
         if (diskOffering.isCustomized()) {
-            diskSize = fileShare.getSize();
+            diskSize = size;
         }
 
         String suffix = Long.toHexString(System.currentTimeMillis());

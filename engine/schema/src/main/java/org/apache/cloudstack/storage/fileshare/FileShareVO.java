@@ -75,9 +75,6 @@ public class FileShareVO implements FileShare {
     @Column(name = "fs_provider_name")
     private String fsProviderName;
 
-    @Column(name = "size")
-    private Long size;
-
     @Column(name = "protocol")
     @Enumerated(value = EnumType.STRING)
     private Protocol protocol;
@@ -121,7 +118,7 @@ public class FileShareVO implements FileShare {
     }
 
     public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId,
-                       String fsProviderName, Long size, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId,
+                       String fsProviderName, Protocol protocol, String mountOptions, FileSystemType fsType, Long diskOfferingId,
                        Long serviceOfferingId) {
         this.name = name;
         this.description = description;
@@ -130,7 +127,6 @@ public class FileShareVO implements FileShare {
         this.projectId = projectId;
         this.dataCenterId = dataCenterId;
         this.fsProviderName = fsProviderName;
-        this.size = size;
         this.protocol = protocol;
         this.state = State.Allocated;
         this.mountOptions = mountOptions;
@@ -208,11 +204,6 @@ public class FileShareVO implements FileShare {
     @Override
     public String getFsProviderName() {
         return fsProviderName;
-    }
-
-    @Override
-    public Long getSize() {
-        return size;
     }
 
     @Override

@@ -45,7 +45,7 @@ public interface FileShareService extends PluggableService {
 
     FileShare allocFileShare(CreateFileShareCmd cmd);
 
-    FileShare deployFileShare(Long fileShareId, Long networkId);
+    FileShare deployFileShare(Long fileShareId, Long networkId, Long size);
 
     FileShare initializeFileShare(Long fileShareId);
 

@@ -142,8 +142,6 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
     String getFsProviderName();
 
-    Long getSize();
-
     Protocol getProtocol();
 
     Long getVolumeId();
