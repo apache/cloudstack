@@ -247,8 +247,8 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     PRIMARY KEY (`id`),
     CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
     INDEX `i_storage_fileshare__account_id`(`account_id`),
-    INDEX `i_storage_fileshare__project_id`(`project_id`),
-    INDEX `i_storage_fileshare__state`(`state`)
+    INDEX `i_storage_fileshare__domain_id`(`domain_id`),
+    INDEX `i_storage_fileshare__project_id`(`project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`storagefsvm`(
@@ -257,15 +257,6 @@ CREATE TABLE `cloud`.`storagefsvm`(
     PRIMARY KEY (`id`),
     KEY `fk_storage_fileshare__id` (`fileshare_id`),
     CONSTRAINT `fk_storagefsvm__id` FOREIGN KEY (`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`storagevm_fs_map`(
-    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-    `vm_id` bigint unsigned NOT NULL,
-    `fileshare_id` bigint unsigned NOT NULL,
-    PRIMARY KEY (`id`),
-    CONSTRAINT `fk_storagevm_fs_map__vm_id` FOREIGN KEY `fk_storagevm_fs_map__vm_id` (`vm_id`) REFERENCES `vm_instance` (`id`)  ON DELETE CASCADE,
-    INDEX `i_storagevm_fs_map__vm_id`(`vm_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`storage_fileshare_view`;

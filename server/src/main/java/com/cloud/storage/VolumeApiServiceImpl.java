@@ -2466,6 +2466,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
+        checkUserVmType(vm);
+
         checkDeviceId(deviceId, volumeToAttach, vm);
 
         checkNumberOfAttachedVolumes(deviceId, vm);
@@ -2560,6 +2562,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
         if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
             throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
+        }
+    }
+
+    private void checkUserVmType(UserVmVO vm) {
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't attach/detach a data volume to/from the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
     }
 
@@ -2880,6 +2888,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Check that the VM is in the correct state
         UserVmVO vm = _userVmDao.findById(vmId);
+
+        checkUserVmType(vm);
+
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }

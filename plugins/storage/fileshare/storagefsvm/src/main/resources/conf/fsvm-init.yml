@@ -33,13 +33,16 @@ write_files:
 
       # Variables
       PARTITION="$1"
-      MOUNT_POINT="/mnt/datadisk"
+      MOUNT_POINT="/mnt/fs"
+      EXPORT_DIR="$MOUNT_POINT/share"
+      NETWORK="10.1.1.0/24"
+      PERMISSIONS="rw,sync,no_subtree_check"
 
       sudo mkdir -p "$MOUNT_POINT"
 
-      sudo mkfs.ext4 "$PARTITION"
+      sudo mkfs.xfs "$PARTITION"
 
-      log "Formatted Partition $PARTITION with EXT4 Filesystem."
+      log "Formatted Partition $PARTITION with XFS Filesystem."
 
       FS_INFO=$(sudo blkid "$PARTITION")
       UUID=$(echo "$FS_INFO" | grep -oP "UUID=\"\K[^\"]+")
@@ -51,7 +54,6 @@ write_files:
       fi
 
       sudo sh -c "echo 'UUID=$UUID $MOUNT_POINT $TYPE defaults 0 2' >> /etc/fstab"
-
       log "Added fstab entry."
 
       sudo mount -a
@@ -62,7 +64,25 @@ write_files:
         log "Failed to mount $PARTITION on $MOUNT_POINT"
         exit 1
       fi
+      
+      if [ ! -d "$EXPORT_DIR" ]; then
+        log "Creating export directory..."
+        sudo mkdir -p "$EXPORT_DIR"
+        sudo chown nobody:nogroup "$EXPORT_DIR"
+        sudo chmod 777 "$EXPORT_DIR"
+      fi
 
+      log "Configuring NFS export..."
+      EXPORT_ENTRY="$EXPORT_DIR $NETWORK($PERMISSIONS)"
+      if ! grep -qF "$EXPORT_ENTRY" /etc/exports; then
+        echo "$EXPORT_ENTRY" | sudo tee -a /etc/exports > /dev/null
+      fi
+      sudo exportfs -ra
+  
+      log "Restarting NFS server..."
+      sudo systemctl restart nfs-kernel-server
+  
+      log "NFS share created successfully."
       log "Finished running add script."
 
   - path: /usr/local/bin/resize-partition
@@ -77,7 +97,7 @@ write_files:
       }
       log "Running resize script."
       PARTITION="$1"
-      sudo resize2fs "$PARTITION"
+      sudo xfs_growfs "$PARTITION"
       log "Finished running resize script."
 
   - path: /usr/local/bin/fsvm-setup
