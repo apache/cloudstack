@@ -44,7 +44,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.BGPService;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.network.nsx.NsxService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -274,6 +276,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private NsxService nsxService;
     @Inject
     private BGPService bgpService;
+    @Inject
+    private ASNumberDao asNumberDao;
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
 
@@ -2147,6 +2151,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         VpcVO vpc = vpcDao.findById(vpcId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());
+
+        ASNumberVO asNumber = asNumberDao.findByZoneAndVpcId(vpc.getZoneId(), vpc.getId());
+        if (asNumber != null) {
+            logger.debug(String.format("Releasing AS number %s from VPC %s", asNumber.getAsNumber(), vpc.getName()));
+            bgpService.releaseASNumber(vpc.getZoneId(), asNumber.getAsNumber(), true);
+        }
+
         return success;
     }
 
