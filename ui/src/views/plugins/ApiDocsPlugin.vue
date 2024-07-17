@@ -134,10 +134,8 @@
                     {{ userkeys.secretkey.substring(0, 20) }}...
                   </div>
                 </div>
-
               </template>
             </a-result>
-
           </span>
         </a-card>
       </template>
