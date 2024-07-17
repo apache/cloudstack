@@ -144,7 +144,6 @@
 </template>
 
 <script>
-import { mixinDevice } from '@/utils/mixin.js'
 import { api } from '@/api'
 
 import ResourceLayout from '@/layouts/ResourceLayout'
@@ -156,7 +155,6 @@ export default {
     ResourceLayout,
     TooltipButton
   },
-  mixins: [mixinDevice],
   data () {
     return {
       query: '',
