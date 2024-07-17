@@ -39,7 +39,7 @@
             <template #renderItem="{ item }">
               <a>
               <a-list-item v-if="item.toLowerCase().includes(query.toLowerCase())" @click="showApi(item)">
-                <span v-if="selected === item">
+                <span v-if="selectedApi === item">
                   <strong>{{ item }}</strong> <a-tag v-if="$store.getters.apis[item].isasync" color="blue">async</a-tag>
                 </span>
                 <span v-else>
@@ -58,13 +58,13 @@
           class="spin-content"
           :bordered="true"
           style="width: 100%; overflow-x: auto">
-          <span v-if="selected && selected in $store.getters.apis">
-            <h2>{{ selected }} <a-tag v-if="$store.getters.apis[selected].isasync" color="blue">Asynchronous API</a-tag></h2>
-            <p>{{ $store.getters.apis[selected].description }}</p>
+          <span v-if="selectedApi && selectedApi in $store.getters.apis">
+            <h2>{{ selectedApi }} <a-tag v-if="$store.getters.apis[selectedApi].isasync" color="blue">Asynchronous API</a-tag></h2>
+            <p>{{ $store.getters.apis[selectedApi].description }}</p>
             <h3>Request parameters:</h3>
             <a-table
               :columns="[{title: 'Parameter Name', dataIndex: 'name'}, {title: 'Required', dataIndex: 'required'}, {title: 'Type', dataIndex: 'type'}, {title: 'Description', dataIndex: 'description'}]"
-              :data-source="$store.getters.apis[selected].params.sort((a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0)).sort((a, b) => (a.required > b.required) ? -1 : ((b.required > a.required) ? 1 : 0))"
+              :data-source="selectedParams"
               :pagination="false"
               size="small">
               <template #bodyCell="{text, record}">
@@ -76,7 +76,7 @@
             <h3>Response keys:</h3>
             <a-table
               :columns="[{title: 'Response Name', dataIndex: 'name'}, {title: 'Type', dataIndex: 'type'}, {title: 'Description', dataIndex: 'description'}]"
-              :data-source="$store.getters.apis[selected].response"
+              :data-source="selectedResponse"
               :pagination="false"
               size="small" />
           </span>
@@ -90,7 +90,6 @@
                 <a href="https://docs.cloudstack.apache.org/en/latest/developersguide/dev.html" target="_blank">{{ $t('label.api.docs.description') }}</a>
               </template>
             </a-alert>
-
             <a-result
               status="success"
               title="Download CloudStack CloudMonkey CLI"
@@ -158,7 +157,9 @@ export default {
   data () {
     return {
       query: '',
-      selected: '',
+      selectedApi: '',
+      selectedParams: [],
+      selectedResponse: [],
       showKeys: false,
       userkeys: {},
       options: [
@@ -198,7 +199,11 @@ export default {
   },
   methods: {
     showApi (api) {
-      this.selected = api
+      this.selectedApi = api
+      this.selectedParams = this.$store.getters.apis[api].params
+        .sort((a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
+        .sort((a, b) => (a.required > b.required) ? -1 : ((b.required > a.required) ? 1 : 0))
+      this.selectedResponse = this.$store.getters.apis[api].response
     }
   }
 }

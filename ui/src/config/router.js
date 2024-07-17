@@ -281,7 +281,7 @@ export function asyncRouterMap () {
     routerMap[0].children.push({
       path: '/apidocs/',
       name: 'apidocs',
-      component: ApiDocsPlugin,
+      component: shallowRef(ApiDocsPlugin),
       meta: { title: 'label.api.docs', icon: 'read-outlined' }
     })
   }
