@@ -415,7 +415,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     protected boolean doDeleteCustomerGateway(Site2SiteCustomerGateway gw) {
         long id = gw.getId();
         List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
-        if (CollectionUtils.isEmpty(vpnConnections)) {
+        if (!CollectionUtils.isEmpty(vpnConnections)) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(), gw.getUuid());
@@ -425,7 +425,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     protected void doDeleteVpnGateway(Site2SiteVpnGateway gw) {
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(gw.getId());
-        if (CollectionUtils.isEmpty(conns)) {
+        if (!CollectionUtils.isEmpty(conns)) {
             throw new InvalidParameterValueException("Unable to delete VPN gateway " + gw.getId() + " because there is still related VPN connections!");
         }
         _vpnGatewayDao.remove(gw.getId());
