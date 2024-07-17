@@ -198,8 +198,6 @@ export default {
   },
   methods: {
     showApi (api) {
-      console.log(this.$route.params)
-      console.log(api)
       this.selected = api
     }
   }
