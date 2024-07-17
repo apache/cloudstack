@@ -24,8 +24,6 @@
             v-model:value="query"
             :options="options"
             style="width: 100%"
-            @select="onSelect"
-            @search="onSearch"
             >
             <a-input-search
                 size="default"
