@@ -314,7 +314,9 @@ const user = {
               const apiName = api.name
               apis[apiName] = {
                 params: api.params,
-                response: api.response
+                response: api.response,
+                isasync: api.isasync,
+                description: api.description
               }
             }
             commit('SET_APIS', apis)
