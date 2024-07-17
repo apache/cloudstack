@@ -493,9 +493,24 @@ export default {
     },
     handleDeleteIpv4Subnet (id) {
       this.componentLoading = true
-      api('deleteIpv4GuestSubnetForZone', { id }).then(() => {
-        this.$notification.success({
-          message: this.$t('message.success.delete.ipv4.subnet')
+      api('deleteIpv4GuestSubnetForZone', { id }).then(response => {
+        this.$pollJob({
+          jobId: response.deleteipv4guestsubnetforzoneresponse.jobid,
+          successMessage: this.$t('message.success.delete.ipv4.subnet'),
+          successMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          },
+          errorMessage: this.$t('message.delete.failed'),
+          errorMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.componentLoading = false
+            this.fetchZoneBgpPeer()
+          }
         })
       }).catch(error => {
         this.$notifyError(error)
