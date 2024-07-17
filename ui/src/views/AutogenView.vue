@@ -955,8 +955,6 @@ export default {
         }
       }
 
-      console.log(params)
-
       if (this.$store.getters.listAllProjects && !this.projectView) {
         params.projectid = '-1'
       }
