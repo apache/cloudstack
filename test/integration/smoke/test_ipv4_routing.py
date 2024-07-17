@@ -24,7 +24,7 @@ import time
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import ZoneIpv4Subnet, Domain, Account, ServiceOffering, NetworkOffering, VpcOffering, Network, \
     Ipv4SubnetForGuestNetwork, VirtualMachine, VPC, NetworkACLList, NetworkACL, RoutingFirewallRule, Template
-from marvin.lib.common import get_domain, get_zone, get_template, list_routers, list_hosts
+from marvin.lib.common import get_domain, get_zone, list_routers, list_hosts
 from marvin.lib.utils import get_host_credentials, get_process_status
 
 from nose.plugins.attrib import attr
@@ -306,7 +306,7 @@ class TestIpv4Routing(cloudstackTestCase):
         if retries > 0 and not expected:
             self.fail("ping vm %s from router %s works, however it is unexpected !!!" % (vm.ipaddress, router.name))
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_01_zone_subnet(self):
         """ Test for subnet for zone"""
         """
@@ -425,7 +425,7 @@ class TestIpv4Routing(cloudstackTestCase):
         )
         self.cleanup.remove(self.subnet_2)
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_02_create_network_routed_mode_with_specified_cidr(self):
         """ Test for guest network with specified cidr"""
         """
@@ -475,7 +475,7 @@ class TestIpv4Routing(cloudstackTestCase):
             "The subnet %s should be removed for network %s" % (network_cidr, isolated_network.name)
         )
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_03_create_subnets_for_guest_network(self):
         """ Test for subnets for guest network with cidr/cidrsize"""
         """
@@ -534,7 +534,7 @@ class TestIpv4Routing(cloudstackTestCase):
         subnet_network_2.delete(self.apiclient)
         self.cleanup.remove(subnet_network_2)
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_04_create_isolated_network_routed_mode_with_cidrsize(self):
         """ Test for subnet and guest network with cidrsize"""
         """
@@ -584,7 +584,7 @@ class TestIpv4Routing(cloudstackTestCase):
             "The subnet should be created for isolated_network %s" % isolated_network.name
         )
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_05_create_vpc_routed_mode_with_cidrsize(self):
         """ Test for Routed VPC with cidrsize"""
         """
@@ -635,7 +635,7 @@ class TestIpv4Routing(cloudstackTestCase):
             "The subnet should be created for vpc %s" % vpc.name
         )
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_06_isolated_network_with_routed_mode(self):
         """ Test for Isolated Network with Routed mode"""
         """
@@ -671,7 +671,7 @@ class TestIpv4Routing(cloudstackTestCase):
             templateid=self.template.id)
         self._cleanup.append(test_network_vm)
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_07_vpc_and_tier_with_routed_mode(self):
         """ Test for VPC/tier with Routed mode"""
         """
@@ -732,7 +732,7 @@ class TestIpv4Routing(cloudstackTestCase):
             templateid=self.template.id)
         self._cleanup.append(test_vpc_vm)
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_08_vpc_and_tier_failed_cases(self):
         """ Test for VPC/tier with Routed mode (some failed cases)"""
         """
@@ -795,7 +795,7 @@ class TestIpv4Routing(cloudstackTestCase):
         except Exception as ex:
             self.message("Failed to create vpc network due to %s, which is expected behaviour" % ex)
 
-    @attr(tags=['advanced', 'basic', 'sg'], required_hardware=False)
+    @attr(tags=['advanced'], required_hardware=False)
     def test_09_connectivity_between_network_and_vpc_tier(self):
         """ Test for connectivity between VMs in the Isolated Network and VPC/tier"""
         """
