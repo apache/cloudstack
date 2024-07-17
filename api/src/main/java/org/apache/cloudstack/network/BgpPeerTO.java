@@ -40,6 +40,10 @@ public class BgpPeerTO {
         this.guestIp6Cidr = guestIp6Cidr;
     }
 
+    public BgpPeerTO(Long networkId) {
+        this.networkId = networkId;
+    }
+
     public Long getPeerId() {
         return peerId;
     }

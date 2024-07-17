@@ -218,10 +218,11 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
     public boolean visit(final BgpPeersRules bgpPeersRules) throws ResourceUnavailableException {
         final VirtualRouter router = bgpPeersRules.getRouter();
         final List<? extends BgpPeer> bgpPeers = bgpPeersRules.getBgpPeers();
+        final Network network = bgpPeersRules.getNetwork();
 
         final Commands cmds = new Commands(Command.OnError.Continue);
 
-        _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, null);
+        _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }

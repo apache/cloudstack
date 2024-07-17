@@ -159,6 +159,8 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd);
 
+    Network removeBgpPeersFromNetwork(Network network);
+
     void validateBgpPeers(Account owner, NetworkOffering networkOffering, Long zoneId, List<Long> bgpPeerIds);
 
     void persistBgpPeersForGuestNetwork(long networkId, List<Long> bgpPeerIds);

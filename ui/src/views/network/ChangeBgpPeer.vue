@@ -150,8 +150,17 @@ export default {
         networkid: this.resource.id,
         bgppeerids: this.selectedRowKeys.join(',')
       }).then(response => {
-        this.$notification.success({
-          message: this.$t('message.success.change.bgp.peers')
+        this.$pollJob({
+          jobId: response.changebgppeersfornetworkresponse.jobid,
+          successMessage: this.$t('message.success.change.bgp.peers'),
+          successMethod: () => {
+          },
+          errorMessage: this.$t('message.update.failed'),
+          errorMethod: () => {
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+          }
         })
         this.$emit('close-action')
         this.parentFetchData()

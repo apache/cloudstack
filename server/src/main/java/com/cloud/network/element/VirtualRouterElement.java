@@ -1397,14 +1397,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean applyBgpPeers(Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
-        boolean result = true;
-
         final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
 
         if (CollectionUtils.isEmpty(routers)) {
-            throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
+            logger.warn(String.format("Can't find at least one router for network %s !", network));
+            return true;
         }
 
+        boolean result = true;
         final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 

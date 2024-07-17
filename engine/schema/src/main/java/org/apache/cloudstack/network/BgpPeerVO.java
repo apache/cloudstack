@@ -82,6 +82,11 @@ public class BgpPeerVO implements BgpPeer {
     }
 
     @Override
+    public String toString() {
+        return String.format("BgpPeerVO [%s|%s|%s]", asNumber, ip4Address, ip6Address);
+    }
+
+    @Override
     public long getId() {
         return id;
     }

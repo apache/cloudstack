@@ -3955,6 +3955,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NetworkVO network = _networksDao.findById(networkId);
         final NetworkOfferingVO networkOffering= _networkOfferingDao.findById(network.getNetworkOfferingId());
 
+        //remove BGP peers from the network
+        if (routedIpv4Manager.removeBgpPeersFromNetwork(network) != null) {
+            logger.debug("Successfully removed BGP peers from network id={}", networkId);
+        } else {
+            success = false;
+            logger.warn("Failed to remove BGP peers from network as a part of network id={} cleanup", networkId);
+        }
+
         //remove all PF/Static Nat rules for the network
         try {
             if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, callerUserId, caller)) {

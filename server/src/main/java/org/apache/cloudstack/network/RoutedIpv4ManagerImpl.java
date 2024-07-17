@@ -1236,13 +1236,22 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
         validateBgpPeers(owner, networkOffering, network.getDataCenterId(), bgpPeerIds);
 
+        return changeBgpPeersForNetworkInternal(network, bgpPeerIds);
+    }
+
+    @Override
+    public Network removeBgpPeersFromNetwork(Network network) {
+        return changeBgpPeersForNetworkInternal(network, null);
+    }
+
+    private Network changeBgpPeersForNetworkInternal(Network network, List<Long> bgpPeerIds) {
         final List<Long> bgpPeerIdsToBeAdded;
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
             bgpPeerIdsToBeAdded = new ArrayList<>(bgpPeerIds);
         } else {
             bgpPeerIdsToBeAdded = new ArrayList<>();
         }
-        List<BgpPeerNetworkMapVO> bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+        List<BgpPeerNetworkMapVO> bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(network.getId());
         for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
             Long bgpPeerId = bgpPeerNetworkMapVO.getBgpPeerId();
             if (bgpPeerIdsToBeAdded.contains(bgpPeerId)) {
@@ -1254,7 +1263,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         for (Long bgpPeedId : bgpPeerIdsToBeAdded) {
-            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, networkId, BgpPeer.State.Add));
+            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, network.getId(), BgpPeer.State.Add));
         }
 
         boolean result = true;
@@ -1266,7 +1275,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
         if (result) {
             logger.info("Succeed to apply BGP peers, updating state");
-            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(network.getId());
             for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
                 if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
                     bgpPeerNetworkMapVO.setState(BgpPeer.State.Active);
@@ -1277,7 +1286,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         } else {
             logger.info("Failed to apply BGP peers, rolling back to original state");
-            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(networkId);
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByNetworkId(network.getId());
             for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
                 if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
                     bgpPeerNetworkMapDao.remove(bgpPeerNetworkMapVO.getId());
@@ -1294,7 +1303,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             return null;
         }
 
-        return networkDao.findById(networkId);
+        return networkDao.findById(network.getId());
     }
 
     @Override

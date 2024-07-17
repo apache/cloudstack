@@ -23,14 +23,15 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.router.VirtualRouter;
 
 public class BgpPeersRules extends RuleApplier {
 
     private final List<? extends BgpPeer> bgpPeers;
 
-    public BgpPeersRules(final List<? extends BgpPeer> bgpPeers) {
-        super(null);
+    public BgpPeersRules(final List<? extends BgpPeer> bgpPeers, final Network network) {
+        super(network);
         this.bgpPeers = bgpPeers;
     }
 

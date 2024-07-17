@@ -18,8 +18,14 @@
 
 
 def merge(dbag, peers):
-    dbag.clear()
+    networkids = {peer['network_id'] for peer in peers['peers']}
+    for key in list(dbag.keys()):
+        if key == "id":
+            continue
+        if dbag[key]['network_id'] in networkids:
+            del dbag[key]
     for peer in peers['peers']:
-        key = "{}-{}".format(peer['peer_id'], peer['network_id'])
-        dbag[key] = peer
+        if 'peer_id' in peer:
+            key = "{}-{}".format(peer['peer_id'], peer['network_id'])
+            dbag[key] = peer
     return dbag

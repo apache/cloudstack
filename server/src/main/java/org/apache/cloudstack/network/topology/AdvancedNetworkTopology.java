@@ -255,7 +255,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             logger.debug("No bgp peers to apply. However, apply BGP peers to clear the existing configuration in the VRs.");
         }
 
-        final BgpPeersRules bgpPeersRules = new BgpPeersRules(bpgPeers);
+        final BgpPeersRules bgpPeersRules = new BgpPeersRules(bpgPeers, network);
 
         boolean result = true;
         if (router.getState() == State.Running) {

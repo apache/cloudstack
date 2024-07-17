@@ -381,9 +381,9 @@ class TestIpv4Routing(cloudstackTestCase):
             self.fail("ping vm %s from router %s works, however it is unexpected !!!" % (vm.ipaddress, router.name))
 
     def verifyFrrConf(self, router, configs):
+        cmd = "cat /etc/frr/frr.conf"
+        res = self.run_command_in_router(router, cmd)
         for config in configs:
-            cmd = "cat /etc/frr/frr.conf | grep '%s'" % (config["config"])
-            res = self.run_command_in_router(router, cmd)
             if "exists" not in config or config["exists"]:
                 exists = True
             else:

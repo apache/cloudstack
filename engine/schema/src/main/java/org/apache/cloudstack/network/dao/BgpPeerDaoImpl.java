@@ -46,6 +46,7 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         final SearchBuilder<BgpPeerNetworkMapVO> networkSearchBuilder = bgpPeerNetworkMapDao.createSearchBuilder();
         networkSearchBuilder.and("networkId", networkSearchBuilder.entity().getNetworkId(), SearchCriteria.Op.EQ);
         networkSearchBuilder.and("state", networkSearchBuilder.entity().getState(), SearchCriteria.Op.IN);
+        networkSearchBuilder.and("removed", networkSearchBuilder.entity().getRemoved(), SearchCriteria.Op.NULL);
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.join("network", networkSearchBuilder, networkSearchBuilder.entity().getBgpPeerId(),
                 NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
