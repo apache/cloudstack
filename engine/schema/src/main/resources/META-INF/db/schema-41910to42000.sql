@@ -161,9 +161,11 @@ ALTER TABLE `cloud`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER 
 ALTER TABLE `cloud_usage`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
 
 ALTER TABLE `cloud`.`account` MODIFY `account_name` VARCHAR(100) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'an account name set by the creator of the account, defaults to username for single accounts';
+ALTER TABLE `cloud`.`affinity_group` MODIFY `description` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL;
 ALTER TABLE `cloud`.`annotations` MODIFY `annotation` TEXT CHARACTER SET utf8mb4;
 ALTER TABLE `cloud`.`autoscale_vmgroups` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name of the autoscale vm group';
 ALTER TABLE `cloud`.`backup_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'backup offering name';
+ALTER TABLE `cloud`.`backup_offering` MODIFY `description` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'backup offering description';
 ALTER TABLE `cloud`.`disk_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
 ALTER TABLE `cloud`.`disk_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name';
 ALTER TABLE `cloud`.`disk_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Optional text set by the admin for display purpose only';
@@ -176,8 +178,10 @@ ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` VARCHAR(64) CHARACT
 ALTER TABLE `cloud`.`network_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'text to display to users';
 ALTER TABLE `cloud`.`networks` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name for this network';
 ALTER TABLE `cloud`.`networks` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'display text for this network';
+ALTER TABLE `cloud`.`project_role` MODIFY `description` TEXT CHARACTER SET utf8mb4 COMMENT 'description of the project role';
 ALTER TABLE `cloud`.`projects` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
 ALTER TABLE `cloud`.`projects` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
+ALTER TABLE `cloud`.`roles` MODIFY `description` TEXT CHARACTER SET utf8mb4 COMMENT 'description of the role';
 ALTER TABLE `cloud`.`service_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
 ALTER TABLE `cloud`.`service_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name for offerings';
 ALTER TABLE `cloud`.`service_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL;
@@ -190,6 +194,7 @@ ALTER TABLE `cloud`.`user` MODIFY `lastname` VARCHAR(255) CHARACTER SET utf8mb4 
 ALTER TABLE `cloud`.`user_data` MODIFY `name` VARCHAR(256) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the user data';
 ALTER TABLE `cloud`.`vm_instance` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
 ALTER TABLE `cloud`.`vm_snapshots` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_snapshots` MODIFY `description` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
 ALTER TABLE `cloud`.`vm_template` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
 ALTER TABLE `cloud`.`vm_template` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Description text set by the admin for display purpose only';
 ALTER TABLE `cloud`.`volumes` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'A user specified name for the volume';
