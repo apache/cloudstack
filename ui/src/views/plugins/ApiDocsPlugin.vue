@@ -22,7 +22,7 @@
         <a-card :bordered="false">
           <a-auto-complete
             v-model:value="query"
-            :options="options"
+            :options="options.filter(value => value.value.toLowerCase().includes(query.toLowerCase()))"
             style="width: 100%"
             >
             <a-input-search
@@ -174,18 +174,18 @@ export default {
       options: [
         { value: 'VirtualMachine', label: 'Instance' },
         { value: 'Kubernetes', label: 'Kubernetes' },
-        { value: 'SSH', label: 'SSH' },
         { value: 'Volume', label: 'Volume' },
         { value: 'Snapshot', label: 'Snapshot' },
         { value: 'Backup', label: 'Backup' },
         { value: 'Network', label: 'Network' },
+        { value: 'IpAddress', label: 'IP Address' },
         { value: 'VPN', label: 'VPN' },
         { value: 'VPC', label: 'VPC' },
         { value: 'NetworkACL', label: 'Network ACL' },
         { value: 'SecurityGroup', label: 'Security Group' },
-        { value: 'IpAddress', label: 'IP Address' },
         { value: 'Template', label: 'Template' },
         { value: 'ISO', label: 'ISO' },
+        { value: 'SSH', label: 'SSH' },
         { value: 'Project', label: 'Project' },
         { value: 'Account', label: 'Account' },
         { value: 'User', label: 'User' },
