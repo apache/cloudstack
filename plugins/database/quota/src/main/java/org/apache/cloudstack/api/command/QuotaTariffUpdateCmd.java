@@ -63,7 +63,7 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
             since = "4.18.0.0")
     private String description;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = org.apache.cloudstack.api.ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE +
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE +
             " Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
     private String activationRule;
 
