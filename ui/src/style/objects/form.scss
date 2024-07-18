@@ -18,6 +18,10 @@
 .form {
   width: 80vw;
 
+  .full-width-input {
+    width: 100%;
+  }
+
   @media (min-width: 500px) {
     width: 400px;
   }
