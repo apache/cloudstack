@@ -162,7 +162,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     @SerializedName(ApiConstants.AS_NUMBER)
     @Param(description = "AS NUMBER")
-    private long asNumber;
+    private Long asNumber;
 
     public void setId(final String id) {
         this.id = id;
