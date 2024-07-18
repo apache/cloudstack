@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
 import javax.inject.Inject;
@@ -71,6 +72,10 @@ public class ListASNumbersCmd extends BaseListCmd {
             description = "the network id")
     private Long networkId;
 
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class,
+            description = "the vpc id")
+    private Long vpcId;
+
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, entityType = AccountResponse.class,
             description = "account name")
     private String account;
@@ -103,6 +108,10 @@ public class ListASNumbersCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     @Inject

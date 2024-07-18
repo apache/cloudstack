@@ -129,6 +129,7 @@ public class BGPServiceImpl implements BGPService {
         Integer asNumber = cmd.getAsNumber();
         Boolean allocated = cmd.getAllocated();
         Long networkId = cmd.getNetworkId();
+        Long vpcId = cmd.getVpcId();
         String accountName = cmd.getAccount();
         Long domainId = cmd.getDomainId();
         Long startIndex = cmd.getStartIndex();
@@ -151,8 +152,22 @@ public class BGPServiceImpl implements BGPService {
             throw new InvalidParameterException(String.format("Failed to find user Account: %s", accountName));
         }
 
+        Long networkSearchId = networkId;
+        Long vpcSerchId = vpcId;
+        if (networkId != null) {
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterException(String.format("Failed to find network with ID: %s", networkId));
+            }
+            if (network.getVpcId() != null) {
+                LOGGER.debug(String.format("The network %s is a VPC tier, searching for the AS number on the VPC with ID %s",
+                        network.getName(), network.getVpcId()));
+                networkSearchId = null;
+                vpcSerchId = network.getVpcId();
+            }
+        }
         Pair<List<ASNumberVO>, Integer> pair = asNumberDao.searchAndCountByZoneOrRangeOrAllocated(zoneId, asNumberRangeId,
-                asNumber, networkId, allocated, Objects.nonNull(userAccount) ? userAccount.getId() : null,
+                asNumber, networkSearchId, vpcSerchId, allocated, Objects.nonNull(userAccount) ? userAccount.getId() : null,
                 Objects.nonNull(domain) ? domain.getId() : null, startIndex, pageSizeVal);
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }

@@ -44,7 +44,8 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
 
     @Override
     public Pair<List<ASNumberVO>, Integer> searchAndCountByZoneOrRangeOrAllocated(Long zoneId, Long asnRangeId,
-                                                                                  Integer asNumber, Long networkId, Boolean allocated,
+                                                                                  Integer asNumber, Long networkId, Long vpcId,
+                                                                                  Boolean allocated,
                                                                                   Long accountId, Long domainId,
                                                                                   Long startIndex, Long pageSizeVal) {
         SearchCriteria<ASNumberVO> sc = asNumberSearch.create();
@@ -56,6 +57,9 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         }
         if (networkId != null) {
             sc.setParameters("networkId", networkId);
+        }
+        if (vpcId != null) {
+            sc.setParameters("vpcId", vpcId);
         }
         if (allocated != null) {
             sc.setParameters("isAllocated", allocated);
