@@ -970,7 +970,7 @@ export default {
       col.width = w
     },
     updateSelectedColumns (name) {
-      this.$emit('update-selected-columns', name)
+      this.$emit('update-selected-columns', this.getColumnKey(name))
     },
     getVmRouteUsingType (record) {
       switch (record.virtualmachinetype) {

@@ -41,6 +41,14 @@
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
+      <a-form-item ref="position" name="position">
+        <template #label>
+         <tooltip-label :title="$t('label.quota.tariff.position')" :tooltip="apiParams.position.description"/>
+       </template>
+       <a-input-number
+         v-model:value="form.position"
+         :placeholder="$t('placeholder.quota.tariff.position')" />
+      </a-form-item>
       <a-form-item ref="endDate" name="endDate">
         <template #label>
           <tooltip-label :title="$t('label.end.date')" :tooltip="apiParams.enddate.description"/>
@@ -97,6 +105,7 @@ export default {
       this.form = reactive({
         description: this.resource.description,
         value: this.resource.tariffValue,
+        position: this.resource.position,
         endDate: parseDateToDatePicker(this.resource.endDate)
       })
     },
@@ -121,6 +130,10 @@ export default {
 
         if (values.value && this.resource.tariffValue !== values.value) {
           params.value = values.value
+        }
+
+        if (values.position && this.resource.position !== values.position) {
+          params.position = values.position
         }
 
         if (values.endDate && !values.endDate.isSame(this.resource.endDate)) {

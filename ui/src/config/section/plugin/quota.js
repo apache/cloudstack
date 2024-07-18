@@ -110,6 +110,11 @@ export default {
           customTitle: 'quota.tariff.value'
         },
         {
+          field: 'executionPosition',
+          customTitle: 'quota.tariff.position',
+          executionPosition: (record) => record.position
+        },
+        {
           field: 'effectiveDate',
           customTitle: 'start.date'
         },
