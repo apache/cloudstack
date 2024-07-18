@@ -373,7 +373,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, com.cloud.dc.DedicatedResources.Type.Pod);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Pod);
                 if (group == null) {
                     logger.error("Unable to dedicate pod due to, failed to create dedication affinity group");
                     throw new CloudRuntimeException("Failed to dedicate pod. Please contact Cloud Support.");
@@ -583,7 +583,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, com.cloud.dc.DedicatedResources.Type.Host);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Host);
                 if (group == null) {
                     logger.error("Unable to dedicate host due to, failed to create dedication affinity group");
                     throw new CloudRuntimeException("Failed to dedicate host. Please contact Cloud Support.");
