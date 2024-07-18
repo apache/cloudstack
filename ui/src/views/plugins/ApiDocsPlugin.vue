@@ -38,13 +38,12 @@
           <a-list style="margin-top: 12px; height:580px; overflow-y: scroll;" size="small" :data-source="Object.keys($store.getters.apis).sort()">
             <template #renderItem="{ item }">
               <a>
-              <a-list-item v-if="item.toLowerCase().includes(query.toLowerCase())" @click="showApi(item)">
-                <span v-if="selectedApi === item">
-                  <strong>{{ item }}</strong> <a-tag v-if="$store.getters.apis[item].isasync" color="blue">async</a-tag>
-                </span>
-                <span v-else>
-                  {{ item }} <a-tag v-if="$store.getters.apis[item].isasync" color="blue">async</a-tag>
-                </span>
+              <a-list-item
+                v-if="item.toLowerCase().includes(query.toLowerCase())"
+                @click="showApi(item)"
+                style="padding-left: 12px"
+                :class="selectedApi === item ? 'selected-item' : ''">
+                {{ item }} <a-tag v-if="$store.getters.apis[item].isasync" color="blue">async</a-tag>
               </a-list-item>
               </a>
             </template>
@@ -59,11 +58,21 @@
           :bordered="true"
           style="width: 100%; overflow-x: auto">
           <span v-if="selectedApi && selectedApi in $store.getters.apis">
-            <h2>{{ selectedApi }} <a-tag v-if="$store.getters.apis[selectedApi].isasync" color="blue">Asynchronous API</a-tag></h2>
+            <h2>{{ selectedApi }}
+              <a-tag v-if="$store.getters.apis[selectedApi].isasync" color="blue">Asynchronous API</a-tag>
+              <tooltip-button
+                tooltipPlacement="right"
+                :tooltip="$t('label.copy') + ' ' + selectedApi"
+                icon="CopyOutlined"
+                type="outlined"
+                size="small"
+                @onClick="$message.success($t('label.copied.clipboard'))"
+                :copyResource="selectedApi" />
+            </h2>
             <p>{{ $store.getters.apis[selectedApi].description }}</p>
-            <h3>Request parameters:</h3>
+            <h3>{{ $t('label.request') }} {{ $t('label.params') }}:</h3>
             <a-table
-              :columns="[{title: 'Parameter Name', dataIndex: 'name'}, {title: 'Required', dataIndex: 'required'}, {title: 'Type', dataIndex: 'type'}, {title: 'Description', dataIndex: 'description'}]"
+              :columns="[{title: $t('label.name'), dataIndex: 'name'}, {title: $t('label.required'), dataIndex: 'required'}, {title: $t('label.type'), dataIndex: 'type'}, {title: $t('label.description'), dataIndex: 'description'}]"
               :data-source="selectedParams"
               :pagination="false"
               size="small">
@@ -73,9 +82,9 @@
               </template>
             </a-table>
             <br/>
-            <h3>Response parameters:</h3>
+            <h3>{{ $t('label.response') }} {{ $t('label.params') }}:</h3>
             <a-table
-              :columns="[{title: 'Response Name', dataIndex: 'name'}, {title: 'Type', dataIndex: 'type'}, {title: 'Description', dataIndex: 'description'}]"
+              :columns="[{title: $t('label.name'), dataIndex: 'name'}, {title: $t('label.type'), dataIndex: 'type'}, {title: $t('label.description'), dataIndex: 'description'}]"
               :data-source="selectedResponse"
               :pagination="false"
               size="small" />
@@ -203,7 +212,8 @@ export default {
       this.selectedParams = this.$store.getters.apis[api].params
         .sort((a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
         .sort((a, b) => (a.required > b.required) ? -1 : ((b.required > a.required) ? 1 : 0))
-      this.selectedResponse = this.$store.getters.apis[api].response
+        .filter(value => Object.keys(value).length > 0)
+      this.selectedResponse = this.$store.getters.apis[api].response.filter(value => Object.keys(value).length > 0)
     }
   }
 }

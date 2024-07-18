@@ -1799,6 +1799,7 @@
 "label.replace.acl": "Replace ACL",
 "label.replace.acl.list": "Replace ACL list",
 "label.report.bug": "Ask a question or Report an issue",
+"label.request": "Request",
 "label.required": "Required",
 "label.requireshvm": "HVM",
 "label.requiresupgrade": "Requires upgrade",
