@@ -65,6 +65,14 @@
           v-model:value="form.value"
           :placeholder="$t('placeholder.quota.tariff.value')" />
       </a-form-item>
+      <a-form-item ref="position" name="position">
+        <template #label>
+          <tooltip-label :title="$t('label.quota.tariff.position')" :tooltip="apiParams.position.description" />
+        </template>
+        <a-input-number
+          v-model:value="form.position"
+          :placeholder="$t('placeholder.quota.tariff.position')" />
+      </a-form-item>
       <a-form-item ref="startDate" name="startDate">
         <template #label>
           <tooltip-label :title="$t('label.start.date')" :tooltip="apiParams.startdate.description"/>
