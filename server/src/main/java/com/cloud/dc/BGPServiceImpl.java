@@ -56,7 +56,7 @@ import java.util.Objects;
 
 public class BGPServiceImpl implements BGPService {
 
-    public static final Logger LOGGER = LogManager.getLogger(getClass());
+    public static final Logger LOGGER = LogManager.getLogger(BGPServiceImpl.class);
 
     @Inject
     private DataCenterDao dataCenterDao;
