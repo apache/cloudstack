@@ -31,6 +31,7 @@ import {
   DEFAULT_THEME,
   APIS,
   ZONES,
+  SHOW_SECURTIY_GROUPS,
   TIMEZONE_OFFSET,
   USE_BROWSER_TIMEZONE,
   HEADER_NOTICES,
@@ -119,6 +120,10 @@ const user = {
     SET_ZONES: (state, zones) => {
       state.zones = zones
       vueProps.$localStorage.set(ZONES, zones)
+    },
+    SET_SHOW_SECURITY_GROUPS: (state, show) => {
+      state.showSecurityGroups = show
+      vueProps.$localStorage.set(SHOW_SECURTIY_GROUPS, show)
     },
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
@@ -276,6 +281,7 @@ const user = {
         const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
+        const cachedShowSecurityGroups = vueProps.$localStorage.get(SHOW_SECURTIY_GROUPS, false)
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
         const hasAuth = Object.keys(cachedApis).length > 0
 
@@ -284,6 +290,7 @@ const user = {
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
+          commit('SET_SHOW_SECURITY_GROUPS', cachedShowSecurityGroups)
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
@@ -342,6 +349,15 @@ const user = {
           reject(error)
         })
 
+        api(
+          'listNetworklistNetworkServiceProviders',
+          { name: 'SecurityGroupProvider', state: 'Enabled' }
+        ).then(response => {
+          const showSecurityGroups = response.listnetworkserviceprovidersresponse.count > 0
+          commit('SET_SHOW_SECURITY_GROUPS', showSecurityGroups)
+        }).catch(ignored => {
+        })
+
         api('listCapabilities').then(response => {
           const result = response.listcapabilitiesresponse.capability
           commit('SET_FEATURES', result)
@@ -350,6 +366,9 @@ const user = {
           }
           if (result && result.customhypervisordisplayname) {
             commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+          }
+          if (result && result.securitygroupsenabled) {
+            commit('SET_SHOW_SECURITY_GROUPS', result.securitygroupsenabled)
           }
         }).catch(error => {
           reject(error)

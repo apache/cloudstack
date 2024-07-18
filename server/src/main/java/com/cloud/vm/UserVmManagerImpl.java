@@ -6112,7 +6112,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
-            if (zone.isSecurityGroupEnabled())  {
+            if (checkSecurityGroupSupportForNetwork(zone, networkIds))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
@@ -6163,6 +6163,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return vm;
+    }
+
+    private boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds) {
+        if (zone.isSecurityGroupEnabled()) {
+            return true;
+        }
+        if (CollectionUtils.isNotEmpty(networkIds)) {
+            for (Long networkId : networkIds) {
+                Network network = _networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+                }
+                if (network.getGuestType() == Network.GuestType.Shared && _networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
