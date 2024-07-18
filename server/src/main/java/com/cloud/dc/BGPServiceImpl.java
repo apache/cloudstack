@@ -44,7 +44,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
@@ -55,7 +56,7 @@ import java.util.Objects;
 
 public class BGPServiceImpl implements BGPService {
 
-    public static final Logger LOGGER = Logger.getLogger(BGPServiceImpl.class);
+    public static final Logger LOGGER = LogManager.getLogger(getClass());
 
     @Inject
     private DataCenterDao dataCenterDao;
