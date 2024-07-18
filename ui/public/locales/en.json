@@ -349,7 +349,7 @@
 "label.anti.affinity": "Anti-affinity",
 "label.anti.affinity.group": "Anti-affinity group",
 "label.api.docs": "API Docs",
-"label.api.docs.description": "For information about how the APIs work, and tips on how to use them, click to see the Developer's Guide.",
+"label.api.docs.description": "For information about how the APIs work, and tips on how to use them, click here to see the Developer's Guide.",
 "label.api.docs.count": "APIs available for your account",
 "label.api.version": "API version",
 "label.apikey": "API key",
