@@ -22,8 +22,6 @@ import utc from 'dayjs/plugin/utc'
 dayjs.extend(utc)
 
 export function parseDayJsObject ({ value, format = true, keepMoment = true }) {
-  console.log(value)
-
   if (!value) {
     return null
   }
