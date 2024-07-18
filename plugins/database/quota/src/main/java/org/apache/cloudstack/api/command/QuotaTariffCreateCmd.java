@@ -54,7 +54,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     @Parameter(name = "value", type = CommandType.DOUBLE, required = true, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = org.apache.cloudstack.api.ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE, length = 65535)
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE, length = 65535)
     private String activationRule;
 
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Inform null to " +
