@@ -73,7 +73,7 @@
               </template>
             </a-table>
             <br/>
-            <h3>Response keys:</h3>
+            <h3>Response parameters:</h3>
             <a-table
               :columns="[{title: 'Response Name', dataIndex: 'name'}, {title: 'Type', dataIndex: 'type'}, {title: 'Description', dataIndex: 'description'}]"
               :data-source="selectedResponse"
