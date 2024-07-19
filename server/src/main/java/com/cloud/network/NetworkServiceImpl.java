@@ -1455,7 +1455,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean hideIpAddressUsage = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
         String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
-        Long asNumber = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getAsNumber() : null;
+        Long asNumber = cmd.getAsNumber();
 
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();

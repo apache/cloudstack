@@ -191,6 +191,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
+    private Long asNumber;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -389,6 +392,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getIp6Dns2() {
         return ip6Dns2;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
     }
 
     /////////////////////////////////////////////////////
