@@ -404,9 +404,6 @@ export default {
       })
     },
     fetchData () {
-      if (this.isAdminOrDomainAdmin()) {
-        this.fetchDomainData()
-      }
       this.fetchZoneData()
       this.allowSettingMTU()
     },
