@@ -143,7 +143,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", authorized = { RoleType.Admin }, length = 5120)
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
     private String extraConfig;
 
     /////////////////////////////////////////////////////
