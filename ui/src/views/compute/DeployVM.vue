@@ -1373,9 +1373,11 @@ export default {
         return false
       }
       for (const network of this.options.networks) {
-        for (const service of network.service) {
-          if (service.name === 'SecurityGroup') {
-            return true
+        if (this.form.networkids && this.form.networkids.includes(network.id)) {
+          for (const service of network.service) {
+            if (service.name === 'SecurityGroup') {
+              return true
+            }
           }
         }
       }
