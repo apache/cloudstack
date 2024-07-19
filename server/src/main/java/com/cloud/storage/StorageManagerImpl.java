@@ -2327,12 +2327,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
-        if (host == null || pool == null) {
+        if (host == null || pool == null || !pool.isManaged()) {
             return false;
-        }
-
-        if (!pool.isManaged()) {
-            return true;
         }
 
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
