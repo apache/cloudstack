@@ -181,6 +181,7 @@ CREATE TABLE `cloud`.`as_number` (
     `allocated` datetime DEFAULT NULL COMMENT 'Date this AS Number was allocated to some network',
     `is_allocated` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates if the AS Number is allocated to some network',
     `network_id` bigint unsigned DEFAULT NULL COMMENT 'Network this AS Number is associated with',
+    `vpc_id` bigint unsigned DEFAULT NULL COMMENT 'VPC this AS Number is associated with',
     `created` datetime DEFAULT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),
