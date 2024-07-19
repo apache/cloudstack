@@ -60,6 +60,7 @@
           <span v-if="selectedApi && selectedApi in $store.getters.apis">
             <h2>{{ selectedApi }}
               <a-tag v-if="$store.getters.apis[selectedApi].isasync" color="blue">Asynchronous API</a-tag>
+              <a-tag v-if="$store.getters.apis[selectedApi].since">Since {{ $store.getters.apis[selectedApi].since }}</a-tag>
               <tooltip-button
                 tooltipPlacement="right"
                 :tooltip="$t('label.copy') + ' ' + selectedApi"
@@ -76,9 +77,10 @@
               :data-source="selectedParams"
               :pagination="false"
               size="small">
-              <template #bodyCell="{text, record}">
-                <span v-if="record.required === true"> <strong>{{ text }}</strong> </span>
-                <span v-else>  {{ text }} </span>
+              <template #bodyCell="{text, column, record}">
+                <a-tag v-if="record.since && column.dataIndex === 'description'">Since {{ record.since }}</a-tag>
+                <span v-if="record.required === true"><strong>{{ text }}</strong></span>
+                <span v-else>{{ text }}</span>
               </template>
             </a-table>
             <br/>
@@ -101,12 +103,12 @@
             </a-alert>
             <a-result
               status="success"
-              title="Download CloudStack CloudMonkey CLI"
+              :title="$t('label.download') + ' CloudStack CloudMonkey CLI'"
               sub-title="For API automation and orchestration"
             >
               <template #extra>
-                <a-button type="primary"><a href="https://github.com/apache/cloudstack-cloudmonkey/releases" target="_blank">Download CLI</a></a-button>
-                <a-button><a href="https://github.com/apache/cloudstack-cloudmonkey/wiki/Usage" target="_blank">Read CLI Documentation</a></a-button>
+                <a-button type="primary"><a href="https://github.com/apache/cloudstack-cloudmonkey/releases" target="_blank">{{ $t('label.download') }} CLI</a></a-button>
+                <a-button><a href="https://github.com/apache/cloudstack-cloudmonkey/wiki/Usage" target="_blank">{{ $t('label.open.documentation') }} (CLI)</a></a-button>
                 <br/>
                 <br/>
                 <div v-if="showKeys">

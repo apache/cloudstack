@@ -316,6 +316,7 @@ const user = {
                 params: api.params,
                 response: api.response,
                 isasync: api.isasync,
+                since: api.since,
                 description: api.description
               }
             }
