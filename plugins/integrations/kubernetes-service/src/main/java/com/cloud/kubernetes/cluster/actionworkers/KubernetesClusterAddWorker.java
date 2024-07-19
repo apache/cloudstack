@@ -88,7 +88,8 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             }
             attachCksIsoForNodesAdditionToCluster(nodeIds, kubernetesCluster.getId(), mountCksIsoOnVr);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AddNodeRequested);
-            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, mountCksIsoOnVr);
+            String controlNodeGuestIp = getControlVmPrivateIp();
+            Ternary<Integer, Long, Long> nodesAddedAndMemory = importNodeToCluster(nodeIds, network, publicIp, controlNodeGuestIp, mountCksIsoOnVr);
             int nodesAdded = nodesAddedAndMemory.first();
             updateKubernetesCluster(kubernetesCluster.getId(), nodesAddedAndMemory, manualUpgrade);
             if (nodeIds.size() != nodesAdded) {
@@ -180,7 +181,8 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
         }
     }
 
-    private Ternary<Integer, Long, Long> importNodeToCluster(List<Long> nodeIds, Network network, IpAddress publicIp, boolean mountCksIsoOnVr) {
+    private Ternary<Integer, Long, Long> importNodeToCluster(List<Long> nodeIds, Network network, IpAddress publicIp,
+                                                             String controlNodeGuestIp, boolean mountCksIsoOnVr) {
         int nodeIndex = 0;
         Long additionalMemory = 0L;
         Long additionalCores = 0L;
@@ -188,7 +190,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             UserVmVO vm = userVmDao.findById(nodeId);
             String k8sControlNodeConfig = null;
             try {
-                k8sControlNodeConfig = getKubernetesNodeConfig(publicIp.getAddress().addr(), Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), mountCksIsoOnVr);
+                k8sControlNodeConfig = getKubernetesNodeConfig(controlNodeGuestIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()), mountCksIsoOnVr);
             } catch (IOException e) {
                 logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
             }
