@@ -583,6 +583,18 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' }
         },
         {
+          api: 'restartFileShare',
+          icon: 'reload-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.restart.fileshare',
+          message: 'message.fileshare.restart',
+          dataView: true,
+          args: ['cleanup'],
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
           api: 'removeFileShare',
           icon: 'delete-outlined',
           label: 'label.delete.fileshare',

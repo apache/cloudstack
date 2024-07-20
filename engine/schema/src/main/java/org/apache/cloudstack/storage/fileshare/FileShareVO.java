@@ -69,9 +69,6 @@ public class FileShareVO implements FileShare {
     @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name = "endpoint_ip")
-    private String endpointIp;
-
     @Column(name = "fs_provider_name")
     private String fsProviderName;
 
@@ -184,16 +181,6 @@ public class FileShareVO implements FileShare {
     @Override
     public State getState() {
         return state;
-    }
-
-    @Override
-    public String getEndpointIp() {
-        return endpointIp;
-    }
-
-    @Override
-    public void setEndpointIp(String endpointIp) {
-        this.endpointIp = endpointIp;
     }
 
     @Override

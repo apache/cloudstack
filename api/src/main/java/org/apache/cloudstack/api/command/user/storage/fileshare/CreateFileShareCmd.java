@@ -210,7 +210,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
         }
 
-        fileShare = fileShareService.initializeFileShare(this.getEntityId());
+        fileShare = fileShareService.startFileShare(this.getEntityId());
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();

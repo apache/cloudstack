@@ -21,6 +21,10 @@ import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareVmNameP
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -36,18 +40,18 @@ import javax.inject.Inject;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.resource.ResourceManager;
@@ -77,6 +81,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     private VirtualMachineManager virtualMachineManager;
 
     @Inject
+    private VolumeApiService volumeApiService;
+
+    @Inject
     protected UserVmService userVmService;
 
     @Inject
@@ -86,7 +93,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     private VMTemplateDao templateDao;
 
     @Inject
-    VMInstanceDao vmDao;
+    VolumeDao volumeDao;
 
     @Inject
     private UserVmDao userVmDao;
@@ -97,83 +104,127 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
-    protected String readResourceFile(String resource) throws IOException {
-        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
+    @Inject
+    protected VMNetworkMapDao vmNetworkMapDao;
+
+    private String readResourceFile(String resource) {
+        try {
+            return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Unable to read the user data resource file due to exception " + e.getMessage());
+        }
     }
 
-    @Override
-    public Pair<String, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size) {
-        Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
+    private UserVm deployFileShareVM(Long zoneId, Account owner, List<Long> networkIds, String name, Long serviceOfferingId, Long diskOfferingId, Long size, Volume volume) {
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
 
-        Long zoneId = fileShare.getDataCenterId();
-        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+        Long diskSize = null;
+        if (diskOfferingId != null) {
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
+            if (diskOffering.isCustomized()) {
+                diskSize = size;
+            }
         }
 
+        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
         Hypervisor.HypervisorType availableHypervisor = resourceMgr.getAvailableHypervisor(zoneId);
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, availableHypervisor);
-
         if (template == null) {
             throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", zone.toString()));
         }
 
-        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(fileShare.getServiceOfferingId());
-        DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
-        Long diskSize = 0L;
-        if (diskOffering.isCustomized()) {
-            diskSize = size;
-        }
-
-        String suffix = Long.toHexString(System.currentTimeMillis());
-        String hostName = String.format("%s-node-%s", FileShareVmNamePrefix, suffix);
+        String hostName = String.format("%s-%s", FileShareVmNamePrefix, name);
 
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
         Map<String, String> customParameterMap = new HashMap<String, String>();
-
-        UserVm vm = null;
         List<String> keypairs = new ArrayList<String>();
+
+        UserVm vm;
         try {
             String fsVmConfig = readResourceFile("/conf/fsvm-init.yml");
             String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, List.of(networkId), owner, hostName, hostName,
-                    diskOffering.getId(), diskSize, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
-                   null, null, keypairs, null, addrs, null, null, null,
+            vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
+                    diskOfferingId, diskSize, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
+                    null, null, keypairs, null, addrs, null, null, null,
                     customParameterMap, null, null, null, null,
-                   true, UserVmManager.STORAGEFSVM, null);
-
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to deploy vm");
+                    true, UserVmManager.STORAGEFSVM, null);
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("Unable to deploy fsvm due to exception " + ex.getMessage());
         }
-
-        try {
-            userVmManager.startVirtualMachine(vm);
-        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
-            throw new CloudRuntimeException("Failed to start VM");
-        }
-
-        return new Pair<>(vm.getPrivateIpAddress(), vm.getId());
+        return vm;
     }
 
     @Override
-    public boolean initializeFileShare(FileShare fileShare) {
-        return false;
+    public Pair<Long, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size) {
+
+        Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
+        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, List.of(networkId), fileShare.getName(), fileShare.getServiceOfferingId(), diskOfferingId, size, null);
+
+        List<VolumeVO> volumes = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
+        return new Pair<>(volumes.get(0).getId(), vm.getId());
+    }
+
+    @Override
+    public boolean startFileShare(FileShare fileShare) {
+        try {
+            UserVmVO vm = userVmDao.findById(fileShare.getVmId());
+            userVmManager.startVirtualMachine(vm);
+        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
+            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stopFileShare(FileShare fileShare) {
+        userVmManager.stopVirtualMachine(fileShare.getVmId(), false);
+        return true;
+    }
+
+    private void expungeVmWithoutDeletingDataVolume(Long vmId) {
+        UserVmVO userVM = userVmDao.findById(vmId);
+        try {
+            UserVm vm = userVmService.destroyVm(userVM.getId(), true);
+            if (!userVmManager.expunge(userVM)) {
+                throw new CloudRuntimeException("Failed to expunge VM " + userVM.toString());
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Failed to expunge VM " + userVM.toString());
+        }
+        userVmDao.remove(vmId);
     }
 
     @Override
     public boolean deleteFileShare(FileShare fileShare) {
         Long vmId = fileShare.getVmId();
         if (vmId != null) {
-            VirtualMachine vm = vmDao.findById(vmId);
-            try {
-                virtualMachineManager.expunge(vm.getUuid());
-            } catch (ResourceUnavailableException e) {
-                //logger.warn(String.format("Unable to destroy storagefsvm [%s] due to [%s].", vm, e.getMessage()), e);
-                return false;
-            }
-            userVmDao.remove(vmId);
+            expungeVmWithoutDeletingDataVolume(vmId);
+        }
+        VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
+        Volume vol = volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), false, false);
+        if (vol == null) {
+            throw new CloudRuntimeException("Failed to destroy Data volume " + volume.toString());
         }
         return true;
+    }
+
+    @Override
+    public Long restartFileShare(FileShare fileShare, boolean cleanup) {
+        Long vmId = fileShare.getVmId();
+        List<Long> networkIds = vmNetworkMapDao.getNetworks(vmId);
+        if (vmId != null) {
+            expungeVmWithoutDeletingDataVolume(vmId);
+        }
+        VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
+        Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
+        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, null, null);
+        volumeApiService.attachVolumeToVM(vm.getId(), volume.getId(), null);
+        try {
+            userVmManager.startVirtualMachine(vm);
+        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
+            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
+        }
+        return vm.getId();
     }
 
     @Override

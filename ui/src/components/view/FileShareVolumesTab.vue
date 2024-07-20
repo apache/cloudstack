@@ -95,13 +95,13 @@ export default {
   },
   methods: {
     fetchVolumes () {
-      if (!this.resource.virtualmachineid) {
+      if (!this.resource.volumeid) {
         return
       }
       this.volumeLoading = true
       this.loading = true
       var params = {
-        virtualmachineid: this.resource.virtualmachineid,
+        id: this.resource.volumeid,
         listsystemvms: 'true',
         listall: true
       }

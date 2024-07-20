@@ -104,6 +104,8 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId);
+
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);

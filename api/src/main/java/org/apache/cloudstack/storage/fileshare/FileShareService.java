@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
@@ -47,11 +46,15 @@ public interface FileShareService extends PluggableService {
 
     FileShare deployFileShare(Long fileShareId, Long networkId, Long diskOfferingId, Long size);
 
-    FileShare initializeFileShare(Long fileShareId);
+    FileShare startFileShare(Long fileShareId);
+
+    FileShare stopFileShare(Long fileShareId);
+
+    FileShare restartFileShare(Long fileShareId, boolean cleanup);
 
     ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd);
 
     FileShare updateFileShare(UpdateFileShareCmd cmd);
 
-    FileShare deleteFileShare(Long fileShareId, Account owner);
+    FileShare deleteFileShare(Long fileShareId);
 }

@@ -16,35 +16,56 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
-import com.cloud.event.EventTypes;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-import javax.inject.Inject;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 
-@APICommand(name = "removeFileShare", responseObject= SuccessResponse.class, description = "Remove a File Share by id",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class RemoveFileShareCmd extends BaseAsyncCmd {
+@APICommand(name = "restartFileShare",
+        responseObject= FileShareResponse.class,
+        description = "Restart a File Share.. ",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class RestartFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
+
+    @Inject
+    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to delete")
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            required = true,
+            entityType = FileShareResponse.class,
+            description = "the ID of the file share")
     private Long id;
+
+    @Parameter(name = ApiConstants.CLEANUP,
+            type = CommandType.BOOLEAN,
+            description = "is cleanup required")
+    private boolean cleanup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -52,6 +73,10 @@ public class RemoveFileShareCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getCleanup() {
+        return cleanup;
     }
 
     /////////////////////////////////////////////////////
@@ -64,23 +89,20 @@ public class RemoveFileShareCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_FILESHARE_DELETE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Deleting fileshare";
-    }
-
-    @Override
     public void execute() {
-        FileShare fileShare = fileShareService.deleteFileShare(id);
+        FileShare fileShare = fileShareService.restartFileShare(id, cleanup);
         if (fileShare != null) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
+            ResponseObject.ResponseView respView = getResponseView();
+            Account caller = CallContext.current().getCallingAccount();
+            if (accountService.isRootAdmin(caller.getId())) {
+                respView = ResponseObject.ResponseView.Full;
+            }
+            FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);
+            response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
+            response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete fileShare");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update file share");
         }
     }
 }

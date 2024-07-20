@@ -58,7 +58,7 @@ FROM
         LEFT JOIN
     `cloud`.`vm_instance` AS `instance` ON `storage_fileshare`.`vm_id` = `instance`.`id`
         LEFT JOIN
-    `cloud`.`volumes` AS `volumes` ON `instance`.`id` = `volumes`.`instance_id` AND `volumes`.`volume_type` = 'datadisk'
+    `cloud`.`volumes` AS `volumes` ON `storage_fileshare`.`volume_id` = `volumes`.`id`
         LEFT JOIN
     `cloud`.`storage_pool` AS `storage_pool` ON `volumes`.`pool_id` = `storage_pool`.`id`
         LEFT JOIN

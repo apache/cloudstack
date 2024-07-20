@@ -25,7 +25,7 @@ import java.util.Date;
 
 public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
 
-    String FileShareVmNamePrefix = "fs";
+    String FileShareVmNamePrefix = "fsvm";
     String FileSharePathPrefix = "/export/fileshare/";
 
     enum FileSystemType {
@@ -39,9 +39,9 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     enum State {
         Allocated(false, "The file share is allocated in db but hasn't been created or initialized yet."),
         Deploying(true, "The file share is being created."),
-        Deployed(false, "The file share is created but not initialized yet."),
+        Deployed(false, "The file share is deployed but not initialized yet."),
         Initializing(true, "The file share is being initialized."),
-        Ready(false, "The file share is initialized and ready to use."),
+        Ready(false, "The file share is ready to use."),
         Stopping(true, "The file share is being stopped"),
         Stopped(false, "The file share is in stopped state. It can not be used but the data is still there."),
         Starting(false, "The file share is being started."),
@@ -81,7 +81,7 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DestroyRequested, Destroyed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationSucceeded, Deployed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationFailed, Allocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.InitializationRequested, Initializing, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.StartRequested, Initializing, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.DestroyRequested, Destroyed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationFailed, Deployed, null));
@@ -135,10 +135,6 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     Long getDataCenterId();
 
     State getState();
-
-    String getEndpointIp();
-
-    void setEndpointIp(String endpointIp);
 
     String getFsProviderName();
 

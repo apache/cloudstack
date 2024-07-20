@@ -229,8 +229,6 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     `project_id` bigint unsigned NOT NULL COMMENT 'Project ID',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
     `state` varchar(12) NOT NULL COMMENT 'State of the file share in the FSM',
-    `endpoint_ip` varchar(40) COMMENT 'IP address of the file share server',
-    `endpoint_path` varchar(255) COMMENT 'Path of the file share',
     `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
     `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
     `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
@@ -297,7 +295,7 @@ FROM
         LEFT JOIN
     `cloud`.`vm_instance` AS `instance` ON `storage_fileshare`.`vm_id` = `instance`.`id`
         LEFT JOIN
-    `cloud`.`volumes` AS `volumes` ON `instance`.`id` = `volumes`.`instance_id` AND `volumes`.`volume_type` = 'datadisk'
+    `cloud`.`volumes` AS `volumes` ON `storage_fileshare`.`volume_id` = `volumes`.`id`
         LEFT JOIN
     `cloud`.`storage_pool` AS `storage_pool` ON `volumes`.`pool_id` = `storage_pool`.`id`
         LEFT JOIN

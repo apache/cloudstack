@@ -744,7 +744,9 @@ public class EventTypes {
     // FileShare
     public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
     public static final String EVENT_FILESHARE_DEPLOY = "FILESHARE.DEPLOY";
-    public static final String EVENT_FILESHARE_INITIALIZE = "FILESHARE.INITIALIZE";
+    public static final String EVENT_FILESHARE_START = "FILESHARE.START";
+    public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
+    public static final String EVENT_FILESHARE_RESTART_WITH_CLEANUP = "FILESHARE.RESTART.WITH.CLEANUP";
     public static final String EVENT_FILESHARE_DELETE = "FILESHARE.DELETE";
 
     static {

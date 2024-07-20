@@ -79,7 +79,8 @@ write_files:
       fi
       sudo exportfs -ra
 
-      log "Restarting NFS server..."
+      log "Enable and restart NFS server..."
+      sudo systemctl enable nfs-kernel-server
       sudo systemctl restart nfs-kernel-server
 
       log "NFS share created successfully."
