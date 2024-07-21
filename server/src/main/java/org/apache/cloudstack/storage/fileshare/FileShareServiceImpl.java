@@ -163,8 +163,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         long ownerId = cmd.getEntityOwnerId();
         Account owner = accountMgr.getActiveAccountById(ownerId);
         FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, 0,
-                                                cmd.getZoneId(), cmd.getFileShareProviderName(), null,
-                                                cmd.getMountOptions(), FileShare.FileSystemType.EXT4, cmd.getServiceOfferingId());
+                                                cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
+                                                cmd.getMountOptions(), FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
         return fileShare;
     }

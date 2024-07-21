@@ -3799,7 +3799,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         DiskOffering diskOffering =_diskOfferingDao.findById(diskOfferingId);
         _accountMgr.checkAccess(owner, diskOffering, zone);
-        if (diskOffering.isFileShare() && !vmType.equals(STORAGEFSVM)) {
+        if (diskOffering != null && diskOffering.isFileShare() && !vmType.equals(STORAGEFSVM)) {
             throw new InvalidParameterValueException("File Share type disk offering can only be used by File Share VMs");
         }
 

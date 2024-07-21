@@ -115,7 +115,14 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         }
     }
 
-    private UserVm deployFileShareVM(Long zoneId, Account owner, List<Long> networkIds, String name, Long serviceOfferingId, Long diskOfferingId, Long size, Volume volume) {
+    private String getStorageFsVmConfig(final String fileSystem) {
+        String fsVmConfig = readResourceFile("/conf/fsvm-init.yml");
+        final String filesystem = "{{ fsvm.filesystem }}";
+        fsVmConfig = fsVmConfig.replace(filesystem, fileSystem);
+        return fsVmConfig;
+    }
+
+    private UserVm deployFileShareVM(Long zoneId, Account owner, List<Long> networkIds, String name, Long serviceOfferingId, Long diskOfferingId, FileShare.FileSystemType fileSystem, Long size) {
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
 
         Long diskSize = null;
@@ -142,7 +149,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
         UserVm vm;
         try {
-            String fsVmConfig = readResourceFile("/conf/fsvm-init.yml");
+            String fsVmConfig = getStorageFsVmConfig(fileSystem.toString().toLowerCase());
             String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
                     diskOfferingId, diskSize, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
@@ -158,7 +165,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
     public Pair<Long, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size) {
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
-        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, List.of(networkId), fileShare.getName(), fileShare.getServiceOfferingId(), diskOfferingId, size, null);
+        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, List.of(networkId), fileShare.getName(), fileShare.getServiceOfferingId(), diskOfferingId, fileShare.getFsType(), size);
 
         List<VolumeVO> volumes = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
         return new Pair<>(volumes.get(0).getId(), vm.getId());
@@ -228,7 +235,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         }
         VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
-        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, null, null);
+        UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, fileShare.getFsType(), null);
         volumeApiService.attachVolumeToVM(vm.getId(), volume.getId(), null, true);
         try {
             userVmManager.startVirtualMachine(vm);
