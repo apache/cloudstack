@@ -133,7 +133,8 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
             throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", zone.toString()));
         }
 
-        String hostName = String.format("%s-%s", FileShareVmNamePrefix, name);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-%s-%s", FileShareVmNamePrefix, name, suffix);
 
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
         Map<String, String> customParameterMap = new HashMap<String, String>();
@@ -156,7 +157,6 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     @Override
     public Pair<Long, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size) {
-
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
         UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, List.of(networkId), fileShare.getName(), fileShare.getServiceOfferingId(), diskOfferingId, size, null);
 
@@ -183,6 +183,10 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     private void expungeVmWithoutDeletingDataVolume(Long vmId) {
         UserVmVO userVM = userVmDao.findById(vmId);
+        if (userVM == null) {
+            return;
+        }
+
         try {
             UserVm vm = userVmService.destroyVm(userVM.getId(), true);
             if (!userVmManager.expunge(userVM)) {
@@ -200,8 +204,18 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         if (vmId != null) {
             expungeVmWithoutDeletingDataVolume(vmId);
         }
+
         VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
-        Volume vol = volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), false, false);
+        if (volume == null) {
+            return true;
+        }
+        Boolean expunge = false;
+        Boolean forceExpunge = false;
+        if (volume.getState() == Volume.State.Allocated) {
+            expunge = true;
+            forceExpunge = true;
+        }
+        Volume vol = volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, forceExpunge);
         if (vol == null) {
             throw new CloudRuntimeException("Failed to destroy Data volume " + volume.toString());
         }
@@ -218,7 +232,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
         UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, null, null);
-        volumeApiService.attachVolumeToVM(vm.getId(), volume.getId(), null);
+        volumeApiService.attachVolumeToVM(vm.getId(), volume.getId(), null, true);
         try {
             userVmManager.startVirtualMachine(vm);
         } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {

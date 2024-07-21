@@ -2107,6 +2107,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new UnsupportedServiceException("Unmanage VM is currently allowed for guest VMs only");
         }
 
+        if (vmVO.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not permitted for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
+
         performUnmanageVMInstancePrechecks(vmVO);
 
         Long hostId = findSuitableHostId(vmVO);

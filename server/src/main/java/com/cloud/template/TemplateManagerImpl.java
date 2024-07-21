@@ -207,6 +207,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -1189,6 +1190,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not permitted for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);

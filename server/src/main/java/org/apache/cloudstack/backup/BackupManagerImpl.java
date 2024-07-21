@@ -29,6 +29,8 @@ import java.util.TimerTask;
 
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -115,6 +117,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
@@ -146,6 +149,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private UserVmDao userVmDao;
     @Inject
     private ApiDispatcher apiDispatcher;
     @Inject
@@ -277,6 +282,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (!Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped, VirtualMachine.State.Shutdown).contains(vm.getState())) {
             throw new CloudRuntimeException("VM is not in running or stopped state");
+        }
+
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not permitted for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
         }
 
         validateForZone(vm.getDataCenterId());
