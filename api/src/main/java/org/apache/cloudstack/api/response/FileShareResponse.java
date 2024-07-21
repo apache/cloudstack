@@ -148,6 +148,38 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "the domain associated with the file share")
     private String domainName;
 
+    @SerializedName(ApiConstants.PROVISIONINGTYPE)
+    @Param(description = "provisioning type used in the file share")
+    private String provisioningType;
+
+    @SerializedName(ApiConstants.DISK_IO_READ)
+    @Param(description = "the read (IO) of disk on the file share")
+    private Long diskIORead;
+
+    @SerializedName(ApiConstants.DISK_IO_WRITE)
+    @Param(description = "the write (IO) of disk on the file share")
+    private Long diskIOWrite;
+
+    @SerializedName(ApiConstants.DISK_KBS_READ)
+    @Param(description = "the file share's disk read in KiB")
+    private Long diskKbsRead;
+
+    @SerializedName(ApiConstants.DISK_KBS_WRITE)
+    @Param(description = "the file share's disk write in KiB")
+    private Long diskKbsWrite;
+
+    @SerializedName(ApiConstants.VIRTUAL_SIZE)
+    @Param(description = "the bytes allocated")
+    private Long virtualSize;
+
+    @SerializedName(ApiConstants.PHYSICAL_SIZE)
+    @Param(description = "the bytes actually consumed on disk")
+    private Long physicalSize;
+
+    @SerializedName(ApiConstants.UTILIZATION)
+    @Param(description = "the disk utilization")
+    private String utilization;
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -276,5 +308,37 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setProvisioningType(String provisioningType) {
+        this.provisioningType = provisioningType;
+    }
+
+    public void setDiskIORead(Long diskIORead) {
+        this.diskIORead = diskIORead;
+    }
+
+    public void setDiskIOWrite(Long diskIOWrite) {
+        this.diskIOWrite = diskIOWrite;
+    }
+
+    public void setDiskKbsRead(Long diskKbsRead) {
+        this.diskKbsRead = diskKbsRead;
+    }
+
+    public void setDiskKbsWrite(Long diskKbsWrite) {
+        this.diskKbsWrite = diskKbsWrite;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+
+    public void setPhysicalSize(Long physicalSize) {
+        this.physicalSize = physicalSize;
+    }
+
+    public void setUtilization(String utilization) {
+        this.utilization = utilization;
     }
 }

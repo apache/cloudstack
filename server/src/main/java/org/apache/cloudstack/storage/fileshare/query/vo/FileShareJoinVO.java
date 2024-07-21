@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.storage.fileshare.FileShare.State;
 
 import com.cloud.api.query.vo.BaseViewVO;
+import com.cloud.storage.Storage;
 
 @Entity
 @Table(name = "storage_fileshare_view")
@@ -61,11 +62,17 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
     @Column(name = "size")
     private Long size;
 
+    @Column(name = "zone_id")
+    private long zoneId;
+
     @Column(name = "zone_uuid")
     private String zoneUuid;
 
     @Column(name = "zone_name")
     private String zoneName;
+
+    @Column(name = "account_id")
+    private long accountId;
 
     @Column(name = "instance_id")
     private long instanceId;
@@ -76,11 +83,28 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
     @Column(name = "instance_name")
     private String instanceName;
 
+    @Column(name = "volume_id")
+    private long volumeId;
+
     @Column(name = "volume_uuid")
     private String volumeUuid;
 
     @Column(name = "volume_name")
     private String volumeName;
+
+    @Column(name = "provisioning_type")
+    @Enumerated(EnumType.STRING)
+    Storage.ProvisioningType provisioningType;
+
+    @Column(name = "volume_format")
+    @Enumerated(EnumType.STRING)
+    private Storage.ImageFormat volumeFormat;
+
+    @Column(name = "volume_path")
+    private String volumePath;
+
+    @Column(name = "volume_chain_info")
+    private String volumeChainInfo;
 
     @Column(name = "pool_uuid")
     private String poolUuid;
@@ -163,6 +187,14 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
         return size;
     }
 
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
     public String getZoneUuid() {
         return zoneUuid;
     }
@@ -183,12 +215,32 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
         return instanceName;
     }
 
+    public long getVolumeId() {
+        return volumeId;
+    }
+
     public String getVolumeUuid() {
         return volumeUuid;
     }
 
     public String getVolumeName() {
         return volumeName;
+    }
+
+    public Storage.ProvisioningType getProvisioningType() {
+        return provisioningType;
+    }
+
+    public Storage.ImageFormat getVolumeFormat() {
+        return volumeFormat;
+    }
+
+    public String getVolumePath() {
+        return volumePath;
+    }
+
+    public String getVolumeChainInfo() {
+        return volumeChainInfo;
     }
 
     public String getPoolUuid() {

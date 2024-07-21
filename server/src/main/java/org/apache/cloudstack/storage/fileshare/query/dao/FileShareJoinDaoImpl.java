@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.storage.fileshare.query.dao;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,8 +29,13 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeStats;
+import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -43,6 +49,9 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
 
     @Inject
     NetworkDao networkDao;
+
+    @Inject
+    private VmDiskStatisticsDao vmDiskStatsDao;
 
     private final SearchBuilder<FileShareJoinVO> fsSearch;
     private final SearchBuilder<FileShareJoinVO> fsIdInSearch;
@@ -121,6 +130,36 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
 
         response.setServiceOfferingId(fileShare.getServiceOfferingUuid());
         response.setServiceOfferingName(fileShare.getServiceOfferingName());
+
+        if (fileShare.getProvisioningType() != null) {
+            response.setProvisioningType(fileShare.getProvisioningType().toString());
+        }
+
+        VmDiskStatisticsVO diskStats = vmDiskStatsDao.findBy(fileShare.getAccountId(), fileShare.getZoneId(), fileShare.getInstanceId(), fileShare.getVolumeId());
+        if (diskStats != null) {
+            response.setDiskIORead(diskStats.getCurrentIORead());
+            response.setDiskIOWrite(diskStats.getCurrentIOWrite());
+            response.setDiskKbsRead((long) (diskStats.getCurrentBytesRead() / 1024.0));
+            response.setDiskKbsWrite((long) (diskStats.getCurrentBytesWrite() / 1024.0));
+        }
+
+        VolumeStats vs = null;
+        if (fileShare.getVolumeFormat() == Storage.ImageFormat.VHD || fileShare.getVolumeFormat() == Storage.ImageFormat.QCOW2 || fileShare.getVolumeFormat() == Storage.ImageFormat.RAW) {
+            if (fileShare.getVolumePath() != null) {
+                vs = ApiDBUtils.getVolumeStatistics(fileShare.getVolumePath());
+            }
+        } else if (fileShare.getVolumeFormat() == Storage.ImageFormat.OVA) {
+            if (fileShare.getVolumeChainInfo() != null) {
+                vs = ApiDBUtils.getVolumeStatistics(fileShare.getVolumeChainInfo());
+            }
+        }
+        if (vs != null) {
+            response.setVirtualSize(vs.getVirtualSize());
+            response.setPhysicalSize(vs.getPhysicalSize());
+            double util = (double) vs.getPhysicalSize() / vs.getVirtualSize();
+            DecimalFormat df = new DecimalFormat("0.0%");
+            response.setUtilization(df.format(util));
+        }
 
         return response;
     }

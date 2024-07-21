@@ -258,11 +258,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private boolean supportsStorageSnapshot;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes allocated")
+    @Param(description = "the bytes actually consumed on disk")
     private Long physicalsize;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "the bytes actually consumed on disk")
+    @Param(description = "the bytes allocated")
     private Long virtualsize;
 
     @SerializedName(ApiConstants.UTILIZATION)

@@ -531,7 +531,7 @@ export default {
       permission: ['listFileShares'],
       resourceType: 'FileShare',
       columns: ['name', 'state', 'sizegb', 'storage', 'account'],
-      details: ['id', 'name', 'description', 'state', 'diskofferingdisplaytext', 'sizegb', 'ipaddress', 'provider', 'protocol', 'account', 'domain', 'created'],
+      details: ['id', 'name', 'description', 'state', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
