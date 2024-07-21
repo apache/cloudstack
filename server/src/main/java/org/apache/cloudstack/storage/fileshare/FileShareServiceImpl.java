@@ -28,6 +28,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -71,14 +74,26 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Inject
     private FileShareJoinDao fileShareJoinDao;
 
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
+
     protected List<FileShareProvider> fileShareProviders;
 
     private Map<String, FileShareProvider> fileShareProviderMap = new HashMap<>();
 
     private final StateMachine2<FileShare.State, Event, FileShare> fileShareStateMachine;
 
+    static final String DEFAULT_FILE_SHARE_DISK_OFFERING_NAME = "Default Offering for File Share";
+
     public FileShareServiceImpl() {
         this.fileShareStateMachine = FileShare.State.getStateMachine();
+    }
+
+    private void createDefaultDiskOfferingForFileShare() {
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_FILE_SHARE_DISK_OFFERING_NAME, DEFAULT_FILE_SHARE_DISK_OFFERING_NAME, Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
+        newDiskOffering.setUniqueName(DEFAULT_FILE_SHARE_DISK_OFFERING_NAME);
+        newDiskOffering.setFileShare(true);
+        diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
     }
 
     @Override
@@ -88,6 +103,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             fileShareProviderMap.put(provider.getName(), provider);
             provider.configure();
         }
+        createDefaultDiskOfferingForFileShare();
         return true;
     }
 

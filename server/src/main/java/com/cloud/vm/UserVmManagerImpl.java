@@ -3796,7 +3796,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify that owner can use the service offering
         _accountMgr.checkAccess(owner, serviceOffering, zone);
-        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
+
+        DiskOffering diskOffering =_diskOfferingDao.findById(diskOfferingId);
+        _accountMgr.checkAccess(owner, diskOffering, zone);
+        if (diskOffering.isFileShare() && !vmType.equals(STORAGEFSVM)) {
+            throw new InvalidParameterValueException("File Share type disk offering can only be used by File Share VMs");
+        }
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {
