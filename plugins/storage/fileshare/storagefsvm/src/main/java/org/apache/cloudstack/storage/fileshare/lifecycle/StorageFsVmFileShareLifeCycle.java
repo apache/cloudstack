@@ -183,10 +183,6 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     private void expungeVmWithoutDeletingDataVolume(Long vmId) {
         UserVmVO userVM = userVmDao.findById(vmId);
-        if (userVM == null) {
-            return;
-        }
-
         try {
             UserVm vm = userVmService.destroyVm(userVM.getId(), true);
             if (!userVmManager.expunge(userVM)) {
@@ -201,14 +197,15 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
     public boolean deleteFileShare(FileShare fileShare) {
         Long vmId = fileShare.getVmId();
+        Long volumeId = fileShare.getVolumeId();
         if (vmId != null) {
             expungeVmWithoutDeletingDataVolume(vmId);
         }
 
-        VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
-        if (volume == null) {
+        if (volumeId == null) {
             return true;
         }
+        VolumeVO volume = volumeDao.findById(volumeId);
         Boolean expunge = false;
         Boolean forceExpunge = false;
         if (volume.getState() == Volume.State.Allocated) {
