@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.fileshare.lifecycle;
 import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareVmNamePrefix;
 
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -46,6 +47,8 @@ import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.commons.codec.binary.Base64;
@@ -67,7 +70,16 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
 
-public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
+public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Configurable {
+
+    public static final ConfigKey<Integer> STORAGEFSVM_MIN_RAM_SIZE = new ConfigKey<Integer>(Integer.class, "storagefsvm.min.ram.size", "Advanced", "1024",
+            "minimum ram size allowed for the compute offering to be used to create storagefsvm for file shares.",
+            true, ConfigKey.Scope.Zone, null);
+
+    public static final ConfigKey<Integer> STORAGEFSVM_MIN_CPU_COUNT = new ConfigKey<Integer>(Integer.class, "storagefsvm.min.cpu.count", "Advanced", "2",
+            "minimum cpu count allowed for the compute offering to be used to create storagefsvm for file shares.",
+            true, ConfigKey.Scope.Zone, null);
+
     @Inject
     private AccountManager accountMgr;
 
@@ -136,9 +148,6 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
         Hypervisor.HypervisorType availableHypervisor = resourceMgr.getAvailableHypervisor(zoneId);
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, availableHypervisor);
-        if (template == null) {
-            throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", zone.toString()));
-        }
 
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-%s-%s", FileShareVmNamePrefix, name, suffix);
@@ -160,6 +169,30 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
             throw new CloudRuntimeException("Unable to deploy fsvm due to exception " + ex.getMessage());
         }
         return vm;
+    }
+
+    @Override
+    public void checkPrerequisites(Long zoneId, Long serviceOfferingId) {
+        if (serviceOfferingId != null) {
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+            if (serviceOffering.getCpu() < STORAGEFSVM_MIN_CPU_COUNT.valueIn(zoneId)) {
+                throw new InvalidParameterValueException("Service offering's number of cpu should be greater than or equal to " + STORAGEFSVM_MIN_CPU_COUNT.key());
+            }
+            if (serviceOffering.getRamSize() < STORAGEFSVM_MIN_RAM_SIZE.valueIn(zoneId)) {
+                throw new InvalidParameterValueException("Service offering's ram size should be greater than or equal to " + STORAGEFSVM_MIN_RAM_SIZE.key());
+            }
+            if (serviceOffering.isOfferHA() == false) {
+                throw new InvalidParameterValueException("Service offering's should be HA enabled");
+            }
+        }
+        if (zoneId != null) {
+            DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
+            Hypervisor.HypervisorType availableHypervisor = resourceMgr.getAvailableHypervisor(zoneId);
+            VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, availableHypervisor);
+            if (template == null) {
+                throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", zone.toString()));
+            }
+        }
     }
 
     @Override
@@ -248,5 +281,18 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     @Override
     public boolean resizeFileShare(FileShare fileShare, Long newSize) {
         return false;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return StorageFsVmFileShareLifeCycle.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] {
+                STORAGEFSVM_MIN_CPU_COUNT,
+                STORAGEFSVM_MIN_RAM_SIZE
+        };
     }
 }

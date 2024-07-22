@@ -162,6 +162,22 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     public FileShare allocFileShare(CreateFileShareCmd cmd) {
         long ownerId = cmd.getEntityOwnerId();
         Account owner = accountMgr.getActiveAccountById(ownerId);
+
+        Long zoneId = cmd.getZoneId();
+        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+        }
+
+        DiskOfferingVO diskOffering = diskOfferingDao.findById(cmd.getDiskOfferingId());
+        if (!diskOffering.isFileShare()) {
+            throw new InvalidParameterValueException("Disk offering is not file share enabled");
+        }
+
+        FileShareProvider provider = getFileShareProvider(cmd.getFileShareProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        lifeCycle.checkPrerequisites(zoneId, cmd.getServiceOfferingId());
+
         FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, 0,
                                                 cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
                                                 cmd.getMountOptions(), FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
@@ -176,12 +192,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-
-        Long zoneId = fileShare.getDataCenterId();
-        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
-        }
 
         stateTransitTo(fileShare, Event.DeployRequested);
         Pair<Long, Long> result = null;
@@ -257,6 +267,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     private void restartWithCleanup(FileShareVO fileShare) {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        lifeCycle.checkPrerequisites(fileShare.getDataCenterId(), fileShare.getServiceOfferingId());
         Long vmId = lifeCycle.restartFileShare(fileShare, true);
         fileShare.setVmId(vmId);
         fileShareDao.update(fileShare.getId(), fileShare);

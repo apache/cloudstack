@@ -34,12 +34,6 @@
           v-model:checked="form.description"
           :placeholder="$t('label.description')"/>
       </a-form-item>
-      <a-form-item name="size" ref="size" :label="$t('label.size')">
-        <a-input
-          v-model:checked="form.size"
-          :placeholder="$t('label.size')"/>
-      </a-form-item>
-
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -113,8 +107,7 @@ export default {
         var data = {
           id: this.resource.id,
           name: values.name,
-          description: values.description,
-          size: values.size
+          description: values.description
         }
 
         this.loading = true
