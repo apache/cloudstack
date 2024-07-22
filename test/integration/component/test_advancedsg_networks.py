@@ -21,17 +21,19 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 import unittest
 from ddt import ddt, data
 from marvin.lib.base import (Zone,
-                                         ServiceOffering,
-                                         Account,
-                                         NetworkOffering,
-                                         Network,
-                                         VirtualMachine,
-                                         Domain,
-                                         VpcOffering,
-                                         VPC,
-                                         SecurityGroup,
-                                         Host,
-                                         )
+                             ServiceOffering,
+                             Account,
+                             NetworkOffering,
+                             Network,
+                             VirtualMachine,
+                             Domain,
+                             VpcOffering,
+                             VPC,
+                             SecurityGroup,
+                             Host,
+                             NetworkServiceProvider,
+                             PhysicalNetwork,
+                             TrafficType)
 
 from marvin.lib.common import (get_domain,
                                            get_zone,
@@ -119,7 +121,7 @@ class TestCreateZoneSG(cloudstackTestCase):
                         % listzones[0].securitygroupsenabled)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_01_createZone_secGrp_enabled(self):
         """ Test to verify Advance Zone with security group enabled can be created"""
 
@@ -137,7 +139,7 @@ class TestCreateZoneSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_02_createZone_secGrp_disabled(self):
         """ Test to verify Advance Zone created with flag
             securitygroupsenabled=False"""
@@ -169,6 +171,26 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.template = get_template(cls.api_client, cls.zone.id,
                                     cls.services["ostype"])
 
@@ -294,7 +316,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_03_createIsolatedNetwork(self):
         """ Test Isolated Network """
 
@@ -311,7 +333,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.isolated_network_offering = NetworkOffering.create(self.api_client, self.services["isolated_network_offering"],
                                                                 conservemode=False)
 
-        self.cleanup.append(self.isolated_network_offering)
+        self.cleanup_nwOfferings.append(self.isolated_network_offering)
 
         self.debug("Isolated Network offering created: %s" % self.isolated_network_offering.id)
 
@@ -331,7 +353,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                         Exception: %s" % e)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_04_createSharedNetwork_withoutSG(self):
         """ Test Shared Network creation without Security Group Service Provider in Network Offering"""
 
@@ -374,7 +396,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                         Exception: %s" % e)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_05_deployVM_SharedwithSG(self):
         """ Test VM deployment in shared networks with SecurityGroup Provider """
 
@@ -453,7 +475,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.debug("Virtual Machine created: %s" % virtual_machine.id)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_06_SharedNwSGAccountSpecific(self):
         """ Test Account specific shared network creation with SG"""
 
@@ -535,7 +557,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_07_SharedNwSG_DomainWide_SubdomainAcccess(self):
         """ Test Domain wide shared network with SG, with subdomain access set True"""
 
@@ -556,7 +578,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.debug("Created domain %s" % self.parent_domain.id)
         self.debug("Creating child domain under this domain")
         self.child_domain = Domain.create(self.api_client,services=self.services["domain"],
-                                          parentdomainid=self.parent_domain)
+                                          parentdomainid=self.parent_domain.id)
 
         self.debug("Created child domain: %s" % self.child_domain.id)
 
@@ -605,7 +627,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_08_SharedNwSGAccountSpecific_samevlan_samesubnet(self):
         """ Test Account specific shared network creation with SG in multiple accounts
             with same subnet and vlan"""
@@ -675,7 +697,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_09_SharedNwDomainWide_samevlan_samesubnet(self):
         """ Test Domain wide shared network creation with SG in different domains
             with same vlan and same subnet"""
@@ -753,7 +775,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_10_deleteSharedNwSGAccountSpecific_InUse(self):
         """ Test delete Account specific shared network creation with SG which is in use"""
 
@@ -806,7 +828,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_11_deleteSharedNwSG_DomainWide_InUse(self):
         """ Test delete Domain wide shared network with SG which is in use"""
 
@@ -861,7 +883,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_29_deleteSharedNwSG_ZoneWide_InUse(self):
         """ Test delete Zone wide shared network with SG which is in use"""
 
@@ -908,7 +930,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         self.cleanup_vms.append(vm)
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_12_deleteSharedNwSGAccountSpecific_NotInUse(self):
         """ Test delete Account specific shared network creation with SG which is not in use"""
 
@@ -950,7 +972,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_13_deleteSharedNwSG_DomainWide_NotInUse(self):
         """ Test delete Domain wide shared network with SG which is not in use"""
 
@@ -994,7 +1016,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_30_deleteSharedNwSG_ZoneWide_NotInUse(self):
         """ Test delete zone wide shared network with SG which is not in use"""
 
@@ -1031,7 +1053,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test__14_createSharedNwWithSG_withoutParams(self):
         """ Test create shared network with SG without specifying necessary parameters"""
 
@@ -1076,7 +1098,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test__15_createVPC(self):
         """ Test create VPC in advanced SG enabled zone"""
 
@@ -1116,6 +1138,26 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -1314,7 +1356,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         status = os.system("%s -i %s" %(file2, config_file))
         return status
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test__16_AccountSpecificNwAccess(self):
         """ Test account specific network access of users"""
 
@@ -1409,7 +1451,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test__17_DomainSpecificNwAccess(self):
         """ Test domain specific network access of users"""
 
@@ -1520,7 +1562,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("account", "domain")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_18_DeployVM_NoFreeIPs(self, value):
         """ Test deploy VM in account/domain specific SG enabled shared network when no free IPs are available"""
 
@@ -1624,7 +1666,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         return
 
     @data("default", "custom")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_20_DeployVM_SecGrp_sharedNetwork(self, value):
         """ Test deploy VM in default/custom security group and shared network"""
 
@@ -1680,7 +1722,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_24_DeployVM_Multiple_Shared_Networks(self):
         """ Test deploy VM in multiple zone wide shared networks"""
 
@@ -1728,7 +1770,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_25_Deploy_Multiple_VM_Different_Shared_Networks_Same_SG(self):
         """ Test deploy Multiple VMs in different shared networks but same security group"""
 
@@ -1796,7 +1838,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_26_Destroy_Deploy_VM_NoFreeIPs(self):
         """ Test destroy VM in zone wide shared nw when IPs are full and then try to deploy vm"""
 
@@ -1903,7 +1945,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
 
             self.debug("SSH to VM successful, proceeding for %s operation" % value)
 
@@ -1914,7 +1956,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                 vm.reboot(self.api_client)
 
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
 
         except Exception as e:
             self.fail("SSH Access failed for %s: %s, failed at line %s" % \
@@ -1972,7 +2014,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
             self.debug("SSH to VM successful, proceeding for %s operation" % value)
             vm.delete(self.api_client, expunge=False)
             if value == "recover":
@@ -1989,7 +2031,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
                     retriesCount -= 1
                     time.sleep(10)
                 self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-                vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+                vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
                 self.debug("SSH successful")
                 self.cleanup_vms.append(vm)
             elif value == "expunge":
@@ -2003,7 +2045,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
                 try:
                     self.debug("SSH into VM: %s, this should fail" % vm.nic[0].ipaddress)
-                    vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+                    vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
                     self.fail("SSH should have failed, instead it succeeded")
                 except Exception as e:
                     self.debug("SSH failed as expected with exception: %s" % e)
@@ -2019,7 +2061,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_31_Deploy_VM_multiple_shared_networks_sg(self):
         """ Test deploy VM in multiple SG enabled shared networks"""
 
@@ -2069,7 +2111,7 @@ class TestNetworksInAdvancedSG_VmOperations(cloudstackTestCase):
 
     @unittest.skip("Testing pending on multihost setup")
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_33_VM_Migrate_SharedNwSG(self, value):
         """ Test migration of VM deployed in Account specific shared network"""
 
@@ -2280,6 +2322,26 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2488,7 +2550,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
 
             # Ping to outsite world
             res = ssh.execute("ping -c 1 www.google.com")
@@ -2580,7 +2642,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % vm.nic[0].ipaddress)
-            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
 
             # Ping to outsite world
             res = ssh.execute("ping -c 1 www.google.com")
@@ -2673,7 +2735,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % vm.ssh_ip)
-            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress)
+            ssh = vm.get_ssh_client(ipaddress=vm.nic[0].ipaddress, retries=5)
 
             # Ping to outsite world
             res = ssh.execute("ping -c 1 www.google.com")
@@ -2695,7 +2757,7 @@ class TestSecurityGroups_BasicSanity(cloudstackTestCase):
                          )
         return
 
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_32_delete_default_security_group(self):
         """ Test Delete the default security group when No VMs are deployed"""
 
@@ -2741,6 +2803,26 @@ class TestSharedNetworkOperations(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -2864,7 +2946,7 @@ class TestSharedNetworkOperations(cloudstackTestCase):
         return
 
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_34_restart_shared_network_sg(self, value):
         """ Test restart account/domain/zone wide shared network"""
 
@@ -2915,7 +2997,7 @@ class TestSharedNetworkOperations(cloudstackTestCase):
 
     @unittest.skip("Testing pending on multihost setup")
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg"])
+    @attr(tags = ["advancedsg", "advanced"])
     def test_35_Enable_Host_Maintenance(self, value):
         """ Test security group rules of VM after putting host in maintenance mode"""
 
@@ -3007,6 +3089,26 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -3196,7 +3298,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.api_client.authorizeSecurityGroupIngress(cmd)
 
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_1.id)
-        sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress)
+        sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress, retries=5)
         try:
             if value == "accessByIp":
                 self.debug("SSHing into vm_2 %s from vm_1 %s" % (self.virtual_machine_2.nic[0].ipaddress,self.virtual_machine_1.nic[0].ipaddress))
@@ -3255,7 +3357,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.api_client.authorizeSecurityGroupIngress(cmd)
 
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_1.id)
-        sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress)
+        sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress, retries=5)
         try:
             self.debug("SSHing into vm_2 %s from vm_1 %s" % (self.virtual_machine_2.nic[0].ipaddress,self.virtual_machine_1.nic[0].ipaddress))
             command = "ping -c 1 %s" % self.virtual_machine_2.nic[0].ipaddress
@@ -3317,7 +3419,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.debug("Deployed vm: %s" % self.virtual_machine_4.id)
 
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_3.id)
-        sshClient = self.virtual_machine_3.get_ssh_client(ipaddress=self.virtual_machine_3.nic[0].ipaddress)
+        sshClient = self.virtual_machine_3.get_ssh_client(ipaddress=self.virtual_machine_3.nic[0].ipaddress, retries=5)
         try:
             if value == "accessByIp":
                 self.debug("SSHing into vm_4 %s from vm_3 %s" % (self.virtual_machine_4.nic[0].ipaddress,self.virtual_machine_3.nic[0].ipaddress))
@@ -3386,7 +3488,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.debug("Deployed vm: %s" % self.virtual_machine_3.id)
 
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_3.id)
-        sshClient = self.virtual_machine_3.get_ssh_client(ipaddress=self.virtual_machine_3.nic[0].ipaddress)
+        sshClient = self.virtual_machine_3.get_ssh_client(ipaddress=self.virtual_machine_3.nic[0].ipaddress, retries=5)
         try:
             if value == "accessByIp":
                 self.debug("SSHing into vm_2 %s from vm_3 %s" % (self.virtual_machine_2.nic[0].ipaddress,self.virtual_machine_3.nic[0].ipaddress))
@@ -3446,7 +3548,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_1.id)
 
         try:
-            sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress)
+            sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress, retries=5)
             self.debug("SSHing into vm_2 %s from vm_1 %s" % (self.virtual_machine_2.nic[0].ipaddress,self.virtual_machine_1.nic[0].ipaddress))
             command = "ssh -t -t root@%s" % self.virtual_machine_2.nic[0].ipaddress
             self.debug("command: --> %s" % command)
@@ -3468,7 +3570,7 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         self.debug("Getting SSH client of virtual machine 1: %s" % self.virtual_machine_1.id)
 
         try:
-            sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress)
+            sshClient = self.virtual_machine_1.get_ssh_client(ipaddress=self.virtual_machine_1.nic[0].ipaddress, retries=5)
             self.debug("SSHing into vm_2 %s from vm_1 %s" % (self.virtual_machine_2.nic[0].ipaddress,self.virtual_machine_1.nic[0].ipaddress))
             command = "ssh -t -t root@%s" % self.virtual_machine_2.nic[0].ipaddress
             self.debug("command: --> %s" % command)

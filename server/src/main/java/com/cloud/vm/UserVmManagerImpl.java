@@ -6112,7 +6112,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
-            if (checkSecurityGroupSupportForNetwork(zone, networkIds))  {
+            if (checkSecurityGroupSupportForNetwork(zone, networkIds, cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
@@ -6165,7 +6165,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
-    private boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds) {
+    private boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+                                                        List<Long> securityGroupsIds) {
         if (zone.isSecurityGroupEnabled()) {
             return true;
         }
@@ -6179,6 +6180,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return true;
                 }
             }
+        } else if (CollectionUtils.isNotEmpty(securityGroupsIds)) {
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
+            return networkWithSecurityGroup != null;
         }
         return false;
     }
