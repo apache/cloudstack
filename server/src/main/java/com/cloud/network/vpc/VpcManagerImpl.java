@@ -47,7 +47,6 @@ import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.BGPService;
 import com.cloud.dc.dao.ASNumberDao;
-import com.cloud.network.nsx.NsxService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
