@@ -103,6 +103,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -921,11 +922,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         HostVO hostVO;
 
-        if (srcStoragePoolVO.getClusterId() != null) {
-            hostVO = getHostInCluster(srcStoragePoolVO.getClusterId());
-        }
-        else {
-            hostVO = getHost(destVolumeInfo.getDataCenterId(), HypervisorType.KVM, false);
+        // if either source or destination is a HOST-scoped storage pool, the migration MUST be performed on that host
+        if (ScopeType.HOST.equals(srcVolumeInfo.getDataStore().getScope().getScopeType())) {
+            hostVO = _hostDao.findById(srcVolumeInfo.getDataStore().getScope().getScopeId());
+        } else if (ScopeType.HOST.equals(destVolumeInfo.getDataStore().getScope().getScopeType())) {
+            hostVO = _hostDao.findById(destVolumeInfo.getDataStore().getScope().getScopeId());
+        } else {
+            if (srcStoragePoolVO.getClusterId() != null) {
+                hostVO = getHostInCluster(srcStoragePoolVO.getClusterId());
+            } else {
+                hostVO = getHost(destVolumeInfo.getDataCenterId(), HypervisorType.KVM, false);
+            }
         }
 
         return hostVO;

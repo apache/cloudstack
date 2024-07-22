@@ -40,17 +40,17 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cluster.dao.ManagementServerStatusDao;
-import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
+import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -130,7 +130,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         // recursive remote calls between nodes
         //
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
-        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT);
     }
 
     private void registerRequestPdu(final ClusterServiceRequestPdu pdu) {
@@ -475,6 +475,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         return Long.toString(_msId);
     }
 
+    @Override
     public String getSelfNodeIP() {
         return _clusterNodeIP;
     }

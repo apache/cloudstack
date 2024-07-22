@@ -104,18 +104,6 @@
                   v-if="resource.id"
                 />
               </a-tooltip>
-              <a-tooltip placement="right" >
-                <template #title>
-                  <span>{{ $t('label.copy.consoleurl') }}</span>
-                </template>
-                <console
-                  copyUrlToClipboard
-                  style="margin-top: -5px;"
-                  :resource="resource"
-                  size="default"
-                  v-if="resource.id"
-                />
-              </a-tooltip>
             </div>
           </slot>
         </div>

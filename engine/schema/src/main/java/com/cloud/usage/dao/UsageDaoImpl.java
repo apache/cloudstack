@@ -29,6 +29,7 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -540,21 +541,25 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public void removeOldUsageRecords(int days) {
-        String sql = DELETE_ALL_BY_INTERVAL;
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, days);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            s_logger.error("error removing old cloud_usage records for interval: " + days);
-        } finally {
-            txn.close();
-        }
+        Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = null;
+                try {
+                    txn.start();
+                    pstmt = txn.prepareAutoCloseStatement(DELETE_ALL_BY_INTERVAL);
+                    pstmt.setLong(1, days);
+                    pstmt.executeUpdate();
+                    txn.commit();
+                } catch (Exception ex) {
+                    txn.rollback();
+                    s_logger.error("error removing old cloud_usage records for interval: " + days);
+                } finally {
+                    txn.close();
+                }
+            }
+        });
     }
 
     public UsageVO persistUsage(final UsageVO usage) {
