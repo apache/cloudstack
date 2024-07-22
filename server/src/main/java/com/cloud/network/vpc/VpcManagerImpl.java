@@ -44,7 +44,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.Vlan;
-import com.cloud.network.nsx.NsxService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
