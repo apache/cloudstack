@@ -273,6 +273,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             return False
         self.debug("Restarting all management server")
         for idx, server_ip in enumerate(server_ips):
+            self.debug("Restarting management server #%d with IP %s" % (idx, server_ip))
             sshClient = SshClient(
                 server_ip,
                 22,
@@ -283,6 +284,9 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             sshClient.execute(command)
             command = "service cloudstack-management start"
             sshClient.execute(command)
+            if idx == 0:
+                # Wait before restarting other management servers to make the first as oldest running
+                time.sleep(10)
 
         # Waits for management to come up in 10 mins, when it's up it will continue
         timeout = time.time() + (10 * 60)
@@ -349,15 +353,18 @@ class TestPurgeExpungedVms(cloudstackTestCase):
     @skipTestIf("hypervisorIsSimulator")
     @attr(tags=["advanced"], required_hardware="true")
     def test_06_purge_expunged_vm_background_task(self):
-        purge_task_delay = 60
+        purge_task_delay = 120
         self.changeConfiguration('expunged.resources.purge.enabled', 'true')
         self.changeConfiguration('expunged.resources.purge.delay', purge_task_delay)
+        self.changeConfiguration('expunged.resources.purge.interval', int(purge_task_delay/2))
         self.changeConfiguration('expunged.resources.purge.keep.past.days', 1)
         if len(self.staticConfigurations) > 0:
             self.restartAllManagementServers()
-        wait = 2 * purge_task_delay
-        logging.info("Waiting for 2x%d = %d seconds for background task to execute" % (purge_task_delay, wait))
+        wait_multiple = 2
+        wait = wait_multiple * purge_task_delay
+        logging.info("Waiting for %dx%d = %d seconds for background task to execute" % (wait_multiple, purge_task_delay, wait))
         time.sleep(wait)
+        logging.debug("Validating expunged VMs")
         self.validatePurgedVmEntriesInDb(
             [self.vm_ids[self.timestamps[0]], self.vm_ids[self.timestamps[1]], self.vm_ids[self.timestamps[2]]],
             None
