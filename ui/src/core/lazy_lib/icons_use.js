@@ -157,6 +157,7 @@ import {
   SettingOutlined,
   ShareAltOutlined,
   ShoppingOutlined,
+  SplitCellsOutlined,
   StopOutlined,
   SwapOutlined,
   SyncOutlined,
@@ -324,6 +325,7 @@ export default {
     app.component('SettingOutlined', SettingOutlined)
     app.component('ShareAltOutlined', ShareAltOutlined)
     app.component('ShoppingOutlined', ShoppingOutlined)
+    app.component('SplitCellsOutlined', SplitCellsOutlined)
     app.component('StopOutlined', StopOutlined)
     app.component('SwapOutlined', SwapOutlined)
     app.component('SyncOutlined', SyncOutlined)

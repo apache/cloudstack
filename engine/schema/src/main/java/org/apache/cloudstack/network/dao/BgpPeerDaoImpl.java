@@ -36,6 +36,7 @@ import java.util.List;
 @DB
 public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements BgpPeerDao {
     protected SearchBuilder<BgpPeerVO> NetworkIdSearch;
+    protected SearchBuilder<BgpPeerVO> VpcIdSearch;
     protected SearchBuilder<BgpPeerVO> AllFieldsSearch;
 
     @Inject
@@ -52,6 +53,15 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
                 NetworkIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         NetworkIdSearch.done();
 
+        final SearchBuilder<BgpPeerNetworkMapVO> vpcSearchBuilder = bgpPeerNetworkMapDao.createSearchBuilder();
+        vpcSearchBuilder.and("vpcId", vpcSearchBuilder.entity().getVpcId(), SearchCriteria.Op.EQ);
+        vpcSearchBuilder.and("state", vpcSearchBuilder.entity().getState(), SearchCriteria.Op.IN);
+        vpcSearchBuilder.and("removed", vpcSearchBuilder.entity().getRemoved(), SearchCriteria.Op.NULL);
+        VpcIdSearch = createSearchBuilder();
+        VpcIdSearch.join("vpc", vpcSearchBuilder, vpcSearchBuilder.entity().getBgpPeerId(),
+                VpcIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        VpcIdSearch.done();
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("zoneId", AllFieldsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -67,6 +77,14 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         SearchCriteria<BgpPeerVO> sc = NetworkIdSearch.create();
         sc.setJoinParameters("network", "networkId", networkId);
         sc.setJoinParameters("network", "state", BgpPeer.State.Active, BgpPeer.State.Add);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<BgpPeerVO> listNonRevokeByVpcId(long vpcId) {
+        SearchCriteria<BgpPeerVO> sc = VpcIdSearch.create();
+        sc.setJoinParameters("vpc", "vpcId", vpcId);
+        sc.setJoinParameters("vpc", "state", BgpPeer.State.Active, BgpPeer.State.Add);
         return listBy(sc);
     }
 

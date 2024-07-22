@@ -1702,7 +1702,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // Validate BGP peers
-        routedIpv4Manager.validateBgpPeers(owner, ntwkOff, zone.getId(), bgpPeerIds);
+        if (vpcId != null && CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            throw new InvalidParameterValueException("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.");
+        }
+        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedNetwork(ntwkOff)) {
+            throw new InvalidParameterValueException("The network offering does not support Dynamic routing");
+        }
+        routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
 
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value

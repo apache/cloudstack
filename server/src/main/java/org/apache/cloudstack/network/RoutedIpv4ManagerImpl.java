@@ -39,6 +39,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
@@ -66,6 +67,7 @@ import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNe
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForVpcCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DeleteBgpPeerCmd;
@@ -127,6 +129,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Inject
     VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
     @Inject
+    VpcDao vpcDao;
+    @Inject
     BgpPeerDao bgpPeerDao;
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
@@ -171,6 +175,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         cmdList.add(DedicateBgpPeerCmd.class);
         cmdList.add(ReleaseDedicatedBgpPeerCmd.class);
         cmdList.add(ChangeBgpPeersForNetworkCmd.class);
+        cmdList.add(ChangeBgpPeersForVpcCmd.class);
         return cmdList;
     }
 
@@ -947,10 +952,10 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public boolean isDynamicRoutedNetwork(Network network) {
         NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
-        return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode());
+        return isDynamicRoutedNetwork(networkOffering);
     }
 
+    @Override
     public boolean isDynamicRoutedNetwork(NetworkOffering networkOffering) {
         return NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && NetworkOffering.RoutingMode.Dynamic.equals(networkOffering.getRoutingMode());
@@ -959,6 +964,20 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public boolean isRoutedVpc(Vpc vpc) {
         return NetworkOffering.NetworkMode.ROUTED.equals(vpcOfferingDao.findById(vpc.getVpcOfferingId()).getNetworkMode());
+    }
+
+    @Override
+    public boolean isDynamicRoutedVpc(Vpc vpc) {
+        VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+        return isDynamicRoutedVpc(vpcOffering);
+    }
+
+    @Override
+    public boolean isDynamicRoutedVpc(VpcOffering vpcOffering) {
+        return true;
+        // TODO
+        //return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
+        //        && NetworkOffering.RoutingMode.Dynamic.equals(vpcOffering.getRoutingMode());
     }
 
     @Override
@@ -1158,13 +1177,21 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         // Check if the BGP peer is used by other domain or account
         if (domainId != null) {
-            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedByOtherDomains(id, domainId);
+            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedNetworksByOtherDomains(id, domainId);
             if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
                 throw new InvalidParameterValueException(String.format("The subnet is being used by %s guest networks of other domains.", usedBgpPeers.size()));
             }
+            usedBgpPeers = bgpPeerNetworkMapDao.listUsedVpcsByOtherDomains(id, domainId);
+            if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
+                throw new InvalidParameterValueException(String.format("The subnet is being used by %s vpcs of other domains.", usedBgpPeers.size()));
+            }
         }
         if (accountId != null) {
-            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedByOtherAccounts(id, accountId);
+            List<BgpPeerNetworkMapVO> usedBgpPeers = bgpPeerNetworkMapDao.listUsedNetworksByOtherAccounts(id, accountId);
+            if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
+                throw new InvalidParameterValueException(String.format("The subnet is being used by %s guest networks of other accounts.", usedBgpPeers.size()));
+            }
+            usedBgpPeers = bgpPeerNetworkMapDao.listUsedVpcsByOtherAccounts(id, accountId);
             if (CollectionUtils.isNotEmpty(usedBgpPeers)) {
                 throw new InvalidParameterValueException(String.format("The subnet is being used by %s guest networks of other accounts.", usedBgpPeers.size()));
             }
@@ -1231,10 +1258,16 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (network == null) {
             throw new InvalidParameterValueException(String.format("Invalid network ID: %s", networkId));
         }
+        if (network.getVpcId() != null) {
+            throw new InvalidParameterValueException("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.");
+        }
 
         Account owner = accountManager.getAccount(network.getAccountId());
         NetworkOffering networkOffering = networkOfferingDao.findById(network.getNetworkOfferingId());
-        validateBgpPeers(owner, networkOffering, network.getDataCenterId(), bgpPeerIds);
+        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !isDynamicRoutedNetwork(networkOffering)) {
+            throw new InvalidParameterValueException("The network does not support Dynamic routing");
+        }
+        validateBgpPeers(owner, network.getDataCenterId(), bgpPeerIds);
 
         return changeBgpPeersForNetworkInternal(network, bgpPeerIds);
     }
@@ -1263,7 +1296,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         }
 
         for (Long bgpPeedId : bgpPeerIdsToBeAdded) {
-            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, network.getId(), BgpPeer.State.Add));
+            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, network.getId(), null, BgpPeer.State.Add));
         }
 
         boolean result = true;
@@ -1307,12 +1340,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public void validateBgpPeers(Account owner, NetworkOffering networkOffering, Long zoneId, List<Long> bgpPeerIds) {
+    public void validateBgpPeers(Account owner, Long zoneId, List<Long> bgpPeerIds) {
         if (CollectionUtils.isEmpty(bgpPeerIds)) {
             return;
-        }
-        if (!isDynamicRoutedNetwork(networkOffering)) {
-            throw new InvalidParameterValueException("The network does not support Dynamic routing");
         }
         for (Long bgpPeerId : bgpPeerIds) {
             BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
@@ -1333,11 +1363,103 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public void persistBgpPeersForGuestNetwork(long networkId, List<Long> bgpPeerIds) {
-        bgpPeerNetworkMapDao.persist(networkId, bgpPeerIds);
+        bgpPeerNetworkMapDao.persistForNetwork(networkId, bgpPeerIds);
     }
 
     @Override
     public void releaseBgpPeersForGuestNetwork(long networkId) {
         bgpPeerNetworkMapDao.removeByNetworkId(networkId);
+    }
+
+    @Override
+    public void persistBgpPeersForVpc(long vpcId, List<Long> bgpPeerIds) {
+        bgpPeerNetworkMapDao.persistForVpc(vpcId, bgpPeerIds);
+    }
+
+    @Override
+    public void releaseBgpPeersForVpc(long vpcId) {
+        bgpPeerNetworkMapDao.removeByVpcId(vpcId);
+    }
+
+    @Override
+    public Vpc changeBgpPeersForVpc(ChangeBgpPeersForVpcCmd changeBgpPeersForVpcCmd) {
+        Long vpcId = changeBgpPeersForVpcCmd.getVpcId();
+        List<Long> bgpPeerIds = changeBgpPeersForVpcCmd.getBgpPeerIds();
+
+        Vpc vpc = vpcDao.findById(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException(String.format("Invalid VPC ID: %s", vpcId));
+        }
+
+        Account owner = accountManager.getAccount(vpc.getAccountId());
+        VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !isDynamicRoutedVpc(vpcOffering)) {
+            throw new InvalidParameterValueException("The VPC does not support Dynamic routing");
+        }
+        validateBgpPeers(owner, vpc.getZoneId(), bgpPeerIds);
+
+        return changeBgpPeersForVpcInternal(vpc, bgpPeerIds);
+    }
+
+    private Vpc changeBgpPeersForVpcInternal(Vpc vpc, List<Long> bgpPeerIds) {
+        final List<Long> bgpPeerIdsToBeAdded;
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            bgpPeerIdsToBeAdded = new ArrayList<>(bgpPeerIds);
+        } else {
+            bgpPeerIdsToBeAdded = new ArrayList<>();
+        }
+        List<BgpPeerNetworkMapVO> bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByVpcId(vpc.getId());
+        for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+            Long bgpPeerId = bgpPeerNetworkMapVO.getBgpPeerId();
+            if (bgpPeerIdsToBeAdded.contains(bgpPeerId)) {
+                bgpPeerIdsToBeAdded.remove(bgpPeerId);
+            } else {
+                bgpPeerNetworkMapVO.setState(BgpPeer.State.Revoke);
+                bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+            }
+        }
+
+        for (Long bgpPeedId : bgpPeerIdsToBeAdded) {
+            bgpPeerNetworkMapDao.persist(new BgpPeerNetworkMapVO(bgpPeedId, null, vpc.getId(), BgpPeer.State.Add));
+        }
+
+        boolean result = true;
+        try {
+            result = bgpService.applyBgpPeers(vpc, false);
+        } catch (ResourceUnavailableException ex) {
+            logger.error("Unable to apply BGP peers due to : " + ex.getMessage());
+            result = false;
+        }
+        if (result) {
+            logger.info("Succeed to apply BGP peers, updating state");
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByVpcId(vpc.getId());
+            for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+                if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapVO.setState(BgpPeer.State.Active);
+                    bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+                } else if (BgpPeer.State.Revoke.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapDao.remove(bgpPeerNetworkMapVO.getId());
+                }
+            }
+        } else {
+            logger.info("Failed to apply BGP peers, rolling back to original state");
+            bgpPeerNetworkMapVOS = bgpPeerNetworkMapDao.listByVpcId(vpc.getId());
+            for (BgpPeerNetworkMapVO bgpPeerNetworkMapVO : bgpPeerNetworkMapVOS) {
+                if (BgpPeer.State.Add.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapDao.remove(bgpPeerNetworkMapVO.getId());
+                } else if (BgpPeer.State.Revoke.equals(bgpPeerNetworkMapVO.getState())) {
+                    bgpPeerNetworkMapVO.setState(BgpPeer.State.Add);
+                    bgpPeerNetworkMapDao.update(bgpPeerNetworkMapVO.getId(), bgpPeerNetworkMapVO);
+                }
+            }
+            try {
+                bgpService.applyBgpPeers(vpc, false);
+            } catch (ResourceUnavailableException ex) {
+                logger.error("Unable to apply BGP peers after rollback due to : " + ex.getMessage());
+            }
+            return null;
+        }
+
+        return vpcDao.findById(vpc.getId());
     }
 }

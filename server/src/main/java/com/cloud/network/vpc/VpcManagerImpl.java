@@ -1116,7 +1116,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
                          final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
-                         final Integer cidrSize) throws ResourceAllocationException {
+                         final Integer cidrSize, final List<Long> bgpPeerIds) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1147,6 +1147,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Validate VPC cidr/cidrsize
         validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
+
+        // Validate BGP peers
+        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedVpc(vpcOff)) {
+            throw new InvalidParameterValueException("The VPC offering does not support Dynamic routing");
+        }
+        routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
 
         final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
@@ -1212,7 +1218,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        return createVpc(displayVpc, vpc);
+        Vpc newVpc = createVpc(displayVpc, vpc);
+        // assign Ipv4 subnet to Routed VPC
+        if (routedIpv4Manager.isRoutedVpc(vpc)) {
+            routedIpv4Manager.assignIpv4SubnetToVpc(cidr, newVpc.getId());
+        }
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
+        }
+        return newVpc;
     }
 
     private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
@@ -1250,7 +1264,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getBgpPeerIds());
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForNsx(vpc);
@@ -1341,10 +1355,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
         if (vpcVO != null) {
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPC_CREATE, vpcVO.getAccountId(), vpcVO.getZoneId(), vpcVO.getId(), vpcVO.getName(), Vpc.class.getName(), vpcVO.getUuid(), vpcVO.isDisplay());
-        }
-        // assign Ipv4 subnet to Routed VPC
-        if (routedIpv4Manager.isRoutedVpc(vpc)) {
-            routedIpv4Manager.assignIpv4SubnetToVpc(cidr, vpc.getId());
         }
         return vpcVO;
     }
@@ -2204,6 +2214,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _networkAclMgr.deleteNetworkACL(networkAcl);
         }
 
+        routedIpv4Manager.releaseBgpPeersForVpc(vpcId);
         routedIpv4Manager.releaseIpv4SubnetForVpc(vpcId);
 
         VpcVO vpc = vpcDao.findById(vpcId);

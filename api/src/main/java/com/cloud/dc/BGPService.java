@@ -18,6 +18,7 @@ package com.cloud.dc;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 
@@ -33,4 +34,6 @@ public interface BGPService {
     boolean deleteASRange(long id);
 
     boolean applyBgpPeers(Network network, boolean continueOnError) throws ResourceUnavailableException;
+
+    boolean applyBgpPeers(Vpc vpc, boolean continueOnError) throws ResourceUnavailableException;
 }

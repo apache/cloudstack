@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNe
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForVpcCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DedicateBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.DeleteBgpPeerCmd;
@@ -139,6 +140,8 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     boolean isDynamicRoutedNetwork(Network network);
 
+    boolean isDynamicRoutedNetwork(NetworkOffering networkOffering);
+
     boolean isRoutedVpc(Vpc vpc);
 
     boolean isVpcVirtualRouterGateway(VpcOffering vpcOffering);
@@ -161,9 +164,19 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     Network removeBgpPeersFromNetwork(Network network);
 
-    void validateBgpPeers(Account owner, NetworkOffering networkOffering, Long zoneId, List<Long> bgpPeerIds);
+    void validateBgpPeers(Account owner, Long zoneId, List<Long> bgpPeerIds);
 
     void persistBgpPeersForGuestNetwork(long networkId, List<Long> bgpPeerIds);
 
     void releaseBgpPeersForGuestNetwork(long networkId);
+
+    boolean isDynamicRoutedVpc(Vpc vpc);
+
+    boolean isDynamicRoutedVpc(VpcOffering vpcOff);
+
+    void persistBgpPeersForVpc(long vpcId, List<Long> bgpPeerIds);
+
+    void releaseBgpPeersForVpc(long vpcId);
+
+    Vpc changeBgpPeersForVpc(ChangeBgpPeersForVpcCmd changeBgpPeersForVpcCmd);
 }

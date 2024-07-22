@@ -27,36 +27,36 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.List;
 
-@APICommand(name = "changeBgpPeersForNetwork",
-        description = "Change the BGP peers for a network.",
+@APICommand(name = "changeBgpPeersForVpc",
+        description = "Change the BGP peers for a VPC.",
         responseObject = BgpPeerResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCmd {
+public class ChangeBgpPeersForVpcCmd extends BaseAsyncCmd implements AdminCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NETWORK_ID,
+    @Parameter(name = ApiConstants.VPC_ID,
             type = CommandType.UUID,
-            entityType = NetworkResponse.class,
+            entityType = VpcResponse.class,
             required = true,
-            description = "UUID of the network which the Bgp Peers are associated to.",
+            description = "UUID of the VPC which the Bgp Peers are associated to.",
             validations = {ApiArgValidator.PositiveNumber})
-    private Long networkId;
+    private Long vpcId;
 
     @Parameter(name = ApiConstants.BGP_PEER_IDS,
             type = CommandType.LIST,
@@ -65,8 +65,8 @@ public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCm
             description = "Ids of the Bgp Peer. If it is empty, all BGP peers will be unlinked.")
     private List<Long> bgpPeerIds;
 
-    public Long getNetworkId() {
-        return networkId;
+    public Long getVpcId() {
+        return vpcId;
     }
 
     public List<Long> getBgpPeerIds() {
@@ -75,24 +75,24 @@ public class ChangeBgpPeersForNetworkCmd extends BaseAsyncCmd implements AdminCm
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_BGP_PEER_UPDATE;
+        return EventTypes.EVENT_VPC_BGP_PEER_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Changing Bgp Peers for network " + getNetworkId();
+        return "Changing Bgp Peers for VPC " + getVpcId();
     }
 
     @Override
     public void execute() {
         try {
-            Network result = routedIpv4Manager.changeBgpPeersForNetwork(this);
+            Vpc result = routedIpv4Manager.changeBgpPeersForVpc(this);
             if (result != null) {
-                NetworkResponse response = _responseGenerator.createNetworkResponse(getResponseView(), result);
+                VpcResponse response = _responseGenerator.createVpcResponse(getResponseView(), result);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to change BGP Peers for network");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to change BGP Peers for vpc");
             }
         } catch (InvalidParameterValueException ex) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex.getMessage());

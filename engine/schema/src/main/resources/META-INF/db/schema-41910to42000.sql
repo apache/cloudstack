@@ -258,10 +258,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `bgp_peer_id` bigint(20) unsigned COMMENT 'id of the BGP peer',
     `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which BGP peer is associated to',
+    `vpc_id` bigint(20) unsigned DEFAULT NULL COMMENT 'vpc which BGP peer is associated to',
     `state` varchar(40) DEFAULT NULL,
     `created` datetime DEFAULT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_bgp_peer_network_map__bgp_peer_id` FOREIGN KEY (`bgp_peer_id`) REFERENCES `bgp_peers`(`id`),
     CONSTRAINT `fk_bgp_peer_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`)
+    CONSTRAINT `fk_bgp_peer_network_map__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

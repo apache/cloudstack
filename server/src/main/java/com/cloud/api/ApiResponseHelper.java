@@ -3504,7 +3504,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // add IPv4 routes
         if (vpcOfferingDao.isRoutedVpc(vpc.getVpcOfferingId())) {
-            response.setIpv4Routing(Network.Routing.Static.toString());
+            // TODO
+            //ASNumberVO asn = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+            response.setIpv4Routing(Network.Routing.Dynamic.toString());
             response.setIpv4Routes(new LinkedHashSet<>());
             List<IPAddressVO> ips = userIpAddressDao.listByAssociatedVpc(vpc.getId(), true);
             for (Network network : networkDao.listByVpc(vpc.getId())) {

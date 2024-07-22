@@ -5217,6 +5217,13 @@ class VPC:
             cmd.listall = True
         return (apiclient.listVPCs(cmd))
 
+    def changeBgpPeers(self, apiclient, bgppeerids):
+        cmd = changeBgpPeersForVpc.changeBgpPeersForVpcCmd()
+        cmd.vpcid = self.id
+        if bgppeerids is not None:
+            cmd.bgppeerids = bgppeerids
+        return (apiclient.changeBgpPeersForVpc(cmd))
+
 
 class PrivateGateway:
     """Manage private gateway lifecycle"""

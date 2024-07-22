@@ -203,7 +203,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = BgpPeerResponse.class,
-            description = "Ids of the Bgp Peer",
+            description = "Ids of the Bgp Peer for the network",
             since = "4.20")
     private List<Long> bgpPeerIds;
 

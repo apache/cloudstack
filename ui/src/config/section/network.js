@@ -188,6 +188,16 @@ export default {
           }
         },
         {
+          api: 'changeBgpPeersForNetwork',
+          icon: 'split-cells-outlined',
+          label: 'label.change.bgp.peers',
+          dataView: true,
+          show: (record) => { return !record.vpcid && ['Dynamic'].includes(record.ip4routing) },
+          args: ['bgppeerids'],
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeerForNetwork'))),
+          popup: true
+        },
+        {
           api: 'deleteNetwork',
           icon: 'delete-outlined',
           label: 'label.action.delete.network',
@@ -197,16 +207,6 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-        },
-        {
-          api: 'changeBgpPeersForNetwork',
-          icon: 'swap-outlined',
-          label: 'label.change.bgp.peers',
-          dataView: true,
-          show: (record) => { return ['Dynamic'].includes(record.ip4routing) },
-          args: ['bgppeerids'],
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeer'))),
-          popup: true
         }
       ]
     },
@@ -278,6 +278,16 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
+        },
+        {
+          api: 'changeBgpPeersForVpc',
+          icon: 'split-cells-outlined',
+          label: 'label.change.bgp.peers',
+          dataView: true,
+          show: (record) => { return ['Dynamic'].includes(record.ip4routing) },
+          args: ['bgppeerids'],
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeerForVpc'))),
+          popup: true
         },
         {
           api: 'deleteVPC',

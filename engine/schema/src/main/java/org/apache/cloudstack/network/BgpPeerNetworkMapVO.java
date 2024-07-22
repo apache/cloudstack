@@ -41,7 +41,10 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     private long bgpPeerId;
 
     @Column(name = "network_id")
-    private long networkId;
+    private Long networkId;
+
+    @Column(name = "vpc_id")
+    private Long vpcId;
 
     @Column(name = "state")
     private BgpPeer.State state;
@@ -59,9 +62,10 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
     protected BgpPeerNetworkMapVO() {
     }
 
-    public BgpPeerNetworkMapVO(long bgpPeerId, long networkId, BgpPeer.State state) {
+    public BgpPeerNetworkMapVO(long bgpPeerId, Long networkId, Long vpcId, BgpPeer.State state) {
         this.bgpPeerId = bgpPeerId;
         this.networkId = networkId;
+        this.vpcId = vpcId;
         this.state = state;
     }
 
@@ -74,8 +78,12 @@ public class BgpPeerNetworkMapVO implements InternalIdentity {
         return bgpPeerId;
     }
 
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     public BgpPeer.State getState() {

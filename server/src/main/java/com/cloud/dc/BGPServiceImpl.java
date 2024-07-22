@@ -29,10 +29,12 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.BgpServiceProvider;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -52,6 +54,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,6 +96,8 @@ public class BGPServiceImpl implements BGPService {
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    VpcServiceMapDao vpcServiceMapDao;
 
     public BGPServiceImpl() {
     }
@@ -363,9 +368,34 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+                List<BgpPeerVO> bgpPeers;
+                if (network.getVpcId() != null) {
+                    bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
+                } else {
+                    bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+                }
                 logger.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean applyBgpPeers(Vpc vpc, boolean continueOnError) throws ResourceUnavailableException {
+        if (!routedIpv4Manager.isDynamicRoutedVpc(vpc)) {
+            return true;
+        }
+        final String gatewayProviderStr = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Network.Service.Gateway);
+        if (gatewayProviderStr != null) {
+            NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
+            if (provider != null && provider instanceof BgpServiceProvider) {
+                List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+                logger.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
+                List<? extends Network> networks = networkModel.listNetworksByVpc(vpc.getId());
+                if (CollectionUtils.isNotEmpty(networks)) {
+                    return ((BgpServiceProvider) provider).applyBgpPeers(networks.get(0), bgpPeers);
+                }
             }
         }
         return true;

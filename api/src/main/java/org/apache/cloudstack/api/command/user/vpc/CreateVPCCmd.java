@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -41,6 +42,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.vpc.Vpc;
+
+import java.util.List;
 
 @APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -125,6 +128,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the VPC tiers")
     private Long asNumber;
 
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            description = "Ids of the Bgp Peer for the VPC",
+            since = "4.20")
+    private List<Long> bgpPeerIds;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -203,6 +214,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Long getAsNumber() {
         return asNumber;
+    }
+
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
     }
 
     /////////////////////////////////////////////////////
