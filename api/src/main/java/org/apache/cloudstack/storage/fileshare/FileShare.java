@@ -154,6 +154,8 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
 
     Long getServiceOfferingId();
 
+    void setServiceOfferingId(Long serviceOfferingId);
+
     Date getUpdated();
 
     public long getUpdatedCount();

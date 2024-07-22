@@ -38,7 +38,7 @@
           <a-select
             v-model:value="form.zoneid"
             :loading="zoneLoading"
-            @change="zone => onChangeZone(id)"
+            @change="zone => handleZoneChange(id)"
             :placeholder="apiParams.zoneid.description"
             showSearch
             optionFilterProp="label"
@@ -128,7 +128,7 @@
           <a-select
             v-model:value="form.diskofferingid"
             :loading="diskofferingLoading"
-            @change="id => onChangeDiskOffering(id)"
+            @change="id => handleDiskOfferingChange(id)"
             :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
             showSearch
             optionFilterProp="label"
@@ -230,7 +230,6 @@ export default {
   },
   created () {
     this.initForm()
-    this.policyList = ['Public', 'Private']
     this.fetchData()
   },
   methods: {
@@ -318,13 +317,11 @@ export default {
         .then(([json1, json2]) => {
           const configs1 = json1.listconfigurationsresponse.configuration || []
           const configs2 = json2.listconfigurationsresponse.configuration || []
-
           if (configs1.length > 0) {
             this.minCpu = parseInt(configs1[0].value) || 0
           } else {
             this.minCpu = 0
           }
-
           if (configs2.length > 0) {
             this.minMemory = parseInt(configs2[0].value) || 0
           } else {
@@ -406,12 +403,7 @@ export default {
     closeModal () {
       this.$emit('close-action')
     },
-    onChangeZone (id) {
-      this.fetchServiceOfferings(id)
-      this.fetchDiskOfferings(id)
-      this.fetchNetworks(id)
-    },
-    onChangeDiskOffering (id) {
+    handleDiskOfferingChange (id) {
       const diskoffering = this.diskofferings.filter(x => x.id === id)
       this.customDiskOffering = diskoffering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = diskoffering[0]?.iscustomizediops || false
@@ -456,6 +448,7 @@ export default {
     }
   }
 }
+
 </script>
 <style lang="scss" scoped>
 .form-layout {

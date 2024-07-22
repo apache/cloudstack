@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
@@ -72,15 +73,11 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
             description = "the description for the file share.")
     private String description;
 
-    @Parameter(name = ApiConstants.SIZE,
-            type = CommandType.LONG,
-            description = "the size of the file share in GB.")
-    private Long size;
-
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS,
-            type = CommandType.STRING,
-            description = "the comma separated list of mount options to use for mounting this file share.")
-    private String mountOptions;
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            description = "the offering to use for the file share vm.")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,12 +95,8 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
         return description;
     }
 
-    public Long getSize() {
-        return (size * 1024 * 1024 * 1024);
-    }
-
-    public String getMountOptions() {
-        return mountOptions;
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     /////////////////////////////////////////////////////

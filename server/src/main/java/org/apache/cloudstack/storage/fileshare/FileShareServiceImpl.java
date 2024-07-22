@@ -329,15 +329,23 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         String description = cmd.getDescription();
 
         FileShareVO fileShare = fileShareDao.findById(id);
+
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        if (serviceOfferingId != null) {
+            FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+            FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+            lifeCycle.checkPrerequisites(fileShare.getDataCenterId(), serviceOfferingId);
+            fileShare.setServiceOfferingId(serviceOfferingId);
+            Long vmId = lifeCycle.restartFileShare(fileShare, true);
+            fileShare.setVmId(vmId);
+        }
+
         if (name != null) {
             fileShare.setName(name);
         }
         if (description != null) {
             fileShare.setDescription(description);
         }
-        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
-        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-        boolean result = lifeCycle.resizeFileShare(fileShare, cmd.getSize());
 
         fileShareDao.update(fileShare.getId(), fileShare);
         return fileShare;

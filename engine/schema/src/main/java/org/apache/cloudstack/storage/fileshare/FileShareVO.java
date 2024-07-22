@@ -229,6 +229,11 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        serviceOfferingId = serviceOfferingId;
+    }
+
+    @Override
     public Date getUpdated() {
         return updated;
     }

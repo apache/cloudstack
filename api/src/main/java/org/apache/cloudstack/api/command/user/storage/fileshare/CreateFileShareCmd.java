@@ -95,7 +95,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             type = CommandType.UUID,
             required = true,
             entityType = ServiceOfferingResponse.class,
-            description = "the disk offering to use for the underlying storage.")
+            description = "the offering to use for the file share vm.")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.MOUNT_OPTIONS,

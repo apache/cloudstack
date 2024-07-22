@@ -2265,7 +2265,7 @@
 "label.update.condition": "Update condition",
 "label.update.instance.group": "Update Instance group",
 "label.update.ip.range": "Update IP range",
-"label.update.fileshare": "Update File Share",
+"label.update.fileshare": "Update Fileshare",
 "label.update.network": "Update Network",
 "label.update.physical.network": "Update physical Network",
 "label.update.project.role": "Update project role",

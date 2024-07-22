@@ -579,6 +579,7 @@ export default {
           docHelp: 'adminguide/object_storage.html#update-bucket',
           label: 'label.update.fileshare',
           dataView: true,
+          popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue'))),
           show: (record) => { return record.state !== 'Destroyed' }
         },

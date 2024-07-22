@@ -23,7 +23,7 @@
       :rules="rules"
       layout="vertical"
       @finish="handleSubmit"
-    >
+     >
       <a-form-item name="name" ref="name" :label="$t('label.name')">
         <a-input
           v-model:value="form.name"
@@ -34,6 +34,28 @@
           v-model:checked="form.description"
           :placeholder="$t('label.description')"/>
       </a-form-item>
+      <a-form-item ref="serviceofferingid" name="serviceofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+        </template>
+        <a-select
+          v-model:value="form.serviceofferingid"
+          :loading="serviceofferingLoading"
+          :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(serviceoffering, index) in serviceofferings"
+            :value="serviceoffering.id"
+            :key="index"
+            :label="serviceoffering.displaytext || serviceoffering.name">
+            {{ serviceoffering.displaytext || serviceoffering.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -42,12 +64,14 @@
   </div>
 </template>
 <script>
+
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'updateBucket',
+  name: 'updateFileShare',
   mixins: [mixinForm],
   props: {
     resource: {
@@ -55,9 +79,16 @@ export default {
       required: true
     }
   },
+  components: {
+    TooltipLabel
+  },
+  inject: ['parentFetchData'],
   data () {
     return {
-      loading: false
+      loading: false,
+      configLoading: false,
+      serviceofferings: [],
+      serviceofferingLoading: false
     }
   },
   beforeCreate () {
@@ -71,12 +102,15 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
-      this.rules = reactive({
-      })
+      this.rules = reactive({})
+    },
+    closeModal () {
+      this.$emit('close-action')
     },
     fetchData () {
       this.loading = false
       this.fillEditFormFieldValues()
+      this.fetchServiceOfferings()
     },
     fillEditFormFieldValues () {
       const form = this.form
@@ -86,11 +120,7 @@ export default {
         let fieldValue = null
         let fieldName = null
 
-        if (field.type === 'list' || field.name === 'account') {
-          fieldName = field.name.replace('ids', 'name').replace('id', 'name')
-        } else {
-          fieldName = field.name
-        }
+        fieldName = field.name
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
           form[field.name] = fieldValue
@@ -98,46 +128,95 @@ export default {
       })
       this.loading = false
     },
+    fetchConfig () {
+      this.configLoading = true
+      const params1 = {
+        zoneid: this.resource.zoneid,
+        name: 'storagefsvm.min.cpu.count'
+      }
+      const params2 = {
+        zoneid: this.resource.zoneid,
+        name: 'storagefsvm.min.ram.size'
+      }
+      const apiCall1 = api('listConfigurations', params1)
+      const apiCall2 = api('listConfigurations', params2)
+      Promise.all([apiCall1, apiCall2])
+        .then(([json1, json2]) => {
+          const configs1 = json1.listconfigurationsresponse.configuration || []
+          const configs2 = json2.listconfigurationsresponse.configuration || []
+          if (configs1.length > 0) {
+            this.minCpu = parseInt(configs1[0].value) || 0
+          } else {
+            this.minCpu = 0
+          }
+          if (configs2.length > 0) {
+            this.minMemory = parseInt(configs2[0].value) || 0
+          } else {
+            this.minMemory = 0
+          }
+        }).finally(() => {
+          this.configLoading = false
+        })
+    },
+    fetchServiceOfferings () {
+      this.fetchConfig()
+      this.serviceofferingLoading = true
+      var params = {
+        zoneid: this.resource.zoneid,
+        listall: true,
+        domainid: this.resource.domainid,
+        account: this.resource.account
+      }
+      api('listServiceOfferings', params).then(json => {
+        var items = json.listserviceofferingsresponse.serviceoffering || []
+        if (items != null) {
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].iscustomized === false && items[i].offerha === true &&
+                items[i].cpunumber >= this.minCpu && items[i].memory >= this.minMemory) {
+              this.serviceofferings.push(items[i])
+            }
+          }
+        }
+      }).finally(() => {
+        this.serviceofferingLoading = false
+      })
+    },
     handleSubmit (e) {
       if (this.loading) return
-      this.formRef.value.validate().then(() => {
+      this.formRef.value.validate().then(async () => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
         var data = {
           id: this.resource.id,
           name: values.name,
-          description: values.description
+          description: values.description,
+          serviceofferingid: values.serviceofferingid
         }
-
         this.loading = true
         api('updateFileShare', data).then(response => {
-          this.$emit('refresh-data')
-          this.$notification.success({
-            message: this.$t('label.fileshare.update'),
-            description: `${this.$t('message.success.update.fileshare')}`
+          this.$pollJob({
+            jobId: response.updatefileshareresponse.jobid,
+            title: this.$t('label.update.fileshare'),
+            description: values.name,
+            successMessage: this.$t('message.success.update.fileshare'),
+            errorMessage: this.$t('message.update.fileshare.failed'),
+            loadingMessage: this.$t('message.update.fileshare.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
           this.closeModal()
         }).catch(error => {
-          console.log(error)
-          this.$notification.error({
-            message: `${this.$t('label.fileshare.update')} ${this.$t('label.error')}`,
-            description: error.response.data.updatebucketresponse.errortext,
-            duration: 0
-          })
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })
       }).catch((error) => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
-    },
-    closeModal () {
-      this.$emit('refresh-data')
-      this.$emit('close-action')
     }
   }
 }
+
 </script>
 <style lang="scss" scoped>
 .form-layout {
