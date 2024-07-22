@@ -37,6 +37,19 @@ import org.xml.sax.SAXException;
 public class LibvirtStoragePoolXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtStoragePoolXMLParser.class);
 
+    private List<String> getNFSMountOptsFromRootElement(Element rootElement) {
+        List<String> nfsMountOpts = new ArrayList<>();
+        Element mountOpts = (Element) rootElement.getElementsByTagName("fs:mount_opts").item(0);
+        if (mountOpts != null) {
+            NodeList options = mountOpts.getElementsByTagName("fs:option");
+            for (int i = 0; i < options.getLength(); i++) {
+                Element option = (Element) options.item(i);
+                nfsMountOpts.add(option.getAttribute("name"));
+            }
+        }
+        return nfsMountOpts;
+    }
+
     public LibvirtStoragePoolDef parseStoragePoolXML(String poolXML) {
         DocumentBuilder builder;
         try {
@@ -94,11 +107,15 @@ public class LibvirtStoragePoolXMLParser {
                         poolName, uuid, host, port, path, targetPath);
             } else {
                 String path = getAttrValue("dir", "path", source);
-
                 Element target = (Element)rootElement.getElementsByTagName("target").item(0);
                 String targetPath = getTagValue("path", target);
 
-                return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
+                if (type.equalsIgnoreCase("netfs")) {
+                    List<String> nfsMountOpts = getNFSMountOptsFromRootElement(rootElement);
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath, nfsMountOpts);
+                } else {
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.PoolType.valueOf(type.toUpperCase()), poolName, uuid, host, path, targetPath);
+                }
             }
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());

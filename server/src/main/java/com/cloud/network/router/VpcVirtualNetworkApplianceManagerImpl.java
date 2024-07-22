@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -223,6 +225,53 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
 
+        return result;
+    }
+
+    @Override
+    public boolean stopKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "stop");
+    }
+
+    @Override
+    public boolean startKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "start");
+    }
+
+    private boolean manageKeepalivedServiceOnRouter(VirtualRouter router,
+            Network network, String action) throws ConcurrentOperationException, ResourceUnavailableException {
+        if (network.getTrafficType() != TrafficType.Guest) {
+            s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
+            return false;
+        }
+        boolean result = true;
+        try {
+            if (router.getState() == State.Running) {
+                final ManageServiceCommand stopCommand = new ManageServiceCommand("keepalived", action);
+                stopCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+
+                final Commands cmds = new Commands(Command.OnError.Stop);
+                cmds.addCommand("manageKeepalived", stopCommand);
+                _nwHelper.sendCommandsToRouter(router, cmds);
+
+                final Answer setupAnswer = cmds.getAnswer("manageKeepalived");
+                if (!(setupAnswer != null && setupAnswer.getResult())) {
+                    s_logger.warn("Unable to " + action + " keepalived on router " + router);
+                    result = false;
+                }
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending command to the backend");
+            } else {
+                String message = "Unable to " + action + " keepalived on virtual router [" + router + "] is not in the right state " + router.getState();
+                s_logger.warn(message);
+                throw new ResourceUnavailableException(message, DataCenter.class, router.getDataCenterId());
+            }
+        } catch (final Exception ex) {
+            s_logger.warn("Failed to " + action + "  keepalived on router " + router + " to network " + network + " due to ", ex);
+            result = false;
+        }
         return result;
     }
 
@@ -698,7 +747,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
                 s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");

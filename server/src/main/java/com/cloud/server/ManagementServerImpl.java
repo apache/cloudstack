@@ -211,6 +211,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -522,6 +523,7 @@ import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -1590,20 +1592,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
 
-            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
             }
         }
 
-        // re-order hosts by priority
         _dpMgr.reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
-        if (s_logger.isDebugEnabled()) {
-            if (suitableHosts.isEmpty()) {
-                s_logger.debug("No suitable hosts found");
-            } else {
-                s_logger.debug("Hosts having capacity and suitable for migration: " + suitableHosts);
-            }
+        if (suitableHosts.isEmpty()) {
+            s_logger.warn("No suitable hosts found.");
+        } else {
+            s_logger.debug("Hosts having capacity and suitable for migration: " + suitableHosts);
         }
 
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
@@ -3484,6 +3483,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpgradeRouterCmd.class);
         cmdList.add(AddSwiftCmd.class);
         cmdList.add(CancelPrimaryStorageMaintenanceCmd.class);
+        cmdList.add(ChangeStoragePoolScopeCmd.class);
         cmdList.add(CreateStoragePoolCmd.class);
         cmdList.add(DeletePoolCmd.class);
         cmdList.add(ListSwiftsCmd.class);
@@ -3920,6 +3920,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateSecondaryStorageSelectorCmd.class);
         cmdList.add(UpdateSecondaryStorageSelectorCmd.class);
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
+        cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
 
 
         // Out-of-band management APIs for admins
@@ -5068,22 +5069,51 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends HypervisorCapabilities>, Integer>(result.first(), result.second());
     }
 
+    protected HypervisorCapabilitiesVO getHypervisorCapabilitiesForUpdate(final Long id, final String hypervisorStr, final String hypervisorVersion) {
+        if (id == null && StringUtils.isAllEmpty(hypervisorStr, hypervisorVersion)) {
+            throw new InvalidParameterValueException("Either ID or hypervisor and hypervisor version must be specified");
+        }
+        if (id != null) {
+            if (!StringUtils.isAllBlank(hypervisorStr, hypervisorVersion)) {
+                throw new InvalidParameterValueException("ID can not be specified together with hypervisor and hypervisor version");
+            }
+            HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
+            if (hpvCapabilities == null) {
+                final InvalidParameterValueException ex = new InvalidParameterValueException("unable to find the hypervisor capabilities for specified id");
+                ex.addProxyObject(id.toString(), "Id");
+                throw ex;
+            }
+            return hpvCapabilities;
+        }
+        if (StringUtils.isAnyBlank(hypervisorStr, hypervisorVersion)) {
+            throw new InvalidParameterValueException("Hypervisor and hypervisor version must be specified together");
+        }
+        HypervisorType hypervisorType = HypervisorType.getType(hypervisorStr);
+        if (hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Invalid hypervisor specified");
+        }
+        HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
+        if (hpvCapabilities == null) {
+            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the hypervisor capabilities for specified hypervisor and hypervisor version");
+            ex.addProxyObject(hypervisorStr, "hypervisor");
+            ex.addProxyObject(hypervisorVersion, "hypervisorVersion");
+            throw ex;
+        }
+        return hpvCapabilities;
+    }
+
     @Override
     public HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd) {
-        final Long id = cmd.getId();
+        Long id = cmd.getId();
+        final String hypervisorStr = cmd.getHypervisor();
+        final String hypervisorVersion = cmd.getHypervisorVersion();
         final Boolean securityGroupEnabled = cmd.getSecurityGroupEnabled();
         final Long maxGuestsLimit = cmd.getMaxGuestsLimit();
         final Integer maxDataVolumesLimit = cmd.getMaxDataVolumesLimit();
         final Boolean storageMotionSupported = cmd.getStorageMotionSupported();
         final Integer maxHostsPerClusterLimit = cmd.getMaxHostsPerClusterLimit();
         final Boolean vmSnapshotEnabled = cmd.getVmSnapshotEnabled();
-        HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
-
-        if (hpvCapabilities == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("unable to find the hypervisor capabilities for specified id");
-            ex.addProxyObject(id.toString(), "Id");
-            throw ex;
-        }
+        HypervisorCapabilitiesVO hpvCapabilities = getHypervisorCapabilitiesForUpdate(id, hypervisorStr, hypervisorVersion);
 
         final boolean updateNeeded = securityGroupEnabled != null || maxGuestsLimit != null ||
                 maxDataVolumesLimit != null || storageMotionSupported != null || maxHostsPerClusterLimit != null ||
@@ -5091,7 +5121,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (!updateNeeded) {
             return hpvCapabilities;
         }
+        if (StringUtils.isNotBlank(hypervisorVersion) && !hpvCapabilities.getHypervisorVersion().equals(hypervisorVersion)) {
+            s_logger.debug(String.format("Hypervisor capabilities for hypervisor: %s and version: %s does not exist, creating a copy from the parent version: %s for update.", hypervisorStr, hypervisorVersion, hpvCapabilities.getHypervisorVersion()));
+            HypervisorCapabilitiesVO copy = new HypervisorCapabilitiesVO(hpvCapabilities);
+            copy.setHypervisorVersion(hypervisorVersion);
+            hpvCapabilities = _hypervisorCapabilitiesDao.persist(copy);
+        }
 
+        id = hpvCapabilities.getId();
         hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
         if (securityGroupEnabled != null) {

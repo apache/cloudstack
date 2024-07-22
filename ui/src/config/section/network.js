@@ -82,7 +82,7 @@ export default {
       }, {
         name: 'vnf.appliances',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VnfAppliancesTab.vue'))),
-        show: () => { return 'deployVnfAppliance' in store.getters.apis }
+        show: () => { return 'listVnfAppliances' in store.getters.apis }
       }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
@@ -337,7 +337,7 @@ export default {
       name: 'vnfapp',
       title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
-      permission: ['listVnfTemplates'],
+      permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
         return { details: 'servoff,tmpl,nics', isvnf: true }

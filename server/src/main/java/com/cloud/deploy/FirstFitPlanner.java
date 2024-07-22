@@ -525,7 +525,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         matchingClusters.addAll(hostDao.findClustersThatMatchHostTagRule(hostTagOnOffering));
 
         if (matchingClusters.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for the following compute offering tags [%s].", hostTagOnOffering));
+            s_logger.error(String.format("No suitable host found in any cluster for the following compute offering tags [%s].", hostTagOnOffering));
             throw new CloudRuntimeException("No suitable host found.");
         }
 

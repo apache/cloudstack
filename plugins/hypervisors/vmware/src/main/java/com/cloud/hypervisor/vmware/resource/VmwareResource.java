@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
@@ -2203,7 +2204,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-            if (deployAsIs) {
+            if (deployAsIs && !vmMo.hasSnapshot()) {
                 s_logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
                 mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
             }
@@ -2279,15 +2280,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 // attach ISO (for patching of system VM)
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    String msg = "Failed to prepare secondary storage on host, NFS secondary or cache store url: " + secStoreUrl + " in dc "+ _dcId;
                     throw new Exception(msg);
                 }
                 DatastoreMO secDsMo = new DatastoreMO(hyperHost.getContext(), morSecDs);
@@ -4613,15 +4614,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
             for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = String.format("Secondary storage for dc %s is not ready yet?", _dcId);
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    String msg = "Failed to prepare secondary storage on host, NFS secondary or cache store url: " + secStoreUrl + " in dc "+ _dcId;
                     throw new Exception(msg);
                 }
             }
@@ -7342,14 +7343,14 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 VmwareManager mgr = targetHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
-                    throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
+                    throw new Exception(String.format("Failed to prepare secondary storage on host, NFS secondary or cache store url: %s in dc %s", secStoreUrl, _dcId));
                 }
             }
 

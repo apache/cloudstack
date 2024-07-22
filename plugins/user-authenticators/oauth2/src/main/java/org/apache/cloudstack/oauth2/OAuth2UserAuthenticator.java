@@ -68,6 +68,11 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             final String[] provider = (String[])requestParameters.get(ApiConstants.PROVIDER);
             final String[] emailArray = (String[])requestParameters.get(ApiConstants.EMAIL);
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
+
+            if (provider == null) {
+                return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+            }
+
             String oauthProvider = ((provider == null) ? null : provider[0]);
             String email = ((emailArray == null) ? null : emailArray[0]);
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);

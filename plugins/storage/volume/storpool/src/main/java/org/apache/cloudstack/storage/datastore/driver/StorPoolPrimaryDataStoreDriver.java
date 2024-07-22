@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -42,6 +44,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.datastore.api.StorPoolSnapshotDef;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -87,6 +90,8 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -95,6 +100,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -132,9 +138,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private HostDao hostDao;
     @Inject
-    private ResourceTagDao _resourceTagDao;
+    private ResourceTagDao resourceTagDao;
     @Inject
-    private SnapshotDetailsDao _snapshotDetailsDao;
+    private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject
+    private SnapshotDao snapshotDao;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
@@ -401,7 +409,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
-
+                tryToSnapshotVolumeBeforeDelete(vinfo, dataStore, name, conn);
                 SpApiResponse resp = StorPoolUtil.volumeDelete(name, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dataStore.getId(), - vinfo.getSize());
@@ -429,6 +437,54 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CommandResult res = new CommandResult();
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, DataStore dataStore, String name, SpConnectionDesc conn) {
+        Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(dataStore.getId());
+        if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null) {
+            createTemporarySnapshot(vinfo, name, deleteAfter, conn);
+        } else {
+            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshot. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
+        }
+    }
+
+    private void createTemporarySnapshot(VolumeInfo vinfo, String name, Integer deleteAfter, SpConnectionDesc conn) {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("cs", StorPoolUtil.DELAY_DELETE);
+        StorPoolSnapshotDef snapshot = new StorPoolSnapshotDef(name, deleteAfter, tags);
+        StorPoolUtil.spLog("Creating backup snapshot before delete the volume [%s]", vinfo.getName());
+        SpApiResponse snapshotResponse = StorPoolUtil.volumeSnapshot(snapshot, conn);
+        if (snapshotResponse.getError() == null) {
+            String snapshotName = StorPoolUtil.getSnapshotNameFromResponse(snapshotResponse, false, StorPoolUtil.GLOBAL_ID);
+            String snapshotPath = StorPoolUtil.devPath(snapshotName);
+            SnapshotVO snapshotVo = createSnapshotVo(vinfo, snapshotName);
+            createSnapshotOnPrimaryVo(vinfo, snapshotVo, snapshotPath);
+            SnapshotDetailsVO snapshotDetails = new SnapshotDetailsVO(snapshotVo.getId(), StorPoolUtil.SP_DELAY_DELETE, "~" + snapshotName, true);
+            snapshotDetailsDao.persist(snapshotDetails);
+        }
+    }
+
+    private void createSnapshotOnPrimaryVo(VolumeInfo vinfo, SnapshotVO snapshotVo, String snapshotPath) {
+        SnapshotDataStoreVO snapshotOnPrimaryVo = new SnapshotDataStoreVO();
+        snapshotOnPrimaryVo.setSnapshotId(snapshotVo.getId());
+        snapshotOnPrimaryVo.setDataStoreId(vinfo.getDataCenterId());
+        snapshotOnPrimaryVo.setRole(vinfo.getDataStore().getRole());
+        snapshotOnPrimaryVo.setVolumeId(vinfo.getId());
+        snapshotOnPrimaryVo.setSize(vinfo.getSize());
+        snapshotOnPrimaryVo.setPhysicalSize(vinfo.getSize());
+        snapshotOnPrimaryVo.setInstallPath(snapshotPath);
+        snapshotOnPrimaryVo.setState(ObjectInDataStoreStateMachine.State.Ready);
+        snapshotDataStoreDao.persist(snapshotOnPrimaryVo);
+    }
+
+    private SnapshotVO createSnapshotVo(VolumeInfo vinfo, String snapshotName) {
+        SnapshotVO snapshotVo = new SnapshotVO(vinfo.getDataCenterId(), vinfo.getAccountId(), vinfo.getDomainId(), vinfo.getId(),
+                vinfo.getDiskOfferingId(), snapshotName,
+                (short)Snapshot.Type.RECURRING.ordinal(), Snapshot.Type.RECURRING.name(),
+                vinfo.getSize(), vinfo.getMinIops(), vinfo.getMaxIops(), vinfo.getHypervisorType(), Snapshot.LocationType.PRIMARY);
+        snapshotVo.setState(com.cloud.storage.Snapshot.State.BackedUp);
+        snapshotVo = snapshotDao.persist(snapshotVo);
+        return snapshotVo;
     }
 
     private void logDataObject(final String pref, DataObject data) {
@@ -473,7 +529,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.VOLUME) {
                 SnapshotInfo sinfo = (SnapshotInfo)srcData;
-                final String snapshotName = StorPoolHelper.getSnapshotName(srcData.getId(), srcData.getUuid(), snapshotDataStoreDao, _snapshotDetailsDao);
+                final String snapshotName = StorPoolHelper.getSnapshotName(srcData.getId(), srcData.getUuid(), snapshotDataStoreDao, snapshotDetailsDao);
 
                 VolumeInfo vinfo = (VolumeInfo)dstData;
                 final String volumeName = vinfo.getUuid();
@@ -491,9 +547,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", StorPoolUtil.getNameFromResponse(resp, false), to.getUuid(), snapshotName, sinfo.getUuid());
                 } else if (resp.getError().getName().equals("objectDoesNotExist")) {
                     //check if snapshot is on secondary storage
-                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snopshot on secondary storage", snapshotName);
+                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snapshot on secondary storage", snapshotName);
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
-                    if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
+                    SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
+                    if (snapshotDetail != null) {
+                        err = String.format("Could not create volume from snapshot due to: %s", resp.getError());
+                    } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
                         resp = StorPoolUtil.volumeCreate(srcData.getUuid(), null, size, null, "no", "snapshot", sinfo.getBaseVolume().getMaxIops(), conn);
                         if (resp.getError() == null) {
                             VolumeObjectTO dstTO = (VolumeObjectTO) dstData.getTO();
@@ -514,11 +573,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                                     err = String.format("Could not freeze Storpool volume %s. Error: %s", srcData.getUuid(), resp2.getError());
                                 } else {
                                     String name = StorPoolUtil.getNameFromResponse(resp, false);
-                                    SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(sinfo.getId(), sinfo.getUuid());
+                                    SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(sinfo.getId(), sinfo.getUuid());
                                     if (snapshotDetails != null) {
                                         StorPoolHelper.updateSnapshotDetailsValue(snapshotDetails.getId(), StorPoolUtil.devPath(name), "snapshot");
                                     }else {
-                                        StorPoolHelper.addSnapshotDetails(sinfo.getId(), sinfo.getUuid(), StorPoolUtil.devPath(name), _snapshotDetailsDao);
+                                        StorPoolHelper.addSnapshotDetails(sinfo.getId(), sinfo.getUuid(), StorPoolUtil.devPath(name), snapshotDetailsDao);
                                     }
                                     resp = StorPoolUtil.volumeCreate(volumeName, StorPoolUtil.getNameFromResponse(resp, true), size, null, null, "volume", sinfo.getBaseVolume().getMaxIops(), conn);
                                     if (resp.getError() == null) {
@@ -548,8 +607,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
                 }
             } else if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.SNAPSHOT) {
+                SnapshotInfo sinfo = (SnapshotInfo)srcData;
+                SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                 // bypass secondary storage
-                if (StorPoolConfigurationManager.BypassSecondaryStorage.value()) {
+                if (StorPoolConfigurationManager.BypassSecondaryStorage.value() || snapshotDetail != null) {
                     SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData.getTO();
                     answer = new CopyCmdAnswer(snapshot);
                 } else {
@@ -986,9 +1047,9 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 SnapshotObjectTO snapTo = (SnapshotObjectTO)snapshot.getTO();
                 snapTo.setPath(StorPoolUtil.devPath(name.split("~")[1]));
                 answer = new CreateObjectAnswer(snapTo);
-                StorPoolHelper.addSnapshotDetails(snapshot.getId(), snapshot.getUuid(), snapTo.getPath(), _snapshotDetailsDao);
+                StorPoolHelper.addSnapshotDetails(snapshot.getId(), snapshot.getUuid(), snapTo.getPath(), snapshotDetailsDao);
                 //add primary storage of snapshot
-                StorPoolHelper.addSnapshotDetails(snapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(snapshot.getDataStore().getId()), _snapshotDetailsDao);
+                StorPoolHelper.addSnapshotDetails(snapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(snapshot.getDataStore().getId()), snapshotDetailsDao);
                 StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.takeSnapshot: snapshot: name=%s, uuid=%s, volume: name=%s, uuid=%s", name, snapshot.getUuid(), volumeName, vinfo.getUuid());
             }
         } catch (Exception e) {
@@ -1003,7 +1064,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void revertSnapshot(final SnapshotInfo snapshot, final SnapshotInfo snapshotOnPrimaryStore, final AsyncCompletionCallback<CommandResult> callback) {
         final VolumeInfo vinfo = snapshot.getBaseVolume();
-        final String snapshotName = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), snapshotDataStoreDao, _snapshotDetailsDao);
+        final String snapshotName = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), snapshotDataStoreDao, snapshotDetailsDao);
         final String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(vinfo.getPath(), true);
         StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.revertSnapshot: snapshot: name=%s, uuid=%s, volume: name=%s, uuid=%s", snapshotName, snapshot.getUuid(), volumeName, vinfo.getUuid());
         String err = null;
@@ -1058,7 +1119,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private String getVcPolicyTag(Long vmId) {
-        ResourceTag resourceTag = vmId != null ? _resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorPoolUtil.SP_VC_POLICY) : null;
+        ResourceTag resourceTag = vmId != null ? resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorPoolUtil.SP_VC_POLICY) : null;
         return resourceTag != null ? resourceTag.getValue() : "";
     }
 

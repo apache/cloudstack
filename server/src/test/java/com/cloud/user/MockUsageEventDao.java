@@ -211,6 +211,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public int expunge(SearchCriteria<UsageEventVO> sc, long limit) {
+        return 0;
+    }
+
+    @Override
     public void expunge() {
 
     }

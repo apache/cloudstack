@@ -751,7 +751,7 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
-     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Enable verbose mode for virt-v2v Instance Conversion from VMware to KVM
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */

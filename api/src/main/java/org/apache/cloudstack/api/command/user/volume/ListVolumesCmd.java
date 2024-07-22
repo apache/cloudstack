@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -82,6 +83,12 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
             RoleType.Admin})
     private String storageId;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               description = "list volumes by disk offering of a service offering. If both service offering and " +
+                       "disk offering are passed, service offering is ignored", since = "4.19.1")
+    private Long serviceOfferingId;
+
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "list volumes by disk offering", since = "4.4")
     private Long diskOfferingId;
 
@@ -96,6 +103,9 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
+    @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",
+            authorized = { RoleType.Admin })
+    private Boolean encrypted;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -118,6 +128,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
 
     public Long getPodId() {
         return podId;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public Long getDiskOfferingId() {
@@ -151,6 +165,10 @@ public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd impleme
 
     public String getState() {
         return state;
+    }
+
+    public Boolean isEncrypted() {
+        return encrypted;
     }
 
     /////////////////////////////////////////////////////

@@ -131,4 +131,8 @@ public class AdaptivePrimaryDatastoreAdapterFactoryMap {
         logger.debug("Creating new ProviderAdapter object for endpoint: " + providerName + "@" + url);
         return api;
     }
+
+    public ProviderAdapterFactory getFactory(String providerName) {
+        return this.factoryMap.get(providerName);
+    }
 }

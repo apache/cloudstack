@@ -453,100 +453,104 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             ServiceOfferingDetailsVO offeringDetails = null;
             if (host == null) {
                 s_logger.debug("The last host of this VM cannot be found");
-            } else if (avoids.shouldAvoid(host)) {
-                s_logger.debug("The last host of this VM is in avoid set");
-            } else if (plan.getClusterId() != null && host.getClusterId() != null
-                    && !plan.getClusterId().equals(host.getClusterId())) {
-                s_logger.debug("The last host of this VM cannot be picked as the plan specifies different clusterId: "
-                        + plan.getClusterId());
-            } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                s_logger.debug("The last Host, hostId: " + host.getId() +
-                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
-            } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.debug("The last host of this VM does not have required GPU devices available");
-                }
-            } else if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
-                s_logger.warn(String.format("The last host of this VM %s does not support volume encryption, which is required by this VM.", host));
             } else {
-                if (host.getStatus() == Status.Up) {
-                    if (checkVmProfileAndHost(vmProfile, host)) {
-                        long cluster_id = host.getClusterId();
-                        ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
-                                "cpuOvercommitRatio");
-                        ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id,
-                                "memoryOvercommitRatio");
-                        Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
-                        Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
+                _hostDao.loadHostTags(host);
+                _hostDao.loadDetails(host);
+                if (avoids.shouldAvoid(host)) {
+                    s_logger.debug("The last host of this VM is in avoid set");
+                } else if (plan.getClusterId() != null && host.getClusterId() != null
+                        && !plan.getClusterId().equals(host.getClusterId())) {
+                    s_logger.debug("The last host of this VM cannot be picked as the plan specifies different clusterId: "
+                            + plan.getClusterId());
+                } else if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
+                    s_logger.debug("The last Host, hostId: " + host.getId() +
+                            " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+                } else if ((offeringDetails  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+                    ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+                    if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
+                        s_logger.debug("The last host of this VM does not have required GPU devices available");
+                    }
+                } else if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
+                    s_logger.warn(String.format("The last host of this VM %s does not support volume encryption, which is required by this VM.", host));
+                } else {
+                    if (host.getStatus() == Status.Up) {
+                        if (checkVmProfileAndHost(vmProfile, host)) {
+                            long cluster_id = host.getClusterId();
+                            ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
+                                    "cpuOvercommitRatio");
+                            ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id,
+                                    "memoryOvercommitRatio");
+                            Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                            Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-                        boolean hostHasCpuCapability, hostHasCapacity = false;
-                        hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+                            boolean hostHasCpuCapability, hostHasCapacity = false;
+                            hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
 
-                        if (hostHasCpuCapability) {
-                            // first check from reserved capacity
-                            hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                            if (hostHasCpuCapability) {
+                                // first check from reserved capacity
+                                hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
 
-                            // if not reserved, check the free capacity
-                            if (!hostHasCapacity)
-                                hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
-                        }
-
-                        boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
-                        if (hostHasCapacity
-                                && hostHasCpuCapability) {
-                            s_logger.debug("The last host of this VM is UP and has enough capacity");
-                            s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId()
-                                    + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
-
-                            Pod pod = _podDao.findById(host.getPodId());
-                            Cluster cluster = _clusterDao.findById(host.getClusterId());
-                            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(), displayStorage);
-                                s_logger.debug("Returning Deployment Destination: " + dest);
-                                return dest;
+                                // if not reserved, check the free capacity
+                                if (!hostHasCapacity)
+                                    hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
                             }
 
-                            // search for storage under the zone, pod, cluster
-                            // of
-                            // the last host.
-                            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
-                                    host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
-                            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
-                                    vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
-                            Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
-                            List<Volume> readyAndReusedVolumes = result.second();
+                            boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
+                            if (hostHasCapacity
+                                    && hostHasCpuCapability) {
+                                s_logger.debug("The last host of this VM is UP and has enough capacity");
+                                s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId()
+                                        + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
 
-                            // choose the potential pool for this VM for this
-                            // host
-                            if (!suitableVolumeStoragePools.isEmpty()) {
-                                List<Host> suitableHosts = new ArrayList<Host>();
-                                suitableHosts.add(host);
-                                Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                                        suitableHosts, suitableVolumeStoragePools, avoids,
-                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts(), vm);
-                                if (potentialResources != null) {
-                                    Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-                                    // remove the reused vol<->pool from
-                                    // destination, since we don't have to
-                                    // prepare
-                                    // this volume.
-                                    for (Volume vol : readyAndReusedVolumes) {
-                                        storageVolMap.remove(vol);
-                                    }
-                                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host,
-                                            storageVolMap, displayStorage);
+                                Pod pod = _podDao.findById(host.getPodId());
+                                Cluster cluster = _clusterDao.findById(host.getClusterId());
+                                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(), displayStorage);
                                     s_logger.debug("Returning Deployment Destination: " + dest);
                                     return dest;
                                 }
+
+                                // search for storage under the zone, pod, cluster
+                                // of
+                                // the last host.
+                                DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
+                                        host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
+                                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
+                                        vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+                                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                                List<Volume> readyAndReusedVolumes = result.second();
+
+                                // choose the potential pool for this VM for this
+                                // host
+                                if (!suitableVolumeStoragePools.isEmpty()) {
+                                    List<Host> suitableHosts = new ArrayList<Host>();
+                                    suitableHosts.add(host);
+                                    Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                                            suitableHosts, suitableVolumeStoragePools, avoids,
+                                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts(), vm);
+                                    if (potentialResources != null) {
+                                        Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                                        // remove the reused vol<->pool from
+                                        // destination, since we don't have to
+                                        // prepare
+                                        // this volume.
+                                        for (Volume vol : readyAndReusedVolumes) {
+                                            storageVolMap.remove(vol);
+                                        }
+                                        DeployDestination dest = new DeployDestination(dc, pod, cluster, host,
+                                                storageVolMap, displayStorage);
+                                        s_logger.debug("Returning Deployment Destination: " + dest);
+                                        return dest;
+                                    }
+                                }
+                            } else {
+                                s_logger.debug("The last host of this VM does not have enough capacity");
                             }
-                        } else {
-                            s_logger.debug("The last host of this VM does not have enough capacity");
                         }
+                    } else {
+                        s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: " + host.getStatus().name() + ", host resource state is: " +
+                                host.getResourceState());
                     }
-                } else {
-                    s_logger.debug("The last host of this VM is not UP or is not enabled, host status is: " + host.getStatus().name() + ", host resource state is: " +
-                            host.getResourceState());
                 }
             }
             s_logger.debug("Cannot choose the last host to deploy this VM ");
@@ -1273,7 +1277,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
                 // if found suitable hosts in this cluster, find suitable storage
                 // pools for each volume of the VM
-                if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                if (CollectionUtils.isNotEmpty(suitableHosts)) {
                     if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
                         DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
                         return dest;
@@ -1614,6 +1618,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         s_logger.debug("Host: " + host.getId() + (hostCanAccessSPool ? " can" : " cannot") + " access pool: " + pool.getId());
+        if (!hostCanAccessSPool) {
+            if (_storageMgr.canHostPrepareStoragePoolAccess(host, pool)) {
+                s_logger.debug("Host: " + host.getId() + " can prepare access to pool: " + pool.getId());
+                hostCanAccessSPool = true;
+            } else {
+                s_logger.debug("Host: " + host.getId() + " cannot prepare access to pool: " + pool.getId());
+            }
+        }
+
         return hostCanAccessSPool;
     }
 
@@ -1621,17 +1634,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Host> suitableHosts = new ArrayList<Host>();
         for (HostAllocator allocator : _hostAllocators) {
             suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, avoid, returnUpTo);
-            if (suitableHosts != null && !suitableHosts.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(suitableHosts)) {
                 break;
             }
         }
 
-        if (suitableHosts.isEmpty()) {
-            s_logger.debug("No suitable hosts found");
+        if (CollectionUtils.isEmpty(suitableHosts)) {
+            s_logger.debug("No suitable hosts found.");
+        } else {
+            reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
         }
-
-        // re-order hosts by priority
-        reorderHostsByPriority(plan.getHostPriorities(), suitableHosts);
 
         return suitableHosts;
     }
