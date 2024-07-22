@@ -240,29 +240,25 @@ public class NetworkModelTest {
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr32() {
         String ipv6cidr = "fd59:16ba:559b:243d::/32";
-        String endipv6 = "fd59:16ba:ffff:ffff:ffff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr63() {
         String ipv6cidr = "fd59:16ba:559b:243d::/63";
-        String endipv6 = "fd59:16ba:559b:243d:ffff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr65() {
         String ipv6cidr = "fd59:16ba:559b:243d::/65";
-        String endipv6 = "fd59:16ba:559b:243d:7fff:ffff:ffff:ffff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void checkIp6ParametersTestCidr120() {
         String ipv6cidr = "fd59:16ba:559b:243d::/120";
-        String endipv6 = "fd59:16ba:559b:243d:0:0:0:ff";
-        networkModel.checkIp6Parameters(START_IPV6, endipv6, IPV6_GATEWAY,ipv6cidr);
+        networkModel.checkIp6CidrSizeEqualTo64(ipv6cidr);
     }
 
     @Test(expected = InvalidParameterValueException.class)

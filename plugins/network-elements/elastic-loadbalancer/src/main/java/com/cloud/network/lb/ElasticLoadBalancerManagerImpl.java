@@ -601,4 +601,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     public void finalizeUnmanage(VirtualMachine vm) {
     }
 
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+        _elbVmMapDao.expungeByLbVmList(vmIds, batchSize);
+    }
 }

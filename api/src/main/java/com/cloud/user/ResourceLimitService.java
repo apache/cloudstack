@@ -38,7 +38,10 @@ public interface ResourceLimitService {
     static final ConfigKey<Long> MaxProjectSecondaryStorage = new ConfigKey<>("Project Defaults", Long.class, "max.project.secondary.storage", "400",
             "The default maximum secondary storage space (in GiB) that can be used for a project", false);
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<>("Advanced", Long.class, "resourcecount.check.interval", "300",
-            "Time (in seconds) to wait before running resource recalculation and fixing task. Default is 300 seconds, Setting this to 0 disables execution of the task", true);
+            "Time (in seconds) to wait before running resource recalculation and fixing tasks like stale resource reservation cleanup" +
+                    ". Default is 300 seconds, Setting this to 0 disables execution of the task", true);
+    static final ConfigKey<Long> ResourceReservationCleanupDelay = new ConfigKey<>("Advanced", Long.class, "resource.reservation.cleanup.delay", "3600",
+            "Time (in seconds) after which a resource reservation gets deleted. Default is 3600 seconds, Setting this to 0 disables execution of the task", true);
     static final ConfigKey<String> ResourceLimitHostTags = new ConfigKey<>("Advanced", String.class, "resource.limit.host.tags", "",
             "A comma-separated list of tags for host resource limits", true);
     static final ConfigKey<String> ResourceLimitStorageTags = new ConfigKey<>("Advanced", String.class, "resource.limit.storage.tags", "",

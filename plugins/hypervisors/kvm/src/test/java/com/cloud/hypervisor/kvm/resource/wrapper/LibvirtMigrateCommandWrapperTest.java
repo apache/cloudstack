@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.cloudstack.utils.linux.MemStat;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,7 +54,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.Spy;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.MigrateCommand;
@@ -444,6 +451,16 @@ public class LibvirtMigrateCommandWrapperTest {
         "  </seclabel>\n" +
         "</domain>";
 
+    @Mock
+    MigrateCommand migrateCommandMock;
+
+    @Mock
+    LibvirtComputingResource libvirtComputingResourceMock;
+
+    @Mock
+    VirtualMachineTO virtualMachineTOMock;
+
+    @Spy
     LibvirtMigrateCommandWrapper libvirtMigrateCmdWrapper = new LibvirtMigrateCommandWrapper();
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
@@ -870,5 +887,68 @@ public class LibvirtMigrateCommandWrapperTest {
         String replaced = lw.replaceDpdkInterfaces(sourceDPDKVMToMigrate, dpdkPortMapping);
         Assert.assertTrue(replaced.contains("csdpdk-7"));
         Assert.assertFalse(replaced.contains("csdpdk-1"));
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesEqualCurrentSharesShouldNotUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 1000;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        Assert.assertEquals(finalXml, fullfile);
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesHigherThanCurrentSharesShouldUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 2000;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        int updateShares = Integer.parseInt(sharesNode.getTextContent());
+
+        Assert.assertEquals(updateShares, newVmCpuShares);
+    }
+
+    @Test
+    public void updateVmSharesIfNeededTestNewCpuSharesLowerThanCurrentSharesShouldUpdateVmShares() throws ParserConfigurationException, IOException, TransformerException,
+            SAXException {
+        int newVmCpuShares = 500;
+        int currentVmCpuShares = 1000;
+
+        Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+        Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+
+        String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+
+        InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        int updateShares = Integer.parseInt(sharesNode.getTextContent());
+
+        Assert.assertEquals(updateShares, newVmCpuShares);
     }
 }

@@ -26,7 +26,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> {
 
-    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host);
+    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host, boolean customStats);
 
     StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);
 

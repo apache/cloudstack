@@ -221,6 +221,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "comma-separated list of tags for the host")
     private String hostTags;
 
+    @SerializedName("explicithosttags")
+    @Param(description = "comma-separated list of explicit host tags for the host", since = "4.18.1")
+    private String explicitHostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.18.1")
+    private String implicitHostTags;
+
     @SerializedName("hasenoughcapacity")
     @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
@@ -452,6 +460,22 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getExplicitHostTags() {
+        return explicitHostTags;
+    }
+
+    public void setExplicitHostTags(String explicitHostTags) {
+        this.explicitHostTags = explicitHostTags;
+    }
+
+    public String getImplicitHostTags() {
+        return implicitHostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {

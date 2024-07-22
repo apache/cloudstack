@@ -846,7 +846,7 @@ public class QemuImg {
         script.add("--output=json");
         script.add("2>/dev/null");
 
-        final String result = Script.runBashScriptIgnoreExitValue(script.toString(), 3);
+        final String result = Script.runSimpleBashScript(script.toString(), 3);
         if (result != null) {
             logger.debug(String.format("Check volume execution result %s", result));
         }

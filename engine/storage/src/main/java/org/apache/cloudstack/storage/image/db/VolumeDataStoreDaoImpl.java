@@ -25,10 +25,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -36,10 +32,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -47,6 +47,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Long> implements VolumeDataStoreDao {
@@ -388,5 +389,17 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
             throw new CloudRuntimeException("Unable to update the volume id for volume store ref", e);
         }
         return true;
+    }
+
+    @Override
+    public int expungeByVolumeList(List<Long> volumeIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(volumeIds)) {
+            return 0;
+        }
+        SearchBuilder<VolumeDataStoreVO> sb = createSearchBuilder();
+        sb.and("volumeIds", sb.entity().getVolumeId(), SearchCriteria.Op.IN);
+        SearchCriteria<VolumeDataStoreVO> sc = sb.create();
+        sc.setParameters("volumeIds", volumeIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

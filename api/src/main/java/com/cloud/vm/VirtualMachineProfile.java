@@ -190,6 +190,10 @@ public interface VirtualMachineProfile {
 
     Map<Param, Object> getParameters();
 
+    void setCpuOvercommitRatio(Float cpuOvercommitRatio);
+
+    void setMemoryOvercommitRatio(Float memoryOvercommitRatio);
+
     Float getCpuOvercommitRatio();
 
     Float getMemoryOvercommitRatio();

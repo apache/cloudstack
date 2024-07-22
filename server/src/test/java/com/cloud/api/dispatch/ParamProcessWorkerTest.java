@@ -20,6 +20,7 @@ package com.cloud.api.dispatch;
 
 import java.util.HashMap;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -65,6 +66,9 @@ public class ParamProcessWorkerTest {
         @Parameter(name = "doubleparam1", type = CommandType.DOUBLE)
         double doubleparam1;
 
+        @Parameter(name = "vmHostNameParam", type = CommandType.STRING, validations = {ApiArgValidator.RFCComplianceDomainName})
+        String vmHostNameParam;
+
         @Override
         public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException, NetworkRuleConflictException {
@@ -102,11 +106,44 @@ public class ParamProcessWorkerTest {
         params.put("intparam1", "100");
         params.put("boolparam1", "true");
         params.put("doubleparam1", "11.89");
+        params.put("vmHostNameParam", "test-host-name-123");
         final TestCmd cmd = new TestCmd();
         paramProcessWorker.processParameters(cmd, params);
         Assert.assertEquals("foo", cmd.strparam1);
         Assert.assertEquals(100, cmd.intparam1);
         Assert.assertTrue(Double.compare(cmd.doubleparam1, 11.89) == 0);
+        Assert.assertEquals("test-host-name-123", cmd.vmHostNameParam);
     }
 
+    @Test(expected = ServerApiException.class)
+    public void processVmHostNameParameter_CannotStartWithDigit() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("vmHostNameParam", "123test");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorker.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processVmHostNameParameter_CannotStartWithHypen() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("vmHostNameParam", "-test");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorker.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processVmHostNameParameter_CannotEndWithHypen() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("vmHostNameParam", "test-");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorker.processParameters(cmd, params);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void processVmHostNameParameter_NotMoreThan63Chars() {
+        final HashMap<String, String> params = new HashMap<String, String>();
+        params.put("vmHostNameParam", "test-f2405112-d5a1-47c1-9f00-976909e3a6d3-1e6f3264-955ee76011a99");
+        final TestCmd cmd = new TestCmd();
+        paramProcessWorker.processParameters(cmd, params);
+    }
 }

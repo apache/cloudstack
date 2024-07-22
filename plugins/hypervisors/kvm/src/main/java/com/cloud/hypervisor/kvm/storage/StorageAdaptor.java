@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 public interface StorageAdaptor {
 
@@ -40,6 +43,11 @@ public interface StorageAdaptor {
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details);
 
     public boolean deleteStoragePool(String uuid);
+
+    public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+                                                      PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
+    }
 
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
@@ -99,5 +107,26 @@ public interface StorageAdaptor {
      */
     default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
         return StoragePoolType.PowerFlex == type;
+    }
+
+    /**
+     * Prepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client preparation
+     * @return status, client details, & message in case failed
+     */
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        return new Ternary<>(true, new HashMap<>(), "");
+    }
+
+    /**
+     * Unprepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @return status, & message in case failed
+     */
+    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+        return new Pair<>(true, "");
     }
 }

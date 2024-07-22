@@ -84,6 +84,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
             since = "4.16")
     private String hostTags;
 
+    @Parameter(name = ApiConstants.PURGE_RESOURCES, type = CommandType.BOOLEAN,
+            description = "Whether to cleanup VM and its associated resource upon expunge",
+            since="4.18.1")
+    private Boolean purgeResources;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -170,6 +175,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public String getHostTags() {
         return hostTags;
+    }
+
+    public boolean isPurgeResources() {
+        return Boolean.TRUE.equals(purgeResources);
     }
 
     /////////////////////////////////////////////////////

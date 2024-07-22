@@ -344,4 +344,6 @@ public interface NetworkOrchestrationService {
     Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }

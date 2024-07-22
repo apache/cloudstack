@@ -100,4 +100,5 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
     List<IPAddressVO> listByDcIdAndAssociatedNetwork(long dcId);
 
     List<IPAddressVO> listByNetworkId(long networkId);
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 }

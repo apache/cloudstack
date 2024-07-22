@@ -81,6 +81,8 @@
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
 
+    <bean id="resourceCleanupServiceImpl" class="org.apache.cloudstack.resource.ResourceCleanupServiceImpl" />
+
     <!-- the new background poll manager -->
     <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
     </bean>

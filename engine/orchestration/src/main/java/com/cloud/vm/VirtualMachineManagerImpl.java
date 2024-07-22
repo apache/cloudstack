@@ -51,6 +51,7 @@ import javax.persistence.EntityExistsException;
 import com.cloud.configuration.Resource;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.ResourceAllocationException;
+import com.google.gson.Gson;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -83,6 +84,7 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resource.ResourceCleanupService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -389,6 +391,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private DomainRouterJoinDao domainRouterJoinDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    ResourceCleanupService resourceCleanupService;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -698,6 +702,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
         }
+        resourceCleanupService.purgeExpungedVmResourcesLaterIfNeeded(vm);
     }
 
     protected void handleUnsuccessfulCommands(Commands cmds, VMInstanceVO vm) throws CloudRuntimeException {
@@ -1248,21 +1253,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 long destHostId = dest.getHost().getId();
                 vm.setPodIdToDeployIn(dest.getPod().getId());
-                final Long cluster_id = dest.getCluster().getId();
-                final ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-                final ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+                final Long clusterId = dest.getCluster().getId();
+                updateOverCommitRatioForVmProfile(vmProfile, clusterId);
 
-                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null &&
-                        (Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f)) {
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
-                } else if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) != null) {
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
-                }
-
-                vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
-                vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
                 StartAnswer startAnswer = null;
 
                 try {
@@ -1277,7 +1270,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     resetVmNicsDeviceId(vm.getId());
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        checkAndAttemptMigrateVmAcrossCluster(vm, cluster_id, dest.getStorageForDisks());
+                        checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
@@ -1479,6 +1472,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
         }
+    }
+
+    private void updateOverCommitRatioForVmProfile(VirtualMachineProfile vmProfile, long clusterId) {
+        final ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        final float parsedClusterCpuDetailCpu = Float.parseFloat(clusterDetailCpu.getValue());
+        final float parsedClusterDetailRam = Float.parseFloat(clusterDetailRam.getValue());
+        UserVmDetailVO vmDetailCpu = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        UserVmDetailVO vmDetailRam = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+
+        if ((vmDetailCpu == null && parsedClusterCpuDetailCpu > 1f) ||
+                (vmDetailCpu != null && Float.parseFloat(vmDetailCpu.getValue()) != parsedClusterCpuDetailCpu)) {
+            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
+        }
+        if ((vmDetailRam == null && parsedClusterDetailRam > 1f) ||
+                (vmDetailRam != null && Float.parseFloat(vmDetailRam.getValue()) != parsedClusterDetailRam)) {
+            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
+        }
+
+        vmProfile.setCpuOvercommitRatio(Float.parseFloat(clusterDetailCpu.getValue()));
+        vmProfile.setMemoryOvercommitRatio(Float.parseFloat(clusterDetailRam.getValue()));
     }
 
     /**
@@ -2762,6 +2776,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
         profile.setConfigDriveLabel(VmConfigDriveLabel.value());
+        updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
@@ -2824,23 +2839,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         boolean migrated = false;
-        Map<String, DpdkTO> dpdkInterfaceMapping = null;
+        Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
         try {
-            final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-            final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
-            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
-                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
-            }
-
-            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
-            mc.setAutoConvergence(kvmAutoConvergence);
-            mc.setHostGuid(dest.getHost().getGuid());
-
-            dpdkInterfaceMapping = ((PrepareForMigrationAnswer) pfma).getDpdkInterfaceMapping();
-            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                mc.setDpdkInterfaceMapping(dpdkInterfaceMapping);
-            }
+            final MigrateCommand mc = buildMigrateCommand(vm, to, dest, pfma, dpdkInterfaceMapping);
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);
@@ -2910,6 +2911,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    /**
+     * Create and set parameters for the {@link MigrateCommand} used in the migration and scaling of VMs.
+     */
+    protected MigrateCommand buildMigrateCommand(VMInstanceVO vmInstance, VirtualMachineTO virtualMachineTO, DeployDestination destination, Answer answer,
+                                                 Map<String, DpdkTO> dpdkInterfaceMapping) {
+        final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vmInstance.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+        final MigrateCommand migrateCommand = new MigrateCommand(vmInstance.getInstanceName(), destination.getHost().getPrivateIpAddress(), isWindows, virtualMachineTO,
+                getExecuteInSequence(vmInstance.getHypervisorType()));
+
+        Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vmInstance.getId());
+        if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
+            s_logger.debug(String.format("Setting VLAN persistence to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap), virtualMachineTO));
+            migrateCommand.setVlanToPersistenceMap(vlanToPersistenceMap);
+        }
+
+        migrateCommand.setAutoConvergence(StorageManager.KvmAutoConvergence.value());
+        migrateCommand.setHostGuid(destination.getHost().getGuid());
+
+        PrepareForMigrationAnswer prepareForMigrationAnswer = (PrepareForMigrationAnswer) answer;
+
+        Map<String, DpdkTO> answerDpdkInterfaceMapping = prepareForMigrationAnswer.getDpdkInterfaceMapping();
+        if (MapUtils.isNotEmpty(answerDpdkInterfaceMapping) && dpdkInterfaceMapping != null) {
+            s_logger.debug(String.format("Setting DPDK interface mapping to [%s] as part of migrate command for VM [%s].", new Gson().toJson(vlanToPersistenceMap),
+                    virtualMachineTO));
+            dpdkInterfaceMapping.putAll(answerDpdkInterfaceMapping);
+            migrateCommand.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        Integer newVmCpuShares = prepareForMigrationAnswer.getNewVmCpuShares();
+        if (newVmCpuShares != null) {
+            s_logger.debug(String.format("Setting CPU shares to [%d] as part of migrate command for VM [%s].", newVmCpuShares, virtualMachineTO));
+            migrateCommand.setNewVmCpuShares(newVmCpuShares);
+        }
+
+        return migrateCommand;
     }
 
     private void updateVmPod(VMInstanceVO vm, long dstHostId) {
@@ -4433,16 +4471,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         boolean migrated = false;
         try {
-            Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
-            final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-            final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
-            if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
-                mc.setVlanToPersistenceMap(vlanToPersistenceMap);
-            }
-
-            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
-            mc.setAutoConvergence(kvmAutoConvergence);
-            mc.setHostGuid(dest.getHost().getGuid());
+            final MigrateCommand mc = buildMigrateCommand(vm, to, dest, pfma, null);
 
             try {
                 final Answer ma = _agentMgr.send(vm.getLastHostId(), mc);

@@ -859,6 +859,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public void checkIp6CidrSizeEqualTo64(String ip6Cidr) throws InvalidParameterValueException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException {
         // TODO Auto-generated method stub
     }

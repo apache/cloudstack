@@ -67,12 +67,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'oscategoryid'],
-      mapping: {
-        oscategoryid: {
-          api: 'listOsCategories'
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
     },
     {
       api: 'provisionCertificate',

@@ -81,7 +81,8 @@ jobs:
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization",
+                  smoke/test_nested_virtualization
+                  smoke/test_purge_expunged_vms",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -125,6 +126,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm

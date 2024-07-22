@@ -38,8 +38,10 @@ import javax.inject.Inject;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
@@ -173,7 +175,6 @@ import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ManagementServerJoinDao;
@@ -197,7 +198,6 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ManagementServerJoinVO;
@@ -391,7 +391,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private StoragePoolTagsDao _storageTagDao;
 
     @Inject
-    private HostTagDao _hostTagDao;
+    private HostTagsDao _hostTagDao;
 
     @Inject
     private ImageStoreJoinDao _imageStoreJoinDao;
@@ -2173,10 +2173,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             SearchBuilder<HostTagVO> hostTagSearchBuilder = _hostTagDao.createSearchBuilder();
             if ((Boolean)haHosts) {
-                hostTagSearchBuilder.and("tag", hostTagSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+                hostTagSearchBuilder.and("tag", hostTagSearchBuilder.entity().getTag(), SearchCriteria.Op.EQ);
             } else {
-                hostTagSearchBuilder.and().op("tag", hostTagSearchBuilder.entity().getName(), Op.NEQ);
-                hostTagSearchBuilder.or("tagNull", hostTagSearchBuilder.entity().getName(), Op.NULL);
+                hostTagSearchBuilder.and().op("tag", hostTagSearchBuilder.entity().getTag(), Op.NEQ);
+                hostTagSearchBuilder.or("tagNull", hostTagSearchBuilder.entity().getTag(), Op.NULL);
                 hostTagSearchBuilder.cp();
             }
             hostSearchBuilder.join("hostTagSearch", hostTagSearchBuilder, hostSearchBuilder.entity().getId(), hostTagSearchBuilder.entity().getHostId(), JoinBuilder.JoinType.LEFT);
@@ -2848,7 +2848,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<StoragePoolJoinVO>, Integer> result = searchForStoragePoolsInternal(cmd);
         ListResponse<StoragePoolResponse> response = new ListResponse<>();
 
-        List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(result.first().toArray(new StoragePoolJoinVO[result.first().size()]));
+        List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(cmd.getCustomStats(), result.first().toArray(new StoragePoolJoinVO[result.first().size()]));
         Map<String, Long> poolUuidToIdMap = result.first().stream().collect(Collectors.toMap(StoragePoolJoinVO::getUuid, StoragePoolJoinVO::getId, (a, b) -> a));
         for (StoragePoolResponse poolResponse : poolResponses) {
             DataStore store = dataStoreManager.getPrimaryDataStore(poolResponse.getId());

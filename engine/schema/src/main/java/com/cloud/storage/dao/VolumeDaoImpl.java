@@ -26,15 +26,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Resource;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.Resource;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -48,12 +46,15 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -848,5 +849,19 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             reservationDao.setResourceId(Resource.ResourceType.primary_storage, volume.getId());
             return volume;
         });
+    }
+
+    @Override
+    public List<VolumeVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VolumeVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        SearchCriteria<VolumeVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        Filter filter = new Filter(VolumeVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
     }
 }

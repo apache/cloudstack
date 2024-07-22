@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +41,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -1029,5 +1031,27 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("lastHostId", String.valueOf(hostId));
         sc.setParameters("podId", String.valueOf(podId));
         return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> searchRemovedByRemoveDate(Date startDate, Date endDate, Long batchSize,
+                List<Long> skippedVmIds) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        sb.and("startDate", sb.entity().getRemoved(), SearchCriteria.Op.GTEQ);
+        sb.and("endDate", sb.entity().getRemoved(), SearchCriteria.Op.LTEQ);
+        sb.and("skippedVmIds", sb.entity().getId(), Op.NOTIN);
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        if (startDate != null) {
+            sc.setParameters("startDate", startDate);
+        }
+        if (endDate != null) {
+            sc.setParameters("endDate", endDate);
+        }
+        if (CollectionUtils.isNotEmpty(skippedVmIds)) {
+            sc.setParameters("skippedVmIds", skippedVmIds.toArray());
+        }
+        Filter filter = new Filter(VMInstanceVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
     }
 }

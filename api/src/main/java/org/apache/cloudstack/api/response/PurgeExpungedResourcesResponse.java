@@ -14,17 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
 
-import java.util.List;
+package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
 
-import com.cloud.api.query.vo.HostTagVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-public interface HostTagDao extends GenericDao<HostTagVO, Long> {
-    HostTagResponse newHostTagResponse(HostTagVO hostTag);
+public class PurgeExpungedResourcesResponse extends BaseResponse {
 
-    List<HostTagVO> searchByIds(Long... hostTagIds);
+    @SerializedName(ApiConstants.RESOURCE_COUNT)
+    @Param(description = "The count of the purged expunged resources")
+    private Long resourceCount;
+
+    public Long getResourceCount() {
+        return resourceCount;
+    }
+
+    public void setResourceCount(Long resourceCount) {
+        this.resourceCount = resourceCount;
+    }
 }

@@ -207,9 +207,11 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
     @Test
     public void validateExecuteHandleLibvirtException() throws LibvirtException {
         String errorMessage = "";
+        int shares = vmTo.getCpus() * vmTo.getSpeed();
 
         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
+        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
         Mockito.doThrow(libvirtException).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
         Mockito.doReturn(errorMessage).when(libvirtException).getMessage();
 
@@ -222,9 +224,12 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
     @Test
     public void validateExecuteSuccessfully() throws LibvirtException {
+        int shares = vmTo.getCpus() * vmTo.getSpeed();
+
         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
         Mockito.doReturn(connectMock).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
+        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
         Mockito.doReturn(domainMock).when(connectMock).domainLookupByName(Mockito.anyString());
         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleMemory(Mockito.any(), Mockito.anyLong(), Mockito.anyString());
         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleVcpus(Mockito.any(), Mockito.anyInt(), Mockito.anyString());

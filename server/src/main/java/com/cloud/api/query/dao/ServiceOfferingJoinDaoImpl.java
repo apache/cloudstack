@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -148,6 +149,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 VsphereStoragePolicyVO vsphereStoragePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(vsphereStoragePolicyId));
                 if (vsphereStoragePolicyVO != null)
                     offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
+            }
+            String purgeResource = offeringDetails.get(ServiceOffering.PURGE_DB_ENTITIES_KEY);
+            if (StringUtils.isNotBlank(purgeResource)) {
+                offeringResponse.setPurgeResources(Boolean.parseBoolean(purgeResource));
             }
         }
 

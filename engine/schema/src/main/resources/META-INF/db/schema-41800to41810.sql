@@ -432,6 +432,163 @@ ALTER TABLE `cloud`.`resource_reservation`
 ALTER TABLE `cloud`.`resource_reservation`
     MODIFY COLUMN `amount` bigint NOT NULL;
 
+-- Add `is_implicit` column to `host_tags` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
+
+-- Update host_view for implicit host tags
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+
+CREATE VIEW `cloud`.`host_view` AS
+    SELECT
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpu_sockets,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        GROUP_CONCAT(DISTINCT(host_tags.tag)) AS tag,
+        GROUP_CONCAT(DISTINCT(explicit_host_tags.tag)) AS explicit_tag,
+        GROUP_CONCAT(DISTINCT(implicit_host_tags.tag)) AS implicit_tag,
+        guest_os_category.id guest_os_category_id,
+        guest_os_category.uuid guest_os_category_uuid,
+        guest_os_category.name guest_os_category_name,
+        mem_caps.used_capacity memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        oobm.enabled AS `oobm_enabled`,
+        oobm.power_state AS `oobm_power_state`,
+        ha_config.enabled AS `ha_enabled`,
+        ha_config.ha_state AS `ha_state`,
+        ha_config.provider AS `ha_provider`,
+        `last_annotation_view`.`annotation` AS `annotation`,
+        `last_annotation_view`.`created` AS `last_annotated`,
+        `user`.`username` AS `username`
+    FROM
+        `cloud`.`host`
+            LEFT JOIN
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            LEFT JOIN
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            LEFT JOIN
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            LEFT JOIN
+        `cloud`.`host_details` ON host.id = host_details.host_id
+            AND host_details.name = 'guest.os.category.id'
+            LEFT JOIN
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
+            LEFT JOIN
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            LEFT JOIN
+        `cloud`.`host_tags` AS explicit_host_tags ON explicit_host_tags.host_id = host.id AND explicit_host_tags.is_implicit = 0
+            LEFT JOIN
+        `cloud`.`host_tags` AS implicit_host_tags ON implicit_host_tags.host_id = host.id AND implicit_host_tags.is_implicit = 1
+            LEFT JOIN
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            AND mem_caps.capacity_type = 0
+            LEFT JOIN
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            AND cpu_caps.capacity_type = 1
+            LEFT JOIN
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            AND async_job.instance_type = 'Host'
+            AND async_job.job_status = 0
+            LEFT JOIN
+        `cloud`.`oobm` ON oobm.host_id = host.id
+            left join
+        `cloud`.`ha_config` ON ha_config.resource_id=host.id
+            and ha_config.resource_type='Host'
+            LEFT JOIN
+        `cloud`.`last_annotation_view` ON `last_annotation_view`.`entity_uuid` = `host`.`uuid`
+            LEFT JOIN
+        `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`
+    GROUP BY
+        `host`.`id`;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'mgmt_server_id', 'bigint unsigned NULL COMMENT "management server id" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.resource_reservation', 'created', 'datetime DEFAULT NULL COMMENT "date when the reservation was created" ');
+
+UPDATE `cloud`.`resource_reservation` SET `created` = now() WHERE created IS NULL;
+
+ALTER TABLE `cloud`.`async_job` MODIFY `job_result` TEXT CHARACTER SET utf8mb4 COMMENT 'job result info';
+ALTER TABLE `cloud`.`async_job` MODIFY `job_cmd_info` TEXT CHARACTER SET utf8mb4 COMMENT 'command parameter info';
+ALTER TABLE `cloud`.`event` MODIFY `description` VARCHAR(1024) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud_usage`.`usage_event` MODIFY `resource_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+
+ALTER TABLE `cloud`.`account` MODIFY `account_name` VARCHAR(100) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'an account name set by the creator of the account, defaults to username for single accounts';
+ALTER TABLE `cloud`.`affinity_group` MODIFY `description` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`annotations` MODIFY `annotation` TEXT CHARACTER SET utf8mb4;
+ALTER TABLE `cloud`.`autoscale_vmgroups` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name of the autoscale vm group';
+ALTER TABLE `cloud`.`backup_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'backup offering name';
+ALTER TABLE `cloud`.`backup_offering` MODIFY `description` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'backup offering description';
+ALTER TABLE `cloud`.`disk_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`disk_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name';
+ALTER TABLE `cloud`.`disk_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Optional text set by the admin for display purpose only';
+ALTER TABLE `cloud`.`instance_group` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY `description` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'display text for this Kubernetes cluster';
+ALTER TABLE `cloud`.`kubernetes_supported_version` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'the name of this Kubernetes version';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `name` VARCHAR(64) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `unique_name` VARCHAR(64) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name of the network offering';
+ALTER TABLE `cloud`.`network_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'text to display to users';
+ALTER TABLE `cloud`.`networks` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'name for this network';
+ALTER TABLE `cloud`.`networks` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'display text for this network';
+ALTER TABLE `cloud`.`project_role` MODIFY `description` TEXT CHARACTER SET utf8mb4 COMMENT 'description of the project role';
+ALTER TABLE `cloud`.`projects` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
+ALTER TABLE `cloud`.`projects` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'project name';
+ALTER TABLE `cloud`.`roles` MODIFY `description` TEXT CHARACTER SET utf8mb4 COMMENT 'description of the role';
+ALTER TABLE `cloud`.`service_offering` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`service_offering` MODIFY `unique_name` VARCHAR(32) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'unique name for offerings';
+ALTER TABLE `cloud`.`service_offering` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`snapshots` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'snapshot name';
+ALTER TABLE `cloud`.`ssh_keypairs` MODIFY `keypair_name` VARCHAR(256) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the key pair';
+ALTER TABLE `cloud`.`user_vm` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user_vm_details` MODIFY `value` VARCHAR(5120) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`user` MODIFY `firstname` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user` MODIFY `lastname` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`user_data` MODIFY `name` VARCHAR(256) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the user data';
+ALTER TABLE `cloud`.`vm_instance` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_snapshots` MODIFY `display_name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_snapshots` MODIFY `description` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL;
+ALTER TABLE `cloud`.`vm_template` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL;
+ALTER TABLE `cloud`.`vm_template` MODIFY `display_text` VARCHAR(4096) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'Description text set by the admin for display purpose only';
+ALTER TABLE `cloud`.`volumes` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'A user specified name for the volume';
+ALTER TABLE `cloud`.`vpc` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'vpc name';
+ALTER TABLE `cloud`.`vpc` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT 'vpc display text';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `name` VARCHAR(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'vpc offering name';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `unique_name` VARCHAR(64) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'unique name of the vpc offering';
+ALTER TABLE `cloud`.`vpc_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER SET utf8mb4  DEFAULT NULL COMMENT 'display text';
+
 -- Scalability and DB optimisations
 
 -- Host additions and listing

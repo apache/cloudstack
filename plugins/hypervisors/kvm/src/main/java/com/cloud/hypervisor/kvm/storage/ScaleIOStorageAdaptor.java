@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetupException;
@@ -42,6 +43,8 @@ import org.libvirt.LibvirtException;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -153,6 +156,11 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
 
+    @Override
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, null, passphrase);
+    }
+
     /**
      * ScaleIO doesn't need to communicate with the hypervisor normally to create a volume. This is used only to prepare a ScaleIO data disk for encryption.
      * Thin encrypted volumes are provisioned in QCOW2 format, which insulates the guest from zeroes/unallocated blocks in the block device that would
@@ -162,11 +170,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
      * @param format disk format
      * @param provisioningType provisioning type
      * @param size disk size
+     * @param usableSize usage disk size
      * @param passphrase passphrase
      * @return the disk object
      */
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         if (passphrase == null || passphrase.length == 0) {
             return null;
         }
@@ -184,7 +193,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 QemuImg qemuImg = new QemuImg(0, true, false);
                 Map<String, String> options = new HashMap<>();
                 List<QemuObject> qemuObjects = new ArrayList<>();
-                long formattedSize = getUsableBytesFromRawBytes(disk.getSize());
+                long formattedSize;
+                if (usableSize != null && usableSize > 0) {
+                    formattedSize = usableSize;
+                } else {
+                    formattedSize = getUsableBytesFromRawBytes(disk.getSize());
+                }
 
                 options.put("preallocation", QemuImg.PreallocationType.Metadata.toString());
                 qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), disk.getQemuEncryptFormat(), keyFile.toString(), "sec0", options));
@@ -550,6 +564,67 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         long usableSizeBytes = getUsableBytesFromRawBytes(rawSizeBytes);
         QemuImg qemu = new QemuImg(timeout);
         qemu.resize(options, objects, usableSizeBytes);
+    }
+
+    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(Storage.StoragePoolType type, String uuid, Map<String, String> details) {
+        if (!ScaleIOUtil.isSDCServiceInstalled()) {
+            LOGGER.debug("SDC service not installed on host, preparing the SDC client not possible");
+            return new Ternary<>(false, null, "SDC service not installed on host");
+        }
+
+        if (!ScaleIOUtil.isSDCServiceEnabled()) {
+            LOGGER.debug("SDC service not enabled on host, enabling it");
+            if (!ScaleIOUtil.enableSDCService()) {
+                return new Ternary<>(false, null, "SDC service not enabled on host");
+            }
+        }
+
+        if (!ScaleIOUtil.isSDCServiceActive()) {
+            if (!ScaleIOUtil.startSDCService()) {
+                return new Ternary<>(false, null, "Couldn't start SDC service on host");
+            }
+        } else if (!ScaleIOUtil.restartSDCService()) {
+            return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        return new Ternary<>( true, getSDCDetails(details), "Prepared client successfully");
+    }
+
+    public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid) {
+        if (!ScaleIOUtil.isSDCServiceInstalled()) {
+            LOGGER.debug("SDC service not installed on host, no need to unprepare the SDC client");
+            return new Pair<>(true, "SDC service not installed on host, no need to unprepare the SDC client");
+        }
+
+        if (!ScaleIOUtil.isSDCServiceEnabled()) {
+            LOGGER.debug("SDC service not enabled on host, no need to unprepare the SDC client");
+            return new Pair<>(true, "SDC service not enabled on host, no need to unprepare the SDC client");
+        }
+
+        if (!ScaleIOUtil.stopSDCService()) {
+            return new Pair<>(false, "Couldn't stop SDC service on host");
+        }
+
+        return new Pair<>(true, "Unprepared SDC client successfully");
+    }
+
+    private Map<String, String> getSDCDetails(Map<String, String> details) {
+        Map<String, String> sdcDetails = new HashMap<String, String>();
+        if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
+            return sdcDetails;
+        }
+
+        String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
+        if (sdcId != null) {
+            sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
+        } else {
+            String sdcGuId = ScaleIOUtil.getSdcGuid();
+            if (sdcGuId != null) {
+                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+            }
+        }
+        return sdcDetails;
     }
 
     /**

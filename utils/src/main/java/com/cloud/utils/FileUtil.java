@@ -21,14 +21,19 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SshHelper;
 
 public class FileUtil {
     private static final Logger s_logger = Logger.getLogger(FileUtil.class);
@@ -56,5 +61,17 @@ public class FileUtil {
             }
         }
         throw new CloudRuntimeException(finalErrMsg);
+    }
+
+    public static boolean writeToFile(String fileName, String content) {
+        Path filePath = Paths.get(fileName);
+        try {
+            Files.write(filePath, content.getBytes(StandardCharsets.UTF_8));
+            s_logger.debug(String.format("Successfully wrote to the file: %s", fileName));
+            return true;
+        } catch (IOException e) {
+            s_logger.error(String.format("Error writing to the file: %s", fileName), e);
+        }
+        return false;
     }
 }

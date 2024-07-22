@@ -167,4 +167,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     void updateSystemVmTemplateId(long templateId, Hypervisor.HypervisorType hypervisorType);
 
     List<VMInstanceVO> listByHostOrLastHostOrHostPod(long hostId, long podId);
+    List<VMInstanceVO> searchRemovedByRemoveDate(final Date startDate, final Date endDate, final Long batchSize,
+             List<Long> skippedVmIds);
+
 }

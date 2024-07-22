@@ -755,6 +755,13 @@ public class AgentProperties{
      */
     public static final Property<String> CONTROL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
 
+    /**
+     * Implicit host tags
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;

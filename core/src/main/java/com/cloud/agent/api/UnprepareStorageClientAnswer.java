@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,48 +15,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.vo;
+//
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+package com.cloud.agent.api;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
-/**
- * Storage Tags DB view.
- *
- */
-@Entity
-@Table(name = "host_tags")
-public class HostTagVO extends BaseViewVO implements InternalIdentity {
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @Column(name = "id")
-    private long id;
-
-    @Column(name = "tag")
-    private String name;
-
-    @Column(name = "host_id")
-    long hostId;
-
-    @Override
-    public long getId() {
-        return id;
+public class UnprepareStorageClientAnswer extends Answer {
+    public UnprepareStorageClientAnswer() {
+        super();
     }
 
-    public String getName() {
-        return name;
+    public UnprepareStorageClientAnswer(Command command, boolean success) {
+        super(command, success, "");
     }
 
-    public long getHostId() {
-        return hostId;
-    }
-
-    public void setHostId(long hostId) {
-        this.hostId = hostId;
+    public UnprepareStorageClientAnswer(Command command, boolean success, String details) {
+        super(command, success, details);
     }
 }

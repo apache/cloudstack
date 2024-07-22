@@ -53,7 +53,10 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.GetVolumeStatAnswer;
+import com.cloud.agent.api.GetVolumeStatCommand;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.configuration.Config;
@@ -185,16 +188,23 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
         when(RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
 
+        long volumeVirtualSize = 68673077248L;
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
-        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
+        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true, volumeVirtualSize);
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
 
         when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
+
+        GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
+        when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
+        when(getVolumeStatAnswer.getResult()).thenReturn(true);
+        when(getVolumeStatAnswer.getVirtualSize()).thenReturn(volumeVirtualSize);
+
         MigrateVolumeAnswer migrateVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
-        when(ep.sendMessage(any())).thenReturn(migrateVolumeAnswer);
+        when(ep.sendMessage(any(MigrateVolumeCommand.class))).thenReturn(migrateVolumeAnswer);
         when(migrateVolumeAnswer.getResult()).thenReturn(true);
 
         Mockito.doNothing().when(scaleIOPrimaryDataStoreDriver)
@@ -232,12 +242,17 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
-        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
+        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true, null);
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
 
         when(configDao.getValue(Config.MigrateWait.key())).thenReturn("3600");
+
+        GetVolumeStatAnswer getVolumeStatAnswer = Mockito.mock(GetVolumeStatAnswer.class);
+        when(ep.sendMessage(any(GetVolumeStatCommand.class))).thenReturn(getVolumeStatAnswer);
+        when(getVolumeStatAnswer.getResult()).thenReturn(false);
+
         MigrateVolumeAnswer migrateVolumeAnswer = Mockito.mock(MigrateVolumeAnswer.class);
         when(ep.sendMessage(any())).thenReturn(migrateVolumeAnswer);
         when(migrateVolumeAnswer.getResult()).thenReturn(false);

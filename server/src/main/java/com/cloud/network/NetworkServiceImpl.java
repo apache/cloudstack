@@ -1587,6 +1587,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 endIPv6 = startIPv6;
             }
             _networkModel.checkIp6Parameters(startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+            if (!GuestType.Shared.equals(ntwkOff.getGuestType())) {
+                _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
+            }
 
             if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() != Network.GuestType.Shared) {
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");

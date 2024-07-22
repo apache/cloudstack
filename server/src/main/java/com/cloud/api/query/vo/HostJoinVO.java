@@ -174,6 +174,12 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "explicit_tag")
+    private String explicitTag;
+
+    @Column(name = "implicit_tag")
+    private String implicitTag;
+
     @Column(name = "memory_used_capacity")
     private long memUsedCapacity;
 
@@ -388,6 +394,14 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public String getTag() {
         return tag;
+    }
+
+    public String getExplicitTag() {
+        return explicitTag;
+    }
+
+    public String getImplicitTag() {
+        return implicitTag;
     }
 
     public String getAnnotation() {

@@ -338,6 +338,12 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="purgeresources" ref="purgeresources">
+          <template #label>
+            <tooltip-label :title="$t('label.purgeresources')" :tooltip="apiParams.purgeresources.description"/>
+          </template>
+          <a-switch v-model:checked="form.purgeresources"/>
+        </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
             <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
@@ -934,7 +940,8 @@ export default {
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
           diskofferingstrictness: values.diskofferingstrictness,
-          encryptroot: values.encryptdisk
+          encryptroot: values.encryptdisk,
+          purgeresources: values.purgeresources
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid

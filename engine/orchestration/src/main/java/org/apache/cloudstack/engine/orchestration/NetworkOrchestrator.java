@@ -770,6 +770,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     continue;
                 }
 
+                // Ensure cidr size is equal to 64 for
+                //      - networks other than shared networks
+                //      - shared networks with SLAAC V6 only
+                if (predefined != null && StringUtils.isNotBlank(predefined.getIp6Cidr()) &&
+                        (!GuestType.Shared.equals(offering.getGuestType()) || guru.isSlaacV6Only())) {
+                    _networkModel.checkIp6CidrSizeEqualTo64(predefined.getIp6Cidr());
+                }
+
                 if (network.getId() != -1) {
                     if (network instanceof NetworkVO) {
                         networks.add((NetworkVO) network);
@@ -2678,8 +2686,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        if (ipv6 && NetUtils.getIp6CidrSize(ip6Cidr) != 64) {
-            throw new InvalidParameterValueException("IPv6 subnet should be exactly 64-bits in size");
+        if (ipv6 && !GuestType.Shared.equals(ntwkOff.getGuestType())) {
+            _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
         }
 
         //TODO(VXLAN): Support VNI specified
@@ -4662,6 +4670,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (virtualMachine.getState() != VirtualMachine.State.Stopped) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, virtualMachine.getAccountId(), virtualMachine.getDataCenterId(), virtualMachine.getId(),
                         Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, virtualMachine.getClass().getName(), virtualMachine.getUuid(), virtualMachine.isDisplay());
+            }
+        }
+    }
+
+    @Override
+    public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(networkElements) || CollectionUtils.isEmpty(vmIds)) {
+            return;
+        }
+        for (NetworkElement element : networkElements) {
+            if (element instanceof LoadBalancingServiceProvider) {
+                LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider)element;
+                lbProvider.expungeLbVmRefs(vmIds, batchSize);
             }
         }
     }

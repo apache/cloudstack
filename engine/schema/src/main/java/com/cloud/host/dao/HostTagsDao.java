@@ -21,6 +21,8 @@ import java.util.List;
 import com.cloud.host.HostTagVO;
 import com.cloud.utils.db.GenericDao;
 
+import org.apache.cloudstack.api.response.HostTagResponse;
+
 public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
     void persist(long hostId, List<String> hostTags);
@@ -31,4 +33,11 @@ public interface HostTagsDao extends GenericDao<HostTagVO, Long> {
 
     void deleteTags(long hostId);
 
+    boolean updateImplicitTags(long hostId, List<String> hostTags);
+
+    List<HostTagVO> getExplicitHostTags(long hostId);
+
+    HostTagResponse newHostTagResponse(HostTagVO hostTag);
+
+    List<HostTagVO> searchByIds(Long... hostTagIds);
 }

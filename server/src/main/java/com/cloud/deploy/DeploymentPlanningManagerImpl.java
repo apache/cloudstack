@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -700,7 +701,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         VirtualMachineTemplate template = vmProfile.getTemplate();
         if (offering.getHostTag() != null || template.getTemplateTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template)) {
+            if (!host.checkHostServiceOfferingAndTemplateTags(offering, template, UserVmManager.getStrictHostTags())) {
                 s_logger.debug("Service Offering host tag or template tag does not match the last host of this VM");
                 return false;
             }
@@ -1581,6 +1582,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         s_logger.debug("Host: " + host.getId() + (hostCanAccessSPool ? " can" : " cannot") + " access pool: " + pool.getId());
+        if (!hostCanAccessSPool) {
+            if (_storageMgr.canHostPrepareStoragePoolAccess(host, pool)) {
+                s_logger.debug("Host: " + host.getId() + " can prepare access to pool: " + pool.getId());
+                hostCanAccessSPool = true;
+            } else {
+                s_logger.debug("Host: " + host.getId() + " cannot prepare access to pool: " + pool.getId());
+            }
+        }
+
         return hostCanAccessSPool;
     }
 

@@ -776,6 +776,8 @@ class VirtualMachine:
         cmd.virtualmachineid = self.id
         if templateid:
             cmd.templateid = templateid
+        if expunge:
+            cmd.expunge = expunge
         if diskofferingid:
             cmd.diskofferingid = diskofferingid
         if rootdisksize:
@@ -788,7 +790,6 @@ class VirtualMachine:
                     'key': key,
                     'value': value
                 })
-
         return apiclient.restoreVirtualMachine(cmd)
 
     def get_ssh_client(

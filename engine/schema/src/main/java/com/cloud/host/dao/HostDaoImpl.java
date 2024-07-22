@@ -1309,7 +1309,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             }
             pstmt.close();
             if(result.isEmpty()){
-                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
+                throw new CloudRuntimeException("No suitable host found for the following compute offering tags: " + computeOfferingTags);
             }
             return result;
         } catch (SQLException e) {
@@ -1336,7 +1336,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             }
             pstmt.close();
             if(result.isEmpty()){
-                throw new CloudRuntimeException("No suitable host found for follow compute offering tags: " + computeOfferingTags);
+                throw new CloudRuntimeException("No suitable host found for the following compute offering tags: " + computeOfferingTags);
             }
             return result;
         } catch (SQLException e) {
