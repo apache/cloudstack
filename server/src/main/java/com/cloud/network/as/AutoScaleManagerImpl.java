@@ -70,6 +70,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -251,6 +252,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     NetworkOrchestrationService networkMgr;
     @Inject
     private UserVmManager userVmMgr;
+    @Inject
+    private UserDataManager userDataMgr;
     @Inject
     private UserVmDao userVmDao;
     @Inject
@@ -571,7 +574,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             userDataDetails = cmd.getUserDataDetails().toString();
         }
         userData = userVmMgr.finalizeUserData(userData, userDataId, template);
-        userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
+        userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
         if (userData != null) {
             profileVO.setUserData(userData);
         }
@@ -650,7 +653,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
             VirtualMachineTemplate template = entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId);
             userData = userVmMgr.finalizeUserData(userData, userDataId, template);
-            userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
+            userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
             vmProfile.setUserDataId(userDataId);
             vmProfile.setUserData(userData);
             vmProfile.setUserDataDetails(userDataDetails);

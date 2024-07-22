@@ -18,9 +18,12 @@
  */
 package com.cloud.storage.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface SnapshotDetailsDao extends GenericDao<SnapshotDetailsVO, Long>, ResourceDetailsDao<SnapshotDetailsVO> {
+    public List<SnapshotDetailsVO> findDetailsByZoneAndKey(long dcId, String key);
 }

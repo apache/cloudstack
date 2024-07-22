@@ -81,6 +81,8 @@
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
 
+    <bean id="resourceCleanupServiceImpl" class="org.apache.cloudstack.resource.ResourceCleanupServiceImpl" />
+
     <!-- the new background poll manager -->
     <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
     </bean>
@@ -107,7 +109,7 @@
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
     <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
-        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
@@ -143,6 +145,10 @@
         <property name="networkAclElements" value="#{networkACLServiceProvidersRegistry.registered}" />
         <property name="pfElements" value="#{portForwardingServiceProvidersRegistry.registered}" />
         <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
+    </bean>
+
+    <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
     </bean>
 
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
@@ -318,7 +324,7 @@
     </bean>
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
-        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
 
     <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />

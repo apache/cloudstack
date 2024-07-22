@@ -19,11 +19,11 @@
 
 package com.cloud.agent.api;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class GetRemoteVmsCommand extends Command {
 
     String remoteIp;
     String username;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     String password;
 
     public GetRemoteVmsCommand(String remoteIp, String username, String password) {

@@ -104,18 +104,6 @@
                   v-if="resource.id"
                 />
               </a-tooltip>
-              <a-tooltip placement="right" >
-                <template #title>
-                  <span>{{ $t('label.copy.consoleurl') }}</span>
-                </template>
-                <console
-                  copyUrlToClipboard
-                  style="margin-top: -5px;"
-                  :resource="resource"
-                  size="default"
-                  v-if="resource.id"
-                />
-              </a-tooltip>
             </div>
           </slot>
         </div>
@@ -138,6 +126,12 @@
           <div class="resource-detail-item__label">{{ $t('label.resourcestate') }}</div>
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.resourcestate" displayText/>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
+          <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.success ? 'success' : 'error'"/>
           </div>
         </div>
 
@@ -479,11 +473,12 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.publicip">
-          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
-            <copy-label :label="resource.publicip"/>
+            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+            <copy-label v-else :label="resource.publicip" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -520,7 +515,7 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <SaveOutlined v-else />
@@ -528,7 +523,7 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.isoid">
-          <div class="resource-detail-item__label">{{ $t('label.iso') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <UsbOutlined v-else />
@@ -544,12 +539,19 @@
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
+        <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
-            <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
+            <div v-if="resource.rootdiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
+            </div>
+            <span v-if="resource.rootdiskofferingid && resource.datadiskofferingid">&nbsp;|&nbsp;</span>
+            <div v-if="resource.datadiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.datadiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.datadiskofferingid }">{{ resource.datadiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.datadiskofferingdisplaytext }}</span>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">
@@ -670,6 +672,22 @@
             <block-outlined v-else />
             <router-link v-if="!isStatic && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + resource.domainid, query: { tab: 'details'}  }">{{ resource.domain || resource.domainid }}</router-link>
             <span v-else>{{ resource.domain || resource.domainid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.payloadurl">
+          <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
+          <div class="resource-detail-item__details">
+          <link-outlined/>
+            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
+            <span v-else>{{ resource.payloadurl }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.webhookid">
+          <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
+          <div class="resource-detail-item__details">
+            <node-index-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
+            <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">

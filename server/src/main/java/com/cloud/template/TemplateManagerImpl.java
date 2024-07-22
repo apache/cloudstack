@@ -188,6 +188,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -1446,6 +1447,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Input validation
         final Long id = cmd.getId();
         final Account caller = CallContext.current().getCallingAccount();
+        final User user = CallContext.current().getCallingUser();
         List<String> accountNames = cmd.getAccountNames();
         List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
@@ -1515,9 +1517,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (owner.getType() == Account.Type.PROJECT) {
-            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
-                    ". Project owned templates cannot be shared outside template.");
+            // if it is a project owned template/iso, the user must at least have access to be allowed to share it.
+            _accountMgr.checkAccess(user, template);
         }
 
         // check configuration parameter(allow.public.user.templates) value for

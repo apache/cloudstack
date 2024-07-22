@@ -64,7 +64,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -163,7 +163,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     EntityManager entityManager;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
-    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+    private List<KubernetesServiceHelper> kubernetesServiceHelpers;
     public static final Map<EntityType, ApiCommandResourceType> s_typeMap = new HashMap<>();
 
     static {
@@ -198,12 +198,12 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.OBJECT_STORAGE, ApiCommandResourceType.ObjectStore);
     }
 
-    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
-        return kubernetesClusterHelpers;
+    public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
+        return kubernetesServiceHelpers;
     }
 
-    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
-        this.kubernetesClusterHelpers = kubernetesClusterHelpers;
+    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
+        this.kubernetesServiceHelpers = kubernetesServiceHelpers;
     }
 
     @Override
@@ -533,7 +533,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             case ISO:
                 return templateDao.findByUuid(entityUuid);
             case KUBERNETES_CLUSTER:
-                return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
+                return kubernetesServiceHelpers.get(0).findByUuid(entityUuid);
             case AUTOSCALE_VM_GROUP:
                 return autoScaleVmGroupDao.findByUuid(entityUuid);
             case MANAGEMENT_SERVER:

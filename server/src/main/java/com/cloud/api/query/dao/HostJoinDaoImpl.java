@@ -247,7 +247,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     host.getHypervisorType() == Hypervisor.HypervisorType.Custom)) {
                 //only kvm has the requirement to return host details
                 try {
-                    hostResponse.setDetails(hostDetails);
+                    hostResponse.setDetails(hostDetails, host.getHypervisorType());
                 } catch (Exception e) {
                     logger.debug("failed to get host details", e);
                 }

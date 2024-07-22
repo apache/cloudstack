@@ -90,6 +90,7 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resource.ResourceCleanupService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -402,6 +403,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private VpcDao vpcDao;
     @Inject
     private DomainDao domainDao;
+    @Inject
+    ResourceCleanupService resourceCleanupService;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -691,6 +694,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (logger.isDebugEnabled()) {
             logger.debug("Expunged " + vm);
         }
+        resourceCleanupService.purgeExpungedVmResourcesLaterIfNeeded(vm);
     }
 
     private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,
@@ -1077,6 +1081,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
         Host lastHost = _hostDao.findById(vm.getLastHostId());
+        if (lastHost == null) {
+            logger.warn("Could not find last host with id [{}], skipping migrate VM [{}] across cluster check." , vm.getLastHostId(), vm.getUuid());
+            return;
+        }
         if (destinationClusterId.equals(lastHost.getClusterId())) {
             return;
         }
@@ -1222,21 +1230,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                 long destHostId = dest.getHost().getId();
                 vm.setPodIdToDeployIn(dest.getPod().getId());
-                final Long cluster_id = dest.getCluster().getId();
-                final ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-                final ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+                final Long clusterId = dest.getCluster().getId();
+                updateOverCommitRatioForVmProfile(vmProfile, clusterId);
 
-                if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null &&
-                        (Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f)) {
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
-                } else if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO) != null) {
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, cluster_detail_cpu.getValue(), true);
-                    userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, cluster_detail_ram.getValue(), true);
-                }
-
-                vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
-                vmProfile.setMemoryOvercommitRatio(Float.parseFloat(cluster_detail_ram.getValue()));
                 StartAnswer startAnswer = null;
 
                 try {
@@ -1251,7 +1247,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     resetVmNicsDeviceId(vm.getId());
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        checkAndAttemptMigrateVmAcrossCluster(vm, cluster_id, dest.getStorageForDisks());
+                        checkAndAttemptMigrateVmAcrossCluster(vm, clusterId, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
@@ -1494,6 +1490,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             networkName = String.format("%s-V%s-S%s", networkName, vpc.getId(), networkVO.getId());
         }
         networkToNetworkNameMap.put(networkVO.getId(), networkName);
+    }
+
+    private void updateOverCommitRatioForVmProfile(VirtualMachineProfile vmProfile, long clusterId) {
+        final ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        final ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+        final float parsedClusterCpuDetailCpu = Float.parseFloat(clusterDetailCpu.getValue());
+        final float parsedClusterDetailRam = Float.parseFloat(clusterDetailRam.getValue());
+        UserVmDetailVO vmDetailCpu = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        UserVmDetailVO vmDetailRam = userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+
+        if ((vmDetailCpu == null && parsedClusterCpuDetailCpu > 1f) ||
+                (vmDetailCpu != null && Float.parseFloat(vmDetailCpu.getValue()) != parsedClusterCpuDetailCpu)) {
+            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO, clusterDetailCpu.getValue(), true);
+        }
+        if ((vmDetailRam == null && parsedClusterDetailRam > 1f) ||
+                (vmDetailRam != null && Float.parseFloat(vmDetailRam.getValue()) != parsedClusterDetailRam)) {
+            userVmDetailsDao.addDetail(vmProfile.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, clusterDetailRam.getValue(), true);
+        }
+
+        vmProfile.setCpuOvercommitRatio(Float.parseFloat(clusterDetailCpu.getValue()));
+        vmProfile.setMemoryOvercommitRatio(Float.parseFloat(clusterDetailRam.getValue()));
     }
 
     /**
@@ -1993,20 +2010,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void updatePersistenceMap(Map<String, Boolean> vlanToPersistenceMap, NetworkVO networkVO) {
+        if (networkVO == null) {
+            return;
+        }
         NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
-        if (offeringVO != null) {
-            Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
-            Boolean shouldDeleteNwResource = (MapUtils.isNotEmpty(vlanToPersistenceMap) && data != null) ? vlanToPersistenceMap.get(data.first()) : null;
-            if (data != null && (shouldDeleteNwResource == null || shouldDeleteNwResource)) {
-                vlanToPersistenceMap.put(data.first(), data.second());
-            }
+        if (offeringVO == null) {
+            return;
+        }
+        Pair<String, Boolean> data = getVMNetworkDetails(networkVO, offeringVO.isPersistent());
+        Boolean shouldDeleteNwResource = (MapUtils.isNotEmpty(vlanToPersistenceMap) && data != null) ? vlanToPersistenceMap.get(data.first()) : null;
+        if (data != null && (shouldDeleteNwResource == null || shouldDeleteNwResource)) {
+            vlanToPersistenceMap.put(data.first(), data.second());
         }
     }
 
     private Map<String, Boolean> getVlanToPersistenceMapForVM(long vmId) {
         List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vmId);
         Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
-        if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(userVmJoinVOs)) {
             for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
                 NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
                 updatePersistenceMap(vlanToPersistenceMap, networkVO);
@@ -2720,6 +2741,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _networkMgr.prepareNicForMigration(profile, dest);
         volumeMgr.prepareForMigration(profile, dest);
         profile.setConfigDriveLabel(VmConfigDriveLabel.value());
+        updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
         final VirtualMachineTO to = toVmTO(profile);
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
@@ -3007,7 +3029,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(plan.getClusterId(), currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, plan, volumeToPoolObjectMap, volume, currentPool);
-            } else if (shouldMapVolume(profile, volume, currentPool)){
+            } else if (shouldMapVolume(profile, currentPool)){
                 volumeToPoolObjectMap.put(volume, currentPool);
             }
         }
@@ -3019,11 +3041,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * Some context: VMware migration workflow requires all volumes to be mapped (even if volume stays on its current pool);
      *  however, this is not necessary/desirable for the KVM flow.
      */
-    protected boolean shouldMapVolume(VirtualMachineProfile profile, Volume volume, StoragePoolVO currentPool) {
+    protected boolean shouldMapVolume(VirtualMachineProfile profile, StoragePoolVO currentPool) {
         boolean isManaged = currentPool.isManaged();
         boolean isNotKvm = HypervisorType.KVM != profile.getHypervisorType();
-        boolean isNotDatadisk = Type.DATADISK != volume.getVolumeType();
-        return isNotKvm || isNotDatadisk || isManaged;
+        return isNotKvm || isManaged;
     }
 
     /**
@@ -4770,6 +4791,18 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private ApiCommandResourceType getApiCommandResourceTypeForVm(VirtualMachine vm) {
+        switch (vm.getType()) {
+            case DomainRouter:
+                return ApiCommandResourceType.DomainRouter;
+            case ConsoleProxy:
+                return ApiCommandResourceType.ConsoleProxy;
+            case SecondaryStorageVm:
+                return ApiCommandResourceType.SystemVm;
+        }
+        return ApiCommandResourceType.VirtualMachine;
+    }
+
     private void handlePowerOnReportWithNoPendingJobsOnVM(final VMInstanceVO vm) {
         Host host = _hostDao.findById(vm.getHostId());
         Host poweredHost = _hostDao.findById(vm.getPowerHostId());
@@ -4817,7 +4850,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     + " -> Running) from out-of-context transition. VM network environment may need to be reset");
 
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, vm.getDomainId(),
-                    EventTypes.EVENT_VM_START, "Out of band VM power on", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
+                EventTypes.EVENT_VM_START, "Out of band VM power on", vm.getId(), getApiCommandResourceTypeForVm(vm).toString());
             logger.info("VM {} is sync-ed to at Running state according to power-on report from hypervisor.", vm.getInstanceName());
             break;
 
@@ -4850,7 +4883,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Running:
         case Stopped:
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,vm.getDomainId(),
-                    EventTypes.EVENT_VM_STOP, "Out of band VM power off", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
+                    EventTypes.EVENT_VM_STOP, "Out of band VM power off", vm.getId(), getApiCommandResourceTypeForVm(vm).toString());
         case Migrating:
             logger.info("VM {} is at {} and we received a {} report while there is no pending jobs on it"
                             , vm.getInstanceName(), vm.getState(), vm.getPowerState());

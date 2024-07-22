@@ -40,5 +40,5 @@
     <bean id="volumeRestService" class="org.apache.cloudstack.engine.rest.service.api.VolumeRestService" />
     <bean id="volumeTypeHelper" class="org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeTypeHelper" />
     <bean id="zoneRestService" class="org.apache.cloudstack.engine.rest.service.api.ZoneRestService" />
-    
+
 </beans>

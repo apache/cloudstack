@@ -135,24 +135,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             List<VolumeDefinition> volumeDefs = api.volumeDefinitionList(rscName, null, null);
             final long size = volumeDefs.isEmpty() ? 0 : volumeDefs.get(0).getSizeKib() * 1024;
 
-            List<ResourceWithVolumes> resources = api.viewResources(
-                Collections.emptyList(),
-                Collections.singletonList(rscName),
-                Collections.emptyList(),
-                null,
-                null,
-                null);
-            if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
-                final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
-                kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
-                kvmDisk.setSize(size);
-                kvmDisk.setVirtualSize(size);
-                return kvmDisk;
-            } else {
-                logger.error("Linstor: viewResources didn't return resources or volumes for " + rscName);
-                throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
-            }
+            final String devicePath = LinstorUtil.getDevicePath(api, rscName);
+            final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devicePath, name, pool);
+            kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+            kvmDisk.setSize(size);
+            kvmDisk.setVirtualSize(size);
+            return kvmDisk;
         } catch (ApiException apiEx) {
             logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);

@@ -37,6 +37,7 @@ import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -272,6 +273,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName("hypervisor")
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
+
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the VM's primary IP address")
+    private String ipAddress;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "public IP address id associated with vm via Static nat rule")
@@ -627,6 +632,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return hypervisor;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public String getPublicIpId() {
         return publicIpId;
     }
@@ -863,6 +872,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
+        setIpAddress(nics);
+    }
+
+    public void setIpAddress(final Set<NicResponse> nics) {
+        if (CollectionUtils.isNotEmpty(nics)) {
+            this.ipAddress = nics.iterator().next().getIpaddress();
+        }
     }
 
     public void addNic(NicResponse nic) {

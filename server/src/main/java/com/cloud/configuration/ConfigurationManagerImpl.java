@@ -136,8 +136,10 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -472,9 +474,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
-    protected Set<String> configValuesForValidation;
-    private Set<String> weightBasedParametersForValidation;
-    private Set<String> overprovisioningFactorsForValidation;
+    private Set<String> configValuesForValidation = new HashSet<String>();
+    private Set<String> weightBasedParametersForValidation = new HashSet<String>();
+    private Set<String> overprovisioningFactorsForValidation = new HashSet<String>();
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -511,6 +513,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Boolean> ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS = new ConfigKey<>(Boolean.class, "allow.domain.admins.to.create.tagged.offerings", "Advanced",
             "false", "Allow domain admins to create offerings with tags.", true, ConfigKey.Scope.Account, null);
 
+    public static final ConfigKey<Long> DELETE_QUERY_BATCH_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.query.batch.size", "0",
+            "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
+                    " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. <= 0 means that no limit will " +
+                    "be applied. Default value is 0. For now, this is used for deletion of vm & volume stats only.", true);
+
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
     private static final String BYTES_READ_RATE = "Bytes Read";
@@ -535,8 +542,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
-    private void populateConfigValuesForValidationSet() {
-        configValuesForValidation = new HashSet<String>();
+    protected void populateConfigValuesForValidationSet() {
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
@@ -562,11 +568,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(StorageManager.STORAGE_POOL_DISK_WAIT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.key());
         configValuesForValidation.add(StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.key());
-        configValuesForValidation.add(VM_USERDATA_MAX_LENGTH_STRING);
+        configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
+        configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
+        configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
     }
 
     private void weightBasedParametersForValidation() {
-        weightBasedParametersForValidation = new HashSet<String>();
         weightBasedParametersForValidation.add(AlertManager.CPUCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
@@ -586,11 +593,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
-
     }
 
     private void overProvisioningFactorsForValidation() {
-        overprovisioningFactorsForValidation = new HashSet<String>();
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
@@ -1177,8 +1182,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
-    private String validateConfigurationValue(final String name, String value, final String scope) {
-
+    protected String validateConfigurationValue(final String name, String value, final String scope) {
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
             logger.error("Missing configuration variable " + name + " in configuration table");
@@ -1260,45 +1264,47 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return null;
         }
 
-        if (type.equals(Integer.class) && NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+        if (type.equals(Integer.class)) {
             try {
                 final int val = Integer.parseInt(value);
-                //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
-                //0 value is considered as disable.
-                if(val < 0 || val > 255){
-                    throw new InvalidParameterValueException(name+" value should be between 0 and 255. 0 value will disable this feature");
+                if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+                    //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
+                    //0 value is considered as disable.
+                    if(val < 0 || val > 255){
+                        throw new InvalidParameterValueException(name + " value should be between 0 and 255. 0 value will disable this feature");
+                    }
                 }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
-            }
-        }
 
-        if (type.equals(Integer.class) && configValuesForValidation.contains(name)) {
-            try {
-                final int val = Integer.parseInt(value);
-                if (val <= 0) {
-                    throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
-                }
-                if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
-                    throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
-                }
-                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
-                    if (val < 8) {
-                        throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
-                    }
-                    if (val > 256) {
-                        throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
+                if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) || UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                    if (val > 10) {
+                        throw new InvalidParameterValueException("Please enter a value between 0 and 10 for the configuration parameter: " + name + ", -1 will disable it");
                     }
                 }
-                if (VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
-                    if (val > 1048576) {
-                        throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+
+                if (configValuesForValidation.contains(name)) {
+                    if (val <= 0) {
+                        throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
+                    }
+                    if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
+                        throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
+                    }
+                    if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
+                        if (val < 8) {
+                            throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
+                        }
+                        if (val > 256) {
+                            throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
+                        }
+                    }
+                    if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
+                        if (val > 1048576) {
+                            throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
+                        }
                     }
                 }
             } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for:" + name);
+                logger.error("There was an error trying to parse the integer value for configuration parameter: " + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the integer value for configuration parameter: " + name);
             }
         }
 
@@ -1309,8 +1315,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
                 }
             } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the float value for:" + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the float value for:" + name);
+                logger.error("There was an error trying to parse the float value for configuration parameter: " + name);
+                throw new InvalidParameterValueException("There was an error trying to parse the float value for configuration parameter: " + name);
             }
         }
 
@@ -3187,7 +3193,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot());
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3198,8 +3204,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID, final boolean dynamicScalingEnabled, final Long diskOfferingId,
-            final boolean diskOfferingStrictness, final boolean isCustomized, final boolean encryptRoot) {
+            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
+            final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
+            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3234,7 +3241,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 limitResourceUse, volatileVm, displayText, isSystem, vmType,
                 hostTag, deploymentPlanner, dynamicScalingEnabled, isCustomized);
 
-        List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+        List<ServiceOfferingDetailsVO> detailsVOList = new ArrayList<ServiceOfferingDetailsVO>();
         if (details != null) {
             // To have correct input, either both gpu card name and VGPU type should be passed or nothing should be passed.
             // Use XOR condition to verify that.
@@ -3268,22 +3275,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     // Add in disk offering details
                     continue;
                 }
-                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), detailEntry.getKey(), detailEntryValue, true));
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), detailEntry.getKey(), detailEntryValue, true));
             }
         }
 
         if (storagePolicyID != null) {
-            detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+            detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+        }
+        if (purgeResources) {
+            detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(),
+                    ServiceOffering.PURGE_DB_ENTITIES_KEY, Boolean.TRUE.toString(), false));
         }
 
         serviceOffering.setDiskOfferingStrictness(diskOfferingStrictness);
 
         DiskOfferingVO diskOffering = null;
         if (diskOfferingId == null) {
-            diskOffering = createDiskOfferingInternal(userId, isSystem, vmType,
-                    name, cpu, ramSize, speed, displayText, typedProvisioningType, localStorageRequired,
-                    offerHA, limitResourceUse, volatileVm, tags, domainIds, zoneIds, hostTag,
-                    networkRate, deploymentPlanner, details, rootDiskSizeInGiB, isCustomizedIops, minIops, maxIops,
+            diskOffering = createDiskOfferingInternal(
+                    name, displayText, typedProvisioningType, localStorageRequired,
+                    tags, details, rootDiskSizeInGiB, isCustomizedIops, minIops, maxIops,
                     bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
                     bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                     iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength,
@@ -3291,6 +3301,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     hypervisorSnapshotReserve, cacheMode, storagePolicyID, encryptRoot);
         } else {
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            String diskStoragePolicyId = diskOfferingDetailsDao.getDetail(diskOfferingId, ApiConstants.STORAGE_POLICY);
+            if (storagePolicyID != null && diskStoragePolicyId != null) {
+                throw new InvalidParameterValueException("Storage policy cannot be defined on both compute and disk offering");
+            }
         }
         if (diskOffering != null) {
             serviceOffering.setDiskOfferingId(diskOffering.getId());
@@ -3300,18 +3314,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
             for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
             if (CollectionUtils.isNotEmpty(zoneIds)) {
                 for (Long zoneId : zoneIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                    detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
-            if (CollectionUtils.isNotEmpty(detailsVO)) {
-                for (ServiceOfferingDetailsVO detail : detailsVO) {
+            if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                for (ServiceOfferingDetailsVO detail : detailsVOList) {
                     detail.setResourceId(serviceOffering.getId());
                 }
-                _serviceOfferingDetailsDao.saveDetails(detailsVO);
+                _serviceOfferingDetailsDao.saveDetails(detailsVOList);
             }
 
             CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
@@ -3330,10 +3344,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
-    private DiskOfferingVO createDiskOfferingInternal(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-                                                      final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final ProvisioningType typedProvisioningType, final boolean localStorageRequired,
-                                                      final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-                                                      final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+    private DiskOfferingVO createDiskOfferingInternal(final String name, final String displayText, final ProvisioningType typedProvisioningType, final boolean localStorageRequired,
+                                                      String tags, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
                                                       Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
                                                       Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
                                                       Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
@@ -3394,8 +3406,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         diskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
         if ((diskOffering = _diskOfferingDao.persist(diskOffering)) != null) {
-            if (details != null && !details.isEmpty()) {
-                List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<DiskOfferingDetailVO>();
+            if ((details != null && !details.isEmpty()) || (storagePolicyID != null)) {
+                List<DiskOfferingDetailVO> diskDetailsVO = new ArrayList<>();
                 // Support disk offering details for below parameters
                 if (details.containsKey(Volume.BANDWIDTH_LIMIT_IN_MBPS)) {
                     diskDetailsVO.add(new DiskOfferingDetailVO(diskOffering.getId(), Volume.BANDWIDTH_LIMIT_IN_MBPS, details.get(Volume.BANDWIDTH_LIMIT_IN_MBPS), false));
@@ -3403,6 +3415,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (details.containsKey(Volume.IOPS_LIMIT)) {
                     diskDetailsVO.add(new DiskOfferingDetailVO(diskOffering.getId(), Volume.IOPS_LIMIT, details.get(Volume.IOPS_LIMIT), false));
                 }
+
+                if (storagePolicyID != null) {
+                    diskDetailsVO.add(new DiskOfferingDetailVO(diskOffering.getId(), ApiConstants.STORAGE_POLICY, String.valueOf(storagePolicyID), false));
+                }
+
                 if (!diskDetailsVO.isEmpty()) {
                     diskOfferingDetailsDao.saveDetails(diskDetailsVO);
                 }
@@ -3468,6 +3485,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String storageTags = cmd.getStorageTags();
         String hostTags = cmd.getHostTags();
         ServiceOffering.State state = cmd.getState();
+        boolean purgeResources = cmd.isPurgeResources();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3484,6 +3502,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
         Collections.sort(existingZoneIds);
+
+        String purgeResourceStr = _serviceOfferingDetailsDao.getDetail(id, ServiceOffering.PURGE_DB_ENTITIES_KEY);
+        boolean existingPurgeResources = false;
+        if (StringUtils.isNotBlank(purgeResourceStr)) {
+            existingPurgeResources = Boolean.parseBoolean(purgeResourceStr);
+        }
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
@@ -3553,7 +3577,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
-        final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) || !filteredZoneIds.equals(existingZoneIds);
+        final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
+                !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources;
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
@@ -3610,6 +3635,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _serviceOfferingDetailsDao.remove(sc);
                 for (Long zoneId : filteredZoneIds) {
                     detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
+                }
+            }
+            if (purgeResources != existingPurgeResources) {
+                sc.setParameters("detailName", ServiceOffering.PURGE_DB_ENTITIES_KEY);
+                _serviceOfferingDetailsDao.remove(sc);
+                if (purgeResources) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(id, ServiceOffering.PURGE_DB_ENTITIES_KEY,
+                            "true", false));
                 }
             }
         }
@@ -4769,6 +4802,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             newIp6Gateway = MoreObjects.firstNonNull(newIp6Gateway, network.getIp6Gateway());
             newIp6Cidr = MoreObjects.firstNonNull(newIp6Cidr, network.getIp6Cidr());
             _networkModel.checkIp6Parameters(newIp6StartIp, newIp6EndIp, newIp6Gateway, newIp6Cidr);
+            if (!GuestType.Shared.equals(network.getGuestType())) {
+                _networkModel.checkIp6CidrSizeEqualTo64(newIp6Cidr);
+            }
             return true;
         }
         return false;
@@ -5247,6 +5283,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         endIpv6 = ObjectUtils.allNull(endIpv6, currentEndIPv6) ? null : MoreObjects.firstNonNull(endIpv6, currentEndIPv6);
 
         _networkModel.checkIp6Parameters(startIpv6, endIpv6, ip6Gateway, ip6Cidr);
+        final Network network = _networkModel.getNetwork(vlanRange.getNetworkId());
+        if (!GuestType.Shared.equals(network.getGuestType())) {
+            _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
+        }
 
         if (!ObjectUtils.allNull(startIpv6, endIpv6) && ObjectUtils.anyNull(startIpv6, endIpv6)) {
             throw new InvalidParameterValueException(String.format("Invalid IPv6 range %s-%s", startIpv6, endIpv6));
@@ -7832,9 +7872,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {SystemVMUseLocalStorage, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
-                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
-                VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS, ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN,
-                ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN, ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, AllowNonRFC1918CompliantIPs
+                BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
+                VM_SERVICE_OFFERING_MAX_CPU_CORES, VM_SERVICE_OFFERING_MAX_RAM_SIZE, MIGRATE_VM_ACROSS_CLUSTERS,
+                ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
+                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE
         };
     }
 

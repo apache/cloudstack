@@ -110,9 +110,14 @@
           </a-select>
         </a-tooltip>
       </span>
-      <span v-else-if="configrecord.type === 'Order'">
+      <span v-else-if="configrecord.type === 'Order' || configrecord.type === 'WhitespaceSeparatedListWithOptions'">
         <a-tooltip :title="editableValue.join(', ')">
-          <b>{{ $t('message.select.deselect.to.sort') }}</b>
+          <b v-if="configrecord.type === 'Order'">
+            {{ $t('message.select.deselect.to.sort') }}
+          </b>
+          <b v-else>
+            {{ $t('message.select.deselect.desired.options') }}
+          </b>
           <br />
           <a-select
             style="width: 20vw"
@@ -241,6 +246,9 @@ export default {
       if (['Order', 'CSV'].includes(configrecord.type)) {
         newValue = newValue.join(',')
       }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        newValue = newValue.join(' ')
+      }
       const params = {
         name: configrecord.name,
         value: newValue
@@ -331,6 +339,13 @@ export default {
         } else {
           return []
         }
+      }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        if (configrecord.value && configrecord.value.length > 0) {
+          return String(configrecord.value).split(' ')
+        }
+
+        return []
       }
       if (configrecord.value) {
         return String(configrecord.value)

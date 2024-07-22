@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -36,6 +37,9 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableDefinition;
+import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -330,7 +334,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void validateEndDateOnCreatingNewQuotaTariffTestSetValidEndDate() {
         Date startDate = DateUtils.addDays(date, -100);
-        Date endDate = DateUtils.addMilliseconds(new Date(), 1);
+        Date endDate = DateUtils.addMinutes(new Date(), 1);
 
         quotaResponseBuilderSpy.validateEndDateOnCreatingNewQuotaTariff(quotaTariffVoMock, startDate, endDate);
         Mockito.verify(quotaTariffVoMock).setEndDate(Mockito.any(Date.class));
@@ -368,8 +372,10 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateValueOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyDouble());
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateStringsOnCreatingNewQuotaTariff(Mockito.any(Consumer.class), Mockito.anyString());
         Mockito.doReturn(quotaTariffVoMock).when(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
+        Mockito.doNothing().when(quotaResponseBuilderSpy).validatePositionOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyInt());
 
-        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "");
+
+        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "", 2);
 
         Mockito.verify(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
     }
@@ -419,6 +425,46 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         assertTrue(quotaSummaryResponse.getQuotaEnabled());
     }
 
+    @Test
+    public void filterSupportedTypesTestReturnWhenQuotaTypeDoesNotMatch() throws NoSuchFieldException {
+        List<Pair<String, String>> variables = new ArrayList<>();
+        Class<?> clazz = Value.class;
+        PresetVariableDefinition presetVariableDefinitionAnnotation = clazz.getDeclaredField("host").getAnnotation(PresetVariableDefinition.class);
+        QuotaTypes quotaType = QuotaTypes.getQuotaType(QuotaTypes.NETWORK_OFFERING);
+        int expectedVariablesSize = 0;
+
+        quotaResponseBuilderSpy.filterSupportedTypes(variables, quotaType, presetVariableDefinitionAnnotation, clazz, null);
+
+        assertEquals(expectedVariablesSize, variables.size());
+    }
+
+    @Test
+    public void filterSupportedTypesTestAddPresetVariableWhenClassIsNotInstanceOfGenericPresetVariableAndComputingResource() throws NoSuchFieldException {
+        List<Pair<String, String>> variables = new ArrayList<>();
+        Class<?> clazz = PresetVariables.class;
+        PresetVariableDefinition presetVariableDefinitionAnnotation = clazz.getDeclaredField("resourceType").getAnnotation(PresetVariableDefinition.class);
+        QuotaTypes quotaType = QuotaTypes.getQuotaType(QuotaTypes.NETWORK_OFFERING);
+        int expectedVariablesSize = 1;
+        String expectedVariableName = "variable.name";
+
+        quotaResponseBuilderSpy.filterSupportedTypes(variables, quotaType, presetVariableDefinitionAnnotation, clazz, "variable.name");
+
+        assertEquals(expectedVariablesSize, variables.size());
+        assertEquals(expectedVariableName, variables.get(0).first());
+    }
+
+    @Test
+    public void filterSupportedTypesTestCallRecursiveMethodWhenIsGenericPresetVariableClassOrComputingResourceClass() throws NoSuchFieldException {
+        List<Pair<String, String>> variables = new ArrayList<>();
+        Class<?> clazz = Value.class;
+        PresetVariableDefinition presetVariableDefinitionAnnotation = clazz.getDeclaredField("storage").getAnnotation(PresetVariableDefinition.class);
+        QuotaTypes quotaType = QuotaTypes.getQuotaType(QuotaTypes.VOLUME);
+
+        quotaResponseBuilderSpy.filterSupportedTypes(variables, quotaType, presetVariableDefinitionAnnotation, clazz, "variable.name");
+
+        Mockito.verify(quotaResponseBuilderSpy, Mockito.atLeastOnce()).addAllPresetVariables(Mockito.any(), Mockito.any(QuotaTypes.class), Mockito.anyList(),
+                Mockito.anyString());
+    }
 
     @Test (expected = InvalidParameterValueException.class)
     public void validateQuotaConfigureEmailCmdParametersTestNullQuotaAccount() {
@@ -441,7 +487,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doReturn(null).when(quotaConfigureEmailCmdMock).getEnable();
         quotaResponseBuilderSpy.validateQuotaConfigureEmailCmdParameters(quotaConfigureEmailCmdMock);
     }
-
 
     @Test
     public void validateQuotaConfigureEmailCmdParametersTestNullTemplateName() {
@@ -510,4 +555,18 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         assertEquals(2, result.getEmailTemplateId());
         assertFalse(result.isEnabled());
     }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestNullValueDoNothing() {
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, null);
+        Mockito.verify(quotaTariffVoMock, Mockito.never()).setPosition(Mockito.any());
+    }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestAnyValueIsSet() {
+        Integer position = 1;
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, position);
+        Mockito.verify(quotaTariffVoMock).setPosition(position);
+    }
+
 }

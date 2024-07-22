@@ -20,6 +20,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -219,8 +220,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         });
     }
 
+    private void cleanupResourceReservationsForMs() {
+        int reservationsRemoved = reservationDao.removeByMsId(ManagementServerNode.getManagementServerId());
+        if (reservationsRemoved > 0) {
+            logger.warn("Removed {} resource reservations for management server id {}", reservationsRemoved, ManagementServerNode.getManagementServerId());
+        }
+    }
+
     @Override
     public boolean start() {
+        cleanupResourceReservationsForMs();
         if (ResourceCountCheckInterval.value() >= 0) {
             ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(_rcExecutor, new ResourceCountCheckTask(), ResourceCountCheckInterval, TimeUnit.SECONDS);
             runner.start();
@@ -230,6 +239,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public boolean stop() {
+        if (_rcExecutor != null) {
+            _rcExecutor.shutdown();
+        }
+        cleanupResourceReservationsForMs();
         return true;
     }
 
@@ -288,6 +301,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
+            accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
 
             domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPublicIPs.key())));
             domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSnapshots.key())));
@@ -300,6 +314,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainMemory.key())));
             domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
         } catch (NumberFormatException e) {
             logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");
@@ -1200,8 +1215,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         });
     }
 
+    protected void cleanupStaleResourceReservations(final long accountId, final ResourceType type, String tag) {
+        Long delay = ResourceReservationCleanupDelay.value();
+        if (delay == null || delay <= 0) {
+            return;
+        }
+        Date cleanupBefore = new Date(System.currentTimeMillis() - delay * 1000);
+        int rowsRemoved = reservationDao.removeStaleReservations(accountId, type, tag, cleanupBefore);
+        if (rowsRemoved > 0) {
+            logger.warn("Removed {} stale resource reservations for account {} of type {} and tag {}",
+                    rowsRemoved, accountId, type, tag);
+        }
+    }
+
     @DB
     protected long recalculateAccountResourceCount(final long accountId, final ResourceType type, String tag) {
+        cleanupStaleResourceReservations(accountId, type, tag);
         final Long newCount;
         if (type == Resource.ResourceType.user_vm) {
             newCount = calculateVmCountForAccount(accountId, tag);
@@ -2106,10 +2135,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
                 ResourceCountCheckInterval,
+                ResourceReservationCleanupDelay,
                 MaxAccountSecondaryStorage,
                 MaxProjectSecondaryStorage,
                 ResourceLimitHostTags,
-                ResourceLimitStorageTags
+                ResourceLimitStorageTags,
+                DefaultMaxAccountProjects,
+                DefaultMaxDomainProjects
         };
     }
 

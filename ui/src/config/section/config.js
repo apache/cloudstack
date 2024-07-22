@@ -101,7 +101,25 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['description', 'clientid', 'redirecturi', 'secretkey', 'enabled']
+          args: ['description', 'clientid', 'redirecturi', 'secretkey']
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.provider',
+          message: 'message.confirm.enable.provider',
+          dataView: true,
+          defaultArgs: { enabled: true },
+          show: (record) => { return record.enabled === false }
+        },
+        {
+          api: 'updateOauthProvider',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.provider',
+          message: 'message.confirm.disable.provider',
+          dataView: true,
+          defaultArgs: { enabled: false },
+          show: (record) => { return record.enabled === true }
         },
         {
           api: 'deleteOauthProvider',
