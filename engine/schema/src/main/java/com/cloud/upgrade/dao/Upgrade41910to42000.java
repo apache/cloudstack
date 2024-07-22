@@ -94,7 +94,7 @@ public class Upgrade41910to42000 extends DbUpgradeAbstractImpl implements DbUpgr
             if (rs.next()) {
                 long maxLengthOfName = rs.getLong(1);
                 if (maxLengthOfName <= MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4) {
-                    pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`affinity_group` MODIFY `name` VARCHAR(191) CHARACTER SET utf8mb4 NOT NULL");
+                    pstmt = conn.prepareStatement(String.format("ALTER TABLE `cloud`.`affinity_group` MODIFY `name` VARCHAR(%d) CHARACTER SET utf8mb4 NOT NULL", MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4));
                     pstmt.executeUpdate();
                     logger.debug("Successfully updated char set for affinity group name to utf8mb4");
                 } else {
