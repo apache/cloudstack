@@ -272,8 +272,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
     @Inject
-    private NsxService nsxService;
-    @Inject
     private BGPService bgpService;
     @Inject
     private ASNumberDao asNumberDao;
