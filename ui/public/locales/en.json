@@ -1891,6 +1891,7 @@
 "label.service.connectivity.distributedroutercapabilitycheckbox": "Distributed router",
 "label.service.connectivity.regionlevelvpccapabilitycheckbox": "Region level VPC",
 "label.service.group": "Service group",
+"label.serviceip": "Service IP",
 "label.service.lb.elasticlbcheckbox": "Elastic LB",
 "label.service.lb.inlinemodedropdown": "Mode",
 "label.service.lb.lbisolationdropdown": "LB isolation",
