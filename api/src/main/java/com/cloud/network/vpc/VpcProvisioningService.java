@@ -20,7 +20,6 @@ package com.cloud.network.vpc;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;

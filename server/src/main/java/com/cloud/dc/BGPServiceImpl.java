@@ -374,7 +374,7 @@ public class BGPServiceImpl implements BGPService {
                 } else {
                     bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
                 }
-                logger.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
+                LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
             }
         }
@@ -391,7 +391,7 @@ public class BGPServiceImpl implements BGPService {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
                 List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
-                logger.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
+                LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
                 List<? extends Network> networks = networkModel.listNetworksByVpc(vpc.getId());
                 if (CollectionUtils.isNotEmpty(networks)) {
                     return ((BgpServiceProvider) provider).applyBgpPeers(networks.get(0), bgpPeers);

@@ -510,8 +510,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     VpcOfferingDao vpcOfferingDao;
     @Inject
-    ASNumberDao asNumberDao;
-    @Inject
     BgpPeerDao bgpPeerDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
