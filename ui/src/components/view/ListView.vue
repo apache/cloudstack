@@ -92,9 +92,6 @@
           </span>
         </span>
       </template>
-      <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['cpunumber', 'memory', 'size'].includes(column.key)">
-        <span>{{ text <= 0 ? 'N/A' : text }}</span>
-      </template>
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
       </template>
@@ -169,7 +166,10 @@
       <template v-if="column.key === 'volumename'">
         <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
       </template>
-      <template v-if="column.key === 'size'">
+      <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['kubernetesversionname', 'cpunumber', 'memory', 'size'].includes(column.key)">
+        <span>{{ text <= 0 || !text ? 'N/A' : text }}</span>
+      </template>
+      <template v-else-if="column.key === 'size'">
         <span v-if="text && $route.path === '/kubernetes'">
           {{ text }}
         </span>
