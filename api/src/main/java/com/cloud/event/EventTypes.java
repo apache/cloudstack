@@ -746,10 +746,9 @@ public class EventTypes {
     public static final String EVENT_FILESHARE_DEPLOY = "FILESHARE.DEPLOY";
     public static final String EVENT_FILESHARE_START = "FILESHARE.START";
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
-    public static final String EVENT_FILESHARE_RESTART_WITH_CLEANUP = "FILESHARE.RESTART.WITH.CLEANUP";
+    public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
     public static final String EVENT_FILESHARE_DELETE = "FILESHARE.DELETE";
-    public static final String EVENT_FILESHARE_RESIZE = "FILESHARE.RESIZE";
-    public static final String EVENT_FILESHARE_CHANGE_DISK_OFFERING = "FILESHARE.CHANGE.DISK.OFFERING";
+    public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
 
     static {
 

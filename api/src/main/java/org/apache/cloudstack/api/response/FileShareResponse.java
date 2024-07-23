@@ -88,6 +88,10 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "disk offering for the file share")
     private String diskOfferingName;
 
+    @SerializedName("iscustomdiskoffering")
+    @Param(description = "disk offering for the file share has custom size")
+    private Boolean isCustomDiskOffering;
+
     @SerializedName("diskofferingdisplaytext")
     @Param(description = "disk offering display text for the file share")
     private String diskOfferingDisplayText;
@@ -340,5 +344,9 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setUtilization(String utilization) {
         this.utilization = utilization;
+    }
+
+    public void setIsCustomDiskOffering(Boolean isCustomDiskOffering) {
+        this.isCustomDiskOffering = isCustomDiskOffering;
     }
 }

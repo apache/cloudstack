@@ -22,7 +22,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,6 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 
@@ -43,7 +44,7 @@ import com.cloud.user.AccountService;
         requestHasSensitiveInfo = false,
         since = "4.20.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RestartFileShareCmd extends BaseCmd implements UserCmd {
+public class RestartFileShareCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -82,6 +83,16 @@ public class RestartFileShareCmd extends BaseCmd implements UserCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_FILESHARE_RESTART;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Restarting fileshare " + id;
+    }
 
     @Override
     public long getEntityOwnerId() {

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -34,7 +35,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "removeFileShare", responseObject= SuccessResponse.class, description = "Remove a File Share by id",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class RemoveFileShareCmd extends BaseAsyncCmd {
+public class RemoveFileShareCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;

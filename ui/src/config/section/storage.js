@@ -543,7 +543,7 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareAccessTab.vue')))
         },
         {
-          name: 'volumes',
+          name: 'volume',
           resourceType: 'FileShare',
           show: (record) => { return store.getters.userInfo.roletype === 'Admin' },
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareVolumesTab.vue')))
@@ -584,16 +584,70 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' }
         },
         {
+          api: 'startFileShare',
+          icon: 'caret-right-outlined',
+          label: 'label.action.start.fileshare',
+          message: 'message.action.start.fileshare',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'stopFileShare',
+          icon: 'poweroff-outlined',
+          label: 'label.action.stop.fileshare',
+          message: 'message.action.stop.fileshare',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          show: (record) => { return ['Ready'].includes(record.state) }
+        },
+        {
           api: 'restartFileShare',
           icon: 'reload-outlined',
           docHelp: 'adminguide/object_storage.html#update-bucket',
-          label: 'label.restart.fileshare',
-          message: 'message.fileshare.restart',
+          label: 'label.action.restart.fileshare',
+          message: 'message.action.restart.fileshare',
           dataView: true,
           args: ['cleanup'],
           show: (record) => { return record.state !== 'Destroyed' },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'resizeFileShare',
+          icon: 'fullscreen-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.action.resize.fileshare',
+          message: 'message.action.resize.fileshare',
+          dataView: true,
+          args: ['size'],
+          show: (record) => { return record.state !== 'Destroyed' && record.iscustomdiskoffering === true },
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'changeFileShareDiskOffering',
+          icon: 'swap-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.change.disk.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareDiskOffering.vue'))),
+          show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'changeFileShareServiceOffering',
+          icon: 'arrows-alt-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.change.service.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareServiceOffering.vue'))),
+          show: (record) => { return record.state !== 'Destroyed' }
         },
         {
           api: 'removeFileShare',
