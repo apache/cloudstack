@@ -30,7 +30,9 @@ public interface FileShareLifeCycle {
 
     boolean deleteFileShare(FileShare fileShare);
 
-    Long restartFileShare(FileShare fileShare, boolean cleanup);
+    Long reDeployFileShare(FileShare fileShare);
 
     boolean resizeFileShare(FileShare fileShare, Long newSize);
+
+    boolean changeFileShareDiskOffering(FileShare fileShare, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops);
 }

@@ -22,6 +22,7 @@ import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareVmNameP
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -39,14 +40,15 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.fileshare.FileShare;
@@ -111,13 +113,13 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
     private UserVmDao userVmDao;
 
     @Inject
+    NicDao nicDao;
+
+    @Inject
     ServiceOfferingDao serviceOfferingDao;
 
     @Inject
     private DiskOfferingDao diskOfferingDao;
-
-    @Inject
-    protected VMNetworkMapDao vmNetworkMapDao;
 
     private String readResourceFile(String resource) {
         try {
@@ -223,6 +225,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
 
     private void expungeVmWithoutDeletingDataVolume(Long vmId) {
         UserVmVO userVM = userVmDao.findById(vmId);
+        if (userVM == null) {
+            return;
+        }
         try {
             UserVm vm = userVmService.destroyVm(userVM.getId(), true);
             if (!userVmManager.expunge(userVM)) {
@@ -260,9 +265,13 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
     }
 
     @Override
-    public Long restartFileShare(FileShare fileShare, boolean cleanup) {
+    public Long reDeployFileShare(FileShare fileShare) {
         Long vmId = fileShare.getVmId();
-        List<Long> networkIds = vmNetworkMapDao.getNetworks(vmId);
+        final List<NicVO> nics = nicDao.listByVmId(vmId);
+        List<Long> networkIds = new ArrayList<>();
+        for (NicVO nic : nics) {
+           networkIds.add(nic.getNetworkId());
+        }
         if (vmId != null) {
             expungeVmWithoutDeletingDataVolume(vmId);
         }
@@ -270,17 +279,33 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
         Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
         UserVm vm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, fileShare.getFsType(), null);
         volumeApiService.attachVolumeToVM(vm.getId(), volume.getId(), null, true);
-        try {
-            userVmManager.startVirtualMachine(vm);
-        } catch (OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
-            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
-        }
         return vm.getId();
     }
 
     @Override
     public boolean resizeFileShare(FileShare fileShare, Long newSize) {
-        return false;
+        VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
+        DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(volume.getDiskOfferingId());
+        if (!diskOfferingVO.isCustomized()) {
+            throw new InvalidParameterValueException("Disk offering should be set to custom for changing the size of the file share");
+        }
+        try {
+            volumeApiService.changeDiskOfferingForVolumeInternal(fileShare.getVolumeId(), volume.getDiskOfferingId(), newSize, null, null, true, false);
+        } catch (ResourceAllocationException ex) {
+            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
+        }
+        return true;
+    }
+
+    @Override
+    public boolean changeFileShareDiskOffering(FileShare fileShare, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops) {
+        DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(diskOfferingId);
+        try {
+            volumeApiService.changeDiskOfferingForVolumeInternal(fileShare.getVolumeId(), diskOfferingId, newSize, newMinIops, newMaxIops, true, false);
+        } catch (ResourceAllocationException ex) {
+            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
+        }
+        return true;
     }
 
     @Override

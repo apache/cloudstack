@@ -102,6 +102,8 @@ public interface VolumeApiService {
 
     boolean deleteVolume(long volumeId, Account caller);
 
+    Volume changeDiskOfferingForVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException;
+
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
     Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean fileShare);

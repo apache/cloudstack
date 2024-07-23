@@ -691,7 +691,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If the retrieved volume name is null, empty or blank, then A random name
      * will be generated using getRandomVolumeName method.
      *
-     * @param cmd
+     * @param userSpecifiedName
      * @return Either the retrieved name or a random name.
      */
     public String getVolumeNameFromCommand(CreateVolumeCmd cmd) {
@@ -1982,7 +1982,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean shrinkOk = cmd.isShrinkOk();
         boolean autoMigrateVolume = cmd.getAutoMigrate();
 
-        VolumeVO volume = _volsDao.findById(cmd.getId());
+        return changeDiskOfferingForVolumeInternal(cmd.getId(), newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume, shrinkOk);
+    }
+
+    @Override
+    public Volume changeDiskOfferingForVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
+
+        VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("No such volume");
         }
@@ -1990,10 +1996,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        return changeDiskOfferingForVolumeInternal(volume, newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume, shrinkOk);
-    }
-
-    private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
         long existingDiskOfferingId = volume.getDiskOfferingId();
         DiskOfferingVO existingDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);

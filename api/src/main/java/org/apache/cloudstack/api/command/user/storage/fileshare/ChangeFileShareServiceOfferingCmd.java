@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,24 +28,23 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-import javax.inject.Inject;
-
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 
-@APICommand(name = "updateFileShare",
+@APICommand(name = "changeFileShareServiceOffering",
         responseObject= FileShareResponse.class,
-        description = "Update a File Share.. ",
+        description = "Change service offering of a File Share.. ",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
         since = "4.20.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
+public class ChangeFileShareServiceOfferingCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -62,15 +63,11 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
             description = "the ID of the file share")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME,
-            type = CommandType.STRING,
-            description = "the name of the file share.")
-    private String name;
-
-    @Parameter(name = ApiConstants.DESCRIPTION,
-            type = CommandType.STRING,
-            description = "the description for the file share.")
-    private String description;
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            description = "the offering to use for the file share vm.")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,12 +77,8 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     /////////////////////////////////////////////////////
@@ -99,7 +92,7 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.updateFileShare(this);
+        FileShare fileShare = fileShareService.changeFileShareServiceOffering(this);
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
@@ -111,7 +104,7 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update file share");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to resize the file share");
         }
     }
 }

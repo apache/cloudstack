@@ -39,11 +39,16 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareDiskOfferingCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareServiceOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareProvidersCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RemoveFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.ResizeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RestartFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.StartFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.StopFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -153,6 +158,11 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         cmdList.add(UpdateFileShareCmd.class);
         cmdList.add(RemoveFileShareCmd.class);
         cmdList.add(RestartFileShareCmd.class);
+        cmdList.add(ResizeFileShareCmd.class);
+        cmdList.add(StartFileShareCmd.class);
+        cmdList.add(StopFileShareCmd.class);
+        cmdList.add(ChangeFileShareDiskOfferingCmd.class);
+        cmdList.add(ChangeFileShareServiceOfferingCmd.class);
         return cmdList;
     }
 
@@ -263,14 +273,16 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         startFileShare(fileShare.getId());
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RESTART_WITH_CLEANUP, eventDescription = "Restarting fileshare", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RESTART_WITH_CLEANUP, eventDescription = "Restarting fileshare with cleanup", async = true)
     private void restartWithCleanup(FileShareVO fileShare) {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         lifeCycle.checkPrerequisites(fileShare.getDataCenterId(), fileShare.getServiceOfferingId());
-        Long vmId = lifeCycle.restartFileShare(fileShare, true);
+        stopFileShare(fileShare.getId());
+        Long vmId = lifeCycle.reDeployFileShare(fileShare);
         fileShare.setVmId(vmId);
         fileShareDao.update(fileShare.getId(), fileShare);
+        startFileShare(fileShare.getId());
     }
 
     @Override
@@ -322,23 +334,13 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Updating fileshare", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Updating fileshare")
     public FileShare updateFileShare(UpdateFileShareCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
         String description = cmd.getDescription();
 
         FileShareVO fileShare = fileShareDao.findById(id);
-
-        Long serviceOfferingId = cmd.getServiceOfferingId();
-        if (serviceOfferingId != null) {
-            FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
-            FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-            lifeCycle.checkPrerequisites(fileShare.getDataCenterId(), serviceOfferingId);
-            fileShare.setServiceOfferingId(serviceOfferingId);
-            Long vmId = lifeCycle.restartFileShare(fileShare, true);
-            fileShare.setVmId(vmId);
-        }
 
         if (name != null) {
             fileShare.setName(name);
@@ -348,6 +350,43 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         }
 
         fileShareDao.update(fileShare.getId(), fileShare);
+        return fileShare;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RESIZE, eventDescription = "Resizing fileshare")
+    public FileShare resizeFileShare(ResizeFileShareCmd cmd) {
+        FileShareVO fileShare = fileShareDao.findById(cmd.getId());
+        Long newSize = cmd.getSize();
+        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        lifeCycle.resizeFileShare(fileShare, newSize);
+        return fileShare;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RESIZE, eventDescription = "Changing disk offering of fileshare")
+    public FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) {
+        FileShareVO fileShare = fileShareDao.findById(cmd.getId());
+        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        lifeCycle.changeFileShareDiskOffering(fileShare, cmd.getDiskOfferingId(), cmd.getSize(), cmd.getMinIops(), cmd.getMaxIops());
+        return fileShare;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RESIZE, eventDescription = "Changing disk offering of fileshare")
+    public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) {
+        FileShareVO fileShare = fileShareDao.findById(cmd.getId());
+        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
+        lifeCycle.checkPrerequisites(fileShare.getDataCenterId(), cmd.getServiceOfferingId());
+        fileShare.setServiceOfferingId(cmd.getServiceOfferingId());
+        Long vmId = lifeCycle.reDeployFileShare(fileShare);
+        fileShare.setVmId(vmId);
         return fileShare;
     }
 

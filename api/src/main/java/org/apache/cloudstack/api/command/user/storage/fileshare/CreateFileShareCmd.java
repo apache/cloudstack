@@ -91,6 +91,16 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the disk offering to use for the underlying storage.")
     private Long diskOfferingId;
 
+    @Parameter(name = ApiConstants.MIN_IOPS,
+            type = CommandType.LONG,
+            description = "min iops")
+    private Long minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS,
+            type = CommandType.LONG,
+            description = "max iops")
+    private Long maxIops;
+
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             required = true,
@@ -147,6 +157,14 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public Long getMinIops() {
+        return minIops;
     }
 
     public String getMountOptions() {
