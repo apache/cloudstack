@@ -348,6 +348,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import utc from 'dayjs/plugin/utc'
 import { api } from '@/api'
 import { toCsv } from '@/utils/util.js'
 import { mixinForm } from '@/utils/mixin'
@@ -360,6 +361,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import Status from '@/components/widgets/Status'
 
 dayjs.extend(relativeTime)
+dayjs.extend(utc)
 
 export default {
   name: 'UsageRecords',
@@ -583,8 +585,13 @@ export default {
         pagesize: pageSize || this.pageSize
       }
       if (values.dateRange) {
-        params.startdate = dayjs(values.dateRange[0]).format('YYYY-MM-DD')
-        params.enddate = dayjs(values.dateRange[1]).format('YYYY-MM-DD')
+        if (this.$store.getters.usebrowsertimezone) {
+          params.startdate = dayjs.utc(dayjs(values.dateRange[0]).startOf('day')).format('YYYY-MM-DD HH:mm:ss')
+          params.enddate = dayjs.utc(dayjs(values.dateRange[0]).endOf('day')).format('YYYY-MM-DD HH:mm:ss')
+        } else {
+          params.startdate = dayjs(values.dateRange[0]).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+          params.enddate = dayjs(values.dateRange[1]).endOf('day').format('YYYY-MM-DD HH:mm:ss')
+        }
       }
       if (values.domain) {
         params.domainid = this.domain.id
@@ -682,7 +689,7 @@ export default {
             title = this.$t('label.end.date.and.time')
             break
           case 'usageActions':
-            title = ''
+            title = this.$t('label.view')
             break
           case 'virtualmachinename':
             dataIndex = 'name'
@@ -699,7 +706,7 @@ export default {
       }
       this.columns.push({
         key: 'usageActions',
-        title: '',
+        title: this.$t('label.view'),
         dataIndex: 'usageActions',
         resizable: false
       })

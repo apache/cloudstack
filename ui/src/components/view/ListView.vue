@@ -380,6 +380,9 @@
       <template v-if="column.key === 'payloadurl'">
         <copy-label :label="text" />
       </template>
+      <template v-if="column.key === 'usageid'">
+        <copy-label :label="text" />
+      </template>
       <template v-if="column.key === 'eventtype'">
         <router-link v-if="$router.resolve('/event/' + record.eventid).matched[0].redirect !== '/exception/404'" :to="{ path: '/event/' + record.eventid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
