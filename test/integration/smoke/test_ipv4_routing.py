@@ -122,6 +122,15 @@ NETWORK_OFFERING_DYNAMIC = {
     }
 }
 
+VPC_OFFERING_DYNAMIC = {
+    "name": "Test VPC offering - Routed mode",
+    "displaytext": "Test VPC offering - Routed mode",
+    "networkmode": "ROUTED",
+    "routingmode": "Dynamic",
+    "supportedservices":
+        "Dhcp,Dns,UserData,NetworkACL"
+}
+
 VPC_NETWORK_OFFERING_DYNAMIC = {
     "name": "Test VPC Network offering - Dynamic Routed mode",
     "displaytext": "Test VPC Network offering - Dynamic Routed mode",
@@ -1379,11 +1388,19 @@ class TestIpv4Routing(cloudstackTestCase):
         )
         self.cleanup.append(bgppeer_2)
 
-        # 2. Create VPC
+        # 2.1 VPC offering for static routing
+        vpc_offering_dynamic = VpcOffering.create(
+            self.apiclient,
+            VPC_OFFERING_DYNAMIC
+        )
+        self.cleanup.append(vpc_offering_dynamic)
+        vpc_offering_dynamic.update(self.apiclient, state='Enabled')
+
+        # 2.2 Create VPC
         self.services["vpc"]["cidr"] = VPC_CIDR_PREFIX + ".8.0/22"
         test_vpc_dynamic = VPC.create(self.apiclient,
                                       self.services["vpc"],
-                                      vpcofferingid=self.vpc_offering.id,
+                                      vpcofferingid=vpc_offering_dynamic.id,
                                       zoneid=self.zone.id,
                                       domainid=self.sub_domain.id,
                                       account=self.regular_user.name,

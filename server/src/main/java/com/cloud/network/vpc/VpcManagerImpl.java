@@ -1221,7 +1221,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Vpc newVpc = createVpc(displayVpc, vpc);
         // assign Ipv4 subnet to Routed VPC
         if (routedIpv4Manager.isRoutedVpc(vpc)) {
-            routedIpv4Manager.assignIpv4SubnetToVpc(cidr, newVpc.getId());
+            routedIpv4Manager.assignIpv4SubnetToVpc(newVpc.getCidr(), newVpc.getId());
         }
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
             routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);

@@ -5107,6 +5107,8 @@ class VpcOffering:
             cmd.internetprotocol = services["internetprotocol"]
         if "networkmode" in services:
             cmd.networkmode = services["networkmode"]
+        if "routingmode" in services:
+            cmd.routingmode = services["routingmode"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
