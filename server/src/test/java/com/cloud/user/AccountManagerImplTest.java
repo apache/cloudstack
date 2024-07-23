@@ -213,6 +213,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             accountManagerImpl.deleteUserAccount(accountId);
         }
     }
+
     @Test
     public void deleteUserAccountTestIfAccountIdIsNotEqualToCallerAccountIdShouldNotThrowException() {
         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
