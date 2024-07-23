@@ -2752,9 +2752,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (networkOfferingDao.isRoutedNetwork(network.getNetworkOfferingId())) {
             ASNumberVO asn = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
             if (asn != null) {
-                response.setIpv4Routing(Network.Routing.Dynamic.toString());
+                response.setIpv4Routing(Network.Routing.Dynamic.name());
             } else {
-                response.setIpv4Routing(Network.Routing.Static.toString());
+                response.setIpv4Routing(Network.Routing.Static.name());
             }
             response.setIpv4Routes(new LinkedHashSet<>());
             List<IPAddressVO> ips = userIpAddressDao.listByAssociatedNetwork(network.getId(), true);
@@ -3502,9 +3502,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // add IPv4 routes
         if (vpcOfferingDao.isRoutedVpc(vpc.getVpcOfferingId())) {
-            // TODO
-            //ASNumberVO asn = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
-            response.setIpv4Routing(Network.Routing.Dynamic.toString());
+            if (Objects.nonNull(asNumberVO)) {
+                response.setIpv4Routing(Network.Routing.Dynamic.name());
+            } else {
+                response.setIpv4Routing(Network.Routing.Static.name());
+            }
             response.setIpv4Routes(new LinkedHashSet<>());
             List<IPAddressVO> ips = userIpAddressDao.listByAssociatedVpc(vpc.getId(), true);
             for (Network network : networkDao.listByVpc(vpc.getId())) {

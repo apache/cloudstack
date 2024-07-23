@@ -974,10 +974,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public boolean isDynamicRoutedVpc(VpcOffering vpcOffering) {
-        return true;
-        // TODO
-        //return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
-        //        && NetworkOffering.RoutingMode.Dynamic.equals(vpcOffering.getRoutingMode());
+        return NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
+                && NetworkOffering.RoutingMode.Dynamic.equals(vpcOffering.getRoutingMode());
     }
 
     @Override

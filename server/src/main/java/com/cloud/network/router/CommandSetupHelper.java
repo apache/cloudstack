@@ -1426,6 +1426,14 @@ public class CommandSetupHelper {
     public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Network network) {
         List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
 
+        ASNumberVO asNumberVO = network.getVpcId() != null ?
+                asNumberDao.findByZoneAndVpcId(network.getDataCenterId(), network.getVpcId()) :
+                asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+        if (asNumberVO == null) {
+            logger.debug("No AS number found for the guest network or VPC.");
+            return;
+        }
+
         List<Network> guestNetworks = new ArrayList<>();
         if (network.getVpcId() == null) {
             guestNetworks.add(network);
@@ -1435,22 +1443,10 @@ public class CommandSetupHelper {
                 guestNetworks.add(networkVO);
             }
         }
-
-        // TODO: get AS number of VPC
-        ASNumberVO networkAsNumber = null;
         for (Network guestNetwork : guestNetworks) {
-            networkAsNumber = asNumberDao.findByZoneAndNetworkId(guestNetwork.getDataCenterId(), guestNetwork.getId());
-            if (networkAsNumber != null) {
-                break;
-            }
-        }
-
-        if (networkAsNumber != null) {
-            for (Network guestNetwork : guestNetworks) {
-                for (BgpPeer bgpPeer: bgpPeers) {
-                    bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
-                            guestNetwork.getId(), networkAsNumber.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr()));
-                }
+            for (BgpPeer bgpPeer: bgpPeers) {
+                bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
+                        guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr()));
             }
         }
         final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
