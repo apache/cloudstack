@@ -2455,7 +2455,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             logger.debug(
                     "Trying to convert volume [{}] ({}) to snapshot [{}].", volume, baseFile, snapshotPath);
 
-            pool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+            pool.createFolder(snapshotFolder);
             convertTheBaseFileToSnapshot(baseFile, snapshotPath, wait, srcKey);
         } catch (QemuImgException | LibvirtException | IOException ex) {
             return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile,
