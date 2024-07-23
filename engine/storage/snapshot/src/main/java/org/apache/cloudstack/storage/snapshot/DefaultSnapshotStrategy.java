@@ -327,8 +327,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             return;
         }
 
-        List<SnapshotDataStoreVO> snapshotDataStoreVoList = snapshotStoreDao.findBySnapshotId(snapshotVo.getSnapshotId());
-        SnapshotDataStoreVO snapshotDataStoreVo = snapshotDataStoreVoList.get(0);
+        SnapshotDataStoreVO snapshotDataStoreVo = snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(snapshotVo.getSnapshotId(), DataStoreRole.Image, State.Destroyed);
+
+        if (snapshotDataStoreVo == null) {
+            snapshotDataStoreVo = snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(snapshotVo.getSnapshotId(), DataStoreRole.Primary, State.Destroyed);
+        }
 
         if (!snapshotDataStoreVo.isEndOfChain()) {
             return;
