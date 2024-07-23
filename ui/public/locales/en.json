@@ -3192,6 +3192,7 @@
 "message.network.usage.info.data.points": "Each data point represents the difference in data traffic since the last data point.",
 "message.network.usage.info.sum.of.vnics": "The Network usage shown is made up of the sum of data traffic from all the vNICs in the Instance.",
 "message.nfs.mount.options.description": "Comma separated list of NFS mount options for KVM hosts. Supported options : vers=[3,4.0,4.1,4.2], nconnect=[1...16]",
+"message.new.version.available": "A new version of CloudStack is available. Click here to check the details",
 "message.no.data.to.show.for.period": "No data to show for the selected period.",
 "message.no.description": "No description entered.",
 "message.offering.internet.protocol.warning": "WARNING: IPv6 supported Networks use static routing and will require upstream routes to be configured manually.",
