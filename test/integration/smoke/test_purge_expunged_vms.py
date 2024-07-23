@@ -273,7 +273,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             return False
         self.debug("Restarting all management server")
         for idx, server_ip in enumerate(server_ips):
-            self.debug("Restarting management server #%d with IP %s" % (idx, server_ip))
+            self.debug(f"Restarting management server #{idx} with IP {server_ip}")
             sshClient = SshClient(
                 server_ip,
                 22,
@@ -362,7 +362,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
             self.restartAllManagementServers()
         wait_multiple = 2
         wait = wait_multiple * purge_task_delay
-        logging.info("Waiting for %dx%d = %d seconds for background task to execute" % (wait_multiple, purge_task_delay, wait))
+        logging.info(f"Waiting for {wait_multiple}x{purge_task_delay} = {wait} seconds for background task to execute")
         time.sleep(wait)
         logging.debug("Validating expunged VMs")
         self.validatePurgedVmEntriesInDb(
