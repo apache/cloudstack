@@ -215,7 +215,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
     @Test
     public void deleteUserAccountTestIfAccountIdIsNotEqualToCallerAccountIdShouldNotThrowException() {
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)){
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
             CallContext callContextMock = Mockito.mock(CallContext.class);
             callContextMocked.when((CallContext::current)).thenReturn(callContextMock);
             long accountId = 1L;
