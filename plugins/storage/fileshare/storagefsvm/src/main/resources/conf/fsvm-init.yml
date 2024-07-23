@@ -40,16 +40,22 @@ write_files:
 
       sudo mkdir -p "$MOUNT_POINT"
 
-      FILESYSTEM={{ fsvm.filesystem }}
-      if [ "$FILESYSTEM" == "xfs" ]; then
-        sudo mkfs.xfs "$PARTITION"
-        log "Formatted Partition $PARTITION with XFS Filesystem."
-      elif [ "$FILESYSTEM" == "ext4" ]; then
-        sudo mkfs.ext4 "$PARTITION"
-        log "Formatted Partition $PARTITION with EXT4 Filesystem."
+      FS_TYPE=$(sudo blkid -o value -s TYPE "$PARTITION")
+  
+      if [ -z "$FS_TYPE" ]; then
+        FILESYSTEM={{ fsvm.filesystem }}
+        if [ "$FILESYSTEM" == "xfs" ]; then
+          sudo mkfs.xfs "$PARTITION"
+          log "Formatted Partition $PARTITION with XFS Filesystem."
+        elif [ "$FILESYSTEM" == "ext4" ]; then
+          sudo mkfs.ext4 "$PARTITION"
+          log "Formatted Partition $PARTITION with EXT4 Filesystem."
+        else
+          log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
+          exit 1
+        fi
       else
-        log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
-        exit 1
+        log "Partition $PARTITION already has a filesystem of type $FS_TYPE. Skipping format."
       fi
 
       FS_INFO=$(sudo blkid "$PARTITION")
