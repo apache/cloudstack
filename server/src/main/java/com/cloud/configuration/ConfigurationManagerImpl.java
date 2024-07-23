@@ -307,6 +307,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Network;
 
+import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
     public static final String PERZONE = "perzone";
@@ -528,6 +531,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
+    private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Override
@@ -6090,6 +6094,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final boolean enable = cmd.getEnable();
+        boolean specifyAsNumber = cmd.getSpecifyAsNumber();
+        String routingModeString = cmd.getRoutingMode();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -6187,6 +6193,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
+
+        NetworkOffering.RoutingMode routingMode = verifyRoutingMode(routingModeString);
 
         // configure service provider map
         final Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
@@ -6398,7 +6406,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -6407,6 +6415,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
+        NetworkOffering.RoutingMode routingMode = null;
+        if (routingModeString != null) {
+            try {
+                if (!SUPPORTED_ROUTING_MODE_STRS.contains(routingModeString.toLowerCase())) {
+                    throw new IllegalArgumentException(String.format("Unsupported value: %s", routingModeString));
+                }
+                routingMode = routingModeString.equalsIgnoreCase(Static.toString()) ? Static : Dynamic;
+            } catch (IllegalArgumentException e) {
+                String msg = String.format("Invalid value %s for Routing Mode, Supported values: %s, %s.",
+                        routingModeString, Static, Dynamic);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        return routingMode;
     }
 
     void validateLoadBalancerServiceCapabilities(final Map<Capability, String> lbServiceCapabilityMap) {
@@ -6548,7 +6573,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                                   final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6577,6 +6603,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (type == GuestType.Shared) {
                 throw new InvalidParameterValueException("SpecifyIpRanges should always be true for Shared network offerings");
             }
+        }
+
+        if (specifyAsNumber && Dynamic != routingMode) {
+            String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && Objects.nonNull(forVpc) && forVpc) {
+            String msg = "SpecifyAsNumber cannot be set for VPC network tiers. It needs to be defined at VPC level";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
         }
 
         // isPersistent should always be false for Shared network Offerings
@@ -6754,6 +6792,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
+        }
+
+        offeringFinal.setSpecifyAsNumber(specifyAsNumber);
+        if (routingMode != null) {
+            offeringFinal.setRoutingMode(routingMode);
         }
 
         // Set VM AutoScaling capability
@@ -6936,6 +6979,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final Boolean isTagged = cmd.isTagged();
         final Boolean forVpc = cmd.getForVpc();
+        final String routingMode = cmd.getRoutingMode();
 
         if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
@@ -7007,6 +7051,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // basic zone, and shouldn't display networkOfferings
                 return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
+        }
+
+        if (routingMode != null && EnumUtils.isValidEnumIgnoreCase(NetworkOffering.RoutingMode.class, routingMode)) {
+            sc.addAnd("routingMode", SearchCriteria.Op.EQ, routingMode);
         }
 
         // Don't return system network offerings to the user

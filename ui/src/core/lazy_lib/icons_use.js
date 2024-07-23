@@ -127,6 +127,7 @@ import {
   LaptopOutlined,
   OrderedListOutlined,
   PaperClipOutlined,
+  PartitionOutlined,
   PauseCircleOutlined,
   PicCenterOutlined,
   PictureOutlined,
@@ -293,6 +294,7 @@ export default {
     app.component('LaptopOutlined', LaptopOutlined)
     app.component('OrderedListOutlined', OrderedListOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
+    app.component('PartitionOutlined', PartitionOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
     app.component('PicCenterOutlined', PicCenterOutlined)
     app.component('PictureOutlined', PictureOutlined)

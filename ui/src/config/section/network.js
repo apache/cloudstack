@@ -47,7 +47,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -215,7 +215,7 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routes', 'ip6routes', 'ispersistent', 'asnumber', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',
@@ -856,6 +856,44 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'asnumbers',
+      title: 'label.asnumbers',
+      icon: 'partition-outlined',
+      permission: ['listASNumbers'],
+      filters: ['all', 'allocatedonly', 'free'],
+      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
+      searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
+      resourceType: 'ASNumber',
+      actions: [
+        {
+          api: 'releaseASNumber',
+          icon: 'delete-outlined',
+          label: 'label.action.release.asnumber',
+          message: 'message.action.release.asnumber',
+          show: (record) => { return record.allocationstate === 'Allocated' },
+          args: ['zoneid', 'asnumber'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
+            asnumber: {
+              value: (record) => { return record.asnumber }
+            }
+          },
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            return selectedItems.length === 1 && selectedItems[0].allocationstate === 'Allocated'
+          },
+          groupMap: (selectedId, values, records) => {
+            const record = records.filter(x => { return x.id === selectedId[0] })
+            return record
+          }
         }
       ]
     },

@@ -279,7 +279,12 @@ known_categories = {
     'importVm': 'Virtual Machine',
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
-    'purgeExpungedResources': 'Resource'
+    'purgeExpungedResources': 'Resource',
+    'createASNRange': 'AS Number Range',
+    'listASNRange': 'AS Number Range',
+    'deleteASNRange': 'AS Number Range',
+    'listASNumbers': 'AS Number',
+    'releaseASNumber': 'AS Number'
 }
 
 

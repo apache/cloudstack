@@ -392,6 +392,11 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
     public static final String EVENT_VLAN_IP_RANGE_UPDATE = "VLAN.IP.RANGE.UPDATE";
 
+    // AS Number
+    public static final String EVENT_AS_RANGE_CREATE = "AS.RANGE.CREATE";
+    public static final String EVENT_AS_RANGE_DELETE = "AS.RANGE.DELETE";
+    public static final String EVENT_AS_NUMBER_RELEASE = "AS.NUMBER.RELEASE";
+
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_UPDATE = "MANAGEMENT.IP.RANGE.UPDATE";

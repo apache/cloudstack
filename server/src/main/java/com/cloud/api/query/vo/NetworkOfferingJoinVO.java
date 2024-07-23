@@ -190,6 +190,13 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
 
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber;
+
     public NetworkOfferingJoinVO() {
     }
 
@@ -440,5 +447,22 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
+    }
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 }

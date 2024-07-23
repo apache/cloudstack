@@ -41,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
@@ -418,6 +419,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private VirtualRouterProviderDao virtualRouterProviderDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    private BGPService bgpService;
 
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
@@ -1490,6 +1493,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean hideIpAddressUsage = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
         String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
+        Long asNumber = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getAsNumber() : null;
 
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
@@ -1787,12 +1791,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
         }
+        if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff)) {
+            bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+        }
 
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private boolean isNonVpcNetworkSupportingDynamicRouting(NetworkOffering networkOffering) {
+        return !networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode();
     }
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {

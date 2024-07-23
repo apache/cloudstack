@@ -39,7 +39,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.ASNumber;
+import com.cloud.dc.ASNumberRange;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
@@ -61,6 +67,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
+import org.apache.cloudstack.api.response.ASNRangeResponse;
+import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -489,7 +497,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserDataDao userDataDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
-
+    @Inject
+    private ASNumberRangeDao asNumberRangeDao;
+    @Inject
+    private ASNumberDao asNumberDao;
     @Inject
     ObjectStoreDao _objectStoreDao;
     @Inject
@@ -2497,7 +2508,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         response.setReservedIpRange(reservation);
-
         // return vlan information only to Root admin
         if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();
@@ -2544,6 +2554,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsPersistent(networkOffering.isPersistent());
             if (Network.GuestType.Isolated.equals(network.getGuestType()) && network.getVpcId() == null) {
                 response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
+            }
+            ASNumberVO asNumberVO = networkOffering.isForVpc() ?
+                    asNumberDao.findByZoneAndVpcId(network.getDataCenterId(), network.getVpcId()) :
+                    asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+            if (Objects.nonNull(asNumberVO)) {
+                response.setAsNumberId(asNumberVO.getUuid());
+                response.setAsNumber(asNumberVO.getAsNumber());
             }
         }
 
@@ -3401,7 +3418,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setUsesDistributedRouter(vpc.usesDistributedRouter());
         response.setRedundantRouter(vpc.isRedundant());
         response.setRegionLevelVpc(vpc.isRegionLevelVpc());
-
+        ASNumberVO asNumberVO = asNumberDao.findByZoneAndVpcId(vpc.getZoneId(), vpc.getId());
+        if (Objects.nonNull(asNumberVO)) {
+            response.setAsNumberId(asNumberVO.getUuid());
+            response.setAsNumber(asNumberVO.getAsNumber());
+        }
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service,Set<Provider>>entry : serviceProviderMap.entrySet()) {
@@ -5310,5 +5331,58 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public ASNRangeResponse createASNumberRangeResponse(ASNumberRange asnRange) {
+        ASNRangeResponse response = new ASNRangeResponse();
+        response.setId(asnRange.getUuid());
+        DataCenterVO zone = ApiDBUtils.findZoneById(asnRange.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+        }
+        response.setStartASNumber(asnRange.getStartASNumber());
+        response.setEndASNumber(asnRange.getEndASNumber());
+        response.setCreated(asnRange.getCreated());
+        response.setObjectName("asnumberrange");
+        return response;
+    }
+
+    @Override
+    public ASNumberResponse createASNumberResponse(ASNumber asn) {
+        ASNumberResponse response = new ASNumberResponse();
+        response.setId(asn.getUuid());
+        if (asn.getAccountId() != null) {
+            Account account = ApiDBUtils.findAccountById(asn.getAccountId());
+            response.setAccountId(account.getUuid());
+            response.setAccountName(account.getAccountName());
+        }
+        if (asn.getDomainId() != null) {
+            DomainVO domain = ApiDBUtils.findDomainById(asn.getDomainId());
+            response.setDomainId(domain.getUuid());
+            response.setDomainName(domain.getName());
+        }
+        DataCenterVO zone = ApiDBUtils.findZoneById(asn.getDataCenterId());
+        response.setZoneId(zone.getUuid());
+        response.setZoneName(zone.getName());
+        response.setAsNumber(asn.getAsNumber());
+        ASNumberRangeVO range = asNumberRangeDao.findById(asn.getAsNumberRangeId());
+        response.setAsNumberRangeId(range.getUuid());
+        String rangeText = String.format("%s-%s", range.getStartASNumber(), range.getEndASNumber());
+        response.setAsNumberRange(rangeText);
+        response.setAllocated(asn.getAllocatedTime());
+        response.setAllocationState(asn.isAllocated() ? "Allocated" : "Free");
+        if (asn.getVpcId() != null) {
+            VpcVO vpc = ApiDBUtils.findVpcById(asn.getVpcId());
+            response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
+        } else if (asn.getNetworkId() != null) {
+            NetworkVO network = ApiDBUtils.findNetworkById(asn.getNetworkId());
+            response.setAssociatedNetworkId(network.getUuid());
+            response.setAssociatedNetworkName(network.getName());
+        }
+        response.setCreated(asn.getCreated());
+        response.setObjectName("asnumber");
+        return response;
     }
 }

@@ -34,7 +34,7 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange'],
   related: [{
     name: 'pod',
     title: 'label.pods',
@@ -76,6 +76,10 @@ export default {
     name: 'ipv4.subnets',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/Ipv4GuestSubnetsTab.vue')))
   }, {
+    name: 'asnumber',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue')))
+  },
+  {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
     show: (record) => { return record.isEdge !== true }

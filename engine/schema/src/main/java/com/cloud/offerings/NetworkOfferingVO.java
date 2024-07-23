@@ -174,6 +174,13 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="service_package_id")
     String servicePackageUuid = null;
 
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
@@ -581,5 +588,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
+    }
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 }

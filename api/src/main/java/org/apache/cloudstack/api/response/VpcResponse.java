@@ -164,6 +164,14 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "The routes for the VPC to ease adding route in upstream router", since = "4.20.0")
     private Set<Ipv4RouteResponse> ipv4Routes;
 
+    @SerializedName(ApiConstants.AS_NUMBER_ID)
+    @Param(description = "UUID of AS NUMBER")
+    private String asNumberId;
+
+    @SerializedName(ApiConstants.AS_NUMBER)
+    @Param(description = "AS NUMBER")
+    private Long asNumber;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -316,5 +324,13 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setIpv6Dns2(String ipv6Dns2) {
         this.ipv6Dns2 = ipv6Dns2;
+    }
+
+    public void setAsNumber(long asNumber) {
+        this.asNumber = asNumber;
+    }
+
+    public void setAsNumberId(String asNumberId) {
+        this.asNumberId = asNumberId;
     }
 }

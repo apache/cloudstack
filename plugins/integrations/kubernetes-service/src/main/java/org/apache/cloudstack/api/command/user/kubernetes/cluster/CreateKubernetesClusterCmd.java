@@ -41,6 +41,17 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.utils.Pair;
+import java.util.Objects;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.ASNumberVO;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
@@ -60,6 +71,14 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
+    @Inject
+    public NetworkOfferingDao networkOfferingDao;
+    @Inject
+    public ConfigurationDao configurationDao;
+    @Inject
+    public ASNumberDao asNumberDao;
+    @Inject
+    public NetworkDao networkDao;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -145,6 +164,9 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
     private String clusterType;
+
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
+    private Long asNumber;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -240,6 +262,47 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             return KubernetesCluster.ClusterType.CloudManaged.toString();
         }
         return clusterType;
+    }
+
+    public Long getAsNumber() {
+        Pair<NetworkOfferingVO, NetworkVO> offeringAndNetwork = getKubernetesNetworkOffering(getNetworkId());
+        NetworkOfferingVO offering = offeringAndNetwork.first();
+        NetworkVO networkVO = offeringAndNetwork.second();
+
+        if (offering == null) {
+            throw new CloudRuntimeException("Failed to find kubernetes network offering");
+        }
+        ASNumberVO asNumberVO = null;
+        if (Objects.isNull(getNetworkId()) && !offering.isForVpc()) {
+            if (Boolean.TRUE.equals(NetworkOffering.RoutingMode.Dynamic.equals(offering.getRoutingMode()) && offering.isSpecifyAsNumber()) && asNumber == null) {
+                throw new InvalidParameterException("AsNumber must be specified as network offering has specifyasnumber set");
+            }
+        } else if (Objects.nonNull(networkVO)) {
+            if (offering.isForVpc()) {
+                asNumberVO = asNumberDao.findByZoneAndVpcId(getZoneId(), networkVO.getVpcId());
+            } else {
+                asNumberVO = asNumberDao.findByZoneAndNetworkId(getZoneId(), getNetworkId());
+            }
+        }
+        if (Objects.nonNull(asNumberVO)) {
+            return asNumberVO.getAsNumber();
+        }
+        return asNumber;
+    }
+
+    private Pair<NetworkOfferingVO,NetworkVO> getKubernetesNetworkOffering(Long networkId) {
+        if (Objects.isNull(networkId)) {
+            ConfigurationVO configurationVO = configurationDao.findByName(KubernetesClusterService.KubernetesClusterNetworkOffering.key());
+            String offeringName = configurationVO.getValue();
+            return new Pair<>(networkOfferingDao.findByUniqueName(offeringName), null);
+        } else {
+            NetworkVO networkVO = networkDao.findById(getNetworkId());
+            if (networkVO == null) {
+                throw new InvalidParameterException(String.format("Failed to find network with id: %s", getNetworkId()));
+            }
+            NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+            return new Pair<>(offeringVO, networkVO);
+        }
     }
 
     /////////////////////////////////////////////////////

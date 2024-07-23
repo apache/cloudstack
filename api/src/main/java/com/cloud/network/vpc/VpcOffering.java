@@ -80,4 +80,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Date getRemoved();
 
     Date getCreated();
+
+    NetworkOffering.RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }

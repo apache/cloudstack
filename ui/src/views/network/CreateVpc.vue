@@ -107,6 +107,25 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+          <template #label>
+            <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+          </template>
+          <a-select
+            v-model:value="form.asnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="asNumberLoading"
+            :placeholder="apiParams.asnumber.description"
+            @change="val => { handleASNumberChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+              {{ opt.asnumber }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <div v-if="setMTU">
           <a-form-item
             ref="publicmtu"
@@ -205,6 +224,7 @@ export default {
     return {
       loading: false,
       loadingZone: false,
+      selectedZone: {},
       loadingOffering: false,
       setMTU: false,
       zoneid: '',
@@ -214,7 +234,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       selectedVpcOffering: {},
-      isNsxNetwork: false
+      isNsxNetwork: false,
+      asNumberLoading: false,
+      asNumbersZone: [],
+      selectedAsNumber: 0
     }
   },
   beforeCreate () {
@@ -255,6 +278,12 @@ export default {
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedVpcOffering) && this.selectedVpcOffering.specifyasnumber && this.selectedVpcOffering?.routingmode.toLowerCase() === 'dynamic'
+    },
+    isObjectEmpty (obj) {
+      return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
     async fetchData () {
       this.fetchZones()
     },
@@ -294,9 +323,23 @@ export default {
           this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
           this.isNsxNetwork = zone?.isnsxenabled || false
+          this.selectedZone = zone
         }
       }
       this.fetchOfferings()
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
     },
     fetchOfferings () {
       this.loadingOffering = true
@@ -321,9 +364,16 @@ export default {
         if (offering.id === value) {
           this.selectedVpcOffering = offering
           this.form.vpcofferingid = offering.id
+          if (this.isASNumberRequired()) {
+            this.fetchZoneASNumbers()
+          }
           return
         }
       }
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     closeAction () {
       this.$emit('close-action')
@@ -368,6 +418,9 @@ export default {
             })
             return
           }
+        }
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
         this.loading = true
         const title = this.$t('label.add.vpc')

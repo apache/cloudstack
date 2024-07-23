@@ -192,3 +192,47 @@ ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;
 
 -- Quota inject tariff result into subsequent ones
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
+
+-- Add tables for AS Numbers and range
+CREATE TABLE `cloud`.`as_number_range` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+    `start_as_number` bigint unsigned DEFAULT NULL COMMENT 'start AS number of the range',
+    `end_as_number` bigint unsigned DEFAULT NULL COMMENT 'end AS number of the range',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_as_number_range__uuid` (`uuid`),
+    UNIQUE KEY `uk_as_number_range__range` (`data_center_id`,`start_as_number`,`end_as_number`, `removed`),
+    CONSTRAINT `fk_as_number_range__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`as_number` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `account_id` bigint unsigned DEFAULT NULL,
+    `domain_id` bigint unsigned DEFAULT NULL,
+    `as_number` bigint unsigned NOT NULL COMMENT 'the AS Number',
+    `as_number_range_id` bigint unsigned NOT NULL,
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+    `allocated` datetime DEFAULT NULL COMMENT 'Date this AS Number was allocated to some network',
+    `is_allocated` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates if the AS Number is allocated to some network',
+    `network_id` bigint unsigned DEFAULT NULL COMMENT 'Network this AS Number is associated with',
+    `vpc_id` bigint unsigned DEFAULT NULL COMMENT 'VPC this AS Number is associated with',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_as_number__uuid` (`uuid`),
+    UNIQUE KEY `uk_as_number__number` (`data_center_id`,`as_number`,`as_number_range_id`),
+    CONSTRAINT `fk_as_number__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`),
+    CONSTRAINT `fk_as_number__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_as_number__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`),
+    CONSTRAINT `fk_as_number__as_number_range_id` FOREIGN KEY (`as_number_range_id`) REFERENCES `as_number_range` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','routing_mode', 'varchar(10) COMMENT "routing mode for the offering"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','specify_as_number', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "specify AS number when using dynamic routing"');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','routing_mode', 'varchar(10) COMMENT "routing mode for the offering"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','specify_as_number', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "specify AS number when using dynamic routing"');

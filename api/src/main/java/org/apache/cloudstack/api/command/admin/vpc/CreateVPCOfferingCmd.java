@@ -136,6 +136,15 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.20.0")
     private String networkMode;
 
+    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN,
+            description = "true if the VPC offering supports choosing AS number")
+    private Boolean specifyAsNumber;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            description = "the routing mode for the VPC offering. Supported types are: Static or Dynamic.")
+    private String routingMode;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -263,6 +272,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             return enable;
         }
         return false;
+    }
+
+    public Boolean getSpecifyAsNumber() {
+        return BooleanUtils.toBoolean(specifyAsNumber);
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
     }
 
     @Override
