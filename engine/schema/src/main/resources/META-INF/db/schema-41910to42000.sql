@@ -150,3 +150,7 @@ SET
 WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
+
+
+-- Quota inject tariff result into subsequent ones
+CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');

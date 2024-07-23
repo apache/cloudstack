@@ -131,7 +131,7 @@ export default {
       }
       this.fetchLoading = true
       api('listVnfAppliances', params).then(json => {
-        this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
+        this.virtualmachines = json.listvnfappliancesresponse.virtualmachine || []
         for (const vm of this.virtualmachines) {
           for (const vmnic of vm.nic) {
             if (vmnic.networkid === this.resource.id) {
