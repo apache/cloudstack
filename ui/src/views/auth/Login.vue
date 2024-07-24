@@ -152,7 +152,17 @@
         @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
-    <translation-menu/>
+    <a-row justify="space-between">
+      <a-col>
+      <translation-menu/>
+      </a-col>
+      <a-col>
+        <router-link :to="{ name: 'forgotPassword' }">
+          {{ $t('label.forgot.password') }}
+        </router-link>
+
+      </a-col>
+    </a-row>
     <div class="content" v-if="socialLogin">
       <p class="or">or</p>
     </div>

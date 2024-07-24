@@ -75,6 +75,8 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(DefaultLoginAPIAuthenticatorCmd.class);
         cmdList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+        cmdList.add(DefaultForgotPasswordAPIAuthenticatorCmd.class);
+        cmdList.add(DefaultResetPasswordAPIAuthenticatorCmd.class);
 
         cmdList.add(ListUserTwoFactorAuthenticatorProvidersCmd.class);
         cmdList.add(ValidateUserTwoFactorAuthenticationCodeCmd.class);

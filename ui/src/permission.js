@@ -30,7 +30,7 @@ import { ACCESS_TOKEN, APIS, SERVER_MANAGER, CURRENT_PROJECT } from '@/store/mut
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const allowList = ['login', 'VerifyOauth'] // no redirect allowlist
+const allowList = ['login', 'VerifyOauth', 'forgotPassword', 'resetPassword'] // no redirect allowlist
 
 router.beforeEach((to, from, next) => {
   // start progress bar

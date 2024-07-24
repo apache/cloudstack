@@ -278,7 +278,9 @@ known_categories = {
     'importVm': 'Virtual Machine',
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
-    'purgeExpungedResources': 'Resource'
+    'purgeExpungedResources': 'Resource',
+    'forgotPassword': 'Authentication',
+    'resetPassword': 'Authentication',
 }
 
 
