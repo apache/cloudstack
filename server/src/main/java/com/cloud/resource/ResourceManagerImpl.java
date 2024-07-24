@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.cpu.CPU;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostTagVO;
@@ -2746,6 +2747,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() +
                     " whose hypervisor type is: " + clusterVO.getHypervisorType());
         }
+        CPU.CPUArchitecture hostCpuArchitecture = CPU.CPUArchitecture.fromType(ssCmd.getCpuArchitecture());
+        if (hostCpuArchitecture != null && clusterVO.getArch() != null && hostCpuArchitecture != clusterVO.getArch()) {
+            String msg = String.format("Can't add a host whose architecture is: %s into cluster of architecture type: %s",
+                    hostCpuArchitecture.getType(), clusterVO.getArch().getType());
+            logger.error(msg);
+            throw new IllegalArgumentException(msg);
+        }
 
         final Map<String, String> hostDetails = ssCmd.getHostDetails();
         if (hostDetails != null) {
@@ -2764,6 +2772,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setCaps(ssCmd.getCapabilities());
         host.setCpuSockets(ssCmd.getCpuSockets());
         host.setCpus(ssCmd.getCpus());
+        host.setArch(hostCpuArchitecture);
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);

@@ -32,6 +32,7 @@ public class StartupRoutingCommand extends StartupCommand {
     Integer cpuSockets;
     int cpus;
     long speed;
+    String cpuArchitecture;
     long memory;
     long dom0MinMemory;
     boolean poolSync;
@@ -200,5 +201,13 @@ public class StartupRoutingCommand extends StartupCommand {
 
     public void setHostHealthCheckResult(Boolean hostHealthCheckResult) {
         this.hostHealthCheckResult = hostHealthCheckResult;
+    }
+
+    public String getCpuArchitecture() {
+        return cpuArchitecture;
+    }
+
+    public void setCpuArchitecture(String cpuArchitecture) {
+        this.cpuArchitecture = cpuArchitecture;
     }
 }

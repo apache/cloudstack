@@ -3643,7 +3643,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (dpdkSupport) {
             capabilities += ",dpdk";
         }
-
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
@@ -3662,6 +3661,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         HealthCheckResult healthCheckResult = getHostHealthCheckResult();
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
+        if (StringUtils.isNotBlank(info.getCpuArchitecture())) {
+            cmd.setCpuArchitecture(info.getCpuArchitecture());
         }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
