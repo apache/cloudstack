@@ -142,6 +142,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         boolean isPublic = cmd.getPublic();
         Boolean recursiveDomains = cmd.getRecursiveDomains();
 
+        CallContext.current().setEventDetails(String.format("Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", name, providedAccountIds,
+                providedDomainIds, recursiveDomains, commonNames));
+
         if (StringUtils.isAllBlank(css, jsonConfiguration)) {
             throw new CloudRuntimeException("Either the `css` or `jsonConfiguration` parameter must be informed.");
         }
@@ -369,6 +372,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         Boolean isPublic = cmd.getIsPublic();
         Boolean recursiveDomains = cmd.getRecursiveDomains();
 
+        CallContext.current().setEventDetails(String.format("ID: %s, Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", guiThemeId, name,
+                providedAccountIds, providedDomainIds, recursiveDomains, commonNames));
+
         validateParameters(jsonConfiguration, providedDomainIds, providedAccountIds, commonNames, guiThemeId);
 
         if (shouldSetGuiThemeToPrivate(providedDomainIds, providedAccountIds)) {
@@ -429,6 +435,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     public void removeGuiTheme(RemoveGuiThemeCmd cmd) {
         Long guiThemeId = cmd.getId();
         GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
+        CallContext.current().setEventDetails(String.format("ID: %s", guiThemeId));
 
         if (guiThemeVO != null) {
             guiThemeDao.remove(guiThemeId);

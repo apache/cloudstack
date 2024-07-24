@@ -46,7 +46,6 @@ public class RemoveGuiThemeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("ID: %s", getId()));
         guiThemeService.removeGuiTheme(this);
         final SuccessResponse response = new SuccessResponse();
         response.setResponseName(getCommandName());
