@@ -20,7 +20,7 @@ import com.cloud.event.EventTypes;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -33,9 +33,9 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "removeFileShare", responseObject= SuccessResponse.class, description = "Remove a File Share by id",
+@APICommand(name = "destroyFileShare", responseObject= SuccessResponse.class, description = "Destroy a File Share by id",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class RemoveFileShareCmd extends BaseAsyncCmd implements UserCmd {
+public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -65,18 +65,8 @@ public class RemoveFileShareCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_FILESHARE_DELETE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Deleting fileshare";
-    }
-
-    @Override
     public void execute() {
-        FileShare fileShare = fileShareService.deleteFileShare(id);
+        FileShare fileShare = fileShareService.destroyFileShare(id);
         if (fileShare != null) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

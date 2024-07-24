@@ -23,8 +23,11 @@ import org.apache.cloudstack.storage.fileshare.FileShareVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
+import java.util.Date;
 import java.util.List;
 
 public interface FileShareDao extends GenericDao<FileShareVO, Long>, StateDao<FileShare.State, FileShare.Event, FileShare> {
     Pair<List<FileShareVO>, Integer> searchAndCount(Long fileShareId, Long accountId, Long networkId, Long startIndex, Long pageSizeVal);
+
+    List<FileShareVO> listFileSharesToBeDestroyed(Date date);
 }

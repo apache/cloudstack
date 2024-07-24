@@ -95,6 +95,7 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationFailed, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.RecoveryRequested, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.ExpungeOperation, Expunging, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationFailed, Destroyed, null));
         }
     }
 

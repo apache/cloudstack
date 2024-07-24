@@ -65,5 +65,5 @@ public interface FileShareService extends PluggableService {
 
     FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd);
 
-    FileShare deleteFileShare(Long fileShareId);
+    FileShare destroyFileShare(Long fileShareId);
 }

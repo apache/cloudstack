@@ -650,10 +650,10 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' }
         },
         {
-          api: 'removeFileShare',
+          api: 'destroyFileShare',
           icon: 'delete-outlined',
-          label: 'label.delete.fileshare',
-          message: 'message.fileshare.delete',
+          label: 'label.destroy.fileshare',
+          message: 'message.action.destroy.fileshare',
           dataView: true,
           show: (record) => { return record.state !== 'Destroyed' },
           groupAction: true,

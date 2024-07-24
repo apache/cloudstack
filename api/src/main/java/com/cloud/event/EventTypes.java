@@ -747,7 +747,7 @@ public class EventTypes {
     public static final String EVENT_FILESHARE_START = "FILESHARE.START";
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
     public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
-    public static final String EVENT_FILESHARE_DELETE = "FILESHARE.DELETE";
+    public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
     public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
 
     static {
@@ -1208,7 +1208,7 @@ public class EventTypes {
 
         // FileShare
         entityEventDetails.put(EVENT_FILESHARE_CREATE, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_DELETE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_DESTROY, FileShare.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

@@ -18,9 +18,13 @@
 package org.apache.cloudstack.storage.fileshare;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -31,9 +35,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -43,7 +50,7 @@ import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareS
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareProvidersCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.RemoveFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ResizeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RestartFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.StartFileShareCmd;
@@ -52,6 +59,10 @@ import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareC
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.fileshare.dao.FileShareDao;
 import org.apache.cloudstack.storage.fileshare.FileShare.Event;
 import org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDao;
@@ -64,7 +75,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class FileShareServiceImpl extends ManagerBase implements FileShareService {
+public class FileShareServiceImpl extends ManagerBase implements FileShareService, Configurable {
 
     @Inject
     private AccountManager accountMgr;
@@ -81,6 +92,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    @Inject
+    ConfigurationDao configDao;
+
     protected List<FileShareProvider> fileShareProviders;
 
     private Map<String, FileShareProvider> fileShareProviderMap = new HashMap<>();
@@ -88,6 +102,27 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     private final StateMachine2<FileShare.State, Event, FileShare> fileShareStateMachine;
 
     static final String DEFAULT_FILE_SHARE_DISK_OFFERING_NAME = "Default Offering for File Share";
+
+    ConfigKey<Integer> FileShareCleanupInterval = new ConfigKey<>(Integer.class,
+            "fileshare.cleanup.interval",
+            "Advanced",
+            "60",
+            "The interval (in seconds) to wait before running the fileshare cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            null);
+    ConfigKey<Integer> FileShareCleanupDelay = new ConfigKey<>(Integer.class,
+            "fileshare.cleanup.delay",
+            "Advanced",
+            "60",
+            "Determines how long (in seconds) to wait before actually expunging destroyed file shares. The default value = the default value of fileshare.cleanup.interval.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            null);
+
+    ScheduledExecutorService _executor = null;
 
     public FileShareServiceImpl() {
         this.fileShareStateMachine = FileShare.State.getStateMachine();
@@ -108,10 +143,12 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             provider.configure();
         }
         createDefaultDiskOfferingForFileShare();
+        _executor.scheduleWithFixedDelay(new FileShareGarbageCollector(), FileShareCleanupInterval.value(), FileShareCleanupInterval.value(), TimeUnit.SECONDS);
         return true;
     }
 
     public boolean stop() {
+        _executor.shutdown();
         return true;
     }
 
@@ -145,6 +182,10 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        String workers = configs.get("expunge.workers");
+        int wrks = NumbersUtil.parseInt(workers, 10);
+        _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("FileShare-Scavenger"));
         return true;
     }
 
@@ -155,7 +196,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         cmdList.add(CreateFileShareCmd.class);
         cmdList.add(ListFileSharesCmd.class);
         cmdList.add(UpdateFileShareCmd.class);
-        cmdList.add(RemoveFileShareCmd.class);
+        cmdList.add(DestroyFileShareCmd.class);
         cmdList.add(RestartFileShareCmd.class);
         cmdList.add(ResizeFileShareCmd.class);
         cmdList.add(StartFileShareCmd.class);
@@ -206,7 +247,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             result = lifeCycle.deployFileShare(fileShare, networkId, diskOfferingId, size);
         } catch (CloudRuntimeException ex) {
             stateTransitTo(fileShare, Event.OperationFailed);
-            deleteFileShare(fileShare.getId());
+            deleteFileShare(fileShare);
             throw ex;
         }
         fileShare.setVolumeId(result.first());
@@ -236,7 +277,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         } catch (CloudRuntimeException ex) {
             stateTransitTo(fileShare, Event.OperationFailed);
             if (fileShare.getState() == FileShare.State.Deployed) {
-               deleteFileShare(fileShare.getId());
+                deleteFileShare(fileShare);
             }
             throw ex;
         }
@@ -384,19 +425,77 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    public FileShare deleteFileShare(Long fileShareId) {
+    public FileShare destroyFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
 
-        //stateTransitTo(fileShare, Event.DestroyRequested);
+        if (!FileShare.State.Stopped.equals(fileShare.getState())) {
+            throw new InvalidParameterValueException("File Share should be in the Stopped state before it is destroyed");
+
+        }
+        stateTransitTo(fileShare, Event.DestroyRequested);
+        return fileShare;
+    }
+
+    private void deleteFileShare(FileShareVO fileShare) {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         boolean result = lifeCycle.deleteFileShare(fileShare);
-        if (!result) {
-            //stateTransitTo(fileShare, Event.OperationFailed);
-            return null;
+        fileShareDao.remove(fileShare.getId());
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return FileShareService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                FileShareCleanupInterval,
+                FileShareCleanupDelay
+        };
+    }
+    protected class FileShareGarbageCollector extends ManagedContextRunnable {
+
+        public FileShareGarbageCollector() {
         }
-        //stateTransitTo(fileShare, Event.OperationSucceeded);
-        fileShareDao.remove(fileShareId);
-        return fileShare;
+
+        @Override
+        protected void runInContext() {
+            try {
+                logger.trace("File Share Garbage Collection Thread is running.");
+
+                cleanupFileShare(true);
+
+            } catch (Exception e) {
+                logger.error("Caught the following Exception", e);
+            }
+        }
+    }
+
+    public void cleanupFileShare(boolean recurring) {
+        GlobalLock scanLock = GlobalLock.getInternLock("fileshareservice.cleanup");
+
+        try {
+            if (scanLock.lock(3)) {
+                try {
+
+                    List<FileShareVO> fileShares = fileShareDao.listFileSharesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)FileShareCleanupDelay.value() << 10)));
+                    for (FileShareVO fileShare : fileShares) {
+                        try {
+                            stateTransitTo(fileShare, Event.ExpungeOperation);
+                            deleteFileShare(fileShare);
+                        } catch (Exception e) {
+                            stateTransitTo(fileShare, Event.OperationFailed);
+                            logger.error(String.format("Unable to expunge file share [%s] due to: [%s].", fileShare.getUuid(), e.getMessage()));
+                        }
+                    }
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
+        }
     }
 }
