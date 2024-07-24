@@ -27,6 +27,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.cloud.cpu.CPU;
 import org.junit.Test;
 
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -272,7 +273,14 @@ public class CheckOnHostCommandTest {
         @Override
         public ResourceState getResourceState() {
             return ResourceState.Enabled;
-        };
+        }
+
+        @Override
+        public CPU.CPUArchitecture getArch() {
+            return CPU.CPUArchitecture.X86_64;
+        }
+
+        ;
     };
 
     CheckOnHostCommand cohc = new CheckOnHostCommand(host);

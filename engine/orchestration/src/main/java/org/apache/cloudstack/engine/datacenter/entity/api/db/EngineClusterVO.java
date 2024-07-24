@@ -79,7 +79,7 @@ public class EngineClusterVO implements EngineCluster, Identity {
 
     @Column(name = "arch")
     @Convert(converter = CPUArchitectureConverter.class)
-    private String arch;
+    private CPU.CPUArchitecture arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -253,10 +253,10 @@ public class EngineClusterVO implements EngineCluster, Identity {
 
     @Override
     public CPU.CPUArchitecture getArch() {
-        return CPU.CPUArchitecture.fromType(arch);
+        return arch;
     }
 
-    public void setArch(String arch) {
+    public void setArch(CPU.CPUArchitecture arch) {
         this.arch = arch;
     }
 

@@ -158,3 +158,4 @@ CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position
 -- Multi-Arch Zones
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the hosts in the cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the host"');

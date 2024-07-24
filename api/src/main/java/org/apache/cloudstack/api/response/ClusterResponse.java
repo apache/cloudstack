@@ -91,6 +91,10 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     @Param(description = "Meta data associated with the zone (key/value pairs)")
     private Map<String, String> resourceDetails;
 
+    @SerializedName(ApiConstants.ARCHITECTURE)
+    @Param(description = "CPU Architecture of the hosts in the cluster")
+    private String architecture;
+
     public String getId() {
         return id;
     }
@@ -218,5 +222,13 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }

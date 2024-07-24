@@ -290,6 +290,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
     private Boolean instanceConversionSupported;
 
+    @SerializedName(ApiConstants.ARCHITECTURE)
+    @Param(description = "CPU Architecture of the host")
+    private String architecture;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -785,5 +789,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setIsTagARule(Boolean tagARule) {
         isTagARule = tagARule;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }
