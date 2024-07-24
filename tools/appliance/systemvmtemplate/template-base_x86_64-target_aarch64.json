@@ -2,7 +2,6 @@
   "_license": "Apache License 2.0",
   "builders": [
     {
-      "accelerator": "kvm",
       "boot_command": [
         "c<wait>",
         "linux /install.a64/vmlinuz <wait>",
