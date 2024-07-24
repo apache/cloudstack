@@ -48,7 +48,7 @@
         ],
 	[
           "-cpu",
-          "cortex-a57"
+          "cortex-a72"
         ],
         [
           "-smp",
