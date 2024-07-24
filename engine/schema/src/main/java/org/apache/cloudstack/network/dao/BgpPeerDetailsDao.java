@@ -14,37 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.network.dao;
 
-package org.apache.cloudstack.network;
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.BgpPeerDetailsVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.List;
+import java.util.Map;
 
-import java.util.Date;
+public interface BgpPeerDetailsDao extends ResourceDetailsDao<BgpPeerDetailsVO> {
+    Map<BgpPeer.Detail, String> getBgpPeerDetails(long bgpPeerId);
+    String getDetail(long offeringId, BgpPeer.Detail detailName);
+    List<Long> findDomainIds(final long resourceId);
+    List<Long> findZoneIds(final long resourceId);
 
-public interface BgpPeer extends Identity, InternalIdentity {
-
-    Long getDomainId();
-
-    Long getAccountId();
-
-    enum State {
-        Active, Add, Revoke
-    }
-
-    enum Detail {
-        EBGP_MultiHop
-    }
-
-    long getDataCenterId();
-
-    String getIp4Address();
-
-    String getIp6Address();
-
-    Long getAsNumber();
-
-    String getPassword();
-
-    Date getCreated();
+    int removeByBgpPeerId(long bgpPeerId);
 }

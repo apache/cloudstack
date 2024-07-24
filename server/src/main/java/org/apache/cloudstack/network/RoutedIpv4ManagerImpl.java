@@ -87,16 +87,20 @@ import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnetVO;
 import org.apache.cloudstack.datacenter.dao.DataCenterIpv4GuestSubnetDao;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap.State;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.dao.Ipv4GuestSubnetNetworkMapDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -132,6 +136,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     VpcDao vpcDao;
     @Inject
     BgpPeerDao bgpPeerDao;
+    @Inject
+    BgpPeerDetailsDao bgpPeerDetailsDao;
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
     @Inject
@@ -991,6 +997,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         String ip4Address = createBgpPeerCmd.getIp4Address();
         String ip6Address = createBgpPeerCmd.getIp6Address();
         String password = createBgpPeerCmd.getPassword();
+        Map<String, String> detailsStr = createBgpPeerCmd.getDetails();
 
         if (ObjectUtils.allNull(ip4Address, ip6Address)) {
             throw new InvalidParameterValueException("At least one of IPv4 and IPv6 address must be specified.");
@@ -1014,6 +1021,17 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        final Map<BgpPeer.Detail, String> details = new HashMap<>();
+        if (detailsStr != null) {
+            for (final String detailStr : detailsStr.keySet()) {
+                BgpPeer.Detail bgpPeerDetail = EnumUtils.getEnumIgnoreCase(BgpPeer.Detail.class, detailStr);
+                if (bgpPeerDetail == null) {
+                    throw new InvalidParameterValueException("Unsupported BGP peer detail " + detailStr);
+                }
+                details.put(bgpPeerDetail, detailsStr.get(detailStr));
+            }
+        }
+
         Long domainId = createBgpPeerCmd.getDomainId();
         final Long projectId = createBgpPeerCmd.getProjectId();
         final String accountName = createBgpPeerCmd.getAccountName();
@@ -1034,7 +1052,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (accountId != null) {
             bgpPeerVO.setAccountId(accountId);
         }
-        bgpPeerVO = bgpPeerDao.persist(bgpPeerVO);
+        bgpPeerVO = bgpPeerDao.persist(bgpPeerVO, details);
         return bgpPeerVO;
     }
 
@@ -1075,6 +1093,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        Map<BgpPeer.Detail, String> detailsMap = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());
+        if (MapUtils.isNotEmpty(detailsMap)) {
+            response.setDetails(detailsMap);
+        }
+
         response.setObjectName("bgppeer");
         return response;
     }
@@ -1099,6 +1122,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         String newIp4Address = updateBgpPeerCmd.getIp4Address();
         String newIp6Address = updateBgpPeerCmd.getIp6Address();
         String password = updateBgpPeerCmd.getPassword();
+        Map<String, String> detailsStr = updateBgpPeerCmd.getDetails();
 
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(bgpPeerId);
         if (bgpPeerVO == null) {
@@ -1141,6 +1165,17 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
         }
 
+        final Map<BgpPeer.Detail, String> details = new HashMap<>();
+        if (detailsStr != null) {
+            for (final String detailStr : detailsStr.keySet()) {
+                BgpPeer.Detail bgpPeerDetail = EnumUtils.getEnumIgnoreCase(BgpPeer.Detail.class, detailStr);
+                if (bgpPeerDetail == null) {
+                    throw new InvalidParameterValueException("Unsupported BGP peer detail " + detailStr);
+                }
+                details.put(bgpPeerDetail, detailsStr.get(detailStr));
+            }
+        }
+
         // update via bgpPeerDao
         bgpPeerVO.setAsNumber(newAsNumber);
         bgpPeerVO.setIp4Address(newIp4Address);
@@ -1149,6 +1184,19 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             bgpPeerVO.setPassword(password);
         }
         bgpPeerDao.update(bgpPeerId, bgpPeerVO);
+
+        boolean cleanupDetails = updateBgpPeerCmd.isCleanupDetails();
+        if (cleanupDetails){
+            bgpPeerDetailsDao.removeByBgpPeerId(bgpPeerId);
+        } else if (MapUtils.isNotEmpty(details)) {
+            bgpPeerDetailsDao.removeByBgpPeerId(bgpPeerId);
+            List<BgpPeerDetailsVO> bgpPeerDetails = new ArrayList<>();
+            for (BgpPeer.Detail key : details.keySet()) {
+                BgpPeerDetailsVO detail = new BgpPeerDetailsVO(bgpPeerVO.getId(), key, details.get(key), true);
+                bgpPeerDetails.add(detail);
+            }
+            bgpPeerDetailsDao.saveDetails(bgpPeerDetails);
+        }
 
         return bgpPeerDao.findById(bgpPeerId);
     }

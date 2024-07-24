@@ -31,6 +31,10 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.collections.MapUtils;
+
+import java.util.Collection;
+import java.util.Map;
 
 @APICommand(name = "updateBgpPeer",
         description = "Updates an existing Bgp Peer.",
@@ -68,6 +72,15 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
             description = "The password of the Bgp Peer.")
     private String password;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "BGP peer details in key/value pairs.")
+    protected Map details;
+
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details are removed for this resource; if false or not set, no action)")
+    private Boolean cleanupDetails;
+
     public Long getId() {
         return id;
     }
@@ -86,6 +99,18 @@ public class UpdateBgpPeerCmd extends BaseAsyncCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public Map<String, String> getDetails() {
+        if (MapUtils.isEmpty(details)) {
+            return null;
+        }
+        Collection<String> paramsCollection = this.details.values();
+        return (Map<String, String>) (paramsCollection.toArray())[0];
+    }
+
+    public boolean isCleanupDetails(){
+        return cleanupDetails == null ? false : cleanupDetails.booleanValue();
     }
 
     @Override

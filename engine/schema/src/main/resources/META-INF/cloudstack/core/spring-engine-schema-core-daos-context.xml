@@ -294,5 +294,6 @@
   <bean id="ASNumberDaoImpl" class="com.cloud.dc.dao.ASNumberDaoImpl" />
   <bean id="ASNumberRangeDaoImpl" class="com.cloud.dc.dao.ASNumberRangeDaoImpl" />
   <bean id="BgpPeerDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerDaoImpl" />
+  <bean id="BgpPeerDetailsDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerDetailsDaoImpl" />
   <bean id="BgpPeerNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerNetworkMapDaoImpl" />
 </beans>

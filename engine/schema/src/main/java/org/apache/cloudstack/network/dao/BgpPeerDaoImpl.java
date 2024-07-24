@@ -23,7 +23,9 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.network.BgpPeer;
+import org.apache.cloudstack.network.BgpPeerDetailsVO;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.springframework.stereotype.Component;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @DB
@@ -41,6 +44,8 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
 
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    @Inject
+    BgpPeerDetailsDao bgpPeerDetailsDao;
 
     @PostConstruct
     public void init() {
@@ -101,4 +106,22 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         }
         return findOneBy(sc);
     }
+
+    @Override
+    public BgpPeerVO persist(BgpPeerVO bgpPeerVO, Map<BgpPeer.Detail, String> details) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        txn.start();
+        BgpPeerVO vo = super.persist(bgpPeerVO);
+
+        // persist the details
+        if (details != null && !details.isEmpty()) {
+            for (BgpPeer.Detail detail : details.keySet()) {
+                bgpPeerDetailsDao.persist(new BgpPeerDetailsVO(bgpPeerVO.getId(), detail, details.get(detail), true));
+            }
+        }
+
+        txn.commit();
+        return vo;
+    }
+
 }

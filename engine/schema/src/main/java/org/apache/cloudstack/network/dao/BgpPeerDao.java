@@ -18,9 +18,11 @@
 package org.apache.cloudstack.network.dao;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
     List<BgpPeerVO> listNonRevokeByNetworkId(long networkId);
@@ -28,4 +30,6 @@ public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
     List<BgpPeerVO> listNonRevokeByVpcId(long vpcId);
 
     BgpPeerVO findByZoneAndAsNumberAndAddress(long zoneId, Long asNumber, String ip4Address, String ip6Address);
+
+    BgpPeerVO persist(BgpPeerVO bgpPeerVO, Map<BgpPeer.Detail, String> details);
 }

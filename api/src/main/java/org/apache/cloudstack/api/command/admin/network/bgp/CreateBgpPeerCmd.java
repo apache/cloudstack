@@ -30,9 +30,13 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.BgpPeer;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+
+import java.util.Collection;
+import java.util.Map;
 
 @APICommand(name = "createBgpPeer",
         description = "Creates a Bgp Peer for a zone.",
@@ -85,6 +89,10 @@ public class CreateBgpPeerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning the Bgp Peer")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "BGP peer details in key/value pairs.")
+    protected Map details;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -120,6 +128,14 @@ public class CreateBgpPeerCmd extends BaseAsyncCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Map<String, String> getDetails() {
+        if (MapUtils.isEmpty(details)) {
+            return null;
+        }
+        Collection<String> paramsCollection = this.details.values();
+        return (Map<String, String>) (paramsCollection.toArray())[0];
     }
 
     @Override

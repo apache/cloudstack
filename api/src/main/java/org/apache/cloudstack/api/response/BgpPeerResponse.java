@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -81,6 +82,10 @@ public class BgpPeerResponse extends BaseResponse {
     @Param(description = "the project name of the bgp peer")
     private String projectName;
 
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "additional key/value details of the bgp peer")
+    private Map details;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -131,5 +136,9 @@ public class BgpPeerResponse extends BaseResponse {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
     }
 }

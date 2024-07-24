@@ -254,6 +254,16 @@ CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peers` (
     UNIQUE KEY `uk_bgp_peers__uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`bgp_peer_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `bgp_peer_id` bigint unsigned NOT NULL COMMENT 'bgp peer id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_bgp_peer_details__bgp_peer_id` FOREIGN KEY `fk_bgp_peer_details__bgp_peer_id`(`bgp_peer_id`) REFERENCES `bgp_peers`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `bgp_peer_id` bigint(20) unsigned COMMENT 'id of the BGP peer',
