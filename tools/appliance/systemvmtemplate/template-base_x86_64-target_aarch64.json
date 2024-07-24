@@ -18,11 +18,11 @@
         "debconf/frontend=noninteractive <wait>",
         "console-setup/ask_detect=false <wait>",
         "console-keymaps-at/keymap=us <wait>",
-	"---",
+        "---",
         "<enter><wait>",
-	"initrd /install.a64/initrd.gz",
-	"<enter><wait>",
-	"boot<enter><wait>"
+        "initrd /install.a64/initrd.gz",
+        "<enter><wait>",
+        "boot<enter><wait>"
       ],
       "boot_wait": "60s",
       "disk_interface": "virtio",
@@ -41,11 +41,11 @@
           "-m",
           "500M"
         ],
-	[
+        [
           "-machine",
           "virt"
         ],
-	[
+        [
           "-cpu",
           "cortex-a72"
         ],
@@ -53,9 +53,9 @@
           "-smp",
           "1"
         ],
-	[ "-pflash", "/usr/share/AAVMF/AAVMF_CODE.fd" ],
-	[ "-monitor", "none" ],
-	[ "-boot", "strict=off" ]
+        [ "-bios", "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd" ],
+        [ "-monitor", "none" ],
+        [ "-boot", "strict=off" ]
       ],
       "shutdown_command": "sudo halt -p",
       "ssh_password": "cloud",

@@ -23,12 +23,12 @@ function usage() {
 Usage:
    ./build.sh [template] [version] [BUILD_NUMBER]
 
-   * Set \$target_arch to provide target architecture
-     (or use command line arg, default to current architecture. Currently x86_64 and aarch64 are implemented)
    * Set \$appliance to provide definition name to build
      (or use command line arg, default systemvmtemplate)
    * Set \$version to provide version to apply to built appliance
      (or use command line arg, default empty)
+   * Set \$target_arch to provide target architecture
+     (or use command line arg, default to current architecture. Currently x86_64 and aarch64 are implemented)
    * Set \$BUILD_NUMBER to provide build number to apply to built appliance
      (or use command line arg, default empty)
    * Set \$DEBUG=1 to enable debug logging
@@ -90,14 +90,14 @@ fi
 # get current system architecture
 base_arch=`arch`
 
-# which architecture to build the template for
-target_arch="${1:-${target_arch:-${base_arch}}}"
-
 # which packer definition to use
-appliance="${2:-${appliance:-systemvmtemplate}}"
+appliance="${1:-${appliance:-systemvmtemplate}}"
 
 # optional version tag to put into the image filename
-version="${3:-${version:-}}"
+version="${2:-${version:-}}"
+
+# which architecture to build the template for
+target_arch="${3:-${target_arch:-${base_arch}}}"
 
 # optional (jenkins) build number tag to put into the image filename
 BUILD_NUMBER="${4:-${BUILD_NUMBER:-}}"

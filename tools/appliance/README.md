@@ -41,9 +41,10 @@ CentOS based built-in user VM template.
 Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist` directory:
 
-    bash build.sh x86_64 systemvmtemplate
-    bash build.sh aarch64 systemvmtemplate
+    bash build.sh <name> <version> <arch>
+    bash build.sh systemvmtemplate 4.19.1.0 x86_64
+    bash build.sh systemvmtemplate 4.19.1.0 aarch64
 
-For building builtin template run:
+For building builtin x86_64 template run:
 
-    bash build.sh x86_64 builtin
+    bash build.sh builtin
