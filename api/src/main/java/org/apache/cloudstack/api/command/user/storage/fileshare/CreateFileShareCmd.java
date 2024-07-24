@@ -115,7 +115,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.FORMAT,
             type = CommandType.STRING,
-            description = "the filesystem format which will be installed on the file share.")
+            description = "the filesystem format (XFS / EXT4) which will be installed on the file share.")
     private String fsFormat;
 
     @Parameter(name = ApiConstants.PROVIDER,

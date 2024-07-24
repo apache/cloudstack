@@ -83,6 +83,7 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
         response.setDescription(fileShare.getDescription());
         response.setState(fileShare.getState().toString());
         response.setProvider(fileShare.getProvider());
+        response.setFormat(fileShare.getFsType().toString());
         response.setPath(FileShare.getFileSharePathFromNameAndUuid(fileShare.getName(), fileShare.getUuid()));
         response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
         response.setZoneId(fileShare.getZoneUuid());

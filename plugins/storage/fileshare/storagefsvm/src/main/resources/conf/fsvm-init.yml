@@ -40,7 +40,7 @@ write_files:
 
       sudo mkdir -p "$MOUNT_POINT"
 
-      FS_TYPE=$(sudo blkid -o value -s TYPE "$PARTITION")
+      FS_TYPE=$(sudo lsblk -no FSTYPE "$PARTITION")
   
       if [ -z "$FS_TYPE" ]; then
         FILESYSTEM={{ fsvm.filesystem }}

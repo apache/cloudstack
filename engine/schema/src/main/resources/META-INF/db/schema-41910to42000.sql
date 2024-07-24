@@ -264,6 +264,7 @@ SELECT
     `storage_fileshare`.`description` AS `description`,
     `storage_fileshare`.`state` AS `state`,
     `storage_fileshare`.`fs_provider_name` AS `provider`,
+    `storage_fileshare`.`fs_type` AS `fs_type`,
     `storage_fileshare`.`volume_id` AS `volume_id`,
     `storage_fileshare`.`account_id` AS `account_id`,
     `storage_fileshare`.`data_center_id` AS `zone_id`,

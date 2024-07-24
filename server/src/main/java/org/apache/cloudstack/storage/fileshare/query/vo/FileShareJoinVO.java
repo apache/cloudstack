@@ -29,6 +29,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShare.State;
 
 import com.cloud.api.query.vo.BaseViewVO;
@@ -58,6 +59,10 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     @Column(name = "provider")
     private String provider;
+
+    @Column(name = "fs_type")
+    @Enumerated(EnumType.STRING)
+    FileShare.FileSystemType fsType;
 
     @Column(name = "size")
     private Long size;
@@ -181,6 +186,10 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     public String getProvider() {
         return provider;
+    }
+
+    public FileShare.FileSystemType getFsType() {
+        return fsType;
     }
 
     public Long getSize() {

@@ -29,7 +29,7 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     String FileSharePathPrefix = "/export/fileshare/";
 
     enum FileSystemType {
-        EXT3, EXT4, XFS
+        EXT4, XFS
     }
 
     enum Protocol {
