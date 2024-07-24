@@ -33,10 +33,17 @@ CentOS based built-in user VM template.
       http://packages.shapeblue.com/systemvmtemplate/vhd-util
       http://packages.shapeblue.com/systemvmtemplate/libvhd.so.1.0
 
+- For building ARM64 systemvm template on amd64 systems, please also install:
+  qemu-utils qemu-system-arm qemu-efi-aarch64
+
 # How to build appliances
 
 Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist` directory:
 
-    bash build.sh systemvmtemplate
-    bash build.sh builtin
+    bash build.sh x86_64 systemvmtemplate
+    bash build.sh aarch64 systemvmtemplate
+
+For building builtin template run:
+
+    bash build.sh x86_64 builtin
