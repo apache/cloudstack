@@ -167,7 +167,8 @@
         <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'volumename'">
-        <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+        <router-link v-if="resourceIdToValidLinksMap[record.id]?.volume" :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
       </template>
       <template v-if="column.key === 'size'">
         <span v-if="text && $route.path === '/kubernetes'">
@@ -488,6 +489,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
+import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
 
@@ -576,6 +578,18 @@ export default {
           notification: 'storageallocatedthreshold',
           disable: 'storageallocateddisablethreshold'
         }
+      },
+      resourceIdToValidLinksMap: {}
+    }
+  },
+  watch: {
+    items: {
+      deep: true,
+      handler (newData, oldData) {
+        if (newData === oldData) return
+        this.items.forEach(record => {
+          this.resourceIdToValidLinksMap[record.id] = validateLinks(this.$router, false, record)
+        })
       }
     }
   },
