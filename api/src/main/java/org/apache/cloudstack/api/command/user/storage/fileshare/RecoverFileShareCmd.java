@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,11 +32,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-import javax.inject.Inject;
-
-@APICommand(name = "destroyFileShare", responseObject= SuccessResponse.class, description = "Destroy a File Share by id",
+@APICommand(name = "recoverFileShare", responseObject= SuccessResponse.class, description = "Recover a File Share by id",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
+public class RecoverFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -65,7 +65,7 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.destroyFileShare(id);
+        FileShare fileShare = fileShareService.recoverFileShare(id);
         if (fileShare != null) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

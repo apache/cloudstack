@@ -658,6 +658,26 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'recoverFileShare',
+          icon: 'medicine-box-outlined',
+          label: 'label.recover.fileshare',
+          message: 'message.action.recover.fileshare',
+          dataView: true,
+          show: (record) => { return record.state === 'Destroyed' },
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'expungeFileShare',
+          icon: 'delete-outlined',
+          label: 'label.expunge.fileshare',
+          message: 'message.action.expunge.fileshare',
+          dataView: true,
+          show: (record) => { return record.state === 'Destroyed' },
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

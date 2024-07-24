@@ -748,6 +748,7 @@ public class EventTypes {
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
     public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
     public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
+    public static final String EVENT_FILESHARE_EXPUNGE = "FILESHARE.EXPUNGE";
     public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
 
     static {

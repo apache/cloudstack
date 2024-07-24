@@ -48,9 +48,11 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareDiskOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareServiceOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.ExpungeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileShareProvidersCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.RecoverFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ResizeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RestartFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.StartFileShareCmd;
@@ -203,6 +205,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         cmdList.add(StopFileShareCmd.class);
         cmdList.add(ChangeFileShareDiskOfferingCmd.class);
         cmdList.add(ChangeFileShareServiceOfferingCmd.class);
+        cmdList.add(RecoverFileShareCmd.class);
+        cmdList.add(ExpungeFileShareCmd.class);
         return cmdList;
     }
 
@@ -247,7 +251,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             result = lifeCycle.deployFileShare(fileShare, networkId, diskOfferingId, size);
         } catch (CloudRuntimeException ex) {
             stateTransitTo(fileShare, Event.OperationFailed);
-            deleteFileShare(fileShare);
+            deleteFileShare(fileShare.getId());
             throw ex;
         }
         fileShare.setVolumeId(result.first());
@@ -277,7 +281,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         } catch (CloudRuntimeException ex) {
             stateTransitTo(fileShare, Event.OperationFailed);
             if (fileShare.getState() == FileShare.State.Deployed) {
-                deleteFileShare(fileShare);
+                deleteFileShare(fileShare.getId());
             }
             throw ex;
         }
@@ -436,7 +440,21 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return fileShare;
     }
 
-    private void deleteFileShare(FileShareVO fileShare) {
+    @Override
+    public FileShare recoverFileShare(Long fileShareId) {
+        FileShareVO fileShare = fileShareDao.findById(fileShareId);
+        if (!FileShare.State.Destroyed.equals(fileShare.getState())) {
+            throw new InvalidParameterValueException("File Share should be in the Destroyed state to be recovered");
+
+        }
+        stateTransitTo(fileShare, Event.RecoveryRequested);
+        return fileShare;
+
+    }
+
+    @Override
+    public void deleteFileShare(Long fileShareId) {
+        FileShareVO fileShare = fileShareDao.findById(fileShareId);
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         boolean result = lifeCycle.deleteFileShare(fileShare);
@@ -484,7 +502,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
                     for (FileShareVO fileShare : fileShares) {
                         try {
                             stateTransitTo(fileShare, Event.ExpungeOperation);
-                            deleteFileShare(fileShare);
+                            deleteFileShare(fileShare.getId());
                         } catch (Exception e) {
                             stateTransitTo(fileShare, Event.OperationFailed);
                             logger.error(String.format("Unable to expunge file share [%s] due to: [%s].", fileShare.getUuid(), e.getMessage()));

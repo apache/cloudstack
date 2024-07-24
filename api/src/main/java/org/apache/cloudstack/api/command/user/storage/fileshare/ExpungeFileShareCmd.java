@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -30,11 +32,11 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
-import javax.inject.Inject;
+import com.cloud.event.EventTypes;
 
-@APICommand(name = "destroyFileShare", responseObject= SuccessResponse.class, description = "Destroy a File Share by id",
+@APICommand(name = "expungeFileShare", responseObject= SuccessResponse.class, description = "Recover a File Share by id",
         responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
-public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
+public class ExpungeFileShareCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -59,18 +61,29 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Override
+    public String getEventType() {
+        return EventTypes.EVENT_FILESHARE_EXPUNGE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Expunging fileshare " + id;
+    }
+
+    @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.destroyFileShare(id);
-        if (fileShare != null) {
+        try {
+            fileShareService.deleteFileShare(id);
+        } catch (Exception ex) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to expunge fileShare");
+        } finally {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete fileShare");
         }
     }
 }
