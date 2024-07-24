@@ -118,8 +118,6 @@ public class UpdateGuiThemeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("ID: %s, Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", getId(), getName(),
-                getAccountIds(), getDomainIds(), getRecursiveDomains(), getCommonNames()));
         GuiThemeJoinVO guiThemeJoinVO = guiThemeService.updateGuiTheme(this);
 
         if (guiThemeJoinVO == null) {
