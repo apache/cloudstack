@@ -26,15 +26,15 @@ import com.cloud.upgrade.dao.Upgrade41520to41600;
 import com.cloud.upgrade.dao.Upgrade41720to41800;
 import com.cloud.upgrade.dao.Upgrade481to490;
 import org.apache.cloudstack.utils.CloudStackVersion;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.InputStream;
 import java.sql.Connection;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-class DatabaseVersionHierarchyTest {
+public class DatabaseVersionHierarchyTest {
 
     private static DatabaseVersionHierarchy hierarchy;
 
@@ -71,8 +71,8 @@ class DatabaseVersionHierarchyTest {
 
     }
 
-    @BeforeAll
-    static void init() {
+    @BeforeClass
+    public static void init() {
         DatabaseVersionHierarchy.DatabaseVersionHierarchyBuilder builder = DatabaseVersionHierarchy.builder()
                 .next("0.0.5", new DummyUpgrade())
                 .next("1.0.0.0", new DummyUpgrade())
@@ -95,23 +95,23 @@ class DatabaseVersionHierarchyTest {
     }
 
     @Test
-    void getRecentVersionMiddle() {
+    public void getRecentVersionMiddle() {
         assertEquals("2.0.0", hierarchy.getRecentVersion(CloudStackVersion.parse("2.2.2")).toString());
     }
     @Test
-    void getRecentVersionEarly() {
+    public void getRecentVersionEarly() {
         assertEquals(null, hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.2")));
     }
     @Test
-    void getRecentVersionStart() {
+    public void getRecentVersionStart() {
         assertEquals(null, hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.5")));
     }
     @Test
-    void getRecentVersionJust() {
+    public void getRecentVersionJust() {
         assertEquals("0.0.5", hierarchy.getRecentVersion(CloudStackVersion.parse("0.0.9")).toString());
     }
     @Test
-    void getRecentVersionExact() {
+    public void getRecentVersionExact() {
         assertEquals("0.0.5", hierarchy.getRecentVersion(CloudStackVersion.parse("1.0.0.0")).toString());
     }
 }

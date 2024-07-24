@@ -34,8 +34,6 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.domain.Domain;
-import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -46,6 +44,7 @@ import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -60,6 +59,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -81,7 +81,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -93,6 +92,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
@@ -102,8 +102,10 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -123,7 +125,6 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -141,6 +142,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -171,8 +173,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Inject
     NetworkDao _networksDao = null;
     @Inject
-    NetworkDetailsDao networkDetailsDao;
-    @Inject
     NicDao _nicDao = null;
     @Inject
     PodVlanMapDao _podVlanMapDao;
@@ -182,6 +182,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     ProjectDao projectDao;
     @Inject
     NetworkPermissionDao _networkPermissionDao;
+    @Inject
+    VpcDao vpcDao;
 
     private List<NetworkElement> networkElements;
 
@@ -231,6 +233,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
     @Inject
     private NetworkService _networkService;
+    @Inject
+    TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -590,11 +594,22 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
-        String mac = _networksDao.getNextAvailableMacAddress(networkId, MACIdentifier.value());
-        if (mac == null) {
-            throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
+        Integer zoneIdentifier = MACIdentifier.value();
+        if (zoneIdentifier.intValue() == 0) {
+            zoneIdentifier = Long.valueOf(network.getDataCenterId()).intValue();
         }
+        String mac;
+        do {
+            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifier);
+            if (mac == null) {
+                throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
+            }
+        } while(! isMACUnique(mac));
         return mac;
+    }
+
+    private boolean isMACUnique(String mac) {
+        return (_nicDao.findByMacAddress(mac) == null);
     }
 
     @Override
@@ -1597,6 +1612,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new CloudRuntimeException("Could not find network associated with public IP.");
+        }
+
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.getGuestType() != GuestType.Isolated) {
             return true;
@@ -2040,6 +2059,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         //Get ips used by load balancers
         List<String> lbIps = _appLbRuleDao.listLbIpsBySourceIpNetworkId(network.getId());
         ips.addAll(lbIps);
+        //Get ips used by tungsten
+        List<String> tfIps = tungstenGuestNetworkIpAddressDao.listGuestIpAddressByNetworkId(network.getId());
+        ips.addAll(tfIps);
         return ips;
     }
 
@@ -2363,7 +2385,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (org.apache.commons.lang3.StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
+        if (StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
@@ -2378,7 +2400,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(startIPv6)) {
+        if (StringUtils.isNotBlank(startIPv6)) {
             if (!NetUtils.isValidIp6(startIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
             }
@@ -2387,7 +2409,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(endIPv6)) {
+        if (StringUtils.isNotBlank(endIPv6)) {
             if (!NetUtils.isValidIp6(endIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
             }
@@ -2395,7 +2417,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
             }
         }
+    }
 
+    public void checkIp6CidrSizeEqualTo64(String ip6Cidr) {
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
         // we only support cidr == 64
         if (cidrSize != 64) {
@@ -2545,10 +2569,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return false;
         }
 
-        //if the network has vms in Starting state (nics for those might not be allocated yet as Starting state also used when vm is being Created)
-        //don't GC
-        if (_nicDao.countNicsForStartingVms(networkId) > 0) {
-            s_logger.debug("Network id=" + networkId + " is not ready for GC as it has vms that are Starting at the moment");
+        // if the network has user vms in Starting/Stopping/Migrating/Running state, or VRs in Starting/Stopping/Migrating state, don't GC
+        // The active nics count (nics_count in op_networks table) might be wrong due to some reasons, should check the state of vms as well.
+        // (nics for Starting VMs might not be allocated yet as Starting state also used when vm is being Created)
+        if (_nicDao.countNicsForNonStoppedVms(networkId) > 0 || _nicDao.countNicsForNonStoppedRunningVrs(networkId) > 0) {
+            s_logger.debug("Network id=" + networkId + " is not ready for GC as it has vms that are not Stopped at the moment");
             return false;
         }
 
@@ -2587,15 +2612,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (userData != null) {
             vmData.add(new String[]{USERDATA_DIR, USERDATA_FILE, userData});
         }
-        vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
-        vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
-        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
+        vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, com.cloud.utils.StringUtils.unicodeEscape(serviceOffering)});
+        vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, com.cloud.utils.StringUtils.unicodeEscape(zoneName)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, com.cloud.utils.StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
 
         addUserDataDetailsToCommand(vmData, userDataDetails);
 
         String publicIpAddress = guestIpAddress;
-        String publicHostName = StringUtils.unicodeEscape(vmHostName);
+        String publicHostName = com.cloud.utils.StringUtils.unicodeEscape(vmHostName);
 
         if (dcVo.getNetworkType() != DataCenter.NetworkType.Basic) {
             if (publicIp != null) {
@@ -2640,7 +2665,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     throw new CloudRuntimeException("Unable to get MD5 MessageDigest", e);
                 }
                 md5.reset();
-                md5.update(password.getBytes(StringUtils.getPreferredCharset()));
+                md5.update(password.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
                 byte[] digest = md5.digest();
                 BigInteger bigInt = new BigInteger(1, digest);
                 String hashtext = bigInt.toString(16);
@@ -2659,6 +2684,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
         }
 
+        String customCloudName = VirtualMachineManager.MetadataCustomCloudName.valueIn(datacenterId);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(customCloudName)) {
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_NAME_FILE, customCloudName});
+        }
+
         return vmData;
     }
 
@@ -2668,10 +2698,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             String[] keyValuePairs = userDataDetails.split(",");
             for(String pair : keyValuePairs)
             {
-                String[] entry = pair.split("=");
-                String key = entry[0].trim();
-                String value = entry[1].trim();
-                vmData.add(new String[]{METATDATA_DIR, key, StringUtils.unicodeEscape(value)});
+                final Pair<String, String> keyValue = com.cloud.utils.StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                vmData.add(new String[]{METATDATA_DIR, keyValue.first(), com.cloud.utils.StringUtils.unicodeEscape(keyValue.second())});
             }
         }
     }
@@ -2694,42 +2722,54 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getDns1())) {
+        if (StringUtils.isNotBlank(network.getDns1())) {
             return new Pair<>(network.getDns1(), network.getDns2());
+        }
+        if (network.getVpcId() != null) {
+            Vpc vpc = vpcDao.findById(network.getVpcId());
+            if (vpc != null && StringUtils.isNotBlank(vpc.getIp4Dns1())) {
+                return new Pair<>(vpc.getIp4Dns1(), vpc.getIp4Dns2());
+            }
         }
         return new Pair<>(zone.getDns1(), zone.getDns2());
     }
 
     @Override
     public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getIp6Dns1())) {
+        if (StringUtils.isNotBlank(network.getIp6Dns1())) {
             return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
+        }
+        if (network.getVpcId() != null) {
+            Vpc vpc = vpcDao.findById(network.getVpcId());
+            if (vpc != null && StringUtils.isNotBlank(vpc.getIp6Dns1())) {
+                return new Pair<>(vpc.getIp6Dns1(), vpc.getIp6Dns2());
+            }
         }
         return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
     }
 
     @Override
     public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
+        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
             throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+        if (StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
             throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+        if (StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
         }
     }
 
     @Override
     public void verifyIp6DnsPair(String ip6Dns1, String ip6Dns2) {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
             throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+        if (StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
+        if (StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
         }
     }

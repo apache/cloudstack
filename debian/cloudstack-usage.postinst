@@ -21,7 +21,12 @@ set -e
 
 case "$1" in
     configure)
-     
+        if ! getent passwd cloud >/dev/null; then
+            adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
+        else
+            usermod -m -d /var/lib/cloudstack/management cloud || true
+        fi
+
         # Linking usage server db.properties to management server db.properties
         if [ -f "/etc/cloudstack/management/db.properties" ]; then
             echo "Replacing usage server's db.properties with a link to the management server's db.properties"

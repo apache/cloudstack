@@ -34,26 +34,70 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
-      <template #zonename="{record}">
-        <span v-if="fetchZoneIcon(record.zoneid)">
-          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
-        </span>
-        <global-outlined v-else style="margin-right: 5px" />
-        <span> {{ record.zonename }} </span>
-      </template>
-      <template #isready="{ record }">
-        <span v-if="record.isready">{{ $t('label.yes') }}</span>
-        <span v-else>{{ $t('label.no') }}</span>
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'zonename'">
+          <span v-if="fetchZoneIcon(record.zoneid)">
+            <resource-icon :image="zoneIcon" size="2x" style="margin-right: 5px"/>
+          </span>
+          <global-outlined v-else style="margin-right: 5px" />
+          <span> {{ record.zonename }} </span>
+        </template>
+        <template v-if="column.key === 'isready'">
+          <span v-if="record.isready">{{ $t('label.yes') }}</span>
+          <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            style="margin-right: 5px"
+            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+            :title="$t('label.action.copy.template')"
+            icon="copy-outlined"
+            :loading="copyLoading"
+            @onClick="showCopyTemplate(record)" />
+          <tooltip-button
+            style="margin-right: 5px"
+            :disabled="!('deleteTemplate' in $store.getters.apis)"
+            :title="$t('label.action.delete.template')"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="onShowDeleteModal(record)"/>
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <a-table
-          style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
-          :columns="innerColumns"
-          :data-source="record.downloaddetails"
+          style="margin: 10px 0;"
+          :columns="storagePoolInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary').length > 0"
           :pagination="false"
           :bordered="true"
-          :rowKey="record => record.zoneid">
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+        <a-table
+          style="margin: 10px 0;"
+          :columns="imageStoreInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary').length > 0"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
         </a-table>
       </template>
       <template #action="{ record }">
@@ -66,7 +110,7 @@
           @onClick="showCopyTemplate(record)" />
         <tooltip-button
           style="margin-right: 5px"
-          :disabled="!('deleteTemplate' in $store.getters.apis)"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
           :title="$t('label.action.delete.template')"
           type="primary"
           :danger="true"
@@ -124,7 +168,7 @@
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
-                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <resource-icon :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                   </span>
                   <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
@@ -171,17 +215,17 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.zoneid || record.name"
+          :rowKey="record => record.zoneid || record.name"
           :pagination="true"
           style="overflow-y: auto">
         </a-table>
         <a-spin :spinning="deleteLoading">
-          <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
+          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
             <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)">{{ $t('label.ok') }}</a-button>
           </div>
         </a-spin>
       </div>
@@ -260,21 +304,21 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'zonename',
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename',
-        slots: { customRender: 'zonename' }
+        dataIndex: 'zonename'
       },
       {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
       {
+        key: 'isready',
         title: this.$t('label.isready'),
-        dataIndex: 'isready',
-        slots: { customRender: 'isready' }
+        dataIndex: 'isready'
       }
     ]
-    this.innerColumns = [
+    this.imageStoreInnerColumns = [
       {
         title: this.$t('label.secondary.storage'),
         dataIndex: 'datastore'
@@ -288,12 +332,26 @@ export default {
         dataIndex: 'downloadState'
       }
     ]
+    this.storagePoolInnerColumns = [
+      {
+        title: this.$t('label.primary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
     if (this.isActionPermitted()) {
       this.columns.push({
+        key: 'actions',
         title: '',
-        dataIndex: 'action',
-        width: 100,
-        slots: { customRender: 'action' }
+        dataIndex: 'actions',
+        width: 100
       })
     }
 
@@ -422,9 +480,9 @@ export default {
     deleteTemplates (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

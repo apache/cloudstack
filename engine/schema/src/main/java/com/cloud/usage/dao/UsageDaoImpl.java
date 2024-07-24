@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.dao;
 
+import com.cloud.usage.BucketStatisticsVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -28,6 +29,7 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -81,6 +83,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             + "INNER   JOIN cloud.domain domain ON (domain.id = cloud_usage.domain_id)\n "
             + "WHERE   cloud_usage.usage_type = ? AND cloud_usage.account_id = ? AND cloud_usage.start_date >= ? AND cloud_usage.end_date <= ? "
             + "GROUP   BY cloud_usage.usage_id ";
+
+    private static final String GET_LAST_BUCKET_STATS_ID = "SELECT id FROM cloud_usage.bucket_statistics ORDER BY id DESC LIMIT 1";
+
+    private static final String INSERT_BUCKET_STATS = "INSERT INTO cloud_usage.bucket_statistics (id, account_id, bucket_id, size) VALUES (?,?,?,?)";
+
+    private static final String UPDATE_BUCKET_STATS = "UPDATE cloud_usage.bucket_statistics SET size=? WHERE id=?";
+
 
     public UsageDaoImpl() {
     }
@@ -286,6 +295,69 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     }
 
     @Override
+    public Long getLastBucketStatsId() {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        String sql = GET_LAST_BUCKET_STATS_ID;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return Long.valueOf(rs.getLong(1));
+            }
+        } catch (Exception ex) {
+            s_logger.error("error getting last bucket stats id", ex);
+        }
+        return null;
+    }
+
+    @Override
+    public void saveBucketStats(List<BucketStatisticsVO> bucketStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_BUCKET_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (BucketStatisticsVO bucketStat : bucketStats) {
+                pstmt.setLong(1, bucketStat.getId());
+                pstmt.setLong(2, bucketStat.getAccountId());
+                pstmt.setLong(3, bucketStat.getBucketId());
+                pstmt.setLong(4, bucketStat.getSize());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving bucket stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
+    public void updateBucketStats(List<BucketStatisticsVO> bucketStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            txn.start();
+            String sql = UPDATE_BUCKET_STATS;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (BucketStatisticsVO bucketStat : bucketStats) {
+                pstmt.setLong(1, bucketStat.getSize());
+                pstmt.setLong(2, bucketStat.getId());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error updating bucket stats to cloud_usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+    }
+
+    @Override
     public List<Long> listPublicTemplatesByAccount(long accountId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -469,21 +541,25 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
 
     @Override
     public void removeOldUsageRecords(int days) {
-        String sql = DELETE_ALL_BY_INTERVAL;
-        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, days);
-            pstmt.executeUpdate();
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            s_logger.error("error removing old cloud_usage records for interval: " + days);
-        } finally {
-            txn.close();
-        }
+        Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = null;
+                try {
+                    txn.start();
+                    pstmt = txn.prepareAutoCloseStatement(DELETE_ALL_BY_INTERVAL);
+                    pstmt.setLong(1, days);
+                    pstmt.executeUpdate();
+                    txn.commit();
+                } catch (Exception ex) {
+                    txn.rollback();
+                    s_logger.error("error removing old cloud_usage records for interval: " + days);
+                } finally {
+                    txn.close();
+                }
+            }
+        });
     }
 
     public UsageVO persistUsage(final UsageVO usage) {

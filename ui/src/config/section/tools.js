@@ -68,6 +68,15 @@ export default {
       resourceType: 'UserVm',
       permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
+    },
+    {
+      name: 'managevolumes',
+      title: 'label.action.import.unmanage.volumes',
+      icon: 'interaction-outlined',
+      docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-volume',
+      resourceType: 'UserVm',
+      permission: ['listInfrastructure', 'listVolumesForImport'],
+      component: () => import('@/views/tools/ManageVolumes.vue')
     }
   ]
 }

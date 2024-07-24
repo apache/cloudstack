@@ -228,7 +228,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
 
     /**
-     * Persist L2 deafult Network offering
+     * Persist L2 default Network offering
      */
     private void persistL2DefaultNetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
         NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, specifyVlan,

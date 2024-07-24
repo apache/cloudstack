@@ -16,10 +16,12 @@
 // under the License.
 
 import {
+  AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
+  ArrowRightOutlined,
   ArrowUpOutlined,
   ArrowsAltOutlined,
   AuditOutlined,
@@ -72,9 +74,12 @@ import {
   DragOutlined,
   EditOutlined,
   EnvironmentOutlined,
+  ExceptionOutlined,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
+  FieldTimeOutlined,
+  FileDoneOutlined,
   FileProtectOutlined,
   FilterOutlined,
   FilterTwoTone,
@@ -86,10 +91,12 @@ import {
   FormOutlined,
   ForwardOutlined,
   FullscreenOutlined,
+  FunnelPlotOutlined,
   GatewayOutlined,
   GithubOutlined,
   GlobalOutlined,
   GoldOutlined,
+  GoogleOutlined,
   HddOutlined,
   HomeOutlined,
   IdcardOutlined,
@@ -112,9 +119,11 @@ import {
   MinusCircleOutlined,
   MinusOutlined,
   MinusSquareOutlined,
+  MobileOutlined,
   MoreOutlined,
   NotificationOutlined,
   NumberOutlined,
+  LaptopOutlined,
   OrderedListOutlined,
   PaperClipOutlined,
   PauseCircleOutlined,
@@ -138,6 +147,7 @@ import {
   SaveOutlined,
   ScheduleOutlined,
   ScissorOutlined,
+  ScanOutlined,
   SearchOutlined,
   SettingOutlined,
   ShareAltOutlined,
@@ -156,7 +166,11 @@ import {
   UserDeleteOutlined,
   UsergroupDeleteOutlined,
   UserOutlined,
+  UserSwitchOutlined,
   UploadOutlined,
+  VerticalAlignBottomOutlined,
+  VerticalAlignTopOutlined,
+  WarningOutlined,
   WifiOutlined,
   SolutionOutlined
 } from '@ant-design/icons-vue'
@@ -164,10 +178,12 @@ import renderIcon from '@/utils/renderIcon'
 
 export default {
   install: (app) => {
+    app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
+    app.component('ArrowRightOutlined', ArrowRightOutlined)
     app.component('ArrowUpOutlined', ArrowUpOutlined)
     app.component('ArrowsAltOutlined', ArrowsAltOutlined)
     app.component('AuditOutlined', AuditOutlined)
@@ -220,9 +236,12 @@ export default {
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)
+    app.component('ExceptionOutlined', ExceptionOutlined)
     app.component('ExclamationCircleOutlined', ExclamationCircleOutlined)
     app.component('EyeInvisibleOutlined', EyeInvisibleOutlined)
     app.component('EyeOutlined', EyeOutlined)
+    app.component('FieldTimeOutlined', FieldTimeOutlined)
+    app.component('FileDoneOutlined', FileDoneOutlined)
     app.component('FileProtectOutlined', FileProtectOutlined)
     app.component('FilterOutlined', FilterOutlined)
     app.component('FilterTwoTone', FilterTwoTone)
@@ -234,10 +253,12 @@ export default {
     app.component('FormOutlined', FormOutlined)
     app.component('ForwardOutlined', ForwardOutlined)
     app.component('FullscreenOutlined', FullscreenOutlined)
+    app.component('FunnelPlotOutlined', FunnelPlotOutlined)
     app.component('GatewayOutlined', GatewayOutlined)
     app.component('GithubOutlined', GithubOutlined)
     app.component('GlobalOutlined', GlobalOutlined)
     app.component('GoldOutlined', GoldOutlined)
+    app.component('GoogleOutlined', GoogleOutlined)
     app.component('HddOutlined', HddOutlined)
     app.component('HomeOutlined', HomeOutlined)
     app.component('IdcardOutlined', IdcardOutlined)
@@ -260,9 +281,11 @@ export default {
     app.component('MinusCircleOutlined', MinusCircleOutlined)
     app.component('MinusOutlined', MinusOutlined)
     app.component('MinusSquareOutlined', MinusSquareOutlined)
+    app.component('MobileOutlined', MobileOutlined)
     app.component('MoreOutlined', MoreOutlined)
     app.component('NotificationOutlined', NotificationOutlined)
     app.component('NumberOutlined', NumberOutlined)
+    app.component('LaptopOutlined', LaptopOutlined)
     app.component('OrderedListOutlined', OrderedListOutlined)
     app.component('PaperClipOutlined', PaperClipOutlined)
     app.component('PauseCircleOutlined', PauseCircleOutlined)
@@ -285,6 +308,7 @@ export default {
     app.component('SafetyOutlined', SafetyOutlined)
     app.component('SaveOutlined', SaveOutlined)
     app.component('ScheduleOutlined', ScheduleOutlined)
+    app.component('ScanOutlined', ScanOutlined)
     app.component('ScissorOutlined', ScissorOutlined)
     app.component('SearchOutlined', SearchOutlined)
     app.component('SettingOutlined', SettingOutlined)
@@ -304,7 +328,11 @@ export default {
     app.component('UserDeleteOutlined', UserDeleteOutlined)
     app.component('UsergroupDeleteOutlined', UsergroupDeleteOutlined)
     app.component('UserOutlined', UserOutlined)
+    app.component('UserSwitchOutlined', UserSwitchOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
+    app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
+    app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)
     app.component('SolutionOutlined', SolutionOutlined)

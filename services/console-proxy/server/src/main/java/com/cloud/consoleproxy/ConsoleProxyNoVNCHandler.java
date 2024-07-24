@@ -29,6 +29,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketFrame;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.api.extensions.Frame;
@@ -79,6 +80,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String sid = queryMap.get("sid");
         String tag = queryMap.get("tag");
         String ticket = queryMap.get("ticket");
+        String displayName = queryMap.get("displayname");
         String ajaxSessionIdStr = queryMap.get("sess");
         String console_url = queryMap.get("consoleurl");
         String console_host_session = queryMap.get("sessionref");
@@ -126,6 +128,7 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setClientHostPassword(sid);
             param.setClientTag(tag);
             param.setTicket(ticket);
+            param.setClientDisplayName(displayName);
             param.setClientTunnelUrl(console_url);
             param.setClientTunnelSession(console_host_session);
             param.setLocale(vm_locale);
@@ -173,5 +176,10 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
         viewer.sendClientFrame(f);
+    }
+
+    @OnWebSocketError
+    public void onError(Throwable cause) {
+        s_logger.error("Error on websocket", cause);
     }
 }

@@ -24,43 +24,96 @@ import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
-    protected long _heartBeatUpdateTimeout = 60000;
-    protected long _heartBeatUpdateFreq = 60000;
-    protected long _heartBeatUpdateMaxTries = 5;
-    protected long _heartBeatUpdateRetrySleep = 10000;
+    protected long _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
+    protected long _heartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
+    protected long _heartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
+    protected long _heartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage
     }
 
-    public static class NfsStoragePool {
-        String _poolUUID;
-        String _poolIp;
-        String _poolMountSourcePath;
-        String _mountDestPath;
-        PoolType _type;
+    public static class HAStoragePool {
+        String poolUuid;
+        String poolIp;
+        String poolMountSourcePath;
+        String mountDestPath;
+        PoolType poolType;
+        KVMStoragePool pool;
 
-        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
-            _poolUUID = poolUUID;
-            _poolIp = poolIp;
-            _poolMountSourcePath = poolSourcePath;
-            _mountDestPath = mountDestPath;
-            _type = type;
+        public HAStoragePool(KVMStoragePool pool, String host, String path, PoolType type) {
+            this.pool = pool;
+            this.poolUuid = pool.getUuid();
+            this.mountDestPath = pool.getLocalPath();
+            this.poolIp = host;
+            this.poolMountSourcePath = path;
+            this.poolType = type;
+        }
+
+        public String getPoolUUID() {
+            return poolUuid;
+        }
+
+        public void setPoolUUID(String poolUuid) {
+            this.poolUuid = poolUuid;
+        }
+
+        public String getPoolIp() {
+            return poolIp;
+        }
+
+        public void setPoolIp(String poolIp) {
+            this.poolIp = poolIp;
+        }
+
+        public String getPoolMountSourcePath() {
+            return poolMountSourcePath;
+        }
+
+        public void setPoolMountSourcePath(String poolMountSourcePath) {
+            this.poolMountSourcePath = poolMountSourcePath;
+        }
+
+        public String getMountDestPath() {
+            return mountDestPath;
+        }
+
+        public void setMountDestPath(String mountDestPath) {
+            this.mountDestPath = mountDestPath;
+        }
+
+        public PoolType getType() {
+            return poolType;
+        }
+
+        public void setType(PoolType type) {
+            this.poolType = type;
+        }
+
+        public KVMStoragePool getPool() {
+            return pool;
+        }
+
+        public void setPool(KVMStoragePool pool) {
+            this.pool = pool;
         }
     }
 
-    protected String checkingMountPoint(NfsStoragePool pool, String poolName) {
-        String mountSource = pool._poolIp + ":" + pool._poolMountSourcePath;
+    protected String checkingMountPoint(HAStoragePool pool, String poolName) {
+        String mountSource = pool.getPoolIp() + ":" + pool.getPoolMountSourcePath();
         String mountPaths = Script.runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
-        String destPath = pool._mountDestPath;
+        String destPath = pool.getMountDestPath();
 
         if (mountPaths != null) {
             String token[] = mountPaths.split(" ");
@@ -100,12 +153,12 @@ public class KVMHABase {
         return destPath;
     }
 
-    protected String getMountPoint(NfsStoragePool storagePool) {
+    protected String getMountPoint(HAStoragePool storagePool) {
 
         StoragePool pool = null;
         String poolName = null;
         try {
-            pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUUID);
+            pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool.getPoolUUID());
             if (pool != null) {
                 StoragePoolInfo spi = pool.getInfo();
                 if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {

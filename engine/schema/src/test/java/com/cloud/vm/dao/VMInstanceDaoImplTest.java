@@ -17,21 +17,31 @@
 
 package com.cloud.vm.dao;
 
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
+import static com.cloud.vm.VirtualMachine.State.Running;
+import static com.cloud.vm.VirtualMachine.State.Stopped;
+import static com.cloud.vm.dao.VMInstanceDaoImpl.MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Date;
+
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assert;
 import org.mockito.Mock;
-
-import static com.cloud.vm.VirtualMachine.State.Running;
-import static com.cloud.vm.VirtualMachine.State.Stopped;
-
-import static org.mockito.Mockito.when;
-import com.cloud.vm.VMInstanceVO;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
+import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Created by sudharma_jain on 3/2/17.
@@ -55,18 +65,130 @@ public class VMInstanceDaoImplTest {
     }
 
     @Test
-    public void testUpdateState() throws Exception {
+    public void testUpdateState() {
         Long destHostId = null;
-        Pair<Long, Long> opaqueMock = new Pair<Long, Long>(new Long(1), destHostId);
+        Pair<Long, Long> opaqueMock = new Pair<>(1L, destHostId);
         vmInstanceDao.updateState(Stopped, VirtualMachine.Event.FollowAgentPowerOffReport, Stopped, vm , opaqueMock);
     }
 
     @Test
-    public void testIfStateAndHostUnchanged() throws Exception {
-        Assert.assertEquals(vmInstanceDao.ifStateUnchanged(Stopped, Stopped, null, null), true);
-        Assert.assertEquals(vmInstanceDao.ifStateUnchanged(Stopped, Running, null, null), false);
+    public void testIfStateAndHostUnchanged() {
+        assertTrue(vmInstanceDao.ifStateUnchanged(Stopped, Stopped, null, null));
+        assertFalse(vmInstanceDao.ifStateUnchanged(Stopped, Running, null, null));
     }
 
+    @Test
+    public void testUpdatePowerStateDifferentPowerState() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
+
+        verify(vm, times(1)).setPowerState(VirtualMachine.PowerState.PowerOff);
+        verify(vm, times(1)).setPowerHostId(1L);
+        verify(vm, times(1)).setPowerStateUpdateCount(1);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
+
+    @Test
+    public void testUpdatePowerStateVmNotFound() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        doReturn(null).when(vmInstanceDao).findById(anyLong());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
+
+        verify(vm, never()).setPowerState(any());
+        verify(vm, never()).setPowerHostId(anyLong());
+        verify(vm, never()).setPowerStateUpdateCount(any(Integer.class));
+        verify(vm, never()).setPowerStateUpdateTime(any(Date.class));
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUpdatePowerStateNoChangeFirstUpdate() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        when(vm.getState()).thenReturn(Running);
+        when(vm.getPowerStateUpdateCount()).thenReturn(1);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
+
+        verify(vm, never()).setPowerState(any());
+        verify(vm, never()).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerStateUpdateCount(2);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
+
+    @Test
+    public void testUpdatePowerStateNoChangeMaxUpdatesValidState() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
+        when(vm.getState()).thenReturn(Running);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
+
+        verify(vm, never()).setPowerState(any());
+        verify(vm, never()).setPowerHostId(anyLong());
+        verify(vm, never()).setPowerStateUpdateCount(any(Integer.class));
+        verify(vm, never()).setPowerStateUpdateTime(any(Date.class));
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmStopped() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOn);
+        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
+        when(vm.getState()).thenReturn(Stopped);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOn, new Date());
+
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerStateUpdateCount(1);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
+
+    @Test
+    public void testUpdatePowerStateNoChangeMaxUpdatesInvalidStateVmRunning() {
+        when(vm.getPowerStateUpdateTime()).thenReturn(null);
+        when(vm.getPowerHostId()).thenReturn(1L);
+        when(vm.getPowerState()).thenReturn(VirtualMachine.PowerState.PowerOff);
+        when(vm.getPowerStateUpdateCount()).thenReturn(MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT);
+        when(vm.getState()).thenReturn(Running);
+        doReturn(vm).when(vmInstanceDao).findById(anyLong());
+        doReturn(true).when(vmInstanceDao).update(anyLong(), any());
+
+        boolean result = vmInstanceDao.updatePowerState(1L, 1L, VirtualMachine.PowerState.PowerOff, new Date());
+
+        verify(vm, times(1)).setPowerState(any());
+        verify(vm, times(1)).setPowerHostId(anyLong());
+        verify(vm, times(1)).setPowerStateUpdateCount(1);
+        verify(vm, times(1)).setPowerStateUpdateTime(any(Date.class));
+
+        assertTrue(result);
+    }
 }
-
-

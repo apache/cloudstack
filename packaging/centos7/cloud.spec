@@ -61,6 +61,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: python
 Requires: python3
 Requires: bash
@@ -107,6 +108,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -142,6 +144,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-11-openjdk
+Requires: tzdata-java
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -274,6 +277,9 @@ install -D client/target/utilities/bin/cloud-setup-management ${RPM_BUILD_ROOT}%
 install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-baremetal
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
+# Bundle cmk in cloudstack-management
+wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/6.3.0/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
+chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 
@@ -299,6 +305,7 @@ ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+install -D utils/target/cloud-utils-%{_maventag}-bundled.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
 
 install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
@@ -316,6 +323,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
+cp -r client/target/classes/META-INF/webapp/WEB-INF ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui/
 cp -r ui/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
@@ -604,6 +612,7 @@ pip3 install --upgrade urllib3
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-sshkey
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
+%attr(0755,root,root) %{_bindir}/cmk
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
@@ -648,12 +657,13 @@ pip3 install --upgrade urllib3
 %attr(0644,root,root) %{python_sitearch}/__pycache__/*
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
 %attr(0644, root, root) %{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
+%attr(0644, root, root) %{_datadir}/%{name}-common/lib/%{name}-utils.jar
 %{_defaultdocdir}/%{name}-common-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-common-%{version}/NOTICE
 
 %files ui
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/ui/config.json
-%attr(0644,root,root) %{_datadir}/%{name}-ui/*
+%{_datadir}/%{name}-ui/*
 %{_defaultdocdir}/%{name}-ui-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-ui-%{version}/NOTICE
 
@@ -709,4 +719,3 @@ pip3 install --upgrade urllib3
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-

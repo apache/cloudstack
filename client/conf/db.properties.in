@@ -29,6 +29,10 @@ db.cloud.driver=@DBDRIVER@
 db.cloud.port=3306
 db.cloud.name=cloud
 
+# Connection URI to the database "cloud". When this property is set, only the following properties will be used along with it: db.cloud.maxActive, db.cloud.maxIdle, db.cloud.maxWait, db.cloud.username, db.cloud.password, db.cloud.driver, db.cloud.validationQuery, db.cloud.isolation.level. Other properties will be ignored.
+db.cloud.uri=
+
+
 # CloudStack database tuning parameters
 db.cloud.maxActive=250
 db.cloud.maxIdle=30
@@ -51,6 +55,7 @@ db.cloud.trustStorePassword=
 # Encryption Settings
 db.cloud.encryption.type=none
 db.cloud.encrypt.secret=
+db.cloud.encryptor.version=
 
 # usage database settings
 db.usage.username=@DBUSER@
@@ -59,6 +64,10 @@ db.usage.host=@DBHOST@
 db.usage.driver=@DBDRIVER@
 db.usage.port=3306
 db.usage.name=cloud_usage
+
+# Connection URI to the database "usage". When this property is set, only the following properties will be used along with it: db.usage.maxActive, db.cloud.maxIdle, db.cloud.maxWait, db.usage.username, db.usage.password, db.usage.driver, db.usage.validationQuery, db.usage.isolation.level. Other properties will be ignored.
+db.usage.uri=
+
 
 # usage database tuning parameters
 db.usage.maxActive=100
@@ -77,6 +86,9 @@ db.simulator.maxActive=250
 db.simulator.maxIdle=30
 db.simulator.maxWait=10000
 db.simulator.autoReconnect=true
+
+# Connection URI to the database "simulator". When this property is set, only the following properties will be used along with it: db.simulator.host, db.simulator.port, db.simulator.name, db.simulator.autoReconnect. Other properties will be ignored.
+db.simulator.uri=
 
 
 # High Availability And Cluster Properties

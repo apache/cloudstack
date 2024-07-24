@@ -39,74 +39,76 @@
           v-focus="true"
         />
       </a-form-item>
-      <a-form-item
-        name="ipv4Dns1"
-        ref="ipv4Dns1"
-        :label="$t('label.ipv4.dns1')"
-        v-bind="formItemLayout"
-        has-feedback>
-        <a-input v-model:value="form.ipv4Dns1" />
-      </a-form-item>
-      <a-form-item
-        name="ipv4Dns2"
-        ref="ipv4Dns2"
-        :label="$t('label.ipv4.dns2')"
-        v-bind="formItemLayout"
-        has-feedback>
-        <a-input v-model:value="form.ipv4Dns2" />
-      </a-form-item>
-      <a-form-item
-        name="ipv6Dns1"
-        ref="ipv6Dns1"
-        :label="$t('label.ipv6.dns1')"
-        v-bind="formItemLayout"
-        v-if="isAdvancedZone"
-        has-feedback>
-        <a-input v-model:value="form.ipv6Dns1" />
-      </a-form-item>
-      <a-form-item
-        name="ipv6Dns2"
-        ref="ipv6Dns2"
-        :label="$t('label.ipv6.dns2')"
-        v-bind="formItemLayout"
-        v-if="isAdvancedZone"
-        has-feedback>
-        <a-input v-model:value="form.ipv6Dns2" />
-      </a-form-item>
-      <a-form-item
-        name="ipv6Cidr"
-        ref="ipv6Cidr"
-        :label="$t('label.ip6cidr')"
-        v-bind="formItemLayout"
-        v-if="isAdvancedZone && securityGroupsEnabled"
-        has-feedback>
-        <a-input v-model:value="form.ipv6Cidr" />
-      </a-form-item>
-      <a-form-item
-        name="ip6gateway"
-        ref="ip6gateway"
-        :label="$t('label.ip6gateway')"
-        v-bind="formItemLayout"
-        v-if="isAdvancedZone && securityGroupsEnabled"
-        has-feedback>
-        <a-input v-model:value="form.ip6gateway" />
-      </a-form-item>
-      <a-form-item
-        name="internalDns1"
-        ref="internalDns1"
-        :label="$t('label.internal.dns.1')"
-        v-bind="formItemLayout"
-        has-feedback>
-        <a-input v-model:value="form.internalDns1" />
-      </a-form-item>
-      <a-form-item
-        name="internalDns2"
-        ref="internalDns2"
-        :label="$t('label.internal.dns.2')"
-        v-bind="formItemLayout"
-        has-feedback>
-        <a-input v-model:value="form.internalDns2" />
-      </a-form-item>
+      <div v-if="!this.isEdgeZone">
+        <a-form-item
+          name="ipv4Dns1"
+          ref="ipv4Dns1"
+          :label="$t('label.ipv4.dns1')"
+          v-bind="formItemLayout"
+          has-feedback>
+          <a-input v-model:value="form.ipv4Dns1" />
+        </a-form-item>
+        <a-form-item
+          name="ipv4Dns2"
+          ref="ipv4Dns2"
+          :label="$t('label.ipv4.dns2')"
+          v-bind="formItemLayout"
+          has-feedback>
+          <a-input v-model:value="form.ipv4Dns2" />
+        </a-form-item>
+        <a-form-item
+          name="ipv6Dns1"
+          ref="ipv6Dns1"
+          :label="$t('label.ipv6.dns1')"
+          v-bind="formItemLayout"
+          v-if="isAdvancedZone"
+          has-feedback>
+          <a-input v-model:value="form.ipv6Dns1" />
+        </a-form-item>
+        <a-form-item
+          name="ipv6Dns2"
+          ref="ipv6Dns2"
+          :label="$t('label.ipv6.dns2')"
+          v-bind="formItemLayout"
+          v-if="isAdvancedZone"
+          has-feedback>
+          <a-input v-model:value="form.ipv6Dns2" />
+        </a-form-item>
+        <a-form-item
+          name="ipv6Cidr"
+          ref="ipv6Cidr"
+          :label="$t('label.ip6cidr')"
+          v-bind="formItemLayout"
+          v-if="isAdvancedZone && securityGroupsEnabled"
+          has-feedback>
+          <a-input v-model:value="form.ipv6Cidr" />
+        </a-form-item>
+        <a-form-item
+          name="ip6gateway"
+          ref="ip6gateway"
+          :label="$t('label.ip6gateway')"
+          v-bind="formItemLayout"
+          v-if="isAdvancedZone && securityGroupsEnabled"
+          has-feedback>
+          <a-input v-model:value="form.ip6gateway" />
+        </a-form-item>
+        <a-form-item
+          name="internalDns1"
+          ref="internalDns1"
+          :label="$t('label.internal.dns.1')"
+          v-bind="formItemLayout"
+          has-feedback>
+          <a-input v-model:value="form.internalDns1" />
+        </a-form-item>
+        <a-form-item
+          name="internalDns2"
+          ref="internalDns2"
+          :label="$t('label.internal.dns.2')"
+          v-bind="formItemLayout"
+          has-feedback>
+          <a-input v-model:value="form.internalDns2" />
+        </a-form-item>
+      </div>
       <a-form-item
         name="hypervisor"
         ref="hypervisor"
@@ -117,56 +119,60 @@
           v-model:value="form.hypervisor"
           :placeholder="$t('message.error.hypervisor.type')"
           :loading="hypervisors === null"
+          :disabled="this.isEdgeZone"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item
-        name="networkOfferingId"
-        ref="networkOfferingId"
-        :label="$t('label.network.offering')"
-        v-bind="formItemLayout"
-        v-if="!isAdvancedZone || securityGroupsEnabled"
-        has-feedback>
-        <a-select
-          :loading="availableNetworkOfferings === null"
-          v-model:value="form.networkOfferingId"
-          :placeholder="$t('message.error.network.offering')"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="networkOffering in availableNetworkOfferings"
-            :key="networkOffering.id">
-            {{ networkOffering.displaytext || networkOffering.name || networkOffering.description }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item
-        name="networkDomain"
-        ref="networkDomain"
-        :label="$t('label.network.domain')"
-        v-bind="formItemLayout"
-        has-feedback>
-        <a-input v-model:value="form.networkDomain" />
-      </a-form-item>
-      <a-form-item
-        name="guestcidraddress"
-        ref="guestcidraddress"
-        :label="$t('label.guest.cidr')"
-        v-bind="formItemLayout"
-        v-if="isAdvancedZone && !securityGroupsEnabled"
-        has-feedback>
-        <a-input v-model:value="form.guestcidraddress" />
-      </a-form-item>
+      <div v-if="!this.isEdgeZone">
+        <a-form-item
+          name="networkOfferingId"
+          ref="networkOfferingId"
+          :label="$t('label.network.offering')"
+          v-bind="formItemLayout"
+          v-if="!isAdvancedZone || securityGroupsEnabled"
+          has-feedback>
+          <a-select
+            :loading="availableNetworkOfferings === null"
+            v-model:value="form.networkOfferingId"
+            :placeholder="$t('message.error.network.offering')"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="networkOffering in availableNetworkOfferings"
+              :key="networkOffering.id"
+              :label="networkOffering.displaytext || networkOffering.name || networkOffering.description">
+              {{ networkOffering.displaytext || networkOffering.name || networkOffering.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item
+          name="networkDomain"
+          ref="networkDomain"
+          :label="$t('label.default.network.domain.isolated.network')"
+          v-bind="formItemLayout"
+          has-feedback>
+          <a-input v-model:value="form.networkDomain" />
+        </a-form-item>
+        <a-form-item
+          name="guestcidraddress"
+          ref="guestcidraddress"
+          :label="$t('label.default.network.guestcidraddress.isolated.network')"
+          v-bind="formItemLayout"
+          v-if="isAdvancedZone && !securityGroupsEnabled"
+          has-feedback>
+          <a-input v-model:value="form.guestcidraddress" />
+        </a-form-item>
+      </div>
       <a-form-item
         name="isDedicated"
         ref="isDedicated"
@@ -188,35 +194,42 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="dom in domains" :key="dom.id">
+          <a-select-option v-for="dom in domains" :key="dom.id" :label="dom.path">
             {{ dom.path }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item
-        name="account"
-        ref="account"
-        :label="$t('label.account')"
-        v-bind="formItemLayout"
-        v-if="isDedicated">
-        <a-input v-model:value="form.account" />
-      </a-form-item>
-      <a-form-item
-        name="localstorageenabled"
-        ref="localstorageenabled"
-        :label="$t('label.local.storage.enabled')"
-        v-bind="formItemLayout">
-        <a-switch v-model:checked="form.localstorageenabled" />
-      </a-form-item>
-      <a-form-item
-        name="localstorageenabledforsystemvm"
-        ref="localstorageenabledforsystemvm"
-        :label="$t('label.local.storage.enabled.system.vms')"
-        v-bind="formItemLayout">
-        <a-switch v-model:checked="form.localstorageenabledforsystemvm" />
-      </a-form-item>
+      <a-alert style="margin-top: 5px" type="warning" v-if="this.isEdgeZone">
+        <template #message>
+          <span v-html="$t('message.zone.edge.local.storage')" />
+        </template>
+      </a-alert>
+      <div v-else>
+        <a-form-item
+          name="account"
+          ref="account"
+          :label="$t('label.account')"
+          v-bind="formItemLayout"
+          v-if="isDedicated">
+          <a-input v-model:value="form.account" />
+        </a-form-item>
+        <a-form-item
+          name="localstorageenabled"
+          ref="localstorageenabled"
+          :label="$t('label.local.storage.enabled')"
+          v-bind="formItemLayout">
+          <a-switch v-model:checked="form.localstorageenabled"/>
+        </a-form-item>
+        <a-form-item
+          name="localstorageenabledforsystemvm"
+          ref="localstorageenabledforsystemvm"
+          :label="$t('label.local.storage.enabled.system.vms')"
+          v-bind="formItemLayout">
+          <a-switch v-model:checked="form.localstorageenabledforsystemvm" />
+        </a-form-item>
+      </div>
     </a-form>
     <div class="form-action">
       <a-button
@@ -251,7 +264,6 @@ export default {
     }
   },
   data: () => ({
-    description: 'message.desc.zone',
     formItemLayout: {
       labelCol: { span: 8 },
       wrapperCol: { span: 12 }
@@ -328,10 +340,19 @@ export default {
     securityGroupsEnabled () {
       return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
+    description () {
+      return this.isEdgeZone ? 'message.desc.zone.edge' : 'message.desc.zone'
+    },
     name () {
       return this.prefillContent?.name || null
     },
     ipv4Dns1 () {
+      if (this.isEdgeZone) {
+        return '8.8.8.8'
+      }
       return this.prefillContent?.ipv4Dns1 || null
     },
     ipv4Dns2 () {
@@ -344,6 +365,9 @@ export default {
       return this.prefillContent?.ipv6Dns2 || null
     },
     internalDns1 () {
+      if (this.isEdgeZone) {
+        return '8.8.8.8'
+      }
       return this.prefillContent?.internalDns1 || null
     },
     internalDns2 () {
@@ -356,6 +380,9 @@ export default {
       return this.prefillContent?.ip6gateway || null
     },
     currentHypervisor () {
+      if (this.isEdgeZone) {
+        return 'KVM'
+      }
       if (this.prefillContent.hypervisor) {
         return this.prefillContent.hypervisor
       } else if (this.hypervisors && this.hypervisors.length > 0) {
@@ -393,9 +420,15 @@ export default {
       return this.prefillContent?.account || null
     },
     localstorageenabled () {
+      if (this.isEdgeZone) {
+        return true
+      }
       return this.prefillContent?.localstorageenabled || false
     },
     localstorageenabledforsystemvm () {
+      if (this.isEdgeZone) {
+        return true
+      }
       return this.prefillContent?.localstorageenabledforsystemvm || false
     }
   },

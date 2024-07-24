@@ -19,19 +19,12 @@
 
 package org.apache.cloudstack.ca;
 
-import static org.apache.cloudstack.ca.CAManager.AutomaticCertRenewal;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.nullable;
-
-import java.lang.reflect.Field;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.CertUtils;
@@ -45,12 +38,18 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.lang.reflect.Field;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.apache.cloudstack.ca.CAManager.AutomaticCertRenewal;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.nullable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CABackgroundTaskTest {

@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -33,10 +35,14 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +63,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -71,11 +79,11 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
 import com.cloud.certificate.dao.CrlDao;
+import com.cloud.configuration.Config;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(RootCAProvider.class);
@@ -126,6 +134,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             "ca.plugin.root.allow.expired.cert",
             "true",
             "When set to true, it will allow expired client certificate during SSL handshake.", true);
+
+    private static String managementCertificateCustomSAN;
 
 
     ///////////////////////////////////////////////////////////
@@ -365,8 +375,15 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         if (managementKeyStore != null) {
             return true;
         }
-        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                NetUtils.getAllDefaultNicIps(), getCaValidityDays());
+        List<String> nicIps = NetUtils.getAllDefaultNicIps();
+        addConfiguredManagementIp(nicIps);
+        nicIps = new ArrayList<>(new HashSet<>(nicIps));
+        List<String> domainNames = new ArrayList<>();
+        domainNames.add(NetUtils.getHostName());
+        domainNames.add(CAManager.CertManagementCustomSubjectAlternativeName.value());
+
+        final Certificate serverCertificate = issueCertificate(domainNames, nicIps, getCaValidityDays());
+
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
         }
@@ -383,6 +400,28 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         }
         return managementKeyStore != null;
     }
+
+    protected void addConfiguredManagementIp(List<String> ipList) {
+        String msNetworkCidr = configDao.getValue(Config.ManagementNetwork.key());
+        try {
+            LOG.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            networkInterfaces.asIterator().forEachRemaining(networkInterface -> {
+                networkInterface.getInetAddresses().asIterator().forEachRemaining(inetAddress -> {
+                    if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), msNetworkCidr)) {
+                        ipList.add(inetAddress.getHostAddress());
+                        LOG.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
+                    }
+                });
+            });
+        } catch (SocketException e) {
+            String msg = "Exception while trying to gather the management server's network interfaces.";
+            LOG.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+
 
     private boolean setupCA() {
         if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
@@ -402,6 +441,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     @Override
     public boolean start() {
+        managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
         return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
     }
 
@@ -455,5 +495,27 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     @Override
     public String getDescription() {
         return "CloudStack's Root CA provider plugin";
+    }
+
+    @Override
+    public boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException {
+        if (!(certificate instanceof X509Certificate)) {
+            return false;
+        }
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+
+        // Check for alternative names
+        Collection<List<?>> altNames = x509Certificate.getSubjectAlternativeNames();
+        if (CollectionUtils.isEmpty(altNames)) {
+            return false;
+        }
+        for (List<?> altName : altNames) {
+            int type = (Integer) altName.get(0);
+            String name = (String) altName.get(1);
+            if (type == GeneralName.dNSName && managementCertificateCustomSAN.equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

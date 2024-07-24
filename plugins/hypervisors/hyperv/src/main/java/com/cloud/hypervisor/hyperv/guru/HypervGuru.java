@@ -50,7 +50,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject HypervManager _hypervMgr;
-    @Inject NetworkModel _networkMgr;
+    @Inject NetworkModel networkModel;
     int MaxNicSupported = 8;
     @Override
     public final HypervisorType getHypervisorType() {
@@ -120,7 +120,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                     nicTo.setName(profile.getName());
 
                     try {
-                        String mac = _networkMgr.getNextAvailableMacAddressInNetwork(networkId);
+                        String mac = networkModel.getNextAvailableMacAddressInNetwork(networkId);
                         nicTo.setMac(mac);
                     } catch (InsufficientAddressCapacityException e) {
                         throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
@@ -136,7 +136,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
                     nicTo.setBroadcastUri(profile.getBroadCastUri());
                     nicTo.setIsolationuri(profile.getIsolationUri());
 
-                    Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
+                    Integer networkRate = networkModel.getNetworkRate(network.getId(), null);
                     nicTo.setNetworkRateMbps(networkRate);
 
                     expandedNics[i] = nicTo;

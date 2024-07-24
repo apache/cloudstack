@@ -23,7 +23,7 @@ public interface NetworkSubsystem {
 
     String start(String network, String reservationId);
 
-    void shutdown(String nework, String reservationId);
+    void shutdown(String network, String reservationId);
 
     void prepare(String vm, String network, String reservationId);
 

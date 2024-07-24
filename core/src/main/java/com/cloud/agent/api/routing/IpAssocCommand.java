@@ -40,9 +40,4 @@ public class IpAssocCommand extends NetworkElementCommand {
     public IpAddressTO[] getIpAddresses() {
         return ipAddresses;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return ipAddresses.length;
-    }
 }

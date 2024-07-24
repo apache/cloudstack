@@ -181,6 +181,8 @@ public class DownloadListener implements Listener {
                 DownloadProgressCommand dcmd = new DownloadProgressCommand(getCommand(), getJobId(), reqType);
                 if (object.getType() == DataObjectType.VOLUME) {
                     dcmd.setResourceType(ResourceType.VOLUME);
+                } else if (object.getType() == DataObjectType.SNAPSHOT) {
+                    dcmd.setResourceType(ResourceType.SNAPSHOT);
                 }
                 _ssAgent.sendMessageAsync(dcmd, new UploadListener.Callback(_ssAgent.getId(), this));
             } catch (Exception e) {

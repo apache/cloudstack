@@ -71,6 +71,14 @@ public class ConsoleProxyHttpHandlerHelper {
                 } else {
                     s_logger.error("decode token. tag info is not found!");
                 }
+                if (param.getClientDisplayName() != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("decode token. displayname: " + param.getClientDisplayName());
+                    }
+                    map.put("displayname", param.getClientDisplayName());
+                } else {
+                    s_logger.error("decode token. displayname info is not found!");
+                }
                 if (param.getClientHostPassword() != null) {
                     map.put("sid", param.getClientHostPassword());
                 } else {

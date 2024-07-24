@@ -59,8 +59,12 @@ fi
 # Default case for Linux sed, just use "-i"
 sedi='-i'
 case "$(uname)" in
-  # For macOS, use two parameters
-  Darwin*) sedi='-i ""'
+  # For macOS, use two parameters, if gnu sed is not set up
+  Darwin*)
+    if ! $(which sed | grep -q gnu); then
+      sedi='-i ""'
+    fi
+  ;;
 esac
 
 set -e

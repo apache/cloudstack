@@ -23,6 +23,8 @@ import com.cloud.storage.ScopeType;
 
 public class Storage extends GenericPresetVariable {
     private List<String> tags;
+
+    private Boolean isTagARule;
     private ScopeType scope;
 
     public List<String> getTags() {
@@ -32,6 +34,15 @@ public class Storage extends GenericPresetVariable {
     public void setTags(List<String> tags) {
         this.tags = tags;
         fieldNamesToIncludeInToString.add("tags");
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean isTagARule) {
+        this.isTagARule = isTagARule;
+        fieldNamesToIncludeInToString.add("isTagARule");
     }
 
     public ScopeType getScope() {

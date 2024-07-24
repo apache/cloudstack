@@ -152,7 +152,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
         try {
             s_eventBus.publish(eventMsg);
         } catch (org.apache.cloudstack.framework.events.EventBusException e) {
-            s_logger.warn("Failed to publish state change event on the the event bus.");
+            s_logger.warn("Failed to publish state change event on the event bus.");
         }
 
     }

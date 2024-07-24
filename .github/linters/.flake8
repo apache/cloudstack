@@ -15,11 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# E112 Expected an indented block
+# E113 Unexpected indentation
+# E133 Closing bracket is missing indentation
 # E223 Tab before operator
 # E224 Tab after operator
+# E227 Missing whitespace around bitwise or shift operator
 # E242 Tab after ','
 # E273 Tab after keyword
 # E274 Tab before keyword
+# E742 Do not define classes named 'I', 'O', or 'l'
+# E743 Do not define functions named 'I', 'O', or 'l'
 # E901 SyntaxError or IndentationError
 # E902 IOError
 # W291 Trailing whitespace
@@ -28,4 +34,7 @@
 # W391 Blank line at end of file
 
 [flake8]
-select = E223,E224,E242,E273,E274,E901,E902,W291,W292,W293,W391
+exclude =
+    .git,
+    venv
+select = E112,E113,E133,E223,E224,E227,E242,E273,E274,E742,E743,E901,E902,W291,W292,W293,W391

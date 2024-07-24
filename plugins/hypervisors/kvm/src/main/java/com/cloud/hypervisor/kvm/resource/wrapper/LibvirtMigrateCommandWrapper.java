@@ -23,6 +23,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,6 +68,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -89,6 +92,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String GRAPHICS_ELEM_END = "/graphics>";
     private static final String GRAPHICS_ELEM_START = "<graphics";
     private static final String CONTENTS_WILDCARD = "(?s).*";
+    private static final String CDROM_LABEL = "hdc";
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
     protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
@@ -164,6 +168,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
             xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword, vmName);
 
+            // Replace Config Drive ISO path
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
@@ -173,6 +178,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     s_logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
                 }
             }
+
+            // Replace CDROM ISO path
+            String oldCdromIsoPath = getOldVolumePathForCdrom(disks, vmName);
+            String newCdromIsoPath = getNewVolumePathForCdrom(libvirtComputingResource, conn, to);
+            if (newCdromIsoPath != null && !newCdromIsoPath.equals(oldCdromIsoPath)) {
+                xmlDesc = replaceCdromIsoPath(xmlDesc, vmName, oldCdromIsoPath, newCdromIsoPath);
+            }
+
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
@@ -189,6 +202,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
             final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
             final boolean migrateStorageManaged = command.isMigrateStorageManaged();
+            Set<String> migrateDiskLabels = null;
 
             if (migrateStorage) {
                 if (s_logger.isDebugEnabled()) {
@@ -198,6 +212,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
                 }
+                migrateDiskLabels = getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
@@ -210,6 +225,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     s_logger.debug(String.format("Changed VM [%s] XML configuration of DPDK interfaces. New XML configuration is [%s].", vmName, xmlDesc));
                 }
             }
+
+            xmlDesc = updateVmSharesIfNeeded(command, xmlDesc, libvirtComputingResource);
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
@@ -224,7 +241,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
-                    command.isAutoConvergence(), vmName, command.getDestinationIp());
+                    command.isAutoConvergence(), vmName, command.getDestinationIp(), migrateDiskLabels);
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -360,6 +377,68 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         return new MigrateAnswer(command, result == null, result, null);
+    }
+
+    /**
+     * Gets the disk labels (vda, vdb...) of the disks mapped for migration on mapMigrateStorage.
+     * @param diskDefinitions list of all the disksDefinitions of the VM.
+     * @param mapMigrateStorage map of the disks that should be migrated.
+     * @return set with the labels of the disks that should be migrated.
+     * */
+    protected Set<String> getMigrateStorageDeviceLabels(List<DiskDef> diskDefinitions, Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage) {
+        HashSet<String> setOfLabels = new HashSet<>();
+        s_logger.debug(String.format("Searching for disk labels of disks [%s].", mapMigrateStorage.keySet()));
+        for (String fileName : mapMigrateStorage.keySet()) {
+            for (DiskDef diskDef : diskDefinitions) {
+                String diskPath = diskDef.getDiskPath();
+                if (diskPath != null && diskPath.contains(fileName)) {
+                    setOfLabels.add(diskDef.getDiskLabel());
+                    s_logger.debug(String.format("Found label [%s] for disk [%s].", diskDef.getDiskLabel(), fileName));
+                    break;
+                }
+            }
+        }
+
+        return setOfLabels;
+    }
+
+
+    /**
+     * Checks if the CPU shares are equal in the source host and destination host.
+     *  <ul>
+     *      <li>
+     *          If both hosts utilize cgroup v1; then, the shares value of the VM is equal in both hosts, and there is no need to update the VM CPU shares value for the
+     *          migration.</li>
+     *      <li>
+     *          If, at least, one of the hosts utilize cgroup v2, the VM CPU shares must be recalculated for the migration, accordingly to
+     *          method {@link LibvirtComputingResource#calculateCpuShares(VirtualMachineTO)}.
+     *      </li>
+     *  </ul>
+     */
+    protected String updateVmSharesIfNeeded(MigrateCommand migrateCommand, String xmlDesc, LibvirtComputingResource libvirtComputingResource)
+            throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        Integer newVmCpuShares = migrateCommand.getNewVmCpuShares();
+        int currentCpuShares = libvirtComputingResource.calculateCpuShares(migrateCommand.getVirtualMachine());
+
+        if (newVmCpuShares == currentCpuShares) {
+            s_logger.info(String.format("Current CPU shares [%s] is equal in both hosts; therefore, there is no need to update the CPU shares for the new host.",
+                    currentCpuShares));
+            return xmlDesc;
+        }
+
+        InputStream inputStream = IOUtils.toInputStream(xmlDesc, StandardCharsets.UTF_8);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document document = docBuilder.parse(inputStream);
+
+        Element root = document.getDocumentElement();
+        Node sharesNode = root.getElementsByTagName("shares").item(0);
+        String currentShares = sharesNode.getTextContent();
+
+        s_logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
+                migrateCommand.getVmName(), currentShares, newVmCpuShares));
+        sharesNode.setTextContent(String.valueOf(newVmCpuShares));
+        return getXml(document);
     }
 
     /**
@@ -575,6 +654,16 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     diskNode.appendChild(newChildSourceNode);
                                 } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
+                                } else if ("backingStore".equals(diskChildNode.getNodeName()) && migrateDiskInfo.getBackingStoreText() != null) {
+                                    for (int b = 0; b < diskChildNode.getChildNodes().getLength(); b++) {
+                                        Node backingChild = diskChildNode.getChildNodes().item(b);
+                                        if ("source".equals(backingChild.getNodeName())) {
+                                            diskChildNode.removeChild(backingChild);
+                                            Element newChildBackingElement = doc.createElement("source");
+                                            newChildBackingElement.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getBackingStoreText());
+                                            diskChildNode.appendChild(newChildBackingElement);
+                                        }
+                                    }
                                 } else if ("encryption".equals(diskChildNode.getNodeName())) {
                                     for (int s = 0; s < diskChildNode.getChildNodes().getLength(); s++) {
                                         Node encryptionChild = diskChildNode.getChildNodes().item(s);
@@ -622,6 +711,81 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk, to.isConfigDriveOnHostCache());
         }
         return newIsoVolumePath;
+    }
+
+    private String getOldVolumePathForCdrom(List<DiskDef> disks, String vmName) {
+        String oldIsoVolumePath = null;
+        for (DiskDef disk : disks) {
+            if (DiskDef.DeviceType.CDROM.equals(disk.getDeviceType())
+                    && CDROM_LABEL.equals(disk.getDiskLabel())
+                    && disk.getDiskPath() != null) {
+                oldIsoVolumePath = disk.getDiskPath();
+                break;
+            }
+        }
+        return oldIsoVolumePath;
+    }
+
+    private String getNewVolumePathForCdrom(LibvirtComputingResource libvirtComputingResource, Connect conn, VirtualMachineTO to) throws LibvirtException, URISyntaxException {
+        DiskTO newDisk = null;
+        for (DiskTO disk : to.getDisks()) {
+            DataTO data = disk.getData();
+            if (disk.getDiskSeq() == 3 && data != null && data.getPath() != null) {
+                newDisk = disk;
+                break;
+            }
+        }
+
+        String newIsoVolumePath = null;
+        if (newDisk != null) {
+            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk);
+        }
+        return newIsoVolumePath;
+    }
+
+    protected String replaceCdromIsoPath(String xmlDesc, String vmName, String oldIsoVolumePath, String newIsoVolumePath) throws IOException, ParserConfigurationException, TransformerException, SAXException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+                    if ("disk".equals(deviceChildNode.getNodeName())) {
+                        Node diskNode = deviceChildNode;
+                        NodeList diskChildNodes = diskNode.getChildNodes();
+                        for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                            Node diskChildNode = diskChildNodes.item(z);
+                            if ("source".equals(diskChildNode.getNodeName())) {
+                                NamedNodeMap sourceNodeAttributes = diskChildNode.getAttributes();
+                                Node sourceNodeAttribute = sourceNodeAttributes.getNamedItem("file");
+                                if (oldIsoVolumePath != null && sourceNodeAttribute != null
+                                        && oldIsoVolumePath.equals(sourceNodeAttribute.getNodeValue())) {
+                                    diskNode.removeChild(diskChildNode);
+                                    Element newChildSourceNode = doc.createElement("source");
+                                    newChildSourceNode.setAttribute("file", newIsoVolumePath);
+                                    diskNode.appendChild(newChildSourceNode);
+                                    s_logger.debug(String.format("Replaced ISO path [%s] with [%s] in VM [%s] XML configuration.", oldIsoVolumePath, newIsoVolumePath, vmName));
+                                    return getXml(doc);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return getXml(doc);
     }
 
     private String getPathFromSourceText(Set<String> paths, String sourceText) {

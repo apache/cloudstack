@@ -45,7 +45,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
     private static final Logger LOG = Logger.getLogger(ScaleIOSnapshotStrategy.class);
 
     @Override
-    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         long volumeId = snapshot.getVolumeId();
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
         boolean baseVolumeExists = volumeVO.getRemoved() == null;
@@ -53,7 +53,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
             return StrategyPriority.CANT_HANDLE;
         }
 
-        if (!isSnapshotStoredOnScaleIOStoragePool(snapshot)) {
+        if (!isSnapshotStoredOnScaleIOStoragePoolAndOperationForSameZone(snapshot, zoneId)) {
             return StrategyPriority.CANT_HANDLE;
         }
 
@@ -82,12 +82,18 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
         return true;
     }
 
-    protected boolean isSnapshotStoredOnScaleIOStoragePool(Snapshot snapshot) {
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+    protected boolean isSnapshotStoredOnScaleIOStoragePoolAndOperationForSameZone(Snapshot snapshot, Long zoneId) {
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotStore == null) {
             return false;
         }
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapshotStore.getDataStoreId());
-        return storagePoolVO != null && storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex;
+        if (storagePoolVO == null) {
+            return false;
+        }
+        if (zoneId != null && !zoneId.equals(storagePoolVO.getDataCenterId())) {
+            return false;
+        }
+        return storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex;
     }
 }

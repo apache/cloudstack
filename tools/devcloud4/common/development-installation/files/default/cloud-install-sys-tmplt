@@ -41,7 +41,8 @@ dbHost=
 dbUser=
 dbPassword=
 name=
-jasypt='/usr/share/cloudstack-common/lib/jasypt-1.9.0.jar'
+jarfile='/usr/share/cloudstack-common/lib/cloudstack-utils.jar'
+
 while getopts 'm:h:f:u:Ft:e:s:o:r:d:n:' OPTION
 do
   case $OPTION in
@@ -134,7 +135,7 @@ then
 	encPassword=$(sed '/^\#/d' /etc/cloudstack/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
 	if [ ! $encPassword == "" ]
 	then
-		dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+		dbPassword=(`java -classpath $jarfile com.cloud.utils.crypt.EncryptionCLI -d -i "$encPassword" -p "$msKey"`)
 		if [ ! $dbPassword ]
 		then
 			echo "Failed to decrypt DB password from db.properties"

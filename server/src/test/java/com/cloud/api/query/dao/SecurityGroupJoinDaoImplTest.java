@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.network.security.SecurityGroupVMMapVO;
+import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.user.Account;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+import junit.framework.TestCase;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,14 +32,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.api.query.vo.SecurityGroupJoinVO;
-import com.cloud.network.security.SecurityGroupVMMapVO;
-import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.user.Account;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import junit.framework.TestCase;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SecurityGroupJoinDaoImplTest extends TestCase {

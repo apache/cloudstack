@@ -18,13 +18,26 @@ package com.cloud.upgrade.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class DatabaseAccessObject {
 
     private static Logger s_logger = Logger.getLogger(DatabaseAccessObject.class);
+
+    public void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
+        String addForeignKeyStmt = String.format("ALTER TABLE `cloud`.`%s` ADD CONSTRAINT `fk_%s__%s` FOREIGN KEY `fk_%s__%s`(`%s`) REFERENCES `%s`(`%s`)", tableName, tableName, tableColumn, tableName, tableColumn, tableColumn, foreignTableName, foreignColumnName);
+        try(PreparedStatement pstmt = conn.prepareStatement(addForeignKeyStmt);)
+        {
+            pstmt.executeUpdate();
+            s_logger.debug(String.format("Foreign key is added successfully from the table %s", tableName));
+        } catch (SQLException e) {
+            s_logger.error("Ignored SQL Exception when trying to add foreign key on table "  + tableName + " exception: " + e.getMessage());
+        }
+    }
 
     public void dropKey(Connection conn, String tableName, String key, boolean isForeignKey)
     {
@@ -73,6 +86,33 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
+    public String generateIndexName(String tableName, String... columnName) {
+        return String.format("i_%s__%s", tableName, StringUtils.join(columnName, "__"));
+    }
+
+    public boolean indexExists(Connection conn, String tableName, String indexName) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("SHOW INDEXES FROM %s where Key_name = \"%s\"", tableName, indexName))) {
+            ResultSet result = pstmt.executeQuery();
+            if (result.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            s_logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName, e.getMessage()));
+        }
+        return false;
+    }
+
+    public void createIndex(Connection conn, String tableName, String indexName, String... columnNames) {
+        String stmt = String.format("CREATE INDEX %s ON %s (%s)", indexName, tableName, StringUtils.join(columnNames, ", "));
+        s_logger.debug("Statement: " + stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            s_logger.debug(String.format("Created index %s", indexName));
+        } catch (SQLException e) {
+            s_logger.warn(String.format("Unable to create index %s", indexName), e);
+        }
+    }
+
     protected static void closePreparedStatement(PreparedStatement pstmt, String errorMessage) {
         try {
             if (pstmt != null) {
@@ -82,5 +122,4 @@ public class DatabaseAccessObject {
             s_logger.warn(errorMessage, e);
         }
     }
-
 }

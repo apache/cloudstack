@@ -16,14 +16,14 @@
 // under the License.
 package org.apache.cloudstack.agent.lb.algorithm;
 
+import org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class IndirectAgentLBShuffleAlgorithmTest {
     private IndirectAgentLBAlgorithm algorithm = new IndirectAgentLBShuffleAlgorithm();

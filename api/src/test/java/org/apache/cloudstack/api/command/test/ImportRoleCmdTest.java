@@ -93,7 +93,7 @@ public class ImportRoleCmdTest {
         when(role.getDescription()).thenReturn("test user imported");
         when(role.getName()).thenReturn("Test User");
         when(role.getRoleType()).thenReturn(RoleType.User);
-        when(roleService.importRole(anyString(),any(), anyString(), any(), anyBoolean())).thenReturn(role);
+        when(roleService.importRole(anyString(), any(), anyString(), any(), anyBoolean(), anyBoolean())).thenReturn(role);
 
         importRoleCmd.execute();
         RoleResponse response = (RoleResponse) importRoleCmd.getResponseObject();

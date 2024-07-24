@@ -33,20 +33,22 @@
       :rowKey="record => record.id + record.prefix"
       :pagination="false"
     >
-      <template #allocated="{ record }">
-        {{ record.usedsubnets + '/' + record.totalsubnets }}
-      </template>
-      <template #actions="{ record }">
-        <div class="actions">
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.delete.ip.v6.prefix')"
-            type="primary"
-            icon="delete-outlined"
-            :danger="true"
-            @click="handleDeleteIpv6Prefix(record)"
-            :disabled="!('deleteGuestNetworkIpv6Prefix' in $store.getters.apis)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'allocated'">
+          {{ record.usedsubnets + '/' + record.totalsubnets }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.delete.ip.v6.prefix')"
+              type="primary"
+              icon="delete-outlined"
+              :danger="true"
+              @click="handleDeleteIpv6Prefix(record)"
+              :disabled="!('deleteGuestNetworkIpv6Prefix' in $store.getters.apis)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <br>
@@ -69,12 +71,14 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #name="{ text, record }">
-        <resource-icon v-if="record.icon" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
-        <apartment-outlined v-else style="margin-right: 5px"/>
-        <router-link :to="{ path: '/guestnetwork/' + record.id }">
-          {{ text }}
-        </router-link>
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'name'">
+          <resource-icon v-if="record.icon" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <apartment-outlined v-else style="margin-right: 5px"/>
+          <router-link :to="{ path: '/guestnetwork/' + record.id }">
+            {{ text }}
+          </router-link>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -170,9 +174,9 @@ export default {
       pageSize: 10,
       columns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.type'),
@@ -202,12 +206,12 @@ export default {
           dataIndex: 'prefix'
         },
         {
-          title: this.$t('label.allocated'),
-          slots: { customRender: 'allocated' }
+          key: 'allocated',
+          title: this.$t('label.allocated')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ],
       addIpv6PrefixModal: false

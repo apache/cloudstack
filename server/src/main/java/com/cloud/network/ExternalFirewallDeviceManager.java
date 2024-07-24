@@ -28,7 +28,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.Manager;
 
 /* ExternalFirewallDeviceManager provides a abstract implementation for managing a external firewall in devices agnostic manner.
- * Device specific managers for external firewall (like SRX) should be implemented as pluggable service extending
+ * Device specific managers for external firewall should be implemented as pluggable service extending
  * ExternalFirewallDeviceManager implementation. An implementation of device specific manager can override default behaviour when needed.
  */
 

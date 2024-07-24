@@ -91,6 +91,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -286,6 +287,23 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    protected boolean isSkipTemplateStoreDownload(VMTemplateVO template, Long zoneId) {
+        if (template.isPublicTemplate()) {
+            return false;
+        }
+        if (template.isFeatured()) {
+            return false;
+        }
+        if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
+            return false;
+        }
+        if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
+            s_logger.debug(String.format("Template %s is not present on any image store for the zone ID: %d, its download cannot be skipped", template.getUniqueName(), zoneId));
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void handleTemplateSync(DataStore store) {
         if (store == null) {
@@ -349,6 +367,7 @@ public class TemplateServiceImpl implements TemplateService {
                     toBeDownloaded.addAll(allTemplates);
 
                     final StateMachine2<VirtualMachineTemplate.State, VirtualMachineTemplate.Event, VirtualMachineTemplate> stateMachine = VirtualMachineTemplate.State.getStateMachine();
+                    Boolean followRedirect = StorageManager.DataStoreDownloadFollowRedirects.value();
                     for (VMTemplateVO tmplt : allTemplates) {
                         String uniqueName = tmplt.getUniqueName();
                         TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
@@ -429,7 +448,8 @@ public class TemplateServiceImpl implements TemplateService {
                                         try {
                                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
                                                     com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
+                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl(),
+                                                            followRedirect));
                                         } catch (ResourceAllocationException e) {
                                             s_logger.warn(e.getMessage());
                                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
@@ -513,7 +533,7 @@ public class TemplateServiceImpl implements TemplateService {
                                 continue;
                             }
                             // if this is private template, skip sync to a new image store
-                            if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
+                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
                                 s_logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
                             }

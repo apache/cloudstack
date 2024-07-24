@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -58,7 +59,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the network offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering, defaults to the value of 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE,
@@ -73,7 +74,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SPECIFY_VLAN, type = CommandType.BOOLEAN, description = "true if network offering supports vlans")
     private Boolean specifyVlan;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. Default value is Optional")
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering. The default value is Optional. "
+            + " Another value is Required, which will make it as the default network offering for new networks ")
     private String availability;
 
     @Parameter(name = ApiConstants.NETWORKRATE, type = CommandType.INTEGER, description = "data transfer rate in megabits per second allowed")
@@ -126,6 +128,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
+    @Parameter(name = ApiConstants.FOR_TUNGSTEN,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+    private Boolean forTungsten;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
             + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
@@ -177,7 +184,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? networkOfferingName : displayText;
     }
 
     public String getTags() {
@@ -233,6 +240,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Boolean getForTungsten() {
+        return forTungsten;
     }
 
     public Boolean getEgressDefaultPolicy() {

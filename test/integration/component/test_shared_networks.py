@@ -584,7 +584,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #  6. No checks reqd
         #  7. a. listVirtualMachines should show both VMs in running state
         #     in the user account and the admin account
-        #     b. VM's IPs shoud be in the range of the shared network ip ranges
+        #     b. VM's IPs should be in the range of the shared network ip ranges
 
         # Create admin account
         self.admin_account = Account.create(
@@ -1974,7 +1974,7 @@ class TestSharedNetworks(cloudstackTestCase):
         #     enabled offering
         #  4. listPhysicalNetworks should return at least one active
         #     physical network
-        #  5. network creation shoud PASS
+        #  5. network creation should PASS
         #  6. network creation should FAIL since VLAN is already used by
         #     previously created network
 

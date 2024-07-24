@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
@@ -50,6 +51,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -63,7 +65,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -158,10 +160,12 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
     @Inject
     private UserDataDao userDataDao;
     @Inject
+    private ManagementServerHostDao managementServerHostDao;
+    @Inject
     EntityManager entityManager;
 
     private static final List<RoleType> adminRoles = Collections.singletonList(RoleType.Admin);
-    private List<KubernetesClusterHelper> kubernetesClusterHelpers;
+    private List<KubernetesServiceHelper> kubernetesServiceHelpers;
     public static final Map<EntityType, ApiCommandResourceType> s_typeMap = new HashMap<>();
 
     static {
@@ -192,14 +196,16 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.VR, ApiCommandResourceType.DomainRouter);
         s_typeMap.put(EntityType.SYSTEM_VM, ApiCommandResourceType.SystemVm);
         s_typeMap.put(EntityType.AUTOSCALE_VM_GROUP, ApiCommandResourceType.AutoScaleVmGroup);
+        s_typeMap.put(EntityType.MANAGEMENT_SERVER, ApiCommandResourceType.Host);
+        s_typeMap.put(EntityType.OBJECT_STORAGE, ApiCommandResourceType.ObjectStore);
     }
 
-    public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {
-        return kubernetesClusterHelpers;
+    public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
+        return kubernetesServiceHelpers;
     }
 
-    public void setKubernetesClusterHelpers(final List<KubernetesClusterHelper> kubernetesClusterHelpers) {
-        this.kubernetesClusterHelpers = kubernetesClusterHelpers;
+    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
+        this.kubernetesServiceHelpers = kubernetesServiceHelpers;
     }
 
     @Override
@@ -529,9 +535,11 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             case ISO:
                 return templateDao.findByUuid(entityUuid);
             case KUBERNETES_CLUSTER:
-                return kubernetesClusterHelpers.get(0).findByUuid(entityUuid);
+                return kubernetesServiceHelpers.get(0).findByUuid(entityUuid);
             case AUTOSCALE_VM_GROUP:
                 return autoScaleVmGroupDao.findByUuid(entityUuid);
+            case MANAGEMENT_SERVER:
+                return managementServerHostDao.findByUuid(entityUuid);
             default:
                 throw new CloudRuntimeException("Invalid entity type " + type);
         }
@@ -607,6 +615,9 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
             case SYSTEM_VM:
                 VMInstanceVO instance = vmInstanceDao.findByUuid(entityUuid);
                 return instance != null ? instance.getInstanceName() : null;
+            case MANAGEMENT_SERVER:
+                ManagementServerHostVO mgmtServer = managementServerHostDao.findByUuid(entityUuid);
+                return mgmtServer != null ? mgmtServer.getName() : null;
             default:
                 return null;
         }

@@ -17,8 +17,15 @@
 
 package com.cloud.api.query.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.log4j.Logger;
@@ -43,6 +50,17 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
 
         _count = "select count(distinct id) from network_offering_view WHERE ";
     }
+
+    private static final String LIST_DOMAINS_OF_NETWORK_OFFERINGS_USED_BY_DOMAIN_PATH = "SELECT nov.domain_id, \n" +
+            "            GROUP_CONCAT('Network:', net.uuid) \n" +
+            "            FROM   cloud.network_offering_view AS nov\n" +
+            "            INNER  JOIN cloud.networks AS net ON (net.network_offering_id  = nov.id) \n" +
+            "            INNER  JOIN cloud.domain AS domain ON (domain.id = net.domain_id) \n" +
+            "            INNER  JOIN cloud.domain AS domain_so ON (domain_so.id = nov.domain_id) \n" +
+            "            WHERE  domain.path LIKE ? \n" +
+            "            AND    domain_so.path NOT LIKE ? \n" +
+            "            AND    net.removed IS NULL \n" +
+            "            GROUP  BY nov.id";
 
     @Override
     public List<NetworkOfferingJoinVO> findByDomainId(long domainId, Boolean includeAllDomainOffering) {
@@ -119,5 +137,40 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
         List<NetworkOfferingJoinVO> offerings = searchIncludingRemoved(sc, null, null, false);
         assert offerings != null && offerings.size() == 1 : "No network offering found for offering id " + offering.getId();
         return offerings.get(0);
+    }
+
+
+
+    @Override
+    public Map<Long, List<String>> listDomainsOfNetworkOfferingsUsedByDomainPath(String domainPath) {
+        s_logger.debug(String.format("Retrieving the domains of the network offerings used by domain with path [%s].", domainPath));
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_NETWORK_OFFERINGS_USED_BY_DOMAIN_PATH)) {
+            Map<Long, List<String>> domainsOfNetworkOfferingsUsedByDomainPath = new HashMap<>();
+
+            String domainSearch = domainPath.concat("%");
+            pstmt.setString(1, domainSearch);
+            pstmt.setString(2, domainSearch);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Long domainId = rs.getLong(1);
+                    List<String> networkUuids = Arrays.asList(rs.getString(2).split(","));
+
+                    domainsOfNetworkOfferingsUsedByDomainPath.put(domainId, networkUuids);
+                }
+            }
+
+            return domainsOfNetworkOfferingsUsedByDomainPath;
+        } catch (SQLException e) {
+            s_logger.error(String.format("Failed to retrieve the domains of the network offerings used by domain with path [%s] due to [%s]. Returning an empty "
+                    + "list of domains.", domainPath, e.getMessage()));
+
+            s_logger.debug(String.format("Failed to retrieve the domains of the network offerings used by domain with path [%s]. Returning an empty " +
+                    "list of domains.", domainPath), e);
+
+            return new HashMap<>();
+        }
     }
 }

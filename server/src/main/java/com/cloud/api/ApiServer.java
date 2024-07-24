@@ -160,6 +160,7 @@ import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
@@ -186,6 +187,8 @@ import com.google.gson.reflect.TypeToken;
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
     private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+
+    private static final String SANITIZATION_REGEX = "[\n\r]";
 
     private static boolean encodeApiResponse = false;
 
@@ -231,42 +234,42 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private MessageBus messageBus;
 
-    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<Integer>("Advanced"
+    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Integer.class
             , "integration.api.port"
             , "0"
             , "Integration (unauthenticated) API port. To disable set it to 0 or negative."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<Long>("Advanced"
+    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Long.class
             , "concurrent.snapshots.threshold.perhost"
             , null
             , "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited"
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<Boolean>("Advanced"
+    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "encode.api.response"
             , "false"
             , "Do URL encoding for the api response, false by default"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>( "Advanced"
+    static final ConfigKey<String> JSONcontentType = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
             , "Http response content type for .js files (default is text/javascript)"
             , false
             , ConfigKey.Scope.Global);
-    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced"
+    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "enable.secure.session.cookie"
             , "false"
             , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
             , false
             , ConfigKey.Scope.Global);
-    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<String> ("Advanced"
+    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
             , String.class
             , "json.content.type"
             , "application/json; charset=UTF-8"
@@ -274,11 +277,32 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , false
             , ConfigKey.Scope.Global);
 
-    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<Boolean>( "advanced"
+    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
             , "event.accountinfo"
             , "false"
             , "use account info in event logging"
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> useForwardHeader = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , Boolean.class
+            , "proxy.header.verify"
+            , "false"
+            , "enables/disables checking of ipaddresses from a proxy set header. See \"proxy.header.names\" for the headers to allow."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> listOfForwardHeaders = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.header.names"
+            , "X-Forwarded-For,HTTP_CLIENT_IP,HTTP_X_FORWARDED_FOR"
+            , "a list of names to check for allowed ipaddresses from a proxy set header. See \"proxy.cidr\" for the proxies allowed to set these headers."
+            , true
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> proxyForwardList = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK
+            , String.class
+            , "proxy.cidr"
+            , ""
+            , "a list of cidrs for which \"proxy.header.names\" are honoured if the \"Remote_Addr\" is in this list."
             , true
             , ConfigKey.Scope.Global);
 
@@ -370,9 +394,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         try {
             eventBus.publish(event);
         } catch (EventBusException evx) {
-            String errMsg = "Failed to publish async job event on the the event bus.";
+            String errMsg = "Failed to publish async job event on the event bus.";
             s_logger.warn(errMsg, evx);
         }
+    }
+
+    protected void setupIntegrationPortListener(Integer apiPort) {
+        if (apiPort == null || apiPort <= 0) {
+            s_logger.trace(String.format("Skipping setting up listener for integration port as %s is set to %d",
+                    IntegrationAPIPort.key(), apiPort));
+            return;
+        }
+        s_logger.debug(String.format("Setting up integration API service listener on port: %d", apiPort));
+        final ListenerThread listenerThread = new ListenerThread(this, apiPort);
+        listenerThread.start();
     }
 
     @Override
@@ -420,10 +455,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         setEncodeApiResponse(EncodeApiResponse.value());
 
-        if (apiPort != null) {
-            final ListenerThread listenerThread = new ListenerThread(this, apiPort);
-            listenerThread.start();
-        }
+        setupIntegrationPortListener(apiPort);
 
         return true;
     }
@@ -737,6 +769,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("ctxStartEventId", String.valueOf(startEventId));
             params.put("cmdEventType", asyncCmd.getEventType().toString());
             params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
+            if (asyncCmd.getHttpMethod() != null) {
+                params.put(ApiConstants.HTTPMETHOD, asyncCmd.getHttpMethod().toString());
+            }
 
             Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
 
@@ -918,7 +953,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if ("3".equals(signatureVersion)) {
                 // New signature authentication. Check for expire parameter and its validity
                 if (expires == null) {
-                    s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("Missing Expires parameter -- ignoring request.");
                     return false;
                 }
 
@@ -931,7 +966,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
-                    s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
+                    signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                    apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
+                    s_logger.debug(String.format("Request expired -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
             }
@@ -978,7 +1015,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
 
             if (!equalSig) {
-                s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                signature = signature.replaceAll(SANITIZATION_REGEX, "_");
+                s_logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
             } else {
                 CallContext.register(user, account);
             }
@@ -1069,6 +1107,18 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.SESSIONKEY.equalsIgnoreCase(attrName)) {
                     response.setSessionKey(attrObj.toString());
                 }
+                if (ApiConstants.IS_2FA_ENABLED.equalsIgnoreCase(attrName)) {
+                    response.set2FAenabled(attrObj.toString());
+                }
+                if (ApiConstants.IS_2FA_VERIFIED.equalsIgnoreCase(attrName)) {
+                    response.set2FAverfied(attrObj.toString());
+                }
+                if (ApiConstants.PROVIDER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setProviderFor2FA(attrObj.toString());
+                }
+                if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
+                    response.setIssuerFor2FA(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1131,6 +1181,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezone", timezone);
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
+
+            boolean is2faEnabled = false;
+            if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
+                is2faEnabled = true;
+            }
+            String issuerFor2FA = AccountManagerImpl.userTwoFactorAuthenticationIssuer.valueIn(userAcct.getDomainId());
+            session.setAttribute(ApiConstants.IS_2FA_ENABLED, Boolean.toString(is2faEnabled));
+            if (!is2faEnabled) {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, true);
+            } else {
+                session.setAttribute(ApiConstants.IS_2FA_VERIFIED, false);
+            }
+            session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
+            session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back
@@ -1464,7 +1528,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 ConcurrentSnapshotsThresholdPerHost,
                 EncodeApiResponse,
                 EnableSecureSessionCookie,
-                JSONDefaultContentType
+                JSONDefaultContentType,
+                proxyForwardList,
+                useForwardHeader,
+                listOfForwardHeaders
         };
     }
 }

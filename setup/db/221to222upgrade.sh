@@ -46,5 +46,3 @@ then
 exit 1
 fi
 echo Finished upgrade for database: cloud_usage from 2.2.1 to 2.2.2
-
-

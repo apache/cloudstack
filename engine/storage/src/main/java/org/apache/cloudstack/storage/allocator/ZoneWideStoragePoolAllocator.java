@@ -50,7 +50,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private CapacityDao capacityDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
@@ -63,9 +63,9 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         List<StoragePool> suitablePools = new ArrayList<>();
-
-        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags());
-        if (storagePools == null) {
+        List<StoragePoolVO> storagePools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), dskCh.getTags(), true);
+        storagePools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(plan.getDataCenterId(), null, null, ScopeType.ZONE, List.of(dskCh.getTags())));
+        if (storagePools.isEmpty()) {
             LOGGER.debug(String.format("Could not find any zone wide storage pool that matched with any of the following tags [%s].", Arrays.toString(dskCh.getTags())));
             storagePools = new ArrayList<>();
         }
@@ -82,7 +82,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         storagePools.addAll(anyHypervisorStoragePools);
 
         // add remaining pools in zone, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null);
+        List<StoragePoolVO> allPools = storagePoolDao.findZoneWideStoragePoolsByTags(plan.getDataCenterId(), null, false);
         allPools.removeAll(storagePools);
         for (StoragePoolVO pool : allPools) {
             avoid.addPool(pool.getId());
@@ -94,10 +94,11 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
             StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                LOGGER.trace(String.format("Found suitable local storage pool [%s], adding to list.", storage));
+                LOGGER.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", storagePool, dskCh));
                 suitablePools.add(storagePool);
             } else {
                 if (canAddStoragePoolToAvoidSet(storage)) {
+                    LOGGER.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", storagePool, dskCh));
                     avoid.addPool(storagePool.getId());
                 }
             }

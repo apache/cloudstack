@@ -109,9 +109,4 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
     public NicTO getNic() {
         return nic;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
-    }
 }

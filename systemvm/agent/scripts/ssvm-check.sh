@@ -99,19 +99,41 @@ then
         fi
      done
 else
-    echo "ERROR: NFS is not currently mounted"
-    echo "Try manually mounting from inside the VM"
-    NFSSERVER=`awk '{print $17}' $CMDLINE|awk -F= '{print $2}'|awk -F: '{print $1}'`
-    echo "NFS server is " $NFSSERVER
-    ping -c 2  $NFSSERVER
-    if [ $? -eq 0 ]
+    echo "ERROR: Storage $storage is not currently mounted"
+    echo "Verifying if we can at least ping the storage"
+    STORAGE_ADDRESSES=`grep "secondaryStorageServerAddress" $CMDLINE | sed -E 's/.*secondaryStorageServerAddress=([^ ]*).*/\1/g'`
+
+    if [[ -z "$STORAGE_ADDRESSES" ]]
     then
-	echo "Good: Can ping $storage server"
+      STORAGE_NETWORK_GATEWAY=`grep "storagegateway" $CMDLINE | sed -E 's/.*storagegateway=([^ ]*).*/\1/g'`
+      echo "Storage address list is empty, trying to ping storage network gateway instead ($STORAGE_NETWORK_GATEWAY)"
+      ping -c 2  $STORAGE_NETWORK_GATEWAY
+      if [ $? -eq 0 ]
+      then
+        echo "Good: Can ping $storage storage network gateway"
+      else
+        echo "WARNING: Cannot ping $storage storage network gateway"
+        echo routing table follows
+        route -n
+      fi
     else
-	echo "WARNING: cannot ping $storage server"
-	echo routing table follows
-	route -n
+      echo "Storage address(s): $STORAGE_ADDRESSES, trying to ping"
+      STORAGE_ADDRESS_LIST=$(echo $STORAGE_ADDRESSES | tr "," "\n")
+      for STORAGE_ADDRESS in $STORAGE_ADDRESS_LIST
+      do
+        echo "Pinging storage address: $STORAGE_ADDRESS"
+        ping -c 2  $STORAGE_ADDRESS
+        if [ $? -eq 0 ]
+        then
+          echo "Good: Can ping $storage storage address"
+        else
+          echo "WARNING: Cannot ping $storage storage address"
+          echo routing table follows
+          route -n
+        fi
+      done
     fi
+
 fi
 
 

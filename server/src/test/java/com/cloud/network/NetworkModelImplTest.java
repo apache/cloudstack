@@ -16,36 +16,50 @@
 // under the License.
 package com.cloud.network;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mockito;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.Pair;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class NetworkModelImplTest {
-    final String[] ip4Dns1 = {"5.5.5.5", "6.6.6.6"};
-    final String[] ip4Dns2 = {"7.7.7.7", "8.8.8.8"};
-    final String[] ip6Dns1 = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
-    final String[] ip6Dns2 = {"2001:4860:4860::7777", "2001:4860:4860::8888"};
+    final String[] ip4Dns1 = {"5.5.5.5", "6.6.6.6", "9.9.9.9"};
+    final String[] ip4Dns2 = {"7.7.7.7", "8.8.8.8", "10.10.10.10"};
+    final String[] ip6Dns1 = {"2001:4860:4860::5555", "2001:4860:4860::6666", "2001:4860:4860::9999"};
+    final String[] ip6Dns2 = {"2001:4860:4860::7777", "2001:4860:4860::8888", "2001:4860:4860::AAAA"};
+
+    @Mock
+    private VpcDao vpcDao;
 
     @InjectMocks
     private NetworkModelImpl networkModel = new NetworkModelImpl();
 
-    private void prepareMocks(boolean isIp6, Network network, DataCenter zone,
-                              String dns1, String dns2, String dns3, String dns4) {
+    private void prepareMocks(boolean isIp6, Network network, DataCenter zone, VpcVO vpc,
+                              String networkDns1, String zoneDns1, String networkDns2, String zoneDns2,
+                              String vpcDns1, String vpcDns2) {
         if (isIp6) {
-            Mockito.when(network.getIp6Dns1()).thenReturn(dns1);
-            Mockito.when(zone.getIp6Dns1()).thenReturn(dns2);
-            Mockito.when(network.getIp6Dns2()).thenReturn(dns3);
-            Mockito.when(zone.getIp6Dns2()).thenReturn(dns4);
+            Mockito.when(network.getIp6Dns1()).thenReturn(networkDns1);
+            Mockito.when(zone.getIp6Dns1()).thenReturn(zoneDns1);
+            Mockito.when(network.getIp6Dns2()).thenReturn(networkDns2);
+            Mockito.when(zone.getIp6Dns2()).thenReturn(zoneDns2);
+            Mockito.when(vpc.getIp6Dns1()).thenReturn(vpcDns1);
+            Mockito.when(vpc.getIp6Dns2()).thenReturn(vpcDns2);
         } else {
-            Mockito.when(network.getDns1()).thenReturn(dns1);
-            Mockito.when(zone.getDns1()).thenReturn(dns2);
-            Mockito.when(network.getDns2()).thenReturn(dns3);
-            Mockito.when(zone.getDns2()).thenReturn(dns4);
+            Mockito.when(network.getDns1()).thenReturn(networkDns1);
+            Mockito.when(zone.getDns1()).thenReturn(zoneDns1);
+            Mockito.when(network.getDns2()).thenReturn(networkDns2);
+            Mockito.when(zone.getDns2()).thenReturn(zoneDns2);
+            Mockito.when(vpc.getIp4Dns1()).thenReturn(vpcDns1);
+            Mockito.when(vpc.getIp4Dns2()).thenReturn(vpcDns2);
         }
     }
 
@@ -54,38 +68,53 @@ public class NetworkModelImplTest {
         String[] dns2 = isIp6 ? ip6Dns2 : ip4Dns2;
         Network network = Mockito.mock(Network.class);
         DataCenter zone = Mockito.mock(DataCenter.class);
-        // Both network and zone have valid dns
-        prepareMocks(isIp6, network, zone, dns1[0], dns1[1], dns2[0], dns1[1]);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(network.getVpcId()).thenReturn(1L);
+        Mockito.doReturn(vpc).when(vpcDao).findById(ArgumentMatchers.anyLong());
+        // network, vpc and zone have valid dns
+        prepareMocks(isIp6, network, zone, vpc, dns1[0], dns1[1], dns2[0], dns2[1], dns1[2], dns2[2]);
         Pair<String, String> result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertEquals(dns1[0], result.first());
         Assert.assertEquals(dns2[0], result.second());
-        // Network has valid dns and zone don't
-        prepareMocks(isIp6, network, zone, dns1[0], null, dns2[0], null);
+        // Network has valid dns and vpc/zone don't
+        prepareMocks(isIp6, network, zone, vpc, dns1[0], null, dns2[0], null, null, null);
         result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertEquals(dns1[0], result.first());
         Assert.assertEquals(dns2[0], result.second());
-        // Zone has a valid dns and network don't
-        prepareMocks(isIp6, network, zone, null, dns1[1],  null, dns2[1]);
+        // Vpc has valid dns and network/zone don't
+        prepareMocks(isIp6, network, zone, vpc, null, null, null, null, dns1[2], dns2[2]);
+        result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
+                networkModel.getNetworkIp4Dns(network, zone);
+        Assert.assertEquals(dns1[2], result.first());
+        Assert.assertEquals(dns2[2], result.second());
+        // Zone has a valid dns and network/vpc don't
+        prepareMocks(isIp6, network, zone, vpc, null, dns1[1],  null, dns2[1], null, null);
         result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertEquals(dns1[1], result.first());
         Assert.assertEquals(dns2[1], result.second());
-        // Zone has a valid dns and network has only first dns
-        prepareMocks(isIp6, network, zone, dns1[0], dns1[1],  null, dns2[1]);
+        // Zone/vpc has a valid dns and network has only first dns
+        prepareMocks(isIp6, network, zone, vpc, dns1[0], dns1[1],  null, dns2[1], dns1[2], dns2[2]);
         result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertEquals(dns1[0], result.first());
         Assert.assertNull(result.second());
-        // Both network and zone only have the first dns
-        prepareMocks(isIp6, network, zone, dns1[0], dns1[1],  null, null);
+        // network don't have a valid dns, vpc has only first dns, Zone has a valid dns
+        prepareMocks(isIp6, network, zone, vpc, null, dns1[1], null, dns2[1], dns1[2], null);
+        result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
+                networkModel.getNetworkIp4Dns(network, zone);
+        Assert.assertEquals(dns1[2], result.first());
+        Assert.assertNull(result.second());
+        // network/vpc/zone only have the first dns
+        prepareMocks(isIp6, network, zone, vpc, dns1[0], dns1[1],  null, null, dns1[2], null);
         result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertEquals(dns1[0], result.first());
         Assert.assertNull(result.second());
-        // Both network and zone dns are null
-        prepareMocks(isIp6, network, zone, null, null,  null, null);
+        // network/vpc and zone dns are null
+        prepareMocks(isIp6, network, zone, vpc, null, null,  null, null, null, null);
         result = isIp6 ? networkModel.getNetworkIp6Dns(network, zone) :
                 networkModel.getNetworkIp4Dns(network, zone);
         Assert.assertNull(result.first());

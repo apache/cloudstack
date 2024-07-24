@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
@@ -57,11 +58,21 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
             }
-            httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
-            httpExchange.sendResponseHeaders(responseCode, response.length());
+            byte[] bytesToOutput = response.getBytes(StandardCharsets.UTF_8);
+            httpExchange.getResponseHeaders().set("content-type", "text/plain; charset=UTF-8");
+            httpExchange.sendResponseHeaders(responseCode, bytesToOutput.length);
             final OutputStream os = httpExchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            try {
+                os.write(bytesToOutput);
+            } catch (IOException e) {
+                LOG.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Error during Prometheus export: ", e);
+                }
+                os.write("The system could not export Prometheus due to an internal error. Contact your operator to learn about the reason.".getBytes());
+            } finally {
+                os.close();
+            }
         }
     }
 

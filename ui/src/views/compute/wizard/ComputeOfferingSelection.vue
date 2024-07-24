@@ -32,8 +32,10 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template #cpuTitle><appstore-outlined /> {{ $t('label.cpu') }}</template>
-      <template #ramTitle><bulb-outlined /> {{ $t('label.memory') }}</template>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'cpu'"><appstore-outlined /> {{ $t('label.cpu') }}</template>
+        <template v-if="column.key === 'ram'"><bulb-outlined /> {{ $t('label.memory') }}</template>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -102,6 +104,11 @@ export default {
     minimumMemory: {
       type: Number,
       default: 0
+    },
+    allowAllOfferings: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -109,18 +116,19 @@ export default {
       filter: '',
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.serviceofferingid'),
           width: '40%'
         },
         {
+          key: 'cpu',
           dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
           width: '30%'
         },
         {
+          key: 'ram',
           dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
           width: '30%'
         }
       ],
@@ -165,7 +173,7 @@ export default {
           disabled = true
         }
         if (disabled === false && maxMemory && this.minimumMemory > 0 &&
-          ((item.iscustomized === false && maxMemory < this.minimumMemory) ||
+          ((item.iscustomized === false && ((maxMemory < this.minimumMemory) || this.exactMatch && maxMemory !== this.minimumMemory)) ||
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }
@@ -174,6 +182,9 @@ export default {
         }
         if (this.autoscale && item.iscustomized) {
           disabled = true
+        }
+        if (this.allowAllOfferings) {
+          disabled = false
         }
         return {
           key: item.id,

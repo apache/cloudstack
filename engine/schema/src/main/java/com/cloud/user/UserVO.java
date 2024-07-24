@@ -106,6 +106,15 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity;
 
+    @Column(name = "is_user_2fa_enabled")
+    private boolean user2faEnabled;
+
+    @Column(name = "user_2fa_provider")
+    private String user2faProvider;
+
+    @Column(name = "key_for_2fa")
+    private String keyFor2fa;
+
     public UserVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -316,4 +325,29 @@ public class UserVO implements User, Identity, InternalIdentity {
     public void setExternalEntity(String externalEntity) {
         this.externalEntity = externalEntity;
     }
+
+    public boolean isUser2faEnabled() {
+        return user2faEnabled;
+    }
+
+    public void setUser2faEnabled(boolean user2faEnabled) {
+        this.user2faEnabled = user2faEnabled;
+    }
+
+    public String getKeyFor2fa() {
+        return keyFor2fa;
+    }
+
+    public void setKeyFor2fa(String keyFor2fa) {
+        this.keyFor2fa = keyFor2fa;
+    }
+
+    public String getUser2faProvider() {
+        return user2faProvider;
+    }
+
+    public void setUser2faProvider(String user2faProvider) {
+        this.user2faProvider = user2faProvider;
+    }
+
 }

@@ -20,14 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.TableGenerator;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterLinkLocalIpAddressVO;
@@ -42,9 +44,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * @config
@@ -63,6 +63,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     protected SearchBuilder<DataCenterVO> ChildZonesSearch;
     protected SearchBuilder<DataCenterVO> DisabledZonesSearch;
     protected SearchBuilder<DataCenterVO> TokenSearch;
+    protected SearchBuilder<DataCenterVO> ZoneAllocationAndNotTypeSearch;
 
     @Inject
     protected DataCenterIpAddressDao _ipAllocDao = null;
@@ -79,7 +80,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
-    protected TableGenerator _tgMacAddress;
+
 
     @Override
     public DataCenterVO findByName(String name) {
@@ -227,25 +228,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String[] getNextAvailableMacAddressPair(long id) {
-        return getNextAvailableMacAddressPair(id, 0);
-    }
-
-    @Override
-    public String[] getNextAvailableMacAddressPair(long id, long mask) {
-        SequenceFetcher fetch = SequenceFetcher.getInstance();
-
-        long seq = fetch.getNextSequence(Long.class, _tgMacAddress, id);
-        seq = seq | _prefix | ((id & 0x7f) << 32);
-        seq |= mask;
-        seq |= ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
-        String[] pair = new String[2];
-        pair[0] = NetUtils.long2Mac(seq);
-        pair[1] = NetUtils.long2Mac(seq | 0x1l << 39);
-        return pair;
-    }
-
-    @Override
     public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
         _ipAllocDao.releaseIpAddress(instanceId);
         DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId, forSystemVms);
@@ -336,12 +318,14 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         DisabledZonesSearch.and("allocationState", DisabledZonesSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
         DisabledZonesSearch.done();
 
+        ZoneAllocationAndNotTypeSearch = createSearchBuilder();
+        ZoneAllocationAndNotTypeSearch.and("allocationState", ZoneAllocationAndNotTypeSearch.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        ZoneAllocationAndNotTypeSearch.and("type", ZoneAllocationAndNotTypeSearch.entity().getType(), SearchCriteria.Op.NLIKE);
+        ZoneAllocationAndNotTypeSearch.done();
+
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();
-
-        _tgMacAddress = _tgs.get("macAddress");
-        assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
     @Override
@@ -400,6 +384,18 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
+    public List<Long> listEnabledNonEdgeZoneIds() {
+        SearchCriteria<DataCenterVO> sc = ZoneAllocationAndNotTypeSearch.create();
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("type", DataCenter.Type.Edge);
+        List<DataCenterVO> zones = listBy(sc);
+        if (CollectionUtils.isEmpty(zones)) {
+            return new ArrayList<>();
+        }
+        return zones.stream().map(DataCenterVO::getId).collect(Collectors.toList());
+    }
+
+    @Override
     public DataCenterVO findByTokenOrIdOrName(String tokenOrIdOrName) {
         DataCenterVO result = findByToken(tokenOrIdOrName);
         if (result == null) {
@@ -436,5 +432,15 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         List<DataCenterVO> dcs = listBy(sc);
 
         return dcs;
+    }
+
+    @Override
+    public List<DataCenterVO> listByIds(List<Long> ids) {
+        SearchBuilder<DataCenterVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<DataCenterVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listBy(sc);
     }
 }

@@ -74,7 +74,7 @@ public class DatabaseCreator {
 
     private static void runQuery(String host, String port, String rootPassword, String query, boolean dryRun) {
         System.out.println("============> Running query: " + query);
-        try (Connection conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/", host, port), "root", rootPassword);
+        try (Connection conn = DriverManager.getConnection(String.format("jdbc:mysql://%s:%s/?" + TransactionLegacy.CONNECTION_PARAMS, host, port), "root", rootPassword);
              Statement stmt = conn.createStatement();){
              if (!dryRun)
                 stmt.executeUpdate(query);

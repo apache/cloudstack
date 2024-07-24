@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VmwareDatacenterVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -46,7 +47,7 @@ import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;

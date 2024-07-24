@@ -61,7 +61,7 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
             ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
 
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "text/plain");
+            hds.set("content-type", "text/plain");
             t.sendResponseHeaders(200, 0);
             OutputStreamWriter os = new OutputStreamWriter(t.getResponseBody(),"UTF-8");
             statsCollector.getStatsReport(os);

@@ -60,7 +60,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
     protected GetMethod createRequest(String downloadUrl) {
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(followRedirects);
         if (!toFileSet) {
             String[] parts = downloadUrl.split("/");
             String filename = parts[parts.length - 1];
@@ -140,7 +140,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
             i++;
         }
         if (!downloaded) {
-            LOGGER.error("Template couldnt be downloaded");
+            LOGGER.error("Template couldn't be downloaded");
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
@@ -172,5 +172,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
     @Override
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        super.setFollowRedirects(followRedirects);
+        if (this.request != null) {
+            this.request.setFollowRedirects(followRedirects);
+        }
     }
 }

@@ -47,6 +47,13 @@ public abstract class Command {
         return wait;
     }
 
+    /**
+     * This is the time in seconds that the agent will wait before waiting for an answer from the endpoint.
+     * The actual wait time is twice the value of this variable.
+     * See {@link com.cloud.agent.manager.AgentAttache#send(com.cloud.agent.transport.Request, int) AgentAttache#send}  implementation for more details.
+     *
+     * @param wait
+     **/
     public void setWait(int wait) {
         this.wait = wait;
     }

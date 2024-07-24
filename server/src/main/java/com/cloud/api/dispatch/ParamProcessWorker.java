@@ -63,8 +63,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ParamProcessWorker implements DispatchWorker {
 
     private static final Logger s_logger = Logger.getLogger(ParamProcessWorker.class.getName());
-    public final DateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
-    public final DateFormat newInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String inputFormatString = "yyyy-MM-dd";
+    private static final String newInputFormatString = "yyyy-MM-dd HH:mm:ss";
+    public static final DateFormat inputFormat = new SimpleDateFormat(inputFormatString);
+    public static final DateFormat newInputFormat = new SimpleDateFormat(newInputFormatString);
 
     @Inject
     protected AccountManager _accountMgr;
@@ -333,26 +335,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
                 break;
             case DATE:
-                // This piece of code is for maintaining backward compatibility
-                // and support both the date formats(Bug 9724)
-                final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
-                if (isObjInNewDateFormat) {
-                    final DateFormat newFormat = newInputFormat;
-                    synchronized (newFormat) {
-                        field.set(cmdObj, newFormat.parse(paramObj.toString()));
-                    }
-                } else {
-                    final DateFormat format = inputFormat;
-                    synchronized (format) {
-                        Date date = format.parse(paramObj.toString());
-                        if (field.getName().equals("startDate")) {
-                            date = messageDate(date, 0, 0, 0);
-                        } else if (field.getName().equals("endDate")) {
-                            date = messageDate(date, 23, 59, 59);
-                        }
-                        field.set(cmdObj, date);
-                    }
-                }
+                parseAndSetDate(field, cmdObj, paramObj);
                 break;
             case FLOAT:
                 // Assuming that the parameters have been checked for required before now,
@@ -428,9 +411,6 @@ public class ParamProcessWorker implements DispatchWorker {
                     }
                 }
                 break;
-            case TZDATE:
-                field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
-                break;
             case MAP:
             default:
                 field.set(cmdObj, paramObj);
@@ -440,6 +420,33 @@ public class ParamProcessWorker implements DispatchWorker {
             s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
             throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() +
                     " is not accessible]");
+        }
+    }
+    private void parseAndSetDate(Field field, BaseCmd cmdObj, Object paramObj) throws IllegalAccessException, ParseException {
+        try {
+            field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
+            return;
+        } catch (ParseException parseException) {
+            s_logger.debug(String.format("Could not parse date [%s] with timezone parser, trying to parse without timezone.", paramObj));
+        }
+        if (isObjInNewDateFormat(paramObj.toString())) {
+            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, newInputFormatString));
+            final DateFormat newFormat = newInputFormat;
+            synchronized (newFormat) {
+                field.set(cmdObj, newFormat.parse(paramObj.toString()));
+            }
+        } else {
+            s_logger.debug(String.format("Parsing date [%s] using the [%s] format.", paramObj, inputFormatString));
+            final DateFormat format = inputFormat;
+            synchronized (format) {
+                Date date = format.parse(paramObj.toString());
+                if (field.getName().equals("startDate")) {
+                    date = messageDate(date, 0, 0, 0);
+                } else if (field.getName().equals("endDate")) {
+                    date = messageDate(date, 23, 59, 59);
+                }
+                field.set(cmdObj, date);
+            }
         }
     }
 

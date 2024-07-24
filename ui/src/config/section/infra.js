@@ -23,6 +23,7 @@ import clusters from '@/config/section/infra/clusters'
 import hosts from '@/config/section/infra/hosts'
 import primaryStorages from '@/config/section/infra/primaryStorages'
 import secondaryStorages from '@/config/section/infra/secondaryStorages'
+import objectStorages from '@/config/section/infra/objectStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
 import ilbvms from '@/config/section/infra/ilbvms'
@@ -49,6 +50,7 @@ export default {
     hosts,
     primaryStorages,
     secondaryStorages,
+    objectStorages,
     systemVms,
     routers,
     ilbvms,
@@ -77,6 +79,7 @@ export default {
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
       details: ['name', 'id', 'type', 'sent', 'description'],
+      searchFilters: ['name', 'type'],
       actions: [
         {
           api: 'archiveAlerts',

@@ -48,6 +48,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.instanceconversionsupported">
+        <div>
+          <strong>{{ $t('label.instance.conversion.support') }}</strong>
+          <div>
+            {{ host.instanceconversionsupported }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>
@@ -104,7 +112,14 @@
           </div>
         </div>
       </a-list-item>
-
+      <a-list-item>
+        <div>
+          <strong>{{ $t('label.uefi.supported') }}</strong>
+          <div>
+            {{ host.ueficapability }}
+          </div>
+        </div>
+      </a-list-item>
     </a-list>
   </a-spin>
 </template>

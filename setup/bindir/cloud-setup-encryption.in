@@ -63,7 +63,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@COMMONLIBDIR@/lib/jasypt-1.9.3.jar'
+    encryptionJarPath = '@COMMONLIBDIR@/lib/cloudstack-utils.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 
@@ -183,8 +183,8 @@ for example:
         self.success = True # At here, we have done successfully and nothing more after this flag is set
                         
     def processEncryptionStuff(self):
-        def encrypt(input):
-            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+        def encrypt(value):
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"']
             return runCmd(cmd).strip('\n')
         
         def saveMgmtServerSecretKey():

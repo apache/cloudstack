@@ -163,6 +163,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "the domain name of the network owner")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the network belongs to", since = "4.19.0.0")
+    private String domainPath;
+
     @SerializedName("isdefault")
     @Param(description = "true if network is default, false otherwise")
     private Boolean isDefault;
@@ -202,6 +206,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
     @Param(description = "the name of the Network associated with this network")
     private String associatedNetworkName;
+
+    @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
+    @Param(description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
@@ -416,6 +424,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.domain = domain;
     }
 
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
     public void setNetworkOfferingAvailability(String networkOfferingAvailability) {
         this.networkOfferingAvailability = networkOfferingAvailability;
     }
@@ -546,12 +558,20 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.redundantRouter = redundantRouter;
     }
 
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
+    }
+
     public Boolean getSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
     }
 
     public void setSupportsVmAutoScaling(Boolean supportsVmAutoScaling) {
         this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    public void setTungstenVirtualRouterUuid(String tungstenVirtualRouterUuid) {
+        this.tungstenVirtualRouterUuid = tungstenVirtualRouterUuid;
     }
 
     public String getVpcName() {

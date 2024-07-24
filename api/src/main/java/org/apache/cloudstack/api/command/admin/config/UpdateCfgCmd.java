@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
@@ -150,25 +151,50 @@ public class UpdateCfgCmd extends BaseCmd {
         if (cfg != null) {
             ConfigurationResponse response = _responseGenerator.createConfigurationResponse(cfg);
             response.setResponseName(getCommandName());
-            if (getZoneId() != null) {
-                response.setScope("zone");
-            }
-            if (getClusterId() != null) {
-                response.setScope("cluster");
-            }
-            if (getStoragepoolId() != null) {
-                response.setScope("storagepool");
-            }
-            if (getAccountId() != null) {
-                response.setScope("account");
-            }
-            if (getDomainId() != null) {
-                response.setScope("domain");
-            }
-            response.setValue(value);
+            response = setResponseScopes(response);
+            response = setResponseValue(response, cfg);
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update config");
         }
+    }
+
+    /**
+     * Sets the configuration value in the response. If the configuration is in the `Hidden` or `Secure` categories, the value is encrypted before being set in the response.
+     * @param response to be set with the configuration `cfg` value
+     * @param cfg to be used in setting the response value
+     * @return the response with the configuration's value
+     */
+    public ConfigurationResponse setResponseValue(ConfigurationResponse response, Configuration cfg) {
+        if (cfg.isEncrypted()) {
+            response.setValue(DBEncryptionUtil.encrypt(getValue()));
+        } else {
+            response.setValue(getValue());
+        }
+        return response;
+    }
+
+    /**
+     * Sets the scope for the Configuration response only if the field is not null.
+     * @param response to be updated
+     * @return the response updated with the scopes
+     */
+    public ConfigurationResponse setResponseScopes(ConfigurationResponse response) {
+        if (getZoneId() != null) {
+            response.setScope("zone");
+        }
+        if (getClusterId() != null) {
+            response.setScope("cluster");
+        }
+        if (getStoragepoolId() != null) {
+            response.setScope("storagepool");
+        }
+        if (getAccountId() != null) {
+            response.setScope("account");
+        }
+        if (getDomainId() != null) {
+            response.setScope("domain");
+        }
+        return response;
     }
 }

@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
@@ -59,7 +60,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    NetworkModel _networkMgr;
+    NetworkModel networkModel;
     String _cidr;
     String _gateway;
 
@@ -114,7 +115,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         if (vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            String mac = networkModel.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
             return nicProf;
         }
@@ -140,7 +141,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
             super.reserve(nic, config, vm, dest, context);
 
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            String mac = networkModel.getNextAvailableMacAddressInNetwork(config.getId());
             nic.setMacAddress(mac);
             return;
         }
@@ -166,18 +167,24 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         assert nic.getTrafficType() == TrafficType.Control;
         HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
+            if (!VirtualNetworkApplianceManager.RemoveControlIpOnStop.valueIn(vm.getVirtualMachine().getDataCenterId())) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("not releasing %s from %s with reservationId %s, as systemvm.release.control.ip.on.stop is set to false for the data center.", nic, vm, reservationId));
+                }
+                return true;
+            }
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
             if (dcVo.getNetworkType() != NetworkType.Basic) {
                 super.release(nic, vm, reservationId);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Released nic: " + nic);
+                    s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             } else {
                 nic.deallocate();
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Released nic: " + nic);
+                    s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
                 }
                 return true;
             }
@@ -187,7 +194,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         nic.deallocate();
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Released nic: " + nic);
+            s_logger.debug(String.format("Released nic: %s for vm %s", nic, vm));
         }
 
         return true;

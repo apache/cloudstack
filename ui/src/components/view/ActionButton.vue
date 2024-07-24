@@ -21,14 +21,36 @@
       <template #title>
         {{ $t('label.view.console') }}
       </template>
-      <console :resource="resource" :size="size" />
+      <console
+        style="margin-top: -5px;"
+        :resource="resource"
+        size="default"
+        v-if="resource.id"
+        icon="code"
+      />
+    </a-tooltip>
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
+      <template #title>
+        {{ $t('label.copy.consoleurl') }}
+      </template>
+      <console
+        copyUrlToClipboard
+        style="margin-top: -5px;"
+        :resource="resource"
+        size="default"
+        v-if="resource.id"
+        icon="copy"
+      />
     </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
       :key="actionIndex"
       arrowPointAtCenter
       placement="bottomRight">
-      <template #title>
+      <template v-if="action.hoverLabel" #title>
+        {{ $t(action.hoverLabel) }}
+      </template>
+      <template v-else #title>
         {{ $t(action.label) }}
       </template>
       <a-badge

@@ -67,7 +67,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId());
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> pools = _mgr.listStoragePoolsForMigrationOfVolume(getId(), getKeyword());
         ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
 
@@ -87,7 +87,8 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
             poolResponses.add(poolResponse);
         }
         sortPoolsBySuitabilityAndName(poolResponses);
-        response.setResponses(poolResponses);
+        List<StoragePoolResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(poolResponses, this.getStartIndex(), this.getPageSizeVal());
+        response.setResponses(pagingList, poolResponses.size());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

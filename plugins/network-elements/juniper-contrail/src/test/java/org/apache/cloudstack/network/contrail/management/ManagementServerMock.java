@@ -387,7 +387,7 @@ public class ManagementServerMock {
             ConfigurationManager mgr = (ConfigurationManager)_configService;
             _zone =
                 mgr.createZone(User.UID_SYSTEM, "default", "8.8.8.8", null, "8.8.4.4", null, null /* cidr */, "ROOT", Domain.ROOT_DOMAIN, NetworkType.Advanced, null,
-                    null /* networkDomain */, false, false, null, null);
+                    null /* networkDomain */, false, false, null, null, false);
         }
     }
 

@@ -24,12 +24,17 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -212,6 +217,13 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+    @Override
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+          PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceAllocationException {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
      */
@@ -268,6 +280,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public IpAddress getIp(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#getIp(String)
+     */
+    @Override
+    public IpAddress getIp(String ipAddress) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -812,6 +833,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException {
+        return true;
+    }
+
+    @Override
     public boolean isNetworkInlineMode(Network network) {
         // TODO Auto-generated method stub
         return false;
@@ -1018,7 +1044,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, boolean forced) {
+    public Pair<NicProfile, Integer> importNic(String macAddress, int deviceId, Network network, Boolean isDefaultNic, VirtualMachine vm, IpAddresses ipAddresses, DataCenter dataCenter, boolean forced) {
         return null;
     }
 
@@ -1049,5 +1075,19 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd) {
         return false;
+    }
+
+    @Override
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
+    }
+
+    @Override
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) {
+
     }
 }

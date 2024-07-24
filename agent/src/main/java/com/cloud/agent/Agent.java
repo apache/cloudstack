@@ -40,6 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.resource.AgentStatusUpdater;
+import com.cloud.resource.ResourceStatusUpdater;
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
@@ -100,7 +103,7 @@ import com.cloud.utils.script.Script;
  *         For more configuration options, see the individual types.
  *
  **/
-public class Agent implements HandlerFactory, IAgentControl {
+public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater {
     protected static Logger s_logger = Logger.getLogger(Agent.class);
 
     public enum ExitStatus {
@@ -409,6 +412,20 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
+    public void triggerUpdate() {
+        PingCommand command = _resource.getCurrentStatus(getId());
+        command.setOutOfBand(true);
+        s_logger.debug("Sending out of band ping");
+
+        final Request request = new Request(_id, -1, command, false);
+        request.setSequence(getNextSequence());
+        try {
+            _link.send(request.toBytes());
+        } catch (final ClosedChannelException e) {
+            s_logger.warn("Unable to send ping update: " + request.toString());
+        }
+    }
+
     protected void cancelTasks() {
         synchronized (_watchList) {
             for (final WatchTask task : _watchList) {
@@ -460,6 +477,10 @@ public class Agent implements HandlerFactory, IAgentControl {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
                 s_logger.warn("Unable to send request: " + request.toString());
+            }
+
+            if (_resource instanceof ResourceStatusUpdater) {
+                ((ResourceStatusUpdater) _resource).registerStatusUpdater(this);
             }
         }
     }
@@ -822,6 +843,9 @@ public class Agent implements HandlerFactory, IAgentControl {
                     listener.processControlResponse(response, (AgentControlAnswer)answer);
                 }
             }
+        } else if (answer instanceof PingAnswer && (((PingAnswer) answer).isSendStartup()) && _reconnectAllowed) {
+            s_logger.info("Management server requested startup command to reinitialize the agent");
+            sendStartup(link);
         } else {
             setLastPingResponseTime();
         }
@@ -1117,6 +1141,12 @@ public class Agent implements HandlerFactory, IAgentControl {
                     s_logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
+                try {
+                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // wait 5 seconds before reconnecting
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
                 reconnect(task.getLink());
                 return;
             } else if (task.getType() == Task.Type.OTHER) {

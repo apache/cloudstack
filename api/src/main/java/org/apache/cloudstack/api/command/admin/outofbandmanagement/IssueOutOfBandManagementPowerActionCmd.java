@@ -114,4 +114,9 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Host;
     }
+
+    @Override
+    public Long getApiResourceId() {
+        return getHostId();
+    }
 }

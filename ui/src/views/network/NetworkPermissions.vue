@@ -44,19 +44,21 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
-          <a-popconfirm
-            :title="$t('message.confirm.remove.network.permission')"
-            @confirm="removeNetworkPermission(record.accountid, record.projectid)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')" >
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.action.delete.network.permission')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
+            <a-popconfirm
+              :title="$t('message.confirm.remove.network.permission')"
+              @confirm="removeNetworkPermission(record.accountid, record.projectid)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')" >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.action.delete.network.permission')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </template>
         </template>
 
       </a-table>
@@ -85,15 +87,12 @@
       :footer="null"
       @cancel="showResetPermissionModal = false"
       centered
-      width="auto"
-      v-ctrl-enter="resetNetworkPermission">
+      width="auto">
       {{ $t('message.confirm.reset.network.permissions') }}
-      <a-form @submit="resetNetworkPermission">
-        <div :span="24" class="action-button">
-          <a-button @click="showResetPermissionModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="resetNetworkPermission">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+      <div :span="24" class="action-button">
+        <a-button @click="showResetPermissionModal = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="resetNetworkPermission">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -140,8 +139,8 @@ export default {
           dataIndex: 'project'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ]
     }

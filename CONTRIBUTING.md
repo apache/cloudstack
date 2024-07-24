@@ -42,7 +42,7 @@ Fork the repository by clicking on the 'Fork' button on the top right hand side.
 
 On your computer, follow these steps to setup a local repository for working on ACS:
 
-``` bash
+```bash
 $ git clone https://github.com/YOUR_ACCOUNT/cloudstack.git
 $ cd cloudstack
 $ git remote add upstream https://github.com/apache/cloudstack.git
@@ -60,7 +60,7 @@ It is important that you create a new branch to make changes on and that you do 
 
 It is best practice to create a new branch each time you want to contribute to the project and only track the changes for that pull request in this branch.
 
-``` bash
+```bash
 $ git checkout -b feature_x
    (make your changes)
 $ git status
@@ -82,7 +82,7 @@ This process will do the following:
 2. Synchronize your local `main` branch with the `upstream/main` so you have all the latest changes from the project
 3. Rebase the latest project code into your `feature_x` branch so it is up-to-date with the upstream code
 
-``` bash
+```bash
 $ git checkout main
 $ git fetch upstream
 $ git rebase upstream/main
@@ -102,7 +102,7 @@ Please include JIRA id, detailed information about the bug/feature, what all tes
 
 > **IMPORTANT:** Make sure you have rebased your `feature_x` branch to include the latest code from `upstream/main` _before_ you do this.
 
-``` bash
+```bash
 $ git push origin main
 $ git push origin feature_x
 ```
@@ -128,7 +128,7 @@ Once the `feature_x` branch has been committed into the `upstream/main` branch, 
 
 You can delete these deprecated branches with the following:
 
-``` bash
+```bash
 $ git checkout main
 $ git branch -D feature_x
 $ git push origin :feature_x

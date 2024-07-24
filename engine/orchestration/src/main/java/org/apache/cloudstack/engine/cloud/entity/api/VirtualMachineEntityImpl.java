@@ -266,7 +266,7 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public void disconnectFrom(NetworkEntity netowrk, short nicId) {
+    public void disconnectFrom(NetworkEntity network, short nicId) {
         // TODO Auto-generated method stub
 
     }

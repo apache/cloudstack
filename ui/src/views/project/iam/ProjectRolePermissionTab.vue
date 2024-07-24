@@ -61,7 +61,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">
@@ -79,7 +78,7 @@
             </div>
             <div class="rules-table__col rules-table__col--description">
               <template v-if="element.description">
-                {{ record.description }}
+                {{ element.description }}
               </template>
               <div v-else class="no-description">
                 {{ $t('message.no.description') }}

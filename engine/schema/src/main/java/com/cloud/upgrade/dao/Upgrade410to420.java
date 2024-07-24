@@ -1884,7 +1884,7 @@ public class Upgrade410to420 implements DbUpgrade {
             //Update all snapshots except KVM snapshots
             int rowCount = snapshotStoreInsert.executeUpdate();
             s_logger.debug("Inserted " + rowCount + " snapshots into snapshot_store_ref");
-            //backsnap_id for KVM snapshots is complate path. CONCAT is not required
+            //backsnap_id for KVM snapshots is complete path. CONCAT is not required
             try(PreparedStatement snapshotStoreInsert_2 =
                     conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");) {
                 rowCount = snapshotStoreInsert_2.executeUpdate();

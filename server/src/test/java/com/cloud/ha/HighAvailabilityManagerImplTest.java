@@ -31,6 +31,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.log4j.Logger;
@@ -58,6 +59,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -65,8 +67,10 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -119,6 +123,14 @@ public class HighAvailabilityManagerImplTest {
     SecondaryStorageVmManager secondaryStorageVmManager;
     @Mock
     HostVO hostVO;
+    @Mock
+    VolumeDao volumeDao;
+    @Mock
+    DataStoreProviderManager dataStoreProviderMgr;
+    @Mock
+    VpcVirtualNetworkApplianceService routerService;
+    @Mock
+    UserVmManager userVmManager;
 
     HighAvailabilityManagerImpl highAvailabilityManager;
     HighAvailabilityManagerImpl highAvailabilityManagerSpy;

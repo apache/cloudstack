@@ -33,9 +33,18 @@ export default {
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created', 'hostcontrolstate'],
   resourceType: 'VirtualRouter',
+  filters: () => {
+    const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+  }, {
+    name: 'metrics',
+    resourceType: 'DomainRouter',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+    show: () => { return store.getters.features.instancesstatsuseronly === false }
   }, {
     name: 'nics',
     component: shallowRef(defineAsyncComponent(() => import('@/views/network/NicsTable.vue')))

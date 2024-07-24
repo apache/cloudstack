@@ -101,10 +101,9 @@ public class ImageStoreUtil {
 
     public static boolean isCompressedExtension(String path) {
         final String lowerCasePath = path.toLowerCase();
-        return UriUtils.COMMPRESSION_FORMATS
+        return UriUtils.COMPRESSION_FORMATS
                        .stream()
                        .map(extension -> "." + extension)
                        .anyMatch(lowerCasePath::endsWith);
     }
 }
-

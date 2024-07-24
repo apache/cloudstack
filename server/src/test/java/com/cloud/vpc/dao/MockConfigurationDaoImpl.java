@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.util.HashMap;
-import java.util.Map;
-
-
+import com.cloud.utils.db.GenericDaoBase;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
-import com.cloud.utils.db.GenericDaoBase;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MockConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
 

@@ -63,7 +63,7 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     @Override
     public long getDomainReservation(Long domainId, Resource.ResourceType resourceType) {
         long total = 0;
-        SearchCriteria<ReservationVO> sc = listAccountAndTypeSearch.create();
+        SearchCriteria<ReservationVO> sc = listDomainAndTypeSearch.create();
         sc.setParameters(DOMAIN_ID, domainId);
         sc.setParameters(RESOURCE_TYPE, resourceType);
         List<ReservationVO> reservations = listBy(sc);

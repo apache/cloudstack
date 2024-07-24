@@ -441,6 +441,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                         } else {
                             guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
                         }
+                        nic.setIpv4AllocationRaceCheck(true);
                     }
                     if (guestIp == null && network.getGuestType() != GuestType.L2 && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                         throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
@@ -544,5 +545,23 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{UseSystemGuestVlans};
+    }
+
+    public Network updateNetworkDesignForIPv6IfNeeded(NetworkVO network, Network userSpecified) {
+        if (userSpecified == null) {
+            return network;
+        }
+        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
+        }
+        if (userSpecified.getIp6Cidr() != null) {
+            network.setIp6Cidr(userSpecified.getIp6Cidr());
+            network.setIp6Gateway(userSpecified.getIp6Gateway());
+        }
+        if (userSpecified.getRouterIpv6() != null) {
+            network.setRouterIpv6(userSpecified.getRouterIpv6());
+        }
+        return network;
     }
 }

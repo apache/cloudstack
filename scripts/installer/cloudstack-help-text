@@ -21,7 +21,7 @@ ACL_MINOR_VERSION=$(echo $ACS_VERSION | cut -d'-' -f1)
 
 case $1 in
     management)
-        PACKAGE="Managment Server"
+        PACKAGE="Management Server"
         ;;
     usage)
         PACKAGE="Usage Server"

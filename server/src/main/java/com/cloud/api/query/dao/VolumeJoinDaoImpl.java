@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -147,8 +148,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
-            if (view == ResponseView.Full)
-                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
+            if (view == ResponseView.Full) {
+                Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
+                volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
+            }
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
                 if (volume.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
@@ -177,6 +180,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (view == ResponseView.Full) {
             volResponse.setPath(volume.getPath());
+            volResponse.setEncryptionFormat(volume.getEncryptionFormat());
         }
 
         // populate owner.
@@ -184,8 +188,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (volume.getDiskOfferingId() > 0) {
             DiskOffering computeOnlyDiskOffering  = ApiDBUtils.findComputeOnlyDiskOfferingById(volume.getDiskOfferingId());
-            if (computeOnlyDiskOffering != null) {
-                ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId());
+            ServiceOffering serviceOffering = getServiceOfferingForDiskOffering(volume, computeOnlyDiskOffering);
+            if (serviceOffering != null) {
                 volResponse.setServiceOfferingId(String.valueOf(serviceOffering.getId()));
                 volResponse.setServiceOfferingName(serviceOffering.getName());
                 volResponse.setServiceOfferingDisplayText(serviceOffering.getDisplayText());
@@ -209,9 +213,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         if (view == ResponseView.Full) {
             if (volume.getState() != Volume.State.UploadOp) {
                 if (volume.getHypervisorType() != null) {
-                    volResponse.setHypervisor(volume.getHypervisorType().toString());
+                    volResponse.setHypervisor(volume.getHypervisorType().getHypervisorDisplayName());
                 } else {
-                    volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
+                    Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
+                    volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
                 }
             }
             Long poolId = volume.getPoolId();
@@ -274,7 +279,29 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         volResponse.setObjectName("volume");
         volResponse.setExternalUuid(volume.getExternalUuid());
+        volResponse.setEncryptionFormat(volume.getEncryptionFormat());
         return volResponse;
+    }
+
+    /**
+     * gets the {@see ServiceOffering} for the {@see Volume} with {@see DiskOffering}
+     * It will first try existing ones
+     * If not found it will try to get a removed one
+     *
+     * @param volume
+     * @param computeOnlyDiskOffering
+     * @return the resulting offering or null
+     */
+    private static ServiceOffering getServiceOfferingForDiskOffering(VolumeJoinVO volume, DiskOffering computeOnlyDiskOffering) {
+        ServiceOffering serviceOffering = null;
+        if (computeOnlyDiskOffering != null) {
+            serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), false);
+            if (serviceOffering == null) {
+                // Check again for removed ones
+                serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
+            }
+        }
+        return serviceOffering;
     }
 
     @Override

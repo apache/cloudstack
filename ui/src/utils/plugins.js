@@ -65,7 +65,8 @@ export const pollJobPlugin = {
         key: jobId,
         title,
         description,
-        status: 'progress'
+        status: 'progress',
+        timestamp: new Date()
       })
 
       eventBus.on('update-job-details', (args) => {
@@ -107,7 +108,8 @@ export const pollJobPlugin = {
             title,
             description,
             status: 'done',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
@@ -157,7 +159,8 @@ export const pollJobPlugin = {
             title,
             description: desc,
             status: 'failed',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
@@ -345,7 +348,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
         return true
       } else {
         return false
@@ -387,6 +390,10 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -414,6 +421,7 @@ export const resourceTypePlugin = {
         case 'AffinityGroup':
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
+        case 'QuotaTariff':
           return resourceType.toLowerCase()
       }
       return ''
@@ -478,11 +486,27 @@ export const fileSizeUtilPlugin = {
   }
 }
 
+function isBase64 (str) {
+  try {
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)))
+    return btoa(decoded) === str
+  } catch (err) {
+    return false
+  }
+}
+
 export const genericUtilPlugin = {
   install (app) {
     app.config.globalProperties.$isValidUuid = function (uuid) {
       const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
       return regexExp.test(uuid)
+    }
+
+    app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
+      if (isBase64(text)) {
+        return text
+      }
+      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }

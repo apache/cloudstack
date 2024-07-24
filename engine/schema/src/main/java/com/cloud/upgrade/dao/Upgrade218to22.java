@@ -1168,7 +1168,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.executeUpdate();
             s_logger.debug("Upgraded userStatistcis with device_type=DomainRouter");
 
-            // update device_id infrormation
+            // update device_id information
             try (
                     PreparedStatement selectUserStatistics = conn.prepareStatement("SELECT id, account_id, data_center_id FROM user_statistics");
                     ResultSet rs = selectUserStatistics.executeQuery();
@@ -1204,7 +1204,7 @@ public class Upgrade218to22 implements DbUpgrade {
                                     selectnonRemovedVms.setLong(2, dataCenterId);
                                     try (ResultSet nonRemovedVms = selectnonRemovedVms.executeQuery();) {
                                         if (nonRemovedVms.next()) {
-                                            s_logger.warn("Failed to find domR for for account id=" + accountId + " in zone id=" + dataCenterId +
+                                            s_logger.warn("Failed to find domR for account id=" + accountId + " in zone id=" + dataCenterId +
                                                     "; will try to locate domR based on user_vm info");
                                             //try to get domR information from the user_vm belonging to the account
                                             try (PreparedStatement selectNetworkType =

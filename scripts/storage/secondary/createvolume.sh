@@ -18,8 +18,8 @@
 
  
 
-# $Id: createtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/createtmplt.sh $
-# createtmplt.sh -- install a volume
+# $Id: createvolume.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/createvolume.sh $
+# createvolume.sh -- install a volume
 
 usage() {
   printf "Usage: %s: -t <volume-fs> -n <volumename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u] [-v]\n" $(basename $0) >&2

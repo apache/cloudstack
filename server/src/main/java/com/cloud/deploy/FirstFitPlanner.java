@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.CapacityVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -124,7 +125,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     protected String allocationAlgorithm = "random";
     protected String globalDeploymentPlanner = "FirstFitPlanner";
-    protected String[] implicitHostTags;
+    protected String[] implicitHostTags = new String[0];
 
     @Override
     public List<Long> orderClusters(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
@@ -214,11 +215,11 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             Long uniqueTags;
             for (Long clusterId : clusterList) {
                 uniqueTags = (long) 0;
-            List<Long> hostList = capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
-            if (!hostList.isEmpty() && implicitHostTags.length > 0) {
-                uniqueTags = new Long(hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size());
-                uniqueTags = uniqueTags + getHostsByCapability(hostList, Host.HOST_UEFI_ENABLE);
-            }
+                List<Long> hostList = capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
+                if (!hostList.isEmpty() && implicitHostTags.length > 0) {
+                    uniqueTags = new Long(hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size());
+                    uniqueTags = uniqueTags + getHostsByCapability(hostList, Host.HOST_UEFI_ENABLE);
+                }
                 UniqueTagsInClusterMap.put(clusterId, uniqueTags);
             }
             Collections.sort(clusterList, new Comparator<Long>() {
@@ -521,6 +522,12 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     private void removeClustersWithoutMatchingTag(List<Long> clusterListForVmAllocation, String hostTagOnOffering) {
 
         List<Long> matchingClusters = hostDao.listClustersByHostTag(hostTagOnOffering);
+        matchingClusters.addAll(hostDao.findClustersThatMatchHostTagRule(hostTagOnOffering));
+
+        if (matchingClusters.isEmpty()) {
+            s_logger.error(String.format("No suitable host found in any cluster for the following compute offering tags [%s].", hostTagOnOffering));
+            throw new CloudRuntimeException("No suitable host found.");
+        }
 
         clusterListForVmAllocation.retainAll(matchingClusters);
 

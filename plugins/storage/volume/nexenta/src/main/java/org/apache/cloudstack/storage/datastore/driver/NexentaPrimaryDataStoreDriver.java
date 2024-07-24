@@ -49,7 +49,9 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.host.Host;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.dao.AccountDao;
@@ -256,5 +258,19 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return false;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
+    }
+
+    @Override
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
     }
 }

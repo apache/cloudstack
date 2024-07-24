@@ -48,15 +48,24 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="form.ostypeid"
             :loading="osTypes.loading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+            <a-select-option
+              v-for="opt in osTypes.opts"
+              :key="opt.id"
+              :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
+          <template #label>
+            <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+          </template>
+          <a-switch v-model:checked="form.isdynamicallyscalable" />
         </a-form-item>
 
         <a-row :gutter="12">
@@ -69,12 +78,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 v-model:value="userdataid"
                 :placeholder="linkUserDataParams.userdataid.description"
                 :loading="userdata.loading">
-                <a-select-option v-for="opt in userdata.opts" :key="opt.id">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -86,13 +95,17 @@
                 <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
               </template>
               <a-select
+                showSearch
                 v-model:value="userdatapolicy"
                 :placeholder="linkUserDataParams.userdatapolicy.description"
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id">
+                <a-select-option
+                  v-for="opt in userdatapolicylist.opts"
+                  :key="opt.id"
+                  :label="opt.name || opt.description">
                   {{ opt.id || opt.description }}
                 </a-select-option>
               </a-select>
@@ -155,7 +168,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'ostypeid', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
 
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]

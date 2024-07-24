@@ -193,4 +193,3 @@ UPDATE `cloud`.`nics` SET strategy='Create' where reserver_name='DirectNetworkGu
 
 UPDATE storage_pool SET cluster_id=(SELECT cluster_id FROM host INNER JOIN storage_pool_host_ref WHERE host.id=storage_pool_host_ref.host_id AND storage_pool_host_ref.pool_id=storage_pool.id) WHERE pool_type='LVM';
 UPDATE `cloud`.`host` SET resource='com.cloud.hypervisor.xen.resource.XenServer56FP1Resource' WHERE resource='com.cloud.hypervisor.xen.resource.XenServer56FP1PremiumResource';
-

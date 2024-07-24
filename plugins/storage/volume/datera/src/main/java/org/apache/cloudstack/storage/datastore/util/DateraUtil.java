@@ -64,7 +64,7 @@ public class DateraUtil {
     public static final String DRIVER_VERSION = "4.13.0-v2.0.0";
 
     private static final String HEADER_AUTH_TOKEN = "auth-token";
-    private static final String HEADER_CONTENT_TYPE = "Content-type";
+    private static final String HEADER_CONTENT_TYPE = "content-type";
     private static final String HEADER_VALUE_JSON = "application/json";
 
     public static final String MANAGEMENT_VIP = "mVip";
@@ -943,7 +943,7 @@ public class DateraUtil {
     }
 
     /**
-     * Checks wether a host initiator is present in an initiator group
+     * Checks whether a host initiator is present in an initiator group
      *
      * @param initiator      Host initiator to check
      * @param initiatorGroup the initiator group

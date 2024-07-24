@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.acl.RoleType;
+import com.cloud.offering.ServiceOffering.State;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -76,16 +77,19 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_TAGS,
             type = CommandType.STRING,
             description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String storageTags;
 
     @Parameter(name = ApiConstants.HOST_TAGS,
             type = CommandType.STRING,
             description = "the host tag for this service offering.",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String hostTags;
+
+    @Parameter(name = ApiConstants.STATE,
+            type = CommandType.STRING,
+            description = "state of the service offering")
+    private String serviceOfferingState;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -173,6 +177,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public String getHostTags() {
         return hostTags;
+    }
+
+    public State getState() {
+        State state = EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
+        if (StringUtils.isNotBlank(serviceOfferingState) && state == null) {
+            throw new InvalidParameterValueException("Invalid state value: " + serviceOfferingState);
+        }
+        return state;
     }
 
     /////////////////////////////////////////////////////

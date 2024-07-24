@@ -22,6 +22,7 @@ package com.cloud.utils.script;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -136,6 +137,38 @@ public abstract class OutputInterpreter {
         public String getLines() {
             return allLines;
         }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
     }
 
+    public static class LineByLineOutputLogger extends OutputInterpreter {
+        private Logger logger;
+        private String logPrefix;
+
+        public LineByLineOutputLogger(Logger logger) {
+            this.logger = logger;
+        }
+
+        public LineByLineOutputLogger(Logger logger, String logPrefix) {
+            this.logger = logger;
+            this.logPrefix = logPrefix;
+        }
+
+        @Override
+        public boolean drain() {
+            return true;
+        }
+
+        @Override
+        public String interpret(BufferedReader reader) throws IOException {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                logger.info(StringUtils.isNotBlank(logPrefix) ? String.format("(%s) %s", logPrefix, line) : line);
+            }
+            return null;
+        }
+    }
 }

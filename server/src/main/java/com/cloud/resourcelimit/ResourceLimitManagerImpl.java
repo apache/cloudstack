@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -29,6 +31,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -42,6 +47,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.user.ResourceReservation;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -103,12 +110,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
@@ -162,6 +167,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private VpcDao _vpcDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -172,6 +179,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> domainResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
+
+    protected void removeResourceReservationIfNeededAndIncrementResourceCount(final long accountId, final ResourceType type, final long numToIncrement) {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+
+                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+                if (obj instanceof Long) {
+                    reservationDao.remove((long)obj);
+                }
+                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
+                    // we should fail the operation (resource creation) when failed to update the resource count
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
+                }
+            }
+        });
+    }
 
     @Override
     public boolean start() {
@@ -270,12 +294,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
-            // we should fail the operation (resource creation) when failed to update the resource count
-            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-        }
+        final long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
+        removeResourceReservationIfNeededAndIncrementResourceCount(accountId, type, numToIncrement);
     }
 
     @Override
@@ -433,8 +453,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                 long currentResourceReservation = reservationDao.getDomainReservation(domainId, type);
                 long requestedDomainResourceCount = currentDomainResourceCount + currentResourceReservation + numResources;
-                String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
-                        + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
+
+                String convDomainResourceLimit = String.valueOf(domainResourceLimit);
+                String convCurrentDomainResourceCount = String.valueOf(currentDomainResourceCount);
+                String convCurrentResourceReservation = String.valueOf(currentResourceReservation);
+                String convNumResources = String.valueOf(numResources);
+
+                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                    convDomainResourceLimit = toHumanReadableSize(domainResourceLimit);
+                    convCurrentDomainResourceCount = toHumanReadableSize(currentDomainResourceCount);
+                    convCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
+                    convNumResources = toHumanReadableSize(numResources);
+                }
+
+                String messageSuffix = String.format(
+                        " domain resource limits of Type '%s' for Domain Id = %s is exceeded: Domain Resource Limit = %s, " +
+                        "Current Domain Resource Amount = %s, Current Resource Reservation = %s, Requested Resource Amount = %s.",
+                        type, domainId, convDomainResourceLimit,
+                        convCurrentDomainResourceCount, convCurrentResourceReservation, convNumResources
+                );
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Checking if" + messageSuffix);
@@ -460,17 +497,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
+        String convertedCurrentResourceReservation = String.valueOf(currentResourceReservation);
         String convertedNumResources = String.valueOf(numResources);
 
         if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
+            convertedCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
             convertedNumResources = toHumanReadableSize(numResources);
         }
 
-        String messageSuffix = " amount of resources of Type = '" + type + "' for " + (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName())
-                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + convertedAccountResourceLimit + ", Current Account Resource Amount = " + convertedCurrentResourceCount
-                + ", Requested Resource Amount = " + convertedNumResources + ".";
+        String messageSuffix = String.format(
+                " amount of resources of Type = '%s' for %s in Domain Id = %s is exceeded: " +
+                "Account Resource Limit = %s, Current Account Resource Amount = %s, Current Account Resource Reservation = %s, Requested Resource Amount = %s.",
+                type, (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName()), account.getDomainId(),
+                convertedAccountResourceLimit, convertedCurrentResourceCount, convertedCurrentResourceReservation, convertedNumResources
+        );
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if" + messageSuffix);
@@ -510,6 +552,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             resourceLimit = Long.valueOf(Resource.RESOURCE_UNLIMITED);
         }
         return resourceLimit;
+    }
+
+    @Override
+    public long findCorrectResourceLimitForAccountAndDomain(Account account, Domain domain, ResourceType type) {
+        long maxSecondaryStorageForAccount = findCorrectResourceLimitForAccount(account, type);
+        long maxSecondaryStorageForDomain = findCorrectResourceLimitForDomain(domain, type);
+
+        if (maxSecondaryStorageForDomain == Resource.RESOURCE_UNLIMITED || maxSecondaryStorageForAccount == Resource.RESOURCE_UNLIMITED) {
+            return Math.max(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
+        }
+
+        return Math.min(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
     }
 
     @Override
@@ -654,7 +708,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (isAccount) {
                     if (accountLimitStr.size() < resourceTypes.length) {
                         for (ResourceType rt : resourceTypes) {
-                            if (!accountLimitStr.contains(rt.toString()) && rt.supportsOwner(ResourceOwnerType.Account)) {
+                            if (!accountLimitStr.contains(rt.toString())) {
                                 limits.add(new ResourceLimitVO(rt, findCorrectResourceLimitForAccount(_accountMgr.getAccount(accountId), rt), accountId, ResourceOwnerType.Account));
                             }
                         }
@@ -663,7 +717,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 } else {
                     if (domainLimitStr.size() < resourceTypes.length) {
                         for (ResourceType rt : resourceTypes) {
-                            if (!domainLimitStr.contains(rt.toString()) && rt.supportsOwner(ResourceOwnerType.Domain)) {
+                            if (!domainLimitStr.contains(rt.toString())) {
                                 limits.add(new ResourceLimitVO(rt, findCorrectResourceLimitForDomain(_domainDao.findById(domainId), rt), domainId, ResourceOwnerType.Domain));
                             }
                         }
@@ -808,16 +862,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         for (ResourceType type : resourceTypes) {
             if (accountId != null) {
-                if (type.supportsOwner(ResourceOwnerType.Account)) {
-                    count = recalculateAccountResourceCount(accountId, type);
-                    counts.add(new ResourceCountVO(type, count, accountId, ResourceOwnerType.Account));
-                }
+                count = recalculateAccountResourceCount(accountId, type);
+                counts.add(new ResourceCountVO(type, count, accountId, ResourceOwnerType.Account));
 
             } else {
-                if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    count = recalculateDomainResourceCount(domainId, type);
-                    counts.add(new ResourceCountVO(type, count, domainId, ResourceOwnerType.Domain));
-                }
+                count = recalculateDomainResourceCount(domainId, type);
+                counts.add(new ResourceCountVO(type, count, domainId, ResourceOwnerType.Domain));
             }
         }
 
@@ -874,25 +924,20 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
                 List<DomainVO> domainChildren = _domainDao.findImmediateChildrenForParent(domainId);
                 // for each child domain update the resource count
-                if (type.supportsOwner(ResourceOwnerType.Domain)) {
 
-                    // calculate project count here
-                    if (type == ResourceType.project) {
-                        newResourceCount += _projectDao.countProjectsForDomain(domainId);
-                    }
-
-                    for (DomainVO childDomain : domainChildren) {
-                        long childDomainResourceCount = recalculateDomainResourceCount(childDomain.getId(), type);
-                        newResourceCount += childDomainResourceCount; // add the child domain count to parent domain count
-                    }
+                // calculate project count here
+                if (type == ResourceType.project) {
+                    newResourceCount += _projectDao.countProjectsForDomain(domainId);
                 }
 
-                if (type.supportsOwner(ResourceOwnerType.Account)) {
-                    List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
-                    for (AccountVO account : accounts) {
-                        long accountResourceCount = recalculateAccountResourceCount(account.getId(), type);
-                        newResourceCount += accountResourceCount; // add account's resource count to parent domain count
-                    }
+                for (DomainVO childDomain : domainChildren) {
+                    long childDomainResourceCount = recalculateDomainResourceCount(childDomain.getId(), type);
+                    newResourceCount += childDomainResourceCount; // add the child domain count to parent domain count
+                }
+                List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
+                for (AccountVO account : accounts) {
+                    long accountResourceCount = recalculateAccountResourceCount(account.getId(), type);
+                    newResourceCount += accountResourceCount; // add account's resource count to parent domain count
                 }
                 _resourceCountDao.setResourceCount(domainId, ResourceOwnerType.Domain, type, newResourceCount);
 
@@ -1133,24 +1178,75 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         @Override
         protected void runInContext() {
+            GlobalLock lock = GlobalLock.getInternLock("ResourceCheckTask");
+            try {
+                if (lock.lock(30)) {
+                    try {
+                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                            s_logger.trace("Skipping the resource counters recalculation task on this management server");
+                            return;
+                        }
+                        runResourceCheckTaskInternal();
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+            } finally {
+                lock.releaseRef();
+            }
+        }
+
+        private void runResourceCheckTaskInternal() {
             s_logger.info("Started resource counters recalculation periodic task.");
-            List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
-            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            List<DomainVO> domains;
+            List<AccountVO> accounts;
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch immediate children for the domain " + Domain.ROOT_DOMAIN, e);
+                // initialize domains as empty list to do best effort recalculation
+                domains = new ArrayList<>();
+            }
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch active accounts for domain " + Domain.ROOT_DOMAIN, e);
+                // initialize accounts as empty list to do best effort recalculation
+                accounts = new ArrayList<>();
+            }
 
             for (ResourceType type : ResourceType.values()) {
-                if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
+                if (CollectionUtils.isEmpty(domains)) {
+                    recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
+                } else {
                     for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
                     }
                 }
 
-                if (type.supportsOwner(ResourceOwnerType.Account)) {
-                    // run through the accounts in the root domain
-                    for (AccountVO account : accounts) {
-                        recalculateAccountResourceCount(account.getId(), type);
-                    }
+                // run through the accounts in the root domain
+                for (AccountVO account : accounts) {
+                    recalculateAccountResourceCountInContext(account.getId(), type);
                 }
+            }
+            s_logger.info("Finished resource counters recalculation periodic task.");
+        }
+
+        private void recalculateDomainResourceCountInContext(long domainId, ResourceType type) {
+            try {
+                recalculateDomainResourceCount(domainId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the domain " + domainId + " and the resource type " + type + " .", e);
+            }
+        }
+        private void recalculateAccountResourceCountInContext(long accountId, ResourceType type) {
+            try {
+                recalculateAccountResourceCount(accountId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the account " + accountId + " and the resource type " + type + " .", e);
             }
         }
     }

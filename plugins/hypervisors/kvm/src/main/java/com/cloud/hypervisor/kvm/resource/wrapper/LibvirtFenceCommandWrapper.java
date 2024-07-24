@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
-import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.hypervisor.kvm.resource.KVMHAChecker;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -47,7 +47,7 @@ public final class LibvirtFenceCommandWrapper extends CommandWrapper<FenceComman
         final ExecutorService executors = Executors.newSingleThreadExecutor();
         final KVMHAMonitor monitor = libvirtComputingResource.getMonitor();
 
-        final List<NfsStoragePool> pools = monitor.getStoragePools();
+        final List<HAStoragePool> pools = monitor.getStoragePools();
 
         /**
          * We can only safely fence off hosts when we use NFS
@@ -60,7 +60,7 @@ public final class LibvirtFenceCommandWrapper extends CommandWrapper<FenceComman
             return new FenceAnswer(command, false, logline);
         }
 
-        final KVMHAChecker ha = new KVMHAChecker(pools, command.getHostIp());
+        final KVMHAChecker ha = new KVMHAChecker(pools, command.getHost(), command.isReportCheckFailureIfOneStorageIsDown());
 
         final Future<Boolean> future = executors.submit(ha);
         try {

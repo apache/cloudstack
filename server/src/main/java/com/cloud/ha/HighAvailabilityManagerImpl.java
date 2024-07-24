@@ -28,7 +28,13 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -62,18 +68,23 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -133,6 +144,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     private ConsoleProxyManager consoleProxyManager;
     @Inject
     private SecondaryStorageVmManager secondaryStorageVmManager;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderMgr;
+    @Inject
+    VpcVirtualNetworkApplianceService routerService;
+    @Inject
+    UserVmManager userVmManager;
 
     long _serverId;
 
@@ -314,6 +333,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     protected void wakeupWorkers() {
+        s_logger.debug("Wakeup workers HA");
         for (WorkerThread worker : _workers) {
             worker.wakup();
         }
@@ -332,6 +352,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     @Override
     public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
+        s_logger.debug("HA schedule restart");
         Long hostId = vm.getHostId();
         if (hostId == null) {
             try {
@@ -424,7 +445,38 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     }
 
+    private void startVm(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        CallContext ctx = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+        ctx.setEventResourceId(vm.getId());
+        try {
+            switch (vm.getType()) {
+                case DomainRouter:
+                    ctx.setEventResourceType(ApiCommandResourceType.DomainRouter);
+                    routerService.startRouterForHA(vm, params, planner);
+                    break;
+                case ConsoleProxy:
+                    ctx.setEventResourceType(ApiCommandResourceType.ConsoleProxy);
+                    consoleProxyManager.startProxyForHA(vm, params, planner);
+                    break;
+                case SecondaryStorageVm:
+                    ctx.setEventResourceType(ApiCommandResourceType.SystemVm);
+                    secondaryStorageVmManager.startSecStorageVmForHA(vm, params, planner);
+                    break;
+                case User:
+                    userVmManager.startVirtualMachineForHA(vm, params, planner);
+                    break;
+                default:
+                    _itMgr.advanceStart(vm.getUuid(), params, planner);
+            }
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
     protected Long restart(final HaWorkVO work) {
+        s_logger.debug("RESTART with HAWORK");
         List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
         if (items.size() > 0) {
             StringBuilder str = new StringBuilder("Cancelling this work item because newer ones have been scheduled.  Work Ids = [");
@@ -599,11 +651,25 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
 
             try{
+                if (HypervisorType.KVM == host.getHypervisorType()) {
+                    List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+                    for (VolumeVO volumeVO : volumes) {
+                        //detach the volumes from all clusters before starting the VM on another host.
+                        if (volumeVO.getPoolType() == StoragePoolType.StorPool) {
+                            DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(volumeVO.getPoolType().name());
+                            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+                            if (storeDriver instanceof PrimaryDataStoreDriver) {
+                                PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+                                primaryStoreDriver.detachVolumeFromAllStorageNodes(volumeVO);
+                            }
+                        }
+                    }
+                }
                 // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
-                _itMgr.advanceStart(vm.getUuid(), params, null);
-            }catch (InsufficientCapacityException e){
+                startVm(vm, params, null);
+            } catch (InsufficientCapacityException e){
                 s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
-                _itMgr.advanceStart(vm.getUuid(), params, _haPlanners.get(0));
+                startVm(vm, params, _haPlanners.get(0));
             }
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
@@ -625,7 +691,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         } catch (final ResourceUnavailableException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " +
-                hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                hostDesc, "The resource is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " +
@@ -633,7 +699,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), "Unable to restart " + vm.getHostName() + " which was running on host " +
-                hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                    hostDesc, "The operation timed out while trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
         }
         vm = _itMgr.findById(vm.getId());
         work.setUpdateTime(vm.getUpdated());
@@ -1064,6 +1130,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {TimeBetweenCleanup, MigrationMaxRetries, TimeToSleep, TimeBetweenFailures,
             StopRetryInterval, RestartRetryInterval, MigrateRetryInterval, InvestigateRetryInterval,
-            HAWorkers, ForceHA};
+            HAWorkers, ForceHA, KvmHAFenceHostIfHeartbeatFailsOnStorage};
     }
 }

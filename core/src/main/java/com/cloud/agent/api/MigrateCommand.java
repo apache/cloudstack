@@ -40,6 +40,9 @@ public class MigrateCommand extends Command {
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+
+    private int newVmCpuShares;
+
     Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
@@ -138,6 +141,14 @@ public class MigrateCommand extends Command {
         this.migrateDiskInfoList = migrateDiskInfoList;
     }
 
+    public int getNewVmCpuShares() {
+        return newVmCpuShares;
+    }
+
+    public void setNewVmCpuShares(int newVmCpuShares) {
+        this.newVmCpuShares = newVmCpuShares;
+    }
+
     public static class MigrateDiskInfo {
         public enum DiskType {
             FILE, BLOCK;
@@ -171,6 +182,7 @@ public class MigrateCommand extends Command {
         private final DriverType driverType;
         private final Source source;
         private final String sourceText;
+        private final String backingStoreText;
         private boolean isSourceDiskOnStorageFileSystem;
 
         public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
@@ -179,6 +191,16 @@ public class MigrateCommand extends Command {
             this.driverType = driverType;
             this.source = source;
             this.sourceText = sourceText;
+            this.backingStoreText = null;
+        }
+
+        public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText, final String backingStoreText) {
+            this.serialNumber = serialNumber;
+            this.diskType = diskType;
+            this.driverType = driverType;
+            this.source = source;
+            this.sourceText = sourceText;
+            this.backingStoreText = backingStoreText;
         }
 
         public String getSerialNumber() {
@@ -200,6 +222,8 @@ public class MigrateCommand extends Command {
         public String getSourceText() {
             return sourceText;
         }
+
+        public String getBackingStoreText() { return backingStoreText; }
 
         public boolean isSourceDiskOnStorageFileSystem() {
             return isSourceDiskOnStorageFileSystem;

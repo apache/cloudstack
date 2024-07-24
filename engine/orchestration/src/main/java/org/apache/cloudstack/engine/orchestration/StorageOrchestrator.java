@@ -17,8 +17,8 @@
 
 package org.apache.cloudstack.engine.orchestration;
 
-import com.cloud.capacity.CapacityManager;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -53,11 +54,14 @@ import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
@@ -219,6 +223,82 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return handleResponse(futures, migrationPolicy, message, success);
     }
 
+    @Override
+    public MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList,
+            List<Long> snapshotIdList) {
+        List<DataObject> files;
+        boolean success = true;
+        String message = null;
+
+        DataStore srcDatastore = dataStoreManager.getDataStore(srcImgStoreId, DataStoreRole.Image);
+        Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
+        Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates = new HashMap<>();
+
+        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndTemplateIds(srcImgStoreId, templateIdList);
+        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndSnapshotIds(srcImgStoreId, DataStoreRole.Image, snapshotIdList);
+
+        if (!migrationHelper.filesReadyToMigrate(srcImgStoreId, templates, snapshots, Collections.emptyList())) {
+            throw new CloudRuntimeException("Migration failed as there are data objects which are not Ready - i.e, they may be in Migrating, creating, copying, etc. states");
+        }
+        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates, templates, snapshots);
+
+        if (files.isEmpty()) {
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getUuid()), null, true);
+        }
+
+        Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
+        storageCapacities.put(srcImgStoreId, new Pair<>(null, null));
+        storageCapacities.put(destImgStoreId, new Pair<>(null, null));
+        storageCapacities = getStorageCapacities(storageCapacities, srcImgStoreId);
+        storageCapacities = getStorageCapacities(storageCapacities, destImgStoreId);
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM, 30,
+                TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
+        List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
+        Date start = new Date();
+
+        while (true) {
+            DataObject chosenFileForMigration = null;
+            if (!files.isEmpty()) {
+                chosenFileForMigration = files.remove(0);
+            }
+
+            if (chosenFileForMigration == null) {
+                message = "Migration completed";
+                break;
+            }
+
+            if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
+                s_logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
+                continue;
+            }
+
+            if (storageCapacityBelowThreshold(storageCapacities, destImgStoreId)) {
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, srcDatastore, destImgStoreId, executor, futures);
+            } else {
+                message = "Migration failed. Destination store doesn't have enough capacity for migration";
+                success = false;
+                break;
+            }
+        }
+        Date end = new Date();
+
+        // Migrate any new child snapshots if created during migration
+        List<Long> migratedSnapshotIdList = snapshotChains.keySet().stream().map(DataObject::getId).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(migratedSnapshotIdList)) {
+            List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.findSnapshots(srcImgStoreId, start, end);
+            snaps.forEach(snap -> {
+                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snap.getSnapshotId(), snap.getDataStoreId(), DataStoreRole.Image);
+                SnapshotInfo parentSnapshot = snapshotInfo.getParent();
+                if (snapshotInfo.getDataStore().getId() == srcImgStoreId && parentSnapshot != null && migratedSnapshotIdList.contains(parentSnapshot.getSnapshotId())) {
+                    futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, dataStoreManager.getDataStore(destImgStoreId, DataStoreRole.Image))));
+                }
+            });
+        }
+
+        return handleResponse(futures, null, message, success);
+    }
+
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
         String message = "";
         boolean success = true;
@@ -295,7 +375,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         }
         message += ". successful migrations: "+successCount;
-        return new MigrationResponse(message, migrationPolicy.toString(), success);
+        String policy = migrationPolicy != null ? migrationPolicy.toString() : null;
+        return new MigrationResponse(message, policy, success);
     }
 
     private void handleSnapshotMigration(Long srcDataStoreId, Date start, Date end, MigrationPolicy policy,
@@ -305,7 +386,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (!snaps.isEmpty()) {
             for (SnapshotDataStoreVO snap : snaps) {
                 SnapshotVO snapshotVO = snapshotDao.findById(snap.getSnapshotId());
-                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snap.getDataStoreId(), DataStoreRole.Image);
                 SnapshotInfo parentSnapshot = snapshotInfo.getParent();
 
                 if (parentSnapshot == null && policy == MigrationPolicy.COMPLETE) {

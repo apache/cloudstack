@@ -41,9 +41,9 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="vm in virtualmachines" :key="vm.id">
+          <a-select-option v-for="vm in virtualmachines" :key="vm.id" :label="vm.name || vm.displayname">
             {{ vm.name || vm.displayname }}
           </a-select-option>
         </a-select>

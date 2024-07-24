@@ -407,7 +407,7 @@ public class RouterDeploymentDefinition {
     private void verifyServiceOfferingByUuid(String offeringUuid) {
         logger.debug("Verifying router service offering with uuid : " + offeringUuid);
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
-        if (serviceOffering != null && serviceOffering.isSystemUse()) {
+        if (serviceOffering != null && serviceOffering.isSystemUse() && ServiceOffering.State.Active.equals(serviceOffering.getState())) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
             if (isLocalStorage == diskOffering.isUseLocalStorage()) {

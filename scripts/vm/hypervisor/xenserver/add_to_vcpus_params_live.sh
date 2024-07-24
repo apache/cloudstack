@@ -30,4 +30,3 @@ if [[ $key == "cap" ]]
 then
     xe vm-param-set VCPUs-params:cap=$value uuid=$uuid
 fi
-

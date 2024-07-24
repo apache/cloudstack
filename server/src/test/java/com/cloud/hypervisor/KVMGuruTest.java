@@ -36,6 +36,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,9 +52,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.junit.Assert;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {

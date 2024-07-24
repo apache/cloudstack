@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.db.GenericDao;
+
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -27,6 +30,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "backups")
@@ -49,7 +54,11 @@ public class BackupVO implements Backup {
     private String backupType;
 
     @Column(name = "date")
-    private String date;
+    @Temporal(value = TemporalType.DATE)
+    private Date date;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    private Date removed;
 
     @Column(name = "size")
     private Long size;
@@ -114,11 +123,11 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public String getDate() {
-        return date;
+    public Date getDate() {
+        return this.date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
@@ -149,6 +158,7 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
+    @Override
     public long getBackupOfferingId() {
         return backupOfferingId;
     }
@@ -191,5 +201,13 @@ public class BackupVO implements Backup {
     @Override
     public String getName() {
         return null;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }

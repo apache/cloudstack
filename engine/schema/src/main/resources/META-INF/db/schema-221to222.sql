@@ -52,5 +52,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`version` (
   PRIMARY KEY (`id`),
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-

@@ -324,7 +324,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
         defaultNic2.setIPv4Address("");
         defaultNic2.setIPv4Gateway("");
         defaultNic2.setIPv4Netmask("");
-        String macAddress = _networkDao.getNextAvailableMacAddress(defaultPublicNetwork.getId(), null);
+        String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(defaultPublicNetwork.getId());
         defaultNic2.setMacAddress(macAddress);
 
         networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount(), _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),

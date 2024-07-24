@@ -109,7 +109,7 @@ export default {
       (state, getters) => getters.headerNotices,
       (newValue, oldValue) => {
         if (oldValue !== newValue && newValue !== undefined) {
-          this.notices = newValue.reverse()
+          this.notices = newValue
         }
       }
     )

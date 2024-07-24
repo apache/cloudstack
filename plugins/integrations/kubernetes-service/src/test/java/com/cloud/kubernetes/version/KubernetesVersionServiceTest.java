@@ -30,20 +30,23 @@ import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernet
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.version.ListKubernetesSupportedVersionsCmd;
+import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -64,14 +67,14 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ComponentContext.class})
+@RunWith(MockitoJUnitRunner.class)
 public class KubernetesVersionServiceTest {
 
     @InjectMocks
@@ -92,6 +95,9 @@ public class KubernetesVersionServiceTest {
     @Mock
     private TemplateApiService templateService;
 
+    AutoCloseable closeable;
+
+
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField(name);
         f.setAccessible(true);
@@ -100,7 +106,7 @@ public class KubernetesVersionServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         overrideDefaultConfigValue(KubernetesClusterService.KubernetesServiceEnabled, "_defaultValue", "true");
 
@@ -114,12 +120,9 @@ public class KubernetesVersionServiceTest {
         when(kubernetesSupportedVersionDao.createSearchCriteria()).thenReturn(versionSearchCriteria);
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
-        when(zone.getId()).thenReturn(1L);
         when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
 
         TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
-        when(templateJoinVO.getId()).thenReturn(1L);
-        when(templateJoinVO.getUrl()).thenReturn("https://download.cloudstack.com");
         when(templateJoinVO.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Ready);
         when(templateJoinDao.findById(Mockito.anyLong())).thenReturn(templateJoinVO);
 
@@ -130,6 +133,7 @@ public class KubernetesVersionServiceTest {
 
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -140,8 +144,13 @@ public class KubernetesVersionServiceTest {
         when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         versionVOs.add(versionVO);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
-        when(kubernetesSupportedVersionDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(versionVOs);
-        kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+        when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(SearchCriteria.class),
+                Mockito.any(Filter.class))).thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+        ListResponse<KubernetesSupportedVersionResponse> versionsResponse =
+                kubernetesVersionService.listKubernetesSupportedVersions(cmd);
+        Assert.assertEquals(versionVOs.size(), versionsResponse.getCount().intValue());
+        Assert.assertTrue(CollectionUtils.isNotEmpty(versionsResponse.getResponses()));
+        Assert.assertEquals(versionVOs.size(), versionsResponse.getResponses().size());
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -206,13 +215,22 @@ public class KubernetesVersionServiceTest {
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
         Account systemAccount =  new AccountVO("system", 1L, "", Account.Type.ADMIN, "uuid");
         when(accountManager.getSystemAccount()).thenReturn(systemAccount);
-        PowerMockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(new RegisterIsoCmd());
-        when(templateService.registerIso(Mockito.any(RegisterIsoCmd.class))).thenReturn(Mockito.mock(VirtualMachineTemplate.class));
-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
-        when(templateVO.getId()).thenReturn(1L);
-        when(templateDao.findById(Mockito.anyLong())).thenReturn(templateVO);
-        kubernetesVersionService.addKubernetesSupportedVersion(cmd);
+        CallContext callContext = Mockito.mock(CallContext.class);
+        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class);
+            MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(
+                    new RegisterIsoCmd());
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+
+            when(templateService.registerIso(Mockito.any(RegisterIsoCmd.class))).thenReturn(
+                    Mockito.mock(VirtualMachineTemplate.class));
+            VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+            when(templateVO.getId()).thenReturn(1L);
+            when(templateDao.findById(Mockito.anyLong())).thenReturn(templateVO);
+            KubernetesSupportedVersionResponse response = kubernetesVersionService.addKubernetesSupportedVersion(cmd);
+            Assert.assertNotNull(response);
+            Mockito.verify(kubernetesSupportedVersionDao, Mockito.times(1)).persist(Mockito.any(KubernetesSupportedVersionVO.class));
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -237,12 +255,11 @@ public class KubernetesVersionServiceTest {
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(KubernetesSupportedVersionVO.class));
         List<KubernetesClusterVO> clusters = new ArrayList<>();
         when(kubernetesClusterDao.listAllByKubernetesVersion(Mockito.anyLong())).thenReturn(clusters);
-        when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
-        PowerMockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.inject(Mockito.any(DeleteIsoCmd.class))).thenReturn(new DeleteIsoCmd());
-        when(templateService.deleteIso(Mockito.any(DeleteIsoCmd.class))).thenReturn(true);
-        when(kubernetesClusterDao.remove(Mockito.anyLong())).thenReturn(true);
-        kubernetesVersionService.deleteKubernetesSupportedVersion(cmd);
+        try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+            mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(DeleteIsoCmd.class))).thenReturn(new DeleteIsoCmd());
+            kubernetesVersionService.deleteKubernetesSupportedVersion(cmd);
+            Mockito.verify(kubernetesSupportedVersionDao).remove(Mockito.anyLong());
+        }
     }
 
     @Test
@@ -254,11 +271,12 @@ public class KubernetesVersionServiceTest {
         CallContext.register(user, account);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(KubernetesSupportedVersionVO.class));
         KubernetesSupportedVersionVO version = Mockito.mock(KubernetesSupportedVersionVO.class);
-        when(kubernetesSupportedVersionDao.createForUpdate(Mockito.anyLong())).thenReturn(version);
-        when(kubernetesSupportedVersionDao.update(Mockito.anyLong(), Mockito.any(KubernetesSupportedVersionVO.class))).thenReturn(true);
         when(version.getState()).thenReturn(KubernetesSupportedVersion.State.Disabled);
         when(version.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(version);
-        kubernetesVersionService.updateKubernetesSupportedVersion(cmd);
+        KubernetesSupportedVersionResponse response = kubernetesVersionService.updateKubernetesSupportedVersion(cmd);
+        Assert.assertNotNull(response);
+        Assert.assertEquals(KubernetesSupportedVersion.State.Disabled.toString(), response.getState());
+        Assert.assertEquals(KubernetesVersionService.MIN_KUBERNETES_VERSION, response.getSemanticVersion());
     }
 }

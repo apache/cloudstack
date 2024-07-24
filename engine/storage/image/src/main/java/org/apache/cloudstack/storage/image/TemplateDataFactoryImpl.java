@@ -20,11 +20,10 @@ package org.apache.cloudstack.storage.image;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -36,18 +35,21 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataFactoryImpl implements TemplateDataFactory {
@@ -97,6 +99,9 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
     @Override
     public TemplateInfo getTemplate(long templateId, DataStore store) {
         VMTemplateVO templ = imageDataDao.findById(templateId);
+        if (templ == null) {
+            return null;
+        }
         if (store == null && !templ.isDirectDownload()) {
             TemplateObject tmpl = TemplateObject.getTemplate(templ, null, null);
             return tmpl;
@@ -203,12 +208,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
      * Given existing spool refs, return one pool id existing on pools and refs
      */
     private Long getOneMatchingPoolIdFromRefs(List<VMTemplateStoragePoolVO> existingRefs, List<StoragePoolVO> pools) {
-        if (pools.isEmpty()) {
-            throw new CloudRuntimeException("No storage pools found");
-        }
-        if (existingRefs.isEmpty()) {
-            return pools.get(0).getId();
-        } else {
+        if (!existingRefs.isEmpty()) {
             for (VMTemplateStoragePoolVO ref : existingRefs) {
                 for (StoragePoolVO p : pools) {
                     if (ref.getPoolId() == p.getId()) {
@@ -217,21 +217,34 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
                 }
             }
         }
-        return null;
+        return pools.get(0).getId();
     }
 
     /**
-     * Retrieve storage pools with scope = cluster or zone matching clusterId or dataCenterId depending on their scope
+     * Retrieve storage pools with scope = cluster or zone or local matching clusterId or dataCenterId or hostId depending on their scope
      */
-    private List<StoragePoolVO> getStoragePoolsFromClusterOrZone(Long clusterId, long dataCenterId, Hypervisor.HypervisorType hypervisorType) {
+    private List<StoragePoolVO> getStoragePoolsForScope(long dataCenterId, Long clusterId, long hostId, Hypervisor.HypervisorType hypervisorType) {
         List<StoragePoolVO> pools = new ArrayList<>();
         if (clusterId != null) {
             List<StoragePoolVO> clusterPools = primaryDataStoreDao.listPoolsByCluster(clusterId);
+            clusterPools = clusterPools.stream().filter(p -> !p.isLocal()).collect(Collectors.toList());
             pools.addAll(clusterPools);
         }
         List<StoragePoolVO> zonePools = primaryDataStoreDao.findZoneWideStoragePoolsByHypervisor(dataCenterId, hypervisorType);
         pools.addAll(zonePools);
+        List<StoragePoolVO> localPools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
+        pools.addAll(localPools);
         return pools;
+    }
+
+    protected Long getBypassedTemplateExistingOrNewPoolId(VMTemplateVO templateVO, Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        List<StoragePoolVO> pools = getStoragePoolsForScope(host.getDataCenterId(), host.getClusterId(), hostId, host.getHypervisorType());
+        if (CollectionUtils.isEmpty(pools)) {
+            throw new CloudRuntimeException(String.format("No storage pool found to download template: %s", templateVO.getName()));
+        }
+        List<VMTemplateStoragePoolVO> existingRefs = templatePoolDao.listByTemplateId(templateVO.getId());
+        return getOneMatchingPoolIdFromRefs(existingRefs, pools);
     }
 
     @Override
@@ -240,22 +253,15 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         if (templateVO == null || !templateVO.isDirectDownload()) {
             return null;
         }
-        Long pool = poolId;
+        Long templatePoolId = poolId;
         if (poolId == null) {
-            //Get ISO from existing pool ref
-            HostVO host = hostDao.findById(hostId);
-            List<StoragePoolVO> pools = getStoragePoolsFromClusterOrZone(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType());
-            List<VMTemplateStoragePoolVO> existingRefs = templatePoolDao.listByTemplateId(templateId);
-            pool = getOneMatchingPoolIdFromRefs(existingRefs, pools);
+            templatePoolId = getBypassedTemplateExistingOrNewPoolId(templateVO, hostId);
         }
-        if (pool == null) {
-            throw new CloudRuntimeException("No storage pool found where to download template: " + templateId);
-        }
-        VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(pool, templateId, null);
+        VMTemplateStoragePoolVO spoolRef = templatePoolDao.findByPoolTemplate(templatePoolId, templateId, null);
         if (spoolRef == null) {
-            directDownloadManager.downloadTemplate(templateId, pool, hostId);
+            directDownloadManager.downloadTemplate(templateId, templatePoolId, hostId);
         }
-        DataStore store = storeMgr.getDataStore(pool, DataStoreRole.Primary);
+        DataStore store = storeMgr.getDataStore(templatePoolId, DataStoreRole.Primary);
         return this.getTemplate(templateId, store);
     }
 

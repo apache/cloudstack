@@ -66,7 +66,7 @@ patch() {
   if [ "$TYPE" != "cksnode" ]; then
     while [ $retry -gt 0 ]
     do
-      if [ -f $patchfile ]; then
+      if tar tf $patchfile &> /dev/null; then
         eval $(validate_checksums $md5file $patchfile)
         if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
         then

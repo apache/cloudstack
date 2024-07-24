@@ -26,6 +26,7 @@ public class ConsoleProxyClientParam {
     private int clientHostPort;
     private String clientHostPassword;
     private String clientTag;
+    private String clientDisplayName;
     private String ticket;
 
     private String clientTunnelUrl;
@@ -88,6 +89,10 @@ public class ConsoleProxyClientParam {
     public void setClientTag(String clientTag) {
         this.clientTag = clientTag;
     }
+
+    public String getClientDisplayName() { return this.clientDisplayName; }
+
+    public void setClientDisplayName(String clientDisplayName) { this.clientDisplayName = clientDisplayName; }
 
     public String getTicket() {
         return ticket;

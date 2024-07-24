@@ -46,10 +46,10 @@ public interface CAManager extends CAService, Configurable, PluggableService {
                                     "2048",
                                     "The key size to be used for random certificate keypair generation.", true);
 
-    ConfigKey<String> CertSignatureAlgorithm = new ConfigKey<>("Advanced", String.class,
-            "ca.framework.cert.signature.algorithm",
+    ConfigKey<String> CertSignatureAlgorithm = new ConfigKey<>(String.class,
+    "ca.framework.cert.signature.algorithm", "Advanced",
             "SHA256withRSA",
-            "The default signature algorithm to use for certificate generation.", true);
+            "The default signature algorithm to use for certificate generation.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "SHA256withRSA");
 
 
     ConfigKey<Integer> CertValidityPeriod = new ConfigKey<>("Advanced", Integer.class,
@@ -76,6 +76,14 @@ public interface CAManager extends CAService, Configurable, PluggableService {
                                                     "ca.framework.cert.expiry.alert.period",
                                                     "15",
                                                     "The number of days before expiry of a client certificate, the validations are checked. Admins are alerted when auto-renewal is not allowed, otherwise auto-renewal is attempted.", true, ConfigKey.Scope.Cluster);
+
+
+    ConfigKey<String> CertManagementCustomSubjectAlternativeName = new ConfigKey<>("Advanced", String.class,
+            "ca.framework.cert.management.custom.san",
+            "cloudstack.internal",
+            "The custom Subject Alternative Name that will be added to the management server certificate. " +
+                    "The actual implementation will depend on the configured CA provider.",
+            false);
 
     /**
      * Returns a list of available CA provider plugins

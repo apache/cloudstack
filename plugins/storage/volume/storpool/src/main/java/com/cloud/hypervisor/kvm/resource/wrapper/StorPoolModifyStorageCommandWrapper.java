@@ -33,6 +33,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
+import com.cloud.hypervisor.kvm.storage.StorPoolStoragePool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.template.TemplateProp;
@@ -47,9 +48,9 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
 
     @Override
     public Answer execute(final StorPoolModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String clusterId = getSpClusterId();
+        String clusterId = StorPoolStoragePool.getStorPoolConfigParam("SP_CLUSTER_ID");
         if (clusterId == null) {
-            log.debug(String.format("Could not get StorPool cluster id for a command $s", command.getClass()));
+            log.debug(String.format("Could not get StorPool cluster id for a command [%s]", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
         try {
@@ -66,40 +67,12 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                 return new Answer(command, false, String.format("Failed to create storage pool [%s]", command.getPool().getId()));
             }
 
-            final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-            final StorPoolModifyStoragePoolAnswer answer = new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId);
-
-            return answer;
+            final Map<String, TemplateProp> tInfo = new HashMap<>();
+            return new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId, storagepool.getStorageNodeId());
         } catch (Exception e) {
             log.debug(String.format("Could not modify storage due to %s", e.getMessage()));
             return new Answer(command, e);
         }
-    }
-
-    private String getSpClusterId() {
-        Script sc = new Script("storpool_confget", 0, log);
-        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-
-        String SP_CLUSTER_ID = null;
-        final String err = sc.execute(parser);
-        if (err != null) {
-            final String errMsg = String.format("Could not execute storpool_confget. Error: %s", err);
-            log.warn(errMsg);
-            StorPoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
-            return SP_CLUSTER_ID;
-        }
-
-        for (String line: parser.getLines().split("\n")) {
-            String[] toks = line.split("=");
-            if( toks.length != 2 ) {
-                continue;
-            }
-            if (toks[0].equals("SP_CLUSTER_ID")) {
-                SP_CLUSTER_ID = toks[1];
-                return SP_CLUSTER_ID;
-            }
-        }
-        return SP_CLUSTER_ID;
     }
 
     public String attachOrDetachVolume(String command, String type, String volumeUuid) {
@@ -128,7 +101,11 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                     Set<Entry<String, JsonElement>> obj2 = new JsonParser().parse(res).getAsJsonObject().entrySet();
                     for (Entry<String, JsonElement> entry : obj2) {
                         if (entry.getKey().equals("error")) {
-                            res = entry.getValue().getAsJsonObject().get("name").getAsString();
+                            JsonElement errName = entry.getValue().getAsJsonObject().get("name");
+                            if (errName != null) {
+                                res = errName.getAsString();
+                                break;
+                            }
                         }
                     }
                 } catch (Exception e) {

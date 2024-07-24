@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.image.db;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -60,12 +62,13 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeSearch;
     private SearchBuilder<VolumeVO> volumeOnlySearch;
     private SearchBuilder<VolumeDataStoreVO> uploadVolumeStateSearch;
+    private SearchBuilder<VolumeDataStoreVO> imageStoreAndInstallPathSearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update volume_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
     DataStoreManager storeMgr;
     @Inject
-    VolumeDao volumeDao;
+    VolumeDao volumeDao;;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -118,6 +121,11 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         uploadVolumeStateSearch.join("volumeOnlySearch", volumeOnlySearch, volumeOnlySearch.entity().getId(), uploadVolumeStateSearch.entity().getVolumeId(), JoinType.LEFT);
         uploadVolumeStateSearch.and("destroyed", uploadVolumeStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         uploadVolumeStateSearch.done();
+
+        imageStoreAndInstallPathSearch = createSearchBuilder();
+        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        imageStoreAndInstallPathSearch.done();
         return true;
     }
 
@@ -336,6 +344,18 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         sc.setParameters("store_id", storeId);
         sc.setParameters("volume_id", volumeId);
         sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VolumeDataStoreVO> listByStoreIdAndInstallPaths(Long storeId, List<String> paths) {
+        if (CollectionUtils.isEmpty(paths)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<VolumeDataStoreVO> sc =  imageStoreAndInstallPathSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("install_pathIN", paths.toArray());
         return listBy(sc);
     }
 

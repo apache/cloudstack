@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -38,7 +39,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "upgradeKubernetesCluster", description = "Upgrades a running Kubernetes cluster",
+@APICommand(name = "upgradeKubernetesCluster", description = "Upgrades a running CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -96,6 +97,11 @@ public class UpgradeKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
     }
 
     /////////////////////////////////////////////////////

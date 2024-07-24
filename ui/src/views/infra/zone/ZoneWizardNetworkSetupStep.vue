@@ -63,12 +63,24 @@
     />
 
     <static-inputs-form
+      v-if="steps && steps[currentStep].formKey === 'tungsten'"
+      @nextPressed="nextPressed"
+      @backPressed="handleBack"
+      @fieldsChanged="fieldsChanged"
+      @submitLaunchZone="submitLaunchZone"
+      :fields="tungstenFields"
+      :prefillContent="prefillContent"
+      :description="tungstenSetupDescription"
+      :isFixError="isFixError"
+    />
+
+    <static-inputs-form
       v-if="steps && steps[currentStep].formKey === 'pod'"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
       @submitLaunchZone="submitLaunchZone"
-      :fields="podFields"
+      :fields="filteredPodFields"
       :prefillContent="prefillContent"
       :description="podSetupDescription"
       :isFixError="isFixError"
@@ -151,15 +163,31 @@ export default {
     zoneType () {
       return this.prefillContent?.zoneType || null
     },
+    isAdvancedZone () {
+      return this.zoneType === 'Advanced'
+    },
     sgEnabled () {
       return this.prefillContent?.securityGroupsEnabled || false
     },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     guestTrafficRangeMode () {
       return this.zoneType === 'Basic' ||
         (this.zoneType === 'Advanced' && this.sgEnabled)
+    },
+    isTungstenZone () {
+      let isTungsten = false
+      if (!this.prefillContent.physicalNetworks) {
+        isTungsten = false
+      } else {
+        const tungstenIdx = this.prefillContent.physicalNetworks.findIndex(network => network.isolationMethod === 'TF')
+        isTungsten = tungstenIdx > -1
+      }
+      return isTungsten
     },
     allSteps () {
       const steps = []
@@ -167,6 +195,12 @@ export default {
         title: 'label.physical.network',
         formKey: 'physicalNetwork'
       })
+      if (this.isTungstenZone) {
+        steps.push({
+          title: 'label.tungsten.provider',
+          formKey: 'tungsten'
+        })
+      }
       if (this.havingNetscaler) {
         steps.push({
           title: 'label.netScaler',
@@ -182,11 +216,13 @@ export default {
         title: 'label.pod',
         formKey: 'pod'
       })
-      steps.push({
-        title: 'label.guest.traffic',
-        formKey: 'guestTraffic',
-        trafficType: 'guest'
-      })
+      if (!this.isTungstenZone) {
+        steps.push({
+          title: 'label.guest.traffic',
+          formKey: 'guestTraffic',
+          trafficType: 'guest'
+        })
+      }
       steps.push({
         title: 'label.storage.traffic',
         formKey: 'storageTraffic',
@@ -200,6 +236,47 @@ export default {
         return { width: 'calc(100% / ' + this.steps.length + ')' }
       }
       return {}
+    },
+    tungstenFields () {
+      const fields = [
+        {
+          title: 'label.tungsten.provider.name',
+          key: 'tungstenName',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.name',
+          required: true
+        },
+        {
+          title: 'label.tungsten.provider.hostname',
+          key: 'tungstenHostname',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.hostname',
+          required: true
+        },
+        {
+          title: 'label.tungsten.provider.gateway',
+          key: 'tungstenGateway',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.gateway',
+          required: true
+        },
+        {
+          title: 'label.tungsten.provider.port',
+          key: 'tungstenPort',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.port',
+          required: false
+        },
+        {
+          title: 'label.tungsten.provider.vrouterport',
+          key: 'tungstenVrouterport',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.vrouterport',
+          required: false
+        },
+        {
+          title: 'label.tungsten.provider.introspectport',
+          key: 'tungstenIntrospectPort',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.introspectport',
+          required: false
+        }
+      ]
+      return fields
     },
     netscalerFields () {
       return [
@@ -312,6 +389,14 @@ export default {
       }
 
       return fields
+    },
+    filteredPodFields () {
+      var fields = [...this.podFields]
+      if (this.isEdgeZone) {
+        fields = fields.filter(x => !['podReservedGateway', 'podReservedNetmask', 'podReservedStartIp', 'podReservedStopIp'].includes(x.key))
+        return fields
+      }
+      return fields
     }
   },
   data () {
@@ -330,6 +415,7 @@ export default {
         basic: 'message.guest.traffic.in.basic.zone'
       },
       podSetupDescription: 'message.add.pod.during.zone.creation',
+      tungstenSetupDescription: 'message.infra.setup.tungsten.description',
       netscalerSetupDescription: 'label.please.specify.netscaler.info',
       storageTrafficDescription: 'label.zonewizard.traffictype.storage',
       podFields: [
@@ -363,7 +449,7 @@ export default {
           title: 'label.end.reserved.system.ip',
           key: 'podReservedStopIp',
           placeHolder: 'message.installwizard.tooltip.addpod.reservedsystemendip',
-          required: false,
+          required: true,
           ipV4: true,
           message: 'message.error.ipv4.address'
         }
@@ -449,6 +535,7 @@ export default {
     },
     filteredSteps () {
       return this.allSteps.filter(step => {
+        if (step.formKey === 'pod' && this.isEdgeZone) return false
         if (!step.trafficType) return true
         if (this.physicalNetworks) {
           let neededTraffic = false

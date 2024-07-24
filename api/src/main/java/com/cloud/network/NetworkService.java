@@ -19,11 +19,14 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -41,6 +44,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -62,6 +66,8 @@ public interface NetworkService {
 
     public static final Integer DEFAULT_MTU = 1500;
     public static final Integer MINIMUM_MTU = 68;
+    public static final String MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT = "Message.AssignNicSecondaryIp.Event";
+    public static final String MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT = "Message.ReleaseNicSecondaryIp.Event";
 
     public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.public.interface.max.mtu", "1500", "The maximum value the MTU can have on the VR's public interfaces",
@@ -93,6 +99,10 @@ public interface NetworkService {
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+           PhysicalNetwork physicalNetwork, long zoneId, ControlledEntity.ACLType aclType) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId, boolean forced);
@@ -108,6 +118,8 @@ public interface NetworkService {
     Network getNetwork(String networkUuid);
 
     IpAddress getIp(long id);
+
+    IpAddress getIp(String ipAddress);
 
     Network updateGuestNetwork(final UpdateNetworkCmd cmd);
 
@@ -241,4 +253,10 @@ public interface NetworkService {
     boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd);
 
     boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
+
+    void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) throws InvalidParameterValueException;
+
+    PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd);
+
+    void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd);
 }

@@ -61,7 +61,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     @Override
     public boolean isEnabled() {
         if (!roleService.isEnabled()) {
-            LOGGER.trace("RoleService is disabled. We will not use ProjectRoleBasedApiAccessChecker.");
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("RoleService is disabled. We will not use ProjectRoleBasedApiAccessChecker.");
+            }
         }
         return roleService.isEnabled();
     }
@@ -74,7 +76,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning APIs [%s] for user [%s] as allowed.", apiNames, user));
+            }
             return apiNames;
         }
 
@@ -112,14 +116,18 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Project project = CallContext.current().getProject();
         if (project == null) {
-            LOGGER.warn(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Project is null, ProjectRoleBasedApiAccessChecker only applies to projects, returning API [%s] for user [%s] as allowed.", apiCommandName,
                 user));
+            }
             return true;
         }
 
         Account userAccount = accountService.getAccount(user.getAccountId());
         if (accountService.isRootAdmin(userAccount.getId()) || accountService.isDomainAdmin(userAccount.getAccountId())) {
-            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
+            }
             return true;
         }
 

@@ -62,6 +62,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     String iPv4Dns1;
     String iPv4Dns2;
     String requestedIPv4;
+    boolean ipv4AllocationRaceCheck;
 
     // IPv6
     String iPv6Address;
@@ -405,6 +406,13 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.mtu = mtu;
     }
 
+    public boolean getIpv4AllocationRaceCheck() {
+        return this.ipv4AllocationRaceCheck;
+    }
+
+    public void setIpv4AllocationRaceCheck(boolean ipv4AllocationRaceCheck) {
+        this.ipv4AllocationRaceCheck = ipv4AllocationRaceCheck;
+    }
 
     //
     // OTHER METHODS
@@ -442,6 +450,6 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     @Override
     public String toString() {
-        return String.format("NicProfile %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "vmId", "reservationId", "iPv4Address", "broadcastUri"));
+        return String.format("NicProfile %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "vmId", "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
     }
 }

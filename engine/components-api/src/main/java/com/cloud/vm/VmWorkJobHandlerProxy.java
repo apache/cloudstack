@@ -21,15 +21,13 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.log4j.Logger;
 
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
+import com.google.gson.Gson;
 
 /**
  * VmWorkJobHandlerProxy can not be used as standalone due to run-time
@@ -102,12 +100,12 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
             try {
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Execute VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+                    s_logger.debug("Execute VM work job: " + work.getClass().getName() + work);
 
                 Object obj = method.invoke(_target, work);
 
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Done executing VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+                    s_logger.debug("Done executing VM work job: " + work.getClass().getName() + work);
 
                 assert (obj instanceof Pair);
                 return (Pair<JobInfo.Status, String>)obj;

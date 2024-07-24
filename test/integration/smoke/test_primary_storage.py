@@ -27,7 +27,7 @@ from marvin.lib.decoratorGenerators import skipTestIf
 from marvin.lib.utils import *
 from nose.plugins.attrib import attr
 
-_multiprocess_shared_ = True
+_multiprocess_shared_ = False
 
 
 class TestPrimaryStorageServices(cloudstackTestCase):
@@ -50,6 +50,12 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         )
         if self.template == FAILED:
             assert False, "get_suitable_test_template() failed to return template with description %s" % self.services["ostype"]
+
+        self.excluded_pools = []
+        storage_pool_list = StoragePool.list(self.apiclient, zoneid=self.zone.id)
+        for pool in storage_pool_list:
+            if pool.state != 'Up':
+                self.excluded_pools.append(pool.id)
 
         return
 
@@ -301,6 +307,8 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             for pool in storage_pool_list:
                 if (pool.id == storage_pool_2.id):
                     continue
+                if pool.id in self.excluded_pools:
+                    continue
                 StoragePool.update(self.apiclient, id=pool.id, enabled=False)
 
             # deployvm
@@ -333,6 +341,8 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 # cancel maintenance
                 for pool in storage_pool_list:
                     if (pool.id == storage_pool_2.id):
+                        continue
+                    if pool.id in self.excluded_pools:
                         continue
                     StoragePool.update(self.apiclient, id=pool.id, enabled=True)
                 # Enable all hosts
@@ -582,6 +592,8 @@ class TestStorageTags(cloudstackTestCase):
         )
         self.debug("VM-1 Volumes: %s" % vm_1_volumes)
         self.assertEqual(vm_1_volumes[0].id, self.volume_1.id, "Check that volume V-1 has been attached to VM-1")
+
+        time.sleep(30)
         self.virtual_machine_1.detach_volume(self.apiclient, self.volume_1)
 
         return

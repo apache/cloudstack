@@ -297,7 +297,7 @@ class TestBasicOperations(cloudstackTestCase):
         # Validations:
         # 1. Step 3 should succeed
         # 2. Step 4 should fail
-        # 3. Step 5 should should fail
+        # 3. Step 5 should fail
         # 4. Step 6 should fail
 
         self.account = Account.create(
@@ -340,7 +340,7 @@ class TestBasicOperations(cloudstackTestCase):
                 self.apiclient, id=(
                     virtual_machine.nic[0].id + random_gen()))
             self.fail(
-                "Adding secondary IP with wrong NIC id succeeded, it shoud have failed")
+                "Adding secondary IP with wrong NIC id succeeded, it should have failed")
         except Exception as e:
             self.debug("Failed while adding secondary IP to wrong NIC")
 

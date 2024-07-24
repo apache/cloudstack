@@ -31,10 +31,27 @@
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             </template>
-            <a-input
-              v-model:value="form.account"
-              :placeholder="apiParams.addAccountToProject.account.description"
-              v-focus="true" />
+            <a-select
+                show-search
+                v-model:value="form.account"
+                :placeholder="apiParams.addAccountToProject.account.description"
+                v-focus="true"
+                :filterOption="false"
+                @search="fetchAccounts"
+              >
+                <template v-if="load.accounts" #notFoundContent>
+                  <a-spin size="small" />
+                </template>
+                <template v-if="!load.accounts">
+                  <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
+                    <span v-if="account.icon">
+                      <resource-icon :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    </span>
+                    <block-outlined v-else style="margin-right: 5px" />
+                    {{ account.name }}
+                  </a-select-option>
+                </template>
+              </a-select>
           </a-form-item>
           <a-form-item name="email" ref="email">
             <template #label>
@@ -55,9 +72,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
@@ -70,9 +87,9 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addAccountToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
@@ -104,10 +121,27 @@
             <template #label>
               <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
             </template>
-            <a-input
-              v-model:value="form.username"
-              :placeholder="apiParams.addUserToProject.username.description"
-              v-focus="true" />
+              <a-select
+                show-search
+                v-model:value="form.username"
+                :placeholder="apiParams.addUserToProject.username.description"
+                v-focus="true"
+                :filterOption="false"
+                @search="fetchUsers"
+              >
+                <template v-if="load.users" #notFoundContent>
+                  <a-spin size="small" />
+                </template>
+                <template v-if="!load.users">
+                  <a-select-option v-for="user in users" :key="user.username" :value="user.username">
+                    <span v-if="user.icon">
+                      <resource-icon :image="user.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    </span>
+                    <block-outlined v-else style="margin-right: 5px" />
+                    {{ user.firstname + ' ' + user.lastname + " (" + user.username + ")" }}
+                  </a-select-option>
+                </template>
+              </a-select>
           </a-form-item>
           <a-form-item name="email" ref="email">
             <template #label>
@@ -128,9 +162,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
@@ -143,9 +177,9 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addUserToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
@@ -163,11 +197,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddAccountOrUserToProject',
   components: {
+    ResourceIcon,
     TooltipLabel
   },
   props: {
@@ -218,9 +254,13 @@ export default {
         this.fetchProjectRoles()
       }
     },
-    fetchUsers () {
+    fetchUsers (keyword) {
       this.load.users = true
-      api('listUsers', { listall: true }).then(response => {
+      const params = { listall: true, showicon: true }
+      if (keyword) {
+        params.keyword = keyword
+      }
+      api('listUsers', params).then(response => {
         this.users = response.listusersresponse.user ? response.listusersresponse.user : []
       }).catch(error => {
         this.$notifyError(error)
@@ -228,11 +268,13 @@ export default {
         this.load.users = false
       })
     },
-    fetchAccounts () {
+    fetchAccounts (keyword) {
       this.load.accounts = true
-      api('listAccounts', {
-        domainid: this.resource.domainid
-      }).then(response => {
+      const params = { domainid: this.resource.domainid, showicon: true }
+      if (keyword) {
+        params.keyword = keyword
+      }
+      api('listAccounts', params).then(response => {
         this.accounts = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notifyError(error)

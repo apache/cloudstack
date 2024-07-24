@@ -106,7 +106,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
     sys_version = '4.x'
     def do_GET(self):
         self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
+        self.send_header('content-type', 'text/plain')
         self.send_header('Server', 'CloudStack Password Server')
         self.end_headers()
         requestType = self.headers.get('DomU_Request')
@@ -135,7 +135,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
                     fp=self.rfile,
                     headers=self.headers,
                     environ={'REQUEST_METHOD':'POST',
-                             'CONTENT_TYPE':self.headers['Content-Type'],
+                             'CONTENT_TYPE':self.headers['content-type'],
                     })
         self.send_response(200)
         self.end_headers()

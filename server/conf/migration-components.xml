@@ -22,6 +22,8 @@ under the License.
         <dao name="host pod dao" class="com.cloud.dc.dao.HostPodDaoImpl" />
         <dao name="Datacenter dao" class="com.cloud.dc.dao.DataCenterDaoImpl" />
         <dao name="Configuration dao" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+        <dao name="Configuration group dao" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl" />
+        <dao name="Configuration subgroup dao" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl" />
         <dao name="Cluster dao" class="com.cloud.dc.dao.ClusterDaoImpl" />
         <dao name="Host dao" class="com.cloud.host.dao.HostDaoImpl" />
         <dao name="StoragePool dao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />

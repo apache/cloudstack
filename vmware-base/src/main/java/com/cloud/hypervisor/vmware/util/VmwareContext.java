@@ -16,29 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreFile;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.StringUtils;
-import com.vmware.pbm.PbmPortType;
-import com.vmware.pbm.PbmServiceInstanceContent;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.ObjectSpec;
-import com.vmware.vim25.PropertyFilterSpec;
-import com.vmware.vim25.PropertySpec;
-import com.vmware.vim25.ServiceContent;
-import com.vmware.vim25.TaskInfo;
-import com.vmware.vim25.TraversalSpec;
-import com.vmware.vim25.VimPortType;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import javax.xml.ws.soap.SOAPFaultException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -58,6 +35,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import javax.xml.ws.soap.SOAPFaultException;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import org.apache.log4j.Logger;
+
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.StringUtils;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmServiceInstanceContent;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.ObjectSpec;
+import com.vmware.vim25.PropertyFilterSpec;
+import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.ServiceContent;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VimPortType;
 
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
@@ -377,8 +380,8 @@ public class VmwareContext {
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
         String contentType = "application/octet-stream";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
         OutputStream out = null;
         InputStream in = null;
@@ -434,8 +437,8 @@ public class VmwareContext {
         String contentType = urlString.endsWith(".iso") ?
                 "application/octet-stream" :
                 "application/x-vnd.vmware-streamVmdk";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 
         BufferedOutputStream bos = null;
@@ -467,7 +470,7 @@ public class VmwareContext {
         }
     }
 
-    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
+    public long downloadVmdkFile(String urlString, String localFileName, AtomicLong totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         String cookie = _vimClient.getServiceCookie();
@@ -493,10 +496,10 @@ public class VmwareContext {
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
                 bytesWritten += len;
-                totalBytesDownloaded += len;
+                totalBytesDownloaded.addAndGet(len);
 
                 if (progressUpdater != null)
-                    progressUpdater.action(new Long(totalBytesDownloaded));
+                    progressUpdater.action(new Long(totalBytesDownloaded.get()));
             }
         } finally {
             if (in != null)
@@ -548,7 +551,7 @@ public class VmwareContext {
      * Url for the query
      *     https://vsphere-1.lab.vmops.com/folder/Fedora-clone-test?dcPath=cupertino&dsName=NFS+datastore
      *
-     * Returned conent from vSphere
+     * Returned content from vSphere
      *
         <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
         <html>
@@ -631,12 +634,12 @@ public class VmwareContext {
         sb.append("https://");
         sb.append(_serverAddress);
         sb.append("/folder/");
-        sb.append(relativePath);
         try {
+            sb.append(URLEncoder.encode(relativePath, "UTF-8"));
             sb.append("?dcPath=").append(URLEncoder.encode(dcName, "UTF-8"));
             sb.append("&dsName=").append(URLEncoder.encode(datastoreName, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("Unable to encode URL. dcPath : " + dcName + ", dsName :" + datastoreName, e);
+            s_logger.error(String.format("Unable to encode URL. relativePath : %s, dcPath : %s, dsName : %s", relativePath, dcName, datastoreName), e);
         }
         return sb.toString();
     }

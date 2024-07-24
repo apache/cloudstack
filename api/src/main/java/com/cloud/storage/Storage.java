@@ -77,12 +77,17 @@ public class Storage {
     }
 
     public static enum Capability {
-        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION");
+        HARDWARE_ACCELERATION("HARDWARE_ACCELERATION"),
+        ALLOW_MIGRATE_OTHER_POOLS("ALLOW_MIGRATE_OTHER_POOLS");
 
         private final String capability;
 
         private Capability(String capability) {
             this.capability = capability;
+        }
+
+        public String toString() {
+            return this.capability;
         }
     }
 
@@ -125,6 +130,7 @@ public class Storage {
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
+        VNF,    /* VNFs (virtual network functions) template */
         DATADISK, /* Template corresponding to a datadisk(non root disk) present in an OVA */
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
@@ -138,7 +144,7 @@ public class Storage {
         LVM(false, false, false), // XenServer local LVM SR
         CLVM(true, false, false),
         RBD(true, true, false), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true, false, true),
+        SharedMountPoint(true, true, true),
         VMFS(true, true, false), // VMware VMFS storage
         PreSetup(true, true, false), // for XenServer, Storage Pool is set up by customers.
         EXT(false, true, false), // XenServer local EXT SR
@@ -149,15 +155,16 @@ public class Storage {
         ManagedNFS(true, false, false),
         Linstor(true, true, false),
         DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
-        StorPool(true, true, false);
+        StorPool(true, true, true),
+        FiberChannel(true, true, false); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
 
         private final boolean shared;
-        private final boolean overprovisioning;
+        private final boolean overProvisioning;
         private final boolean encryption;
 
-        StoragePoolType(boolean shared, boolean overprovisioning, boolean encryption) {
+        StoragePoolType(boolean shared, boolean overProvisioning, boolean encryption) {
             this.shared = shared;
-            this.overprovisioning = overprovisioning;
+            this.overProvisioning = overProvisioning;
             this.encryption = encryption;
         }
 
@@ -166,14 +173,16 @@ public class Storage {
         }
 
         public boolean supportsOverProvisioning() {
-            return overprovisioning;
+            return overProvisioning;
         }
 
-        public boolean supportsEncryption() { return encryption; }
+        public boolean supportsEncryption() {
+            return encryption;
+        }
     }
 
     public static List<StoragePoolType> getNonSharedStoragePoolTypes() {
-        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<StoragePoolType>();
+        List<StoragePoolType> nonSharedStoragePoolTypes = new ArrayList<>();
         for (StoragePoolType storagePoolType : StoragePoolType.values()) {
             if (!storagePoolType.isShared()) {
                 nonSharedStoragePoolTypes.add(storagePoolType);

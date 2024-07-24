@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -101,6 +102,11 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
                 ctx.putContextParameters((Map<Object, Object>) gson.fromJson(contextDetails, objectMapType));
             }
 
+            String httpmethod = params.get(ApiConstants.HTTPMETHOD);
+            if (httpmethod != null) {
+                cmdObj.setHttpMethod(httpmethod);
+            }
+
             try {
                 // dispatch could ultimately queue the job
                 _dispatcher.dispatch(cmdObj, params, true);
@@ -129,9 +135,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             response.setErrorText(errorMsg);
             response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
-            // FIXME:  setting resultCode to ApiErrorCode.INTERNAL_ERROR is not right, usually executors have their exception handling
-            //         and we need to preserve that as much as possible here
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, errorCode, ApiSerializerHelper.toSerializedString(response));
         }
     }
 }

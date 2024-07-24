@@ -21,15 +21,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
@@ -48,6 +50,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -72,6 +75,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -117,6 +123,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -148,10 +155,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Class to manage console proxys. <br><br>
@@ -491,6 +494,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         return null;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROXY_START, eventDescription = "restarting console proxy VM for HA", async = true)
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        virtualMachineManager.advanceStart(vm.getUuid(), params, planner);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {
@@ -1120,7 +1131,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         Map<String, String> configs = configurationDao.getConfiguration("management-server", params);
 
-        String value = configs.get("consoleproxy.sslEnabled");
+        String value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             sslEnabled = true;
         }
@@ -1491,15 +1502,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public Long[] getScannablePools() {
-        List<DataCenterVO> zones = dataCenterDao.listEnabledZones();
-
-        Long[] dcIdList = new Long[zones.size()];
-        int i = 0;
-        for (DataCenterVO dc : zones) {
-            dcIdList[i++] = dc.getId();
+        List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
         }
-
-        return dcIdList;
+        return zoneIds.toArray(Long[]::new);
     }
 
     @Override
@@ -1613,7 +1620,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
+        return new ConfigKey<?>[] { ConsoleProxySslEnabled, NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

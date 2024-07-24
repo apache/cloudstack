@@ -311,7 +311,7 @@ public class Ovm3StoragePool {
             LOGGER.debug(
                     "Delete storage pool on host "
                             + config.getAgentHostname()
-                            + " failed, however, we leave to user for cleanup and tell managment server it succeeded",
+                            + " failed, however, we leave to user for cleanup and tell management server it succeeded",
                     e);
         }
 

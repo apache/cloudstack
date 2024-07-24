@@ -59,7 +59,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
         // This guru handles only Guest Isolated network that supports Source nat service
         if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
                 (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == Network.GuestType.L2) &&
-                isMyIsolationMethod(physicalNetwork)) {
+                isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " or " + GuestType.L2 + " in zone of type " + NetworkType.Advanced);
@@ -69,19 +69,16 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-
         NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (network == null) {
             return null;
         }
-
         if (offering.getGuestType() == GuestType.L2 && network.getBroadcastUri() != null) {
             String vxlan = BroadcastDomainType.getValue(network.getBroadcastUri());
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
         network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
-
-        return network;
+        return updateNetworkDesignForIPv6IfNeeded(network, userSpecified);
     }
 
     @Override

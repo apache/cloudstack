@@ -131,8 +131,10 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             return new ArrayList<Host>();
         }
 
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            s_logger.debug(String.format("Looking for hosts in %s.", paramAsStringToLog));
         }
 
         String hostTagOnOffering = offering.getHostTag();
@@ -182,7 +184,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
                 if (hasSvcOfferingTag && hasTemplateTag) {
                     hostsMatchingOfferingTag.retainAll(hostsMatchingTemplateTag);
-                    clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found " + hostsMatchingOfferingTag.size() + " Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
                     }
@@ -202,6 +203,13 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             clusterHosts.retainAll(hostsMatchingUefiTag);
         }
 
+        clusterHosts.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
+
+
+        if (clusterHosts.isEmpty()) {
+            s_logger.info(String.format("No suitable host found for VM [%s] with tags [%s] in %s.", vmProfile, hostTagOnOffering, paramAsStringToLog));
+            return null;
+        }
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
         allhostsInCluster.removeAll(clusterHosts);
@@ -266,6 +274,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 }
             }
         }
+
+        hostsCopy.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
 
         if (!hostsCopy.isEmpty()) {
             suitableHosts = allocateTo(plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);

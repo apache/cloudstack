@@ -17,9 +17,9 @@
 
 package org.apache.cloudstack.acl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -32,9 +32,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RoleManagerImplTest {
@@ -166,7 +165,7 @@ public class RoleManagerImplTest {
         String roleName = "roleName";
         List<Role> roles = new ArrayList<>();
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 0);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null, null, false);
 
         roleManagerImpl.findRolesByName(roleName);
         Mockito.verify(roleManagerImpl).removeRootAdminRolesIfNeeded(roles);
@@ -239,7 +238,7 @@ public class RoleManagerImplTest {
 
         Assert.assertEquals(0, returnedRoles.size());
         Mockito.verify(accountManagerMock, Mockito.times(1)).isRootAdmin(Mockito.anyLong());
-        Mockito.verify(roleDaoMock, Mockito.times(0)).findAllByRoleType(Mockito.any(RoleType.class));
+        Mockito.verify(roleDaoMock, Mockito.times(0)).findAllByRoleType(Mockito.any(RoleType.class), Mockito.anyBoolean());
     }
 
     @Test
@@ -250,11 +249,11 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 1);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.Admin, null, null);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.Admin, null, null, true);
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.Admin);
 
         Assert.assertEquals(1, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(1)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(accountManagerMock, Mockito.times(2)).isRootAdmin(Mockito.anyLong());
     }
 
     @Test
@@ -265,11 +264,11 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 1);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.User, null, null);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.User, null, null, true);
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.User);
 
         Assert.assertEquals(1, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(0)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(accountManagerMock, Mockito.times(1)).isRootAdmin(Mockito.anyLong());
     }
 
     @Test

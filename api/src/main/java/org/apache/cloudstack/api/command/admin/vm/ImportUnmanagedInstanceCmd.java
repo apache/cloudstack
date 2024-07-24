@@ -84,7 +84,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
             required = true,
-            description = "the hypervisor name of the instance")
+            description = "the name of the instance as it is known to the hypervisor")
     private String name;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME,
@@ -124,7 +124,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the ID of the service offering for the virtual machine")
+            description = "the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
@@ -154,7 +154,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
-            description = "VM is imported despite some of its NIC's MAC addresses are already present")
+            description = "VM is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -203,8 +203,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
                 if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
@@ -221,8 +221,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
                 }
                 if (StringUtils.isEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
@@ -279,7 +279,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing unmanaged VM";
+        String vmName = this.name;
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     public boolean isForced() {

@@ -68,4 +68,3 @@ END
 For packet flow, @see http://msdn.microsoft.com/en-us/library/cc226794.aspx
  */
 package rdpclient.ntlmssp;
-

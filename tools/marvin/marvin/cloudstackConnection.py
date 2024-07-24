@@ -147,7 +147,7 @@ class CSConnection(object):
                 ).replace("+", "%20")]
             ) for r in params]
         )
-        signature = base64.encodestring(
+        signature = base64.encodebytes(
             hmac.new(self.securityKey.encode('utf-8'),
                      hash_str.encode('utf-8'),
                      hashlib.sha1).digest()).strip()

@@ -86,6 +86,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean fence(Host r) throws HAFenceException {
+
         try {
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
@@ -96,7 +97,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             }
         } catch (Exception e){
             LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
-            throw new HAFenceException("OOBM service is not configured or enabled for this host " + r.getName() , e);
+            throw new HAFenceException("OBM service is not configured or enabled for this host " + r.getName() , e);
         }
     }
 
@@ -151,7 +152,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             KVMHAConfig.KvmHAActivityCheckFailureThreshold,
             KVMHAConfig.KvmHADegradedMaxPeriod,
             KVMHAConfig.KvmHARecoverWaitPeriod,
-            KVMHAConfig.KvmHARecoverAttemptThreshold
+            KVMHAConfig.KvmHARecoverAttemptThreshold,
         };
     }
 }

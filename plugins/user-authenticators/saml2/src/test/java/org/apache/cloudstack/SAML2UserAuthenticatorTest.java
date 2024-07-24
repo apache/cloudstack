@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import org.apache.cloudstack.saml.SAML2UserAuthenticator;
 import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.junit.Assert;
@@ -32,7 +33,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserAccountDao;

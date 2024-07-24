@@ -22,6 +22,8 @@ import java.util.List;
 public class Host extends GenericPresetVariable {
     private List<String> tags;
 
+    private Boolean isTagARule;
+
     public List<String> getTags() {
         return tags;
     }
@@ -31,4 +33,12 @@ public class Host extends GenericPresetVariable {
         fieldNamesToIncludeInToString.add("tags");
     }
 
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean isTagARule) {
+        this.isTagARule = isTagARule;
+        fieldNamesToIncludeInToString.add("isTagARule");
+    }
 }

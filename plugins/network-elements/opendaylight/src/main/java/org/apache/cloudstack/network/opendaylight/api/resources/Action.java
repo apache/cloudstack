@@ -51,7 +51,7 @@ public abstract class Action {
 
     protected static final String TEXT_HTML_CONTENT_TYPE = "text/html";
     protected static final String JSON_CONTENT_TYPE = "application/json";
-    protected static final String CONTENT_TYPE = "Content-Type";
+    protected static final String CONTENT_TYPE = "content-type";
 
     private final URL url;
     private final String username;

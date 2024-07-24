@@ -297,6 +297,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         Vpc copyOfVpc;
         long copyOfVpcId;
         try {
+
             copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(),
                     vpc.getDisplayText(), vpc.getCidr(), vpc.getNetworkDomain(), vpc.getIp4Dns1(), vpc.getIp4Dns2(),
                     vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu());

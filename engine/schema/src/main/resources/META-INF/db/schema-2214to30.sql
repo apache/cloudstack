@@ -445,7 +445,7 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
   `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
-  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
+  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by cloudstack',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
   PRIMARY KEY (`id`),
@@ -702,7 +702,7 @@ UPDATE `cloud`.`configuration` SET category = 'Usage' where name in ('usage.exec
 ALTER TABLE  `cloud`.`op_dc_vnet_alloc` ADD CONSTRAINT `fk_op_dc_vnet_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`domain` ADD COLUMN `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project';
 
-UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destory.forcestop';
+UPDATE `cloud`.`configuration` SET name='vm.destroy.forcestop' where name='vm.destroy.forcestop';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destroy.forcestop', 'false', 'On destroy, force-stop takes this value');
 DELETE FROM `cloud`.`configuration` where name='skip.steps';
 

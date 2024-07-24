@@ -16,6 +16,7 @@
 # under the License.
 """ BVT tests for Events Resource
 """
+import json
 import os
 import tempfile
 import time
@@ -115,6 +116,7 @@ class TestEventsResource(cloudstackTestCase):
             self.services["domain"],
             parentdomainid=self.domain.id
         )
+        self.cleanup.append(domain1)
         self.services["domainid"] = domain1.id
 
         account = Account.create(
@@ -122,6 +124,7 @@ class TestEventsResource(cloudstackTestCase):
             self.services["account"],
             domainid=domain1.id
         )
+        self.cleanup.append(account)
 
         account_network = Network.create(
             self.apiclient,
@@ -129,6 +132,7 @@ class TestEventsResource(cloudstackTestCase):
             account.name,
             account.domainid
         )
+        self.cleanup.append(account_network)
         virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.services,
@@ -137,6 +141,7 @@ class TestEventsResource(cloudstackTestCase):
             networkids=account_network.id,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(virtual_machine)
         volume = Volume.create(
             self.apiclient,
             self.services,
@@ -145,6 +150,7 @@ class TestEventsResource(cloudstackTestCase):
             domainid=account.domainid,
             diskofferingid=self.disk_offering.id
         )
+        self.cleanup.append(volume)
         virtual_machine.attach_volume(
             self.apiclient,
             volume
@@ -156,15 +162,20 @@ class TestEventsResource(cloudstackTestCase):
         time.sleep(self.services["sleep"])
         virtual_machine.detach_volume(self.apiclient, volume)
         volume.delete(self.apiclient)
+        self.cleanup.remove(volume)
         ts = str(time.time())
         virtual_machine.update(self.apiclient, displayname=ts)
         virtual_machine.delete(self.apiclient)
+        self.cleanup.remove(virtual_machine)
         account_network.update(self.apiclient, name=account_network.name + ts)
         account_network.delete(self.apiclient)
+        self.cleanup.remove(account_network)
         account.update(self.apiclient, newname=account.name + ts)
         account.disable(self.apiclient)
         account.delete(self.apiclient)
+        self.cleanup.remove(account)
         domain1.delete(self.apiclient)
+        self.cleanup.remove(domain1)
 
         cmd = listEvents.listEventsCmd()
         cmd.startdate = start_time
@@ -184,8 +195,9 @@ class TestEventsResource(cloudstackTestCase):
         for event in events:
             if event.type.startswith("VM.") or (event.type.startswith("NETWORK.") and not event.type.startswith("NETWORK.ELEMENT")) or event.type.startswith("VOLUME.") or event.type.startswith("ACCOUNT.") or event.type.startswith("DOMAIN.") or event.type.startswith("TEMPLATE."):
                 if event.resourceid is None or event.resourcetype is None:
-                    self.debug("Failed event:: %" % event)
-                    self.fail("resourceid or resourcetype for the event not found!")
+                    event_json = json.dumps(event.__dict__, indent=2)
+                    self.debug("Failed event:: %s" % event_json)
+                    self.fail("resourceid or resourcetype not found for the event: %s" % event_json)
                 else:
                     self.debug("Event %s at %s:: Resource Type: %s, Resource ID: %s" % (event.type, event.created, event.resourcetype, event.resourceid))
 

@@ -22,13 +22,18 @@ import static com.google.common.collect.ObjectArrays.concat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -78,6 +83,9 @@ import com.cloud.upgrade.dao.Upgrade41610to41700;
 import com.cloud.upgrade.dao.Upgrade41700to41710;
 import com.cloud.upgrade.dao.Upgrade41710to41720;
 import com.cloud.upgrade.dao.Upgrade41720to41800;
+import com.cloud.upgrade.dao.Upgrade41800to41810;
+import com.cloud.upgrade.dao.Upgrade41810to41900;
+import com.cloud.upgrade.dao.Upgrade41900to41910;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -109,6 +117,7 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
@@ -118,6 +127,7 @@ import com.google.common.annotations.VisibleForTesting;
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
+    private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
 
     @Inject
     VersionDao _dao;
@@ -213,6 +223,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.17.0.1", new Upgrade41700to41710())
                 .next("4.17.1.0", new Upgrade41710to41720())
                 .next("4.17.2.0", new Upgrade41720to41800())
+                .next("4.18.0.0", new Upgrade41800to41810())
+                .next("4.18.1.0", new Upgrade41810to41900())
+                .next("4.19.0.0", new Upgrade41900to41910())
                 .build();
     }
 
@@ -356,7 +369,31 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
+
+        executeViewScripts();
         updateSystemVmTemplates(upgrades);
+    }
+
+    protected void executeViewScripts() {
+        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(VIEWS_DIRECTORY);
+
+        try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
+            Connection conn = txn.getConnection();
+
+            for (String filePath : filesPathUnderViewsDirectory) {
+                s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
+
+                InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+                runScript(conn, viewScript);
+            }
+
+            s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        } catch (SQLException e) {
+            String message = String.format("Unable to execute VIEW scripts due to [%s].", e.getMessage());
+            s_logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
     }
 
     @Override
@@ -369,6 +406,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
 
             try {
+                initializeDatabaseEncryptors();
 
                 final CloudStackVersion dbVersion = CloudStackVersion.parse(_dao.getCurrentVersion());
                 final String currentVersionValue = this.getClass().getPackage().getImplementationVersion();
@@ -403,11 +441,46 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
     }
 
+    private void initializeDatabaseEncryptors() {
+        TransactionLegacy txn = TransactionLegacy.open("initializeDatabaseEncryptors");
+        txn.start();
+        String errorMessage = "Unable to get the database connections";
+        try {
+            Connection conn = txn.getConnection();
+            errorMessage = "Unable to get the 'init' value from 'configuration' table in the 'cloud' database";
+            decryptInit(conn);
+            txn.commit();
+        } catch (CloudRuntimeException e) {
+            s_logger.error(e.getMessage());
+            errorMessage = String.format("Unable to initialize the database encryptors due to %s. " +
+                    "Please check if database encryption key and database encryptor version are correct.", errorMessage);
+            s_logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage, e);
+        } catch (SQLException e) {
+            s_logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
+        } finally {
+            txn.close();
+        }
+    }
+
+    private void decryptInit(Connection conn) throws SQLException {
+        String sql = "SELECT value from configuration WHERE name = 'init'";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet result = pstmt.executeQuery()) {
+            if (result.next()) {
+                String init = result.getString(1);
+                s_logger.info("init = " + DBEncryptionUtil.decrypt(init));
+            }
+        }
+    }
+
     @VisibleForTesting
-    protected static final class NoopDbUpgrade implements DbUpgrade {
+    protected static final class NoopDbUpgrade implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
         private final String upgradedVersion;
         private final String[] upgradeRange;
+        private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
         private NoopDbUpgrade(final CloudStackVersion fromVersion, final CloudStackVersion toVersion) {
 
@@ -448,5 +521,23 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             return new InputStream[0];
         }
 
+        private void initSystemVmTemplateRegistration() {
+            systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+        }
+
+        @Override
+        public void updateSystemVmTemplates(Connection conn) {
+            s_logger.debug("Updating System Vm template IDs");
+            initSystemVmTemplateRegistration();
+            try {
+                systemVmTemplateRegistration.updateSystemVmTemplates(conn);
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            }
+        }
+    }
+
+    public CloudStackVersion getLatestVersion() {
+        return hierarchy.getLatestVersion();
     }
 }

@@ -110,4 +110,3 @@ uniq ./config_difference_before_and_after_upgrade.sort > ./config_difference_bef
 
 rm -rf $path2 *.sort category description scope component temp temp1 $a
 rm -rf mismatch_config_between_before_and_after_upgrade  config_difference_before_and_after_upgrade.sort t
-

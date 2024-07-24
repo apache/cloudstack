@@ -121,6 +121,11 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
+  <bean id="CustomServerDiscoverer"
+        class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer">
+    <property name="name" value="CustomHW Agent" />
+  </bean>
+
   <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.BareMetalDiscoverer">
     <property name="name" value="Bare Metal Agent"/>
   </bean>
@@ -188,5 +193,9 @@
   -->
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
   </bean>
-  
+  <bean id="configurationGroupDaoImpl" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl">
+  </bean>
+  <bean id="configurationSubGroupDaoImpl" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl">
+  </bean>
+
 </beans>

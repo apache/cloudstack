@@ -66,7 +66,7 @@ def getTemplateSize(session, args):
    try:
        template = urllib2.urlopen(srcUrl)
        headers = template.info()
-       return str(headers["Content-Length"])
+       return str(headers["content-length"])
    except:
        return ""
 if __name__ == "__main__":

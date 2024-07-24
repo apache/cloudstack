@@ -111,7 +111,7 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
                 long d = Date.parse(ifModifiedSince);
                 if (d + 1000 >= lastModified) {
                     Headers hds = t.getResponseHeaders();
-                    hds.set("Content-Type", contentType);
+                    hds.set("content-type", contentType);
                     t.sendResponseHeaders(304, -1);
 
                     if (s_logger.isInfoEnabled())
@@ -122,8 +122,8 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
 
             long length = f.length();
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", contentType);
-            hds.set("Last-Modified", new Date(lastModified).toGMTString());
+            hds.set("content-type", contentType);
+            hds.set("last-modified", new Date(lastModified).toGMTString());
             t.sendResponseHeaders(200, length);
             responseFileContent(t, f);
 

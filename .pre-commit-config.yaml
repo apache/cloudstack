@@ -1,0 +1,74 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+---
+default_stages: [commit, push]
+default_language_version:
+  # force all unspecified Python hooks to run python3
+  python: python3
+minimum_pre_commit_version: "2.17.0"
+repos:
+  - repo: meta
+    hooks:
+      - id: identity
+      - id: check-hooks-apply
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      #- id: check-added-large-files
+      - id: check-case-conflict
+      #- id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-vcs-permalinks
+      #- id: check-yaml
+      - id: destroyed-symlinks
+      - id: detect-private-key
+        exclude: >
+          (?x)
+          ^scripts/vm/systemvm/id_rsa\.cloud$|
+          ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
+          ^server/src/test/resources/certs/dsa_self_signed\.key$|
+          ^server/src/test/resources/certs/non_root\.key$|
+          ^server/src/test/resources/certs/root_chain\.key$|
+          ^server/src/test/resources/certs/rsa_ca_signed\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed_with_pwd\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed\.key$|
+          ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
+          ^systemvm/agent/certs/localhost\.key$|
+          ^systemvm/agent/certs/realhostip\.key$
+      - id: end-of-file-fixer
+        exclude: \.vhd$
+      #- id: fix-byte-order-marker
+      - id: mixed-line-ending
+        exclude: \.(cs|xml)$
+      # - id: trailing-whitespace
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+    - id: flake8
+      args: [--config, .github/linters/.flake8]
+      exclude: >
+        (?x)
+        ^agent/bindir/cloud-setup-agent\.in$|
+        ^client/bindir/cloud-update-xenserver-licenses\.in$|
+        ^cloud-cli/bindir/cloud-tool$|
+        ^python/bindir/cloud-grab-dependent-library-versions$|
+        ^python/bindir/cloud-setup-baremetal$|
+        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
+        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
+        ^setup/bindir/cloud-setup-encryption\.in$|
+        ^venv/.*$

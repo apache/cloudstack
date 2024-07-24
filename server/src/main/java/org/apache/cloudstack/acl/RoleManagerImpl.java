@@ -56,7 +56,6 @@ import com.cloud.utils.ListUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -95,7 +94,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public Role findRole(Long id) {
+    public Role findRole(Long id, boolean ignorePrivateRoles) {
         if (id == null || id < 1L) {
             logger.trace(String.format("Role ID is invalid [%s]", id));
             return null;
@@ -105,12 +104,39 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             logger.trace(String.format("Role not found [id=%s]", id));
             return null;
         }
-        Account account = getCurrentAccount();
-        if (!accountManager.isRootAdmin(account.getId()) && RoleType.Admin == role.getRoleType()) {
-            logger.debug(String.format("Role [id=%s, name=%s] is of 'Admin' type and is only visible to 'Root admins'.", id, role.getName()));
+        if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
+            logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", id, role.getName()));
             return null;
         }
         return role;
+    }
+
+    @Override
+    public List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles) {
+        List<Role> result = new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            logger.trace(String.format("Role IDs are invalid [%s]", ids));
+            return result;
+        }
+
+        List<RoleVO> roles = roleDao.searchByIds(ids.toArray(new Long[0]));
+        if (CollectionUtils.isEmpty(roles)) {
+            logger.trace(String.format("Roles not found [ids=%s]", ids));
+            return result;
+        }
+        for (Role role : roles) {
+            if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
+                logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role.getId(), role.getName()));
+                continue;
+            }
+            result.add(role);
+        }
+        return result;
+    }
+
+    @Override
+    public Role findRole(Long id) {
+        return findRole(id, false);
     }
 
     /**
@@ -140,7 +166,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_CREATE, eventDescription = "creating Role")
-    public Role createRole(final String name, final RoleType roleType, final String description) {
+    public Role createRole(final String name, final RoleType roleType, final String description, boolean publicRole) {
         checkCallerAccess();
         if (roleType == null || roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role type provided");
@@ -148,7 +174,9 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         return Transaction.execute(new TransactionCallback<RoleVO>() {
             @Override
             public RoleVO doInTransaction(TransactionStatus status) {
-                RoleVO role = roleDao.persist(new RoleVO(name, roleType, description));
+                RoleVO role = new RoleVO(name, roleType, description);
+                role.setPublicRole(publicRole);
+                role = roleDao.persist(role);
                 CallContext.current().putContextParameter(Role.class, role.getUuid());
                 return role;
             }
@@ -157,12 +185,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_CREATE, eventDescription = "creating role by cloning another role")
-    public Role createRole(String name, Role role, String description) {
+    public Role createRole(String name, Role role, String description, boolean publicRole) {
         checkCallerAccess();
         return Transaction.execute(new TransactionCallback<RoleVO>() {
             @Override
             public RoleVO doInTransaction(TransactionStatus status) {
-                RoleVO newRoleVO = roleDao.persist(new RoleVO(name, role.getRoleType(), description));
+                RoleVO newRole = new RoleVO(name, role.getRoleType(), description);
+                newRole.setPublicRole(publicRole);
+                RoleVO newRoleVO = roleDao.persist(newRole);
                 if (newRoleVO == null) {
                     throw new CloudRuntimeException("Unable to create the role: " + name + ", failed to persist in DB");
                 }
@@ -181,7 +211,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_IMPORT, eventDescription = "importing Role")
-    public Role importRole(String name, RoleType type, String description, List<Map<String, Object>> rules, boolean forced) {
+    public Role importRole(String name, RoleType type, String description, List<Map<String, Object>> rules, boolean forced, boolean isPublicRole) {
         checkCallerAccess();
         if (StringUtils.isEmpty(name)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role name provided");
@@ -190,7 +220,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role type provided");
         }
 
-        List<RoleVO> existingRoles = roleDao.findByName(name);
+        List<RoleVO> existingRoles = roleDao.findByName(name, isCallerRootAdmin());
         if (CollectionUtils.isNotEmpty(existingRoles) && !forced) {
             throw new CloudRuntimeException("Role already exists");
         }
@@ -199,7 +229,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             @Override
             public RoleVO doInTransaction(TransactionStatus status) {
                 RoleVO newRole = null;
-                RoleVO existingRole = roleDao.findByNameAndType(name, type);
+                RoleVO existingRole = roleDao.findByNameAndType(name, type, isCallerRootAdmin());
                 if (existingRole != null) {
                     if (existingRole.isDefault()) {
                         throw new CloudRuntimeException("Failed to import the role: " + name + ", default role cannot be overriden");
@@ -216,11 +246,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     existingRole.setName(name);
                     existingRole.setRoleType(type);
                     existingRole.setDescription(description);
+                    existingRole.setPublicRole(isPublicRole);
                     roleDao.update(existingRole.getId(), existingRole);
 
                     newRole = existingRole;
                 } else {
-                    newRole = roleDao.persist(new RoleVO(name, type, description));
+                    RoleVO role = new RoleVO(name, type, description);
+                    role.setPublicRole(isPublicRole);
+                    newRole = roleDao.persist(role);
                 }
 
                 if (newRole == null) {
@@ -243,16 +276,23 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_UPDATE, eventDescription = "updating Role")
-    public Role updateRole(final Role role, final String name, final RoleType roleType, final String description) {
+    public Role updateRole(final Role role, final String name, final RoleType roleType, final String description, Boolean publicRole) {
         checkCallerAccess();
-        if (role.isDefault()) {
-            throw new PermissionDeniedException("Default roles cannot be updated");
-        }
 
         if (roleType != null && roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");
         }
         RoleVO roleVO = (RoleVO)role;
+
+        if (role.isDefault()) {
+            if (publicRole == null || roleType != null || !StringUtils.isAllEmpty(name, description)) {
+                throw new PermissionDeniedException("Default roles cannot be updated (with the exception of making it private/public).");
+            }
+            roleVO.setPublicRole(publicRole);
+            roleDao.update(role.getId(), roleVO);
+            return role;
+        }
+
         if (StringUtils.isNotEmpty(name)) {
             roleVO.setName(name);
         }
@@ -268,6 +308,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             roleVO.setDescription(description);
         }
 
+        if (publicRole == null) {
+            publicRole = role.isPublicRole();
+        }
+        roleVO.setPublicRole(publicRole);
         roleDao.update(role.getId(), roleVO);
         return role;
     }
@@ -357,13 +401,13 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        return findRolesByName(name, null, null).first();
+        return findRolesByName(name, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit) {
-        if (StringUtils.isNotBlank(name)) {
-            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, startIndex, limit);
+    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
+        if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit, isCallerRootAdmin());
             int removed = removeRootAdminRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
@@ -375,8 +419,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
      *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
      */
     protected int removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
-        Account account = getCurrentAccount();
-        if (!accountManager.isRootAdmin(account.getId())) {
+        if (!isCallerRootAdmin()) {
             return removeRootAdminRoles(roles);
         }
         return 0;
@@ -408,10 +451,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit) {
-        if (roleType == null || RoleType.Admin == roleType && !accountManager.isRootAdmin(getCurrentAccount().getId())) {
+        if (roleType == null || RoleType.Admin == roleType && !isCallerRootAdmin()) {
             return new Pair<List<Role>, Integer>(Collections.emptyList(), 0);
         }
-        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, startIndex, limit);
+        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, startIndex, limit, isCallerRootAdmin());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second()));
     }
 
@@ -424,8 +467,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit) {
-        Pair<List<RoleVO>, Integer> data = roleDao.searchAndCount(null,
-                new Filter(RoleVO.class, "id", Boolean.TRUE, startIndex, limit));
+        Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(startIndex, limit, isCallerRootAdmin());
         int removed = removeRootAdminRolesIfNeeded(data.first());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
     }
@@ -437,6 +479,10 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return new ArrayList<>(permissions);
         }
         return Collections.emptyList();
+    }
+
+    private boolean isCallerRootAdmin() {
+        return accountManager.isRootAdmin(getCurrentAccount().getId());
     }
 
     @Override

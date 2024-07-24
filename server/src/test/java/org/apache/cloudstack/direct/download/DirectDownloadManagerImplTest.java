@@ -46,9 +46,9 @@ public class DirectDownloadManagerImplTest {
     @InjectMocks
     private DirectDownloadManagerImpl manager = new DirectDownloadManagerImpl();
 
-    private static final String HTTP_HEADER_1 = "Content-Type";
+    private static final String HTTP_HEADER_1 = "content-type";
     private static final String HTTP_VALUE_1 = "application/x-www-form-urlencoded";
-    private static final String HTTP_HEADER_2 = "Accept-Encoding";
+    private static final String HTTP_HEADER_2 = "accept-encoding";
     private static final String HTTP_VALUE_2 = "gzip";
 
     private static final String VALID_CERTIFICATE =

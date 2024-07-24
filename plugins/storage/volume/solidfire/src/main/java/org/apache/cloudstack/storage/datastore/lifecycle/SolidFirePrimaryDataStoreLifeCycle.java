@@ -63,7 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.google.common.base.Preconditions;
 
-public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
 
     @Inject private CapacityManager _capacityMgr;
@@ -91,6 +91,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
@@ -142,6 +143,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         }
 
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
 
         String managementVip = SolidFireUtil.getManagementVip(url);
@@ -384,5 +386,14 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     @Override
     public void disableStoragePool(DataStore dataStore) {
         _dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorType as null.
+         */
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 }

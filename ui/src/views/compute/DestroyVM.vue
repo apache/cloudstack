@@ -54,9 +54,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="volume in volumes" :key="volume.id">
+              <a-select-option v-for="volume in volumes" :key="volume.id" :label="volume.name">
                 {{ volume.name }}
               </a-select-option>
             </a-select>
@@ -102,12 +102,12 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="listVolumes[record.id].loading"
                     :placeholder="$t('label.delete.volumes')"
                     @change="(value) => onChangeVolume(record.id, value)">
-                    <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
+                    <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id" :label="item.name || item.description">
                       {{ item.name || item.description }}
                     </a-select-option>
                   </a-select>
@@ -317,9 +317,9 @@ export default {
       this.selectedItemsProgress = Array.from(this.selectedItems)
       this.selectedItemsProgress = this.selectedItemsProgress.map(v => ({ ...v, status: 'InProgress' }))
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

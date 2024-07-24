@@ -37,13 +37,18 @@
                 v-if="item.icon && item.icon.base64image"
                 class="radio-group__os-logo"
                 :image="item.icon.base64image"
-                size="1x" />
+                size="2x" />
               <os-logo
                 v-else
                 class="radio-group__os-logo"
+                size="2x"
                 :osId="item.ostypeid"
                 :os-name="item.osName" />
-              {{ item.displaytext }}&nbsp;
+              &nbsp;
+              {{ item.displaytext }}
+              <span v-if="item?.projectid">
+                | <project-outlined /> {{ item.project }}
+            </span>
             </a-radio>
           </a-radio-group>
         </a-list-item>
@@ -156,15 +161,11 @@ export default {
     margin: 0.5rem 0;
 
     :deep(.ant-radio) {
-      margin-right: 20px;
+      margin-right: 0px;
     }
 
     &__os-logo {
-      position: absolute;
-      top: 0;
-      left: 0;
-      margin-top: 2px;
-      margin-left: 23px;
+      margin-top: -4px;
     }
   }
 

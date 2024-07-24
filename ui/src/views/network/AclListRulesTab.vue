@@ -40,7 +40,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">
@@ -65,19 +64,19 @@
                 <div class="list__label">{{ $t('label.protocol') }}</div>
                 <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="element.startport">
+              <div class="list__col" v-if="element.startport !== undefined">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ element.startport }}</div>
               </div>
-              <div class="list__col" v-if="element.endport">
+              <div class="list__col" v-if="element.endport !== undefined">
                 <div class="list__label">{{ $t('label.endport') }}</div>
                 <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="element.icmpcode">
+              <div class="list__col" v-if="element.icmpcode !== undefined">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
                 <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="element.icmptype">
+              <div class="list__col" v-if="element.icmptype !== undefined">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
                 <div>{{ element.icmptype }}</div>
               </div>
@@ -91,6 +90,16 @@
               </div>
             </div>
             <div class="list__actions">
+              <tooltip-button
+                v-if="element.id !== acls[0].id"
+                :tooltip="$t('label.move.to.top')"
+                icon="vertical-align-top-outlined"
+                @onClick="() => moveRuleToTop(element)" />
+              <tooltip-button
+                v-if="element.id !== acls[acls.length - 1].id"
+                :tooltip="$t('label.move.to.bottom')"
+                icon="vertical-align-bottom-outlined"
+                @onClick="() => moveRuleToBottom(element)" />
               <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(element)" />
               <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(element)" />
               <tooltip-button
@@ -182,10 +191,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
-            <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
+            <a-select-option value="allow" :label="$t('label.allow')">{{ $t('label.allow') }}</a-select-option>
+            <a-select-option value="deny" :label="$t('label.deny')">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')" ref="protocol" name="protocol">
@@ -194,13 +203,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
-            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all" :label="$t('label.all')">{{ $t('label.all') }}</a-select-option>
+            <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ $t('label.protocol.number') }}</a-select-option>
           </a-select>
         </a-form-item>
 
@@ -212,7 +221,7 @@
           <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+        <div v-if="form.protocol === 'icmp'">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
             <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
@@ -236,10 +245,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
-            <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
+            <a-select-option value="ingress" :label="$t('label.ingress')">{{ $t('label.ingress') }}</a-select-option>
+            <a-select-option value="egress" :label="$t('label.egress')">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.description')" ref="reason" name="reason">
@@ -322,6 +331,10 @@ export default {
       }
 
       keys = Object.keys(data[0])
+      for (var i = 1; i < data.length; ++i) {
+        const rowKeys = Object.keys(data[i])
+        keys = keys.concat(rowKeys.filter(k => !keys.includes(k)))
+      }
 
       result = ''
       result += keys.join(columnDelimiter)
@@ -334,7 +347,17 @@ export default {
             result += columnDelimiter
           }
 
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          if (key === 'tags') {
+            var tags = '"'
+            if (item[key].length > 0) {
+              item[key].forEach(tag => {
+                tags += '(' + tag.key + ',' + tag.value + ')'
+              })
+            }
+            result += tags + '"'
+          } else {
+            result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          }
           ctr++
         })
         result += lineDelimiter
@@ -623,6 +646,12 @@ export default {
 
       if (e.moved.newIndex + 1 < this.acls.length) nextaclruleid = this.acls[e.moved.newIndex + 1].id
 
+      this.moveRule(
+        id,
+        previousaclruleid,
+        nextaclruleid)
+    },
+    moveRule (id, previousaclruleid, nextaclruleid) {
       this.fetchLoading = true
       api('moveNetworkAclItem', {
         id,
@@ -654,6 +683,12 @@ export default {
         this.$notifyError(error)
         this.fetchLoading = false
       })
+    },
+    moveRuleToTop (element) {
+      this.moveRule(element.id, null, this.acls[0].id)
+    },
+    moveRuleToBottom (element) {
+      this.moveRule(element.id, this.acls[this.acls.length - 1].id, null)
     },
     exportAclList () {
       const csvData = this.csv({ data: this.acls })

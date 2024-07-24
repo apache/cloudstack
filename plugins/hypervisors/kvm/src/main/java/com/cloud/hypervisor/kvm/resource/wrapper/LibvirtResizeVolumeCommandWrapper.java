@@ -50,6 +50,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.hypervisor.kvm.storage.MultipathSCSIPool;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -83,6 +84,10 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
         try {
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
+
+            if (pool instanceof MultipathSCSIPool) {
+                return handleMultipathSCSIResize(command, pool);
+            }
 
             if (spool.getType().equals(StoragePoolType.PowerFlex)) {
                 pool.connectPhysicalDisk(volumeId, null);
@@ -224,5 +229,10 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
         } catch (QemuImgException | LibvirtException ex) {
             throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
         }
+    }
+
+    private Answer handleMultipathSCSIResize(ResizeVolumeCommand command, KVMStoragePool pool) {
+        ((MultipathSCSIPool)pool).resize(command.getPath(), command.getInstanceName(), command.getNewSize());
+        return new ResizeVolumeAnswer(command, true, "");
     }
 }

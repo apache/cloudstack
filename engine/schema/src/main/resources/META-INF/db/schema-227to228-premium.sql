@@ -34,4 +34,3 @@ drop table `cloud_usage`.`temp_usage`;
 
 update `cloud_usage`.`cloud_usage` set raw_usage = (raw_usage % 24) where usage_type =6 and raw_usage > 24 and (raw_usage % 24) <> 0;
 update `cloud_usage`.`cloud_usage` set raw_usage = 24 where usage_type =6 and raw_usage > 24 and (raw_usage % 24) = 0;
-

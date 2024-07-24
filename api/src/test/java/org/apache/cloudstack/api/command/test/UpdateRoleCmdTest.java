@@ -58,7 +58,7 @@ public class UpdateRoleCmdTest extends TestCase{
         when(role.getDescription()).thenReturn("Default user");
         when(role.getName()).thenReturn("User");
         when(role.getRoleType()).thenReturn(RoleType.User);
-        when(roleService.updateRole(role,updateRoleCmd.getRoleName(),updateRoleCmd.getRoleType(),updateRoleCmd.getRoleDescription())).thenReturn(role);
+        when(roleService.updateRole(role, updateRoleCmd.getRoleName(), updateRoleCmd.getRoleType(), updateRoleCmd.getRoleDescription(), updateRoleCmd.isPublicRole())).thenReturn(role);
         when(role.getId()).thenReturn(1L);
         when(role.getDescription()).thenReturn("Description Initial");
         when(role.getName()).thenReturn("User");

@@ -268,4 +268,3 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
-

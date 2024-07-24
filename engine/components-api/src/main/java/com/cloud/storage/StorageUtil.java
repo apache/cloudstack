@@ -73,7 +73,7 @@ public class StorageUtil {
      * With managed storage on XenServer and vSphere, CloudStack needs to use an iSCSI SR (XenServer) or datastore (vSphere) per CloudStack
      * volume. Since XenServer and vSphere are limited to the hundreds with regards to how many SRs or datastores can be leveraged per
      * compute cluster, this method is used to check a Global Setting (that specifies the maximum number of SRs or datastores per compute cluster)
-     * against what is being requested. KVM does not apply here here because it does not suffer from the same scalability limits as XenServer and
+     * against what is being requested. KVM does not apply here because it does not suffer from the same scalability limits as XenServer and
      * vSphere do. With XenServer and vSphere, each host is configured to see all the SRs/datastores of the cluster. With KVM, each host typically
      * is only configured to see the managed volumes of the VMs that are currently running on that host.
      *

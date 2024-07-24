@@ -30,7 +30,8 @@ import {
   USE_BROWSER_TIMEZONE,
   SERVER_MANAGER,
   VUE_VERSION,
-  CUSTOM_COLUMNS
+  CUSTOM_COLUMNS,
+  RELOAD_ALL_PROJECTS
 } from '@/store/mutation-types'
 
 const app = {
@@ -50,7 +51,8 @@ const app = {
     metrics: false,
     listAllProjects: false,
     server: '',
-    vueVersion: ''
+    vueVersion: '',
+    allProjects: []
   },
   mutations: {
     SET_SIDEBAR_TYPE: (state, type) => {
@@ -121,6 +123,16 @@ const app = {
     SET_CUSTOM_COLUMNS: (state, customColumns) => {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
+    },
+    RELOAD_ALL_PROJECTS: (state, allProjects = []) => {
+      vueProps.$localStorage.set(RELOAD_ALL_PROJECTS, allProjects)
+      state.allProjects = allProjects
+    },
+    SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
+      state.shutdownTriggered = shutdownTriggered
+    },
+    SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, readyForShutdownPollingJob) => {
+      state.readyForShutdownPollingJob = readyForShutdownPollingJob
     }
   },
   actions: {
@@ -177,6 +189,15 @@ const app = {
     },
     SetCustomColumns ({ commit }, bool) {
       commit('SET_CUSTOM_COLUMNS', bool)
+    },
+    ReloadAllProjects ({ commit, allProjects }) {
+      commit('RELOAD_ALL_PROJECTS', allProjects)
+    },
+    SetShutdownTriggered ({ commit }, bool) {
+      commit('SET_SHUTDOWN_TRIGGERED', bool)
+    },
+    SetReadyForShutdownPollingJob ({ commit }, job) {
+      commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', job)
     }
   }
 }

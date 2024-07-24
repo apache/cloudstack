@@ -31,15 +31,15 @@ public class MessageDetector implements MessageSubscriber {
         _subjects = null;
     }
 
-    public void waitAny(long timeoutInMiliseconds) {
-        if (timeoutInMiliseconds < 100) {
-            s_logger.warn("waitAny is passed with a too short time-out interval. " + timeoutInMiliseconds + "ms");
-            timeoutInMiliseconds = 100;
+    public void waitAny(long timeoutInMilliseconds) {
+        if (timeoutInMilliseconds < 100) {
+            s_logger.warn("waitAny is passed with a too short time-out interval. " + timeoutInMilliseconds + "ms");
+            timeoutInMilliseconds = 100;
         }
 
         synchronized (this) {
             try {
-                wait(timeoutInMiliseconds);
+                wait(timeoutInMilliseconds);
             } catch (InterruptedException e) {
                 s_logger.debug("[ignored] interrupted while waiting on any message.");
             }

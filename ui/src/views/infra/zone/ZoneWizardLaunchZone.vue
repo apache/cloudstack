@@ -161,6 +161,9 @@ export default {
     sgEnabled () {
       return this.prefillContent?.securityGroupsEnabled || false
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     havingNetscaler () {
       return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
@@ -175,6 +178,14 @@ export default {
     },
     selectedBaremetalProviders () {
       return this.prefillContent?.networkOfferingSelected?.selectedBaremetalProviders || []
+    },
+    physicalNetworks () {
+      const tungstenNetworks = this.prefillContent.physicalNetworks.filter(network => network.isolationMethod === 'TF')
+      if (tungstenNetworks && tungstenNetworks.length > 0) {
+        return tungstenNetworks
+      }
+
+      return this.prefillContent.physicalNetworks
     }
   },
   mounted () {
@@ -189,7 +200,8 @@ export default {
         this.stepData.tasks = []
         this.stepData.stepMove = this.stepData.stepMove.filter(item => item.indexOf('createStorageNetworkIpRange') === -1)
       }
-      this.handleSubmit()
+      console.log('step-data', this.stepData)
+      // this.handleSubmit()
     }
   },
   methods: {
@@ -333,6 +345,7 @@ export default {
       params.internaldns1 = this.prefillContent?.internalDns1 || null
       params.internaldns2 = this.prefillContent?.internalDns2 || null
       params.domain = this.prefillContent?.networkDomain || null
+      params.isedge = this.isEdgeZone
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -453,6 +466,9 @@ export default {
           if (physicalNetwork.isolationMethod) {
             params.isolationmethods = physicalNetwork.isolationMethod
           }
+          if (physicalNetwork.tags) {
+            params.tags = physicalNetwork.tags
+          }
 
           try {
             if (!this.stepData.stepMove.includes('createPhysicalNetwork' + index)) {
@@ -461,8 +477,17 @@ export default {
               this.stepData.physicalNetworkReturned = physicalNetworkReturned
               this.stepData.physicalNetworkItem['createPhysicalNetwork' + index] = physicalNetworkReturned
               this.stepData.stepMove.push('createPhysicalNetwork' + index)
+
+              if (physicalNetwork.isolationMethod === 'TF' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public') > -1) {
+                this.stepData.isTungstenZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
+            }
+            if (physicalNetwork.traffics.findIndex(traffic => traffic.type === 'guest') > -1) {
+              this.stepData.guestPhysicalNetworkId = physicalNetworkReturned.id
             }
           } catch (e) {
             this.messageError = e
@@ -617,11 +642,11 @@ export default {
 
           try {
             // Advanced SG-disabled zone
-            if (!this.sgEnabled) {
+            if (!this.sgEnabled && !this.isEdgeZone) {
               // ***** VPC Virtual Router ***** (begin) *****
               await this.configVpcVirtualRouter(physicalNetwork)
               // ***** VPC Virtual Router ***** (end) *****
-            } else {
+            } else if (this.sgEnabled && !this.isEdgeZone) {
               this.stepData.physicalNetworkReturned = physicalNetwork
               await this.stepEnableSecurityGroupProvider()
             }
@@ -643,7 +668,7 @@ export default {
       }
     },
     async configOvs (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configOvs' + physicalNetwork.id)) {
         return
       }
 
@@ -663,7 +688,7 @@ export default {
       this.stepData.stepMove.push('configOvs' + physicalNetwork.id)
     },
     async configInternalLBVM (physicalNetwork) {
-      if (this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
+      if (this.isEdgeZone || this.stepData.stepMove.includes('configInternalLBVM' + physicalNetwork.id)) {
         return
       }
 
@@ -817,6 +842,9 @@ export default {
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
       params.name = this.prefillContent?.podName || null
+      if (this.isEdgeZone) {
+        params.name = 'Pod-' + this.stepData.zoneReturned.name
+      }
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
@@ -869,7 +897,7 @@ export default {
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
-        (this.isAdvancedZone && !this.sgEnabled)) {
+        (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
         this.addStep('message.configuring.public.traffic', 'publicTraffic')
@@ -938,9 +966,17 @@ export default {
           return
         }
 
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenFabricPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else if (this.isAdvancedZone && this.sgEnabled) {
-        await this.stepConfigureStorageTraffic()
+        if (this.stepData.isTungstenZone) {
+          await this.stepCreateTungstenFabricPublicNetwork()
+        } else {
+          await this.stepConfigureStorageTraffic()
+        }
       } else {
         if (this.prefillContent.physicalNetworks) {
           const storageExists = this.prefillContent.physicalNetworks[0].traffics.filter(traffic => traffic.type === 'storage')
@@ -950,6 +986,56 @@ export default {
             await this.stepConfigureGuestTraffic()
           }
         }
+      }
+    },
+    async stepCreateTungstenFabricPublicNetwork () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.create.tungsten.public.network', 'tungsten')
+      if (this.stepData.stepMove.includes('tungsten')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('createTungstenFabricProvider')) {
+          const providerParams = {}
+          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname || ''
+          providerParams.name = this.prefillContent?.tungstenName || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort || ''
+          providerParams.tungstengateway = this.prefillContent?.tungstenGateway || ''
+          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter || ''
+          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort || ''
+          await this.createTungstenFabricProvider(providerParams)
+          this.stepData.stepMove.push('createTungstenFabricProvider')
+        }
+        if (!this.stepData.stepMove.includes('configTungstenFabricService')) {
+          const configParams = {}
+          configParams.zoneid = this.stepData.zoneReturned.id
+          configParams.physicalnetworkid = this.stepData.tungstenPhysicalNetworkId
+          await this.configTungstenFabricService(configParams)
+          this.stepData.stepMove.push('configTungstenFabricService')
+        }
+        if (!this.stepData.stepMove.includes('createTungstenFabricManagementNetwork')) {
+          const networkParams = {}
+          networkParams.podId = this.stepData.podReturned.id
+          await this.createTungstenFabricManagementNetwork(networkParams)
+          this.stepData.stepMove.push('createTungstenFabricManagementNetwork')
+        }
+        if (!this.sgEnabled) {
+          if (!this.stepData.stepMove.includes('createTungstenFabricPublicNetwork')) {
+            const publicParams = {}
+            publicParams.zoneId = this.stepData.zoneReturned.id
+            await this.createTungstenFabricPublicNetwork(publicParams)
+            this.stepData.stepMove.push('createTungstenFabricPublicNetwork')
+          }
+        }
+        this.stepData.stepMove.push('tungsten')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
       }
     },
     async stepConfigureStorageTraffic () {
@@ -1101,7 +1187,7 @@ export default {
             }
 
             const updateParams = {}
-            updateParams.id = this.stepData.physicalNetworkReturned.id
+            updateParams.id = this.stepData.guestPhysicalNetworkId
             updateParams.vlan = vlan
 
             try {
@@ -1141,7 +1227,10 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName
+      let clusterName = this.prefillContent?.clusterName || null
+      if (this.isEdgeZone) {
+        clusterName = 'Cluster-' + this.stepData.zoneReturned.name
+      }
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -1298,6 +1387,7 @@ export default {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
+        params['details[0].nfsmountopts'] = this.prefillContent.primaryStorageNFSMountOptions
       } else if (protocol === 'SMB') {
         let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
@@ -1501,7 +1591,7 @@ export default {
         if (this.prefillContent.secondaryStoragePolicy &&
           this.prefillContent.secondaryStoragePolicy.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'storagepolicy'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy
           index++
         }
       }
@@ -1974,7 +2064,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addCluster', args).then(json => {
+        api('addCluster', args, 'POST').then(json => {
           const result = json.addclusterresponse.cluster[0]
           resolve(result)
         }).catch(error => {
@@ -2004,7 +2094,11 @@ export default {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
-          reject(message)
+          if (message.includes('is already in the database')) {
+            resolve()
+          } else {
+            reject(message)
+          }
         })
       })
     },
@@ -2077,6 +2171,46 @@ export default {
           resolve(result)
         }).catch(error => {
           message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricProvider (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    configTungstenFabricService (args) {
+      return new Promise((resolve, reject) => {
+        api('configTungstenFabricService', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricManagementNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricManagementNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createTungstenFabricPublicNetwork (args) {
+      return new Promise((resolve, reject) => {
+        api('createTungstenFabricPublicNetwork', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
           reject(message)
         })
       })

@@ -17,6 +17,9 @@
  * under the License.
  */
 package org.apache.cloudstack.storage.datastore.driver;
+
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -26,8 +29,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -39,9 +44,11 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.datastore.api.StorPoolSnapshotDef;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -56,6 +63,8 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -66,35 +75,43 @@ import com.cloud.agent.api.storage.StorPoolCopyVolumeToSecondaryCommand;
 import com.cloud.agent.api.storage.StorPoolDownloadTemplateCommand;
 import com.cloud.agent.api.storage.StorPoolDownloadVolumeCommand;
 import com.cloud.agent.api.storage.StorPoolResizeVolumeCommand;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionAnswer;
+import com.cloud.agent.api.storage.StorPoolSetVolumeEncryptionCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -121,9 +138,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private HostDao hostDao;
     @Inject
-    private ResourceTagDao _resourceTagDao;
+    private ResourceTagDao resourceTagDao;
     @Inject
-    private SnapshotDetailsDao _snapshotDetailsDao;
+    private SnapshotDetailsDao snapshotDetailsDao;
+    @Inject
+    private SnapshotDao snapshotDao;
     @Inject
     private SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
@@ -133,7 +152,19 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
-    private VMTemplatePoolDao vmTemplatePoolDao;
+    private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    DataStoreManager dataStoreManager;
+
+    private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        for (SnapshotDataStoreVO ref : snaps) {
+            if (zoneId == dataStoreManager.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
+                return ref;
+            }
+        }
+        return null;
+    }
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -167,6 +198,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
+        if (DataObjectType.VOLUME == data.getType()) {
+            final VolumeVO volume = volumeDao.findById(data.getId());
+            if (volume.getInstanceId() == null) {
+                StorPoolUtil.spLog("Removing tags from detached volume=%s", volume.toString());
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
+                StorPoolUtil.volumeRemoveTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), conn);
+            }
+        }
+
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -217,12 +257,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void createAsync(DataStore dataStore, DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         String path = null;
-        String err = null;
+        Answer answer;
         if (data.getType() == DataObjectType.VOLUME) {
             try {
                 VolumeInfo vinfo = (VolumeInfo)data;
                 String name = vinfo.getUuid();
-                Long size = vinfo.getSize();
+                Long size = vinfo.getPassphraseId() == null ? vinfo.getSize() : vinfo.getSize() + 2097152;
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
 
                 StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriver.createAsync volume: name=%s, uuid=%s, isAttached=%s vm=%s, payload=%s, template: %s", vinfo.getName(), vinfo.getUuid(), vinfo.isAttachedVM(), vinfo.getAttachedVmName(), vinfo.getpayload(), conn.getTemplateName());
@@ -231,28 +271,64 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     String volumeName = StorPoolUtil.getNameFromResponse(resp, false);
                     path = StorPoolUtil.devPath(volumeName);
 
-                    VolumeVO volume = volumeDao.findById(vinfo.getId());
-                    volume.setPoolId(dataStore.getId());
-                    volume.setPath(path);
-                    volumeDao.update(volume.getId(), volume);
+                    updateVolume(dataStore, path, vinfo);
 
+                    if (vinfo.getPassphraseId() != null) {
+                        VolumeObjectTO volume = updateVolumeObjectTO(vinfo, resp);
+                        answer = createEncryptedVolume(dataStore, data, vinfo, size, volume, null, true);
+                    } else {
+                        answer = new Answer(null, true, null);
+                    }
                     updateStoragePool(dataStore.getId(), size);
                     StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriver.createAsync volume: name=%s, uuid=%s, isAttached=%s vm=%s, payload=%s, template: %s", volumeName, vinfo.getUuid(), vinfo.isAttachedVM(), vinfo.getAttachedVmName(), vinfo.getpayload(), conn.getTemplateName());
                 } else {
-                    err = String.format("Could not create StorPool volume %s. Error: %s", name, resp.getError());
+                    answer = new Answer(null, false, String.format("Could not create StorPool volume %s. Error: %s", name, resp.getError()));
                 }
             } catch (Exception e) {
-                err = String.format("Could not create volume due to %s", e.getMessage());
+                answer = new Answer(null, false, String.format("Could not create volume due to %s", e.getMessage()));
             }
         } else {
-            err = String.format("Invalid object type \"%s\"  passed to createAsync", data.getType());
+            answer = new Answer(null, false, String.format("Invalid object type \"%s\"  passed to createAsync", data.getType()));
         }
-
-        CreateCmdResult res = new CreateCmdResult(path, new Answer(null, err == null, err));
-        res.setResult(err);
+        CreateCmdResult res = new CreateCmdResult(path, answer);
+        res.setResult(answer.getDetails());
         if (callback != null) {
             callback.complete(res);
         }
+    }
+
+    private void updateVolume(DataStore dataStore, String path, VolumeInfo vinfo) {
+        VolumeVO volume = volumeDao.findById(vinfo.getId());
+        volume.setPoolId(dataStore.getId());
+        volume.setPath(path);
+        volume.setPoolType(StoragePoolType.StorPool);
+        volumeDao.update(volume.getId(), volume);
+    }
+
+    private StorPoolSetVolumeEncryptionAnswer createEncryptedVolume(DataStore dataStore, DataObject data, VolumeInfo vinfo, Long size, VolumeObjectTO volume, String parentName, boolean isDataDisk) {
+        StorPoolSetVolumeEncryptionAnswer ans;
+        EndPoint ep = null;
+        if (parentName == null) {
+            ep = selector.select(data, vinfo.getPassphraseId() != null);
+        } else {
+            Long clusterId = StorPoolHelper.findClusterIdByGlobalId(parentName, clusterDao);
+            if (clusterId == null) {
+                ep = selector.select(data, vinfo.getPassphraseId() != null);
+            } else {
+                List<HostVO> hosts = hostDao.findByClusterIdAndEncryptionSupport(clusterId);
+                ep = CollectionUtils.isNotEmpty(hosts) ? RemoteHostEndPoint.getHypervisorHostEndPoint(hosts.get(0)) : ep;
+            }
+        }
+        if (ep == null) {
+            ans = new StorPoolSetVolumeEncryptionAnswer(null, false, "Could not find a host with volume encryption");
+        } else {
+            StorPoolSetVolumeEncryptionCommand cmd = new StorPoolSetVolumeEncryptionCommand(volume, parentName, isDataDisk);
+            ans = (StorPoolSetVolumeEncryptionAnswer) ep.sendMessage(cmd);
+            if (ans.getResult()) {
+                updateStoragePool(dataStore.getId(), size);
+            }
+        }
+        return ans;
     }
 
     @Override
@@ -333,7 +409,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
-
+                tryToSnapshotVolumeBeforeDelete(vinfo, dataStore, name, conn);
                 SpApiResponse resp = StorPoolUtil.volumeDelete(name, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dataStore.getId(), - vinfo.getSize());
@@ -361,6 +437,54 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CommandResult res = new CommandResult();
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, DataStore dataStore, String name, SpConnectionDesc conn) {
+        Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(dataStore.getId());
+        if (deleteAfter != null && deleteAfter > 0 && vinfo.getPassphraseId() == null) {
+            createTemporarySnapshot(vinfo, name, deleteAfter, conn);
+        } else {
+            StorPoolUtil.spLog("The volume [%s] is not marked to be snapshot. Check the global setting `storpool.delete.after.interval` or the volume is encrypted [%s]", name, deleteAfter, vinfo.getPassphraseId() != null);
+        }
+    }
+
+    private void createTemporarySnapshot(VolumeInfo vinfo, String name, Integer deleteAfter, SpConnectionDesc conn) {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("cs", StorPoolUtil.DELAY_DELETE);
+        StorPoolSnapshotDef snapshot = new StorPoolSnapshotDef(name, deleteAfter, tags);
+        StorPoolUtil.spLog("Creating backup snapshot before delete the volume [%s]", vinfo.getName());
+        SpApiResponse snapshotResponse = StorPoolUtil.volumeSnapshot(snapshot, conn);
+        if (snapshotResponse.getError() == null) {
+            String snapshotName = StorPoolUtil.getSnapshotNameFromResponse(snapshotResponse, false, StorPoolUtil.GLOBAL_ID);
+            String snapshotPath = StorPoolUtil.devPath(snapshotName);
+            SnapshotVO snapshotVo = createSnapshotVo(vinfo, snapshotName);
+            createSnapshotOnPrimaryVo(vinfo, snapshotVo, snapshotPath);
+            SnapshotDetailsVO snapshotDetails = new SnapshotDetailsVO(snapshotVo.getId(), StorPoolUtil.SP_DELAY_DELETE, "~" + snapshotName, true);
+            snapshotDetailsDao.persist(snapshotDetails);
+        }
+    }
+
+    private void createSnapshotOnPrimaryVo(VolumeInfo vinfo, SnapshotVO snapshotVo, String snapshotPath) {
+        SnapshotDataStoreVO snapshotOnPrimaryVo = new SnapshotDataStoreVO();
+        snapshotOnPrimaryVo.setSnapshotId(snapshotVo.getId());
+        snapshotOnPrimaryVo.setDataStoreId(vinfo.getDataCenterId());
+        snapshotOnPrimaryVo.setRole(vinfo.getDataStore().getRole());
+        snapshotOnPrimaryVo.setVolumeId(vinfo.getId());
+        snapshotOnPrimaryVo.setSize(vinfo.getSize());
+        snapshotOnPrimaryVo.setPhysicalSize(vinfo.getSize());
+        snapshotOnPrimaryVo.setInstallPath(snapshotPath);
+        snapshotOnPrimaryVo.setState(ObjectInDataStoreStateMachine.State.Ready);
+        snapshotDataStoreDao.persist(snapshotOnPrimaryVo);
+    }
+
+    private SnapshotVO createSnapshotVo(VolumeInfo vinfo, String snapshotName) {
+        SnapshotVO snapshotVo = new SnapshotVO(vinfo.getDataCenterId(), vinfo.getAccountId(), vinfo.getDomainId(), vinfo.getId(),
+                vinfo.getDiskOfferingId(), snapshotName,
+                (short)Snapshot.Type.RECURRING.ordinal(), Snapshot.Type.RECURRING.name(),
+                vinfo.getSize(), vinfo.getMinIops(), vinfo.getMaxIops(), vinfo.getHypervisorType(), Snapshot.LocationType.PRIMARY);
+        snapshotVo.setState(com.cloud.storage.Snapshot.State.BackedUp);
+        snapshotVo = snapshotDao.persist(snapshotVo);
+        return snapshotVo;
     }
 
     private void logDataObject(final String pref, DataObject data) {
@@ -405,7 +529,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.VOLUME) {
                 SnapshotInfo sinfo = (SnapshotInfo)srcData;
-                final String snapshotName = StorPoolHelper.getSnapshotName(srcData.getId(), srcData.getUuid(), snapshotDataStoreDao, _snapshotDetailsDao);
+                final String snapshotName = StorPoolHelper.getSnapshotName(srcData.getId(), srcData.getUuid(), snapshotDataStoreDao, snapshotDetailsDao);
 
                 VolumeInfo vinfo = (VolumeInfo)dstData;
                 final String volumeName = vinfo.getUuid();
@@ -423,9 +547,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", StorPoolUtil.getNameFromResponse(resp, false), to.getUuid(), snapshotName, sinfo.getUuid());
                 } else if (resp.getError().getName().equals("objectDoesNotExist")) {
                     //check if snapshot is on secondary storage
-                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snopshot on secondary storage", snapshotName);
-                    SnapshotDataStoreVO snap = snapshotDataStoreDao.findBySnapshot(sinfo.getId(), DataStoreRole.Image);
-                    if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
+                    StorPoolUtil.spLog("Snapshot %s does not exists on StorPool, will try to create a volume from a snapshot on secondary storage", snapshotName);
+                    SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
+                    SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
+                    if (snapshotDetail != null) {
+                        err = String.format("Could not create volume from snapshot due to: %s", resp.getError());
+                    } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
                         resp = StorPoolUtil.volumeCreate(srcData.getUuid(), null, size, null, "no", "snapshot", sinfo.getBaseVolume().getMaxIops(), conn);
                         if (resp.getError() == null) {
                             VolumeObjectTO dstTO = (VolumeObjectTO) dstData.getTO();
@@ -446,11 +573,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                                     err = String.format("Could not freeze Storpool volume %s. Error: %s", srcData.getUuid(), resp2.getError());
                                 } else {
                                     String name = StorPoolUtil.getNameFromResponse(resp, false);
-                                    SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(sinfo.getId(), sinfo.getUuid());
+                                    SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(sinfo.getId(), sinfo.getUuid());
                                     if (snapshotDetails != null) {
                                         StorPoolHelper.updateSnapshotDetailsValue(snapshotDetails.getId(), StorPoolUtil.devPath(name), "snapshot");
                                     }else {
-                                        StorPoolHelper.addSnapshotDetails(sinfo.getId(), sinfo.getUuid(), StorPoolUtil.devPath(name), _snapshotDetailsDao);
+                                        StorPoolHelper.addSnapshotDetails(sinfo.getId(), sinfo.getUuid(), StorPoolUtil.devPath(name), snapshotDetailsDao);
                                     }
                                     resp = StorPoolUtil.volumeCreate(volumeName, StorPoolUtil.getNameFromResponse(resp, true), size, null, null, "volume", sinfo.getBaseVolume().getMaxIops(), conn);
                                     if (resp.getError() == null) {
@@ -480,8 +607,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
                 }
             } else if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.SNAPSHOT) {
+                SnapshotInfo sinfo = (SnapshotInfo)srcData;
+                SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                 // bypass secondary storage
-                if (StorPoolConfigurationManager.BypassSecondaryStorage.value()) {
+                if (StorPoolConfigurationManager.BypassSecondaryStorage.value() || snapshotDetail != null) {
                     SnapshotObjectTO snapshot = (SnapshotObjectTO) srcData.getTO();
                     answer = new CopyCmdAnswer(snapshot);
                 } else {
@@ -623,39 +752,44 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 // create volume from template on Storpool PRIMARY
                 TemplateInfo tinfo = (TemplateInfo)srcData;
 
-                VolumeInfo vinfo = (VolumeInfo)dstData;
-                VMTemplateStoragePoolVO templStoragePoolVO = StorPoolHelper.findByPoolTemplate(vinfo.getPoolId(), tinfo.getId());
-                final String parentName = templStoragePoolVO.getLocalDownloadPath() !=null ? StorPoolStorageAdaptor.getVolumeNameFromPath(templStoragePoolVO.getLocalDownloadPath(), true) : StorPoolStorageAdaptor.getVolumeNameFromPath(templStoragePoolVO.getInstallPath(), true);
+                VolumeInfo vinfo = (VolumeInfo) dstData;
+                VMTemplateStoragePoolVO templStoragePoolVO = StorPoolHelper.findByPoolTemplate(vinfo.getPoolId(),
+                        tinfo.getId());
+                final String parentName = templStoragePoolVO.getLocalDownloadPath() != null
+                        ? StorPoolStorageAdaptor.getVolumeNameFromPath(templStoragePoolVO.getLocalDownloadPath(), true)
+                        : StorPoolStorageAdaptor.getVolumeNameFromPath(templStoragePoolVO.getInstallPath(), true);
                 final String name = vinfo.getUuid();
-                SpConnectionDesc conn = StorPoolUtil.getSpConnection(vinfo.getDataStore().getUuid(), vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(vinfo.getDataStore().getUuid(),
+                        vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
 
-                Long snapshotSize = StorPoolUtil.snapshotSize(parentName, conn);
-                if (snapshotSize == null) {
-                    err = String.format("Snapshot=%s does not exist on StorPool. Will recreate it first on primary", parentName);
-                    vmTemplatePoolDao.remove(templStoragePoolVO.getId());
+                Long snapshotSize = templStoragePoolVO.getTemplateSize();
+                boolean withoutEncryption = vinfo.getPassphraseId() == null;
+                long size = withoutEncryption ? vinfo.getSize() : vinfo.getSize() + 2097152;
+                if (snapshotSize != null && size < snapshotSize) {
+                    StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));
+                    size = withoutEncryption ? snapshotSize : snapshotSize + 2097152;
                 }
-                if (err == null) {
-                    long size = vinfo.getSize();
-                    if( size < snapshotSize )
-                    {
-                        StorPoolUtil.spLog(String.format("provided size is too small for snapshot. Provided %d, snapshot %d. Using snapshot size", size, snapshotSize));
-                        size = snapshotSize;
-                    }
-                    StorPoolUtil.spLog(String.format("volume size is: %d", size));
-                    Long vmId = vinfo.getInstanceId();
-                    SpApiResponse resp = StorPoolUtil.volumeCreate(name, parentName, size, getVMInstanceUUID(vmId),
-                            getVcPolicyTag(vmId), "volume", vinfo.getMaxIops(), conn);
-                    if (resp.getError() == null) {
-                        updateStoragePool(dstData.getDataStore().getId(), vinfo.getSize());
+                StorPoolUtil.spLog(String.format("volume size is: %d", size));
+                Long vmId = vinfo.getInstanceId();
+                SpApiResponse resp = StorPoolUtil.volumeCreate(name, parentName, size, getVMInstanceUUID(vmId), getVcPolicyTag(vmId),
+                        "volume", vinfo.getMaxIops(), conn);
+                if (resp.getError() == null) {
+                    updateStoragePool(dstData.getDataStore().getId(), vinfo.getSize());
+                    updateVolumePoolType(vinfo);
 
-                        VolumeObjectTO to = (VolumeObjectTO) vinfo.getTO();
-                        to.setSize(vinfo.getSize());
-                        to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
-
+                    if (withoutEncryption) {
+                        VolumeObjectTO to = updateVolumeObjectTO(vinfo, resp);
                         answer = new CopyCmdAnswer(to);
                     } else {
-                        err = String.format("Could not create Storpool volume %s. Error: %s", name, resp.getError());
+                        VolumeObjectTO volume = updateVolumeObjectTO(vinfo, resp);
+                        String snapshotPath = StorPoolUtil.devPath(parentName.split("~")[1]);
+                        answer = createEncryptedVolume(dstData.getDataStore(), dstData, vinfo, size, volume, snapshotPath, false);
+                        if (answer.getResult()) {
+                             answer = new CopyCmdAnswer(((StorPoolSetVolumeEncryptionAnswer) answer).getVolume());
+                        }
                     }
+                } else {
+                    err = String.format("Could not create Storpool volume %s. Error: %s", name, resp.getError());
                 }
             } else if (srcType == DataObjectType.VOLUME && dstType == DataObjectType.VOLUME) {
                 StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriver.copyAsync src Data Store=%s", srcData.getDataStore().getDriver());
@@ -684,9 +818,9 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         EndPoint ep = selector.select(srcData, dstData);
 
-                        if( ep == null) {
-                            StorPoolUtil.spLog("select(srcData, dstData) returned NULL. trying srcOnly");
-                            ep = selector.select(srcData); // Storpool is zone
+                        if (ep == null || storagePoolHostDao.findByPoolHost(dstData.getId(), ep.getId()) == null) {
+                            StorPoolUtil.spLog("select(srcData, dstData) returned NULL or the destination pool is not connected to the selected host. Trying dstData");
+                            ep = selector.select(dstData); // Storpool is zone
                         }
                         if (ep == null) {
                             err = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -711,27 +845,15 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 } else {
                     // download volume - first copies to secondary
                     VolumeObjectTO srcTO = (VolumeObjectTO)srcData.getTO();
-                    StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc SRC path=%s ", srcTO.getPath());
-                    StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc DST canonicalName=%s ", dstData.getDataStore().getClass().getCanonicalName());
+                    StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc SRC path=%s DST canonicalName=%s ", srcTO.getPath(), dstData.getDataStore().getClass().getCanonicalName());
                     PrimaryDataStoreTO checkStoragePool = dstData.getTO().getDataStore() instanceof PrimaryDataStoreTO ? (PrimaryDataStoreTO)dstData.getTO().getDataStore() : null;
-                    final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
-                    StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc DST tmpSnapName=%s ,srcUUID=%s", name, srcTO.getUuid());
+                    final String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
 
                     if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
-                        SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                        String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
-                        //uuid tag will be the same as srcData.uuid
-                        String volumeName = srcData.getUuid();
-                        StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc volumeName=%s, baseOn=%s", volumeName, baseOn);
-                        final SpApiResponse response = StorPoolUtil.volumeCopy(volumeName, baseOn, "volume", srcInfo.getMaxIops(), conn);
-                        srcTO.setSize(srcData.getSize());
-                        srcTO.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(response, false)));
-                        StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc DST to=%s", srcTO);
-
-                        answer = new CopyCmdAnswer(srcTO);
+                        answer = migrateVolumeToStorPool(srcData, dstData, srcInfo, srcTO, volumeName);
                     } else {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(srcData.getDataStore().getUuid(), srcData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                        final SpApiResponse resp = StorPoolUtil.volumeSnapshot(name, srcTO.getUuid(), srcInfo.getInstanceId() != null ? getVMInstanceUUID(srcInfo.getInstanceId()) : null, "temporary", null, conn);
+                        final SpApiResponse resp = StorPoolUtil.volumeSnapshot(volumeName, srcTO.getUuid(), srcInfo.getInstanceId() != null ? getVMInstanceUUID(srcInfo.getInstanceId()) : null, "temporary", null, conn);
                         String snapshotName = StorPoolUtil.getSnapshotNameFromResponse(resp, true, StorPoolUtil.GLOBAL_ID);
                         if (resp.getError() == null) {
                             srcTO.setPath(StorPoolUtil.devPath(
@@ -794,6 +916,109 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
+    private void updateVolumePoolType(VolumeInfo vinfo) {
+        VolumeVO volumeVO = volumeDao.findById(vinfo.getId());
+        volumeVO.setPoolType(StoragePoolType.StorPool);
+        volumeDao.update(volumeVO.getId(), volumeVO);
+    }
+
+    private VolumeObjectTO updateVolumeObjectTO(VolumeInfo vinfo, SpApiResponse resp) {
+        VolumeObjectTO to = (VolumeObjectTO) vinfo.getTO();
+        to.setSize(vinfo.getSize());
+        to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
+        return to;
+    }
+
+    /**
+     * Live migrate/copy volume from one StorPool storage to another
+     * @param srcData The source volume data
+     * @param dstData The destination volume data
+     * @param srcInfo The source volume info
+     * @param srcTO The source Volume TO
+     * @param volumeName The name of the volume
+     * @return Answer
+     */
+    private Answer migrateVolumeToStorPool(DataObject srcData, DataObject dstData, VolumeInfo srcInfo,
+            VolumeObjectTO srcTO, final String volumeName) {
+        Answer answer;
+        SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
+        String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
+
+        String vmUuid = null;
+        String vcPolicyTag = null;
+
+        VMInstanceVO vm = null;
+        if (srcInfo.getInstanceId() != null) {
+            vm = vmInstanceDao.findById(srcInfo.getInstanceId());
+        }
+
+        if (vm != null) {
+            vmUuid = vm.getUuid();
+            vcPolicyTag = getVcPolicyTag(vm.getId());
+        }
+
+        if (vm != null && vm.getState().equals(State.Running)) {
+            answer = migrateVolume(srcData, dstData, volumeName, conn);
+        } else {
+            answer = copyVolume(srcInfo, srcTO, conn, baseOn, vmUuid, vcPolicyTag);
+        }
+        return answer;
+    }
+
+    /**
+     * Copy the volume from StorPool primary storage to another StorPool primary storage
+     * @param srcInfo The source volume info
+     * @param srcTO The source Volume TO
+     * @param conn StorPool connection
+     * @param baseOn The name of an already existing volume that the new volume is to be a copy of.
+     * @param vmUuid The UUID of the VM
+     * @param vcPolicyTag The VC policy tag
+     * @return Answer
+     */
+    private Answer copyVolume(VolumeInfo srcInfo, VolumeObjectTO srcTO, SpConnectionDesc conn, String baseOn, String vmUuid, String vcPolicyTag) {
+        //uuid tag will be the same as srcData.uuid
+        String volumeName = srcInfo.getUuid();
+        Long iops = (srcInfo.getMaxIops() != null && srcInfo.getMaxIops().longValue() > 0) ? srcInfo.getMaxIops() : null;
+        SpApiResponse response = StorPoolUtil.volumeCopy(volumeName, baseOn, "volume", iops, vmUuid, vcPolicyTag, conn);
+        if (response.getError() != null) {
+            return new CopyCmdAnswer(String.format("Could not copy volume [%s] due to %s", baseOn, response.getError()));
+        }
+        String newVolume = StorPoolUtil.getNameFromResponse(response, false);
+
+        StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc copy volume[%s] from pool[%s] with a new name [%s]",
+                baseOn, srcInfo.getDataStore().getName(), newVolume);
+
+        srcTO.setSize(srcInfo.getSize());
+        srcTO.setPath(StorPoolUtil.devPath(newVolume));
+
+        return new CopyCmdAnswer(srcTO);
+    }
+
+    /**
+     * Live migrate the StorPool's volume to another StorPool template
+     * @param srcData The source data volume
+     * @param dstData The destination data volume
+     * @param name The volume's name
+     * @param conn StorPool's connection
+     * @return Answer
+     */
+    private Answer migrateVolume(DataObject srcData, DataObject dstData, String name, SpConnectionDesc conn) {
+        Answer answer;
+        SpApiResponse resp = StorPoolUtil.volumeUpdateTemplate(name, conn);
+        if (resp.getError() != null) {
+            answer = new Answer(null, false, String.format("Could not migrate volume %s to %s due to %s", name, conn.getTemplateName(), resp.getError()));
+        } else {
+            StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc migrate volume[%s] from pool[%s] to pool[%s]",
+                    name, srcData.getDataStore().getName(),dstData.getDataStore().getName());
+            VolumeVO updatedVolume = volumeDao.findById(srcData.getId());
+            updatedVolume.setPoolId(dstData.getDataStore().getId());
+            updatedVolume.setLastPoolId(srcData.getDataStore().getId());
+            volumeDao.update(updatedVolume.getId(), updatedVolume);
+            answer = new Answer(null, true, null);
+        }
+        return answer;
+    }
+
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         String snapshotName = snapshot.getUuid();
@@ -822,9 +1047,9 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 SnapshotObjectTO snapTo = (SnapshotObjectTO)snapshot.getTO();
                 snapTo.setPath(StorPoolUtil.devPath(name.split("~")[1]));
                 answer = new CreateObjectAnswer(snapTo);
-                StorPoolHelper.addSnapshotDetails(snapshot.getId(), snapshot.getUuid(), snapTo.getPath(), _snapshotDetailsDao);
+                StorPoolHelper.addSnapshotDetails(snapshot.getId(), snapshot.getUuid(), snapTo.getPath(), snapshotDetailsDao);
                 //add primary storage of snapshot
-                StorPoolHelper.addSnapshotDetails(snapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(snapshot.getDataStore().getId()), _snapshotDetailsDao);
+                StorPoolHelper.addSnapshotDetails(snapshot.getId(), StorPoolUtil.SP_STORAGE_POOL_ID, String.valueOf(snapshot.getDataStore().getId()), snapshotDetailsDao);
                 StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.takeSnapshot: snapshot: name=%s, uuid=%s, volume: name=%s, uuid=%s", name, snapshot.getUuid(), volumeName, vinfo.getUuid());
             }
         } catch (Exception e) {
@@ -839,7 +1064,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void revertSnapshot(final SnapshotInfo snapshot, final SnapshotInfo snapshotOnPrimaryStore, final AsyncCompletionCallback<CommandResult> callback) {
         final VolumeInfo vinfo = snapshot.getBaseVolume();
-        final String snapshotName = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), snapshotDataStoreDao, _snapshotDetailsDao);
+        final String snapshotName = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), snapshotDataStoreDao, snapshotDetailsDao);
         final String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(vinfo.getPath(), true);
         StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.revertSnapshot: snapshot: name=%s, uuid=%s, volume: name=%s, uuid=%s", snapshotName, snapshot.getUuid(), volumeName, vinfo.getUuid());
         String err = null;
@@ -883,7 +1108,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (vinfo.getMaxIops() != null) {
-            response = StorPoolUtil.volumeUpadateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+            response = StorPoolUtil.volumeUpdateIopsAndTags(volumeName, null, vinfo.getMaxIops(), conn, null);
             if (response.getError() != null) {
                 StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s", response.getError().getDescr());
             }
@@ -894,7 +1119,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private String getVcPolicyTag(Long vmId) {
-        ResourceTag resourceTag = vmId != null ? _resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorPoolUtil.SP_VC_POLICY) : null;
+        ResourceTag resourceTag = vmId != null ? resourceTagDao.findByKey(vmId, ResourceObjectType.UserVm, StorPoolUtil.SP_VC_POLICY) : null;
         return resourceTag != null ? resourceTag.getValue() : "";
     }
 
@@ -909,18 +1134,54 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public boolean canProvideStorageStats() {
-        return false;
+        return StorPoolConfigurationManager.StorageStatsInterval.value() > 0;
     }
 
     public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        if (storagePool == null) {
+            return null;
+        }
+        Map<Long, Map<String, Pair<Long, Long>>> templatesStats = StorPoolStatsCollector.templatesStats;
+        if (MapUtils.isNotEmpty(templatesStats) && templatesStats.containsKey(storagePool.getDataCenterId())) {
+            Map<String, Pair<Long, Long>> storageStats = templatesStats.get(storagePool.getDataCenterId());
+            StoragePoolDetailVO templateName = storagePoolDetailsDao.findDetail(storagePool.getId(), StorPoolUtil.SP_TEMPLATE);
+            if (storageStats.containsKey(templateName.getValue()) && templateName != null) {
+                Pair<Long, Long> stats = storageStats.get(templateName.getValue());
+                if (stats.first() != storagePool.getCapacityBytes()) {
+                    primaryStoreDao.updateCapacityBytes(storagePool.getId(), stats.first());
+                }
+                return storageStats.get(templateName.getValue());
+            }
+        }
         return null;
     }
 
     public boolean canProvideVolumeStats() {
-        return false;
+        return StorPoolConfigurationManager.VolumesStatsInterval.value() > 0;
     }
 
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+
+        if (volumeId == null) {
+            return null;
+        }
+
+        Map<String, Pair<Long, Long>> volumesStats = StorPoolStatsCollector.volumesStats;
+        if (MapUtils.isNotEmpty(volumesStats)) {
+            Pair<Long, Long> volumeStats = volumesStats.get(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeId, true));
+            if (volumeStats != null) {
+                return volumeStats;
+            }
+        } else {
+            List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId());
+            for (VolumeVO volume : volumes) {
+                if (volume.getPath() != null && volume.getPath().equals(volumeId)) {
+                    long size = volume.getSize();
+                    StorPoolUtil.spLog("Volume [%s] doesn't have any statistics, returning its size [%s]", volumeId, size);
+                    return new Pair<>(size, size);
+                }
+            }
+        }
         return null;
     }
 
@@ -936,13 +1197,16 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void provideVmInfo(long vmId, long volumeId) {
         VolumeVO volume = volumeDao.findById(volumeId);
+        if (volume.getInstanceId() == null) {
+            return;
+        }
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
                 VMInstanceVO userVM = vmInstanceDao.findById(vmId);
-                SpApiResponse resp = StorPoolUtil.volumeUpadateTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
+                SpApiResponse resp = StorPoolUtil.volumeUpdateIopsAndTags(volName, volume.getInstanceId() != null ? userVM.getUuid() : "", null, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
                     log.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }
@@ -965,13 +1229,29 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             try {
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
                 String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
-                SpApiResponse resp = StorPoolUtil.volumeUpadateVCTags(volName, conn, getVcPolicyTag(vmId));
+                SpApiResponse resp = StorPoolUtil.volumeUpdateVCTags(volName, conn, getVcPolicyTag(vmId));
                 if (resp.getError() != null) {
                     log.warn(String.format("Could not update VC policy tags of a volume with id [%s]", volume.getUuid()));
                 }
             } catch (Exception e) {
                 log.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
             }
+        }
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return true;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
+        StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
+        if (poolVO != null) {
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
+            String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
+            SpApiResponse resp = StorPoolUtil.detachAllForced(volName, false, conn);
+            StorPoolUtil.spLog("The volume [%s] is detach from all clusters [%s]", volName, resp);
         }
     }
 }

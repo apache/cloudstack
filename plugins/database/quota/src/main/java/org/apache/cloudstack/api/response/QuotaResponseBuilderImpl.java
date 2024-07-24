@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -75,6 +76,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
@@ -173,7 +176,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return new Pair<>(result, count);
     }
 
-    private QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
+    protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
         Calendar[] period = _statement.getCurrentStatementTime();
 
         if (account != null) {
@@ -192,6 +195,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             qr.setStartDate(period[0].getTime());
             qr.setEndDate(period[1].getTime());
             qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+            qr.setQuotaEnabled(QuotaConfig.QuotaAccountEnabled.valueIn(account.getId()));
             qr.setObjectName("summary");
             return qr;
         } else {
@@ -379,6 +383,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_UPDATE, eventDescription = "updating Quota Tariff")
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
         String name = cmd.getName();
         Double value = cmd.getValue();
@@ -402,6 +407,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
                 activationRule);
         _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
+
+        CallContext.current().setEventResourceId(newQuotaTariff.getId());
+
         return newQuotaTariff;
     }
 
@@ -618,6 +626,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_CREATE, eventDescription = "creating Quota Tariff")
     public QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd) {
         String name = cmd.getName();
         int usageType = cmd.getUsageType();
@@ -639,9 +648,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new InvalidParameterValueException(String.format("The quota tariff's start date [%s] cannot be less than now [%s]", startDate, now));
         }
 
-        return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+
+        CallContext.current().setEventResourceId(newQuotaTariff.getId());
+
+        return newQuotaTariff;
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_DELETE, eventDescription = "removing Quota Tariff")
     public boolean deleteQuotaTariff(String quotaTariffUuid) {
         QuotaTariffVO quotaTariff = _quotaTariffDao.findByUuid(quotaTariffUuid);
 
@@ -650,6 +664,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
+
+        CallContext.current().setEventResourceId(quotaTariff.getId());
+
         return _quotaTariffDao.updateQuotaTariff(quotaTariff);
     }
 }

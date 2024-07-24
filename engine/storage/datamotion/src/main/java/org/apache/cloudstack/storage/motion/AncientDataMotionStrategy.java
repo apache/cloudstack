@@ -66,10 +66,13 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
@@ -97,6 +100,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
     @Inject
     StorageManager storageManager;
+    @Inject
+    SnapshotDao snapshotDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -188,7 +193,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                      destData.getType() == DataObjectType.TEMPLATE)) {
                     // volume transfer from primary to secondary. Volume transfer between primary pools are already handled by copyVolumeBetweenPools
                     // Delete cache in order to certainly transfer a latest image.
-                    s_logger.debug("Delete " + cacheType + " cache(id: " + cacheId +
+                    if (s_logger.isDebugEnabled()) s_logger.debug("Delete " + cacheType + " cache(id: " + cacheId +
                                    ", uuid: " + cacheUuid + ")");
                     cacheMgr.deleteCacheObject(srcForCopy);
                 } else {
@@ -200,7 +205,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                                       ", uuid: " + cacheUuid + ")");
                         cacheMgr.deleteCacheObject(srcForCopy);
                     } else {
-                        s_logger.debug("Decrease reference count of " + cacheType +
+                        if (s_logger.isDebugEnabled()) s_logger.debug("Decrease reference count of " + cacheType +
                                        " cache(id: " + cacheId + ", uuid: " + cacheUuid + ")");
                         cacheMgr.releaseCacheObject(srcForCopy);
                     }
@@ -208,7 +213,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy object failed: ", e);
+            if (s_logger.isDebugEnabled()) s_logger.debug("copy object failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
@@ -326,7 +331,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("Failed to send to storage pool", e);
+            if (s_logger.isDebugEnabled()) s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
         }
     }
@@ -383,7 +388,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 if (answer == null || !answer.getResult()) {
                     if (answer != null) {
-                        s_logger.debug("copy to image store failed: " + answer.getDetails());
+                        if (s_logger.isDebugEnabled()) s_logger.debug("copy to image store failed: " + answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
@@ -406,7 +411,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 if (answer == null || !answer.getResult()) {
                     if (answer != null) {
-                        s_logger.debug("copy to primary store failed: " + answer.getDetails());
+                        if (s_logger.isDebugEnabled()) s_logger.debug("copy to primary store failed: " + answer.getDetails());
                     }
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
@@ -466,13 +471,17 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             s_logger.error(errMsg);
             answer = new Answer(command, false, errMsg);
         } else {
+            if (s_logger.isDebugEnabled()) s_logger.debug("Sending MIGRATE_COPY request to node " + ep);
             answer = ep.sendMessage(command);
+            if (s_logger.isDebugEnabled()) s_logger.debug("Received MIGRATE_COPY response from node with answer: " + answer);
         }
 
         if (answer == null || !answer.getResult()) {
             throw new CloudRuntimeException("Failed to migrate volume " + volume + " to storage pool " + destPool);
         } else {
             // Update the volume details after migration.
+            if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE_COPY updating volume");
+
             VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(((MigrateVolumeAnswer)answer).getVolumePath());
@@ -491,6 +500,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             volumeVo.setFolder(folder);
             volDao.update(volume.getId(), volumeVo);
+            if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE_COPY update volume data complete");
+
         }
 
         return answer;
@@ -502,7 +513,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         Answer answer = null;
         String errMsg = null;
         try {
-            s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
+            if (s_logger.isDebugEnabled()) s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.TEMPLATE) {
@@ -511,11 +522,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 answer = cloneVolume(srcData, destData);
             } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME &&
                 srcData.getDataStore().getRole() == DataStoreRole.Primary && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+                if (s_logger.isDebugEnabled()) s_logger.debug("About to MIGRATE copy between datasources");
                 if (srcData.getId() == destData.getId()) {
                     // The volume has to be migrated across storage pools.
+                    if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE copy using migrateVolumeToPool STARTING");
                     answer = migrateVolumeToPool(srcData, destData);
+                    if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE copy using migrateVolumeToPool DONE: " + answer.getResult());
                 } else {
+                    if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE copy using copyVolumeBetweenPools STARTING");
                     answer = copyVolumeBetweenPools(srcData, destData);
+                    if (s_logger.isDebugEnabled()) s_logger.debug("MIGRATE copy using copyVolumeBetweenPools DONE: " + answer.getResult());
                 }
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
                 answer = copySnapshot(srcData, destData);
@@ -527,7 +543,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 errMsg = answer.getDetails();
             }
         } catch (Exception e) {
-            s_logger.debug("copy failed", e);
+            if (s_logger.isDebugEnabled()) s_logger.debug("copy failed", e);
             errMsg = e.toString();
         }
         CopyCommandResult result = new CopyCommandResult(null, answer);
@@ -583,8 +599,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             fullSnapshot = snapshotFullBackup;
         }
         Map<String, String> options = new HashMap<String, String>();
-        options.put("fullSnapshot", fullSnapshot.toString());
-        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
+
+        addCommandOptions(snapshotInfo, fullSnapshot, options);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         Answer answer = null;
@@ -622,13 +638,22 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy snasphot failed: ", e);
+            if (s_logger.isDebugEnabled()) s_logger.debug("copy snasphot failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
             throw new CloudRuntimeException(e.toString());
         }
 
+    }
+
+    private void addCommandOptions(SnapshotInfo snapshotInfo, Boolean fullSnapshot, Map<String, String> options) {
+        SnapshotVO snap = snapshotDao.findById(snapshotInfo.getSnapshotId());
+        if (snap != null && Type.FROM_GROUP.name().equals(snap.getTypeDescription())) {
+            options.put("typeDescription", snap.getTypeDescription());
+        }
+        options.put("fullSnapshot", fullSnapshot.toString());
+        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
     }
 
     @Override

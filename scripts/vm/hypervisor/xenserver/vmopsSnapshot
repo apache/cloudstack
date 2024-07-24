@@ -190,7 +190,7 @@ def isfile(path, isISCSI):
     errMsg = ''
     exists = True
     if isISCSI:
-        exists = checkVolumeAvailablility(path)
+        exists = checkVolumeAvailability(path)
     else:
         exists = os.path.isfile(path)
         
@@ -269,7 +269,7 @@ def getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI):
 
     baseCopyUuid = ''
     if isISCSI:
-        checkVolumeAvailablility(snapshotPath)
+        checkVolumeAvailability(snapshotPath)
         baseCopyUuid = scanParent(snapshotPath)
     else:
         baseCopyUuid = getParent(snapshotPath, isISCSI)
@@ -439,7 +439,7 @@ def manageAvailability(path, value):
     return
 
 
-def checkVolumeAvailablility(path):
+def checkVolumeAvailability(path):
     try:
         if not isVolumeAvailable(path):
             # The VHD file is not available on XenSever. The volume is probably
@@ -621,4 +621,3 @@ def revert_memory_snapshot(session, args):
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "getSnapshotSize":getSnapshotSize})
     
-

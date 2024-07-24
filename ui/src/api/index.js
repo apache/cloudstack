@@ -59,7 +59,7 @@ export function login (arg) {
     method: 'post',
     data: params,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'content-type': 'application/x-www-form-urlencoded'
     }
   })
 }
@@ -69,4 +69,29 @@ export function logout () {
   message.destroy()
   notification.destroy()
   return api('logout')
+}
+
+export function oauthlogin (arg) {
+  if (!sourceToken.checkExistSource()) {
+    sourceToken.init()
+  }
+
+  // Logout before login is called to purge any duplicate sessionkey cookies
+  api('logout')
+
+  const params = new URLSearchParams()
+  params.append('command', 'oauthlogin')
+  params.append('email', arg.email)
+  params.append('secretcode', arg.secretcode)
+  params.append('provider', arg.provider)
+  params.append('domain', arg.domain)
+  params.append('response', 'json')
+  return axios({
+    url: '/',
+    method: 'post',
+    data: params,
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded'
+    }
+  })
 }

@@ -22,7 +22,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -31,17 +31,19 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.Volume;
 
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
@@ -81,6 +83,12 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
             RoleType.Admin})
     private String storageId;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               description = "list volumes by disk offering of a service offering. If both service offering and " +
+                       "disk offering are passed, service offering is ignored", since = "4.19.1")
+    private Long serviceOfferingId;
+
     @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "list volumes by disk offering", since = "4.4")
     private Long diskOfferingId;
 
@@ -95,6 +103,9 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
 
+    @Parameter(name = ApiConstants.IS_ENCRYPTED, type = CommandType.BOOLEAN, description = "list only volumes that are encrypted", since = "4.19.1",
+            authorized = { RoleType.Admin })
+    private Boolean encrypted;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -117,6 +128,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public Long getPodId() {
         return podId;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public Long getDiskOfferingId() {
@@ -145,15 +160,17 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     public String getState() {
         return state;
     }
+
+    public Boolean isEncrypted() {
+        return encrypted;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
+import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,15 +35,16 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.dao.VolumeDetailsDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -49,26 +52,34 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJournalDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
+import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDetector;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.jobs.JobInfo.Status;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
+import org.apache.log4j.NDC;
 
 import com.cloud.cluster.ClusterManagerListener;
-import org.apache.cloudstack.management.ManagementServerHost;
-import com.cloud.storage.DataStoreRole;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
@@ -91,11 +102,12 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.mgmt.JmxUtil;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.storage.dao.VolumeDao;
-
-import static com.cloud.utils.HumanReadableJson.getHumanReadableBytesJson;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
@@ -149,11 +161,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
 
+    @Inject
+    private VolumeDataFactory volFactory;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkOrchestrationService networkOrchestrationService;
+
     private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
+
+    private boolean asyncJobsEnabled = true;
 
     @Override
     public String getConfigComponentName() {
@@ -197,12 +220,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return submitAsyncJob(job, false);
     }
 
+    private void checkShutdown() {
+        if (!isAsyncJobsEnabled()) {
+            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @DB
     public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
+        checkShutdown();
+
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
         job.setInitMsid(getMsid());
+        job.setExecutingMsid(getMsid());
         job.setSyncSource(null);        // no sync source originally
         dao.persist(job);
 
@@ -218,6 +250,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
+        checkShutdown();
+
         try {
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -744,7 +778,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMiliseconds, Predicate predicate) {
+    public boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate) {
 
         MessageDetector msgDetector = new MessageDetector();
         String[] topics = Arrays.copyOf(wakeupTopicsOnMessageBus, wakeupTopicsOnMessageBus.length + 1);
@@ -753,7 +787,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         msgDetector.open(_messageBus, topics);
         try {
             long startTick = System.currentTimeMillis();
-            while (timeoutInMiliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
+            while (timeoutInMilliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMilliseconds) {
                 msgDetector.waitAny(checkIntervalInMilliSeconds);
                 job = _jobDao.findById(job.getId());
                 if (job != null && job.getStatus().done()) {
@@ -827,6 +861,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
             protected void reallyRun() {
                 try {
+                    if (!isAsyncJobsEnabled()) {
+                        s_logger.info("A shutdown has been triggered. Not executing any async job");
+                        return;
+                    }
+
                     List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
                     if (l != null && l.size() > 0) {
                         for (SyncQueueItemVO item : l) {
@@ -1072,6 +1111,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Cancel left-over job-" + job.getId());
                         }
+                        cleanupResources(job);
                         job.setStatus(JobInfo.Status.FAILED);
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
                         job.setResult("job cancelled because of management server restart or shutdown");
@@ -1084,30 +1124,112 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (ApiCommandResourceType.Volume.toString().equals(job.getInstanceType())) {
-
-                            try {
-                                _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
-                                _volsDao.remove(job.getInstanceId());
-                            } catch (Exception e) {
-                                s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
-                            }
-                        }
                     }
-                    final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
-                    for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
-                        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
-                        if (snapshot == null) {
-                            _snapshotDetailsDao.remove(snapshotDetailsVO.getId());
-                            continue;
-                        }
-                        snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
-                        _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
-                    }
+                    cleanupFailedSnapshotsCreatedWithDefaultStrategy(msid);
                 }
             });
         } catch (Throwable e) {
             s_logger.warn("Unexpected exception in cleaning up left over jobs for mamagement server node " + msid, e);
+        }
+    }
+
+    /*
+    Cleanup Resources in transition state and move them to appropriate state
+    This will allow other operation on the resource, instead of being stuck in transition state
+     */
+    protected boolean cleanupResources(AsyncJobVO job) {
+        try {
+            ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(job.getInstanceType());
+            if (resourceType == null) {
+                s_logger.warn("Unknown ResourceType. Skip Cleanup: " + job.getInstanceType());
+                return true;
+            }
+            switch (resourceType) {
+                case Volume:
+                    return cleanupVolume(job.getInstanceId());
+                case VirtualMachine:
+                    return cleanupVirtualMachine(job.getInstanceId());
+                case Network:
+                    return cleanupNetwork(job.getInstanceId());
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error while cleaning up resource: [" + job.getInstanceType().toString()  + "] with Id: " + job.getInstanceId(), e);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean cleanupVolume(final long volumeId) {
+        VolumeInfo vol = volFactory.getVolume(volumeId);
+        if (vol == null) {
+            s_logger.warn("Volume not found. Skip Cleanup. VolumeId: " + volumeId);
+            return true;
+        }
+        if (vol.getState().isTransitional()) {
+            s_logger.debug("Cleaning up volume with Id: " + volumeId);
+            boolean status = vol.stateTransit(Volume.Event.OperationFailed);
+            cleanupFailedVolumesCreatedFromSnapshots(volumeId);
+            return status;
+        }
+        s_logger.debug("Volume not in transition state. Skip cleanup. VolumeId: " + volumeId);
+        return true;
+    }
+
+    private boolean cleanupVirtualMachine(final long vmId) throws Exception {
+        VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vmId);
+        if (vmInstanceVO == null) {
+            s_logger.warn("Instance not found. Skip Cleanup. InstanceId: " + vmId);
+            return true;
+        }
+        if (vmInstanceVO.getState().isTransitional()) {
+            s_logger.debug("Cleaning up Instance with Id: " + vmId);
+            return virtualMachineManager.stateTransitTo(vmInstanceVO, VirtualMachine.Event.OperationFailed, vmInstanceVO.getHostId());
+        }
+        s_logger.debug("Instance not in transition state. Skip cleanup. InstanceId: " + vmId);
+        return true;
+    }
+
+    private boolean cleanupNetwork(final long networkId) throws Exception {
+        NetworkVO networkVO = networkDao.findById(networkId);
+        if (networkVO == null) {
+            s_logger.warn("Network not found. Skip Cleanup. NetworkId: " + networkId);
+            return true;
+        }
+        if (Network.State.Implementing.equals(networkVO.getState())) {
+            try {
+                s_logger.debug("Cleaning up Network with Id: " + networkId);
+                return networkOrchestrationService.stateTransitTo(networkVO, Network.Event.OperationFailed);
+            } catch (final NoTransitionException e) {
+                networkVO.setState(Network.State.Shutdown);
+                networkDao.update(networkVO.getId(), networkVO);
+            }
+        }
+        s_logger.debug("Network not in transition state. Skip cleanup. NetworkId: " + networkId);
+        return true;
+    }
+
+    private void cleanupFailedVolumesCreatedFromSnapshots(final long volumeId) {
+        try {
+            VolumeDetailVO volumeDetail = _volumeDetailsDao.findDetail(volumeId, VolumeService.SNAPSHOT_ID);
+            if (volumeDetail != null) {
+                _volumeDetailsDao.removeDetail(volumeId, VolumeService.SNAPSHOT_ID);
+                _volsDao.remove(volumeId);
+            }
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
+        }
+    }
+
+    private void cleanupFailedSnapshotsCreatedWithDefaultStrategy(final long msid) {
+        final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
+        for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
+            SnapshotInfo snapshot = snapshotFactory.getSnapshotOnPrimaryStore(snapshotDetailsVO.getResourceId());
+            if (snapshot == null) {
+                _snapshotDetailsDao.remove(snapshotDetailsVO.getId());
+                continue;
+            }
+            snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
+            _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
         }
     }
 
@@ -1170,5 +1292,27 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public long countPendingJobs(String havingInfo, String... cmds) {
         return _jobDao.countPendingJobs(havingInfo, cmds);
+    }
+
+    // Returns the number of pending jobs for the given Management server msids.
+    // NOTE: This is the msid and NOT the id
+    @Override
+    public long countPendingNonPseudoJobs(Long... msIds) {
+    return _jobDao.countPendingNonPseudoJobs(msIds);
+    }
+
+    @Override
+    public void enableAsyncJobs() {
+        this.asyncJobsEnabled = true;
+    }
+
+    @Override
+    public void disableAsyncJobs() {
+        this.asyncJobsEnabled = false;
+    }
+
+    @Override
+    public boolean isAsyncJobsEnabled() {
+        return asyncJobsEnabled;
     }
 }

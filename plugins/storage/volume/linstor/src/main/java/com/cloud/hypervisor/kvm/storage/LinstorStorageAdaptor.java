@@ -16,27 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 import javax.annotation.Nonnull;
 
+import com.cloud.storage.Storage;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
-import com.cloud.storage.Storage;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.linbit.linstor.api.ApiClient;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
@@ -44,9 +42,9 @@ import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
-import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
@@ -65,30 +63,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return new DevelopersApi(client);
     }
 
-    private String getLinstorRscName(String name) {
-        return "cs-" + name;
-    }
-
-    private String getHostname() {
-        // either there is already some function for that in the agent or a better way.
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/hostname");
-        try
-        {
-            String result;
-            Process p = pb.start();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-            StringJoiner sj = new StringJoiner(System.getProperty("line.separator"));
-            reader.lines().iterator().forEachRemaining(sj::add);
-            result = sj.toString();
-
-            p.waitFor();
-            p.destroy();
-            return result.trim();
-        } catch (IOException | InterruptedException exc) {
-            Thread.currentThread().interrupt();
-            throw new CloudRuntimeException("Unable to run '/usr/bin/hostname' command.");
-        }
+    private static String getLinstorRscName(String name) {
+        return LinstorUtil.RSC_PREFIX + name;
     }
 
     private void logLinstorAnswer(@Nonnull ApiCallRc answer) {
@@ -99,6 +75,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         } else if (answer.isInfo()) {
             s_logger.info(answer.getMessage());
         }
+    }
+
+    private void logLinstorAnswers(@Nonnull ApiCallRcList answers) {
+        answers.forEach(this::logLinstorAnswer);
     }
 
     private void checkLinstorAnswersThrow(@Nonnull ApiCallRcList answers) {
@@ -121,7 +101,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     public LinstorStorageAdaptor() {
-        localNodeName = getHostname();
+        localNodeName = LinstorStoragePool.getHostname();
     }
 
     @Override
@@ -150,24 +130,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             List<VolumeDefinition> volumeDefs = api.volumeDefinitionList(rscName, null, null);
             final long size = volumeDefs.isEmpty() ? 0 : volumeDefs.get(0).getSizeKib() * 1024;
 
-            List<ResourceWithVolumes> resources = api.viewResources(
-                Collections.emptyList(),
-                Collections.singletonList(rscName),
-                Collections.emptyList(),
-                null,
-                null,
-                null);
-            if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
-                final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
-                final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
-                kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
-                kvmDisk.setSize(size);
-                kvmDisk.setVirtualSize(size);
-                return kvmDisk;
-            } else {
-                s_logger.error("Linstor: viewResources didn't return resources or volumes for " + rscName);
-                throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
-            }
+            final String devicePath = LinstorUtil.getDevicePath(api, rscName);
+            final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devicePath, name, pool);
+            kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+            kvmDisk.setSize(size);
+            kvmDisk.setVirtualSize(size);
+            return kvmDisk;
         } catch (ApiException apiEx) {
             s_logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
@@ -197,10 +165,24 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
+    private void makeResourceAvailable(DevelopersApi api, String rscName, boolean diskfull) throws ApiException
+    {
+        ResourceMakeAvailable rma = new ResourceMakeAvailable();
+        rma.diskful(diskfull);
+        ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
+        handleLinstorApiAnswers(answers,
+            String.format("Linstor: Unable to make resource %s available on node: %s", rscName, localNodeName));
+    }
+
+    /**
+     * createPhysicalDisk will check if the resource wasn't yet created and do so, also it will make sure
+     * it is accessible from this node (MakeAvailable).
+     */
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
                                               Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
+        s_logger.debug(String.format("Linstor.createPhysicalDisk: %s;%s", name, format));
         final String rscName = getLinstorRscName(name);
         LinstorStoragePool lpool = (LinstorStoragePool) pool;
         final DevelopersApi api = getLinstorAPI(pool);
@@ -214,7 +196,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 rgSpawn.setResourceDefinitionName(rscName);
                 rgSpawn.addVolumeSizesItem(size / 1024); // linstor uses KiB
 
-                s_logger.debug("Linstor: Spawn resource " + rscName);
+                s_logger.info("Linstor: Spawn resource " + rscName);
                 ApiCallRcList answers = api.resourceGroupSpawn(lpool.getResourceGroup(), rgSpawn);
                 handleLinstorApiAnswers(answers, "Linstor: Unable to spawn resource.");
             }
@@ -228,7 +210,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 null,
                 null);
 
-            // TODO make available on node
+            makeResourceAvailable(api, rscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
                 final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
@@ -241,7 +223,30 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
             }
         } catch (ApiException apiEx) {
+            s_logger.error(String.format("Linstor.createPhysicalDisk: ApiException: %s", apiEx.getBestMessage()));
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    /**
+     * Checks if the given resource is in use by drbd on any host and
+     * if so set the drbd option allow-two-primaries
+     * @param api linstor api object
+     * @param rscName resource name to set allow-two-primaries if in use
+     * @throws ApiException if any problem connecting to the Linstor controller
+     */
+    private void allow2PrimariesIfInUse(DevelopersApi api, String rscName) throws ApiException {
+        if (LinstorUtil.isResourceInUse(api, rscName)) {
+            // allow 2 primaries for live migration, should be removed by disconnect on the other end
+            ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+            Properties props = new Properties();
+            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+            rdm.setOverrideProps(props);
+            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+            if (answers.hasError()) {
+                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+            }
         }
     }
 
@@ -255,48 +260,115 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
 
         final DevelopersApi api = getLinstorAPI(pool);
+        String rscName;
         try
         {
-            final String rscName = getLinstorRscName(volumePath);
+            rscName = getLinstorRscName(volumePath);
 
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
 
-            // allow 2 primaries for live migration, should be removed by disconnect on the other end
-            ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-            Properties props = new Properties();
-            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
-            rdm.setOverrideProps(props);
-            answers = api.resourceDefinitionModify(rscName, rdm);
-            if (answers.hasError()) {
-                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
-                throw new CloudRuntimeException(answers.get(0).getMessage());
-            }
         } catch (ApiException apiEx) {
             s_logger.error(apiEx);
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
+
+        try
+        {
+            allow2PrimariesIfInUse(api, rscName);
+        } catch (ApiException apiEx) {
+            s_logger.error(apiEx);
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        }
         return true;
+    }
+
+    private boolean tryDisconnectLinstor(String volumePath, KVMStoragePool pool)
+    {
+        if (volumePath == null) {
+            return false;
+        }
+
+        s_logger.debug("Linstor: Using storage pool: " + pool.getUuid());
+        final DevelopersApi api = getLinstorAPI(pool);
+
+        Optional<ResourceWithVolumes> optRsc;
+        try
+        {
+            List<ResourceWithVolumes> resources = api.viewResources(
+                    Collections.singletonList(localNodeName),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
+
+            optRsc = getResourceByPathOrName(resources, volumePath);
+        } catch (ApiException apiEx) {
+            // couldn't query linstor controller
+            s_logger.error(apiEx.getBestMessage());
+            return false;
+        }
+
+
+        if (optRsc.isPresent()) {
+            try {
+                Resource rsc = optRsc.get();
+
+                // if diskless resource remove it, in the worst case it will be transformed to a tiebreaker
+                if (rsc.getFlags() != null &&
+                        rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
+                        !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
+                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName);
+                    logLinstorAnswers(delAnswers);
+                }
+
+                // remove allow-two-primaries
+                ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+                rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
+                ApiCallRcList answers = api.resourceDefinitionModify(rsc.getName(), rdm);
+                if (answers.hasError()) {
+                    s_logger.error(
+                            String.format("Failed to remove 'allow-two-primaries' on %s: %s",
+                                    rsc.getName(), LinstorUtil.getBestErrorMessage(answers)));
+                    // do not fail here as removing allow-two-primaries property isn't fatal
+                }
+            } catch (ApiException apiEx) {
+                s_logger.error(apiEx.getBestMessage());
+                // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
+            }
+
+            return true;
+        }
+
+        s_logger.warn("Linstor: Couldn't find resource for this path: " + volumePath);
+        return false;
     }
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool)
     {
         s_logger.debug("Linstor: disconnectPhysicalDisk " + pool.getUuid() + ":" + volumePath);
-        return true;
+        if (MapStorageUuidToStoragePool.containsValue(pool)) {
+            return tryDisconnectLinstor(volumePath, pool);
+        }
+        return false;
     }
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect)
     {
+        // as of now this is only relevant for iscsi targets
+        s_logger.info("Linstor: disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) called?");
         return false;
     }
 
-    private Optional<ResourceWithVolumes> getResourceByPath(final List<ResourceWithVolumes> resources, String path) {
+    private Optional<ResourceWithVolumes> getResourceByPathOrName(
+            final List<ResourceWithVolumes> resources, String path) {
         return resources.stream()
-            .filter(rsc -> rsc.getVolumes().stream()
-                .anyMatch(v -> v.getDevicePath().equals(path)))
+            .filter(rsc -> getLinstorRscName(path).equalsIgnoreCase(rsc.getName()) || rsc.getVolumes().stream()
+                .anyMatch(v -> path.equals(v.getDevicePath())))
             .findFirst();
     }
 
@@ -317,39 +389,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
             final KVMStoragePool pool = optFirstPool.get();
 
-            s_logger.debug("Linstor: Using storpool: " + pool.getUuid());
-            final DevelopersApi api = getLinstorAPI(pool);
-
-            try
-            {
-                List<ResourceWithVolumes> resources = api.viewResources(
-                    Collections.singletonList(localNodeName),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
-
-                Optional<ResourceWithVolumes> rsc = getResourceByPath(resources, localPath);
-
-                if (rsc.isPresent())
-                {
-                    ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-                    rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
-                    ApiCallRcList answers = api.resourceDefinitionModify(rsc.get().getName(), rdm);
-                    if (answers.hasError())
-                    {
-                        s_logger.error("Failed to remove 'allow-two-primaries' on " + rsc.get().getName());
-                        throw new CloudRuntimeException(answers.get(0).getMessage());
-                    }
-
-                    return true;
-                }
-                s_logger.warn("Linstor: Couldn't find resource for this path: " + localPath);
-            } catch (ApiException apiEx) {
-                s_logger.error(apiEx);
-                throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
-            }
+            return tryDisconnectLinstor(localPath, pool);
         }
         return false;
     }
@@ -411,15 +451,16 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
-        s_logger.debug("Linstor: copyPhysicalDisk");
+        s_logger.debug(String.format("Linstor.copyPhysicalDisk: %s -> %s", disk.getPath(), name));
         final QemuImg.PhysicalDiskFormat sourceFormat = disk.getFormat();
         final String sourcePath = disk.getPath();
 
         final QemuImgFile srcFile = new QemuImgFile(sourcePath, sourceFormat);
 
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
-            name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.FAT, disk.getVirtualSize(), null);
+            name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
+        s_logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
@@ -476,68 +517,19 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     public long getCapacity(LinstorStoragePool pool) {
-        DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
-        try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
-
-            final long capacity = storagePools.stream()
-                .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0)
-                .sum() * 1024;  // linstor uses kiB
-            s_logger.debug("Linstor: GetCapacity() -> " + capacity);
-            return capacity;
-        } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
-            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
-        }
+        return LinstorUtil.getCapacityBytes(pool.getSourceHost(), rscGroupName);
     }
 
     public long getAvailable(LinstorStoragePool pool) {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
 
             final long free = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(StoragePool::getFreeCapacity).sum() * 1024;  // linstor uses KiB
+                .mapToLong(sp -> sp.getFreeCapacity() != null ? sp.getFreeCapacity() : 0L).sum() * 1024;  // linstor uses KiB
 
             s_logger.debug("Linstor: getAvailable() -> " + free);
             return free;
@@ -551,29 +543,13 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         DevelopersApi linstorApi = getLinstorAPI(pool);
         final String rscGroupName = pool.getResourceGroup();
         try {
-            List<ResourceGroup> rscGrps = linstorApi.resourceGroupList(
-                Collections.singletonList(rscGroupName),
-                null,
-                null,
-                null);
-
-            if (rscGrps.isEmpty()) {
-                final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-                s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            List<StoragePool> storagePools = linstorApi.viewStoragePools(
-                Collections.emptyList(),
-                rscGrps.get(0).getSelectFilter().getStoragePoolList(),
-                null,
-                null,
-                null
-            );
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
 
             final long used = storagePools.stream()
                 .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
-                .mapToLong(sp -> sp.getTotalCapacity() - sp.getFreeCapacity()).sum() * 1024; // linstor uses Kib
+                .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                        sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                    .sum() * 1024; // linstor uses Kib
             s_logger.debug("Linstor: getUsed() -> " + used);
             return used;
         } catch (ApiException apiEx) {

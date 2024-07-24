@@ -41,9 +41,12 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
+import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -60,6 +63,7 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplain
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,13 +112,13 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
-import com.cloud.hypervisor.vmware.VmwareDatacenter;
+import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -295,7 +299,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW, VmwareUserVmNicDeviceType};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -558,7 +562,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public Pair<String, Long> getSecondaryStorageStoreUrlAndId(long dcId) {
-
         String secUrl = null;
         Long secId = null;
         DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dcId);
@@ -568,18 +571,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         if (secUrl == null) {
-            // we are using non-NFS image store, then use cache storage instead
-            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
+            s_logger.info("Secondary storage is either not having free capacity or not NFS, then use cache/staging storage instead");
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 secUrl = cacheStore.getUri();
                 secId = cacheStore.getId();
             } else {
-                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
+                s_logger.warn("No cache/staging storage found when NFS secondary storage with free capacity not available or non-NFS secondary storage is used");
             }
         }
 
-        return new Pair<String, Long>(secUrl, secId);
+        return new Pair<>(secUrl, secId);
     }
 
     @Override
@@ -595,13 +597,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         if (urlIdList.isEmpty()) {
-            // we are using non-NFS image store, then use cache storage instead
-            s_logger.info("Secondary storage is not NFS, we need to use staging storage");
+            s_logger.info("Secondary storage is either not having free capacity or not NFS, then use cache/staging storage instead");
             DataStore cacheStore = _dataStoreMgr.getImageCacheStore(dcId);
             if (cacheStore != null) {
                 urlIdList.add(new Pair<>(cacheStore.getUri(), cacheStore.getId()));
             } else {
-                s_logger.warn("No staging storage is found when non-NFS secondary storage is used");
+                s_logger.warn("No cache/staging storage found when NFS secondary storage with free capacity not available or non-NFS secondary storage is used");
             }
         }
 
@@ -1112,6 +1113,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ImportVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
+        cmdList.add(ListVmwareDcVmsCmd.class);
         return cmdList;
     }
 
@@ -1171,12 +1173,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Association of VMware DC to zone is not allowed if zone already has resources added.
         validateZoneWithResources(zoneId, "add VMware datacenter to zone");
 
-        // Check if DC is already part of zone
-        // In that case vmware_data_center table should have the DC
-        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
-        if (vmwareDc != null) {
-            throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
-        }
+        checkIfDcIsUsed(vCenterHost, vmwareDcName, zoneId);
 
         VmwareContext context = null;
         DatacenterMO dcMo = null;
@@ -1210,11 +1207,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 throw new ResourceInUseException("This DC is being managed by other CloudStack deployment. Cannot add this DC to zone.");
             }
 
-            // Add DC to database into vmware_data_center table
-            vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
-            vmwareDc = vmwareDcDao.persist(vmwareDc);
+            vmwareDc = createOrUpdateDc(guid, vmwareDcName, vCenterHost, userName, password);
 
-            // Map zone with vmware datacenter
+                // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
             vmwareDcZoneMap = vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
@@ -1241,6 +1236,41 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
+    }
+
+    VmwareDatacenterVO createOrUpdateDc(String guid, String name, String host, String user, String password) {
+        VmwareDatacenterVO vmwareDc = new VmwareDatacenterVO(guid, name, host, user, password);
+        // Add DC to database into vmware_data_center table
+        try {
+            vmwareDc = vmwareDcDao.persist(vmwareDc);
+        } catch (EntityExistsException e) {
+            // if that fails just get the record as is
+            vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(guid);
+            // we could now update the `vmwareDC` with the user supplied `password`, `user`, `name` and `host`,
+            // but let's assume user error for now
+        }
+
+        return vmwareDc;
+    }
+
+    /**
+     * Check if DC is already part of zone
+     * In that case vmware_data_center table should have the DC and a dc zone mapping should exist
+     *
+     * @param vCenterHost
+     * @param vmwareDcName
+     * @param zoneId
+     * @throws ResourceInUseException if the DC can not be used.
+     */
+    private void checkIfDcIsUsed(String vCenterHost, String vmwareDcName, Long zoneId) throws ResourceInUseException {
+        VmwareDatacenterVO vmwareDc;
+        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        if (vmwareDc != null) {
+            VmwareDatacenterZoneMapVO mapping = vmwareDatacenterZoneMapDao.findByVmwareDcId(vmwareDc.getId());
+            if (mapping != null && Long.compare(zoneId, mapping.getZoneId()) == 0) {
+                throw new ResourceInUseException(String.format("This DC (%s) is already part of other CloudStack zone (%d). Cannot add this DC to more zones.", vmwareDc.getUuid(), zoneId));
+            }
+        }
     }
 
     @Override
@@ -1555,6 +1585,62 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
         }
         return compatiblePools;
+    }
+
+    @Override
+    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+        String vcenter = cmd.getVcenter();
+        String datacenterName = cmd.getDatacenterName();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        Long existingVcenterId = cmd.getExistingVcenterId();
+        String keyword = cmd.getKeyword();
+
+        if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
+                (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {
+            throw new InvalidParameterValueException("Please provide an existing vCenter ID or a vCenter IP/Name, parameters are mutually exclusive");
+        }
+
+        if (existingVcenterId == null && StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
+            throw new InvalidParameterValueException("Please set all the information for a vCenter IP/Name, datacenter, username and password");
+        }
+
+        if (existingVcenterId != null) {
+            VmwareDatacenterVO vmwareDc = vmwareDcDao.findById(existingVcenterId);
+            if (vmwareDc == null) {
+                throw new InvalidParameterValueException(String.format("Cannot find a VMware datacenter with ID %s", existingVcenterId));
+            }
+            vcenter = vmwareDc.getVcenterHost();
+            datacenterName = vmwareDc.getVmwareDatacenterName();
+            username = vmwareDc.getUser();
+            password = vmwareDc.getPassword();
+        }
+
+        try {
+            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+                    datacenterName, vcenter));
+            String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
+            VmwareClient vimClient = new VmwareClient(vcenter);
+            vimClient.connect(serviceUrl, username, password);
+            VmwareContext context = new VmwareContext(vimClient, vcenter);
+
+            DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
+            ManagedObjectReference dcMor = dcMo.getMor();
+            if (dcMor == null) {
+                String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
+                        datacenterName, vcenter);
+                s_logger.error(msg);
+                throw new InvalidParameterValueException(msg);
+            }
+            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
+            return StringUtils.isBlank(keyword) ? instances :
+                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
+        } catch (Exception e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vcenter, datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
     }
 
     @Override

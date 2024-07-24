@@ -45,16 +45,24 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Vector;
 import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.trilead.ssh2.SFTPException;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3DirectoryEntry;
+import com.trilead.ssh2.SFTPv3FileAttributes;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.security.ParserUtils;
@@ -214,6 +222,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     private final static int USER_DEVICE_START_ID = 3;
 
     private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
+    private final static String VM_NAME_CONFIGDRIVE_ISO_SUFFIX = "-CONFIGDRIVE-ISO";
 
     private final static String VM_FILE_ISO_SUFFIX = ".iso";
     public final static int DEFAULTDOMRSSHPORT = 3922;
@@ -801,7 +811,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Throwable e) {
-            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to to " + e.toString();
+            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         }
@@ -1013,12 +1023,13 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     protected SR createIsoSRbyURI(final Connection conn, final URI uri, final String vmName, final boolean shared) {
         try {
             final Map<String, String> deviceConfig = new HashMap<String, String>();
+            final boolean isConfigDrive = uri.toString().endsWith(ConfigDrive.CONFIGDRIVEDIR);
             String path = uri.getPath();
             path = path.replace("//", "/");
             deviceConfig.put("location", uri.getHost() + ":" + path);
             final Host host = Host.getByUuid(conn, _host.getUuid());
             final SR sr = SR.create(conn, host, deviceConfig, new Long(0), uri.getHost() + path, "iso", "iso", "iso", shared, new HashMap<String, String>());
-            sr.setNameLabel(conn, vmName + "-ISO");
+            sr.setNameLabel(conn, vmName + (isConfigDrive ? VM_NAME_CONFIGDRIVE_ISO_SUFFIX: VM_NAME_ISO_SUFFIX));
             sr.setNameDescription(conn, deviceConfig.get("location"));
 
             sr.scan(conn);
@@ -1338,7 +1349,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 vmr.VCPUsMax = (long)vmSpec.getCpus();
             } else {
                 if (vmSpec.getVcpuMaxLimit() != null) {
-                    vmr.VCPUsMax = (long)vmSpec.getVcpuMaxLimit();
+                    vmr.VCPUsMax = Math.min(vmSpec.getVcpuMaxLimit(), (long) _host.getCpus());
                 }
             }
         } else {
@@ -1574,7 +1585,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             final Set<VDI> vdis = VDI.getByNameLabel(conn, nameLabel);
             if (vdis.size() != 1) {
-                s_logger.warn("destoryVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
+                s_logger.warn("destroyVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
                 return;
             }
             for (final VDI vdi : vdis) {
@@ -2641,9 +2652,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return scsiid;
     }
 
-    public SR getISOSRbyVmName(final Connection conn, final String vmName) {
+    public SR getISOSRbyVmName(final Connection conn, final String vmName, boolean isConfigDrive) {
         try {
-            final Set<SR> srs = SR.getByNameLabel(conn, vmName + "-ISO");
+            final Set<SR> srs = SR.getByNameLabel(conn, vmName +
+                    (isConfigDrive ? VM_NAME_CONFIGDRIVE_ISO_SUFFIX : VM_NAME_ISO_SUFFIX));
             if (srs.size() == 0) {
                 return null;
             } else if (srs.size() == 1) {
@@ -2690,9 +2702,20 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         } catch (final URISyntaxException e) {
             throw new CloudRuntimeException("isoURL is wrong: " + isoURL);
         }
-        isoSR = getISOSRbyVmName(conn, vmName);
+        isoSR = getISOSRbyVmName(conn, vmName, false);
         if (isoSR == null) {
             isoSR = createIsoSRbyURI(conn, uri, vmName, false);
+        } else {
+            try {
+                String description = isoSR.getNameDescription(conn);
+                if (description.endsWith(ConfigDrive.CONFIGDRIVEDIR)) {
+                    throw new CloudRuntimeException(String.format("VM %s already has %s ISO attached. Please " +
+                            "stop-start VM to allow attaching-detaching both ISOs", vmName, ConfigDrive.CONFIGDRIVEDIR));
+                }
+            } catch (XenAPIException | XmlRpcException e) {
+                throw new CloudRuntimeException(String.format("Unable to retrieve name description for the already " +
+                        "attached ISO on VM %s", vmName));
+            }
         }
 
         final String isoName = isoURL.substring(index + 1);
@@ -3192,7 +3215,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         // constraint
         // for
         // stability
-        if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
+        if (dynamicMaxRam > staticMax) { // XS constraint that dynamic max <=
             // static max
             s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " can't be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
@@ -3206,7 +3229,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             return dynamicMinRam;
         }
 
-        if (dynamicMinRam < recommendedValue) { // XS contraint that dynamic min
+        if (dynamicMinRam < recommendedValue) { // XS constraint that dynamic min
             // > static min
             s_logger.warn("Vm ram is set to dynamic min " + toHumanReadableSize(dynamicMinRam) + " and is less than the recommended static min " + toHumanReadableSize(recommendedValue) + ", this could lead to stability issues");
         }
@@ -4582,7 +4605,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             removeSR(conn, sr);
             return;
         } catch (XenAPIException | XmlRpcException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.toString()), e);
         }
         String msg = "Remove SR failed";
         s_logger.warn(msg);
@@ -4677,9 +4700,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             removeSR(conn, sr);
             return null;
         } catch (final XenAPIException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.toString()), e);
         } catch (final XmlRpcException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.getMessage()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.getMessage()), e);
         }
         final String msg = "Remove SR failed";
         s_logger.warn(msg);
@@ -5660,7 +5683,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_CONFIGDRIVE_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
             Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);
@@ -5720,6 +5743,72 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             return false;
         }
 
+    }
+
+    public Answer listFilesAtPath(ListDataStoreObjectsCommand command) throws IOException, XmlRpcException {
+        DataStoreTO store = command.getStore();
+        int startIndex = command.getStartIndex();
+        int pageSize = command.getPageSize();
+        String relativePath = command.getPath();
+        if (relativePath.endsWith("/")) {
+            relativePath = relativePath.substring(0, relativePath.length() - 1);
+        }
+
+        final Connection conn = getConnection();
+
+        final SR sr = getStorageRepository(conn, store.getUuid());
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+        try {
+            sshConnection.connect(null, 60000, 60000);
+            if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
+                throw new CloudRuntimeException("Unable to authenticate");
+            }
+            String mountPoint = "/var/run/sr-mount/" + sr.getUuid(conn);
+            boolean pathExists = true;
+            SFTPv3FileAttributes fileAttr = null;
+            int count = 0;
+            List<String> names = new ArrayList<>();
+            List<String> paths = new ArrayList<>();
+            List<String> absPaths = new ArrayList<>();
+            List<Boolean> isDirs = new ArrayList<>();
+            List<Long> sizes = new ArrayList<>();
+            List<Long> modifiedList = new ArrayList<>();
+            SFTPv3Client client = new SFTPv3Client(sshConnection);
+            try {
+                fileAttr = client._stat(mountPoint + "/" + relativePath);
+
+                // Path doesn't exist
+                if (fileAttr == null) {
+                    return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+                }
+
+                try {
+                    Vector fileList = client.ls(mountPoint + "/" + relativePath);
+                    count = fileList.size() - 2; // -2 for . and ..
+                    for (int i = startIndex + 2; i < startIndex + pageSize + 2 && i < fileList.size(); i++) {
+                        SFTPv3DirectoryEntry entry = (SFTPv3DirectoryEntry) fileList.get(i);
+                        names.add(entry.filename);
+                        paths.add(relativePath + "/" + entry.filename);
+                        isDirs.add(entry.attributes.isDirectory());
+                        sizes.add(entry.attributes.size);
+                        modifiedList.add(entry.attributes.mtime * 1000L);
+                    }
+                } catch (SFTPException e) {
+                    // Path is a file
+                    count = 1;
+                    names.add(relativePath.substring(relativePath.lastIndexOf("/") + 1));
+                    paths.add(relativePath);
+                    isDirs.add(false);
+                    sizes.add(fileAttr.size);
+                    modifiedList.add(fileAttr.mtime * 1000L);
+                }
+            } finally {
+                client.close();
+            }
+            return new ListDataStoreObjectsAnswer(pathExists, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+        } finally {
+            sshConnection.close();
+        }
     }
 
     /**

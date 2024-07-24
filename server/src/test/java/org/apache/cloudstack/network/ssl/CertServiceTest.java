@@ -16,32 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.ssl;
 
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.when;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.LoadBalancerCertMapDao;
@@ -57,6 +31,31 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.when;
 
 public class CertServiceTest {
 

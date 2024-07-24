@@ -37,14 +37,14 @@
         </keep-alive>
         <a-tabs
           v-else
-          style="width: 100%"
+          style="width: 100%; margin-top: -12px"
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
           <template v-for="tab in tabs" :key="tab.name">
             <a-tab-pane
               :key="tab.name"
-              :tab="$t('label.' + tab.name)"
+              :tab="$t('label.' + tabName(tab))"
               v-if="showTab(tab)">
               <keep-alive>
                 <component
@@ -157,6 +157,12 @@ export default {
         }).join('&')
       )
       this.$emit('onTabChange', key)
+    },
+    tabName (tab) {
+      if (typeof tab.name === 'function') {
+        return tab.name(this.resource)
+      }
+      return tab.name
     },
     showTab (tab) {
       if (this.networkService && this.networkService.service && tab.networkServiceFilter) {

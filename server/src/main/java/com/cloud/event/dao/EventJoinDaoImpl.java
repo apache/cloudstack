@@ -110,6 +110,9 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setParentId(event.getStartUuid());
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
+        if (event.getArchived()) {
+            responseEvent.setArchived(true);
+        }
         Long resourceId = event.getResourceId();
         responseEvent.setResourceType(event.getResourceType());
         ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(event.getResourceType());

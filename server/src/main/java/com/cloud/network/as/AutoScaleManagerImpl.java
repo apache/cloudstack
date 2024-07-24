@@ -37,15 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -79,6 +70,12 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
@@ -86,9 +83,9 @@ import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
 import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
 import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
 import com.cloud.api.ApiDBUtils;
@@ -173,9 +170,9 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -185,10 +182,14 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
@@ -254,6 +255,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Inject
     private UserVmManager userVmMgr;
     @Inject
+    private UserDataManager userDataMgr;
+    @Inject
     private UserVmDao userVmDao;
     @Inject
     private HostDao hostDao;
@@ -273,6 +276,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private AffinityGroupDao affinityGroupDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
@@ -530,7 +535,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
-        String userData = cmd.getUserData();
 
         DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
 
@@ -541,6 +545,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         ServiceOffering serviceOffering = entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id");
+        }
+
+        VirtualMachineTemplate template = entityMgr.findById(VirtualMachineTemplate.class, cmd.getTemplateId());
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
         }
 
         // validations
@@ -560,8 +569,22 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             profileVO.setDisplay(cmd.getDisplay());
         }
 
+        String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserDataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserDataDetails())) {
+            userDataDetails = cmd.getUserDataDetails().toString();
+        }
+        userData = userVmMgr.finalizeUserData(userData, userDataId, template);
+        userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
         if (userData != null) {
             profileVO.setUserData(userData);
+        }
+        if (userDataId != null) {
+            profileVO.setUserDataId(userDataId);
+        }
+        if (userDataDetails != null) {
+            profileVO.setUserDataDetails(userDataDetails);
         }
 
         profileVO = checkValidityAndPersist(profileVO, true);
@@ -580,12 +603,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map<String, HashMap<String, String>> otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
         String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserDataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserDataDetails())) {
+            userDataDetails = cmd.getUserDataDetails().toString();
+        }
+        boolean userdataUpdate = userData != null || userDataId != null || MapUtils.isNotEmpty(cmd.getUserDataDetails());
 
         Integer expungeVmGracePeriod = cmd.getExpungeVmGracePeriod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, autoScaleVmProfileDao);
 
-        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null || expungeVmGracePeriod != null || userData != null);
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null
+                || otherDeployParams != null || expungeVmGracePeriod != null || userdataUpdate);
 
         if (serviceOfferingId != null) {
             vmProfile.setServiceOfferingId(serviceOfferingId);
@@ -607,10 +637,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             vmProfile.setCounterParamsForUpdate(counterParamList);
         }
 
-        if (userData != null) {
-            vmProfile.setUserData(userData);
-        }
-
         if (expungeVmGracePeriod != null) {
             vmProfile.setExpungeVmGracePeriod(expungeVmGracePeriod);
         }
@@ -621,6 +647,18 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (cmd.getDisplay() != null) {
             vmProfile.setDisplay(cmd.getDisplay());
+        }
+
+        if (userdataUpdate) {
+            if (templateId == null) {
+                templateId = vmProfile.getTemplateId();
+            }
+            VirtualMachineTemplate template = entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId);
+            userData = userVmMgr.finalizeUserData(userData, userDataId, template);
+            userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
+            vmProfile.setUserDataId(userDataId);
+            vmProfile.setUserData(userData);
+            vmProfile.setUserDataDetails(userDataDetails);
         }
 
         List<AutoScaleVmGroupVO> vmGroupList = autoScaleVmGroupDao.listByAll(null, profileId);
@@ -1139,6 +1177,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long profileId = cmd.getProfileId();
         Long zoneId = cmd.getZoneId();
         Boolean forDisplay = cmd.getDisplay();
+        String keyword = cmd.getKeyword();
 
         SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<>(autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
@@ -1149,6 +1188,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         sb.and("profileId", sb.entity().getProfileId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
 
         if (policyId != null) {
             SearchBuilder<AutoScaleVmGroupPolicyMapVO> asVmGroupPolicySearch = autoScaleVmGroupPolicyMapDao.createSearchBuilder();
@@ -1177,6 +1217,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         if (forDisplay != null) {
             sc.setParameters("display", forDisplay);
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            sc.setParameters("keyword", "%" + keyword + "%");
         }
         return searchWrapper.search();
     }
@@ -1738,6 +1781,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
 
             String userData = profileVo.getUserData();
+            Long userDataId = profileVo.getUserDataId();
+            String userDataDetails = profileVo.getUserDataDetails();
 
             UserVm vm = null;
             IpAddresses addrs = new IpAddresses(null, null);
@@ -1761,20 +1806,20 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
                         vmHostName, diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                        hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
-                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
                             diskOfferingId, dataDiskSize, null,
-                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, null, overrideDiskOfferingId);
                 }
@@ -1901,7 +1946,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
+    @Override
+    public String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
         String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
@@ -1909,7 +1955,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
     }
 
-    private void checkAutoScaleVmGroupName(String groupName) {
+    @Override
+    public void checkAutoScaleVmGroupName(String groupName) {
         String errorMessage = "";
         if (groupName == null || groupName.length() > 255 || groupName.length() < 1) {
             errorMessage = "AutoScale Vm Group name must be between 1 and 255 characters long";
@@ -1927,7 +1974,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private boolean startNewVM(long vmId) {
         try {
             CallContext.current().setEventDetails("Vm Id: " + vmId);
-            userVmMgr.startVirtualMachine(vmId, null, null, null);
+            userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null);
         } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -2653,21 +2700,21 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<Long> vmIds = hostAndVmIds.getValue();
 
             if (!DEFAULT_HOST_ID.equals(hostId)) {
-                Map<Long, VmStatsEntry> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
+                Map<Long, ? extends VmStats> vmStatsById = getVmStatsByIdFromHost(hostId, vmIds);
                 processVmStatsByIdFromHost(groupTO, vmIds, vmStatsById, policyCountersMap);
             }
         }
     }
 
-    protected Map<Long, VmStatsEntry> getVmStatsByIdFromHost(Long hostId, List<Long> vmIds) {
-        Map<Long, VmStatsEntry> vmStatsById = new HashMap<>();
+    protected Map<Long, ? extends VmStats> getVmStatsByIdFromHost(Long hostId, List<Long> vmIds) {
+        Map<Long, ? extends VmStats> vmStatsById = new HashMap<>();
         HostVO host = hostDao.findById(hostId);
         if (host == null) {
             s_logger.debug("Failed to get VM stats from non-existing host : " + hostId);
             return vmStatsById;
         }
         try {
-            vmStatsById = userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+            vmStatsById = virtualMachineManager.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
             if (MapUtils.isEmpty(vmStatsById)) {
                 s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
             }
@@ -2677,10 +2724,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmStatsById;
     }
 
-    protected void processVmStatsByIdFromHost(AutoScaleVmGroupTO groupTO, List<Long> vmIds, Map<Long, VmStatsEntry> vmStatsById, Map<Long, List<CounterTO>> policyCountersMap) {
+    protected void processVmStatsByIdFromHost(AutoScaleVmGroupTO groupTO, List<Long> vmIds, Map<Long, ? extends VmStats> vmStatsById, Map<Long, List<CounterTO>> policyCountersMap) {
         Date timestamp = new Date();
         for (Long vmId : vmIds) {
-            VmStatsEntry vmStats = vmStatsById == null ? null : vmStatsById.get(vmId);
+            VmStatsEntry vmStats = vmStatsById == null ? null : (VmStatsEntry)vmStatsById.get(vmId);
             for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
                 Long policyId = policyCounters.getKey();
                 List<CounterTO> counters = policyCounters.getValue();

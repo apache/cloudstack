@@ -289,3 +289,84 @@ class TestNetworkManagement(cloudstackTestCase):
         )
 
         self.cleanup.append(self.network_offering)
+
+    @attr(tags=["adeancedsg", "Simulator"], required_hardware="false")
+    def test_03_create_network_with_empty_displayText(self):
+        """Create Shared network with empty displayText
+           and verify value of displayText after network
+           is being created.
+        """
+        # Update the global setting to true
+        Configurations.update(self.apiclient,
+                              name="allow.duplicate.networkname",
+                              value="true"
+                              )
+
+        # Create network offering
+        self.network_offering = NetworkOffering.create(
+            self.apiclient,
+            self.testdata["network_offering_shared"]
+        )
+        self.cleanup.append( self.network_offering)
+
+        NetworkOffering.update(
+            self.network_offering,
+            self.apiclient,
+            id=self.network_offering.id,
+            state="enabled"
+        )
+
+        physical_network, vlan = get_free_vlan(self.apiclient, self.zone.id)
+        self.testdata["shared_network_sg"]["physicalnetworkid"] = physical_network.id
+
+        random_subnet_number = random.randrange(100, 199)
+        self.testdata["shared_network_sg"]["specifyVlan"] = 'True'
+        self.testdata["shared_network_sg"]["specifyIpRanges"] = 'True'
+        self.testdata["shared_network_sg"]["name"] = "Shared-Network-SG-Test-vlan-1"
+        self.testdata["shared_network_sg"]["displayText"] = ''
+        self.testdata["shared_network_sg"]["vlan"] = "vlan://" + str(random_subnet_number)
+        self.testdata["shared_network_sg"]["startip"] = "192.168." + str(random_subnet_number) + ".1"
+        self.testdata["shared_network_sg"]["endip"] = "192.168." + str(random_subnet_number) + ".10"
+        self.testdata["shared_network_sg"]["gateway"] = "192.168." + str(random_subnet_number) + ".254"
+        self.testdata["shared_network_sg"]["netmask"] = "255.255.255.0"
+        self.testdata["shared_network_sg"]["acltype"] = "account"
+
+        # Create the first network with empty displayText
+        network1 = Network.create(
+            self.apiclient,
+            self.testdata["shared_network_sg"],
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.cleanup.append(network1)
+
+        self.assertEqual(
+            network1.displayText,
+            self.testdata["shared_network_sg"]["name"],
+            msg="displayText does not match name"
+        )
+
+        self.testdata["shared_network_sg"]["displayText"] = 'test'
+
+        #Create the second network with non-empty displayText
+        network2 = Network.create(
+            self.apiclient,
+            self.testdata["shared_network_sg"],
+            networkofferingid=self.network_offering.id,
+            zoneid=self.zone.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.cleanup.append(network2)
+
+        self.assertNotEqual(
+            network2.displayText,
+            self.testdata["shared_network_sg"]["name"],
+            msg="displayText and name are equal"
+        )
+
+        return

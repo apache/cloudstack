@@ -142,7 +142,9 @@ public class QuotaManagerImplTest {
     public void getUsageValueAccordingToUsageUnitTypeTestAllTypes() {
         Mockito.doReturn(10.0).when(usageVoMock).getRawUsage();
         Mockito.doReturn(ByteScaleUtils.GiB).when(usageVoMock).getSize();
+        Mockito.doReturn(new Date(0, 8, 10)).when(usageVoMock).getStartDate();
         BigDecimal aggregatedQuotaTariffsValue = new BigDecimal(400);
+
 
         Arrays.asList(UsageUnitTypes.values()).forEach(type -> {
            BigDecimal result = quotaManagerImplSpy.getUsageValueAccordingToUsageUnitType(usageVoMock, aggregatedQuotaTariffsValue, type.toString());
@@ -164,6 +166,12 @@ public class QuotaManagerImplTest {
                case GB_MONTH:
                    //The value 5.5555556 is referent to the calculation (( usage size / gib ) * raw usage * ( tariffs values / hours in month )).
                    expected = 5.5555556;
+                   break;
+
+               case BYTES:
+               case IOPS:
+                   //The value 4000.0 is referent to the calculation ( raw usage * tariffs values ).
+                   expected = 4000.0;
                    break;
 
                default:
@@ -261,7 +269,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
@@ -282,7 +290,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }

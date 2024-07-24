@@ -277,7 +277,7 @@ public class TemplateDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     }
 
     public long getSize() {
-        return size;
+        return size == null ? 0l : size.longValue();
     }
 
     public void setPhysicalSize(long physicalSize) {

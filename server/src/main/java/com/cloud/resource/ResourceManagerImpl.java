@@ -32,12 +32,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.alert.AlertManager;
+import com.cloud.host.HostTagVO;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.hypervisor.HypervisorGuru;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -294,6 +302,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private AlertManager alertManager;
+    @Inject
+    private AnnotationService annotationService;
+    @Inject
+    private VolumeDao volumeDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -541,7 +555,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         // save cluster details for later cluster/host cross-checking
-        final Map<String, String> details = new HashMap<String, String>();
+        final Map<String, String> details = new HashMap<>();
         details.put("url", url);
         details.put("username", StringUtils.defaultString(username));
         details.put("password", StringUtils.defaultString(password));
@@ -641,7 +655,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), false);
+        String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
+                "Custom" : cmd.getHypervisor();
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false);
     }
 
     @Override
@@ -842,7 +858,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                                     if (s_logger.isTraceEnabled()) {
                                         s_logger.trace("Adding Host Tags for KVM host, tags:  :" + hostTags);
                                     }
-                                    _hostTagsDao.persist(host.getId(), hostTags);
+                                    _hostTagsDao.persist(host.getId(), hostTags, false);
                                 }
                                 hosts.add(host);
 
@@ -979,6 +995,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     final Long poolId = pool.getPoolId();
                     final StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
                     if (storagePool.isLocal() && isForceDeleteStorage) {
+                        destroyLocalStoragePoolVolumes(poolId);
                         storagePool.setUuid(null);
                         storagePool.setClusterId(null);
                         _storagePoolDao.update(poolId, storagePool);
@@ -1009,6 +1026,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return true;
+    }
+
+    private void addVolumesToList(List<VolumeVO> volumes, List<VolumeVO> volumesToAdd) {
+        if (CollectionUtils.isNotEmpty(volumesToAdd)) {
+            volumes.addAll(volumesToAdd);
+        }
+    }
+
+    protected void destroyLocalStoragePoolVolumes(long poolId) {
+        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+
+        List<VolumeVO> volumes = new ArrayList<>();
+        addVolumesToList(volumes, rootDisks);
+        addVolumesToList(volumes, dataVolumes);
+
+        if (CollectionUtils.isNotEmpty(volumes)) {
+            for (VolumeVO volume : volumes) {
+                volumeDao.updateAndRemoveVolume(volume);
+            }
+        }
     }
 
     /**
@@ -1774,73 +1812,149 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return hostInMaintenance;
     }
 
+    private ResourceState.Event getResourceEventFromAllocationStateString(String allocationState) {
+        final ResourceState.Event resourceEvent = ResourceState.Event.toEvent(allocationState);
+        if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
+            throw new InvalidParameterValueException(String.format("Invalid allocation state: %s, " +
+                    "only Enable/Disable are allowed", allocationState));
+        }
+        return resourceEvent;
+    }
+
+    private void handleAutoEnableDisableKVMHost(boolean autoEnableDisableKVMSetting,
+                                                boolean isUpdateFromHostHealthCheck,
+                                                HostVO host, DetailVO hostDetail,
+                                                ResourceState.Event resourceEvent) {
+        if (autoEnableDisableKVMSetting) {
+            if (!isUpdateFromHostHealthCheck && hostDetail != null &&
+                    !Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Enable) {
+                hostDetail.setValue(Boolean.TRUE.toString());
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            } else if (!isUpdateFromHostHealthCheck && hostDetail != null &&
+                    Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Disable) {
+                s_logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
+                                "ignoring future auto enabling of the host based on health check results",
+                        AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent));
+                hostDetail.setValue(Boolean.FALSE.toString());
+                _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+            } else if (hostDetail == null) {
+                String autoEnableValue = !isUpdateFromHostHealthCheck ? Boolean.FALSE.toString() : Boolean.TRUE.toString();
+                hostDetail = new DetailVO(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST, autoEnableValue);
+                _hostDetailsDao.persist(hostDetail);
+            }
+        }
+    }
+    private boolean updateHostAllocationState(HostVO host, String allocationState,
+                                           boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+        boolean autoEnableDisableKVMSetting = AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId()) &&
+                host.getHypervisorType() == HypervisorType.KVM;
+        ResourceState.Event resourceEvent = getResourceEventFromAllocationStateString(allocationState);
+        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST);
+
+        if ((host.getResourceState() == ResourceState.Enabled && resourceEvent == ResourceState.Event.Enable) ||
+                (host.getResourceState() == ResourceState.Disabled && resourceEvent == ResourceState.Event.Disable)) {
+            s_logger.info(String.format("The host %s is already on the allocated state", host.getName()));
+            return false;
+        }
+
+        if (isAutoEnableAttemptForADisabledHost(autoEnableDisableKVMSetting, isUpdateFromHostHealthCheck, hostDetail, resourceEvent)) {
+            s_logger.debug(String.format("The setting '%s' is enabled and the health check succeeds on the host, " +
+                            "but the host has been manually disabled previously, ignoring auto enabling",
+                    AgentManager.EnableKVMAutoEnableDisable.key()));
+            return false;
+        }
+
+        handleAutoEnableDisableKVMHost(autoEnableDisableKVMSetting, isUpdateFromHostHealthCheck, host,
+                hostDetail, resourceEvent);
+
+        resourceStateTransitTo(host, resourceEvent, _nodeId);
+        return true;
+    }
+
+    private boolean isAutoEnableAttemptForADisabledHost(boolean autoEnableDisableKVMSetting,
+                                                        boolean isUpdateFromHostHealthCheck,
+                                                        DetailVO hostDetail, ResourceState.Event resourceEvent) {
+        return autoEnableDisableKVMSetting && isUpdateFromHostHealthCheck && hostDetail != null &&
+                !Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Enable;
+    }
+
+    private void updateHostName(HostVO host, String name) {
+        s_logger.debug("Updating Host name to: " + name);
+        host.setName(name);
+        _hostDao.update(host.getId(), host);
+    }
+
+    private void updateHostGuestOSCategory(Long hostId, Long guestOSCategoryId) {
+        // Verify that the guest OS Category exists
+        if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+        }
+
+        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+        final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+
+        if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
+            // Create/Update an entry for guest.os.category.id
+            if (guestOSDetail != null) {
+                guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
+                _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
+            } else {
+                final Map<String, String> detail = new HashMap<String, String>();
+                detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+                _hostDetailsDao.persist(hostId, detail);
+            }
+        } else {
+            // Delete any existing entry for guest.os.category.id
+            if (guestOSDetail != null) {
+                _hostDetailsDao.remove(guestOSDetail.getId());
+            }
+        }
+    }
+
+    private void updateHostTags(HostVO host, Long hostId, List<String> hostTags, Boolean isTagARule) {
+        List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
+        s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. " +
+                "Updating the host tags will not affect them.", activeVMs, host));
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Updating Host Tags to :" + hostTags);
+        }
+        _hostTagsDao.persist(hostId, new ArrayList<>(new HashSet<>(hostTags)), isTagARule);
+    }
+
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        Long hostId = cmd.getId();
-        String name = cmd.getName();
-        Long guestOSCategoryId = cmd.getOsCategoryId();
+        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
+    }
 
+    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
+                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
         }
 
-        if (cmd.getAllocationState() != null) {
-            final ResourceState.Event resourceEvent = ResourceState.Event.toEvent(cmd.getAllocationState());
-            if (resourceEvent != ResourceState.Event.Enable && resourceEvent != ResourceState.Event.Disable) {
-                throw new CloudRuntimeException("Invalid allocation state:" + cmd.getAllocationState() + ", only Enable/Disable are allowed");
-            }
-
-            resourceStateTransitTo(host, resourceEvent, _nodeId);
+        boolean isUpdateHostAllocation = false;
+        if (StringUtils.isNotBlank(allocationState)) {
+            isUpdateHostAllocation = updateHostAllocationState(host, allocationState, isUpdateFromHostHealthCheck);
         }
 
         if (StringUtils.isNotBlank(name)) {
-            s_logger.debug("Updating Host name to: " + name);
-            host.setName(name);
-            _hostDao.update(host.getId(), host);
+            updateHostName(host, name);
         }
 
         if (guestOSCategoryId != null) {
-            // Verify that the guest OS Category exists
-            if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-            }
-
-            final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-            final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
-
-            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
-                // Create/Update an entry for guest.os.category.id
-                if (guestOSDetail != null) {
-                    guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
-                    _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
-                } else {
-                    final Map<String, String> detail = new HashMap<String, String>();
-                    detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-                    _hostDetailsDao.persist(hostId, detail);
-                }
-            } else {
-                // Delete any existing entry for guest.os.category.id
-                if (guestOSDetail != null) {
-                    _hostDetailsDao.remove(guestOSDetail.getId());
-                }
-            }
+            updateHostGuestOSCategory(hostId, guestOSCategoryId);
         }
-        final List<String> hostTags = cmd.getHostTags();
+
         if (hostTags != null) {
-            List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
-            s_logger.warn(String.format("The following active VMs [%s] are using the host [%s]. Updating the host tags will not affect them.", activeVMs, host));
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Updating Host Tags to :" + hostTags);
-            }
-            _hostTagsDao.persist(hostId, new ArrayList(new HashSet<String>(hostTags)));
+            updateHostTags(host, hostId, hostTags, isTagARule);
         }
 
-        final String url = cmd.getUrl();
         if (url != null) {
-            _storageMgr.updateSecondaryStorage(cmd.getId(), cmd.getUrl());
+            _storageMgr.updateSecondaryStorage(hostId, url);
         }
         try {
             _storageMgr.enableHost(hostId);
@@ -1849,7 +1963,53 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         final HostVO updatedHost = _hostDao.findById(hostId);
+
+        sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(host, allocationState,
+                isUpdateFromHostHealthCheck, isUpdateHostAllocation, annotation);
+
         return updatedHost;
+    }
+
+    private void sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(HostVO host, String allocationState,
+                                                                          boolean isUpdateFromHostHealthCheck,
+                                                                          boolean isUpdateHostAllocation, String annotation) {
+        boolean isAutoEnableDisableKVMSettingEnabled = host.getHypervisorType() == HypervisorType.KVM &&
+                AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId());
+        if (!isAutoEnableDisableKVMSettingEnabled) {
+            if (StringUtils.isNotBlank(annotation)) {
+                annotationService.addAnnotation(annotation, AnnotationService.EntityType.HOST, host.getUuid(), true);
+            }
+            return;
+        }
+
+        if (!isUpdateHostAllocation) {
+            return;
+        }
+
+        String msg = String.format("The host %s (%s) ", host.getName(), host.getUuid());
+        ResourceState.Event resourceEvent = getResourceEventFromAllocationStateString(allocationState);
+        boolean isEventEnable = resourceEvent == ResourceState.Event.Enable;
+
+        if (isUpdateFromHostHealthCheck) {
+            msg += String.format("is auto-%s after %s health check results",
+                    isEventEnable ? "enabled" : "disabled",
+                    isEventEnable ? "successful" : "failed");
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(),
+                    host.getPodId(), msg, msg);
+        } else {
+            msg += String.format("is %s despite the setting '%s' is enabled for the cluster %s",
+                    isEventEnable ? "enabled" : "disabled", AgentManager.EnableKVMAutoEnableDisable.key(),
+                    host.getClusterId());
+            if (StringUtils.isNotBlank(annotation)) {
+                msg += String.format(", reason: %s", annotation);
+            }
+        }
+        annotationService.addAnnotation(msg, AnnotationService.EntityType.HOST, host.getUuid(), true);
+    }
+
+    @Override
+    public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true);
     }
 
     @Override
@@ -2181,7 +2341,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final List<String> implicitHostTags = ssCmd.getHostTags();
             if (!implicitHostTags.isEmpty()) {
                 if (hostTags == null) {
-                    hostTags = _hostTagsDao.getHostTags(host.getId());
+                    hostTags = _hostTagsDao.getHostTags(host.getId()).parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
                 }
                 if (hostTags != null) {
                     implicitHostTags.removeAll(hostTags);
@@ -2209,7 +2369,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setManagementServerId(_nodeId);
         host.setStorageUrl(startup.getIqn());
         host.setLastPinged(System.currentTimeMillis() >> 10);
-        host.setHostTags(hostTags);
+        host.setHostTags(hostTags, false);
         host.setDetails(details);
         if (startup.getStorageIpAddressDeux() != null) {
             host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
@@ -3193,7 +3353,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public String getHostTags(final long hostId) {
-        final List<String> hostTags = _hostTagsDao.getHostTags(hostId);
+        final List<String> hostTags = _hostTagsDao.getHostTags(hostId).parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
         if (hostTags == null) {
             return null;
         } else {
@@ -3229,6 +3389,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
 
@@ -3255,6 +3424,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.setJoinParameters("groupId", "vgpuType", vgpuType);
         sc.setJoinParameters("groupId", "remainingCapacity", 0);
         return _hostGpuGroupsDao.customSearch(sc, searchFilter);
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(final HypervisorType type, final long dcId, final long clusterId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, final long dcId, final long clusterId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.IN, types);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
     }
 
     @Override

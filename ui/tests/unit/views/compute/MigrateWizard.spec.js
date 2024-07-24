@@ -93,12 +93,12 @@ router.push('/')
 describe('Views > compute > MigrateWizard.vue', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
 
     if (!wrapper) {
       mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
       wrapper = factory({
-        props: { resource: {} },
-        data: { columns: [] }
+        props: { resource: {} }
       })
     }
 
@@ -107,7 +107,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
 
   afterEach(() => {
     if (wrapper) {
-      wrapper.vm.columns = []
       wrapper.vm.searchQuery = ''
       wrapper.vm.page = 1
       wrapper.vm.pageSize = 10
@@ -132,7 +131,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource is empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: {} })
-        await wrapper.setData({ columns: [] })
         await wrapper.vm.fetchData()
         await flushPromises()
 
@@ -156,7 +154,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource.id is empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: null } })
-        await wrapper.setData({ columns: [] })
         await wrapper.vm.fetchData()
         await flushPromises()
 
@@ -180,7 +177,6 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource.id is not empty and searchQuery is empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: 'test-id-value' } })
-        await wrapper.setData({ columns: [] })
         await wrapper.vm.fetchData()
         await flushPromises()
 
@@ -204,7 +200,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
       it('API should be called with resource.id is not empty and searchQuery is not empty', async (done) => {
         await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
         await wrapper.setProps({ resource: { id: 'test-id-value' } })
-        await wrapper.setData({ searchQuery: 'test-query-value', columns: [] })
+        await wrapper.setData({ searchQuery: 'test-query-value' })
         await wrapper.vm.fetchData()
         await flushPromises()
 
@@ -231,8 +227,7 @@ describe('Views > compute > MigrateWizard.vue', () => {
         await wrapper.setData({
           searchQuery: 'test-query-value',
           page: 2,
-          pageSize: 20,
-          columns: []
+          pageSize: 20
         })
         await wrapper.vm.fetchData()
         await flushPromises()

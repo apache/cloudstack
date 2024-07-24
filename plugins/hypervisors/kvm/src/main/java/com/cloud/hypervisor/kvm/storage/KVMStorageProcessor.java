@@ -18,31 +18,58 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.ErrorCode;
+import com.ceph.rados.exceptions.RadosException;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
+import com.ceph.rbd.jna.RbdSnapInfo;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
+import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
+import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
+import com.cloud.storage.Volume;
+import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.S3.S3Utils;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadHelper;
+import org.apache.cloudstack.direct.download.DirectTemplateDownloader;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -65,14 +92,20 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -80,65 +113,28 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
-import com.ceph.rados.IoCTX;
-import com.ceph.rados.Rados;
-import com.ceph.rados.exceptions.ErrorCode;
-import com.ceph.rados.exceptions.RadosException;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
-import com.ceph.rbd.RbdImage;
-import com.ceph.rbd.jna.RbdSnapInfo;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.direct.download.DirectTemplateDownloader;
-import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
-import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
-import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
-import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
-import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
-import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
-import com.cloud.storage.JavaStorageLayer;
-import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
-import com.cloud.storage.resource.StorageProcessor;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.utils.Pair;
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.S3.S3Utils;
+import javax.naming.ConfigurationException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -272,7 +268,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 Map<String, String> details = primaryStore.getDetails();
 
-                String path = details != null ? details.get("managedStoreTarget") : null;
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     s_logger.warn("Failed to connect physical disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
@@ -296,9 +292,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 final TemplateObjectTO newTemplate = new TemplateObjectTO();
                 newTemplate.setPath(primaryVol.getName());
                 newTemplate.setSize(primaryVol.getSize());
-                if (primaryPool.getType() == StoragePoolType.RBD ||
-                    primaryPool.getType() == StoragePoolType.PowerFlex ||
-                    primaryPool.getType() == StoragePoolType.Linstor) {
+
+                if(List.of(
+                    StoragePoolType.RBD,
+                    StoragePoolType.PowerFlex,
+                    StoragePoolType.Linstor,
+                    StoragePoolType.FiberChannel).contains(primaryPool.getType())) {
                     newTemplate.setFormat(ImageFormat.RAW);
                 } else {
                     newTemplate.setFormat(ImageFormat.QCOW2);
@@ -327,6 +326,16 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Failed to clean up secondary storage", e);
             }
         }
+    }
+
+    private String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
+        String path = null;
+        if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
+            path = destData.getPath();
+        } else {
+            path = details != null ? details.get("managedStoreTarget") : null;
+        }
+        return path;
     }
 
     // this is much like PrimaryStorageDownloadCommand, but keeping it separate. copies template direct to root disk
@@ -408,7 +417,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
             } if (primaryPool.getType() == StoragePoolType.PowerFlex) {
                 Map<String, String> details = primaryStore.getDetails();
-                String path = details != null ? details.get("managedStoreTarget") : null;
+                String path = derivePath(primaryStore, destData, details);
 
                 if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), templatePath, details)) {
                     s_logger.warn("Failed to connect base template volume at path: " + templatePath + ", in storage pool id: " + primaryStore.getUuid());
@@ -590,7 +599,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer createTemplateFromVolume(final CopyCommand cmd) {
         Map<String, String> details = cmd.getOptions();
 
-        if (details != null && details.get(DiskTO.IQN) != null) {
+        // handle cases where the managed storage driver had to make a temporary volume from
+        // the snapshot in order to support the copy
+        if (details != null && (details.get(DiskTO.IQN) != null || details.get(DiskTO.PATH) != null)) {
             // use the managed-storage approach
             return createTemplateFromVolumeOrSnapshot(cmd);
         }
@@ -718,7 +729,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer createTemplateFromSnapshot(CopyCommand cmd) {
         Map<String, String> details = cmd.getOptions();
 
-        if (details != null && details.get(DiskTO.IQN) != null) {
+        if (details != null && (details.get(DiskTO.IQN) != null || details.get(DiskTO.PATH) != null)) {
             // use the managed-storage approach
             return createTemplateFromVolumeOrSnapshot(cmd);
         }
@@ -756,12 +767,15 @@ public class KVMStorageProcessor implements StorageProcessor {
         KVMStoragePool secondaryStorage = null;
 
         try {
+            // look for options indicating an overridden path or IQN.  Used when snapshots have to be
+            // temporarily copied on the manaaged storage device before the actual copy to target object
             Map<String, String> details = cmd.getOptions();
-
-            String path = details != null ? details.get(DiskTO.IQN) : null;
-
+            String path = details != null ? details.get(DiskTO.PATH) : null;
             if (path == null) {
-                new CloudRuntimeException("The 'path' field must be specified.");
+                path = details != null ? details.get(DiskTO.IQN) : null;
+                if (path == null) {
+                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                }
             }
 
             storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
@@ -1018,9 +1032,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
+
+                descName = UUID.randomUUID().toString();
+
                 command.add("-t", descName);
                 final String result = command.execute();
                 if (result != null) {
@@ -1044,19 +1058,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             srcVolume.clearPassphrase();
             if (isCreatedFromVmSnapshot) {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
-            } else if (primaryPool.getType() != StoragePoolType.RBD) {
-                String snapshotPath = snapshot.getPath();
-                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
-
-                if (backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) {
-                    try {
-                        Files.deleteIfExists(Paths.get(snapshotPath));
-                    } catch (IOException ex) {
-                        s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
-                    }
-                } else {
-                    s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
-                }
+            } else if (primaryPool != null && primaryPool.getType() != StoragePoolType.RBD) {
+                deleteSnapshotOnPrimary(cmd, snapshot, primaryPool);
             }
 
             try {
@@ -1068,7 +1071,29 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
         }
     }
-    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws
+
+    private void deleteSnapshotOnPrimary(final CopyCommand cmd, final SnapshotObjectTO snapshot,
+            KVMStoragePool primaryPool) {
+        String snapshotPath = snapshot.getPath();
+        String backupSnapshotAfterTakingSnapshot = null;
+        boolean deleteSnapshotOnPrimary = true;
+        if (cmd.getOptions() != null) {
+            backupSnapshotAfterTakingSnapshot = cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+            deleteSnapshotOnPrimary = cmd.getOptions().get("typeDescription") == null;
+        }
+
+        if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
+            try {
+                Files.deleteIfExists(Paths.get(snapshotPath));
+            } catch (IOException ex) {
+                s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
+            }
+        } else {
+            s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
+        }
+    }
+
+    protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params, DataStoreTO store) throws
             LibvirtException, InternalErrorException {
         DiskDef iso = new DiskDef();
         boolean isUefiEnabled = MapUtils.isNotEmpty(params) && params.containsKey("UEFI");
@@ -1076,8 +1101,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
             final String name = isoPath.substring(index + 1);
-            final KVMStoragePool secondaryPool = storagePoolMgr.getStoragePoolByURI(path);
-            final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
+            KVMStoragePool storagePool;
+            if (store instanceof PrimaryDataStoreTO) {
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO)store;
+                storagePool = storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), store.getUuid());
+            } else {
+                storagePool = storagePoolMgr.getStoragePoolByURI(path);
+            }
+            final KVMPhysicalDisk isoVol = storagePool.getPhysicalDisk(name);
             isoPath = isoVol.getPath();
 
             iso.defISODisk(isoPath, isUefiEnabled);
@@ -1106,7 +1137,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo());
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true, cmd.getControllerInfo(), store);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
@@ -1127,7 +1158,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams());
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false, cmd.getParams(), store);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
@@ -1143,19 +1174,25 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Return data store URL from store
      */
     private String getDataStoreUrlFromStore(DataStoreTO store) {
-        if (!(store instanceof NfsTO) && (!(store instanceof PrimaryDataStoreTO) ||
-                store instanceof PrimaryDataStoreTO && !((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem))) {
+        List<StoragePoolType> supportedPoolType = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem);
+        if (!(store instanceof NfsTO) && (!(store instanceof PrimaryDataStoreTO) || !supportedPoolType.contains(((PrimaryDataStoreTO) store).getPoolType()))) {
+            s_logger.error(String.format("Unsupported protocol, store: %s", store.getUuid()));
             throw new InvalidParameterValueException("unsupported protocol");
         }
 
         if (store instanceof NfsTO) {
             NfsTO nfsStore = (NfsTO)store;
             return nfsStore.getUrl();
-        } else if (store instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+        } else if (store instanceof PrimaryDataStoreTO) {
             //In order to support directly downloaded ISOs
+            StoragePoolType poolType = ((PrimaryDataStoreTO)store).getPoolType();
             String psHost = ((PrimaryDataStoreTO) store).getHost();
             String psPath = ((PrimaryDataStoreTO) store).getPath();
-            return "nfs://" + psHost + File.separator + psPath;
+            if (StoragePoolType.NetworkFilesystem.equals(poolType)) {
+                return "nfs://" + psHost + File.separator + psPath;
+            } else if (StoragePoolType.Filesystem.equals(poolType)) {
+                return StoragePoolType.Filesystem.toString().toLowerCase() + "://" + psHost + File.separator + psPath;
+            }
         }
         return store.getUrl();
     }
@@ -1284,11 +1321,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final String serial, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
-                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails)
+                                                   final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails, Map<String, String> details)
             throws LibvirtException, InternalErrorException {
         attachOrDetachDisk(conn, attach, vmName, attachingDisk, devId, serial, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength,
                 bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength, iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate,
-                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l);
+                iopsWriteRateMax, iopsWriteRateMaxLength, cacheMode, encryptDetails, 0l, details);
     }
 
     /**
@@ -1323,8 +1360,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                                                    final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate,
                                                    final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax,
                                                    final Long iopsWriteRateMaxLength, final String cacheMode, final DiskDef.LibvirtDiskEncryptDetails encryptDetails,
-                                                   long waitDetachDevice)
+                                                   long waitDetachDevice, Map<String, String> details)
             throws LibvirtException, InternalErrorException {
+
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -1448,6 +1486,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if(cacheMode != null) {
                     diskdef.setCacheMode(DiskDef.DiskCacheMode.valueOf(cacheMode.toUpperCase()));
                 }
+
+                diskdef.isIothreadsEnabled(details != null && details.containsKey(VmDetailConstants.IOTHREADS));
+
+                String ioDriver = (details != null && details.containsKey(VmDetailConstants.IO_POLICY)) ? details.get(VmDetailConstants.IO_POLICY) : null;
+                if (ioDriver != null) {
+                    resource.setDiskIoDriver(diskdef, resource.getIoDriverForTheStorage(ioDriver.toUpperCase()));
+                }
             }
 
             attachOrDetachDevice(conn, attach, vmName, diskdef, waitDetachDevice);
@@ -1485,7 +1530,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails, disk.getDetails());
 
             return new AttachAnswer(disk);
         } catch (final LibvirtException e) {
@@ -1521,7 +1566,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
                     vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
-                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice);
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, null);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
@@ -1596,7 +1641,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
-                        volume.getProvisioningType(), disksize, volume.getPassphrase());
+                        volume.getProvisioningType(), disksize, volume.getUsableSize(), volume.getPassphrase());
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
@@ -1604,6 +1649,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 newVol.setPath(vol.getName());
                 if (vol.getQemuEncryptFormat() != null) {
                     newVol.setEncryptFormat(vol.getQemuEncryptFormat().toString());
+                }
+                if (vol.getFormat() != null) {
+                    format = vol.getFormat();
                 }
             }
             newVol.setSize(volume.getSize());
@@ -1708,11 +1756,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
 
                     String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
-                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
+                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, disk, snapshotPath, volume, cmd.getWait());
 
                     mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
 
-                    validateCopyResult(copyResult, snapshotPath);
+                    validateConvertResult(convertResult, snapshotPath);
                 } catch (LibvirtException e) {
                     if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
                         throw e;
@@ -1777,8 +1825,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 } else {
                     snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
-                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
-                    validateCopyResult(copyResult, snapshotPath);
+                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, disk, snapshotPath, volume, cmd.getWait());
+                    validateConvertResult(convertResult, snapshotPath);
                 }
             }
 
@@ -1831,13 +1879,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         s_logger.debug(String.format("Full VM Snapshot [%s] of VM [%s] took [%s] seconds to finish.", snapshotName, vmName, (System.currentTimeMillis() - start)/1000));
     }
 
-    protected void validateCopyResult(String copyResult, String snapshotPath) throws CloudRuntimeException, IOException {
-        if (copyResult == null) {
+    protected void validateConvertResult(String convertResult, String snapshotPath) throws CloudRuntimeException, IOException {
+        if (convertResult == null) {
             return;
         }
 
         Files.deleteIfExists(Paths.get(snapshotPath));
-        throw new CloudRuntimeException(copyResult);
+        throw new CloudRuntimeException(convertResult);
     }
 
     /**
@@ -1894,21 +1942,49 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Creates the snapshot directory in the primary storage, if it does not exist; then copies the base file (VM's old writing file) to the snapshot dir..
+     * Creates the snapshot directory in the primary storage, if it does not exist; then, converts the base file (VM's old writing file) to the snapshot directory.
      * @param primaryPool Storage to create folder, if not exists;
-     * @param baseFile Base file of VM, which will be copied;
-     * @param snapshotPath Path to copy the base file;
-     * @return null if copies successfully or a error message.
+     * @param baseFile Base file of VM, which will be converted;
+     * @param snapshotPath Path to convert the base file;
+     * @return null if the conversion occurs successfully or an error message that must be handled.
      */
-    protected String copySnapshotToPrimaryStorageDir(KVMStoragePool primaryPool, String baseFile, String snapshotPath, VolumeObjectTO volume) {
-        try {
+    protected String convertBaseFileToSnapshotFileInPrimaryStorageDir(KVMStoragePool primaryPool,
+            KVMPhysicalDisk baseFile, String snapshotPath, VolumeObjectTO volume, int wait) {
+        try (KeyFile srcKey = new KeyFile(volume.getPassphrase())) {
+            s_logger.debug(
+                    String.format("Trying to convert volume [%s] (%s) to snapshot [%s].", volume, baseFile, snapshotPath));
+
             primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
-            Files.copy(Paths.get(baseFile), Paths.get(snapshotPath));
-            s_logger.debug(String.format("Copied %s snapshot from [%s] to [%s].", volume, baseFile, snapshotPath));
-            return null;
-        } catch (IOException ex) {
-            return String.format("Unable to copy %s snapshot [%s] to [%s] due to [%s].", volume, baseFile, snapshotPath, ex.getMessage());
+            convertTheBaseFileToSnapshot(baseFile, snapshotPath, wait, srcKey);
+        } catch (QemuImgException | LibvirtException | IOException ex) {
+            return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile,
+                    snapshotPath, ex.getMessage());
         }
+
+        s_logger.debug(String.format("Converted volume [%s] (from path \"%s\") to snapshot [%s].", volume, baseFile,
+                snapshotPath));
+        return null;
+    }
+
+    private void convertTheBaseFileToSnapshot(KVMPhysicalDisk baseFile, String snapshotPath, int wait, KeyFile srcKey)
+            throws LibvirtException, QemuImgException {
+        List<QemuObject> qemuObjects = new ArrayList<>();
+        Map<String, String> options = new HashMap<>();
+        QemuImageOptions qemuImageOpts = new QemuImageOptions(baseFile.getPath());
+        if (srcKey.isSet()) {
+            String srcKeyName = "sec0";
+            qemuObjects.add(QemuObject.prepareSecretForQemuImg(baseFile.getFormat(), EncryptFormat.LUKS,
+                    srcKey.toString(), srcKeyName, options));
+            qemuImageOpts = new QemuImageOptions(baseFile.getFormat(), baseFile.getPath(), srcKeyName);
+        }
+        QemuImgFile srcFile = new QemuImgFile(baseFile.getPath());
+        srcFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImgFile destFile = new QemuImgFile(snapshotPath);
+        destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+        QemuImg q = new QemuImg(wait);
+        q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 
     /**
@@ -2149,7 +2225,16 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         Map<String, String> details = cmd.getOptions2();
 
-        String path = details != null ? details.get(DiskTO.IQN) : null;
+        String path = cmd.getDestTO().getPath();
+        if (path == null) {
+            path = details != null ? details.get(DiskTO.PATH) : null;
+            if (path == null) {
+                path = details != null ? details.get(DiskTO.IQN) : null;
+                if (path == null) {
+                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                }
+            }
+        }
 
         storagePoolMgr.connectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path, details);
 
@@ -2302,28 +2387,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
-    /**
-     * Get direct template downloader from direct download command and destination pool
-     */
-    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd,
-                                                                            KVMStoragePool destPool,
-                                                                            String temporaryDownloadPath) {
-        if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
-        } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout(), temporaryDownloadPath);
-        } else if (cmd instanceof NfsDirectDownloadCommand) {
-            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), temporaryDownloadPath);
-        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
-        } else {
-            throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
-        }
-    }
-
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
@@ -2344,7 +2407,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             Long templateSize = null;
             if (StringUtils.isNotBlank(cmd.getUrl())) {
                 String url = cmd.getUrl();
-                templateSize = UriUtils.getRemoteSize(url);
+                templateSize = UriUtils.getRemoteSize(url, cmd.isFollowRedirects());
             }
 
             s_logger.debug("Checking for free space on the host for downloading the template with physical size: " + templateSize + " and virtual size: " + cmd.getTemplateSize());
@@ -2355,7 +2418,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
-            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool, temporaryDownloadPath);
+            downloader = DirectDownloadHelper.getDirectTemplateDownloaderFromCommand(cmd, destPool.getLocalPath(), temporaryDownloadPath);
             s_logger.debug("Trying to download template");
             Pair<Boolean, String> result = downloader.downloadTemplate();
             if (!result.first()) {
@@ -2429,8 +2492,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (!storagePoolMgr.connectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath, destPrimaryStore.getDetails())) {
                     s_logger.warn("Failed to connect dest volume at path: " + destVolumePath + ", in storage pool id: " + destPrimaryStore.getUuid());
                 }
-                String managedStoreTarget = destPrimaryStore.getDetails() != null ? destPrimaryStore.getDetails().get("managedStoreTarget") : null;
-                destVolumeName = managedStoreTarget != null ? managedStoreTarget : destVolumePath;
+                destVolumeName = derivePath(destPrimaryStore, destData, destPrimaryStore.getDetails());
             } else {
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
@@ -2438,7 +2500,12 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
-                storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+                if (srcVol.getPassphrase() != null && srcVol.getVolumeType().equals(Volume.Type.ROOT)) {
+                    volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
+                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
+                } else {
+                    storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+                }
             } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
                 String errMsg = String.format("Failed to copy volume: %s to dest storage: %s, due to %s", srcVol.getName(), destPrimaryStore.getName(), e.toString());
                 s_logger.debug(errMsg, e);
@@ -2457,6 +2524,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
             newVol.setPath(path);
             newVol.setFormat(destFormat);
+            newVol.setEncryptFormat(destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);

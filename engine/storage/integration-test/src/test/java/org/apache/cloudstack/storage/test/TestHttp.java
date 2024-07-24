@@ -48,8 +48,8 @@ public class TestHttp extends AbstractTestNGSpringContextTests {
         long length = 0;
         try {
             HttpResponse response = client.execute(method);
-            length = Long.parseLong(response.getFirstHeader("Content-Length").getValue());
-            System.out.println(response.getFirstHeader("Content-Length").getValue());
+            length = Long.parseLong(response.getFirstHeader("content-length").getValue());
+            System.out.println(response.getFirstHeader("content-length").getValue());
             final File localFile = new File("/tmp/test");
             if (!localFile.exists()) {
                 localFile.createNewFile();

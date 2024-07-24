@@ -17,19 +17,15 @@
 
 package org.apache.cloudstack.region;
 
-import java.util.HashMap;
-
-import javax.naming.ConfigurationException;
-
+import com.cloud.exception.InvalidParameterValueException;
 import junit.framework.Assert;
-
+import org.apache.cloudstack.region.dao.RegionDao;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.region.dao.RegionDao;
-
-import com.cloud.exception.InvalidParameterValueException;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
 
 public class RegionManagerTest {
 

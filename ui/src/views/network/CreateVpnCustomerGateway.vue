@@ -62,9 +62,9 @@
         <a-select
           v-model:value="form.ikeEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
@@ -75,9 +75,9 @@
         <a-select
           v-model:value="form.ikeHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
@@ -91,9 +91,9 @@
         <a-select
           v-model:value="form.ikeversion"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
             {{ vers }}
@@ -106,9 +106,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
+          <a-select-option
+            :value="DHGroups[group]"
+            v-for="(group, idx) in Object.keys(DHGroups)"
+            :key="idx"
+            :label="group + '(' + DHGroups[group] + ')'">
             <div v-if="group !== ''">
               {{ group+"("+DHGroups[group]+")" }}
             </div>
@@ -119,9 +123,9 @@
         <a-select
           v-model:value="form.espEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
@@ -132,9 +136,9 @@
         <a-select
           v-model:value="form.espHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
@@ -147,9 +151,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
+          <a-select-option
+            :value="DHGroups[group]"
+            v-for="(group, idx) in Object.keys(DHGroups)"
+            :key="idx"
+            :label="group === '' ? DHGroups[group] : group + '(' + DHGroups[group] + ')'">
             <div v-if="group === ''">
               {{ DHGroups[group] }}
             </div>

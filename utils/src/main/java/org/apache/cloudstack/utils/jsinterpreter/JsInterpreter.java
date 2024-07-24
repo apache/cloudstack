@@ -78,11 +78,26 @@ public class JsInterpreter implements Closeable {
     }
 
     /**
-     * Adds the parameters to a Map that will be converted to JS variables right before executing the scripts..
+     * Adds the parameters to a Map that will be converted to JS variables right before executing the script.
      * @param key The name of the variable.
      * @param value The value of the variable.
      */
     public void injectVariable(String key, String value) {
+        logger.trace(String.format(injectingLogMessage, key, value));
+        variables.put(key, value);
+    }
+
+    /**
+     * Adds the parameter, surrounded by double quotes, to a Map that will be converted to a JS variable right before executing the script.
+     * @param key The name of the variable.
+     * @param value The value of the variable.
+     */
+    public void injectStringVariable(String key, String value) {
+        if (value == null) {
+            logger.trace(String.format("Not injecting [%s] because its value is null.", key));
+            return;
+        }
+        value = String.format("\"%s\"", value);
         logger.trace(String.format(injectingLogMessage, key, value));
         variables.put(key, value);
     }

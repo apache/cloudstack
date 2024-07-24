@@ -111,6 +111,7 @@ under the License.
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+            <adapter name="CustomHW Agent" class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
 			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>

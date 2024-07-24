@@ -29,7 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
@@ -38,10 +38,10 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.vmware.VmwareDatacenter;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenter;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -112,8 +112,8 @@ public class VmwareManagerImplTest {
         Assert.assertEquals(vmwareDatacenter.getUser(), updateVmwareDcCmd.getUsername());
         Assert.assertEquals(vmwareDatacenter.getPassword(), updateVmwareDcCmd.getPassword());
         Mockito.verify(clusterDetails, Mockito.times(2)).put(Mockito.anyString(), Mockito.anyString());
-        Mockito.verify(clusterDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
+        Mockito.verify(clusterDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMap());
         Mockito.verify(hostDetails, Mockito.times(3)).put(Mockito.anyString(), Mockito.anyString());
-        Mockito.verify(hostDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
+        Mockito.verify(hostDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMap());
     }
 }

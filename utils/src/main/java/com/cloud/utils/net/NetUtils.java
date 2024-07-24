@@ -30,6 +30,7 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,8 +78,10 @@ public class NetUtils {
     public final static String TCP_PROTO = "tcp";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
+    public static final String ICMP6_PROTO = "icmp6";
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
+    public final static String HTTPS_PROTO = "https";
     public final static String SSL_PROTO = "ssl";
 
     public final static String ALL_IP4_CIDRS = "0.0.0.0/0";
@@ -95,6 +98,10 @@ public class NetUtils {
     // RFC4291 IPv6 EUI-64
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
+
+    public static String extractHost(String uri) throws URISyntaxException {
+        return (new URI(uri)).getHost();
+    }
 
     public enum InternetProtocol {
         IPv4, IPv6, DualStack;

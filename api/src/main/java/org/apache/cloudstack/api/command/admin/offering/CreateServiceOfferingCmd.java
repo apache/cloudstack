@@ -56,10 +56,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CPU_NUMBER, type = CommandType.INTEGER, required = false, description = "the CPU number of the service offering")
     private Integer cpuNumber;
 
-    @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "the CPU speed of the service offering in MHz.")
+    @Parameter(name = ApiConstants.CPU_SPEED, type = CommandType.INTEGER, required = false, description = "For VMware and Xen based hypervisors this is the CPU speed of the service offering in MHz.\n" +
+            "For the KVM hypervisor," +
+            " the values of the parameters cpuSpeed and cpuNumber will be used to calculate the `shares` value. This value is used by the KVM hypervisor to calculate how much time" +
+            " the VM will have access to the host's CPU. The `shares` value does not have a unit, and its purpose is being a weight value for the host to compare between its guest" +
+            " VMs. For more information, see https://libvirt.org/formatdomain.html#cpu-tuning.")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the service offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the service offering, defaults to 'name'.")
     private String displayText;
 
     @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
@@ -258,10 +262,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        if (StringUtils.isEmpty(displayText)) {
-            throw new InvalidParameterValueException("Failed to create service offering because the offering display text has not been spified.");
-        }
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? serviceOfferingName : displayText;
     }
 
     public String getProvisioningType() {

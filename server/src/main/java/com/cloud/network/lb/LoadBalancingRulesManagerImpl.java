@@ -49,6 +49,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1813,13 +1814,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         return cidr;
     }
+
     @DB
     @Override
-    public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
- final long sourceIpId,
-            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay, String cidrList)
-            throws NetworkRuleConflictException {
-
+    public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort, final long sourceIpId,
+                                                 final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol,
+                                                 final Boolean forDisplay, String cidrList) throws NetworkRuleConflictException {
         if (!NetUtils.isValidPort(destPort)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
         }
@@ -1828,55 +1828,41 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Invalid algorithm: " + algorithm);
         }
 
-        final IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
-        // make sure ip address exists
-        if (ipAddr == null || !ipAddr.readyToUse()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
-            if (ipAddr == null) {
-                ex.addProxyObject(String.valueOf(sourceIpId), "sourceIpId");
-            } else {
+        try {
+            final IPAddressVO ipAddr = _ipAddressDao.acquireInLockTable(sourceIpId);
+
+            // make sure ip address exists
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
+                if (ipAddr == null) {
+                    ex.addProxyObject(String.valueOf(sourceIpId), "sourceIpId");
+                } else {
+                    ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                }
+                throw ex;
+            } else if (ipAddr.isOneToOneNat()) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled");
                 ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                throw ex;
             }
-            throw ex;
-        } else if (ipAddr.isOneToOneNat()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled");
-            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
-            throw ex;
-        }
 
-        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
+            _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
-        final Long networkId = ipAddr.getAssociatedWithNetworkId();
-        if (networkId == null) {
-            InvalidParameterValueException ex =
-                new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
-            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
-            throw ex;
-        }
+            final Long networkId = ipAddr.getAssociatedWithNetworkId();
+            if (networkId == null) {
+                InvalidParameterValueException ex =
+                        new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
+                ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                throw ex;
+            }
 
-        // verify that lb service is supported by the network
-        isLbServiceSupportedInNetwork(networkId, Scheme.Public);
+            // verify that lb service is supported by the network
+            isLbServiceSupportedInNetwork(networkId, Scheme.Public);
 
-        _firewallMgr.validateFirewallRule(caller.getCallingAccount(), ipAddr, srcPort, srcPort, protocol, Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
+            _firewallMgr.validateFirewallRule(caller.getCallingAccount(), ipAddr, srcPort, srcPort, protocol, Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
-        LoadBalancerVO newRule =
-            new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
-
-        // verify rule is supported by Lb provider of the network
-        Ip sourceIp = getSourceIp(newRule);
-        LoadBalancingRule loadBalancing =
-            new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp, null,
-                lbProtocol);
-        if (!validateLbRule(loadBalancing)) {
-            throw new InvalidParameterValueException("LB service provider cannot support this rule");
-        }
-
-        return Transaction.execute(new TransactionCallbackWithException<LoadBalancerVO, NetworkRuleConflictException>() {
-            @Override
-            public LoadBalancerVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
-                LoadBalancerVO newRule =
-                    new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
+            return Transaction.execute((TransactionCallbackWithException<LoadBalancerVO, NetworkRuleConflictException>) status -> {
+                LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
                         ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
                 if (forDisplay != null) {
@@ -1885,9 +1871,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                 // verify rule is supported by Lb provider of the network
                 Ip sourceIp = getSourceIp(newRule);
-                LoadBalancingRule loadBalancing =
-                    new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp,
-                        null, lbProtocol);
+                LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), sourceIp, null, lbProtocol);
                 if (!validateLbRule(loadBalancing)) {
                     throw new InvalidParameterValueException("LB service provider cannot support this rule");
                 }
@@ -1907,10 +1891,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port " + srcPort + ", private port " + destPort +
-                        " is added successfully.");
+                            " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
-                        null, LoadBalancingRule.class.getName(), newRule.getUuid());
+                            null, LoadBalancingRule.class.getName(), newRule.getUuid());
 
                     return newRule;
                 } catch (Exception e) {
@@ -1925,9 +1909,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         removeLBRule(newRule);
                     }
                 }
-            }
-        });
-
+            });
+        } finally {
+            _ipAddressDao.releaseFromLockTable(sourceIpId);
+        }
     }
 
     @Override
@@ -2322,36 +2307,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Boolean applied = cmd.isApplied();
 
         if (applied == null) {
+            s_logger.info(String.format("The [%s] parameter was not passed. Using the default value [%s].", ApiConstants.APPLIED, Boolean.TRUE));
             applied = Boolean.TRUE;
         }
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
-            return null;
-        }
-
-        _accountMgr.checkAccess(caller, null, true, loadBalancer);
-
-        List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
-        List<String> serviceStates = new ArrayList<String>();
-        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
-        vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
-        if(vmLoadBalancerMappings == null) {
-            String msg = "no VM Loadbalancer Mapping found";
+            String msg = String.format("Unable to find the load balancer with ID [%s].", cmd.getId());
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        Map<Long, String> vmServiceState = new HashMap<Long, String>(vmLoadBalancerMappings.size());
-        List<Long> appliedInstanceIdList = new ArrayList<Long>();
 
-        if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
-            for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
-                appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
-                vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
-            }
+        String loadBalancerAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(loadBalancer, "uuid", "name");
+
+        _accountMgr.checkAccess(caller, null, true, loadBalancer);
+
+        List<UserVmVO> loadBalancerInstances = new ArrayList<>();
+        List<String> serviceStates = new ArrayList<>();
+        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
+
+        if (vmLoadBalancerMappings == null) {
+            String msg = String.format("Unable to find map of VMs related to load balancer [%s].", loadBalancerAsString);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
 
-        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndNetwork(loadBalancer.getAccountId(), loadBalancer.getNetworkId());
+        Map<Long, String> vmServiceState = new HashMap<>(vmLoadBalancerMappings.size());
+        List<Long> appliedInstanceIdList = new ArrayList<>();
+
+        for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
+            appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
+            vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
+        }
+
+        List<UserVmVO> userVms = _vmDao.listByIds(appliedInstanceIdList);
 
         for (UserVmVO userVm : userVms) {
             // if the VM is destroyed, being expunged, in an error state, or in
@@ -2364,13 +2353,25 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 continue;
             }
 
+            String userVmAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(userVm, "uuid", "name");
+
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
-            if ((isApplied && applied) || (!isApplied && !applied)) {
-                loadBalancerInstances.add(userVm);
-                serviceStates.add(vmServiceState.get(userVm.getId()));
+            String isAppliedMsg = isApplied ? "is applied" : "is not applied";
+            s_logger.debug(String.format("The user VM [%s] %s to a rule of the load balancer [%s].", userVmAsString, isAppliedMsg, loadBalancerAsString));
+
+            if (isApplied != applied) {
+                s_logger.debug(String.format("Skipping adding service state from the user VM [%s] to the service state list. This happens because the VM %s to the load "
+                        + "balancer rule and the [%s] parameter was passed as [%s].", userVmAsString, isAppliedMsg, ApiConstants.APPLIED, applied));
+                continue;
             }
+
+            loadBalancerInstances.add(userVm);
+            String serviceState = vmServiceState.get(userVm.getId());
+            s_logger.debug(String.format("Adding the service state [%s] from the user VM [%s] to the service state list.", serviceState, userVmAsString));
+            serviceStates.add(serviceState);
         }
-        return new Pair<List<? extends UserVm>, List<String>>(loadBalancerInstances, serviceStates);
+
+        return new Pair<>(loadBalancerInstances, serviceStates);
     }
 
     @Override

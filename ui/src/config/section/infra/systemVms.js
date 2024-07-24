@@ -24,13 +24,24 @@ export default {
   icon: 'thunderbolt-outlined',
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
-  columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
+  searchFilters: ['name', 'zoneid', 'podid', 'hostid', 'systemvmtype', 'storageid'],
+  columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'version', 'hostname', 'zonename'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'version', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable', 'hostcontrolstate'],
   resourceType: 'SystemVm',
+  filters: () => {
+    const filters = ['starting', 'running', 'stopping', 'stopped', 'destroyed', 'expunging', 'migrating', 'error', 'unknown', 'shutdown']
+    return filters
+  },
   tabs: [
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'metrics',
+      resourceType: 'SystemVm',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+      show: () => { return store.getters.features.instancesstatsuseronly === false }
     },
     {
       name: 'volume',

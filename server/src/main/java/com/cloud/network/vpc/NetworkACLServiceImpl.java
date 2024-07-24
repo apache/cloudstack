@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.PermissionDeniedException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -103,12 +104,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
-        final Account caller = CallContext.current().getCallingAccount();
-        final Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
-        if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find VPC");
+        if (vpcId != 0) {
+            final Account caller = CallContext.current().getCallingAccount();
+            final Vpc vpc = _vpcDao.findById(vpcId);
+            if (vpc == null) {
+                throw new InvalidParameterValueException(String.format("Unable to find VPC with ID [%s].", vpcId));
+            }
+            _accountMgr.checkAccess(caller, null, true, vpc);
+
         }
-        _accountMgr.checkAccess(caller, null, true, vpc);
         return _networkAclMgr.createNetworkACL(name, description, vpcId, forDisplay);
     }
 
@@ -212,22 +216,17 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_DELETE, eventDescription = "Deleting Network ACL List", async = true)
     public boolean deleteNetworkACL(final long id) {
-        final Account caller = CallContext.current().getCallingAccount();
         final NetworkACL acl = _networkACLDao.findById(id);
+        Account account = CallContext.current().getCallingAccount();
         if (acl == null) {
             throw new InvalidParameterValueException("Unable to find specified ACL");
         }
 
-        //Do not allow deletion of default ACLs
-        if (acl.getId() == NetworkACL.DEFAULT_ALLOW || acl.getId() == NetworkACL.DEFAULT_DENY) {
+        if (isDefaultAcl(acl.getId())) {
             throw new InvalidParameterValueException("Default ACL cannot be removed");
         }
 
-        final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-        if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find specified VPC associated with the ACL");
-        }
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admin can delete global ACLs.");
         return _networkAclMgr.deleteNetworkACL(acl);
     }
 
@@ -253,7 +252,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified vpc id");
         }
 
-        if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
+        if (!isDefaultAcl(aclId)) {
             final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
             if (vpc == null) {
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
@@ -293,15 +292,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Network ACL can be created just for networks of type " + Networks.TrafficType.Guest);
         }
 
-        if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
-            //ACL is not default DENY/ALLOW
-            // ACL should be associated with a VPC
-            final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-            if (vpc == null) {
-                throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
-            }
+        if (!isDefaultAcl(aclId) && !isGlobalAcl(acl.getVpcId())) {
+            validateAclAssociatedToVpc(acl.getVpcId(), caller, acl.getUuid());
 
-            _accountMgr.checkAccess(caller, null, true, vpc);
             if (!network.getVpcId().equals(acl.getVpcId())) {
                 throw new InvalidParameterValueException("Network: " + networkId + " and ACL: " + aclId + " do not belong to the same VPC");
             }
@@ -340,6 +333,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
 
         validateNetworkAcl(acl);
+        Account caller = CallContext.current().getCallingAccount();
+
+        if (isGlobalAcl(acl.getVpcId()) && !Account.Type.ADMIN.equals(caller.getType())) {
+            throw new PermissionDeniedException("Only Root Admins can create rules for a global ACL.");
+        }
         validateAclRuleNumber(createNetworkACLCmd, acl);
 
         NetworkACLItem.Action ruleAction = validateAndCreateNetworkAclRuleAction(action);
@@ -409,7 +407,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      * <ul>
      *  <li>If the parameter is null, we return an  {@link InvalidParameterValueException};
      *  <li>Default ACLs {@link NetworkACL#DEFAULT_ALLOW} and {@link NetworkACL#DEFAULT_DENY} cannot be modified. Therefore, if any of them is provided we throw a {@link InvalidParameterValueException};
-     *  <li>If the network does not have a VPC, we will throw an {@link InvalidParameterValueException}.
+     *  <li>If no VPC is given, then it is a global ACL and there is no need to check any VPC ID. However, if a VPC is given and it does not exist, throws an
+     *  {@link InvalidParameterValueException}.
      * </ul>
      *
      * After all validations, we check if the user has access to the given network ACL using {@link AccountManager#checkAccess(Account, org.apache.cloudstack.acl.SecurityChecker.AccessType, boolean, org.apache.cloudstack.acl.ControlledEntity...)}.
@@ -419,16 +418,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified ACL.");
         }
 
-        if (acl.getId() == NetworkACL.DEFAULT_DENY || acl.getId() == NetworkACL.DEFAULT_ALLOW) {
+        if (isDefaultAcl(acl.getId())) {
             throw new InvalidParameterValueException("Default ACL cannot be modified");
         }
 
-        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-        if (vpc == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find Vpc associated with the NetworkACL [%s]", acl.getUuid()));
+        Long aclVpcId = acl.getVpcId();
+        if (!isGlobalAcl(aclVpcId)) {
+            validateAclAssociatedToVpc(aclVpcId, CallContext.current().getCallingAccount(), acl.getUuid());
         }
-        Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, vpc);
     }
 
     /**
@@ -792,17 +789,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         final NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
         if (aclItem != null) {
             final NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+            final Account account = CallContext.current().getCallingAccount();
 
-            final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-
-            if (aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY) {
+            if (isDefaultAcl(aclItem.getAclId())) {
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
-
-            final Account caller = CallContext.current().getCallingAccount();
-
-            _accountMgr.checkAccess(caller, null, true, vpc);
-
+            validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admin can delete global ACL rules.");
         }
         return _networkAclMgr.revokeNetworkACLItem(ruleId);
     }
@@ -825,6 +817,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         NetworkACL acl = _networkAclMgr.getNetworkACL(networkACLItemVo.getAclId());
         validateNetworkAcl(acl);
+
+        Account account = CallContext.current().getCallingAccount();
+        validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admins can update global ACLs.");
 
         transferDataToNetworkAclRulePojo(updateNetworkACLItemCmd, networkACLItemVo, acl);
         validateNetworkACLItem(networkACLItemVo);
@@ -912,14 +907,13 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_UPDATE, eventDescription = "updating network acl", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_UPDATE, eventDescription = "Updating Network ACL", async = true)
     public NetworkACL updateNetworkACL(UpdateNetworkACLListCmd updateNetworkACLListCmd) {
         Long id = updateNetworkACLListCmd.getId();
         NetworkACLVO acl = _networkACLDao.findById(id);
-        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        Account account = CallContext.current().getCallingAccount();
 
-        Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, vpc);
+        validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Must be Root Admin to update a global ACL.");
 
         String name = updateNetworkACLListCmd.getName();
         if (StringUtils.isNotBlank(name)) {
@@ -977,6 +971,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
     }
 
+    @Override
+    public NetworkACLItem moveRuleToTheTopInACLList(NetworkACLItem ruleBeingMoved) {
+        List<NetworkACLItemVO> allRules = getAllAclRulesSortedByNumber(ruleBeingMoved.getAclId());
+        if (allRules.size() == 1) {
+            return ruleBeingMoved;
+        }
+        return moveRuleToTheTop(ruleBeingMoved, allRules);
+    }
+
     /**
      * Validates the consistency of the ACL; the validation process is the following.
      * <ul>
@@ -1028,7 +1031,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     /**
      * Moves an ACL to the space between to other rules. If there is already enough room to accommodate the ACL rule being moved, we simply get the 'number' field from the previous ACL rule and add one, and then define this new value as the 'number' value for the ACL rule being moved.
-     * Otherwise, we will need to make room. This process is executed via {@link #updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO, int, List, int)}, which will create the space between ACL rules if necessary. This involves shifting ACL rules to accommodate the rule being moved.
+     * Otherwise, we will need to make room. This process is executed via {@link #updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItem, int, List, int)}, which will create the space between ACL rules if necessary. This involves shifting ACL rules to accommodate the rule being moved.
      */
     protected NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
         if (previousRule.getNumber() + 1 != nextRule.getNumber()) {
@@ -1070,7 +1073,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  Move the rule to the top of the ACL rule list. This means that the ACL rule being moved will receive the position '1'.
      *  Also, if necessary other ACL rules will have their 'number' field updated to create room for the new top rule.
      */
-    protected NetworkACLItem moveRuleToTheTop(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+    protected NetworkACLItem moveRuleToTheTop(NetworkACLItem ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
         return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, 1, allAclRules, 0);
     }
 
@@ -1092,9 +1095,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  <li> ACL C - number 4
      * </ul>
      */
-    protected NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
+    protected NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItem ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
             int indexToStartProcessing) {
-        ruleBeingMoved.setNumber(newNumberFieldValue);
         for (int i = indexToStartProcessing; i < allAclRules.size(); i++) {
             NetworkACLItemVO networkACLItemVO = allAclRules.get(i);
             if (networkACLItemVO.getId() == ruleBeingMoved.getId()) {
@@ -1141,14 +1143,59 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         long aclId = ruleBeingMoved.getAclId();
 
         if ((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
-            throw new InvalidParameterValueException("Cannot use ACL rules from differenting ACLs. Rule being moved.");
+            throw new InvalidParameterValueException("Cannot use ACL rules from differentiating ACLs. Rule being moved.");
         }
         NetworkACLVO acl = _networkACLDao.findById(aclId);
-        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-        if (vpc == null) {
-            throw new InvalidParameterValueException("Re-ordering rules for a default ACL is prohibited");
+        Account account = CallContext.current().getCallingAccount();
+
+        if (isDefaultAcl(aclId)) {
+            throw new InvalidParameterValueException("Default ACL rules cannot be moved.");
         }
-        Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, vpc);
+
+        validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account,"Must be Root Admin to move global ACL rules.");
+    }
+
+    /**
+     * Checks if the given ACL is a global ACL. If it is, then checks if the account is Root Admin, and throws an exception according to {@code exceptionMessage} param if it
+     * does not have permission.
+     */
+    protected void checkGlobalAclPermission(Long aclVpcId, Account account, String exceptionMessage) {
+        if (isGlobalAcl(aclVpcId) && !Account.Type.ADMIN.equals(account.getType())) {
+            throw new PermissionDeniedException(exceptionMessage);
+        }
+    }
+
+    protected void validateAclAssociatedToVpc(Long aclVpcId, Account account, String aclUuid) {
+        final Vpc vpc = _vpcDao.findById(aclVpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find specified VPC [%s] associated with the ACL [%s].", aclVpcId, aclUuid));
+        }
+        _accountMgr.checkAccess(account, null, true, vpc);
+    }
+
+    /**
+     * It performs two different verifications depending on if the ACL is global or not.
+     * <ul>
+     *     <li> If the given ACL is a Global ACL, i.e. has VPC ID = 0, then checks if the account is Root Admin, and throws an exception if it isn't.
+     *     <li> If the given ACL is associated to a VPC, i.e. VPC ID != 0, then calls {@link #validateAclAssociatedToVpc(Long, Account, String)} and checks if the given {@code
+     *     aclVpcId} is from a valid VPC.
+     * </ul>
+     */
+    protected void validateGlobalAclPermissionAndAclAssociatedToVpc(NetworkACL acl, Account account, String exception){
+        if (isGlobalAcl(acl.getVpcId())) {
+            s_logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
+            checkGlobalAclPermission(acl.getVpcId(), account, exception);
+        } else {
+            s_logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
+            validateAclAssociatedToVpc(acl.getVpcId(), account, acl.getUuid());
+        }
+    }
+
+    protected boolean isGlobalAcl(Long aclVpcId) {
+        return aclVpcId != null && aclVpcId == 0;
+    }
+
+    protected boolean isDefaultAcl(long aclId) {
+        return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
     }
 }

@@ -134,7 +134,7 @@ public class VmDiskUsageParser {
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
                 usageRecord =
-                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioWrite + " io write", UsageTypes.VM_DISK_BYTES_WRITE,
+                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioWrite + " io write", UsageTypes.VM_DISK_IO_WRITE,
                         new Double(ioWrite), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
                 usageRecords.add(usageRecord);
 

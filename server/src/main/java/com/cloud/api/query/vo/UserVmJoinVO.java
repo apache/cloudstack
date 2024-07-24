@@ -34,6 +34,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
@@ -191,8 +193,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_name")
     private String templateName;
 
+    @Column(name = "template_type")
+    private TemplateType templateType;
+
     @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
+
+    @Column(name = "template_format")
+    private Storage.ImageFormat templateFormat;
 
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
@@ -632,8 +640,16 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return templateName;
     }
 
+    public TemplateType getTemplateType() {
+        return templateType;
+    }
+
     public String getTemplateDisplayText() {
         return templateDisplayText;
+    }
+
+    public Storage.ImageFormat getTemplateFormat() {
+        return templateFormat;
     }
 
     public boolean isPasswordEnabled() {

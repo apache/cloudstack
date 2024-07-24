@@ -23,7 +23,7 @@ package com.cloud.utils;
  * purposes.  This is purely on an honor system though.  You should always
  **/
 public interface SerialVersionUID {
-    public static final long Base = 0x564D4F70 << 32;  // 100 brownie points if you guess what this is and tell me.
+    public static final long Base = 0x564D4F70L << 32;  // 100 brownie points if you guess what this is and tell me.
 
     public static final long UUID = Base | 0x1;
     public static final long CloudRuntimeException = Base | 0x2;
@@ -52,7 +52,7 @@ public interface SerialVersionUID {
     public static final long DiscoveryException = Base | 0x1b;
     public static final long ConflictingNetworkSettingException = Base | 0x1c;
     public static final long CloudAuthenticationException = Base | 0x1d;
-    public static final long AsyncCommandQueued = Base | 0x1e;
+    public static final long CloudTwoFactorAuthenticationException = Base | 0x1e;
     public static final long ResourceUnavailableException = Base | 0x1f;
     public static final long ConnectionException = Base | 0x20;
     public static final long PermissionDeniedException = Base | 0x21;
@@ -71,4 +71,5 @@ public interface SerialVersionUID {
     public static final long UnavailableCommandException = Base | 0x2f;
     public static final long OriginDeniedException = Base | 0x30;
     public static final long StorageAccessException = Base | 0x31;
+    public static final long EncryptionException = Base | 0x32;
 }

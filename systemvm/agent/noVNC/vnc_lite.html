@@ -16,12 +16,6 @@
     -->
     <title>noVNC</title>
 
-    <meta charset="utf-8">
-
-    <!-- Always force latest IE rendering engine (even in intranet) &
-                Chrome Frame. Remove this if you use the .htaccess -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-
     <style>
 
         body {
@@ -68,13 +62,6 @@
 
     </style>
 
-    <!-- Promise polyfill for IE11 -->
-    <script src="vendor/promise.js"></script>
-
-    <!-- ES2015/ES6 modules polyfill -->
-    <script nomodule src="vendor/browser-es-module-loader/dist/browser-es-module-loader.js"></script>
-
-    <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">
         // RFB holds the API to connect and communicate with a VNC server
         import RFB from './core/rfb.js';
@@ -132,13 +119,20 @@
         // query string. If the variable isn't defined in the URL
         // it returns the default value instead.
         function readQueryVariable(name, defaultValue) {
-            // A URL with a query parameter can look like this:
+            // A URL with a query parameter can look like this (But will most probably get logged on the http server):
             // https://www.example.com?myqueryparam=myvalue
+            //
+            // For privacy (Using a hastag #, the parameters will not be sent to the server)
+            // the url can be requested in the following way:
+            // https://www.example.com#myqueryparam=myvalue&password=secreatvalue
+            //
+            // Even Mixing public and non public parameters will work:
+            // https://www.example.com?nonsecretparam=example.com#password=secreatvalue
             //
             // Note that we use location.href instead of location.search
             // because Firefox < 53 has a bug w.r.t location.search
             const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
-                  match = document.location.href.match(re);
+                  match = ''.concat(document.location.href, window.location.hash).match(re);
             if (typeof defaultValue === 'undefined') { defaultValue = null; }
 
             if (match) {

@@ -99,6 +99,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by VPC networks only")
     private Boolean forVpc;
 
+    @SerializedName(ApiConstants.FOR_TUNGSTEN)
+    @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
+    private Boolean forTungsten;
+
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
     private Boolean isPersistent;
@@ -209,6 +213,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setForVpc(Boolean forVpc) {
         this.forVpc = forVpc;
+    }
+
+    public void setForTungsten(Boolean forTungsten) {
+        this.forTungsten = forTungsten;
     }
 
     public void setIsPersistent(Boolean isPersistent) {

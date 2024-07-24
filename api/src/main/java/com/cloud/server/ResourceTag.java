@@ -20,12 +20,17 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 public interface ResourceTag extends ControlledEntity, Identity, InternalIdentity {
 
     // FIXME - extract enum to another interface as its used both by resourceTags and resourceMetaData code
     public enum ResourceObjectType {
         UserVm(true, true, true),
         Template(true, true, true),
+        VnfTemplate(false, false, true),
         ISO(true, false, true),
         Volume(true, true),
         Snapshot(true, false),
@@ -64,7 +69,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         GuestOs(false, true),
         NetworkOffering(false, true),
         VpcOffering(true, false),
-        Domain(false, false, true);
+        Domain(false, false, true),
+        ObjectStore(false, false, true);
 
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
@@ -80,6 +86,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         private final boolean resourceTagsSupport;
         private final boolean metadataSupport;
         private boolean resourceIconSupport;
+        private static final Map<String, ResourceObjectType> resourceObjectTypeMap = new HashMap<>();
 
         public boolean resourceTagsSupport() {
             return resourceTagsSupport;
@@ -91,6 +98,16 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
 
         public boolean resourceIconSupport() {
             return resourceIconSupport;
+        }
+
+        static {
+            for (var value : ResourceObjectType.values()) {
+                resourceObjectTypeMap.put(value.toString().toLowerCase(Locale.ROOT), value);
+            }
+        }
+
+        public static ResourceObjectType getResourceObjectType(String type) {
+            return resourceObjectTypeMap.getOrDefault(type.toLowerCase(Locale.ROOT), null);
         }
     }
 

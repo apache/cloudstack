@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -86,7 +88,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         TemplateSearch.done();
 
         PoolTemplateSearch = createSearchBuilder();
-        PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), Op.IN);
         PoolTemplateSearch.and("template_id", PoolTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.and("configuration", PoolTemplateSearch.entity().getDeploymentOption(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.done();
@@ -120,8 +122,8 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 
         templatePathSearch = createSearchBuilder();
         templatePathSearch.and("pool_id", templatePathSearch.entity().getPoolId(), Op.EQ);
-        templatePathSearch.and("local_path", templatePathSearch.entity().getLocalDownloadPath(), Op.EQ);
-        templatePathSearch.and("install_path", templatePathSearch.entity().getInstallPath(), Op.EQ);
+        templatePathSearch.and("local_path", templatePathSearch.entity().getLocalDownloadPath(), Op.IN);
+        templatePathSearch.and("install_path", templatePathSearch.entity().getInstallPath(), Op.IN);
         templatePathSearch.done();
     }
 
@@ -290,6 +292,28 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
         sc.setParameters("local_path", templatePath);
         sc.setParameters("install_path", templatePath);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateStoragePoolVO> listByPoolIdAndInstallPath(Long poolId, List<String> pathList) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
+        sc.setParameters("pool_id", poolId);
+        sc.setParameters("install_path", pathList.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId, List<Long> poolIds) {
+        if (CollectionUtils.isEmpty(poolIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("pool_id", poolIds.toArray());
         return listBy(sc);
     }
 

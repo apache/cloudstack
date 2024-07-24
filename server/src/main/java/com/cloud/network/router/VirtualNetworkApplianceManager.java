@@ -36,84 +36,85 @@ import com.cloud.vm.DomainRouterVO;
  */
 public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkApplianceService {
 
-    static final String RouterTemplateXenCK = "router.template.xenserver";
-    static final String RouterTemplateKvmCK = "router.template.kvm";
-    static final String RouterTemplateVmwareCK = "router.template.vmware";
-    static final String RouterTemplateHyperVCK = "router.template.hyperv";
-    static final String RouterTemplateLxcCK = "router.template.lxc";
-    static final String RouterTemplateOvm3CK = "router.template.ovm3";
-    static final String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
-    static final String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
-    static final String VirtualRouterServiceOfferingCK = "router.service.offering";
+    String RouterTemplateXenCK = "router.template.xenserver";
+    String RouterTemplateKvmCK = "router.template.kvm";
+    String RouterTemplateVmwareCK = "router.template.vmware";
+    String RouterTemplateHyperVCK = "router.template.hyperv";
+    String RouterTemplateLxcCK = "router.template.lxc";
+    String RouterTemplateOvm3CK = "router.template.ovm3";
+    String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
+    String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
+    String VirtualRouterServiceOfferingCK = "router.service.offering";
 
-    static final String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
-    static final String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
-    static final String RouterHealthChecksFailuresToRecreateVrCK = "router.health.checks.failures.to.recreate.vr";
+    String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
+    String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
+    String RouterHealthChecksFailuresToRecreateVrCK = "router.health.checks.failures.to.recreate.vr";
+    String RemoveControlIpOnStopCK = "systemvm.release.control.ip.on.stop";
 
-    static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
+    ConfigKey<String> RouterTemplateXen = new ConfigKey<>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
             "Name of the default router template on Xenserver.", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterTemplateKvm = new ConfigKey<String>(String.class, RouterTemplateKvmCK, "Advanced", "SystemVM Template (KVM)",
+    ConfigKey<String> RouterTemplateKvm = new ConfigKey<>(String.class, RouterTemplateKvmCK, "Advanced", "SystemVM Template (KVM)",
             "Name of the default router template on KVM.", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterTemplateVmware = new ConfigKey<String>(String.class, RouterTemplateVmwareCK, "Advanced", "SystemVM Template (vSphere)",
+    ConfigKey<String> RouterTemplateVmware = new ConfigKey<>(String.class, RouterTemplateVmwareCK, "Advanced", "SystemVM Template (vSphere)",
             "Name of the default router template on Vmware.", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterTemplateHyperV = new ConfigKey<String>(String.class, RouterTemplateHyperVCK, "Advanced", "SystemVM Template (HyperV)",
+    ConfigKey<String> RouterTemplateHyperV = new ConfigKey<>(String.class, RouterTemplateHyperVCK, "Advanced", "SystemVM Template (HyperV)",
             "Name of the default router template on Hyperv.", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterTemplateLxc = new ConfigKey<String>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (LXC)",
+    ConfigKey<String> RouterTemplateLxc = new ConfigKey<>(String.class, RouterTemplateLxcCK, "Advanced", "SystemVM Template (LXC)",
             "Name of the default router template on LXC.", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<String>(String.class, RouterTemplateOvm3CK, "Advanced", "SystemVM Template (Ovm3)",
+    ConfigKey<String> RouterTemplateOvm3 = new ConfigKey<>(String.class, RouterTemplateOvm3CK, "Advanced", "SystemVM Template (Ovm3)",
             "Name of the default router template on Ovm3.", true, ConfigKey.Scope.Zone, null);
 
-    static final ConfigKey<String> SetServiceMonitor = new ConfigKey<String>(String.class, SetServiceMonitorCK, "Advanced", "true",
+    ConfigKey<Boolean> SetServiceMonitor = new ConfigKey<>(Boolean.class, SetServiceMonitorCK, "Advanced", "true",
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
 
-    static final ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<Integer>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
+    ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Boolean> RouterVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
+    ConfigKey<Boolean> RouterVersionCheckEnabled = new ConfigKey<>("Advanced", Boolean.class, "router.version.check", "true",
             "If true, router minimum required version is checked before sending command", false);
-    static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
+    ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<>(Boolean.class, "use.external.dns", "Advanced", "false",
             "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<Boolean> ExposeDnsAndBootpServer = new ConfigKey<Boolean>(Boolean.class, "expose.dns.externally", "Advanced", "true",
+    ConfigKey<Boolean> ExposeDnsAndBootpServer = new ConfigKey<>(Boolean.class, "expose.dns.externally", "Advanced", "false",
             "open dns, dhcp and bootp on the public interface", true, ConfigKey.Scope.Zone, null);
 
-    static final ConfigKey<String> VirtualRouterServiceOffering = new ConfigKey<String>(String.class, VirtualRouterServiceOfferingCK, "Advanced", "",
+    ConfigKey<String> VirtualRouterServiceOffering = new ConfigKey<>(String.class, VirtualRouterServiceOfferingCK, "Advanced", "",
             "Uuid of the service offering used by virtual routers; if NULL - system offering will be used", true, ConfigKey.Scope.Account, null);
 
     // Health checks
-    static final ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<Boolean>(Boolean.class, "router.health.checks.enabled", "Advanced", "true",
+    ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<>(Boolean.class, "router.health.checks.enabled", "Advanced", "true",
             "If true, router health checks are allowed to be executed and read. If false, all scheduled checks and API calls for on demand checks are disabled.",
             true, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<Integer>(Integer.class, "router.health.checks.basic.interval", "Advanced", "3",
+    ConfigKey<Integer> RouterHealthChecksBasicInterval = new ConfigKey<>(Integer.class, "router.health.checks.basic.interval", "Advanced", "3",
             "Interval in minutes at which basic router health checks are performed. If set to 0, no tests are scheduled.",
-            true, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> RouterHealthChecksAdvancedInterval = new ConfigKey<Integer>(Integer.class, "router.health.checks.advanced.interval", "Advanced", "10",
+            true, ConfigKey.Scope.Global, null, RouterHealthChecksEnabled.key());
+    ConfigKey<Integer> RouterHealthChecksAdvancedInterval = new ConfigKey<>(Integer.class, "router.health.checks.advanced.interval", "Advanced", "10",
             "Interval in minutes at which advanced router health checks are performed. If set to 0, no tests are scheduled.",
-            true, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> RouterHealthChecksConfigRefreshInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksConfigRefreshIntervalCK, "Advanced", "10",
+            true, ConfigKey.Scope.Global, null, RouterHealthChecksEnabled.key());
+    ConfigKey<Integer> RouterHealthChecksConfigRefreshInterval = new ConfigKey<>(Integer.class, RouterHealthChecksConfigRefreshIntervalCK, "Advanced", "10",
             "Interval in minutes at which router health checks config - such as scheduling intervals, excluded checks, etc is updated on virtual routers by the management server. This value should" +
                     " be sufficiently high (like 2x) from the router.health.checks.basic.interval and router.health.checks.advanced.interval so that there is time between new results generation and results generation for passed data.",
-            false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> RouterHealthChecksResultFetchInterval = new ConfigKey<Integer>(Integer.class, RouterHealthChecksResultFetchIntervalCK, "Advanced", "10",
+            false, ConfigKey.Scope.Global, null, RouterHealthChecksEnabled.key());
+    ConfigKey<Integer> RouterHealthChecksResultFetchInterval = new ConfigKey<>(Integer.class, RouterHealthChecksResultFetchIntervalCK, "Advanced", "10",
             "Interval in minutes at which router health checks results are fetched by management server. On each result fetch, management server evaluates need to recreate VR as per configuration of " + RouterHealthChecksFailuresToRecreateVrCK +
                     "This value should be sufficiently high (like 2x) from the router.health.checks.basic.interval and router.health.checks.advanced.interval so that there is time between new results generation and fetch.",
-            false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<String> RouterHealthChecksFailuresToRecreateVr = new ConfigKey<String>(String.class, RouterHealthChecksFailuresToRecreateVrCK, "Advanced", "",
+            false, ConfigKey.Scope.Global, null, RouterHealthChecksEnabled.key());
+    ConfigKey<String> RouterHealthChecksFailuresToRecreateVr = new ConfigKey<>(String.class, RouterHealthChecksFailuresToRecreateVrCK, "Advanced", "",
             "Health checks failures defined by this config are the checks that should cause router recreation. If empty the recreate is not attempted for any health check failure. Possible values are comma separated script names " +
                     "from systemvm’s /root/health_scripts/ (namely - cpu_usage_check.py, dhcp_check.py, disk_space_check.py, dns_check.py, gateways_check.py, haproxy_check.py, iptables_check.py, memory_usage_check.py, router_version_check.py), connectivity.test, filesystem.writable.test " +
                     " or services (namely - loadbalancing.service, webserver.service, dhcp.service) ",
-            true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<String>(String.class, "router.health.checks.to.exclude", "Advanced", "",
+            true, ConfigKey.Scope.Zone, null, null, RouterHealthChecksEnabled.key(), null, null, ConfigKey.Kind.CSV, null);
+    ConfigKey<String> RouterHealthChecksToExclude = new ConfigKey<>(String.class, "router.health.checks.to.exclude", "Advanced", "",
             "Health checks that should be excluded when executing scheduled checks on the router. This can be a comma separated list of script names placed in the '/root/health_checks/' folder. Currently the following scripts are " +
                     "placed in default systemvm template -  cpu_usage_check.py, disk_space_check.py, gateways_check.py, iptables_check.py, router_version_check.py, dhcp_check.py, dns_check.py, haproxy_check.py, memory_usage_check.py.",
-            true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<Double> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.free.disk.space.threshold",
+            true, ConfigKey.Scope.Zone, null, null, RouterHealthChecksEnabled.key(), null, null, ConfigKey.Kind.CSV, null);
+    ConfigKey<Double> RouterHealthChecksFreeDiskSpaceThreshold = new ConfigKey<>(Double.class, "router.health.checks.free.disk.space.threshold",
             "Advanced", "100", "Free disk space threshold (in MB) on VR below which the check is considered a failure.",
-            true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<Double> RouterHealthChecksMaxCpuUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.cpu.usage.threshold",
+            true, ConfigKey.Scope.Zone, null, RouterHealthChecksEnabled.key());
+    ConfigKey<Double> RouterHealthChecksMaxCpuUsageThreshold = new ConfigKey<>(Double.class, "router.health.checks.max.cpu.usage.threshold",
             "Advanced", "100", " Max CPU Usage threshold as % above which check is considered a failure.",
-            true, ConfigKey.Scope.Zone, null);
-    static final ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<Double>(Double.class, "router.health.checks.max.memory.usage.threshold",
+            true, ConfigKey.Scope.Zone, null, RouterHealthChecksEnabled.key());
+    ConfigKey<Double> RouterHealthChecksMaxMemoryUsageThreshold = new ConfigKey<>(Double.class, "router.health.checks.max.memory.usage.threshold",
             "Advanced", "100", "Max Memory Usage threshold as % above which check is considered a failure.",
-            true, ConfigKey.Scope.Zone, null);
+            true, ConfigKey.Scope.Zone, null, RouterHealthChecksEnabled.key());
     ConfigKey<String> RouterLogrotateFrequency = new ConfigKey<>(String.class, "router.logrotate.frequency", "Advanced", "*:00:00",
             "Sets the frequency of the logrotate service on the virtual router. The default value is *:00:00 (hourly) and follows the last block of " +
                     "OnCalendar standard [Hour:Minute:Second]. e.g, *:*:00 is for every minute and */12:00:00 is for every 12 hours. See Systemd Timers for more options. " +
@@ -121,23 +122,15 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
                     "reach the minimum size.",
             true, ConfigKey.Scope.Zone, null);
 
-    public static final int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
-    public static final int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
-    public static final boolean USE_POD_VLAN = false;
-    public static final int DEFAULT_PRIORITY = 100;
-    public static final int DEFAULT_DELTA = 2;
+    ConfigKey<Boolean> RemoveControlIpOnStop = new ConfigKey<>(Boolean.class, RemoveControlIpOnStopCK, "Advanced", "true",
+            "on stopping routers and system VMs the IP will be released to preserve IPv4 space.", true, ConfigKey.Scope.Zone, null);
 
-    /**
-    /*
-     * Send ssh public/private key pair to specified host
-     * @param hostId
-     * @param pubKey
-     * @param prvKey
-     *
-     * NOT USED IN THE VIRTUAL NET APPLIANCE
-     *
-     */
-    //boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey):
+    int DEFAULT_ROUTER_VM_RAMSIZE = 256;            // 256M
+    int DEFAULT_ROUTER_CPU_MHZ = 500;                // 500 MHz
+    boolean USE_POD_VLAN = false;
+    int DEFAULT_PRIORITY = 100;
+    int DEFAULT_DELTA = 2;
+
 
     boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 

@@ -368,4 +368,21 @@ public class QemuImgTest {
         Assert.assertTrue("should support qcow2", QemuImg.helpSupportsImageFormat(partialHelp, PhysicalDiskFormat.QCOW2));
         Assert.assertFalse("should not support http", QemuImg.helpSupportsImageFormat(partialHelp, PhysicalDiskFormat.SHEEPDOG));
     }
+
+    @Test
+    public void testCheckAndRepair() throws LibvirtException {
+        String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
+
+        QemuImgFile file = new QemuImgFile(filename);
+
+        try {
+            QemuImg qemu = new QemuImg(0);
+            qemu.checkAndRepair(file, null, null, null);
+        } catch (QemuImgException e) {
+            fail(e.getMessage());
+        }
+
+        File f = new File(filename);
+        f.delete();
+    }
 }

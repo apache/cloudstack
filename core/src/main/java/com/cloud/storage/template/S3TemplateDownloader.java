@@ -34,6 +34,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
@@ -44,6 +45,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.List;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static java.util.Arrays.asList;
@@ -72,8 +74,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     private long downloadTime;
     private long totalBytes;
     private long maxTemplateSizeInByte;
-
     private boolean resume = false;
+    private boolean followRedirects = false;
 
     public S3TemplateDownloader(S3TO s3TO, String downloadUrl, String installPath, DownloadCompleteCallback downloadCompleteCallback,
             long maxTemplateSizeInBytes, String username, String password, Proxy proxy, ResourceType resourceType) {
@@ -91,7 +93,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         this.getMethod.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, HTTPUtils.getHttpMethodRetryHandler(5));
 
         // Follow redirects
-        this.getMethod.setFollowRedirects(true);
+        this.getMethod.setFollowRedirects(followRedirects);
 
         // Set file extension.
         this.fileExtension = StringUtils.substringAfterLast(StringUtils.substringAfterLast(downloadUrl, "/"), ".");
@@ -124,17 +126,18 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             return 0;
         }
 
-        if (!HTTPUtils.verifyResponseCode(responseCode)) {
+        boolean failedDueToRedirection = List.of(HttpStatus.SC_MOVED_PERMANENTLY,
+                HttpStatus.SC_MOVED_TEMPORARILY).contains(responseCode) && !followRedirects;
+        if (!HTTPUtils.verifyResponseCode(responseCode) || failedDueToRedirection) {
             errorString = "Response code for GetMethod of " + downloadUrl + " is incorrect, responseCode: " + responseCode;
             LOGGER.warn(errorString);
-
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
 
         // Headers
-        Header contentLengthHeader = getMethod.getResponseHeader("Content-Length");
-        Header contentTypeHeader = getMethod.getResponseHeader("Content-Type");
+        Header contentLengthHeader = getMethod.getResponseHeader("content-length");
+        Header contentTypeHeader = getMethod.getResponseHeader("content-type");
 
         // Check the contentLengthHeader and transferEncodingHeader.
         if (contentLengthHeader == null) {
@@ -372,5 +375,13 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
     public String getFileExtension() {
         return fileExtension;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        if (this.getMethod != null) {
+            this.getMethod.setFollowRedirects(followRedirects);
+        }
     }
 }

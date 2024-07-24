@@ -22,13 +22,14 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.hypervisor.kvm.resource.KVMHAVMActivityChecker;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.storage.Storage;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -43,9 +44,13 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
         final ExecutorService executors = Executors.newSingleThreadExecutor();
         final KVMHAMonitor monitor = libvirtComputingResource.getMonitor();
         final StorageFilerTO pool = command.getPool();
-        if (Storage.StoragePoolType.NetworkFilesystem == pool.getType()){
-            final NfsStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
-            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost().getPrivateNetwork().getIp(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+
+        KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
+
+        if (primaryPool.isPoolSupportHA()){
+            final HAStoragePool nfspool = monitor.getStoragePool(pool.getUuid());
+            final KVMHAVMActivityChecker ha = new KVMHAVMActivityChecker(nfspool, command.getHost(), command.getVolumeList(), libvirtComputingResource.getVmActivityCheckPath(), command.getSuspectTimeInSeconds());
             final Future<Boolean> future = executors.submit(ha);
             try {
                 final Boolean result = future.get();

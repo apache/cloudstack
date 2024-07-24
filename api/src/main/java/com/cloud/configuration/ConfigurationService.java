@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
@@ -273,7 +274,7 @@ public interface ConfigurationService {
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.
      *
-     * @param UpdateZoneCmd
+     * @param cmd command object containing the id of the zone to update and relevant attributes
      * @return Updated zone
      */
     DataCenter editZone(UpdateZoneCmd cmd);
@@ -281,8 +282,7 @@ public interface ConfigurationService {
     /**
      * Deletes a zone from the database. Will not allow you to delete zones that are being used anywhere in the system.
      *
-     * @param userId
-     * @param zoneId
+     * @param cmd command object containg the zoneid
      */
     boolean deleteZone(DeleteZoneCmd cmd);
 
@@ -318,13 +318,12 @@ public interface ConfigurationService {
     Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException;
     /**
-     * Marks the the account with the default zone-id.
+     * Marks the account with the default zone-id.
      *
      * @param accountName
      * @param domainId
-     * @param zoneId
+     * @param defaultZoneId
      * @return The new account object
-     * @throws ,
      */
     Account markDefaultZone(String accountName, long domainId, long defaultZoneId);
 
@@ -371,4 +370,6 @@ public interface ConfigurationService {
     List<? extends PortableIpRange> listPortableIpRanges(ListPortableIpRangesCmd cmd);
 
     List<? extends PortableIp> listPortableIps(long id);
+
+    Boolean isAccountAllowedToCreateOfferingsWithTags(IsAccountAllowedToCreateOfferingsWithTagsCmd cmd);
 }

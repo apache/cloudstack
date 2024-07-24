@@ -74,7 +74,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP,
             type = CommandType.MAP,
-            description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].ip=10.1.1.75",
+            description = "VM ID and IP map, vmidipmap[0].vmid=1 vmidipmap[0].vmip=10.1.1.75",
             since = "4.4")
     private Map vmIdIpMap;
 
@@ -133,7 +133,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
                     throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
                 }
 
-                //check wether the given ip is valid ip or not
+                //check whether the given ip is valid ip or not
                 if (vmIp == null || !NetUtils.isValidIp4(vmIp)) {
                     throw new InvalidParameterValueException("Invalid ip address "+ vmIp +" passed in vmidipmap for " +
                             "vmid " + vmId);

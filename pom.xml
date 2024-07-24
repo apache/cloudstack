@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.18.0.0-SNAPSHOT</version>
+    <version>4.19.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -49,7 +49,8 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.systemvm.template.version>4.18.0.0</project.systemvm.template.version>
+        <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
+        <project.systemvm.template.version>4.19.1.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -63,7 +64,7 @@
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -72,7 +73,7 @@
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
         <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
-        <cs.owasp.dependency-checker-plugin.version>5.3.0</cs.owasp.dependency-checker-plugin.version>
+        <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
@@ -80,12 +81,13 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.reload4j.version>1.2.22</cs.reload4j.version>
+        <cs.reload4j.version>1.2.25</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
+        <cs.commons-cli.version>1.5.0</cs.commons-cli.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.21</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
@@ -97,7 +99,7 @@
         <cs.commons-net.version>3.7.2</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
-        <cs.daemon.version>1.3.1</cs.daemon.version>
+        <cs.daemon.version>1.3.3</cs.daemon.version>
         <cs.dbcp.version>2.9.0</cs.dbcp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
@@ -112,8 +114,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>3.2.4</cs.mockito.version>
-        <cs.powermock.version>2.0.5</cs.powermock.version>
+        <cs.mockito.version>3.12.4</cs.mockito.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
@@ -122,25 +123,26 @@
         <cs.assertj.version>3.23.1</cs.assertj.version>
 
         <!-- Dependencies versions -->
-        <cs.amqp-client.version>5.16.0</cs.amqp-client.version>
+        <cs.amqp-client.version>5.17.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
-        <cs.aspectjrt.version>1.9.9.1</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.12.310</cs.aws.sdk.version>
+        <cs.aspectjrt.version>1.9.19</cs.aspectjrt.version>
+        <cs.aws.sdk.version>1.12.439</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
         <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
+        <cs.cron-utils.version>9.2.0</cs.cron-utils.version>
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
-        <cs.google-http-client>1.42.2</cs.google-http-client>
+        <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
         <cs.guava.version>31.1-jre</cs.guava.version>
-        <cs.httpclient.version>4.5.13</cs.httpclient.version>
-        <cs.httpcore.version>4.4.15</cs.httpcore.version>
+        <cs.httpclient.version>4.5.14</cs.httpclient.version>
+        <cs.httpcore.version>4.4.16</cs.httpcore.version>
         <cs.influxdb-java.version>2.22</cs.influxdb-java.version>
         <cs.jackson.version>2.13.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
@@ -151,34 +153,35 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.49.v20220914</cs.jetty.version>
+        <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
-        <cs.joda-time.version>2.11.2</cs.joda-time.version>
+        <cs.joda-time.version>2.12.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
-        <cs.json.version>20090211</cs.json.version>
+        <cs.json.version>20231013</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>8.0.19</cs.mysql.version>
+        <cs.mysql.version>8.0.33</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
-        <cs.reflections.version>0.9.12</cs.reflections.version>
+        <cs.java-linstor.version>0.5.1</cs.java-linstor.version>
+        <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
+        <cs.tink.version>1.7.0</cs.tink.version>
         <cs.tomcat-embed-core.version>10.0.22</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
-        <cs.vmware.api.version>7.0</cs.vmware.api.version>
+        <cs.vmware.api.version>8.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
-        <cs.xstream.version>1.4.19</cs.xstream.version>
-        <org.springframework.version>5.3.23</org.springframework.version>
+        <cs.xstream.version>1.4.20</cs.xstream.version>
+        <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
@@ -450,8 +453,8 @@
                 <version>${cs.reload4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${cs.mysql.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -696,6 +699,11 @@
                 <artifactId>xml-apis</artifactId>
                 <version>2.0.2</version>
             </dependency>
+            <dependency>
+                <groupId>com.linbit.linstor.api</groupId>
+                <artifactId>java-linstor</artifactId>
+                <version>${cs.java-linstor.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -735,24 +743,6 @@
             <groupId>com.tngtech.java</groupId>
             <artifactId>junit-dataprovider</artifactId>
             <version>${cs.junit.dataprovider.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-core</artifactId>
-            <version>${cs.powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${cs.powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${cs.powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -1060,6 +1050,7 @@
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
+                            <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

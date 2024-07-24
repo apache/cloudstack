@@ -117,6 +117,8 @@ SP_API_HTTP - address of StorPool Api
 SP_AUTH_TOKEN - StorPool's token
 SP_TEMPLATE - name of StorPool's template
 
+> **NOTE:** You can use the alternative format option for the URL - storpool://{SP_AUTH_TOKEN}@{SP_API_HTTP}:{SP_API_HTTP_PORT}/{SP_TEMPLATE}
+
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
 
@@ -342,3 +344,11 @@ Max IOPS are kept in StorPool's volumes with the help of custom service offering
 corresponding system disk offering.
 
 CloudStack has no way to specify max BW. Do they want to be able to specify max BW only is sufficient.
+
+## Supported operations for Volume encryption
+
+Supported Virtual machine operations - live migration of VM to another host, virtual machine snapshots (group snapshot without memory), revert VM snapshot, delete VM snapshot
+
+Supported Volume operations - attach/detach volume, live migrate volume between two StorPool primary storages, volume snapshot, delete snapshot, revert snapshot
+
+Note: volume snapshot are allowed only when `sp.bypass.secondary.storage` is set to `true`. This means that the snapshots are not backed up to secondary storage

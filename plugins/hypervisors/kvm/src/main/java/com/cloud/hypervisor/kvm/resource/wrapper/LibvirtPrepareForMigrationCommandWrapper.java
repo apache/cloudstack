@@ -47,7 +47,6 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -80,6 +79,9 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             for (final NicTO nic : nics) {
                 LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                if (vm.getDetails() != null) {
+                    libvirtComputingResource.setInterfaceDefQueueSettings(vm.getDetails(), vm.getCpus(), interfaceDef);
+                }
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
@@ -122,17 +124,11 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
-            PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
-            if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
-                answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
-            }
-            return answer;
+            return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
                 for (DpdkTO to : dpdkInterfaceMapping.values()) {
-                    String cmd = String.format("ovs-vsctl del-port %s", to.getPort());
-                    s_logger.debug("Removing DPDK port: " + to.getPort());
-                    Script.runSimpleBashScript(cmd);
+                    removeDpdkPort(to.getPort());
                 }
             }
             return new PrepareForMigrationAnswer(command, e.toString());
@@ -141,6 +137,22 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vm);
             }
         }
+    }
+
+    protected PrepareForMigrationAnswer createPrepareForMigrationAnswer(PrepareForMigrationCommand command, Map<String, DpdkTO> dpdkInterfaceMapping,
+                                                                        LibvirtComputingResource libvirtComputingResource, VirtualMachineTO vm) {
+        PrepareForMigrationAnswer answer = new PrepareForMigrationAnswer(command);
+
+        if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
+            s_logger.debug(String.format("Setting DPDK interface for the migration of VM [%s].", vm));
+            answer.setDpdkInterfaceMapping(dpdkInterfaceMapping);
+        }
+
+        int newCpuShares = libvirtComputingResource.calculateCpuShares(vm);
+        s_logger.debug(String.format("Setting CPU shares to [%s] for the migration of VM [%s].", newCpuShares, vm));
+        answer.setNewVmCpuShares(newCpuShares);
+
+        return answer;
     }
 
     private Answer handleRollback(PrepareForMigrationCommand command, LibvirtComputingResource libvirtComputingResource) {

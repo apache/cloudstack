@@ -46,6 +46,7 @@ import static org.apache.log4j.Level.ERROR;
 import static org.apache.log4j.Level.FATAL;
 import static org.apache.log4j.Level.INFO;
 import static org.apache.log4j.Level.OFF;
+import static org.apache.log4j.Level.WARN;
 
 /**
 *
@@ -152,6 +153,7 @@ public final class TestAppender extends AppenderSkeleton {
             expectedPatterns.put(FATAL, new HashSet<PatternResult>());
             expectedPatterns.put(INFO, new HashSet<PatternResult>());
             expectedPatterns.put(OFF, new HashSet<PatternResult>());
+            expectedPatterns.put(WARN, new HashSet<PatternResult>());
         }
         public TestAppenderBuilder addExpectedPattern(final Level level, final String pattern) {
             checkArgument(level != null, "addExpectedPattern requires a non-null level");

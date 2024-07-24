@@ -93,6 +93,10 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Param(description = "whether the event is parented")
     private String parentId;
 
+    @SerializedName(ApiConstants.ARCHIVED)
+    @Param(description = "whether the event has been archived or not")
+    private Boolean archived;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -172,5 +176,9 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 }

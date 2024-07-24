@@ -86,7 +86,8 @@ public class StartVMCmd extends BaseAsyncCmd implements UserCmd {
             type = CommandType.BOOLEAN,
             description = "True by default, CloudStack will firstly try to start the VM on the last host where it run on before stopping, if destination host is not specified. " +
                     "If false, CloudStack will not consider the last host and start the VM by normal process.",
-            since = "4.18.0")
+            since = "4.18.0",
+            authorized = {RoleType.Admin})
     private Boolean considerLastHost;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })

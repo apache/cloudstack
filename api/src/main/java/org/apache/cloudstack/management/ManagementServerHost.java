@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.management;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ManagementServerHost extends InternalIdentity, Identity {
+public interface ManagementServerHost extends InternalIdentity, Identity, ControlledEntity {
     enum State {
-        Up, Down
+        Up, Down, PreparingToShutDown, ReadyToShutDown, ShuttingDown
     }
 
     long getMsid();

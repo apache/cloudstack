@@ -19,6 +19,8 @@
 
 package com.cloud.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,8 +28,10 @@ import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
+import java.util.List;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -44,15 +48,11 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * Download a template file using HTTP
@@ -81,6 +81,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private long maxTemplateSizeInBytes;
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
+    private boolean followRedirects = false;
 
     public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
             String user, String password, Proxy proxy, ResourceType resourceType) {
@@ -112,7 +113,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private GetMethod createRequest(String downloadUrl) {
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(followRedirects);
         return request;
     }
 
@@ -247,7 +248,9 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         while (!done && status != Status.ABORTED && offset <= remoteSize) {
             if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
                 offset = writeBlock(bytes, out, block, offset);
-                if (!verifyFormat.isVerifiedFormat() && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                if (!ResourceType.SNAPSHOT.equals(resourceType) &&
+                        !verifyFormat.isVerifiedFormat() &&
+                        (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
                     verifyFormat.invoke();
                 }
             } else {
@@ -293,7 +296,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     }
 
     private boolean tryAndGetRemoteSize() {
-        Header contentLengthHeader = request.getResponseHeader("Content-Length");
+        Header contentLengthHeader = request.getResponseHeader("content-length");
         boolean chunked = false;
         long reportedRemoteSize = 0;
         if (contentLengthHeader == null) {
@@ -336,6 +339,12 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         } else if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
             status = Status.UNRECOVERABLE_ERROR;
             errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
+            if (List.of(HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY).contains(responseCode)
+                    && !followRedirects) {
+                errorString = String.format("Failed to download %s due to redirection, response code: %d",
+                        downloadUrl, responseCode);
+                s_logger.error(errorString);
+            }
             return true; //FIXME: retry?
         }
         return false;
@@ -535,6 +544,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 verifiedFormat = true;
             }
             return this;
+        }
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        if (this.request != null) {
+            this.request.setFollowRedirects(followRedirects);
         }
     }
 }

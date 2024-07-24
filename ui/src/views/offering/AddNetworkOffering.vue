@@ -178,7 +178,7 @@
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
-            <a-form-item>
+            <a-form-item name="maclearning" ref="maclearning">
               <template #label>
                 <tooltip-label :title="$t('label.maclearning')" :tooltip="$t('message.network.offering.mac.learning')"/>
               </template>
@@ -237,7 +237,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
           <a-alert v-if="!isVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
             <template #message>
               <span v-if="guestType === 'l2'" v-html="$t('message.vr.alert.upon.network.offering.creation.l2')" />
@@ -252,11 +252,11 @@
             optionFilterProp="label"
             v-model:value="form.serviceofferingid"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="serviceOfferingLoading"
             :placeholder="apiParams.serviceofferingid.description">
-            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id">
+            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -320,11 +320,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="registeredServicePackageLoading"
             :placeholder="$t('label.service.lb.netscaler.servicepackages')">
-            <a-select-option v-for="(opt, optIndex) in registeredServicePackages" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in registeredServicePackages" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -577,7 +577,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.description') }],
         networkrate: [{ type: 'number', validator: this.validateNumber }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.select') }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],

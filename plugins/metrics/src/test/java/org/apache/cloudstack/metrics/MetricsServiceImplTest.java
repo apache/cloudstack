@@ -44,6 +44,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VmStatsDao;
@@ -84,10 +85,10 @@ public class MetricsServiceImplTest {
     ArgumentCaptor<SearchCriteria.Op> opCaptor;
     long fakeVmId1 = 1L, fakeVmId2 = 2L;
 
-    Pair<List<UserVmVO>, Integer> expectedVmListAndCounter;
+    Pair<List<? extends VMInstanceVO>, Integer> expectedVmListAndCounter;
 
     @Mock
-    Pair<List<UserVmVO>, Integer> expectedVmListAndCounterMock;
+    Pair<List<? extends VMInstanceVO>, Integer> expectedVmListAndCounterMock;
 
     @Mock
     Map<Long,List<VmStatsVO>> vmStatsMapMock;
@@ -100,7 +101,7 @@ public class MetricsServiceImplTest {
     }
 
     private void preparesearchForUserVmsInternalTest() {
-        expectedVmListAndCounter = new Pair<List<UserVmVO>, Integer>(Arrays.asList(userVmVOMock), 1);
+        expectedVmListAndCounter = new Pair<>(Arrays.asList(userVmVOMock), 1);
 
         Mockito.doReturn(1L).when(listVMsUsageHistoryCmdMock).getStartIndex();
         Mockito.doReturn(2L).when(listVMsUsageHistoryCmdMock).getPageSizeVal();
@@ -196,9 +197,11 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(fakeVmId1).when(userVmVOMock).getId();
         Map<Long,List<VmStatsVO>> expected = new HashMap<Long,List<VmStatsVO>>();
         expected.put(fakeVmId1, new ArrayList<VmStatsVO>());
+        Date startDate = Mockito.mock(Date.class);
+        Date endDate = Mockito.mock(Date.class);
 
         Map<Long,List<VmStatsVO>> result = spy.searchForVmMetricsStatsInternal(
-                listVMsUsageHistoryCmdMock, Arrays.asList(userVmVOMock));
+                startDate, endDate, Arrays.asList(userVmVOMock));
 
         Mockito.verify(userVmVOMock).getId();
         Mockito.verify(spy).findVmStatsAccordingToDateParams(
@@ -210,9 +213,10 @@ public class MetricsServiceImplTest {
     public void searchForVmMetricsStatsInternalTestWithAnEmptyListOfVms() {
         Mockito.doNothing().when(spy).validateDateParams(Mockito.any(), Mockito.any());
         Map<Long,List<VmStatsVO>> expected = new HashMap<Long,List<VmStatsVO>>();
-
+        Date startDate = Mockito.mock(Date.class);
+        Date endDate = Mockito.mock(Date.class);
         Map<Long,List<VmStatsVO>> result = spy.searchForVmMetricsStatsInternal(
-                listVMsUsageHistoryCmdMock, new ArrayList<UserVmVO>());
+                startDate, endDate, new ArrayList<UserVmVO>());
 
         Mockito.verify(userVmVOMock, Mockito.never()).getId();
         Mockito.verify(spy, Mockito.never()).findVmStatsAccordingToDateParams(
@@ -287,7 +291,7 @@ public class MetricsServiceImplTest {
         Mockito.doReturn(null).when(spy).createStatsResponse(Mockito.any());
 
         ListResponse<VmMetricsStatsResponse> result = spy.createVmMetricsStatsResponse(
-                expectedVmListAndCounterMock, vmStatsMapMock);
+                expectedVmListAndCounterMock.first(), vmStatsMapMock);
 
         Assert.assertEquals(Integer.valueOf(1), result.getCount());
     }
@@ -299,7 +303,7 @@ public class MetricsServiceImplTest {
 
     @Test(expected = NullPointerException.class)
     public void createVmMetricsStatsResponseTestWithNoVmStatsList() {
-        spy.createVmMetricsStatsResponse(expectedVmListAndCounterMock, null);
+        spy.createVmMetricsStatsResponse(expectedVmListAndCounterMock.first(), null);
     }
 
     @Test

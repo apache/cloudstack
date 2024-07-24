@@ -106,9 +106,12 @@ public abstract class AgentHookBase implements AgentHook {
             }
 
             if (!consoleAccessManager.isSessionAllowed(sessionUuid)) {
-                s_logger.error("Invalid session, only one session allowed per token");
+                s_logger.error(String.format("Session [%s] has been already used or does not exist.", sessionUuid));
                 return new ConsoleAccessAuthenticationAnswer(cmd, false);
             }
+
+            s_logger.debug(String.format("Acquiring session [%s] as it was just used.", sessionUuid));
+            consoleAccessManager.acquireSession(sessionUuid);
 
             if (!ticket.equals(ticketInUrl)) {
                 Date now = new Date();
@@ -210,7 +213,7 @@ public abstract class AgentHookBase implements AgentHook {
             byte[] ksBits = null;
 
             String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
-            String consoleProxySslEnabled = _configDao.getValue("consoleproxy.sslEnabled");
+            String consoleProxySslEnabled = _configDao.getValue(ConsoleProxyManager.ConsoleProxySslEnabled.key());
             if (!StringUtils.isEmpty(consoleProxyUrlDomain) && !StringUtils.isEmpty(consoleProxySslEnabled)
                     && consoleProxySslEnabled.equalsIgnoreCase("true")) {
                 ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);

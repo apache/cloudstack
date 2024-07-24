@@ -32,14 +32,16 @@
           <a-select
             v-model:value="form.scope"
             v-focus="true"
+            @change="val => changeScope(val)"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.scope.description" >
-            <a-select-option :value="'cluster'"> {{ $t('label.clusterid') }} </a-select-option>
-            <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
+            <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
+            <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
+            <a-select-option :value="'host'" :label="$t('label.hostid')"> {{ $t('label.hostid') }} </a-select-option>
           </a-select>
         </a-form-item>
         <div v-if="form.scope === 'zone'">
@@ -50,9 +52,9 @@
             <a-select
               v-model:value="form.hypervisor"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.hypervisor.description" >
               <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
@@ -93,10 +95,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.podid.description">
-              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
+              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id" :label="pod.name">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
@@ -111,10 +113,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.clusterid.description">
-              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
+              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id" :label="cluster.name">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
@@ -127,9 +129,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
+              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id" :label="host.name">
                 {{ host.name }}
               </a-select-option>
             </a-select>
@@ -148,9 +150,9 @@
           <a-select
             v-model:value="form.protocol"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.clusterid.description">
             <a-select-option :value="protocol" v-for="(protocol,idx) in protocols" :key="idx">
@@ -160,7 +162,7 @@
         </a-form-item>
         <div
           v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'iscsi' || form.protocol === 'vmfs'|| form.protocol === 'Gluster' || form.protocol === 'Linstor' ||
-            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster'">
+            (form.protocol === 'PreSetup' && hypervisorType === 'VMware') || form.protocol === 'datastorecluster' || form.provider === 'Linstor'">
           <a-form-item name="server" ref="server">
             <template #label>
               <tooltip-label :title="$t('label.server')" :tooltip="$t('message.server.description')"/>
@@ -168,12 +170,23 @@
             <a-input v-model:value="form.server" :placeholder="$t('message.server.description')" />
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
+        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || form.protocol === 'Filesystem' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
           <a-form-item name="path" ref="path">
             <template #label>
               <tooltip-label :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
             </template>
             <a-input v-model:value="form.path" :placeholder="$t('message.path.description')"/>
+          </a-form-item>
+        </div>
+        <div
+          v-if="form.protocol === 'nfs' &&
+            ((form.scope === 'zone' && (form.hypervisor === 'KVM' || form.hypervisor === 'Simulator')) ||
+             (form.scope === 'cluster' && (hypervisorType === 'KVM' || hypervisorType === 'Simulator')))">
+          <a-form-item name="nfsMountOpts" ref="nfsMountOpts">
+            <template #label>
+              <tooltip-label :title="$t('label.nfsmountopts')" :tooltip="$t('message.nfs.mount.options.description')"/>
+            </template>
+            <a-input v-model:value="form.nfsMountOpts" :placeholder="$t('message.nfs.mount.options.description')" />
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'SMB'">
@@ -218,9 +231,9 @@
               v-model:value="form.provider"
               @change="updateProviderAndProtocol"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.provider.description">
               <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
@@ -229,7 +242,7 @@
             </a-select>
           </a-form-item>
         </div>
-        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor'">
+        <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor' && form.protocol !== 'FiberChannel'">
           <a-form-item name="managed" ref="managed">
             <template #label>
               <tooltip-label :title="$t('label.ismanaged')" :tooltip="apiParams.managed.description"/>
@@ -283,6 +296,70 @@
             <a-input v-model:value="form.powerflexStoragePool" :placeholder="$t('label.powerflex.storage.pool')"/>
           </a-form-item>
         </div>
+        <div v-if="form.provider === 'Primera'">
+          <a-form-item name="primeraURL" ref="primeraURL">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="$t('label.primera.url.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.primeraURL" :placeholder="$t('label.primera.url.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="primeraUsername" ref="primeraUsername">
+            <template #label>
+              <tooltip-label :title="$t('label.username')" :tooltip="$t('label.primera.username.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.primeraUsername" :placeholder="$t('label.primera.username.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="primeraPassword" ref="primeraPassword">
+            <template #label>
+              <tooltip-label :title="$t('label.password')" :tooltip="$t('label.primera.password')"/>
+            </template>
+            <a-input-password v-model:value="form.primeraPassword" :placeholder="$t('label.primera.password')"/>
+          </a-form-item>
+          <a-form-item name="capacityBytes" ref="capacityBytes">
+            <template #label>
+              <tooltip-label :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            </template>
+            <a-input v-model:value="form.capacityBytes" :placeholder="apiParams.capacitybytes.description" />
+          </a-form-item>
+          <a-form-item name="capacityIops" ref="capacityIops">
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
+            <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
+          </a-form-item>
+        </div>
+        <div v-if="form.provider === 'Flash Array'">
+          <a-form-item name="flashArrayURL" ref="flashArrayURL">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="$t('label.flashArray.url.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.flashArrayURL" :placeholder="$t('label.flashArray.url.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="flashArrayUsername" ref="flashArrayUsername">
+            <template #label>
+              <tooltip-label :title="$t('label.username')" :tooltip="$t('label.flashArray.username.tooltip')"/>
+            </template>
+            <a-input v-model:value="form.flashArrayUsername" :placeholder="$t('label.flashArray.username.tooltip')"/>
+          </a-form-item>
+          <a-form-item name="flashArrayPassword" ref="flashArrayPassword">
+            <template #label>
+              <tooltip-label :title="$t('label.password')" :tooltip="$t('label.flashArray.password')"/>
+            </template>
+            <a-input-password v-model:value="form.flashArrayPassword" :placeholder="$t('label.flashArray.password')"/>
+          </a-form-item>
+          <a-form-item name="capacityBytes" ref="capacityBytes">
+            <template #label>
+              <tooltip-label :title="$t('label.capacitybytes')" :tooltip="apiParams.capacitybytes.description"/>
+            </template>
+            <a-input v-model:value="form.capacityBytes" :placeholder="apiParams.capacitybytes.description" />
+          </a-form-item>
+          <a-form-item name="capacityIops" ref="capacityIops">
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
+            <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
+          </a-form-item>
+        </div>
         <div v-if="form.protocol === 'RBD'">
           <a-form-item name="radosmonitor" ref="radosmonitor">
             <template #label>
@@ -310,7 +387,7 @@
             <a-input v-model:value="form.volume" :placeholder="$t('label.volume')"/>
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'Linstor'">
+        <div v-if="form.protocol === 'Linstor' || form.provider === 'Linstor'">
           <a-form-item name="capacityIops" ref="capacityIops">
             <template #label>
               <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
@@ -421,7 +498,15 @@ export default {
         powerflexGateway: [{ required: true, message: this.$t('label.required') }],
         powerflexGatewayUsername: [{ required: true, message: this.$t('label.required') }],
         powerflexGatewayPassword: [{ required: true, message: this.$t('label.required') }],
-        powerflexStoragePool: [{ required: true, message: this.$t('label.required') }]
+        powerflexStoragePool: [{ required: true, message: this.$t('label.required') }],
+        username: [{ required: true, message: this.$t('label.required') }],
+        password: [{ required: true, message: this.$t('label.required') }],
+        primeraURL: [{ required: true, message: this.$t('label.url') }],
+        primeraUsername: [{ required: true, message: this.$t('label.username') }],
+        primeraPassword: [{ required: true, message: this.$t('label.password') }],
+        flashArrayURL: [{ required: true, message: this.$t('label.url') }],
+        flashArrayUsername: [{ required: true, message: this.$t('label.username') }],
+        flashArrayPassword: [{ required: true, message: this.$t('label.password') }]
       })
     },
     fetchData () {
@@ -437,6 +522,15 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    changeScope (value) {
+      if (value === 'host') {
+        const cluster = this.clusters.find(cluster => cluster.id === this.form.cluster)
+        this.hypervisorType = cluster.hypervisortype
+        if (this.hypervisorType === 'KVM') {
+          this.protocols.push('Filesystem')
+        }
+      }
     },
     changeZone (value) {
       this.form.zone = value
@@ -503,7 +597,10 @@ export default {
       const cluster = this.clusters.find(cluster => cluster.id === this.form.cluster)
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
-        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom']
+        this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom', 'FiberChannel']
+        if (this.form.scope === 'host') {
+          this.protocols.push('Filesystem')
+        }
       } else if (this.hypervisorType === 'XenServer') {
         this.protocols = ['nfs', 'PreSetup', 'iscsi', 'custom']
       } else if (this.hypervisorType === 'VMware') {
@@ -523,6 +620,20 @@ export default {
       if (!value) {
         this.form.protocol = this.protocols[0]
       }
+    },
+    filesystemURL (hostId, path) {
+      var url
+      if (path.substring(0, 1) !== '/') {
+        path = '/' + path
+      }
+      var hostName
+      this.hosts.forEach(host => {
+        if (host.id === hostId) {
+          hostName = host.name
+        }
+      })
+      url = 'file://' + hostName + path
+      return url
     },
     nfsURL (server, path) {
       var url
@@ -586,11 +697,6 @@ export default {
     },
     rbdURL (monitor, pool, id, secret) {
       var url
-      /*  Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
-          It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
-      */
-      secret = secret.replace(/\+/g, '-')
-      secret = secret.replace(/\//g, '_')
       if (id !== null && secret !== null) {
         monitor = id + ':' + secret + '@' + monitor
       }
@@ -649,6 +755,9 @@ export default {
       if (value === 'PowerFlex') {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
+      } else if (value === 'Flash Array' || value === 'Primera') {
+        this.protocols = ['FiberChannel']
+        this.form.protocol = 'FiberChannel'
       } else {
         this.fetchHypervisor(value)
       }
@@ -696,6 +805,9 @@ export default {
         var url = ''
         if (values.protocol === 'nfs') {
           url = this.nfsURL(server, path)
+          if (values.nfsMountOpts) {
+            params['details[0].nfsmountopts'] = values.nfsMountOpts
+          }
         } else if (values.protocol === 'SMB') {
           url = this.smbURL(server, path)
           const smbParams = {
@@ -754,14 +866,28 @@ export default {
           var lun = values.lun
           url = this.iscsiURL(server, iqn, lun)
         } else if (values.protocol === 'Linstor') {
-          url = this.linstorURL(server)
           params.provider = 'Linstor'
+        } else if (values.protocol === 'Filesystem') {
+          url = this.filesystemURL(values.host, path)
+        } else if (values.provider === 'Primera') {
+          params['details[0].api_username'] = values.primeraUsername
+          params['details[0].api_password'] = values.primeraPassword
+          url = values.primeraURL
+        } else if (values.provider === 'Flash Array') {
+          params['details[0].api_username'] = values.flashArrayUsername
+          params['details[0].api_password'] = values.flashArrayPassword
+          url = values.flashArrayURL
+        }
+
+        if (values.provider === 'Linstor' || values.protocol === 'Linstor') {
+          url = this.linstorURL(server)
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup
           if (values.capacityIops && values.capacityIops.length > 0) {
             params.capacityIops = values.capacityIops.split(',').join('')
           }
         }
+
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {
           if (values.managed) {

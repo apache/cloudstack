@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.google.gson.annotations.SerializedName;
@@ -111,7 +110,7 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the type of hypervisor on which snapshot is stored")
-    private Hypervisor.HypervisorType hypervisor;
+    private String hypervisor;
 
     public VMSnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -266,11 +265,11 @@ public class VMSnapshotResponse extends BaseResponseWithTagInformation implement
         this.tags = tags;
     }
 
-    public Hypervisor.HypervisorType getHypervisor() {
+    public String getHypervisor() {
         return hypervisor;
     }
 
-    public void setHypervisor(Hypervisor.HypervisorType hypervisor) {
+    public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 }

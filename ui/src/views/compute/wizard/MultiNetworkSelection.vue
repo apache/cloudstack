@@ -26,41 +26,55 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <template #name="{record}">
-        <span>{{ record.displaytext || record.name }}</span>
-        <div v-if="record.meta">
-          <div v-for="meta in record.meta" :key="meta.key">
-            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span>{{ record.displaytext || record.name }}</span>
+          <div v-if="record.meta">
+            <div v-for="meta in record.meta" :key="meta.key">
+              <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+            </div>
           </div>
-        </div>
-      </template>
-      <template #network="{record}">
-        <a-select
-          v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
-          :defaultValue="validNetworks[record.id][0].id"
-          @change="val => handleNetworkChange(record, val)"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="network in validNetworks[record.id]" :key="network.id">
-            {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}
-          </a-select-option>
-        </a-select>
-        <span v-else>
-          {{ $t('label.no.matching.network') }}
-        </span>
-      </template>
-      <template #ipaddress="{record}">
-        <check-box-input-pair
-          layout="vertical"
-          :resourceKey="record.id"
-          :checkBoxLabel="$t('label.auto.assign.random.ip')"
-          :defaultCheckBoxValue="true"
-          :reversed="true"
-          :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
-          @handle-checkinputpair-change="setIpAddress" />
+        </template>
+        <template v-if="column.key === 'network'">
+          <a-alert
+            v-if="hypervisor === 'KVM' && unableToMatch"
+            type="warning"
+            showIcon
+            banner
+            style="margin-bottom: 10px"
+            :message="$t('message.select.nic.network')"
+          />
+          <a-select
+            style="width: 100%"
+            v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
+            :defaultValue="validNetworks[record.id][0].id"
+            @change="val => handleNetworkChange(record, val)"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="network in hypervisor !== 'KVM' ? validNetworks[record.id] : networks"
+              :key="network.id"
+              :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
+              <div>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
+            </a-select-option>
+          </a-select>
+          <span v-else>
+            {{ $t('label.no.matching.network') }}
+          </span>
+        </template>
+        <template v-if="column.key === 'ipaddress'">
+          <check-box-input-pair
+            layout="vertical"
+            :resourceKey="record.id"
+            :checkBoxLabel="$t('label.auto.assign.random.ip')"
+            :defaultCheckBoxValue="true"
+            :reversed="true"
+            :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
+            @handle-checkinputpair-change="setIpAddress" />
+        </template>
       </template>
     </a-table>
   </div>
@@ -85,6 +99,14 @@ export default {
       type: String,
       default: () => ''
     },
+    domainid: {
+      type: String,
+      default: ''
+    },
+    account: {
+      type: String,
+      default: ''
+    },
     selectionEnabled: {
       type: Boolean,
       default: true
@@ -96,36 +118,42 @@ export default {
     filterMatchKey: {
       type: String,
       default: null
+    },
+    hypervisor: {
+      type: String,
+      default: null
     }
   },
   data () {
     return {
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.nic'),
-          slots: { customRender: 'name' }
+          title: this.$t('label.nic')
         },
         {
+          key: 'network',
           dataIndex: 'network',
-          title: this.$t('label.network'),
-          slots: { customRender: 'network' }
+          title: this.$t('label.network')
         },
         {
+          key: 'ipaddress',
           dataIndex: 'ipaddress',
-          title: this.$t('label.ipaddress'),
-          slots: { customRender: 'ipaddress' }
+          title: this.$t('label.ipaddress')
         }
       ],
       loading: false,
       selectedRowKeys: [],
       networks: [],
       validNetworks: {},
+      unableToMatch: false,
       values: {},
       ipAddressesEnabled: {},
       ipAddresses: {},
       indexNum: 1,
-      sendValuesTimer: null
+      sendValuesTimer: null,
+      accountNetworkUpdateTimer: null
     }
   },
   computed: {
@@ -165,6 +193,14 @@ export default {
     },
     zoneId () {
       this.fetchNetworks()
+    },
+    account () {
+      clearTimeout(this.accountNetworkUpdateTimer)
+      this.accountNetworkUpdateTimer = setTimeout(() => {
+        if (this.account) {
+          this.fetchNetworks()
+        }
+      }, 750)
     }
   },
   created () {
@@ -177,13 +213,20 @@ export default {
         return
       }
       this.loading = true
-      api('listNetworks', {
+      var params = {
         zoneid: this.zoneId,
         listall: true
-      }).then(response => {
+      }
+      if (this.domainid && this.account) {
+        params.domainid = this.domainid
+        params.account = this.account
+      }
+      api('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network || []
-        this.orderNetworks()
+      }).catch(() => {
+        this.networks = []
       }).finally(() => {
+        this.orderNetworks()
         this.loading = false
       })
     },
@@ -193,10 +236,16 @@ export default {
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && x.type === 'Shared')))
+          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))))
         }
         if (this.filterMatchKey) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
+          const filtered = this.networks.filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
+          if (this.hypervisor === 'KVM') {
+            this.unableToMatch = filtered.length === 0
+            this.validNetworks[item.id] = filtered.length === 0 ? this.networks : filtered.concat(this.networks.filter(x => filtered.includes(x)))
+          } else {
+            this.validNetworks[item.id] = filtered
+          }
         }
       }
       this.setDefaultValues()
@@ -204,6 +253,8 @@ export default {
     },
     setIpAddressEnabled (nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
+      this.ipAddresses[nic.id] = (!network || network.type === 'L2') ? null : 'auto'
+      this.values[nic.id] = network ? network.id : null
       this.indexNum = (this.indexNum % 2) + 1
     },
     setIpAddress (nicId, autoAssign, ipAddress) {
@@ -222,7 +273,11 @@ export default {
       this.sendValuesTimed()
     },
     handleNetworkChange (nic, networkId) {
-      this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
+      if (this.hypervisor === 'KVM') {
+        this.setIpAddressEnabled(nic, _.find(this.networks, (option) => option.id === networkId))
+      } else {
+        this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
+      }
       this.sendValuesTimed()
     },
     sendValuesTimed () {

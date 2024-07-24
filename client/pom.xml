@@ -25,15 +25,20 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.19.2.0-SNAPSHOT</version>
     </parent>
     <repositories>
         <repository>
-            <id>juniper-contrail</id>
-            <url>https://juniper.github.io/contrail-maven/snapshots</url>
+            <id>juniper-tungsten-api</id>
+            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
         </repository>
     </repositories>
     <dependencies>
+        <dependency>
+            <groupId>net.juniper.tungsten</groupId>
+            <artifactId>juniper-tungsten-api</artifactId>
+            <version>2.0</version>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -59,8 +64,58 @@
             <artifactId>jetty-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-cluster</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-jobs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-managed-context</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-security</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -70,6 +125,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-spring-lifecycle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-adaptive</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -100,6 +160,16 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-volume-storpool</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-primera</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-flasharray</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -154,6 +224,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-authenticator-oauth2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-user-authenticator-pbkdf2</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -174,17 +249,22 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-two-factor-authenticator-totp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-two-factor-authenticator-staticpin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-nvp</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-network-contrail</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -200,6 +280,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-ovs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-network-tungsten</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -330,6 +415,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-userdata-cloud-init</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-userdata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-mom-rabbitmq</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -381,11 +476,6 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-components-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-engine-network</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -500,6 +590,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-cluster-drs-balanced</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-cluster-drs-condensed</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-database-quota</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -520,9 +620,44 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-backup-networker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-plugin-shutdown</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-object</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-minio</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-simulator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-usage</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-utils</artifactId>
+           <version>${project.version}</version>
+       </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -565,8 +700,8 @@
                 <dependencies>
                     <!-- specify the dependent jdbc driver here -->
                     <dependency>
-                        <groupId>mysql</groupId>
-                        <artifactId>mysql-connector-java</artifactId>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
                         <version>${cs.mysql.version}</version>
                     </dependency>
                     <dependency>
@@ -754,8 +889,8 @@
                                     <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>mysql</groupId>
-                                    <artifactId>mysql-connector-java</artifactId>
+                                    <groupId>com.mysql</groupId>
+                                    <artifactId>mysql-connector-j</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -780,6 +915,12 @@
                                 <artifactItem>
                                     <groupId>org.apache.cloudstack</groupId>
                                     <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.linbit.linstor.api</groupId>
+                                    <artifactId>java-linstor</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
@@ -816,8 +957,6 @@
                                     <exclude>com.tngtech.java:junit-dataprovider</exclude>
                                     <exclude>org.mockito:mockito-all</exclude>
                                     <exclude>org.hamcrest:hamcrest-all</exclude>
-                                    <exclude>org.powermock:powermock-module-junit4</exclude>
-                                    <exclude>org.powermock:powermock-api-mockito2</exclude>
                                     <exclude>org.springframework:spring-test</exclude>
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
@@ -825,9 +964,11 @@
                                     <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
-                                    <exclude>mysql:mysql-connector-java</exclude>
+                                    <exclude>com.mysql:mysql-connector-j</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-usage</exclude>
+                                    <exclude>com.linbit.linstor.api:java-linstor</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
@@ -925,21 +1066,6 @@
             </dependencies>
         </profile>
         <profile>
-            <id>srx</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.cloudstack</groupId>
-                    <artifactId>cloud-plugin-network-srx</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>vmware</id>
             <activation>
                 <property>
@@ -965,6 +1091,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-contrail</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

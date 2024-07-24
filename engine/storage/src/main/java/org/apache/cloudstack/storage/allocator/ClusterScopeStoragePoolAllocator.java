@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VolumeApiServiceImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -45,7 +46,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     DiskOfferingDao _diskOfferingDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && dskCh.useLocalStorage()) {
@@ -78,11 +79,12 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             logDisabledStoragePools(dcId, podId, clusterId, ScopeType.CLUSTER);
         }
 
-        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags());
+        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), true, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
+        pools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, podId, clusterId, ScopeType.CLUSTER, List.of(dskCh.getTags())));
         s_logger.debug(String.format("Found pools [%s] that match with tags [%s].", pools, Arrays.toString(dskCh.getTags())));
 
         // add remaining pools in cluster, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null);
+        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null, false, 0);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
             s_logger.trace(String.format("Adding pool [%s] to the 'avoid' set since it did not match any tags.", pool));
@@ -100,9 +102,10 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
+                s_logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                 suitablePools.add(storagePool);
             } else {
+                s_logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                 avoid.addPool(pool.getId());
             }
         }

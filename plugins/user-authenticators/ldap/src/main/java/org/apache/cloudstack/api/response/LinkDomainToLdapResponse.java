@@ -39,7 +39,7 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     private String ldapDomain;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "type of the name in LDAP which is linke to the domain")
+    @Param(description = "type of the name in LDAP which is linked to the domain")
     private String type;
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)

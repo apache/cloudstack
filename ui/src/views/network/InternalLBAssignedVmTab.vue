@@ -25,23 +25,25 @@
       :rowKey="item => item.id"
       :pagination="false"
     >
-      <template #displayname="{ record }">
-        <router-link :to="{ path: '/vm/' + record.id }">{{ record.displayname || record.name }}</router-link>
-      </template>
-      <template #ipaddress="{ record }">
-        <span v-for="nic in record.nic" :key="nic.id">
-          <span v-if="nic.networkid === resource.networkid">
-            {{ nic.ipaddress }} <br/>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'displayname'">
+          <router-link :to="{ path: '/vm/' + record.id }">{{ record.displayname || record.name }}</router-link>
+        </template>
+        <template v-if="column.key === 'ipaddress'">
+          <span v-for="nic in record.nic" :key="nic.id">
+            <span v-if="nic.networkid === resource.networkid">
+              {{ nic.ipaddress }} <br/>
+            </span>
           </span>
-        </span>
-      </template>
-      <template #remove="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.remove.vm.from.lb')"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="removeVmFromLB(record)" />
+        </template>
+        <template v-if="column.key === 'remove'">
+          <tooltip-button
+            :tooltip="$t('label.remove.vm.from.lb')"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="removeVmFromLB(record)" />
+        </template>
       </template>
       <a-divider />
     </a-table>
@@ -86,18 +88,18 @@ export default {
       totalInstances: 0,
       columns: [
         {
+          key: 'displayname',
           title: this.$t('label.name'),
-          dataIndex: 'displayname',
-          slots: { customRender: 'displayname' }
+          dataIndex: 'displayname'
         },
         {
+          key: 'ipaddress',
           title: this.$t('label.ipaddress'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
-          title: '',
-          slots: { customRender: 'remove' }
+          key: 'remove',
+          title: ''
         }
       ]
     }

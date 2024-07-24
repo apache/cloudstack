@@ -286,7 +286,7 @@ public class ConfigHelperTest {
         final IpAddressTO[] ipArray = ips.toArray(new IpAddressTO[ips.size()]);
         final IpAssocVpcCommand cmd = new IpAssocVpcCommand(ipArray);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, ROUTERNAME);
-        assertEquals(6, cmd.getAnswersCount()); // AnswersCount is clearly wrong as it doesn't know enough to tell
+        assertEquals(2, cmd.getAnswersCount());
 
         return cmd;
     }

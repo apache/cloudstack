@@ -219,7 +219,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             return false;
         }
 
-        final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        final Map<VirtualMachineProfile.Param, Object> params = new HashMap<>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         if (network.isRollingRestart()) {
@@ -264,27 +264,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             return false;
         }
 
-        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (offering.isSystemOnly()) {
-            return false;
-        }
         if (!_networkMdl.isProviderEnabledInPhysicalNetwork(_networkMdl.getPhysicalNetworkId(network), getProvider().getName())) {
             return false;
         }
 
-        final RouterDeploymentDefinition routerDeploymentDefinition =
-                routerDeploymentDefinitionBuilder.create()
-                .setGuestNetwork(network)
-                .setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
-                .setParams(vm.getParameters())
-                .build();
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        implement(network, offering, dest, context);
 
-        final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
-
-        if (routers == null || routers.size() == 0) {
-            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
-        }
         return true;
     }
 

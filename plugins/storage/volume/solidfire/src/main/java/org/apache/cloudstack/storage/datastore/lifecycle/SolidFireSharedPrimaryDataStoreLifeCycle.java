@@ -72,7 +72,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
 
     @Inject private AccountDao accountDao;
@@ -104,6 +104,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get(CAPACITY_IOPS);
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
@@ -152,6 +153,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(hypervisorType);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
 
         String managementVip = SolidFireUtil.getManagementVip(url);

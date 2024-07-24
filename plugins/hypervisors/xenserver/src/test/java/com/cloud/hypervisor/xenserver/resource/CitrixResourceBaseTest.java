@@ -16,14 +16,25 @@
 package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.trilead.ssh2.SFTPException;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3DirectoryEntry;
+import com.trilead.ssh2.SFTPv3FileAttributes;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.xmlrpc.XmlRpcException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,11 +42,10 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
@@ -52,13 +62,14 @@ import com.xensource.xenapi.Host.Record;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Host.class, Script.class, SR.class})
+@RunWith(MockitoJUnitRunner.class)
 public class CitrixResourceBaseTest {
 
     @Spy
@@ -80,47 +91,55 @@ public class CitrixResourceBaseTest {
 
     private static final String platformString = "device-model:qemu-upstream-compat;vga:std;videoram:8;apic:true;viridian:false;timeoffset:0;pae:true;acpi:1;hpet:true;secureboot:false;nx:true";
 
-    final static long[] vpcStats = { 1L, 2L };
-    final static long[] networkStats = { 3L, 4L };
-    final static long[] lbStats = { 5L };
+    final static long[] vpcStats = {1L, 2L};
+    final static long[] networkStats = {3L, 4L};
+    final static long[] lbStats = {5L};
     final static String privateIp = "192.168.1.1";
     final static String publicIp = "10.10.10.10";
     final static Integer port = 8080;
+
+    MockedStatic<Host> hostMocked;
 
     @Before
     public void beforeTest() throws XenAPIException, XmlRpcException {
         citrixResourceBase._host.setUuid(hostUuidMock);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, hostUuidMock)).thenReturn(hostMock);
+        hostMocked = Mockito.mockStatic(Host.class);
+        hostMocked.when(() -> Host.getByUuid(connectionMock, hostUuidMock)).thenReturn(hostMock);
 
         hostRecordMock.softwareVersion = new HashMap<>();
         Mockito.when(hostMock.getRecord(connectionMock)).thenReturn(hostRecordMock);
 
     }
 
-    public void testGetPathFilesExeption() {
+    public void testGetPathFilesException() {
         String patch = citrixResourceBase.getPatchFilePath();
 
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(Script.findScript("", patch)).thenReturn(null);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.findScript("", patch)).thenReturn(null);
 
-        citrixResourceBase.getPatchFiles();
-
+            citrixResourceBase.getPatchFiles();
+        }
     }
 
     public void testGetPathFilesListReturned() {
         String patch = citrixResourceBase.getPatchFilePath();
 
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(Script.findScript("", patch)).thenReturn(patch);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.findScript("", patch)).thenReturn(patch);
 
-        File expected = new File(patch);
-        String pathExpected = expected.getAbsolutePath();
+            File expected = new File(patch);
+            String pathExpected = expected.getAbsolutePath();
 
-        List<File> files = citrixResourceBase.getPatchFiles();
-        String receivedPath = files.get(0).getAbsolutePath();
-        Assert.assertEquals(receivedPath, pathExpected);
+            List<File> files = citrixResourceBase.getPatchFiles();
+            String receivedPath = files.get(0).getAbsolutePath();
+            Assert.assertEquals(receivedPath, pathExpected);
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        hostMocked.close();
     }
 
     @Test
@@ -233,14 +252,14 @@ public class CitrixResourceBaseTest {
         Map<SR, SR.Record> mapOfSrsRecords = new HashMap<>();
         mapOfSrsRecords.put(srExtShared, srExtSharedRecord);
         mapOfSrsRecords.put(srExtNonShared, srExtNonSharedRecord);
+        try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+            BDDMockito.given(SR.getAllRecords(connectionMock)).willReturn(mapOfSrsRecords);
 
-        PowerMockito.mockStatic(SR.class);
-        BDDMockito.given(SR.getAllRecords(connectionMock)).willReturn(mapOfSrsRecords);
+            List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
 
-        List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
-
-        Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
-        Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
+            Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
+            Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
+        }
     }
 
     @Test
@@ -287,9 +306,7 @@ public class CitrixResourceBaseTest {
         String hostUuid = "hostUuid";
         citrixResourceBase._host.setUuid(hostUuid);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, hostUuid)).thenReturn(hostMock);
-
+        Mockito.when(Host.getByUuid(connectionMock, hostUuid)).thenReturn(hostMock);
         String srType = "ext";
         String srUuid = "srUuid";
         long srPhysicalSize = 100l;
@@ -432,7 +449,6 @@ public class CitrixResourceBaseTest {
         CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
         Connection connection = Mockito.mock(Connection.class);
 
-        String args = "-g -l " + publicIp;
         doReturn(networkStats[0] + ":" + networkStats[1]).when(citrixResourceBaseSpy).networkUsage(Mockito.any(Connection.class),
                 Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
 
@@ -465,5 +481,136 @@ public class CitrixResourceBaseTest {
 
         result = citrixResourceBaseSpy.networkUsage(connectionMock, null, "put", null);
         Assert.assertNull(result);
+    }
+
+    @Test
+    public void testListFilesAtPath() throws IOException, XmlRpcException {
+        SR srMock = Mockito.mock(SR.class);
+        SFTPv3FileAttributes fileAttributesMock = Mockito.mock(SFTPv3FileAttributes.class);
+        SFTPv3DirectoryEntry directoryEntryMock = Mockito.mock(SFTPv3DirectoryEntry.class);
+        Vector fileListMock = new Vector();
+        for (int i=0; i < 16; ++i) {
+            fileListMock.add(directoryEntryMock);
+        }
+
+        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+        DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        Mockito.when(command.getStore()).thenReturn(store);
+        Mockito.when(store.getUuid()).thenReturn("storeUuid");
+        Mockito.when(command.getStartIndex()).thenReturn(0);
+        Mockito.when(command.getPageSize()).thenReturn(10);
+        Mockito.when(command.getPath()).thenReturn("/path/to/files");
+
+        Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+        ReflectionTestUtils.setField(directoryEntryMock, "filename", "file1");
+        ReflectionTestUtils.setField(directoryEntryMock, "attributes", fileAttributesMock);
+        Mockito.when(fileAttributesMock.isDirectory()).thenReturn(false);
+        ReflectionTestUtils.setField(fileAttributesMock, "size", 1024L);
+        ReflectionTestUtils.setField(fileAttributesMock, "mtime", 123456789L);
+
+        Answer answer;
+        try (MockedConstruction<com.trilead.ssh2.Connection> ignored = Mockito.mockConstruction(com.trilead.ssh2.Connection.class, (mock, context) -> {
+            Mockito.when(mock.authenticateWithPassword(Mockito.any(), Mockito.any())).thenReturn(true);
+            Mockito.when(mock.connect(null, 60000, 60000)).thenReturn(null);
+        }); MockedConstruction<SFTPv3Client> ignored2 = Mockito.mockConstruction(SFTPv3Client.class, (mock, context) -> {
+            Mockito.when(mock._stat(Mockito.anyString())).thenReturn(fileAttributesMock);
+            Mockito.when(mock.ls(Mockito.anyString())).thenReturn(fileListMock);
+        })) {
+
+            answer = citrixResourceBase.listFilesAtPath(command);
+        }
+
+        Assert.assertTrue(answer instanceof ListDataStoreObjectsAnswer);
+        ListDataStoreObjectsAnswer listAnswer = (ListDataStoreObjectsAnswer) answer;
+        Assert.assertTrue(listAnswer.isPathExists());
+        Assert.assertEquals(14, listAnswer.getCount());
+        Assert.assertEquals("file1", listAnswer.getNames().get(0));
+        Assert.assertEquals("/path/to/files/file1", listAnswer.getPaths().get(0));
+        Assert.assertFalse(listAnswer.getIsDirs().get(0));
+        Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
+        Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+    }
+
+    @Test
+    public void testListFilesAtPathWithNonExistentPath() throws IOException, XmlRpcException {
+        Connection connectionMock = Mockito.mock(Connection.class);
+        SR srMock = Mockito.mock(SR.class);
+
+        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+        DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        Mockito.when(command.getStore()).thenReturn(store);
+        Mockito.when(store.getUuid()).thenReturn("storeUuid");
+        Mockito.when(command.getStartIndex()).thenReturn(0);
+        Mockito.when(command.getPageSize()).thenReturn(10);
+        Mockito.when(command.getPath()).thenReturn("/path/to/non/existent/files");
+
+        Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+
+        Answer answer;
+        try (MockedConstruction<com.trilead.ssh2.Connection> ignored = Mockito.mockConstruction(com.trilead.ssh2.Connection.class, (mock, context) -> {
+            Mockito.when(mock.authenticateWithPassword(Mockito.any(), Mockito.any())).thenReturn(true);
+            Mockito.when(mock.connect(null, 60000, 60000)).thenReturn(null);
+        }); MockedConstruction<SFTPv3Client> ignored2 = Mockito.mockConstruction(SFTPv3Client.class, (mock, context) -> {
+            Mockito.when(mock._stat(Mockito.anyString())).thenReturn(null);
+        })) {
+
+            answer = citrixResourceBase.listFilesAtPath(command);
+        }
+
+        Assert.assertTrue(answer instanceof ListDataStoreObjectsAnswer);
+        ListDataStoreObjectsAnswer listAnswer = (ListDataStoreObjectsAnswer) answer;
+        Assert.assertFalse(listAnswer.isPathExists());
+        Assert.assertEquals(0, listAnswer.getCount());
+        Assert.assertEquals(0, listAnswer.getNames().size());
+        Assert.assertEquals(0, listAnswer.getPaths().size());
+        Assert.assertEquals(0, listAnswer.getIsDirs().size());
+        Assert.assertEquals(0, listAnswer.getSizes().size());
+        Assert.assertEquals(0, listAnswer.getLastModified().size());
+    }
+
+    @Test
+    public void testListFilesAtPathWithFile() throws IOException, XmlRpcException {
+        Connection connectionMock = Mockito.mock(Connection.class);
+        SR srMock = Mockito.mock(SR.class);
+        SFTPv3FileAttributes fileAttributesMock = Mockito.mock(SFTPv3FileAttributes.class);
+        Vector fileListMock = new Vector();
+        fileListMock.add(fileAttributesMock);
+
+        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+        DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        Mockito.when(command.getStore()).thenReturn(store);
+        Mockito.when(store.getUuid()).thenReturn("storeUuid");
+        Mockito.when(command.getStartIndex()).thenReturn(0);
+        Mockito.when(command.getPageSize()).thenReturn(10);
+        Mockito.when(command.getPath()).thenReturn("/path/to/file");
+
+        Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+        ReflectionTestUtils.setField(fileAttributesMock, "size", 1024L);
+        ReflectionTestUtils.setField(fileAttributesMock, "mtime", 123456789L);
+
+        Answer answer;
+        try (MockedConstruction<com.trilead.ssh2.Connection> ignored = Mockito.mockConstruction(com.trilead.ssh2.Connection.class, (mock, context) -> {
+            Mockito.when(mock.authenticateWithPassword(Mockito.any(), Mockito.any())).thenReturn(true);
+            Mockito.when(mock.connect(null, 60000, 60000)).thenReturn(null);
+        }); MockedConstruction<SFTPv3Client> ignored2 = Mockito.mockConstruction(SFTPv3Client.class, (mock, context) -> {
+            Mockito.when(mock._stat(Mockito.anyString())).thenReturn(fileAttributesMock);
+            Mockito.when(mock.ls(Mockito.anyString())).thenThrow(Mockito.mock(SFTPException.class));
+        })) {
+
+            answer = citrixResourceBase.listFilesAtPath(command);
+        }
+
+        Assert.assertTrue(answer instanceof ListDataStoreObjectsAnswer);
+        ListDataStoreObjectsAnswer listAnswer = (ListDataStoreObjectsAnswer) answer;
+        Assert.assertTrue(listAnswer.isPathExists());
+        Assert.assertEquals(1, listAnswer.getCount());
+        Assert.assertEquals("file", listAnswer.getNames().get(0));
+        Assert.assertEquals("/path/to/file", listAnswer.getPaths().get(0));
+        Assert.assertFalse(listAnswer.getIsDirs().get(0));
+        Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
+        Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
     }
 }

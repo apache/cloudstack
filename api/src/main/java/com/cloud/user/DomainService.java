@@ -20,9 +20,11 @@ import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.utils.Pair;
 
 public interface DomainService {
@@ -66,4 +68,5 @@ public interface DomainService {
      */
     Domain findDomainByIdOrPath(Long id, String domainPath);
 
+    Domain moveDomainAndChildrenToNewParentDomain(MoveDomainCmd cmd) throws ResourceAllocationException;
 }

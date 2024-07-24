@@ -134,6 +134,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return showUnique != null && showUnique;
     }
 
+    public Long getImageStoreId() {
+        return null;
+    }
+
     public Boolean getShowIcon () {
         return  showIcon != null ? showIcon : false;
     }
@@ -191,4 +195,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             templateResponse.setResourceIconResponse(iconResponse);
         }
     }
+
+    public Long getStoragePoolId() {
+        return null;
+    };
 }

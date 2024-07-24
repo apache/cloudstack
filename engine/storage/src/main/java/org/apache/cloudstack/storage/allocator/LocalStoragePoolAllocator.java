@@ -60,7 +60,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     ConfigurationDao _configDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {
         logStartOfSearch(dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck);
 
         if (!bypassStorageTypeCheck && !dskCh.useLocalStorage()) {
@@ -82,9 +82,10 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                     if (filter(avoid, storagePool, dskCh, plan)) {
-                        s_logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
+                        s_logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                         suitablePools.add(storagePool);
                     } else {
+                        s_logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                         avoid.addPool(pool.getId());
                     }
                 }
@@ -100,21 +101,24 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 return null;
             }
             List<StoragePoolVO> availablePools =
-                storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+                storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags(), true, keyword);
+            availablePools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST, List.of(dskCh.getTags())));
             for (StoragePoolVO pool : availablePools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;
                 }
                 StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                 if (filter(avoid, storagePool, dskCh, plan)) {
+                    s_logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                     suitablePools.add(storagePool);
                 } else {
+                    s_logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                     avoid.addPool(pool.getId());
                 }
             }
 
             // add remaining pools in cluster to the 'avoid' set which did not match tags
-            List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
+            List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null, false);
             allPools.removeAll(availablePools);
             for (StoragePoolVO pool : allPools) {
                 avoid.addPool(pool.getId());

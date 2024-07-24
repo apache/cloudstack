@@ -268,6 +268,8 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         // Create the directory structure so that its visible under apache server root
         String extractDir = "/var/www/html/userdata/";
+        extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
+        s_logger.info("HARI  " + extractDir);
         Script command = new Script("/bin/su", s_logger);
         command.add("-s");
         command.add("/bin/bash");
@@ -281,12 +283,20 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
+        File file = new File("/mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath());
+        // Return error if the file does not exist or is a directory
+        if (!file.exists() || file.isDirectory()) {
+            String errorString = "Error in finding the file " + file.getAbsolutePath();
+            s_logger.error(errorString);
+            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+        }
+
         // Create a random file under the directory for security reasons.
-        String uuid = cmd.getExtractLinkUUID();
+        String filename = cmd.getFilenameInExtractURL();
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
+        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;
@@ -302,7 +312,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     public Answer handleDeleteEntityDownloadURLCommand(DeleteEntityDownloadURLCommand cmd) {
 
         //Delete the soft link. Example path = volumes/8/74eeb2c6-8ab1-4357-841f-2e9d06d1f360.vhd
-        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + cmd.getType().toString());
+        s_logger.warn("handleDeleteEntityDownloadURLCommand Path:" + cmd.getPath() + " Type:" + (cmd.getType() != null ? cmd.getType().toString(): ""));
         String path = cmd.getPath();
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
