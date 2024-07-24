@@ -111,8 +111,6 @@ public class CreateGuiThemeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails(String.format("Name: %s, AccountIDs: %s, DomainIDs: %s, RecursiveDomains: %s, CommonNames: %s", getName(), getAccountIds(),
-                getDomainIds(), getRecursiveDomains(), getCommonNames()));
         GuiThemeJoinVO guiTheme = guiThemeService.createGuiTheme(this);
 
         if (guiTheme == null) {
