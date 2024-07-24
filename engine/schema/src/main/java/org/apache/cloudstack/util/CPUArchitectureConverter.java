@@ -1,5 +1,3 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
@@ -14,31 +12,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.org;
+package org.apache.cloudstack.util;
 
 import com.cloud.cpu.CPU;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Managed.ManagedState;
-import org.apache.cloudstack.kernel.Partition;
 
-public interface Cluster extends Grouping, Partition {
-    public static enum ClusterType {
-        CloudManaged, ExternalManaged;
-    };
+import javax.persistence.AttributeConverter;
 
-    String getName();
+public class CPUArchitectureConverter implements AttributeConverter<CPU.CPUArchitecture, String> {
 
-    long getDataCenterId();
+    @Override
+    public String convertToDatabaseColumn(CPU.CPUArchitecture cpuArchitecture) {
+        return cpuArchitecture == null ? CPU.CPUArchitecture.X86_64.getType() : cpuArchitecture.getType();
+    }
 
-    long getPodId();
-
-    HypervisorType getHypervisorType();
-
-    ClusterType getClusterType();
-
-    AllocationState getAllocationState();
-
-    ManagedState getManagedState();
-
-    CPU.CPUArchitecture getArch();
+    @Override
+    public CPU.CPUArchitecture convertToEntityAttribute(String attribute) {
+        return CPU.CPUArchitecture.fromType(attribute);
+    }
 }

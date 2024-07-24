@@ -154,3 +154,7 @@ WHERE
 
 -- Quota inject tariff result into subsequent ones
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
+
+-- Multi-Arch Zones
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the hosts in the cluster"');

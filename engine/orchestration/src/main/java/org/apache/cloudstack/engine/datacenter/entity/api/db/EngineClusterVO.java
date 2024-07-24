@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.engine.datacenter.entity.api.db;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
@@ -26,6 +27,7 @@ import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import org.apache.cloudstack.util.CPUArchitectureConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
@@ -74,6 +76,10 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Column(name = "allocation_state")
     @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchitectureConverter.class)
+    private String arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -243,6 +249,15 @@ public class EngineClusterVO implements EngineCluster, Identity {
 
     public State getState() {
         return state;
+    }
+
+    @Override
+    public CPU.CPUArchitecture getArch() {
+        return CPU.CPUArchitecture.fromType(arch);
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 
     @Override
