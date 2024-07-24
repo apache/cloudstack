@@ -16,33 +16,19 @@
 // under the License.
 
 <template>
-  <a-table
-    class="table"
-    size="small"
-    :columns="vmColumns"
-    :dataSource="virtualmachines"
-    :rowKey="item => item.id"
-    :pagination="false"
-    >
-      <template #bodyCell="{ column, text, record }">
-        <template v-if="column.key === 'name'" :name="text">
-          <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
-        </template>
-        <template v-if="column.key === 'status'">
-          <status class="status" :text="record.state" displayText />
-        </template>
-      </template>
-    </a-table>
+  <div>
+    <child-component :resource="vm"></child-component>
+  </div>
 </template>
 
 <script>
 import { api } from '@/api'
-import Status from '@/components/widgets/Status'
+import ChildComponent from '../../views/compute/InstanceTab.vue'
 
 export default {
   name: 'FileShareAccessTab',
   components: {
-    Status
+    ChildComponent
   },
   props: {
     resource: {
@@ -52,27 +38,13 @@ export default {
   },
   data () {
     return {
+      loading: false,
       instanceLoading: false,
-      virtualmachines: []
+      virtualmachines: [],
+      vm: {}
     }
   },
   created () {
-    this.vmColumns = [
-      {
-        key: 'name',
-        title: this.$t('label.name'),
-        dataIndex: 'name'
-      },
-      {
-        key: 'status',
-        title: this.$t('label.status'),
-        dataIndex: 'state'
-      },
-      {
-        title: this.$t('label.zonename'),
-        dataIndex: 'zonename'
-      }
-    ]
     this.fetchInstances()
   },
   methods: {
@@ -88,7 +60,7 @@ export default {
       }
       api('listVirtualMachines', params).then(json => {
         this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
-        this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
+        this.vm = this.virtualmachines[0]
       }).finally(() => {
         this.loading = false
       })
@@ -102,10 +74,10 @@ export default {
 .title {
   font-weight: bold;
   margin-bottom: 14px;
-  font-size: 16px; /* Increased font size */
+  font-size: 16px;
 }
 
 .content {
-  font-size: 16px; /* Increased font size */
+  font-size: 16px;
 }
 </style>
