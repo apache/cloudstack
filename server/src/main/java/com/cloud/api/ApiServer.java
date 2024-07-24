@@ -55,6 +55,13 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -103,6 +110,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.user.PasswordReset;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -157,13 +165,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
@@ -181,6 +182,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
+
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
@@ -214,6 +218,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private ProjectDao projectDao;
     @Inject
     private UUIDManager uuidMgr;
+    @Inject
+    private PasswordReset passwordReset;
 
     private List<PluggableService> pluggableServices;
 
@@ -1221,6 +1227,32 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean forgotPassword(UserAccount userAccount) {
+        String resetToken = userAccount.getDetails().get(PasswordResetToken);
+        String resetTokenExpiryTimeString = userAccount.getDetails().getOrDefault(PasswordResetTokenExpiryDate, "0");
+
+        if (StringUtils.isBlank(userAccount.getEmail())) {
+            throw new CloudRuntimeException("Email is not set for the user. Please contact your administrator.");
+        }
+
+        if (StringUtils.isNotEmpty(resetToken) && StringUtils.isNotEmpty(resetTokenExpiryTimeString)) {
+            final Date resetTokenExpiryTime = new Date(Long.parseLong(resetTokenExpiryTimeString));
+            final Date currentTime = new Date();
+            if (currentTime.after(resetTokenExpiryTime)) {
+                passwordReset.setResetTokenAndSend(userAccount);
+            }
+        } else if (StringUtils.isEmpty(resetToken)) {
+            passwordReset.setResetTokenAndSend(userAccount);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean resetPassword(UserAccount userAccount, String token, String password) {
+        return passwordReset.validateAndResetPassword(userAccount, token, password);
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
