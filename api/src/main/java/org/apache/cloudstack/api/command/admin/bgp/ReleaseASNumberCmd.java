@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,8 +33,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-@APICommand(name = "releaseASNumber", description = "Releases an AS Number back to the pool", since = "4.20.0",
-        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "releaseASNumber",
+        description = "Releases an AS Number back to the pool",
+        since = "4.20.0",
+        authorized = {RoleType.Admin},
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false)
 public class ReleaseASNumberCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,

@@ -40,9 +40,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.bgp.BGPService;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.template.TemplateApiService;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -267,12 +264,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Inject
     private UserVmService userVmService;
-    @Inject
-    private TemplateApiService templateService;
-    @Inject
-    private PortForwardingRulesDao pfRuleDao;
-    @Inject
-    private BGPService bgpService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -848,7 +839,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     private Network getKubernetesClusterNetworkIfMissing(final String clusterName, final DataCenter zone,  final Account owner, final int controlNodesCount,
-                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId, final Long asNumber) throws CloudRuntimeException {
+                         final int nodesCount, final String externalLoadBalancerIpAddress, final Long networkId) throws CloudRuntimeException {
         Network network = null;
         if (networkId != null) {
             network = networkDao.findById(networkId);
@@ -880,9 +871,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
                         owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
                         ControlledEntity.ACLType.Account);
-                if (!networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode()) {
-                    bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
-                }
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
             } finally {
@@ -1224,7 +1212,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final ServiceOffering serviceOffering = serviceOfferingDao.findById(cmd.getServiceOfferingId());
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
-        final Long asNumber = cmd.getAsNumber();
 
         DeployDestination deployDestination = null;
         try {
@@ -1241,7 +1228,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             securityGroup = getOrCreateSecurityGroupForAccount(owner);
         }
 
-        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId(), asNumber);
+        final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
         final VMTemplateVO finalTemplate = getKubernetesServiceTemplate(zone, deployDestination.getCluster().getHypervisorType());
         final long cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
         final long memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
