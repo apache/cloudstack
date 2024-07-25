@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.BGPService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.uservm.UserVm;

@@ -14,8 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.bgp;
 
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;

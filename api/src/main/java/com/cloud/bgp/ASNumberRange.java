@@ -14,19 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.bgp;
 
-import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.List;
+import java.util.Date;
 
-public interface BGPService {
+public interface ASNumberRange extends InfrastructureEntity, InternalIdentity, Identity {
 
-    ASNumberRange createASNumberRange(long zoneId, long startASNumber, long endASNumber);
-    List<ASNumberRange> listASNumberRanges(Long zoneId);
-    Pair<List<ASNumber>, Integer> listASNumbers(ListASNumbersCmd cmd);
-    boolean allocateASNumber(long zoneId, Long asNumber, Long networkId, Long vpcId);
-    Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isReleaseNetworkDestroy);
-    boolean deleteASRange(long id);
+    long getStartASNumber();
+    long getEndASNumber();
+    long getDataCenterId();
+    Date getCreated();
 }

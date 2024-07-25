@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.bgp;
 
-import com.cloud.dc.ASNumber;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.ASNumber;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -41,7 +40,6 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,9 +111,6 @@ public class ListASNumbersCmd extends BaseListCmd {
     public Long getVpcId() {
         return vpcId;
     }
-
-    @Inject
-    private BGPService bgpService;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {

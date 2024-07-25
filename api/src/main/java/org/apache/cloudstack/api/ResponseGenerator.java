@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.dc.ASNumber;
-import com.cloud.dc.ASNumberRange;
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;

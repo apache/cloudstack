@@ -45,7 +45,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;

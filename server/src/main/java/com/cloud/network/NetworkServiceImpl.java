@@ -41,7 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;

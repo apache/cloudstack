@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.bgp;
 
-import com.cloud.dc.BGPService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -32,8 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import javax.inject.Inject;
 
 @APICommand(name = "deleteASNRange",
         description = "deletes a range of Autonomous Systems for BGP Dynamic Routing",
@@ -52,9 +49,6 @@ public class DeleteASNRangeCmd extends BaseCmd {
             required = true,
             description = "ID of the AS range")
     private Long id;
-
-    @Inject
-    BGPService bgpService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
