@@ -294,12 +294,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
-        return findParent(role, storeId, volumeId, false);
+        return findParent(role, storeId, volumeId, false, null);
     }
 
     @Override
     @DB
-    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot) {
+    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
         if (!isSnapshotChainingRequired(volumeId, kvmIncrementalSnapshot)) {
             logger.trace(String.format("Snapshot chaining is not required for snapshots of volume [%s]. Returning null as parent.", volumeId));
             return null;
@@ -318,7 +318,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         SnapshotDataStoreVO parent = snapshotList.get(0);
 
-        if (kvmIncrementalSnapshot && parent.getKvmCheckpointPath() == null) {
+        if (kvmIncrementalSnapshot && parent.getKvmCheckpointPath() == null && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
             return null;
         }
 
