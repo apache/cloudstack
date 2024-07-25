@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 import javax.inject.Inject;
 
-@APICommand(name = "releaseASNumber", description = "Releases an AS Number back to the pool",
+@APICommand(name = "releaseASNumber", description = "Releases an AS Number back to the pool", since = "4.20.0",
         responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleaseASNumberCmd extends BaseCmd {
 
