@@ -62,6 +62,7 @@
 
         <module>backup/dummy</module>
         <module>backup/networker</module>
+        <module>backup/nas</module>
 
         <module>ca/root-ca</module>
 
