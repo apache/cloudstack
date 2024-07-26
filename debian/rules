@@ -85,7 +85,7 @@ override_dh_auto_install:
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
 
 	# Bundle cmk in cloudstack-management
-	CMK_REL=$(curl -s  "https://api.github.com/repos/apache/cloudstack-cloudmonkey/tags" | jq -r '.[0].name')
+	CMK_REL=$(wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/tags" 2>/dev/null | jq -r '.[0].name')
 	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
 	chmod +x $(DESTDIR)/usr/bin/cmk
 
