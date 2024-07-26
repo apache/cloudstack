@@ -716,6 +716,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 if (vmDetailCpu != null) {
                     //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
                     cpuOvercommitRatio = Float.parseFloat(vmDetailCpu.getValue());
+                }
+                if (vmDetailRam != null) {
                     ramOvercommitRatio = Float.parseFloat(vmDetailRam.getValue());
                 }
                 ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());

@@ -21,13 +21,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
 
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
     private SearchBuilder<R> AllFieldsSearch;
@@ -200,5 +201,18 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("value", values);
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public long batchExpungeForResources(final List<Long> ids, final Long batchSize) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return 0;
+        }
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("ids", sb.entity().getResourceId(), Op.IN);
+        sb.done();
+        SearchCriteria<R> sc = sb.create();
+        sc.setParameters("ids", ids.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

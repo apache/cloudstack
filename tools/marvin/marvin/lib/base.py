@@ -782,6 +782,8 @@ class VirtualMachine:
         cmd.virtualmachineid = self.id
         if templateid:
             cmd.templateid = templateid
+        if expunge:
+            cmd.expunge = expunge
         if diskofferingid:
             cmd.diskofferingid = diskofferingid
         if rootdisksize:
@@ -794,7 +796,6 @@ class VirtualMachine:
                     'key': key,
                     'value': value
                 })
-
         return apiclient.restoreVirtualMachine(cmd)
 
     def get_ssh_client(
@@ -7227,3 +7228,65 @@ class Bucket:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.updateBucket(cmd)
+
+class Webhook:
+    """Manage Webhook Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, payloadurl, **kwargs):
+        """Create Webhook"""
+        cmd = createWebhook.createWebhookCmd()
+        cmd.name = name
+        cmd.payloadurl = payloadurl
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        return Webhook(apiclient.createWebhook(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listWebhooks.listWebhooksCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listWebhooks(cmd)
+
+    def delete(self, apiclient):
+        """Delete Webhook"""
+        cmd = deleteWebhook.deleteWebhookCmd()
+        cmd.id = self.id
+        apiclient.deleteWebhook(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update Webhook"""
+
+        cmd = updateWebhook.updateWebhookCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateWebhook(cmd)
+
+    def list_deliveries(self, apiclient, **kwargs):
+        """List Webhook Deliveries"""
+
+        cmd = listWebhookDeliveries.listWebhookDeliveriesCmd()
+        cmd.webhookid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listWebhookDeliveries(cmd)
+
+    def execute_delivery(self, apiclient, **kwargs):
+        """Execute Webhook Delivery"""
+
+        cmd = executeWebhookDelivery.executeWebhookDeliveryCmd()
+        cmd.webhookid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.executeWebhookDelivery(cmd)
+
+    def delete_deliveries(self, apiclient, **kwargs):
+        """Delete Webhook Deliveries"""
+
+        cmd = deleteWebhookDelivery.deleteWebhookDeliveryCmd()
+        cmd.webhookid = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.deleteWebhookDelivery(cmd)

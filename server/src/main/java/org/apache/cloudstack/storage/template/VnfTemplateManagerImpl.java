@@ -71,11 +71,13 @@ import org.apache.cloudstack.api.command.admin.template.ListVnfTemplatesCmdByAdm
 import org.apache.cloudstack.api.command.admin.template.RegisterVnfTemplateCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.template.UpdateVnfTemplateCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.DeployVnfApplianceCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ListVnfAppliancesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.template.DeleteVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListVnfTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.ListVnfAppliancesCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
@@ -130,6 +132,8 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         cmdList.add(DeleteVnfTemplateCmd.class);
         cmdList.add(DeployVnfApplianceCmd.class);
         cmdList.add(DeployVnfApplianceCmdByAdmin.class);
+        cmdList.add(ListVnfAppliancesCmd.class);
+        cmdList.add(ListVnfAppliancesCmdByAdmin.class);
         return cmdList;
     }
 

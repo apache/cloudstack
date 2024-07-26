@@ -23,9 +23,9 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -110,7 +110,8 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     @Override
-    public ProviderVolume create(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, ProviderAdapterDiskOffering offering, long size) {
+    public ProviderVolume create(ProviderAdapterContext context, ProviderAdapterDataObject dataObject,
+            ProviderAdapterDiskOffering offering, long size) {
         FlashArrayVolume request = new FlashArrayVolume();
         request.setExternalName(
                 pod + "::" + ProviderVolumeNamer.generateObjectName(context, dataObject));
@@ -129,30 +130,50 @@ public class FlashArrayAdapter implements ProviderAdapter {
      * cluster (depending on Cloudstack Storage Pool configuration)
      */
     @Override
-    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+    public String attach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
+
+        // should not happen but double check for sanity
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            throw new RuntimeException("This storage provider does not support direct attachments of snapshots to hosts");
+        }
+
         String volumeName = normalizeName(pod, dataObject.getExternalName());
         try {
-            FlashArrayList<FlashArrayConnection> list = POST("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName, null, new TypeReference<FlashArrayList<FlashArrayConnection>> () { });
+            FlashArrayList<FlashArrayConnection> list = null;
+            FlashArrayHost host = getHost(hostname);
+            if (host != null) {
+                list = POST("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName, null,
+                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                });
+            }
 
             if (list == null || list.getItems() == null || list.getItems().size() == 0) {
                 throw new RuntimeException("Volume attach did not return lun information");
             }
 
-            FlashArrayConnection connection = (FlashArrayConnection)this.getFlashArrayItem(list);
+            FlashArrayConnection connection = (FlashArrayConnection) this.getFlashArrayItem(list);
             if (connection.getLun() == null) {
                 throw new RuntimeException("Volume attach missing lun field");
             }
 
-            return ""+connection.getLun();
+            return "" + connection.getLun();
 
         } catch (Throwable e) {
-            // the volume is already attached.  happens in some scenarios where orchestration creates the volume before copying to it
+            // the volume is already attached. happens in some scenarios where orchestration
+            // creates the volume before copying to it
             if (e.toString().contains("Connection already exists")) {
                 FlashArrayList<FlashArrayConnection> list = GET("/connections?volume_names=" + volumeName,
-                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
-                    });
+                        new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                        });
                 if (list != null && list.getItems() != null) {
-                    return ""+list.getItems().get(0).getLun();
+                    for (FlashArrayConnection conn : list.getItems()) {
+                        if (conn.getHost() != null && conn.getHost().getName() != null &&
+                            (conn.getHost().getName().equals(hostname) || conn.getHost().getName().equals(hostname.substring(0, hostname.indexOf('.')))) &&
+                            conn.getLun() != null) {
+                            return "" + conn.getLun();
+                        }
+                    }
+                    throw new RuntimeException("Volume lun is not found in existing connection");
                 } else {
                     throw new RuntimeException("Volume lun is not found in existing connection");
                 }
@@ -163,22 +184,41 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     @Override
-    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+    public void detach(ProviderAdapterContext context, ProviderAdapterDataObject dataObject, String hostname) {
         String volumeName = normalizeName(pod, dataObject.getExternalName());
-        DELETE("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName);
+        // hostname is always provided by cloudstack, but we will detach from hostgroup
+        // if this pool is configured to use hostgroup for attachments
+        if (hostgroup != null) {
+            DELETE("/connections?host_group_names=" + hostgroup + "&volume_names=" + volumeName);
+        }
+
+        FlashArrayHost host = getHost(hostname);
+        if (host != null) {
+            DELETE("/connections?host_names=" + host.getName() + "&volume_names=" + volumeName);
+        }
     }
 
     @Override
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
-        // public void deleteVolume(String volumeNamespace, String volumeName) {
         // first make sure we are disconnected
         removeVlunsAll(context, pod, dataObject.getExternalName());
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
         FlashArrayVolume volume = new FlashArrayVolume();
-        volume.setDestroyed(true);
+
+        // rename as we delete so it doesn't conflict if the template or volume is ever recreated
+        // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
+        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+        volume.setExternalName(fullName + "-" + timestamp);
+
         try {
             PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            });
+
+            // now delete it with new name
+            volume.setDestroyed(true);
+
+            PATCH("/volumes?names=" + fullName + "-" + timestamp, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
             if (e.toString().contains("Volume does not exist")) {
@@ -206,8 +246,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 return null;
             }
 
-            populateConnectionId(volume);
-
             return volume;
         } catch (Exception e) {
             // assume any exception is a not found. Flash returns 400's for most errors
@@ -218,7 +256,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public ProviderVolume getVolumeByAddress(ProviderAdapterContext context, AddressType addressType, String address) {
         // public FlashArrayVolume getVolumeByWwn(String wwn) {
-        if (address == null ||addressType == null) {
+        if (address == null || addressType == null) {
             throw new RuntimeException("Invalid search criteria provided for getVolumeByAddress");
         }
 
@@ -235,51 +273,23 @@ public class FlashArrayAdapter implements ProviderAdapter {
         FlashArrayVolume volume = null;
         try {
             FlashArrayList<FlashArrayVolume> list = GET("/volumes?filter=" + query,
-                new TypeReference<FlashArrayList<FlashArrayVolume>>() {
-                });
+                    new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                    });
 
             // if we didn't get an address back its likely an empty object
             if (list == null || list.getItems() == null || list.getItems().size() == 0) {
                 return null;
             }
 
-            volume = (FlashArrayVolume)this.getFlashArrayItem(list);
+            volume = (FlashArrayVolume) this.getFlashArrayItem(list);
             if (volume != null && volume.getAddress() == null) {
                 return null;
             }
-
-            populateConnectionId(volume);
 
             return volume;
         } catch (Exception e) {
             // assume any exception is a not found. Flash returns 400's for most errors
             return null;
-        }
-    }
-
-    private void populateConnectionId(FlashArrayVolume volume) {
-        // we need to see if there is a connection (lun) associated with this volume.
-        // note we assume 1 lun for the hostgroup associated with this object
-        FlashArrayList<FlashArrayConnection> list = null;
-        try {
-            list = GET("/connections?volume_names=" + volume.getExternalName(),
-                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
-                    });
-        } catch (CloudRuntimeException e) {
-            // this means there is no attachment associated with this volume on the array
-            if (e.toString().contains("Bad Request")) {
-                return;
-            }
-        }
-
-        if (list != null && list.getItems() != null) {
-            for (FlashArrayConnection conn: list.getItems()) {
-                if (conn.getHostGroup() != null && conn.getHostGroup().getName().equals(this.hostgroup)) {
-                    volume.setExternalConnectionId(""+conn.getLun());
-                    break;
-                }
-            }
-
         }
     }
 
@@ -300,7 +310,8 @@ public class FlashArrayAdapter implements ProviderAdapter {
      * @return
      */
     @Override
-    public ProviderSnapshot snapshot(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject, ProviderAdapterDataObject targetDataObject) {
+    public ProviderSnapshot snapshot(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject,
+            ProviderAdapterDataObject targetDataObject) {
         // public FlashArrayVolume snapshotVolume(String volumeNamespace, String
         // volumeName, String snapshotName) {
         FlashArrayList<FlashArrayVolume> list = POST(
@@ -355,11 +366,12 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     @Override
-    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject, ProviderAdapterDataObject destDataObject) {
+    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceDataObject,
+            ProviderAdapterDataObject destDataObject) {
         // private ManagedVolume copy(ManagedVolume sourceVolume, String destNamespace,
         // String destName) {
         if (sourceDataObject == null || sourceDataObject.getExternalName() == null
-                ||sourceDataObject.getType() == null) {
+                || sourceDataObject.getType() == null) {
             throw new RuntimeException("Provided volume has no external source information");
         }
 
@@ -425,12 +437,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public void validate() {
         login();
-        // check if hostgroup and pod from details really exist - we will
-        // require a distinct configuration object/connection object for each type
-        if (this.getHostgroup(hostgroup) == null) {
-            throw new RuntimeException("Hostgroup [" + hostgroup + "] not found in FlashArray at [" + url
-                    + "], please validate configuration");
-        }
 
         if (this.getVolumeNamespace(pod) == null) {
             throw new RuntimeException(
@@ -478,40 +484,36 @@ public class FlashArrayAdapter implements ProviderAdapter {
             throw new RuntimeException("Unable to validate host access because a hostname was not provided");
         }
 
-        List<String> members = getHostgroupMembers(hostgroup);
-
-        // check for fqdn and shortname combinations.  this assumes there is at least a shortname match in both the storage array and cloudstack
-        // hostname configuration
-        String shortname;
-        if (hostname.indexOf('.') > 0) {
-            shortname = hostname.substring(0, (hostname.indexOf('.')));
-        } else {
-            shortname = hostname;
+        FlashArrayHost host = getHost(hostname);
+        if (host != null) {
+            return true;
         }
 
-        for (String member : members) {
-            // exact match (short or long names)
-            if (member.equals(hostname)) {
-                return true;
-            }
-
-            // primera has short name and cloudstack had long name
-            if (member.equals(shortname)) {
-                return true;
-            }
-
-            // member has long name but cloudstack had shortname
-            if (member.indexOf('.') > 0) {
-                if (member.substring(0, (member.indexOf('.'))).equals(shortname)) {
-                    return true;
-                }
-            }
-        }
         return false;
     }
 
+    private FlashArrayHost getHost(String hostname) {
+        FlashArrayList<FlashArrayHost> list = null;
+
+        try {
+            list = GET("/hosts?names=" + hostname,
+                new TypeReference<FlashArrayList<FlashArrayHost>>() {
+                });
+        } catch (Exception e) {
+
+        }
+
+        if (list == null) {
+            if (hostname.indexOf('.') > 0) {
+                list = GET("/hosts?names=" + hostname.substring(0, (hostname.indexOf('.'))),
+                    new TypeReference<FlashArrayList<FlashArrayHost>>() {
+                });
+            }
+        }
+        return (FlashArrayHost) getFlashArrayItem(list);
+    }
+
     private String getAccessToken() {
-        refreshSession(false);
         return accessToken;
     }
 
@@ -528,13 +530,21 @@ public class FlashArrayAdapter implements ProviderAdapter {
             }
         } catch (Exception e) {
             // retry frequently but not every request to avoid DDOS on storage API
-            logger.warn("Failed to refresh FlashArray API key for " + username + "@" + url + ", will retry in 5 seconds",
+            logger.warn(
+                    "Failed to refresh FlashArray API key for " + username + "@" + url + ", will retry in 5 seconds",
                     e);
             keyExpiration = System.currentTimeMillis() + (5 * 1000);
         }
     }
 
-    private void validateLoginInfo(String urlStr) {
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
+
         URL urlFull;
         try {
             urlFull = new URL(urlStr);
@@ -572,15 +582,6 @@ public class FlashArrayAdapter implements ProviderAdapter {
             }
         }
 
-        hostgroup = connectionDetails.get(FlashArrayAdapter.HOSTGROUP);
-        if (hostgroup == null) {
-            hostgroup = queryParms.get(FlashArrayAdapter.HOSTGROUP);
-            if (hostgroup == null) {
-                throw new RuntimeException(
-                        FlashArrayAdapter.STORAGE_POD + " paramater/option required to configure this storage pool");
-            }
-        }
-
         apiLoginVersion = connectionDetails.get(FlashArrayAdapter.API_LOGIN_VERSION);
         if (apiLoginVersion == null) {
             apiLoginVersion = queryParms.get(FlashArrayAdapter.API_LOGIN_VERSION);
@@ -595,6 +596,12 @@ public class FlashArrayAdapter implements ProviderAdapter {
             if (apiVersion == null) {
                 apiVersion = API_VERSION_DEFAULT;
             }
+        }
+
+        // retrieve for legacy purposes.  if set, we'll remove any connections to hostgroup we find and use the host
+        hostgroup = connectionDetails.get(FlashArrayAdapter.HOSTGROUP);
+        if (hostgroup == null) {
+            hostgroup = queryParms.get(FlashArrayAdapter.HOSTGROUP);
         }
 
         String connTimeoutStr = connectionDetails.get(FlashArrayAdapter.CONNECT_TIMEOUT_MS);
@@ -652,16 +659,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         } else {
             skipTlsValidation = true;
         }
-    }
 
-    /**
-     * Login to the array and get an access token
-     */
-    private void login() {
-        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
-        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
-        validateLoginInfo(urlStr);
         CloseableHttpResponse response = null;
         try {
             HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
@@ -750,7 +748,13 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
         if (list != null && list.getItems() != null) {
             for (FlashArrayConnection conn : list.getItems()) {
-                DELETE("/connections?host_group_names=" + conn.getHostGroup().getName() + "&volume_names=" + volumeName);
+                if (hostgroup != null && conn.getHostGroup() != null && conn.getHostGroup().getName() != null) {
+                    DELETE("/connections?host_group_names=" + conn.getHostGroup().getName() + "&volume_names="
+                            + volumeName);
+                    break;
+                } else if (conn.getHost() != null && conn.getHost().getName() != null) {
+                    DELETE("/connections?host_names=" + conn.getHost().getName() + "&volume_names=" + volumeName);
+                }
             }
         }
     }
@@ -763,30 +767,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
     }
 
     private FlashArrayPod getVolumeNamespace(String name) {
-        FlashArrayList<FlashArrayPod> list = GET("/pods?names=" + name, new TypeReference<FlashArrayList<FlashArrayPod>>() {
-        });
+        FlashArrayList<FlashArrayPod> list = GET("/pods?names=" + name,
+                new TypeReference<FlashArrayList<FlashArrayPod>>() {
+                });
         return (FlashArrayPod) getFlashArrayItem(list);
-    }
-
-    private FlashArrayHostgroup getHostgroup(String name) {
-        FlashArrayList<FlashArrayHostgroup> list = GET("/host-groups?name=" + name,
-                new TypeReference<FlashArrayList<FlashArrayHostgroup>>() {
-                });
-        return (FlashArrayHostgroup) getFlashArrayItem(list);
-    }
-
-    private List<String> getHostgroupMembers(String groupname) {
-        FlashArrayGroupMemberReferenceList list = GET("/hosts/host-groups?group_names=" + groupname,
-                new TypeReference<FlashArrayGroupMemberReferenceList>() {
-                });
-        if (list == null || list.getItems().size() == 0) {
-            return null;
-        }
-        List<String> hostnames = new ArrayList<String>();
-        for (FlashArrayGroupMemberReference ref : list.getItems()) {
-            hostnames.add(ref.getMember().getName());
-        }
-        return hostnames;
     }
 
     private FlashArrayVolume getSnapshot(String snapshotName) {
@@ -857,7 +841,8 @@ public class FlashArrayAdapter implements ProviderAdapter {
                     }
                     return null;
                 } catch (UnsupportedOperationException | IOException e) {
-                    throw new CloudRuntimeException("Error processing response from FlashArray [" + url + path + "]", e);
+                    throw new CloudRuntimeException("Error processing response from FlashArray [" + url + path + "]",
+                            e);
                 }
             } else if (statusCode == 400) {
                 try {
@@ -1083,5 +1068,40 @@ public class FlashArrayAdapter implements ProviderAdapter {
             sizeInBytes = sizeInBytes + (512 - remainder);
         }
         return sizeInBytes;
+    }
+
+    @Override
+    public Map<String, String> getConnectionIdMap(ProviderAdapterDataObject dataIn) {
+        Map<String, String> map = new HashMap<String, String>();
+
+        // flasharray doesn't let you directly map a snapshot to a host, so we'll just return an empty map
+        if (dataIn.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            return map;
+        }
+
+        try {
+            FlashArrayList<FlashArrayConnection> list = GET("/connections?volume_names=" + dataIn.getExternalName(),
+                    new TypeReference<FlashArrayList<FlashArrayConnection>>() {
+                    });
+
+            if (list != null && list.getItems() != null) {
+                for (FlashArrayConnection conn : list.getItems()) {
+                    if (conn.getHost() != null) {
+                        map.put(conn.getHost().getName(), "" + conn.getLun());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // flasharray returns a 400 if the volume doesn't exist, so we'll just return an empty object.
+            if (logger.isTraceEnabled()) {
+                logger.trace("Error getting connection map for volume [" + dataIn.getExternalName() + "]: " + e.toString(), e);
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public boolean canDirectAttachSnapshot() {
+        return false;
     }
 }

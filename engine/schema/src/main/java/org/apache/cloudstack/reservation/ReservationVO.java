@@ -25,10 +25,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.user.ResourceReservation;
 
 import com.cloud.configuration.Resource;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "resource_reservation")
@@ -57,6 +61,12 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "amount")
     long amount;
 
+    @Column(name = "mgmt_server_id")
+    Long managementServerId;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
     protected ReservationVO() {
     }
 
@@ -69,6 +79,7 @@ public class ReservationVO implements ResourceReservation {
         this.resourceType = resourceType;
         this.tag = tag;
         this.amount = delta;
+        this.managementServerId = ManagementServerNode.getManagementServerId();
     }
 
     public ReservationVO(Long accountId, Long domainId, Resource.ResourceType resourceType, Long delta) {
@@ -114,4 +125,16 @@ public class ReservationVO implements ResourceReservation {
         this.resourceId = resourceId;
     }
 
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
+    }
 }

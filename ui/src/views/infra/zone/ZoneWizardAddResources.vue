@@ -531,6 +531,15 @@ export default {
           }
         },
         {
+          title: 'label.nfsmountopts',
+          key: 'primaryStorageNFSMountOptions',
+          required: false,
+          display: {
+            primaryStorageProtocol: 'nfs',
+            hypervisor: ['KVM', 'Simulator']
+          }
+        },
+        {
           title: 'label.resourcegroup',
           key: 'primaryStorageLinstorResourceGroup',
           placeHolder: 'message.error.linstor.resourcegroup',

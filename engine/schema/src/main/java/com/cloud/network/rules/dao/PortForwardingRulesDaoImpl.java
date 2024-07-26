@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.dao.FirewallRulesCidrsDao;
@@ -169,5 +170,17 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("id", id);
         sc.setParameters("dstIp", secondaryIp);
         return findOneBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<PortForwardingRuleVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVirtualMachineId(), SearchCriteria.Op.IN);
+        SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

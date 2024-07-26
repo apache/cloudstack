@@ -24,7 +24,9 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.reservation.ReservationVO;
@@ -141,6 +143,43 @@ public class CheckedReservationTest {
             Assert.assertEquals(tags.size() + 1, list.size()); // An extra for no tag
         } catch (Exception e) {
             Assert.fail("Exception faced: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMultipleReservationsWithOneFailing() {
+        List<String> tags = List.of("abc", "xyz");
+        when(account.getAccountId()).thenReturn(1L);
+        when(account.getDomainId()).thenReturn(4L);
+        Map<Long, ReservationVO> persistedReservations = new HashMap<>();
+        Mockito.when(reservationDao.persist(Mockito.any(ReservationVO.class))).thenAnswer((Answer<ReservationVO>) invocation -> {
+            ReservationVO reservationVO = (ReservationVO) invocation.getArguments()[0];
+            Long id = (long) (persistedReservations.size() + 1);
+            ReflectionTestUtils.setField(reservationVO, "id", id);
+            persistedReservations.put(id, reservationVO);
+            return reservationVO;
+        });
+        Mockito.when(reservationDao.remove(Mockito.anyLong())).thenAnswer((Answer<Boolean>) invocation -> {
+            Long id = (Long) invocation.getArguments()[0];
+            persistedReservations.remove(id);
+            return true;
+        });
+        try {
+            Mockito.doThrow(ResourceAllocationException.class).when(resourceLimitService).checkResourceLimitWithTag(account, Resource.ResourceType.cpu, "xyz", 1L);
+            try (CheckedReservation vmReservation = new CheckedReservation(account, Resource.ResourceType.user_vm, tags, 1L, reservationDao, resourceLimitService);
+                 CheckedReservation cpuReservation = new CheckedReservation(account, Resource.ResourceType.cpu, tags, 1L, reservationDao, resourceLimitService);
+                 CheckedReservation memReservation = new CheckedReservation(account, Resource.ResourceType.memory, tags, 256L, reservationDao, resourceLimitService);
+            ) {
+                Assert.fail("Exception should have occurred but all reservations successful!");
+            } catch (Exception ex) {
+                if (!(ex instanceof ResourceAllocationException)) {
+                    Assert.fail(String.format("Expected ResourceAllocationException but %s occurred!", ex.getClass().getSimpleName()));
+                }
+                throw ex;
+            }
+        } catch (Exception rae) {
+            // Check if all persisted reservations are removed
+            Assert.assertTrue("All persisted reservations are not removed", persistedReservations.isEmpty());
         }
     }
 }

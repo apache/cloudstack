@@ -44,18 +44,18 @@ public class QuotaTariffListCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "Usage type of the resource")
     private Integer usageType;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the quota tariff. Use yyyy-MM-dd as the date format, "
-            + "e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date effectiveDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g. "
-            + "endDate=2021-11-03.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the quota tariff.", since = "4.18.0.0")
     private String name;
 
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to True, we will "
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to true, we will "
             + "list all, including the removed ones. The default is false.", since = "4.18.0.0")
     private boolean listAll = false;
 

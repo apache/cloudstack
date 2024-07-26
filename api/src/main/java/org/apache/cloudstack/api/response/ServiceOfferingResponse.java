@@ -234,6 +234,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.18")
     private Boolean encryptRoot;
 
+    @SerializedName(ApiConstants.PURGE_RESOURCES)
+    @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
+    private Boolean purgeResources;
+
     public ServiceOfferingResponse() {
     }
 
@@ -555,4 +559,8 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     }
 
     public void setEncryptRoot(Boolean encrypt) { this.encryptRoot = encrypt; }
+
+    public void setPurgeResources(Boolean purgeResources) {
+        this.purgeResources = purgeResources;
+    }
 }

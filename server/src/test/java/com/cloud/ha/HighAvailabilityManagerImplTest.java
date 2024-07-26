@@ -60,6 +60,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
@@ -70,6 +71,7 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -126,6 +128,10 @@ public class HighAvailabilityManagerImplTest {
     VolumeDao volumeDao;
     @Mock
     DataStoreProviderManager dataStoreProviderMgr;
+    @Mock
+    VpcVirtualNetworkApplianceService routerService;
+    @Mock
+    UserVmManager userVmManager;
 
     HighAvailabilityManagerImpl highAvailabilityManager;
     HighAvailabilityManagerImpl highAvailabilityManagerSpy;

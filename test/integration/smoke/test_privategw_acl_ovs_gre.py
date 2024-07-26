@@ -683,7 +683,7 @@ class TestPrivateGwACLOvsGRE(cloudstackTestCase):
                     (select id from physical_network where uuid='%s');" % physical_network.id
                 )
                 for traffic_type in traffic_type_list:
-                    if "Guest" in  str(traffic_type[0]):
+                    if "Guest" in str(traffic_type[0]):
                         return physical_network
         return None
 

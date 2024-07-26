@@ -290,12 +290,16 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String externalUuid;
 
     @SerializedName(ApiConstants.VOLUME_CHECK_RESULT)
-    @Param(description = "details for the volume check result, they may vary for different hypervisors, since = 4.19.1")
+    @Param(description = "details for the volume check result, they may vary for different hypervisors", since = "4.19.1")
     private Map<String, String> volumeCheckResult;
 
     @SerializedName(ApiConstants.VOLUME_REPAIR_RESULT)
-    @Param(description = "details for the volume repair result, they may vary for different hypervisors, since = 4.19.1")
+    @Param(description = "details for the volume repair result, they may vary for different hypervisors", since = "4.19.1")
     private Map<String, String> volumeRepairResult;
+
+    @SerializedName(ApiConstants.ENCRYPT_FORMAT)
+    @Param(description = "the format of the disk encryption if applicable", since = "4.19.1")
+    private String encryptionFormat;
 
     public String getPath() {
         return path;
@@ -841,5 +845,9 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setVolumeRepairResult(Map<String, String> volumeRepairResult) {
         this.volumeRepairResult = volumeRepairResult;
+    }
+
+    public void setEncryptionFormat(String encryptionFormat) {
+        this.encryptionFormat = encryptionFormat;
     }
 }

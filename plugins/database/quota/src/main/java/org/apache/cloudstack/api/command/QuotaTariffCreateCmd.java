@@ -60,13 +60,16 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             "value will be applied.", length = 65535)
     private String activationRule;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Use yyyy-MM-dd as"
-            + " the date format, e.g. startDate=2009-06-03. Inform null to use the current date.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Inform null to " +
+            "use the current date. " + ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " endDate=2009-06-03.")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. If not informed, the tariff will be valid indefinitely. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
+
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
+    private Integer position;
 
     @Override
     public void execute() {
@@ -139,4 +142,13 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.QuotaTariff;
     }
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
+
 }

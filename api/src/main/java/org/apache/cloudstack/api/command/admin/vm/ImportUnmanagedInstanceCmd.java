@@ -201,8 +201,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
                 if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
@@ -219,8 +219,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
                 }
                 if (StringUtils.isEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));

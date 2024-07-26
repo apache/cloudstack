@@ -82,6 +82,10 @@ public class TemplateObject implements TemplateInfo {
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {
+        if (template == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.warn(msg);
+        }
         imageVO = template;
         this.dataStore = dataStore;
     }
@@ -98,6 +102,10 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public VMTemplateVO getImage() {
+        if (imageVO == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.error(msg);
+        } // somehow the nullpointer is needed : refacter needed!?!
         return imageVO;
     }
 
