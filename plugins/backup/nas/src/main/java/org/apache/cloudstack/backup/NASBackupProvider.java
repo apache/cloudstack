@@ -48,9 +48,20 @@ import java.util.HashMap;
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
 
-    private final ConfigKey<String> NASDetails = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.nas.details", "Default",
-            "The NFS/NAS storage details", true, ConfigKey.Scope.Zone);
+    private final ConfigKey<String> NasType = new ConfigKey<>("Advanced", String.class,
+            "backup.plugin.nas.target.type", "nfs",
+            "The NAS storage target type. Only supported: nfs and cephfs", true, ConfigKey.Scope.Zone);
+    private final ConfigKey<String> NfsPool = new ConfigKey<>("Advanced", String.class,
+            "backup.plugin.nas.nfs.pool", "",
+            "The NFS NAS storage pool URL (format <domain|ip>:<path>", true, ConfigKey.Scope.Zone);
+
+    private final ConfigKey<String> CephFSPool = new ConfigKey<>("Advanced", String.class,
+            "backup.plugin.nas.cephfs.pool", "",
+            "The CephFS storage pool URL (format: <comma-separated domain|ip>:<path>)", true, ConfigKey.Scope.Zone);
+
+    private final ConfigKey<String> CephFSPoolCredentials = new ConfigKey<>("Advanced", String.class,
+            "backup.plugin.nas.cephfs.credentials", "",
+            "The CephFS storage pool URL (format: <name=username,secret=secretkey>)", true, ConfigKey.Scope.Zone);
 
     @Inject
     private BackupDao backupDao;
@@ -69,28 +80,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private VMInstanceDao vmInstanceDao;
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{
-                NASDetails
-        };
-    }
-
-    @Override
-    public String getName() {
-        return "nas";
-    }
-
-    @Override
-    public String getDescription() {
-        return "NAS KVM Backup Plugin";
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return BackupService.class.getSimpleName();
-    }
 
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
@@ -127,6 +116,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Unable to find the HYPERVISOR for " + vm.getName() + ". Make sure the virtual machine is running");
         }
         return hostDao.findById(hostId);
+    }
+
+    @Override
+    public boolean takeBackup(VirtualMachine vm) {
+        // Find where the VM is currently running
+        Host hostVO = getRunningVMHypervisorHost(vm);
+        // Get retention Period for our Backup
+        BackupOfferingVO vmBackupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+
+        LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on NAS provider");
+        // TODO: initiate backup to NAS by KVM agent
+        // TODO: perisist object based on Answer: backupDao.persist(backup);
+
+        return true;
     }
 
     @Override
@@ -170,20 +173,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean takeBackup(VirtualMachine vm) {
-        // Find where the VM is currently running
-        Host hostVO = getRunningVMHypervisorHost(vm);
-        // Get retention Period for our Backup
-        BackupOfferingVO vmBackupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
-
-        LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on NAS provider");
-        // TODO: initiate backup to NAS by KVM agent
-        // TODO: perisist object based on Answer: backupDao.persist(backup);
-
-        return true;
-    }
-
-    @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
 
         final Long zoneId = backup.getZoneId();
@@ -216,6 +205,25 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
+        return Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType());
+    }
+
+    @Override
+    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+        return true;
+    }
+
+    @Override
+    public boolean willDeleteBackupsOnOfferingRemoval() {
+        return false;
+    }
+
+    @Override
+    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+    }
+
+    @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         return new ArrayList<>();
     }
@@ -227,19 +235,27 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
-        return Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType());
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{
+                NasType,
+                NfsPool,
+                CephFSPool,
+                CephFSPoolCredentials
+        };
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
-        return true;
+    public String getName() {
+        return "nas";
     }
 
     @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+    public String getDescription() {
+        return "NAS KVM Backup Plugin";
     }
 
     @Override
-    public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
+    public String getConfigComponentName() {
+        return BackupService.class.getSimpleName();
+    }
 }
