@@ -532,37 +532,9 @@ export default {
       resourceType: 'FileShare',
       columns: ['name', 'state', 'sizegb', 'storage', 'account'],
       details: ['id', 'name', 'description', 'state', 'format', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'access',
-          resourceType: 'FileShare',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareAccessTab.vue')))
-        },
-        {
-          name: 'volume',
-          resourceType: 'FileShare',
-          show: (record) => { return store.getters.userInfo.roletype === 'Admin' },
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareVolumesTab.vue')))
-
-        },
-        {
-          name: 'instance',
-          resourceType: 'FileShare',
-          show: (record) => { return store.getters.userInfo.roletype === 'Admin' },
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/FileShareInstancesTab.vue')))
-
-        },
-        {
-          name: 'events',
-          resourceType: 'FileShare',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
-          show: () => { return 'listEvents' in store.getters.apis }
-        }
-      ],
+      tabs: [{
+        component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
+      }],
       actions: [
         {
           api: 'createFileShare',

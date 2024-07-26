@@ -273,6 +273,7 @@ SELECT
     `instance`.`id` AS `instance_id`,
     `instance`.`uuid` AS `instance_uuid`,
     `instance`.`name` AS `instance_name`,
+    `instance`.`state` AS `instance_state`,
     `volumes`.`size` AS `size`,
     `volumes`.`uuid` AS `volume_uuid`,
     `volumes`.`name` AS `volume_name`,

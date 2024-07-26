@@ -505,6 +505,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String VIRTUAL_MACHINE_TYPE = "virtualmachinetype";
+    public static final String VIRTUAL_MACHINE_STATE = "vmstate";
     public static final String VIRTUAL_MACHINES = "virtualmachines";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";

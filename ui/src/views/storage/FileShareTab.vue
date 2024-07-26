@@ -23,72 +23,62 @@
       :animated="false"
       @change="handleChangeTab">
       <a-tab-pane :tab="$t('label.details')" key="details">
-        <DetailsTab :resource="vm" :loading="loading" />
+        <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.metrics')" key="stats">
-        <StatsTab :resource="vm"/>
+      <a-tab-pane :tab="$t('label.access')" key="access">
+        <a-card :title="$t('label.mount.fileshare')">
+          <h3>NFS</h3>
+          <div class="title">{{ $t('label.nfs.mount') }}</div>
+          <div class="content">{{ $t('message.server') }} {{ resource.ipaddress }}</div>
+          <div class="content">{{ $t('message.path') }} {{ resource.path }}</div>
+          <br>
+        </a-card>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
-        <usb-outlined />
-        <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
-        <barcode-outlined /> {{ vm.isoid }}
+      <a-tab-pane :tab="$t('label.volume')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
+        <volumes-tab :resource="vm" :items="volumes" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
-        <a-button
-          type="primary"
-          style="width: 100%; margin-bottom: 10px"
-          @click="showAddVolModal"
-          :loading="loading"
-          :disabled="!('createVolume' in $store.getters.apis)">
-          <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
-        </a-button>
-        <volumes-tab :resource="vm" :loading="loading" />
+      <a-tab-pane :tab="$t('label.instance')" key="instance" v-if="'listVirtualMachines' in $store.getters.apis">
+        <a-table
+          class="table"
+          size="small"
+          :columns="vmColumns"
+          :dataSource="virtualmachines"
+          :rowKey="item => item.id"
+          :pagination="false"
+          >
+            <template #bodyCell="{ column, text, record }">
+              <template v-if="column.key === 'name'" :name="text">
+              <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status class="status" :text="record.state" displayText />
+            </template>
+          </template>
+        </a-table>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
-        <ListResourceTable
-          apiName="listVMSnapshot"
-          :resource="vm"
-          :params="{virtualmachineid: dataResource.id}"
-          :columns="['displayname', 'state', 'type', 'created']"
-          :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
+      <a-tab-pane v-if="$store.getters.features.instancesdisksstatsretentionenabled" :tab="$t('label.volume.metrics')" key="volumestats">
+        <StatsTab :resource="volume" :resourceType="'Volume'"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.backup')" key="backups" v-if="'listBackups' in $store.getters.apis">
-        <ListResourceTable
-          apiName="listBackups"
-          :resource="vm"
-          :params="{virtualmachineid: dataResource.id}"
-          :columns="['id', 'status', 'type', 'created']"
-          :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
-          :showSearch="false"/>
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0">
-        <ListResourceTable
-          :items="dataResource.securitygroup"
-          :columns="['name', 'description']"
-          :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
-          :showSearch="false"/>
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
-        <InstanceSchedules
-          :virtualmachine="vm"
-          :loading="loading"/>
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.settings')" key="settings">
-        <DetailSettings :resource="vm" :loading="loading" />
+      <a-tab-pane :tab="$t('label.instance.metrics')" key="vmstats">
+        <StatsTab :resource="vm"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
-        <events-tab :resource="vm" resourceType="VirtualMachine" :loading="loading" />
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
-        <AnnotationsTab
-          :resource="vm"
-          :items="annotations">
-        </AnnotationsTab>
+        <events-tab :resource="resource" resourceType="FileShare" :loading="loading" />
       </a-tab-pane>
     </a-tabs>
+
+    <a-modal
+      :visible="showAddVolumeModal"
+      :title="$t('label.action.create.volume.add')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="closeModals">
+      <CreateVolume :resource="resource" @close-action="closeModals" />
+    </a-modal>
 
   </a-spin>
 </template>
@@ -97,13 +87,14 @@
 
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
+import Status from '@/components/widgets/Status'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
 import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
-import NicsTab from '@/components/view/NicsTab'
+import NicsTab from '@/components/view/NicsTab.vue'
 import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -112,7 +103,7 @@ import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
 
 export default {
-  name: 'InstanceTab',
+  name: 'FileShareTab',
   components: {
     ResourceLayout,
     DetailsTab,
@@ -126,7 +117,8 @@ export default {
     TooltipButton,
     ResourceIcon,
     AnnotationsTab,
-    VolumesTab
+    VolumesTab,
+    Status
   },
   mixins: [mixinDevice],
   props: {
@@ -143,22 +135,47 @@ export default {
   data () {
     return {
       vm: {},
+      virtualmachines: [],
       totalStorage: 0,
       currentTab: 'details',
       showAddVolumeModal: false,
       diskOfferings: [],
-      annotations: [],
       dataResource: {}
     }
   },
   created () {
     const self = this
     this.dataResource = this.resource
-    this.vm = this.dataResource
     this.fetchData()
     window.addEventListener('popstate', function () {
       self.setCurrentTab()
     })
+    this.vmColumns = [
+      {
+        key: 'name',
+        title: this.$t('label.name'),
+        dataIndex: 'name'
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'state'
+      },
+      {
+        key: 'instancename',
+        title: this.$t('label.instancename'),
+        dataIndex: 'instancename'
+      },
+      {
+        key: 'hostname',
+        title: this.$t('label.hostname'),
+        dataIndex: 'hostname'
+      },
+      {
+        title: this.$t('label.zonename'),
+        dataIndex: 'zonename'
+      }
+    ]
   },
   watch: {
     resource: {
@@ -166,7 +183,6 @@ export default {
       handler (newData, oldData) {
         if (newData !== oldData) {
           this.dataResource = newData
-          this.vm = this.dataResource
           this.fetchData()
         }
       }
@@ -196,16 +212,40 @@ export default {
         }).join('&')
       )
     },
-    fetchData () {
-      this.annotations = []
-      if (!this.vm || !this.vm.id) {
+    fetchInstances () {
+      if (!this.resource.virtualmachineid) {
         return
       }
-      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
-          this.annotations = json.listannotationsresponse.annotation
-        }
+      this.instanceLoading = true
+      var params = {
+        id: this.resource.virtualmachineid,
+        listall: true
+      }
+      api('listVirtualMachines', params).then(json => {
+        this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
+        this.vm = this.virtualmachines[0]
       })
+      this.instanceLoading = false
+    },
+    fetchVolumes () {
+      if (!this.resource.volumeid) {
+        return
+      }
+      this.volumeLoading = true
+      var params = {
+        id: this.resource.volumeid,
+        listsystemvms: 'true',
+        listall: true
+      }
+      api('listVolumes', params).then(json => {
+        this.volumes = json.listvolumesresponse.volume || []
+        this.volume = this.volumes[0]
+      })
+      this.volumeLoading = false
+    },
+    fetchData () {
+      this.fetchInstances()
+      this.fetchVolumes()
     },
     listDiskOfferings () {
       api('listDiskOfferings', {

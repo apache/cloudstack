@@ -90,6 +90,7 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
         response.setZoneName(fileShare.getZoneName());
 
         response.setVirtualMachineId(fileShare.getInstanceUuid());
+        response.setVirtualMachineState(fileShare.getIntanceState().toString());
         response.setVolumeId(fileShare.getVolumeUuid());
         response.setVolumeName(fileShare.getVolumeName());
 

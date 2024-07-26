@@ -26,7 +26,7 @@ import java.util.Date;
 public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
 
     String FileShareVmNamePrefix = "fsvm";
-    String FileSharePathPrefix = "/export/fileshare/";
+    String FileSharePath = "/mnt/fs/share";
 
     enum FileSystemType {
         EXT4, XFS
@@ -112,7 +112,7 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     }
 
     static String getFileSharePathFromNameAndUuid(String name, String uuid) {
-        return FileSharePathPrefix + name + "-" + uuid;
+        return FileSharePath;
     }
 
     long getId();

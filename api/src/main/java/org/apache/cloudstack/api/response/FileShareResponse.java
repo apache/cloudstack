@@ -56,6 +56,10 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "id of the storage fs vm")
     private String virtualMachineId;
 
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
+    @Param(description = "id of the storage fs vm")
+    private String virtualMachineState;
+
     @SerializedName(ApiConstants.VOLUME_NAME)
     @Param(description = "name of the storage fs data volume")
     private String volumeName;
@@ -356,5 +360,9 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
 
     public void setIsCustomDiskOffering(Boolean isCustomDiskOffering) {
         this.isCustomDiskOffering = isCustomDiskOffering;
+    }
+
+    public void setVirtualMachineState(String virtualMachineState) {
+        this.virtualMachineState = virtualMachineState;
     }
 }

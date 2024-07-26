@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.fileshare.FileShare.State;
 
 import com.cloud.api.query.vo.BaseViewVO;
 import com.cloud.storage.Storage;
+import com.cloud.vm.VirtualMachine;
 
 @Entity
 @Table(name = "storage_fileshare_view")
@@ -87,6 +88,10 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     @Column(name = "instance_name")
     private String instanceName;
+
+    @Column(name = "instance_state")
+    @Enumerated(value = EnumType.STRING)
+    private VirtualMachine.State intanceState;
 
     @Column(name = "volume_id")
     private long volumeId;
@@ -222,6 +227,10 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     public String getInstanceName() {
         return instanceName;
+    }
+
+    public VirtualMachine.State getIntanceState() {
+        return intanceState;
     }
 
     public long getVolumeId() {
