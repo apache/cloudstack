@@ -18,7 +18,7 @@
 package org.apache.cloudstack.network;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
