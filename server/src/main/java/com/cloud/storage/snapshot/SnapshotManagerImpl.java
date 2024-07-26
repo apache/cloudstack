@@ -398,6 +398,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize() - snapshot.getSize()));
             volume.setSize(snapshot.getSize());
             _volsDao.update(volume.getId(), volume);
+            endSnapshotChainForVolume(snapshot.getVolumeId(), snapshot.getHypervisorType());
             return snapshotInfo;
         }
         return null;
@@ -660,14 +661,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     private void endChainIfNeeded(Long snapshotId) {
-        List<SnapshotDataStoreVO> currentSnapStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
-        SnapshotDataStoreVO snapshotDataStoreVo = currentSnapStoreRefs.get(0);
+        SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId);
         int chainSize = 1;
         while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
-            snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotDataStoreVo.getParentSnapshotId(), DataStoreRole.Primary);
+            snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId());
             chainSize++;
         }
         if (chainSize >= snapshotDeltaMax.value()) {
+            List<SnapshotDataStoreVO> currentSnapStoreRefs = _snapshotStoreDao.listBySnapshotId(snapshotId);
             for (SnapshotDataStoreVO currentSnapStoreRef : currentSnapStoreRefs) {
                 currentSnapStoreRef.setEndOfChain(true);
                 _snapshotStoreDao.update(currentSnapStoreRef.getId(), currentSnapStoreRef);
@@ -1505,8 +1506,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         _snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
 
-        snapshotDetailsDao.removeDetail(snapshotOnPrimary.getId(), AsyncJob.Constants.MS_ID);
         snapshotOnPrimary.markBackedUp();
+        _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
+        snapshotDetailsDao.removeDetail(snapshotOnPrimary.getId(), AsyncJob.Constants.MS_ID);
     }
 
     @Override

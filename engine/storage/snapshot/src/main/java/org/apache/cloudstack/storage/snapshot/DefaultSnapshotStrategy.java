@@ -333,16 +333,28 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             snapshotDataStoreVo = snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(snapshotVo.getSnapshotId(), DataStoreRole.Primary, State.Destroyed);
         }
 
-        if (!snapshotDataStoreVo.isEndOfChain()) {
+        if (!snapshotDataStoreVo.isEndOfChain() || snapshotDataStoreVo.getParentSnapshotId() <= 0) {
             return;
         }
 
-        List<SnapshotDataStoreVO> parentSnapshotDataStoreVoList = snapshotStoreDao.findBySnapshotId(snapshotDataStoreVo.getParentSnapshotId());
+        List<SnapshotDataStoreVO> parentSnapshotDataStoreVoList = findLastAliveAncestors(snapshotDataStoreVo.getParentSnapshotId());
+
         for (SnapshotDataStoreVO parentSnapshotDatastoreVo : parentSnapshotDataStoreVoList) {
             parentSnapshotDatastoreVo.setEndOfChain(true);
             snapshotStoreDao.update(parentSnapshotDatastoreVo.getId(), parentSnapshotDatastoreVo);
         }
 
+    }
+
+    protected List<SnapshotDataStoreVO> findLastAliveAncestors(long snapshotId) {
+        List<SnapshotDataStoreVO> parentSnapshotDataStoreVoList = snapshotStoreDao.listBySnapshotId(snapshotId);
+        if (CollectionUtils.isEmpty(parentSnapshotDataStoreVoList)) {
+            return parentSnapshotDataStoreVoList;
+        }
+        if (parentSnapshotDataStoreVoList.stream().anyMatch(snapshotDataStoreVO -> State.Ready.equals(snapshotDataStoreVO.getState()))) {
+            return parentSnapshotDataStoreVoList;
+        }
+        return findLastAliveAncestors(parentSnapshotDataStoreVoList.get(0).getParentSnapshotId());
     }
 
     protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo, Long zoneId) {
