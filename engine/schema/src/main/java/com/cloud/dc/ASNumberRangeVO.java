@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc;
 
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;

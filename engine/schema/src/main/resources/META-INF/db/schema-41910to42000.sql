@@ -194,12 +194,12 @@ ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
 
 -- Add tables for AS Numbers and range
-CREATE TABLE `cloud`.`as_number_range` (
+CREATE TABLE IF NOT EXISTS `cloud`.`as_number_range` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT,
     `uuid` varchar(40) DEFAULT NULL,
     `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
-    `start_as_number` bigint unsigned DEFAULT NULL COMMENT 'start AS number of the range',
-    `end_as_number` bigint unsigned DEFAULT NULL COMMENT 'end AS number of the range',
+    `start_as_number` bigint unsigned NOT NULL COMMENT 'start AS number of the range',
+    `end_as_number` bigint unsigned NOT NULL COMMENT 'end AS number of the range',
     `created` datetime DEFAULT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),
@@ -208,7 +208,7 @@ CREATE TABLE `cloud`.`as_number_range` (
     CONSTRAINT `fk_as_number_range__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`as_number` (
+CREATE TABLE IF NOT EXISTS `cloud`.`as_number` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT,
     `uuid` varchar(40) DEFAULT NULL,
     `account_id` bigint unsigned DEFAULT NULL,

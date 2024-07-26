@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.bgp.BGPService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -218,6 +219,8 @@ public abstract class BaseCmd {
     public VnfTemplateManager vnfTemplateManager;
     @Inject
     public BucketApiService _bucketService;
+    @Inject
+    public BGPService bgpService;
 
     @Inject
     public RoutedIpv4Manager routedIpv4Manager;

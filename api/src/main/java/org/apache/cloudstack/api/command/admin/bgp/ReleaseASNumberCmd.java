@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.bgp;
 
-import com.cloud.dc.BGPService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -24,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,10 +33,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import javax.inject.Inject;
-
-@APICommand(name = "releaseASNumber", description = "Releases an AS Number back to the pool",
-        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "releaseASNumber",
+        description = "Releases an AS Number back to the pool",
+        since = "4.20.0",
+        authorized = {RoleType.Admin},
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false)
 public class ReleaseASNumberCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
@@ -46,9 +49,6 @@ public class ReleaseASNumberCmd extends BaseCmd {
     @Parameter(name= ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number to be released",
             required = true)
     private Long asNumber;
-
-    @Inject
-    private BGPService bgpService;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {

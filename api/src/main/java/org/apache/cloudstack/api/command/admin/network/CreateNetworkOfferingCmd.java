@@ -211,12 +211,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.16")
     private Boolean enable;
 
-    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN,
+    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN, since = "4.20.0",
             description = "true if network offering supports choosing AS number")
     private Boolean specifyAsNumber;
 
     @Parameter(name = ApiConstants.ROUTING_MODE,
             type = CommandType.STRING,
+            since = "4.20.0",
             description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 

@@ -372,5 +372,5 @@
 
     <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
 
-    <bean id="BGPServiceImpl" class="com.cloud.dc.BGPServiceImpl" />
+    <bean id="BGPServiceImpl" class="com.cloud.bgp.BGPServiceImpl" />
 </beans>

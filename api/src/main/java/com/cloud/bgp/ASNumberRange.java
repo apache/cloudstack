@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.bgp;
 
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.api.Identity;

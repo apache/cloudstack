@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.ASNumber;
-import com.cloud.dc.ASNumberRange;
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;

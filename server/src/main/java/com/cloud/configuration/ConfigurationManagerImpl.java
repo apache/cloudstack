@@ -6605,7 +6605,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (specifyAsNumber && Dynamic != routingMode) {
+        if (specifyAsNumber && !Dynamic.equals(routingMode)) {
             String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
             logger.error(msg);
             throw new InvalidParameterValueException(msg);

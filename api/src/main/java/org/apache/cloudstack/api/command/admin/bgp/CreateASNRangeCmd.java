@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.bgp;
 
-import com.cloud.dc.ASNumberRange;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -33,8 +32,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-
-import javax.inject.Inject;
 
 @APICommand(name = "createASNRange",
         description = "Creates a range of Autonomous Systems for BGP Dynamic Routing",
@@ -53,9 +50,6 @@ public class CreateASNRangeCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.END_ASN, type = CommandType.LONG, required=true, description = "the end AS Number")
     private Long endASNumber;
-
-    @Inject
-    private BGPService bgpService;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {

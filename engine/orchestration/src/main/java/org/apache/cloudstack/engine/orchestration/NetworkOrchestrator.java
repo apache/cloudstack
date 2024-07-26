@@ -39,7 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.VlanDetailsDao;

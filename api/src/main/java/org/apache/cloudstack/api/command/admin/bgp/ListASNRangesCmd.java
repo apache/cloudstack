@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.bgp;
 
-import com.cloud.dc.ASNumberRange;
-import com.cloud.dc.BGPService;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -36,7 +35,6 @@ import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,9 +49,6 @@ public class ListASNRangesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "the zone ID")
     private Long zoneId;
-
-    @Inject
-    private BGPService bgpService;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {

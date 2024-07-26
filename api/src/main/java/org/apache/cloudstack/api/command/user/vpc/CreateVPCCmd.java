@@ -125,7 +125,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
-    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the VPC tiers")
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the VPC tiers")
     private Long asNumber;
 
     @Parameter(name = ApiConstants.BGP_PEER_IDS,

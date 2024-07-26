@@ -884,6 +884,9 @@ export default {
       title: 'label.asnumbers',
       icon: 'partition-outlined',
       permission: ['listASNumbers'],
+      show: () => {
+        return ['Admin'].includes(store.getters.userInfo.roletype)
+      },
       filters: ['all', 'allocatedonly', 'free'],
       columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
       searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
