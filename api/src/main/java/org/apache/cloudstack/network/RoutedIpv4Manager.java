@@ -179,4 +179,6 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     void releaseBgpPeersForVpc(long vpcId);
 
     Vpc changeBgpPeersForVpc(ChangeBgpPeersForVpcCmd changeBgpPeersForVpcCmd);
+
+    List<Long> getBgpPeersForAccount(Account owner, long zoneIdd);
 }

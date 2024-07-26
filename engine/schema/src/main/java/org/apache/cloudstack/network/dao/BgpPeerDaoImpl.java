@@ -24,6 +24,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerDetailsVO;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
@@ -32,6 +33,10 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +46,11 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     protected SearchBuilder<BgpPeerVO> NetworkIdSearch;
     protected SearchBuilder<BgpPeerVO> VpcIdSearch;
     protected SearchBuilder<BgpPeerVO> AllFieldsSearch;
+
+    private static final String LIST_BGP_PEERS_IDS_FOR_ACCOUNT = "SELECT id FROM `cloud`.`bgp_peers` WHERE data_center_id = ? " +
+            "AND ((domain_id IS NULL AND account_id IS NULL) " +
+            "OR (domain_id = ? AND account_id IS NULL) " +
+            "OR (domain_id = ? AND account_id = ?))";
 
     @Inject
     BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
@@ -124,4 +134,28 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
         return vo;
     }
 
+    @Override
+    public List<Long> listAvailableBgpPeerIdsForAccount(long zoneId, long domainId, long accountId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        List<Long> result = new ArrayList<Long>();
+
+        StringBuilder sql = new StringBuilder(LIST_BGP_PEERS_IDS_FOR_ACCOUNT);
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+            pstmt.setLong(1, zoneId);
+            pstmt.setLong(2, domainId);
+            pstmt.setLong(3, domainId);
+            pstmt.setLong(4, accountId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(rs.getLong(1));
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+        } catch (Throwable e) {
+            throw new CloudRuntimeException("Caught: " + sql, e);
+        }
+    }
 }

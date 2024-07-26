@@ -32,4 +32,6 @@ public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
     BgpPeerVO findByZoneAndAsNumberAndAddress(long zoneId, Long asNumber, String ip4Address, String ip6Address);
 
     BgpPeerVO persist(BgpPeerVO bgpPeerVO, Map<BgpPeer.Detail, String> details);
+
+    List<Long> listAvailableBgpPeerIdsForAccount(long zoneId, long domainId, long accountId);
 }

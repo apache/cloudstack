@@ -1519,7 +1519,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
         Integer networkCidrSize = cmd.getCidrSize();
-        List<Long> bgpPeerIds = cmd.getBgpPeerIds();
+        List<Long> bgpPeerIds = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getBgpPeerIds() : null;
 
         // Validate network offering id
         NetworkOffering ntwkOff = getAndValidateNetworkOffering(networkOfferingId);
@@ -1708,7 +1708,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedNetwork(ntwkOff)) {
             throw new InvalidParameterValueException("The network offering does not support Dynamic routing");
         }
-        routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
+        if (CollectionUtils.isEmpty(bgpPeerIds)) {
+            bgpPeerIds = routedIpv4Manager.getBgpPeersForAccount(owner, zone.getId());
+        } else {
+            routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
+        }
 
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value

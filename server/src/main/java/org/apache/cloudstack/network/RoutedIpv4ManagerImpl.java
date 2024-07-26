@@ -1447,6 +1447,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return changeBgpPeersForVpcInternal(vpc, bgpPeerIds);
     }
 
+    @Override
+    public List<Long> getBgpPeersForAccount(Account owner, long zoneId) {
+        return bgpPeerDao.listAvailableBgpPeerIdsForAccount(zoneId, owner.getDomainId(), owner.getId());
+    }
+
     private Vpc changeBgpPeersForVpcInternal(Vpc vpc, List<Long> bgpPeerIds) {
         final List<Long> bgpPeerIdsToBeAdded;
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {

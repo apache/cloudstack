@@ -1116,7 +1116,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
                          final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
-                         final Integer cidrSize, final List<Long> bgpPeerIds) throws ResourceAllocationException {
+                         final Integer cidrSize, List<Long> bgpPeerIds) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1152,7 +1152,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedVpc(vpcOff)) {
             throw new InvalidParameterValueException("The VPC offering does not support Dynamic routing");
         }
-        routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
+        if (CollectionUtils.isEmpty(bgpPeerIds)) {
+            bgpPeerIds = routedIpv4Manager.getBgpPeersForAccount(owner, zone.getId());
+        } else {
+            routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
+        }
 
         final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {

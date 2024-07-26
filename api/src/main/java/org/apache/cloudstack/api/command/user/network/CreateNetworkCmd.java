@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
-import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -47,8 +46,6 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
-
-import java.util.List;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -198,14 +195,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "the CIDR size of IPv4 network. For regular users, this is required for isolated networks with ROUTED mode.",
             since = "4.20")
     private Integer cidrSize;
-
-    @Parameter(name = ApiConstants.BGP_PEER_IDS,
-            type = CommandType.LIST,
-            collectionType = CommandType.UUID,
-            entityType = BgpPeerResponse.class,
-            description = "Ids of the Bgp Peer for the network",
-            since = "4.20")
-    private List<Long> bgpPeerIds;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the network")
     private Long asNumber;
@@ -385,10 +374,6 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Integer getCidrSize() {
         return cidrSize;
-    }
-
-    public List<Long> getBgpPeerIds() {
-        return bgpPeerIds;
     }
 
     public Long getAclId() {
