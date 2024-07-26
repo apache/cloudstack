@@ -20,7 +20,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -550,10 +549,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // Since it's non-conserve mode, only one service should be used for IP
         if (services.size() != 1) {
-            throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterValueException("There are multiple services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
-            throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
+            throw new InvalidParameterValueException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
         }
         return true;
     }
@@ -599,7 +598,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 // We don't support multiple providers for one service now
                 if (!provider.equals(curProvider)) {
-                    throw new InvalidParameterException("There would be multiple providers for IP " + ip.getAddress() + " with the new network offering!");
+                    throw new InvalidParameterValueException("There would be multiple providers for IP " + ip.getAddress() + " with the new network offering!");
                 }
             }
         }
@@ -2827,7 +2826,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
              * TODO Restarting a SDN based network requires updating the nics and the configuration
              * in the controller. This requires a non-trivial rewrite of the restart procedure.
              */
-            throw new InvalidParameterException("Unable to restart a running SDN network.");
+            throw new InvalidParameterValueException("Unable to restart a running SDN network.");
         }
 
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
@@ -4072,11 +4071,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         if (tags != null && tags.size() > 1) {
-            throw new InvalidParameterException("Only one tag can be specified for a physical network at this time");
+            throw new InvalidParameterValueException("Only one tag can be specified for a physical network at this time");
         }
 
         if (isolationMethods != null && isolationMethods.size() > 1) {
-            throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
+            throw new InvalidParameterValueException("Only one isolationMethod can be specified for a physical network at this time");
         }
 
         if (vnetRange != null && zoneType == NetworkType.Basic) {
@@ -4215,7 +4214,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (tags != null && tags.size() > 1) {
-            throw new InvalidParameterException("Unable to support more than one tag on network yet");
+            throw new InvalidParameterValueException("Unable to support more than one tag on network yet");
         }
 
         // If tags are null, then check if there are any other networks with null tags
