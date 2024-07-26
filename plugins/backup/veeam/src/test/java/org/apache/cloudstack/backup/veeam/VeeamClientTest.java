@@ -38,7 +38,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.http.HttpResponse;
-import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -163,13 +163,61 @@ public class VeeamClientTest {
             Mockito.when(mockClient.get(Mockito.anyString())).thenReturn(httpResponse);
             Mockito.when(mockClient.parseRestoreSessionResponse(httpResponse)).thenReturn(restoreSession);
             Mockito.when(restoreSession.getResult()).thenReturn("No Success");
-            Mockito.when(mockClient.checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"))).thenCallRealMethod();
+            Mockito.doCallRealMethod().when(mockClient).checkIfRestoreSessionFinished(Mockito.eq("RestoreTest"), Mockito.eq("any"));
             mockClient.checkIfRestoreSessionFinished("RestoreTest", "any");
             fail();
         } catch (Exception e) {
             Assert.assertEquals("Related job type: RestoreTest was not successful", e.getMessage());
         }
         Mockito.verify(mockClient, times(10)).get(Mockito.anyString());
+    }
+
+    @Test
+    public void getRestoreVmErrorDescriptionTestFindErrorDescription() {
+        Pair<Boolean, String> response = new Pair<>(true, "Example of error description found in Veeam.");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
+        Assert.assertEquals("Example of error description found in Veeam.", result);
+    }
+
+    @Test
+    public void getRestoreVmErrorDescriptionTestNotFindErrorDescription() {
+        Pair<Boolean, String> response = new Pair<>(true, "Cannot find restore session with provided uid uuid");
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
+        Assert.assertEquals("Cannot find restore session with provided uid uuid", result);
+    }
+
+    @Test
+    public void getRestoreVmErrorDescriptionTestWhenPowerShellOutputIsNull() {
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(null);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
+        Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
+    }
+
+    @Test
+    public void getRestoreVmErrorDescriptionTestWhenPowerShellOutputIsFalse() {
+        Pair<Boolean, String> response = new Pair<>(false, null);
+        Mockito.when(mockClient.getRestoreVmErrorDescription("uuid")).thenCallRealMethod();
+        Mockito.when(mockClient.executePowerShellCommands(Mockito.any())).thenReturn(response);
+        String result = mockClient.getRestoreVmErrorDescription("uuid");
+        Assert.assertEquals("Failed to get the description of the failed restore session [uuid]. Please contact an administrator.", result);
+    }
+
+
+    private void verifyBackupMetrics(Map<String, Backup.Metric> metrics) {
+        Assert.assertEquals(2, metrics.size());
+
+        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
+        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
+
+        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
+        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
     }
 
     @Test

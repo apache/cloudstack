@@ -16,10 +16,19 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.utils.component.Manager;
-import com.cloud.vm.ConsoleProxyVO;
+import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.component.Manager;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
@@ -52,6 +61,10 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     void resumeLastManagementState();
 
     ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
+
+    void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+            OperationTimedoutException;
 
     boolean stopProxy(long proxyVmId);
 

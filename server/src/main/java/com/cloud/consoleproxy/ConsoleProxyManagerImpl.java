@@ -74,6 +74,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -489,6 +492,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         return null;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PROXY_START, eventDescription = "restarting console proxy VM for HA", async = true)
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        virtualMachineManager.advanceStart(vm.getUuid(), params, planner);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {

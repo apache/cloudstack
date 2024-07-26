@@ -50,6 +50,9 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.commons.collections.MapUtils;
+
+import java.util.Map;
 
 @Component
 public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Long> implements StoragePoolJoinDao {
@@ -100,7 +103,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool) {
+    public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool, boolean customStats) {
         StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
@@ -147,6 +150,13 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
             long usedIops = driver.getUsedIops(storagePool);
             poolResponse.setAllocatedIops(usedIops);
+
+            if (customStats && driver.poolProvidesCustomStorageStats()) {
+                Map<String, String> storageCustomStats = driver.getCustomStorageStats(storagePool);
+                if (MapUtils.isNotEmpty(storageCustomStats)) {
+                    poolResponse.setCustomStats(storageCustomStats);
+                }
+            }
         }
 
         // TODO: StatsCollector does not persist data

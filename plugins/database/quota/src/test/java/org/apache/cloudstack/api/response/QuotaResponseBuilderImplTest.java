@@ -334,7 +334,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Test
     public void validateEndDateOnCreatingNewQuotaTariffTestSetValidEndDate() {
         Date startDate = DateUtils.addDays(date, -100);
-        Date endDate = DateUtils.addMilliseconds(new Date(), 1);
+        Date endDate = DateUtils.addMinutes(new Date(), 1);
 
         quotaResponseBuilderSpy.validateEndDateOnCreatingNewQuotaTariff(quotaTariffVoMock, startDate, endDate);
         Mockito.verify(quotaTariffVoMock).setEndDate(Mockito.any(Date.class));
@@ -372,8 +372,10 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateValueOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyDouble());
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateStringsOnCreatingNewQuotaTariff(Mockito.any(Consumer.class), Mockito.anyString());
         Mockito.doReturn(quotaTariffVoMock).when(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
+        Mockito.doNothing().when(quotaResponseBuilderSpy).validatePositionOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyInt());
 
-        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "");
+
+        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "", 2);
 
         Mockito.verify(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
     }
@@ -553,4 +555,18 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         assertEquals(2, result.getEmailTemplateId());
         assertFalse(result.isEnabled());
     }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestNullValueDoNothing() {
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, null);
+        Mockito.verify(quotaTariffVoMock, Mockito.never()).setPosition(Mockito.any());
+    }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestAnyValueIsSet() {
+        Integer position = 1;
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, position);
+        Mockito.verify(quotaTariffVoMock).setPosition(position);
+    }
+
 }

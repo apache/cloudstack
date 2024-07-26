@@ -757,7 +757,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
                 logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");

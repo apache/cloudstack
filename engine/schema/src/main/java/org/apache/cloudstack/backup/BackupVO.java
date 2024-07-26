@@ -168,6 +168,7 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
+    @Override
     public long getBackupOfferingId() {
         return backupOfferingId;
     }

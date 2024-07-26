@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public interface CAProvider {
 
     /**
      * Issues certificate with provided options
+     *
      * @param domainNames
      * @param ipAddresses
      * @param validityDays
@@ -104,4 +106,6 @@ public interface CAProvider {
      * @return returns description
      */
     String getDescription();
+
+    boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException;
 }

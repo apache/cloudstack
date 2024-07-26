@@ -39,6 +39,37 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Integer> ConvertVmwareInstanceToKvmTimeout = new ConfigKey<>(Integer.class,
+            "convert.vmware.instance.to.kvm.timeout",
+            "Advanced",
+            "3",
+            "Timeout (in hours) for the instance conversion process from VMware through the virt-v2v binary on a KVM host",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> ThreadsOnMSToImportVMwareVMFiles = new ConfigKey<>(Integer.class,
+            "threads.on.ms.to.import.vmware.vm.files",
+            "Advanced",
+            "0",
+            "Threads to use on the management server when importing VM files from VMWare." +
+                    " -1 or 1 disables threads, 0 uses a thread per VM disk (disabled for single disk) and >1 for manual thread configuration." +
+                    " Max number is 10, Default is 0.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> ThreadsOnKVMHostToImportVMwareVMFiles = new ConfigKey<>(Integer.class,
+            "threads.on.kvm.host.to.import.vmware.vm.files",
+            "Advanced",
+            "0",
+            "Threads to use on the KVM host (by the ovftool, if the version is 4.4.0+) when importing VM files from VMWare." +
+                    " -1 or 1 disables threads, 0 uses a thread per VM disk (disabled for single disk) and >1 for manual thread configuration." +
+                    " Max number is 10, Default is 0.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }

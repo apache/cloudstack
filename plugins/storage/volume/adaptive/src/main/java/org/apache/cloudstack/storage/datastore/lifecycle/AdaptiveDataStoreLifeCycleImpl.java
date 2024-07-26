@@ -57,17 +57,13 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.host.Host;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Manages the lifecycle of a Managed Data Store in CloudStack
  */
-public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
-    protected Logger logger = LogManager.getLogger(getClass());
-
     @Inject
     PrimaryDataStoreHelper _dataStoreHelper;
     @Inject

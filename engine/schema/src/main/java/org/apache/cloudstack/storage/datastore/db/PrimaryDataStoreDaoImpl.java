@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import org.apache.commons.collections.CollectionUtils;
@@ -35,7 +36,6 @@ import org.apache.commons.collections.CollectionUtils;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
@@ -647,6 +647,28 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
+    public List<StoragePoolVO> findZoneWideStoragePoolsByHypervisorAndPoolType(long dataCenterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dataCenterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, StoragePoolStatus.Up);
+        sc.and(sc.entity().getScope(), Op.EQ, ScopeType.ZONE);
+        sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        sc.and(sc.entity().getPoolType(), Op.EQ, poolType);
+        return sc.list();
+    }
+
+    @Override
+    public List<StoragePoolVO> findClusterWideStoragePoolsByHypervisorAndPoolType(long clusterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType) {
+        QueryBuilder<StoragePoolVO> sc = QueryBuilder.create(StoragePoolVO.class);
+        sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, StoragePoolStatus.Up);
+        sc.and(sc.entity().getScope(), Op.EQ, ScopeType.CLUSTER);
+        sc.and(sc.entity().getHypervisor(), Op.EQ, hypervisorType);
+        sc.and(sc.entity().getPoolType(), Op.EQ, poolType);
+        return sc.list();
+    }
+
+    @Override
     public void deletePoolTags(long poolId) {
         _tagsDao.deleteTags(poolId);
     }
@@ -682,6 +704,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("poolType", storageType);
         return listBy(sc);
+    }
+
+    @Override
+    public StoragePoolVO findPoolByZoneAndPath(long zoneId, String datastorePath) {
+        SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
+        sc.setParameters("datacenterId", zoneId);
+        if (datastorePath != null) {
+            sc.addAnd("path", Op.LIKE,  "%/" + datastorePath);
+        }
+        return findOneBy(sc);
     }
 
     @Override

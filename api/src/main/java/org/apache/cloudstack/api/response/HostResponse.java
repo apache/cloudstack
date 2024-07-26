@@ -29,6 +29,7 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -284,6 +285,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
     @Param(description = "true if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
+
+    @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
+    @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
+    private Boolean instanceConversionSupported;
 
     @Override
     public String getObjectId() {
@@ -550,7 +555,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.username = username;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map details, Hypervisor.HypervisorType hypervisorType) {
 
         if (details == null) {
             return;
@@ -569,6 +574,15 @@ public class HostResponse extends BaseResponseWithAnnotations {
             detailsCopy.remove(Host.HOST_VOLUME_ENCRYPTION);
         } else {
             this.setEncryptionSupported(new Boolean(false)); // default
+        }
+
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
+                this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+                detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
+            } else {
+                this.setInstanceConversionSupported(new Boolean(false)); // default
+            }
         }
 
         this.details = detailsCopy;
@@ -759,6 +773,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setEncryptionSupported(Boolean encryptionSupported) {
         this.encryptionSupported = encryptionSupported;
+    }
+
+    public void setInstanceConversionSupported(Boolean instanceConversionSupported) {
+        this.instanceConversionSupported = instanceConversionSupported;
     }
 
     public Boolean getIsTagARule() {

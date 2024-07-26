@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -35,6 +36,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
@@ -97,11 +100,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
     protected SearchBuilder<VMInstanceVO> BackupSearch;
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
+    protected SearchBuilder<VMInstanceVO> VmsNotInClusterUsingPool;
 
     @Inject
-    ResourceTagDao _tagsDao;
+    ResourceTagDao tagsDao;
     @Inject
-    NicDao _nicDao;
+    NicDao nicDao;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    HostDao hostDao;
 
     protected Attribute _updateTimeAttr;
 
@@ -278,7 +286,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
 
-        SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+        SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         nicSearch.and("removedNic", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
@@ -307,6 +315,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
 
+        VmsNotInClusterUsingPool = createSearchBuilder();
+        SearchBuilder<VolumeVO> volumeSearch = volumeDao.createSearchBuilder();
+        volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), Op.EQ);
+        volumeSearch.and("removed", volumeSearch.entity().getRemoved(), Op.NULL);
+        VmsNotInClusterUsingPool.join("volumeSearch", volumeSearch, volumeSearch.entity().getInstanceId(), VmsNotInClusterUsingPool.entity().getId(), JoinType.INNER);
+        SearchBuilder<HostVO> hostSearch2 = hostDao.createSearchBuilder();
+        hostSearch2.and("clusterId", hostSearch2.entity().getClusterId(), SearchCriteria.Op.NEQ);
+        VmsNotInClusterUsingPool.join("hostSearch2", hostSearch2, hostSearch2.entity().getId(), VmsNotInClusterUsingPool.entity().getHostId(), JoinType.INNER);
+        VmsNotInClusterUsingPool.and("vmStates", VmsNotInClusterUsingPool.entity().getState(), Op.IN);
+        VmsNotInClusterUsingPool.done();
     }
 
     @Override
@@ -836,8 +854,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types) {
         if (NetworkTypeSearch == null) {
 
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
             NetworkTypeSearch = createSearchBuilder();
             NetworkTypeSearch.and("types", NetworkTypeSearch.entity().getType(), SearchCriteria.Op.IN);
@@ -873,7 +892,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         txn.start();
         VMInstanceVO vm = findById(id);
         if (vm != null && vm.getType() == Type.User) {
-            _tagsDao.removeByIdAndType(id, ResourceObjectType.UserVm);
+            tagsDao.removeByIdAndType(id, ResourceObjectType.UserVm);
         }
         boolean result = super.remove(id);
         txn.commit();
@@ -1039,5 +1058,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         }
         Filter filter = new Filter(VMInstanceVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
+    }
+
+    public Pair<List<VMInstanceVO>, Integer> listByVmsNotInClusterUsingPool(long clusterId, long poolId) {
+        SearchCriteria<VMInstanceVO> sc = VmsNotInClusterUsingPool.create();
+        sc.setParameters("vmStates", State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
+        sc.setJoinParameters("volumeSearch", "poolId", poolId);
+        sc.setJoinParameters("hostSearch2", "clusterId", clusterId);
+        List<VMInstanceVO> vms = search(sc, null);
+        List<VMInstanceVO> uniqueVms = vms.stream().distinct().collect(Collectors.toList());
+        return new Pair<>(uniqueVms, uniqueVms.size());
     }
 }

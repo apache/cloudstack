@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.lang.management.ManagementFactory;
@@ -63,10 +64,10 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.Level;
 import org.influxdb.BatchOptions;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
@@ -281,11 +282,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     protected static ConfigKey<Boolean> vmStatsCollectUserVMOnly = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.user.vm.only", "false",
             "When set to 'false' stats for system VMs will be collected otherwise stats collection will be done only for user VMs", true);
-
-    protected static ConfigKey<Long> vmStatsRemoveBatchSize = new ConfigKey<>("Advanced", Long.class, "vm.stats.remove.batch.size", "0", "Indicates the" +
-            " limit applied to delete vm_stats entries while running the clean-up task. With this, ACS will run the delete query, applying the limit, as many times as necessary" +
-            " to delete all entries older than the value defined in vm.stats.max.retention.time. This is advised when retaining several days of records, which can lead to slowness" +
-            " on the delete query. Zero (0) means that no limit will be applied, therefore, the query will run once and without limit, keeping the default behavior.", true);
 
     protected static ConfigKey<Boolean> vmDiskStatsRetentionEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.disk.stats.retention.enabled", "false",
             "When set to 'true' stats for VM disks will be stored in the database otherwise disk stats will not be stored", true);
@@ -1718,7 +1714,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     pool.setCapacityBytes(capacityBytes);
                                     poolNeedsUpdating = true;
                                 } else {
-                                    logger.warn("Not setting capacity bytes, received " + ((StorageStats)answer).getCapacityBytes()  + " capacity for pool ID " + poolId);
+                                    logger.warn("Not setting capacity bytes, received {} capacity for pool ID {}",
+                                            NumbersUtil.toReadableSize(((StorageStats)answer).getCapacityBytes()), poolId);
                                 }
                             }
                             if (((_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getByteUsed() != usedBytes)
@@ -1835,16 +1832,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         double totalCapacity = imageStoreStats.getCapacityBytes();
         double usedCapacity = imageStoreStats.getByteUsed();
         double threshold = getImageStoreCapacityThreshold();
-        String readableTotalCapacity = FileUtils.byteCountToDisplaySize((long) totalCapacity);
-        String readableUsedCapacity = FileUtils.byteCountToDisplaySize((long) usedCapacity);
+        String readableTotalCapacity = NumbersUtil.toReadableSize((long) totalCapacity);
+        String readableUsedCapacity = NumbersUtil.toReadableSize((long) usedCapacity);
 
-        logger.debug(String.format("Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
-
+        logger.printf(Level.DEBUG, "Verifying image storage [%s]. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100);
         if (usedCapacity / totalCapacity <= threshold) {
             return true;
         }
 
-        logger.warn(String.format("Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%s%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100));
+        logger.printf(Level.WARN, "Image storage [%s] has not enough capacity. Capacity: total=[%s], used=[%s], threshold=[%.2f%%].", imageStoreId, readableTotalCapacity, readableUsedCapacity, threshold * 100);
         return false;
     }
 
@@ -1965,7 +1961,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         logger.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        vmStatsDao.removeAllByTimestampLessThan(limit, vmStatsRemoveBatchSize.value());
+        vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -1984,7 +1980,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         logger.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        volumeStatsDao.removeAllByTimestampLessThan(limit);
+        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -2139,7 +2135,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, vmStatsRemoveBatchSize,
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
             vmStatsIncrementMetrics, vmStatsMaxRetentionTime, vmStatsCollectUserVMOnly, vmDiskStatsRetentionEnabled, vmDiskStatsMaxRetentionTime,
                 MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL,
                 DATABASE_SERVER_STATUS_COLLECTION_INTERVAL,

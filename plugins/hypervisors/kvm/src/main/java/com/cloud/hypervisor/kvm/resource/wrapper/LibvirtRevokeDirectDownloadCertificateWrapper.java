@@ -19,6 +19,14 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -26,13 +34,6 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 @ResourceWrapper(handles =  RevokeDirectDownloadCertificateCommand.class)
 public class LibvirtRevokeDirectDownloadCertificateWrapper extends CommandWrapper<RevokeDirectDownloadCertificateCommand, Answer, LibvirtComputingResource> {
@@ -82,17 +83,17 @@ public class LibvirtRevokeDirectDownloadCertificateWrapper extends CommandWrappe
             }
 
             final String keyStoreFile = getKeyStoreFilePath(agentFile);
-
-            String checkCmd = String.format("keytool -list -alias %s -keystore %s -storepass %s",
-                    certificateAlias, keyStoreFile, privatePassword);
-            int existsCmdResult = Script.runSimpleBashScriptForExitValue(checkCmd);
+            String keyToolPath = Script.getExecutableAbsolutePath("keytool");
+            int existsCmdResult = Script.executeCommandForExitValue(keyToolPath, "-list", "-alias",
+                    sanitizeBashCommandArgument(certificateAlias), "-keystore", keyStoreFile, "-storepass",
+                    privatePassword);
             if (existsCmdResult == 1) {
                 logger.error("Certificate alias " + certificateAlias + " does not exist, no need to revoke it");
             } else {
-                String revokeCmd = String.format("keytool -delete -alias %s -keystore %s -storepass %s",
-                        certificateAlias, keyStoreFile, privatePassword);
                 logger.debug("Revoking certificate alias " + certificateAlias + " from keystore " + keyStoreFile);
-                Script.runSimpleBashScriptForExitValue(revokeCmd);
+                Script.executeCommandForExitValue(keyToolPath, "-delete", "-alias",
+                        sanitizeBashCommandArgument(certificateAlias), "-keystore", keyStoreFile, "-storepass",
+                        privatePassword);
             }
         } catch (FileNotFoundException | CloudRuntimeException e) {
             logger.error("Error while setting up certificate " + certificateAlias, e);
