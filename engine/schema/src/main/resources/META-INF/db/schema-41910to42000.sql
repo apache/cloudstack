@@ -247,14 +247,6 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     INDEX `i_storage_fileshare__project_id`(`project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`storagefsvm`(
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-    `fileshare_id` bigint unsigned NOT NULL COMMENT 'corresponding file share ID',
-    PRIMARY KEY (`id`),
-    KEY `fk_storage_fileshare__id` (`fileshare_id`),
-    CONSTRAINT `fk_storagefsvm__id` FOREIGN KEY (`id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 DROP VIEW IF EXISTS `cloud`.`storage_fileshare_view`;
 CREATE VIEW `cloud`.`storage_fileshare_view` AS
 SELECT

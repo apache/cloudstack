@@ -23,10 +23,10 @@
       :animated="false"
       @change="handleChangeTab">
       <a-tab-pane :tab="$t('label.details')" key="details">
-        <DetailsTab :resource="vm" :loading="loading" />
+        <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.metrics')" key="stats">
-        <StatsTab :resource="vm"/>
+        <StatsTab :resource="resource"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
         <usb-outlined />
@@ -50,7 +50,7 @@
       <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
         <ListResourceTable
           apiName="listVMSnapshot"
-          :resource="vm"
+          :resource="dataResource"
           :params="{virtualmachineid: dataResource.id}"
           :columns="['displayname', 'state', 'type', 'created']"
           :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
@@ -58,7 +58,7 @@
       <a-tab-pane :tab="$t('label.backup')" key="backups" v-if="'listBackups' in $store.getters.apis">
         <ListResourceTable
           apiName="listBackups"
-          :resource="vm"
+          :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
           :columns="['id', 'status', 'type', 'created']"
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
@@ -77,10 +77,10 @@
           :loading="loading"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
-        <DetailSettings :resource="vm" :loading="loading" />
+        <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
-        <events-tab :resource="vm" resourceType="VirtualMachine" :loading="loading" />
+        <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -103,7 +103,7 @@ import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import CreateVolume from '@/views/storage/CreateVolume'
-import NicsTab from '@/components/view/NicsTab'
+import NicsTab from '@/views/network/NicsTab'
 import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
