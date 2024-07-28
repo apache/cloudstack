@@ -1187,14 +1187,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering");
             }
 
-            if (diskOffering.isFileShare() != newDiskOffering.isFileShare()) {
-                if (diskOffering.isFileShare() == true) {
-                    throw new InvalidParameterValueException("Disk offering should be file share enabled for a file share volume");
-                } else {
-                    throw new InvalidParameterValueException("Disk offering cannot be file share enabled for a non file share volume");
-                }
-            }
-
             if (diskOffering.getDiskSizeStrictness() && (diskOffering.getDiskSize() != newDiskOffering.getDiskSize())) {
                 throw new InvalidParameterValueException(String.format("Resize volume for %s is not allowed since disk offering's size is fixed", volume.getName()));
             }
@@ -2003,14 +1995,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         boolean volumeMigrateRequired = false;
         boolean volumeResizeRequired = false;
-
-        if (existingDiskOffering.isFileShare() != newDiskOffering.isFileShare()) {
-            if (existingDiskOffering.isFileShare() == true) {
-                throw new InvalidParameterValueException("Disk offering should be file share enabled for a file share volume");
-            } else {
-                throw new InvalidParameterValueException("Disk offering cannot be file share enabled for a non file share volume");
-            }
-        }
 
         // VALIDATIONS
         Long[] updateNewSize = {newSize};

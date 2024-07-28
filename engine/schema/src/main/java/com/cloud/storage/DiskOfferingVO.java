@@ -152,9 +152,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "disk_size_strictness")
     boolean diskSizeStrictness = false;
 
-    @Column(name = "fileshare")
-    boolean fileShare = false;
-
     public DiskOfferingVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -590,14 +587,5 @@ public class DiskOfferingVO implements DiskOffering {
 
     public void setDiskSizeStrictness(boolean diskSizeStrictness) {
         this.diskSizeStrictness = diskSizeStrictness;
-    }
-
-    @Override
-    public boolean isFileShare() {
-        return fileShare;
-    }
-
-    public void setFileShare(boolean fileShare) {
-        this.fileShare = fileShare;
     }
 }

@@ -3421,7 +3421,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String storageType = cmd.getStorageType();
         DiskOffering.State state = cmd.getState();
         final Long vmId = cmd.getVirtualMachineId();
-        Boolean fileShare = cmd.getFileShare();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
@@ -3526,9 +3525,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 diskOfferingSearch.or("customized", diskOfferingSearch.entity().isCustomized(), Op.EQ);
                 diskOfferingSearch.cp();
             }
-            if (currentDiskOffering.isFileShare()) {
-                diskOfferingSearch.and("fileShare", diskOfferingSearch.entity().isFileShare(), Op.EQ);
-            }
             diskOfferingSearch.and("idNEQ", diskOfferingSearch.entity().getId(), Op.NEQ);
             diskOfferingSearch.and("diskSizeStrictness", diskOfferingSearch.entity().getDiskSizeStrictness(), Op.EQ);
         }
@@ -3543,10 +3539,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, JoinBuilder.JoinType.LEFT, JoinBuilder.JoinCondition.AND,
                     diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(),
                     domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
-        }
-
-        if (fileShare != null) {
-            diskOfferingSearch.and("fileShare", diskOfferingSearch.entity().isFileShare(), Op.EQ);
         }
 
         SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
@@ -3597,9 +3589,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.setParameters("diskSize", volume.getSize());
                 sc.setParameters("customized", true);
             }
-            if (currentDiskOffering.isFileShare()) {
-                sc.setParameters("fileShare", true);
-            }
             sc.setParameters("idNEQ", currentDiskOffering.getId());
             sc.setParameters("diskSizeStrictness", currentDiskOffering.getDiskSizeStrictness());
         }
@@ -3620,10 +3609,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (!isRootAdmin) {
                 accountMgr.checkAccess(account, null, false, vm);
             }
-        }
-
-        if (fileShare != null) {
-            sc.setParameters("fileShare", fileShare);
         }
 
         Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);

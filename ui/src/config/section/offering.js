@@ -217,7 +217,7 @@ export default {
       icon: 'hdd-outlined',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       permission: ['listDiskOfferings'],
-      searchFilters: ['name', 'zoneid', 'fileshare', 'domainid', 'storageid'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'storageid'],
       params: () => {
         var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -230,7 +230,7 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops',
           'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesReadRateMax', 'diskBytesWriteRate', 'diskBytesWriteRateMax', 'miniops', 'maxiops', 'tags',
-          'domain', 'zone', 'created', 'encrypt', 'fileshare']
+          'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -274,7 +274,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'fileshare', 'tags']
+        args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
         icon: 'lock-outlined',

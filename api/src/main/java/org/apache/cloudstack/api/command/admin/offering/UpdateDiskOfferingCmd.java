@@ -126,9 +126,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the disk offering")
     private String diskOfferingState;
 
-    @Parameter(name = ApiConstants.FILESHARE, type = CommandType.BOOLEAN, required=false, description = "Disk offering is meant for File shares", since = "4.20")
-    private Boolean fileShare;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -274,10 +271,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
             throw new InvalidParameterValueException("Invalid state value: " + diskOfferingState);
         }
         return state;
-    }
-
-    public Boolean getFileShare() {
-        return fileShare;
     }
 
     /////////////////////////////////////////////////////

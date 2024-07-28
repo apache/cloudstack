@@ -35,7 +35,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -144,13 +143,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         this.fileShareStateMachine = FileShare.State.getStateMachine();
     }
 
-    private void createDefaultDiskOfferingForFileShare() {
-        DiskOfferingVO newDiskOffering = new DiskOfferingVO(DEFAULT_FILE_SHARE_DISK_OFFERING_NAME, DEFAULT_FILE_SHARE_DISK_OFFERING_NAME, Storage.ProvisioningType.THIN, 0, null, true, null, null, null);
-        newDiskOffering.setUniqueName(DEFAULT_FILE_SHARE_DISK_OFFERING_NAME);
-        newDiskOffering.setFileShare(true);
-        diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
-    }
-
     @Override
     public boolean start() {
         fileShareProviderMap.clear();
@@ -158,7 +150,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             fileShareProviderMap.put(provider.getName(), provider);
             provider.configure();
         }
-        createDefaultDiskOfferingForFileShare();
         _executor.scheduleWithFixedDelay(new FileShareGarbageCollector(), FileShareCleanupInterval.value(), FileShareCleanupInterval.value(), TimeUnit.SECONDS);
         return true;
     }
@@ -240,9 +231,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         }
 
         DiskOfferingVO diskOffering = diskOfferingDao.findById(cmd.getDiskOfferingId());
-        if (!diskOffering.isFileShare()) {
-            throw new InvalidParameterValueException("Disk offering is not file share enabled");
-        }
         configMgr.checkDiskOfferingAccess(null, diskOffering, zone);
 
         FileShareProvider provider = getFileShareProvider(cmd.getFileShareProviderName());

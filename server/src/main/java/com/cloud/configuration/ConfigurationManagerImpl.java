@@ -3682,7 +3682,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                 final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID,
-                                                final boolean diskSizeStrictness, final boolean encrypt, boolean fileShare) {
+                                                final boolean diskSizeStrictness, final boolean encrypt) {
         long diskSize = 0;// special case for custom disk offerings
         long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
         if (numGibibytes != null && numGibibytes <= 0) {
@@ -3767,8 +3767,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         newDiskOffering.setEncrypt(encrypt);
         newDiskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
         newDiskOffering.setDiskSizeStrictness(diskSizeStrictness);
-
-        newDiskOffering.setFileShare(fileShare);
 
         CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         final DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
@@ -3880,7 +3878,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
         final String cacheMode = cmd.getCacheMode();
         final boolean encrypt = cmd.getEncrypt();
-        final boolean fileShare = cmd.getFileShare();
 
         validateMaxRateEqualsOrGreater(iopsReadRate, iopsReadRateMax, IOPS_READ_RATE);
         validateMaxRateEqualsOrGreater(iopsWriteRate, iopsWriteRateMax, IOPS_WRITE_RATE);
@@ -3894,7 +3891,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
                 maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
                 iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
-                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness, encrypt, fileShare);
+                hypervisorSnapshotReserve, cacheMode, details, storagePolicyId, diskSizeStrictness, encrypt);
     }
 
     /**
@@ -3974,7 +3971,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         String cacheMode = cmd.getCacheMode();
         DiskOffering.State state = cmd.getState();
-        boolean fileShare = cmd.getFileShare();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -4059,8 +4055,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (state != null) {
             diskOffering.setState(state);
         }
-
-        diskOffering.setFileShare(fileShare);
 
         if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;

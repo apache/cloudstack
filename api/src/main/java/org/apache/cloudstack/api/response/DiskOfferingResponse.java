@@ -177,10 +177,6 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "Returns true if the disk offering is suitable for the given virtual machine for disk creation otherwise false", since = "4.20.0")
     private Boolean suitableForVm;
 
-    @SerializedName(ApiConstants.FILESHARE)
-    @Param(description = "Whether this offering is meant for file shares", since = "4.20.0")
-    private Boolean fileshare;
-
     public Boolean getDisplayOffering() {
         return displayOffering;
     }
@@ -414,9 +410,5 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setSuitableForVm(Boolean suitableForVm) {
         this.suitableForVm = suitableForVm;
-    }
-
-    public void setFileshare(Boolean fileshare) {
-        this.fileshare = fileshare;
     }
 }

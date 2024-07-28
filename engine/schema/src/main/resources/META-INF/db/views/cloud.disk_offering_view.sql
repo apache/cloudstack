@@ -56,7 +56,6 @@ SELECT
     `disk_offering`.`disk_size_strictness` AS `disk_size_strictness`,
     `vsphere_storage_policy`.`value` AS `vsphere_storage_policy`,
     `disk_offering`.`encrypt` AS `encrypt`,
-    `disk_offering`.`fileshare` AS `fileshare`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
