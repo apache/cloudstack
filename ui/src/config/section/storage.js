@@ -530,11 +530,42 @@ export default {
       icon: 'file-text-outlined',
       permission: ['listFileShares'],
       resourceType: 'FileShare',
-      columns: ['name', 'state', 'sizegb', 'storage', 'account'],
+      columns: () => {
+        const fields = ['name', 'state', 'sizegb']
+        const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
+
+        if (store.getters.userInfo.roletype === 'Admin') {
+          metricsFields.push('physicalsize')
+        }
+        metricsFields.push('utilization')
+
+        if (store.getters.metrics) {
+          fields.push(...metricsFields)
+        }
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.push('storage')
+          fields.push('account')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('zonename')
+
+        return fields
+      },
       details: ['id', 'name', 'description', 'state', 'format', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
       tabs: [{
         component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
       }],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'account', 'state', 'serviceofferingid', 'diskofferingid', 'networkid']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createFileShare',

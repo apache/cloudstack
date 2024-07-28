@@ -19,14 +19,16 @@ package org.apache.cloudstack.api.command.user.storage.fileshare;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.UserCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
@@ -40,7 +42,7 @@ import javax.inject.Inject;
         requestHasSensitiveInfo = false,
         since = "4.20.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListFileSharesCmd extends BaseListCmd implements UserCmd {
+public class ListFileSharesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
@@ -52,11 +54,20 @@ public class ListFileSharesCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share")
     private Long id;
 
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the file share")
+    private String name;
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the availability zone")
+    private Long zoneId;
+
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "the ID of the network")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the account", authorized = RoleType.Admin)
-    private Long accountId;
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the disk offering of the file share")
+    private Long diskOfferingId;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "the service offering of the file share")
+    private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,12 +77,24 @@ public class ListFileSharesCmd extends BaseListCmd implements UserCmd {
         return id;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
     public Long getNetworkId() {
         return networkId;
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public Long getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     /////////////////////////////////////////////////////

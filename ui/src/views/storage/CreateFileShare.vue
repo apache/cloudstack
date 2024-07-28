@@ -16,169 +16,172 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <a-spin :spinning="loading">
-      <a-form
-        :ref="formRef"
-        :model="form"
-        :rules="rules"
-        layout="vertical"
-        @finish="handleSubmit"
-       >
-        <a-form-item name="name" ref="name" :label="$t('label.name')">
-          <a-input v-model:value="form.name" v-focus="true" />
-        </a-form-item>
-        <a-form-item name="description" ref="description" :label="$t('label.description')">
-          <a-input v-model:value="form.description" v-focus="true" />
-        </a-form-item>
-        <a-form-item ref="zoneid" name="zoneid">
+  <a-spin :spinning="loading">
+    <div v-if="!isNormalUserOrProject">
+      <ownership-selection @fetch-owner="fetchOwnerOptions" />
+    </div>
+    <a-form
+      class="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+     >
+      <a-form-item name="name" ref="name" :label="$t('label.name')">
+        <a-input v-model:value="form.name" v-focus="true" />
+      </a-form-item>
+      <a-form-item name="description" ref="description" :label="$t('label.description')">
+        <a-input v-model:value="form.description" v-focus="true" />
+      </a-form-item>
+      <a-form-item ref="zoneid" name="zoneid">
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
+        <a-select
+          v-model:value="form.zoneid"
+          :loading="zoneLoading"
+          @change="zone => handleZoneChange(id)"
+          :placeholder="apiParams.zoneid.description"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(zone, index) in zones"
+            :value="zone.id"
+            :key="index"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
+              {{ zone.name }}
+            </span>
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item ref="provider" name="provider">
+        <template #label>
+          <tooltip-label :title="$t('label.provider')" :tooltip="apiParams.provider.description"/>
+        </template>
+        <a-select
+          v-model:value="form.provider"
+          :loading="providerLoading"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(provider, index) in providers"
+            :value="provider.name"
+            :key="index"
+            :label="provider.name">
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item ref="networkid" name="networkid">
+        <template #label>
+          <tooltip-label :title="$t('label.networkid')" :tooltip="apiParams.networkid.description || 'Network'"/>
+        </template>
+        <a-select
+          v-model:value="form.networkid"
+          :loading="networkLoading"
+          :placeholder="apiParams.networkid.description || $t('label.networkid')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(network, index) in networks"
+            :value="network.id"
+            :key="index"
+            :label="network.name"> {{ network.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item ref="serviceofferingid" name="serviceofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+        </template>
+        <a-select
+          v-model:value="form.serviceofferingid"
+          :loading="serviceofferingLoading"
+          :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(serviceoffering, index) in serviceofferings"
+            :value="serviceoffering.id"
+            :key="index"
+            :label="serviceoffering.displaytext || serviceoffering.name">
+            {{ serviceoffering.displaytext || serviceoffering.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item ref="diskofferingid" name="diskofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+        </template>
+        <a-select
+          v-model:value="form.diskofferingid"
+          :loading="diskofferingLoading"
+          @change="id => handleDiskOfferingChange(id)"
+          :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(diskoffering, index) in diskofferings"
+            :value="diskoffering.id"
+            :key="index"
+            :label="diskoffering.displaytext || diskoffering.name">
+            {{ diskoffering.displaytext || diskoffering.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <span v-if="customDiskOffering">
+        <a-form-item ref="size" name="size">
           <template #label>
-            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
           </template>
-          <a-select
-            v-model:value="form.zoneid"
-            :loading="zoneLoading"
-            @change="zone => handleZoneChange(id)"
-            :placeholder="apiParams.zoneid.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(zone, index) in zones"
-              :value="zone.id"
-              :key="index"
-              :label="zone.name">
-              <span>
-                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px"/>
-                {{ zone.name }}
-              </span>
-            </a-select-option>
-          </a-select>
+          <a-input
+            v-model:value="form.size"
+            :placeholder="apiParams.size.description"/>
         </a-form-item>
-        <a-form-item ref="provider" name="provider">
+      </span>
+      <span v-if="isCustomizedDiskIOps">
+        <a-form-item ref="miniops" name="miniops">
           <template #label>
-            <tooltip-label :title="$t('label.provider')" :tooltip="apiParams.provider.description"/>
+            <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
           </template>
-          <a-select
-            v-model:value="form.provider"
-            :loading="providerLoading"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(provider, index) in providers"
-              :value="provider.name"
-              :key="index"
-              :label="provider.name">
-            </a-select-option>
-          </a-select>
+          <a-input
+            v-model:value="form.miniops"
+            :placeholder="apiParams.miniops.description"/>
         </a-form-item>
-        <a-form-item ref="networkid" name="networkid">
+        <a-form-item ref="maxiops" name="maxiops">
           <template #label>
-            <tooltip-label :title="$t('label.networkid')" :tooltip="apiParams.networkid.description || 'Network'"/>
+            <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
           </template>
-          <a-select
-            v-model:value="form.networkid"
-            :loading="networkLoading"
-            :placeholder="apiParams.networkid.description || $t('label.networkid')"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(network, index) in networks"
-              :value="network.id"
-              :key="index"
-              :label="network.name"> {{ network.name }}
-            </a-select-option>
-          </a-select>
+          <a-input
+            v-model:value="form.maxiops"
+            :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
-        <a-form-item ref="serviceofferingid" name="serviceofferingid">
-          <template #label>
-            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
-          </template>
-          <a-select
-            v-model:value="form.serviceofferingid"
-            :loading="serviceofferingLoading"
-            :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(serviceoffering, index) in serviceofferings"
-              :value="serviceoffering.id"
-              :key="index"
-              :label="serviceoffering.displaytext || serviceoffering.name">
-              {{ serviceoffering.displaytext || serviceoffering.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item ref="diskofferingid" name="diskofferingid">
-          <template #label>
-            <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
-          </template>
-          <a-select
-            v-model:value="form.diskofferingid"
-            :loading="diskofferingLoading"
-            @change="id => handleDiskOfferingChange(id)"
-            :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(diskoffering, index) in diskofferings"
-              :value="diskoffering.id"
-              :key="index"
-              :label="diskoffering.displaytext || diskoffering.name">
-              {{ diskoffering.displaytext || diskoffering.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <span v-if="customDiskOffering">
-          <a-form-item ref="size" name="size">
-            <template #label>
-              <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
-            </template>
-            <a-input
-              v-model:value="form.size"
-              :placeholder="apiParams.size.description"/>
-          </a-form-item>
-        </span>
-        <span v-if="isCustomizedDiskIOps">
-          <a-form-item ref="miniops" name="miniops">
-            <template #label>
-              <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
-            </template>
-            <a-input
-              v-model:value="form.miniops"
-              :placeholder="apiParams.miniops.description"/>
-          </a-form-item>
-          <a-form-item ref="maxiops" name="maxiops">
-            <template #label>
-              <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
-            </template>
-            <a-input
-              v-model:value="form.maxiops"
-              :placeholder="apiParams.maxiops.description"/>
-          </a-form-item>
-        </span>
-        <div :span="24" class="action-button">
-          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-spin>
-  </div>
+      </span>
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+      </div>
+    </a-form>
+  </a-spin>
 </template>
 <script>
 
@@ -186,6 +189,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import store from '@/store'
 
@@ -199,6 +203,7 @@ export default {
     }
   },
   components: {
+    OwnershipSelection,
     ResourceIcon,
     TooltipLabel
   },
@@ -223,6 +228,11 @@ export default {
       diskofferingLoading: false,
       customDiskOffering: false,
       isCustomizedDiskIOps: false
+    }
+  },
+  computed: {
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project?.id
     }
   },
   beforeCreate () {
@@ -264,6 +274,22 @@ export default {
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {}
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      this.fetchData()
     },
     fetchData () {
       this.fetchZones()
@@ -448,14 +474,15 @@ export default {
     }
   }
 }
-
 </script>
-<style lang="scss" scoped>
-.form-layout {
-  width: 85vw;
 
-  @media (min-width: 1000px) {
-    width: 35vw;
+<style lang="scss" scoped>
+.form {
+  width: 80vw;
+
+  @media (min-width: 500px) {
+    min-width: 400px;
+    width: 100%;
   }
 }
 </style>

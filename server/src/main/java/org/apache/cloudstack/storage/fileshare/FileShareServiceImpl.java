@@ -30,17 +30,25 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.projects.Project;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -86,6 +94,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     private EntityManager entityMgr;
 
     @Inject
+    private ConfigurationManager configMgr;
+
+    @Inject
     private FileShareDao fileShareDao;
 
     @Inject
@@ -96,6 +107,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Inject
     ConfigurationDao configDao;
+
+    @Inject
+    VolumeDao volumeDao;
 
     protected List<FileShareProvider> fileShareProviders;
 
@@ -213,8 +227,11 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "allocating fileshare", create = true)
     public FileShare allocFileShare(CreateFileShareCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+
         long ownerId = cmd.getEntityOwnerId();
         Account owner = accountMgr.getActiveAccountById(ownerId);
+        accountMgr.checkAccess(caller, null, true, accountMgr.getActiveAccountById(ownerId));
 
         Long zoneId = cmd.getZoneId();
         DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
@@ -226,12 +243,13 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         if (!diskOffering.isFileShare()) {
             throw new InvalidParameterValueException("Disk offering is not file share enabled");
         }
+        configMgr.checkDiskOfferingAccess(null, diskOffering, zone);
 
         FileShareProvider provider = getFileShareProvider(cmd.getFileShareProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         lifeCycle.checkPrerequisites(zoneId, cmd.getServiceOfferingId());
 
-        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, 0,
+        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, cmd.getProjectId(),
                                                 cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
                                                 cmd.getMountOptions(), FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
@@ -339,8 +357,76 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     private Pair<List<Long>, Integer> searchForFileSharesIdsAndCount(ListFileSharesCmd cmd) {
-        Filter searchFilter = new Filter(FileShareVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        Pair<List<FileShareVO>, Integer> result = fileShareDao.searchAndCount(cmd.getId(), cmd.getAccountId(), cmd.getNetworkId(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<>();
+
+        Long id = cmd.getId();
+        String name = cmd.getName();
+        Long networkId = cmd.getNetworkId();
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        String keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+        Long zoneId = cmd.getZoneId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
+
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, cmd.isRecursive(), null);
+        accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(FileShareVO.class, "created", false, startIndex, pageSize);
+
+        SearchBuilder<FileShareVO> fileShareSearchBuilder = fileShareDao.createSearchBuilder();
+        fileShareSearchBuilder.select(null, SearchCriteria.Func.DISTINCT, fileShareSearchBuilder.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(fileShareSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        fileShareSearchBuilder.and("name", fileShareSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        fileShareSearchBuilder.and("uuid", fileShareSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
+        fileShareSearchBuilder.and("dataCenterId", fileShareSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+
+        if (keyword != null) {
+            fileShareSearchBuilder.and().op("keywordName", fileShareSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
+        }
+
+        fileShareSearchBuilder.and("serviceOfferingId", fileShareSearchBuilder.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
+
+        if (diskOfferingId != null) {
+            SearchBuilder<VolumeVO> volSearch = volumeDao.createSearchBuilder();
+            volSearch.and("diskOfferingId", volSearch.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
+            fileShareSearchBuilder.join("volSearch", volSearch, volSearch.entity().getId(), fileShareSearchBuilder.entity().getVolumeId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<FileShareVO> sc = fileShareSearchBuilder.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (keyword != null) {
+            sc.setParameters("keywordName", "%" + keyword + "%");
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (diskOfferingId != null) {
+            sc.setJoinParameters("volSearch", "diskOfferingId", diskOfferingId);
+        }
+
+        if (serviceOfferingId != null) {
+            sc.setParameters("serviceOfferingId", serviceOfferingId);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+
+        Pair<List<FileShareVO>, Integer> result = fileShareDao.searchAndCount(sc, searchFilter);
         List<Long> idsArray = result.first().stream().map(FileShareVO::getId).collect(Collectors.toList());
         return new Pair<List<Long>, Integer>(idsArray, result.second());
     }
@@ -358,18 +444,23 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd) {
         Pair<List<FileShareJoinVO>, Integer> result = searchForFileSharesInternal(cmd);
-        List<FileShareResponse> fileShareResponses = null;
+        ListResponse<FileShareResponse> response = new ListResponse<>();
+
+        if (cmd.getRetrieveOnlyResourceCount()) {
+            response.setResponses(new ArrayList<>(), result.second());
+            return response;
+        }
 
         Account caller = CallContext.current().getCallingAccount();
         if (accountMgr.isRootAdmin(caller.getId())) {
             respView = ResponseObject.ResponseView.Full;
         }
 
+        List<FileShareResponse> fileShareResponses = null;
         if (result.second() > 0) {
             fileShareResponses = fileShareJoinDao.createFileShareResponses(respView, result.first().toArray(new FileShareJoinVO[result.first().size()]));
         }
 
-        ListResponse<FileShareResponse> response = new ListResponse<>();
         response.setResponses(fileShareResponses, result.second());
         return response;
     }

@@ -18,12 +18,14 @@ package org.apache.cloudstack.storage.fileshare;
 
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
+
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 
-public interface FileShare extends StateObject<FileShare.State>, Identity, InternalIdentity {
+public interface FileShare extends ControlledEntity, Identity, InternalIdentity, StateObject<FileShare.State> {
 
     String FileShareVmNamePrefix = "fsvm";
     String FileSharePath = "/mnt/fs/share";
@@ -126,12 +128,6 @@ public interface FileShare extends StateObject<FileShare.State>, Identity, Inter
     String getDescription();
 
     void setDescription(String description);
-
-    Long getDomainId();
-
-    Long getAccountId();
-
-    Long getProjectId();
 
     Long getDataCenterId();
 

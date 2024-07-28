@@ -226,7 +226,6 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     `description` varchar(1024) COMMENT 'Description',
     `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
     `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
-    `project_id` bigint unsigned NOT NULL COMMENT 'Project ID',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
     `state` varchar(12) NOT NULL COMMENT 'State of the file share in the FSM',
     `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',

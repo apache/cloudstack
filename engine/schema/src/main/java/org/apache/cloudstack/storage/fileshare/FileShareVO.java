@@ -59,9 +59,6 @@ public class FileShareVO implements FileShare {
     @Column(name = "account_id")
     private long accountId;
 
-    @Column(name = "project_id")
-    private long projectId;
-
     @Column(name = "data_center_id")
     private long dataCenterId;
 
@@ -117,7 +114,6 @@ public class FileShareVO implements FileShare {
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
-        this.projectId = projectId;
         this.dataCenterId = dataCenterId;
         this.fsProviderName = fsProviderName;
         this.protocol = protocol;
@@ -126,6 +122,11 @@ public class FileShareVO implements FileShare {
         this.fsType = fsType;
         this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return FileShare.class;
     }
 
     @Override
@@ -159,18 +160,13 @@ public class FileShareVO implements FileShare {
     }
 
     @Override
-    public Long getDomainId() {
+    public long getDomainId() {
         return domainId;
     }
 
     @Override
-    public Long getAccountId() {
+    public long getAccountId() {
         return accountId;
-    }
-
-    @Override
-    public Long getProjectId() {
-        return projectId;
     }
 
     @Override

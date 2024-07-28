@@ -29,13 +29,16 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -67,6 +70,25 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             required = true,
             description = "the name of the file share.")
     private String name;
+
+    @Parameter(name = ApiConstants.ACCOUNT,
+            type = BaseCmd.CommandType.STRING,
+            description = "the account associated with the file share. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the domain ID associated with the file share. If used with the account parameter"
+                    + " returns the file share associated with the account for the specified domain." +
+                    "If account is NOT provided then the file share will be assigned to the caller account and domain.")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.PROJECT_ID,
+            type = CommandType.UUID,
+            entityType = ProjectResponse.class,
+            description = "the project associated with the file share. Mutually exclusive with account parameter")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.DESCRIPTION,
             type = CommandType.STRING,
@@ -139,6 +161,18 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return name;
     }
 
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
     public String getDescription() {
         return description;
     }
