@@ -62,12 +62,21 @@ public class StopFileShareCmd extends BaseCmd implements UserCmd {
             description = "the ID of the file share")
     private Long id;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "Force stop the file share.")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     /////////////////////////////////////////////////////
@@ -81,7 +90,7 @@ public class StopFileShareCmd extends BaseCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.stopFileShare(this.getId());
+        FileShare fileShare = fileShareService.stopFileShare(this.getId(), this.isForced());
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();

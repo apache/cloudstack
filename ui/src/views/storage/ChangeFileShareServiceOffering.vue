@@ -120,38 +120,15 @@ export default {
     fetchData () {
       this.fetchServiceOfferings()
     },
-    fetchConfig () {
-      this.configLoading = true
-      const params1 = {
-        zoneid: this.resource.zoneid,
-        name: 'storagefsvm.min.cpu.count'
-      }
-      const params2 = {
-        zoneid: this.resource.zoneid,
-        name: 'storagefsvm.min.ram.size'
-      }
-      const apiCall1 = api('listConfigurations', params1)
-      const apiCall2 = api('listConfigurations', params2)
-      Promise.all([apiCall1, apiCall2])
-        .then(([json1, json2]) => {
-          const configs1 = json1.listconfigurationsresponse.configuration || []
-          const configs2 = json2.listconfigurationsresponse.configuration || []
-          if (configs1.length > 0) {
-            this.minCpu = parseInt(configs1[0].value) || 0
-          } else {
-            this.minCpu = 0
-          }
-          if (configs2.length > 0) {
-            this.minMemory = parseInt(configs2[0].value) || 0
-          } else {
-            this.minMemory = 0
-          }
-        }).finally(() => {
-          this.configLoading = false
-        })
+    fetchCapabilities (id) {
+      api('listCapabilities').then(json => {
+        this.capability = json.listcapabilitiesresponse.capability || []
+        this.minCpu = this.capability.storagefsvmmincpucount
+        this.minMemory = this.capability.storagefsvmminramsize
+      })
     },
     fetchServiceOfferings () {
-      this.fetchConfig()
+      this.fetchCapabilities()
       this.serviceofferingLoading = true
       var params = {
         zoneid: this.resource.zoneid,
@@ -174,9 +151,8 @@ export default {
           }
         }
         this.form.serviceofferingid = this.serviceofferings[0].id || ''
-      }).finally(() => {
-        this.serviceofferingLoading = false
       })
+      this.serviceofferingLoading = false
     },
     closeModal () {
       this.$emit('close-action')

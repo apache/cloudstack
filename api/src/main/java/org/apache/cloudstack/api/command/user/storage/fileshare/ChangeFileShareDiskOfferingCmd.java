@@ -72,7 +72,6 @@ public class ChangeFileShareDiskOfferingCmd extends BaseAsyncCmd implements User
 
     @Parameter(name = ApiConstants.SIZE,
             type = CommandType.LONG,
-            required = true,
             description = "the size of the file share in GiB")
     private Long size;
 

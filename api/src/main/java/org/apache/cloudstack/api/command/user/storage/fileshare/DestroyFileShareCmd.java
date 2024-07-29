@@ -50,8 +50,16 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to delete")
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = FileShareResponse.class,
+            description = "the ID of the file share to delete")
     private Long id;
+
+    @Parameter(name = ApiConstants.EXPUNGE,
+            type = CommandType.BOOLEAN,
+            description = "If true is passed, the file share is expunged immediately. False by default.")
+    private Boolean expunge;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -59,6 +67,10 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isExpunge() {
+        return (expunge != null) ? expunge : false;
     }
 
     /////////////////////////////////////////////////////
@@ -72,12 +84,12 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.destroyFileShare(id);
-        if (fileShare != null) {
+        Boolean result = fileShareService.destroyFileShare(this);
+        if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete fileShare");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy fileShare");
         }
     }
 }

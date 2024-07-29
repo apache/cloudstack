@@ -26,7 +26,7 @@ public interface FileShareLifeCycle {
 
     boolean startFileShare(FileShare fileShare);
 
-    boolean stopFileShare(FileShare fileShare);
+    boolean stopFileShare(FileShare fileShare, Boolean forced);
 
     boolean deleteFileShare(FileShare fileShare);
 

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareDiskOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareServiceOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
+import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 
 import com.cloud.utils.component.PluggableService;
@@ -50,7 +51,7 @@ public interface FileShareService extends PluggableService {
 
     FileShare startFileShare(Long fileShareId);
 
-    FileShare stopFileShare(Long fileShareId);
+    FileShare stopFileShare(Long fileShareId, Boolean forced);
 
     FileShare restartFileShare(Long fileShareId, boolean cleanup);
 
@@ -62,7 +63,7 @@ public interface FileShareService extends PluggableService {
 
     FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd);
 
-    FileShare destroyFileShare(Long fileShareId);
+    Boolean destroyFileShare(DestroyFileShareCmd cmd);
 
     FileShare recoverFileShare(Long fileShareId);
 

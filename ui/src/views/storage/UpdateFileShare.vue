@@ -31,30 +31,8 @@
       </a-form-item>
       <a-form-item name="description" ref="description" :label="$t('label.description')">
         <a-input
-          v-model:checked="form.description"
+          v-model:value="form.description"
           :placeholder="$t('label.description')"/>
-      </a-form-item>
-      <a-form-item ref="serviceofferingid" name="serviceofferingid">
-        <template #label>
-          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
-        </template>
-        <a-select
-          v-model:value="form.serviceofferingid"
-          :loading="serviceofferingLoading"
-          :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="(serviceoffering, index) in serviceofferings"
-            :value="serviceoffering.id"
-            :key="index"
-            :label="serviceoffering.displaytext || serviceoffering.name">
-            {{ serviceoffering.displaytext || serviceoffering.name }}
-          </a-select-option>
-        </a-select>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
@@ -85,10 +63,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      loading: false,
-      configLoading: false,
-      serviceofferings: [],
-      serviceofferingLoading: false
+      loading: false
     }
   },
   beforeCreate () {
@@ -110,7 +85,6 @@ export default {
     fetchData () {
       this.loading = false
       this.fillEditFormFieldValues()
-      this.fetchServiceOfferings()
     },
     fillEditFormFieldValues () {
       const form = this.form
@@ -128,81 +102,25 @@ export default {
       })
       this.loading = false
     },
-    fetchConfig () {
-      this.configLoading = true
-      const params1 = {
-        zoneid: this.resource.zoneid,
-        name: 'storagefsvm.min.cpu.count'
-      }
-      const params2 = {
-        zoneid: this.resource.zoneid,
-        name: 'storagefsvm.min.ram.size'
-      }
-      const apiCall1 = api('listConfigurations', params1)
-      const apiCall2 = api('listConfigurations', params2)
-      Promise.all([apiCall1, apiCall2])
-        .then(([json1, json2]) => {
-          const configs1 = json1.listconfigurationsresponse.configuration || []
-          const configs2 = json2.listconfigurationsresponse.configuration || []
-          if (configs1.length > 0) {
-            this.minCpu = parseInt(configs1[0].value) || 0
-          } else {
-            this.minCpu = 0
-          }
-          if (configs2.length > 0) {
-            this.minMemory = parseInt(configs2[0].value) || 0
-          } else {
-            this.minMemory = 0
-          }
-        }).finally(() => {
-          this.configLoading = false
-        })
-    },
-    fetchServiceOfferings () {
-      this.fetchConfig()
-      this.serviceofferingLoading = true
-      var params = {
-        zoneid: this.resource.zoneid,
-        listall: true,
-        domainid: this.resource.domainid,
-        account: this.resource.account
-      }
-      api('listServiceOfferings', params).then(json => {
-        var items = json.listserviceofferingsresponse.serviceoffering || []
-        if (items != null) {
-          for (var i = 0; i < items.length; i++) {
-            if (items[i].iscustomized === false && items[i].offerha === true &&
-                items[i].cpunumber >= this.minCpu && items[i].memory >= this.minMemory) {
-              this.serviceofferings.push(items[i])
-            }
-          }
-        }
-      }).finally(() => {
-        this.serviceofferingLoading = false
-      })
-    },
     handleSubmit (e) {
       if (this.loading) return
-      this.formRef.value.validate().then(async () => {
+      this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
         var data = {
           id: this.resource.id,
           name: values.name,
-          description: values.description,
-          serviceofferingid: values.serviceofferingid
+          description: values.description
         }
+        console.log(data)
+        console.log(this.form)
         this.loading = true
         api('updateFileShare', data).then(response => {
-          this.$pollJob({
-            jobId: response.updatefileshareresponse.jobid,
-            title: this.$t('label.update.fileshare'),
-            description: values.name,
-            successMessage: this.$t('message.success.update.fileshare'),
-            errorMessage: this.$t('message.update.fileshare.failed'),
-            loadingMessage: this.$t('message.update.fileshare.processing'),
-            catchMessage: this.$t('error.fetching.async.job.result')
+          this.$emit('refresh-data')
+          this.$notification.success({
+            message: this.$t('label.update.fileshare'),
+            description: `${this.$t('message.success.update.fileshare')} ${data.name}`
           })
           this.closeModal()
         }).catch(error => {
