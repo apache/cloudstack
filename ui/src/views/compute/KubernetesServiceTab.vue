@@ -402,6 +402,7 @@ export default {
           if (this.arrayHasItems(networks)) {
             this.network = networks[0]
           }
+          resolve(this.network)
         })
         this.networkLoading = false
       })
