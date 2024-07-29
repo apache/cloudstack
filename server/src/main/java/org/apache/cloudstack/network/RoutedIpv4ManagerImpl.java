@@ -1273,7 +1273,49 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         Long domainId = listBgpPeersCmd.getDomainId();
         Long projectId = listBgpPeersCmd.getProjectId();
         String accountName = listBgpPeersCmd.getAccountName();
+        Boolean isDedicated = listBgpPeersCmd.getDedicated();
 
+        Long accountId = null;
+        if (accountName != null || projectId != null) {
+            accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
+        }
+        if (isDedicated != null) {
+            SearchCriteria sc1 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            if (Boolean.TRUE.equals(isDedicated)) {
+                sc1.addAnd("domainId", SearchCriteria.Op.NNULL);
+            } else {
+                sc1.addAnd("domainId", SearchCriteria.Op.NULL);
+            }
+            if (domainId != null) {
+                sc1.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }
+            if (accountId != null) {
+                sc1.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            }
+            // search via bgpPeerDao
+            return bgpPeerDao.search(sc1, null);
+        } else {
+            SearchCriteria sc2 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            if (domainId == null && accountId == null) {
+                sc2.addAnd("domainId", SearchCriteria.Op.NULL);
+                return bgpPeerDao.search(sc2, null);
+            }
+            sc2.addAnd("domainId", SearchCriteria.Op.NULL);
+            List<? extends BgpPeer> results = bgpPeerDao.search(sc2, null); // non-dedicated BGP peers
+            SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            if (domainId != null) {
+                sc3.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+            }
+            if (accountId != null) {
+                sc3.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+            }
+            results.addAll(bgpPeerDao.search(sc3, null)); // dedicated BGP peers
+            return results;
+        }
+
+    }
+
+    private SearchCriteria createSearchCriteriaForListBgpPeersCmd(Long id, Long zoneId, String asNumber) {
         SearchCriteria sc = bgpPeerDao.createSearchCriteria();
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1284,15 +1326,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (asNumber != null) {
             sc.addAnd("subnet", SearchCriteria.Op.EQ, asNumber);
         }
-        if (domainId != null) {
-            sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        }
-        if (accountName != null || projectId != null) {
-            Long accountId= accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        }
-        // search via bgpPeerDao
-        return bgpPeerDao.search(sc, null);
+        return sc;
     }
 
     @Override
@@ -1396,13 +1430,13 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
                 throw new InvalidParameterValueException(String.format("Invalid BGP peer ID: %s", bgpPeerId));
             }
             if (bgpPeerVO.getDataCenterId() != zoneId) {
-                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different zone", bgpPeerId));
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different zone", bgpPeerVO.getUuid()));
             }
-            if (bgpPeerVO.getDomainId() != null && bgpPeerVO.getDomainId().equals(owner.getDomainId())) {
-                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different domain", bgpPeerId));
+            if (bgpPeerVO.getDomainId() != null && !bgpPeerVO.getDomainId().equals(owner.getDomainId())) {
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different domain", bgpPeerVO.getUuid()));
             }
-            if (bgpPeerVO.getAccountId() != null && bgpPeerVO.getAccountId().equals(owner.getAccountId())) {
-                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different account", bgpPeerId));
+            if (bgpPeerVO.getAccountId() != null && !bgpPeerVO.getAccountId().equals(owner.getAccountId())) {
+                throw new InvalidParameterValueException(String.format("BGP peer (ID: %s) belongs to a different account", bgpPeerVO.getUuid()));
             }
         }
     }

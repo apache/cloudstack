@@ -74,6 +74,11 @@ public class ListBgpPeersCmd extends BaseListCmd {
             description = "the domain ID which the Bgp Peer is dedicated to.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.IS_DEDICATED,
+            type = CommandType.BOOLEAN,
+            description = "Lists only dedicated Bgp Peers or not. If not set, lists all dedicated and non-dedicated BGP peers the domain/account can access.")
+    private Boolean isDedicated;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -100,6 +105,10 @@ public class ListBgpPeersCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public Boolean getDedicated() {
+        return isDedicated;
     }
 
     @Override

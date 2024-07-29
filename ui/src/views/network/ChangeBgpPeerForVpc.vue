@@ -115,6 +115,8 @@ export default {
       api('listBgpPeers', {
         keyword: this.options.keyword,
         zoneid: this.resource.zoneid,
+        domainid: this.resource.domainid,
+        account: this.resource.account,
         page: this.options.page,
         pageSize: this.options.pageSize,
         response: 'json'
