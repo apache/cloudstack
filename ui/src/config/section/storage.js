@@ -584,7 +584,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' && record.state !== 'Recovering' }
         },
         {
           api: 'startFileShare',
@@ -616,7 +616,7 @@ export default {
           message: 'message.action.restart.fileshare',
           dataView: true,
           args: ['cleanup'],
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' && record.state !== 'Recovering' },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
@@ -640,7 +640,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareDiskOffering.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' && record.state !== 'Recovering' }
         },
         {
           api: 'changeFileShareServiceOffering',
@@ -650,7 +650,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareServiceOffering.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' }
+          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' && record.state !== 'Recovering' }
         },
         {
           api: 'destroyFileShare',
@@ -658,7 +658,7 @@ export default {
           label: 'label.destroy.fileshare',
           message: 'message.action.destroy.fileshare',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' && record.state !== 'Recovering' },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },

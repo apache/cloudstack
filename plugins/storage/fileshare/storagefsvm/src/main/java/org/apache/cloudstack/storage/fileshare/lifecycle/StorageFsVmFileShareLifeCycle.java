@@ -23,9 +23,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -121,6 +123,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    @Inject
+    protected LaunchPermissionDao launchPermissionDao;
+
     private String readResourceFile(String resource) {
         try {
             return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
@@ -150,6 +155,12 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
         DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
         Hypervisor.HypervisorType availableHypervisor = resourceMgr.getAvailableHypervisor(zoneId);
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, availableHypervisor);
+
+        LaunchPermissionVO existingPermission = launchPermissionDao.findByTemplateAndAccount(template.getId(), owner.getId());
+        if (existingPermission == null) {
+            LaunchPermissionVO launchPermission = new LaunchPermissionVO(template.getId(), owner.getId());
+            launchPermissionDao.persist(launchPermission);
+        }
 
         String suffix = Long.toHexString(System.currentTimeMillis());
         String hostName = String.format("%s-%s-%s", FileShareVmNamePrefix, name, suffix);

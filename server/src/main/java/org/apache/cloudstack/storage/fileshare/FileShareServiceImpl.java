@@ -237,9 +237,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         lifeCycle.checkPrerequisites(zoneId, cmd.getServiceOfferingId());
 
-        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(), ownerId, cmd.getProjectId(),
-                                                cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
-                                                cmd.getMountOptions(), FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
+        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(),
+                ownerId, cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
+                cmd.getMountOptions(), FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
         return fileShare;
     }

@@ -108,7 +108,7 @@ public class FileShareVO implements FileShare {
     public FileShareVO() {
     }
 
-    public FileShareVO(String name, String description, long domainId, long accountId, long projectId, long dataCenterId,
+    public FileShareVO(String name, String description, long domainId, long accountId, long dataCenterId,
                        String fsProviderName, Protocol protocol, String mountOptions, FileSystemType fsType, Long serviceOfferingId) {
         this.name = name;
         this.description = description;

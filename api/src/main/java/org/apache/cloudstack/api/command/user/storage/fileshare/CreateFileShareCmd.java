@@ -232,7 +232,11 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
     @Override
     public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        if (accountId == null) {
+            return CallContext.current().getCallingAccount().getId();
+        }
+        return accountId;
     }
 
     @Override

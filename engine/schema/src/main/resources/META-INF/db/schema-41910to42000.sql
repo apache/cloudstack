@@ -235,7 +235,7 @@ FROM
         LEFT JOIN
     `cloud`.`account` AS `account` ON `storage_fileshare`.`account_id` = `account`.`id`
         LEFT JOIN
-    `cloud`.`projects` AS `project` ON `storage_fileshare`.`project_id` = `project`.`id`
+    `cloud`.`projects` AS `project` ON `project`.`project_account_id` = `account`.`id`
         LEFT JOIN
     `cloud`.`domain` AS `domain` ON `storage_fileshare`.`domain_id` = `domain`.`id`
         LEFT JOIN

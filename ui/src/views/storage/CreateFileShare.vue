@@ -68,7 +68,7 @@
         </template>
         <a-select
           v-model:value="form.provider"
-          :loading="providerLoading"
+          :loading="providersLoading"
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
@@ -218,12 +218,13 @@ export default {
       loading: false,
       zones: [],
       zoneLoading: false,
-      fileShareProvidersLoading: false,
+      providers: [],
+      providersLoading: false,
       configLoading: false,
       networks: [],
       networkLoading: false,
       serviceofferings: [],
-      serviceofferingLoding: false,
+      serviceofferingLoading: false,
       diskofferings: [],
       diskofferingLoading: false,
       customDiskOffering: false,
@@ -277,18 +278,22 @@ export default {
     },
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {}
+      console.log('fetching owner')
       if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
         if (!OwnerOptions.selectedAccount) {
           return
         }
+        console.log('fetched account')
         this.owner.account = OwnerOptions.selectedAccount
         this.owner.domainid = OwnerOptions.selectedDomain
       } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
         if (!OwnerOptions.selectedProject) {
           return
         }
+        console.log('fetched project')
         this.owner.projectid = OwnerOptions.selectedProject
       }
+      console.log('fetched owner')
       this.fetchData()
     },
     fetchData () {
@@ -319,12 +324,12 @@ export default {
       this.fetchNetworks()
     },
     fetchFileShareProviders (id) {
-      this.fileShareProvidersLoading = true
+      this.providersLoading = true
       api('listFileShareProviders').then(json => {
         this.providers = json.listfileshareprovidersresponse.fileshareprovider || []
         this.form.provider = this.providers[0].name || ''
       }).finally(() => {
-        this.fileShareProvidersLoading = false
+        this.providersLoading = false
       })
     },
     fetchConfig () {
@@ -386,7 +391,7 @@ export default {
       })
     },
     fetchDiskOfferings () {
-      this.diskOfferingLoading = true
+      this.diskofferingLoading = true
       var params = {
         zoneid: this.selectedZone.id,
         listall: true,
@@ -404,7 +409,7 @@ export default {
         this.customDiskOffering = this.diskofferings[0].iscustomized || false
         this.isCustomizedDiskIOps = this.diskofferings[0]?.iscustomizediops || false
       }).finally(() => {
-        this.diskOfferingLoading = false
+        this.diskofferingLoading = false
       })
     },
     fetchNetworks () {
@@ -449,7 +454,13 @@ export default {
           diskofferingid: values.diskofferingid,
           networkid: values.networkid,
           size: values.size,
-          provider: values.provider
+          provider: values.provider,
+          domainid: this.owner.domainid
+        }
+        if (this.owner.projectid) {
+          data.projectid = this.owner.projectid
+        } else {
+          data.account = this.owner.account
         }
         this.loading = true
         api('createFileShare', data).then(response => {
