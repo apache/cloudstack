@@ -2763,10 +2763,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.addIpv4Route(route);
             }
 
-            List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
-            for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
-                BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
-                response.addBgpPeer(bgpPeerResponse);
+            if (view == ResponseView.Full) {
+                List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+                for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
+                    BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
+                    response.addBgpPeer(bgpPeerResponse);
+                }
             }
         }
 
