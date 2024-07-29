@@ -123,12 +123,12 @@ public class DefaultSnapshotStrategyTest {
 
         SnapshotDataStoreVO snapshotDataStoreVO = new SnapshotDataStoreVO();
         snapshotDataStoreVO.setEndOfChain(false);
-        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDao).findBySnapshotId(2);
+        Mockito.doReturn(snapshotDataStoreVO).when(snapshotDataStoreDao).findBySnapshotIdAndDataStoreRoleAndState(2, DataStoreRole.Image, ObjectInDataStoreStateMachine.State.Destroyed);
 
         defaultSnapshotStrategySpy.updateSnapshotToDestroyed(snapshotVoMock);
 
         Mockito.verify(snapshotVoMock).setState(Snapshot.State.Destroyed);
-        Mockito.verify(snapshotDataStoreDao, Mockito.times(1)).findBySnapshotId(Mockito.anyLong());
+        Mockito.verify(snapshotDataStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
@@ -139,16 +139,17 @@ public class DefaultSnapshotStrategyTest {
         SnapshotDataStoreVO snapshotDataStoreVO = new SnapshotDataStoreVO();
         snapshotDataStoreVO.setEndOfChain(true);
         snapshotDataStoreVO.setParentSnapshotId(8);
-        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDao).findBySnapshotId(2);
+        Mockito.doReturn(snapshotDataStoreVO).when(snapshotDataStoreDao).findBySnapshotIdAndDataStoreRoleAndState(2, DataStoreRole.Image, ObjectInDataStoreStateMachine.State.Destroyed);
 
-        Mockito.doReturn(List.of(snapshotDataStoreVOMock)).when(snapshotDataStoreDao).findBySnapshotId(8);
+        Mockito.doReturn(ObjectInDataStoreStateMachine.State.Ready).when(snapshotDataStoreVOMock).getState();
+        Mockito.doReturn(List.of(snapshotDataStoreVOMock)).when(snapshotDataStoreDao).listBySnapshotId(8);
 
         defaultSnapshotStrategySpy.updateSnapshotToDestroyed(snapshotVoMock);
 
         Mockito.verify(snapshotVoMock).setState(Snapshot.State.Destroyed);
-        Mockito.verify(snapshotDataStoreDao, Mockito.times(2)).findBySnapshotId(Mockito.anyLong());
+        Mockito.verify(snapshotDataStoreDao, Mockito.times(1)).listBySnapshotId(Mockito.anyLong());
         Mockito.verify(snapshotDataStoreVOMock).setEndOfChain(true);
-        Mockito.verify(snapshotDataStoreDao).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(snapshotDataStoreDao, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
