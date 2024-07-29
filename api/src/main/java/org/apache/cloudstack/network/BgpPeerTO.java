@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.network;
 
+import java.util.Map;
+
 public class BgpPeerTO {
     Long peerId;
     Long peerAsNumber;
@@ -27,8 +29,10 @@ public class BgpPeerTO {
     String guestIp4Cidr;
     String guestIp6Cidr;
 
+    Map<BgpPeer.Detail, String> details;
+
     public BgpPeerTO(Long peerId, String ip4Address, String ip6Address, Long peerAsNumber, String peerPassword,
-                     Long networkId, Long networkAsNumber, String guestIp4Cidr, String guestIp6Cidr) {
+                     Long networkId, Long networkAsNumber, String guestIp4Cidr, String guestIp6Cidr, Map<BgpPeer.Detail, String> details) {
         this.peerId = peerId;
         this.ip4Address = ip4Address;
         this.ip6Address = ip6Address;
@@ -38,6 +42,7 @@ public class BgpPeerTO {
         this.networkAsNumber = networkAsNumber;
         this.guestIp4Cidr = guestIp4Cidr;
         this.guestIp6Cidr = guestIp6Cidr;
+        this.details = details;
     }
 
     public BgpPeerTO(Long networkId) {
@@ -74,5 +79,9 @@ public class BgpPeerTO {
 
     public String getGuestIp6Cidr() {
         return guestIp6Cidr;
+    }
+
+    public Map<BgpPeer.Detail, String> getDetails() {
+        return details;
     }
 }

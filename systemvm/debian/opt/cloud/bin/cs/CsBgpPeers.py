@@ -89,10 +89,16 @@ class CsBgpPeers(CsDataBag):
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip4_peer['ip4_address'], ip4_peer['peer_as_number']))
                 if 'peer_password' in ip4_peer:
                     self.frr_conf.add(" neighbor {} password {}".format(ip4_peer['ip4_address'], ip4_peer['peer_password']))
+                if 'details' in ip4_peer:
+                    if 'EBGP_MultiHop' in ip4_peer['details']:
+                        self.frr_conf.add(" neighbor {} ebgp-multihop {}".format(ip4_peer['ip4_address'], ip4_peer['details']['EBGP_MultiHop']))
             for ip6_peer in self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip6_peer['ip6_address'], ip6_peer['peer_as_number']))
                 if 'peer_password' in ip6_peer:
-                    self.frr_conf.add(" neighbor {} password {}".format(ip6_peer['ip4_address'], ip6_peer['peer_password']))
+                    self.frr_conf.add(" neighbor {} password {}".format(ip6_peer['ip6_address'], ip6_peer['peer_password']))
+                if 'details' in ip6_peer:
+                    if 'EBGP_MultiHop' in ip6_peer['details']:
+                        self.frr_conf.add(" neighbor {} ebgp-multihop {}".format(ip6_peer['ip6_address'], ip6_peer['details']['EBGP_MultiHop']))
             if self.peers[as_number]['ip4_peers']:
                 self.frr_conf.add(" address-family ipv4 unicast")
                 ip4_cidrs = set({ip4_peer['guest_ip4_cidr'] for ip4_peer in self.peers[as_number]['ip4_peers']})

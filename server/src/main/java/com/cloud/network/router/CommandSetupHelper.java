@@ -33,7 +33,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerTO;
-import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
+import org.apache.cloudstack.network.dao.BgpPeerDetailsDao;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -218,7 +218,7 @@ public class CommandSetupHelper {
     @Inject
     ASNumberDao asNumberDao;
     @Inject
-    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    BgpPeerDetailsDao bgpPeerDetailsDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1443,12 +1443,14 @@ public class CommandSetupHelper {
                 guestNetworks.add(networkVO);
             }
         }
-        for (Network guestNetwork : guestNetworks) {
-            for (BgpPeer bgpPeer: bgpPeers) {
+        for (BgpPeer bgpPeer: bgpPeers) {
+            Map<BgpPeer.Detail, String> bgpPeerDetails = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());
+            for (Network guestNetwork : guestNetworks) {
                 bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
-                        guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr()));
+                        guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
             }
         }
+
         final SetBgpPeersCommand cmd = new SetBgpPeersCommand(bgpPeerTOs);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

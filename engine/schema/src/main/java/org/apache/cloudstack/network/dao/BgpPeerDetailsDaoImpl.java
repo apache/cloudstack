@@ -61,6 +61,9 @@ public class BgpPeerDetailsDaoImpl extends ResourceDetailsDaoBase<BgpPeerDetails
         sc.setParameters("display", true);
 
         List<BgpPeerDetailsVO> results = search(sc, null);
+        if (results.size() == 0) {
+            return null;
+        }
         Map<BgpPeer.Detail, String> details = new HashMap<>(results.size());
         for (BgpPeerDetailsVO result : results) {
             details.put(result.getDetailName(), result.getValue());
