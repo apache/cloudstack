@@ -180,7 +180,7 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc">
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc && forNsx">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyasnumber" ref="specifyasnumber">
               <template #label>

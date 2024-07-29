@@ -101,7 +101,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="routingMode === 'dynamic'">
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && forNsx">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyasnumber" ref="specifyasnumber">
               <template #label>

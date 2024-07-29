@@ -516,6 +516,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         NetworkOffering.RoutingMode routingMode = ConfigurationManagerImpl.verifyRoutingMode(routingModeString);
 
+        if (specifyAsNumber && !forNsx) {
+            String msg = "SpecifyAsNumber can only be true for VPC offerings for NSX";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
         if (specifyAsNumber && Dynamic != routingMode) {
             String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
             logger.error(msg);

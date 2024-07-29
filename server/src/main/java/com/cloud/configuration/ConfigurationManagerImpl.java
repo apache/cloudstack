@@ -6605,6 +6605,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (specifyAsNumber && !forNsx) {
+            String msg = "SpecifyAsNumber can only be true for network offerings for NSX";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
         if (specifyAsNumber && !Dynamic.equals(routingMode)) {
             String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
             logger.error(msg);
