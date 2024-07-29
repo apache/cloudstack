@@ -32,7 +32,5 @@ public interface FileShareLifeCycle {
 
     Long reDeployFileShare(FileShare fileShare);
 
-    boolean resizeFileShare(FileShare fileShare, Long newSize);
-
     boolean changeFileShareDiskOffering(FileShare fileShare, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops);
 }

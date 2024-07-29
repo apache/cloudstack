@@ -60,7 +60,6 @@ import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharePro
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RecoverFileShareCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.ResizeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.RestartFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.StartFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.StopFileShareCmd;
@@ -205,7 +204,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         cmdList.add(UpdateFileShareCmd.class);
         cmdList.add(DestroyFileShareCmd.class);
         cmdList.add(RestartFileShareCmd.class);
-        cmdList.add(ResizeFileShareCmd.class);
         cmdList.add(StartFileShareCmd.class);
         cmdList.add(StopFileShareCmd.class);
         cmdList.add(ChangeFileShareDiskOfferingCmd.class);
@@ -471,16 +469,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         }
 
         fileShareDao.update(fileShare.getId(), fileShare);
-        return fileShare;
-    }
-
-    @Override
-    public FileShare resizeFileShare(ResizeFileShareCmd cmd) {
-        FileShareVO fileShare = fileShareDao.findById(cmd.getId());
-        Long newSize = cmd.getSize();
-        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
-        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-        lifeCycle.resizeFileShare(fileShare, newSize);
         return fileShare;
     }
 

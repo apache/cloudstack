@@ -286,21 +286,6 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     }
 
     @Override
-    public boolean resizeFileShare(FileShare fileShare, Long newSize) {
-        VolumeVO volume = volumeDao.findById(fileShare.getVolumeId());
-        DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(volume.getDiskOfferingId());
-        if (!diskOfferingVO.isCustomized()) {
-            throw new InvalidParameterValueException("Disk offering should be set to custom for changing the size of the file share");
-        }
-        try {
-            volumeApiService.changeDiskOfferingForVolumeInternal(fileShare.getVolumeId(), volume.getDiskOfferingId(), newSize, null, null, true, false);
-        } catch (ResourceAllocationException ex) {
-            throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
-        }
-        return true;
-    }
-
-    @Override
     public boolean changeFileShareDiskOffering(FileShare fileShare, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops) {
         DiskOfferingVO diskOfferingVO = diskOfferingDao.findById(diskOfferingId);
         try {

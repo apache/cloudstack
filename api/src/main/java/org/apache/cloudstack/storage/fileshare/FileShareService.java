@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareDiskOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareServiceOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareCmd;
-import org.apache.cloudstack.api.command.user.storage.fileshare.ResizeFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 
 import com.cloud.utils.component.PluggableService;
@@ -58,8 +57,6 @@ public interface FileShareService extends PluggableService {
     ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd);
 
     FileShare updateFileShare(UpdateFileShareCmd cmd);
-
-    FileShare resizeFileShare(ResizeFileShareCmd cmd);
 
     FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd);
 
