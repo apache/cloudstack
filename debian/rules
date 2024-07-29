@@ -4,7 +4,7 @@ VERSION := $(shell grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
-CMK_REL := $(shell wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/tags" 2>/dev/null | jq -r '.[0].name')
+CMK_REL := $(shell wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/releases" 2>/dev/null | jq -r '.[0].tag_name')
 
 %:
 	dh $@ --with systemd
