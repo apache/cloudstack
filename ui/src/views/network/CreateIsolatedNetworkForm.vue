@@ -449,7 +449,9 @@ export default {
       })
     },
     fetchData () {
-      this.fetchDomainData()
+      if (this.isAdminOrDomainAdmin()) {
+        this.fetchDomainData()
+      }
       this.fetchZoneData()
       this.allowSettingMTU()
     },

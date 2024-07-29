@@ -23,8 +23,9 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.NumbersUtil;
@@ -44,6 +45,8 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     @Inject
     private ManagementServerHostDao _mshostDao;
     @Inject
+    private CAManager caService;
+    @Inject
     protected ConfigDepot _configDepot;
 
     private ClusterServiceServletContainer _servletContainer;
@@ -51,7 +54,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     private int _clusterServicePort = DEFAULT_SERVICE_PORT;
 
     public ClusterServiceServletAdapter() {
-        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT);
     }
 
     @Override
@@ -66,12 +69,10 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
         String serviceUrl = getServiceEndpointName(strPeer);
         if (serviceUrl == null)
             return null;
-
-        return new ClusterServiceServletImpl(serviceUrl);
+        return new ClusterServiceServletImpl(serviceUrl, caService);
     }
 
-    @Override
-    public String getServiceEndpointName(String strPeer) {
+    protected String getServiceEndpointName(String strPeer) {
         try {
             init();
         } catch (ConfigurationException e) {
@@ -95,7 +96,7 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
 
     private String composeEndpointName(String nodeIP, int port) {
         StringBuffer sb = new StringBuffer();
-        sb.append("http://").append(nodeIP).append(":").append(port).append("/clusterservice");
+        sb.append("https://").append(nodeIP).append(":").append(port).append("/clusterservice");
         return sb.toString();
     }
 
@@ -108,7 +109,8 @@ public class ClusterServiceServletAdapter extends AdapterBase implements Cluster
     @Override
     public boolean start() {
         _servletContainer = new ClusterServiceServletContainer();
-        _servletContainer.start(new ClusterServiceServletHttpHandler(_manager), _clusterServicePort);
+        _servletContainer.start(new ClusterServiceServletHttpHandler(_manager), _manager.getSelfNodeIP(),
+                _clusterServicePort, caService);
         return true;
     }
 
