@@ -171,6 +171,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setCreated(userVm.getCreated());
         userVmResponse.setLastUpdated(userVm.getLastUpdated());
         userVmResponse.setDisplayVm(userVm.isDisplayVm());
+        userVmResponse.setVmType(userVm.getUserVmType());
 
         if (userVm.getState() != null) {
             userVmResponse.setState(userVm.getState().toString());

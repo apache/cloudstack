@@ -560,10 +560,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
       }],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'account', 'state', 'serviceofferingid', 'diskofferingid', 'networkid']
-        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          filters.push('storageid')
-        }
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid', 'networkid']
         return filters
       },
       actions: [

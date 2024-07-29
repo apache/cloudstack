@@ -4471,6 +4471,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             regionSecondaryEnabled = true;
         }
 
+        final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("storagefsvm.min.cpu.count"));
+        final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("storagefsvm.min.ram.size"));
+
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", userPublicTemplateEnabled);
         capabilities.put("cloudStackVersion", getVersion());
@@ -4497,6 +4500,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
         }
+        capabilities.put("storageFsVmMinCpuCount", fsVmMinCpu);
+        capabilities.put("storageFsVmMinRamSize", fsVmMinRam);
 
         return capabilities;
     }

@@ -363,6 +363,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(FileShareVO.class, "created", false, startIndex, pageSize);
@@ -371,8 +372,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         fileShareSearchBuilder.select(null, SearchCriteria.Func.DISTINCT, fileShareSearchBuilder.entity().getId()); // select distinct
         accountMgr.buildACLSearchBuilder(fileShareSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
+        fileShareSearchBuilder.and("id", fileShareSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
         fileShareSearchBuilder.and("name", fileShareSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
-        fileShareSearchBuilder.and("uuid", fileShareSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
         fileShareSearchBuilder.and("dataCenterId", fileShareSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {

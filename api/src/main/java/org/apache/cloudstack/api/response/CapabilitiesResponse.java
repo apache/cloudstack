@@ -124,6 +124,14 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
     private Integer instancesDisksStatsRetentionTime;
 
+    @SerializedName("storagefsvmmincpucount")
+    @Param(description = "the min CPU count for the serive offering used by the file share VM", since = "4.20.0")
+    private Integer storageFsVmMinCpuCount;
+
+    @SerializedName("storagefsvmminramsize")
+    @Param(description = "the min CPU count for the serive offering used by the file share VM", since = "4.20.0")
+    private Integer storageFsVmMinRamSize;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -222,5 +230,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
         this.customHypervisorDisplayName = customHypervisorDisplayName;
+    }
+
+    public void setStorageFsVmMinCpuCount(Integer storageFsVmMinCpuCount) {
+        this.storageFsVmMinCpuCount = storageFsVmMinCpuCount;
+    }
+
+    public void setStorageFsVmMinRamSize(Integer storageFsVmMinRamSize) {
+        this.storageFsVmMinRamSize = storageFsVmMinRamSize;
     }
 }

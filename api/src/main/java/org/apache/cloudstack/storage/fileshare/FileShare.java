@@ -22,10 +22,17 @@ import com.cloud.utils.fsm.StateObject;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.Date;
 
 public interface FileShare extends ControlledEntity, Identity, InternalIdentity, StateObject<FileShare.State> {
+
+    static final ConfigKey<Boolean> FileShareFeatureEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "file.share.feature.enabled",
+            "true",
+            " Indicates whether the File Share feature is enabled or not. Management server restart needed on change",
+            false);
 
     String FileShareVmNamePrefix = "fsvm";
     String FileSharePath = "/mnt/fs/share";

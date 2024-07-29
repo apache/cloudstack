@@ -18,6 +18,8 @@
 package org.apache.cloudstack.storage.fileshare.lifecycle;
 
 import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareVmNamePrefix;
+import static org.apache.cloudstack.storage.fileshare.provider.StorageFsVmFileShareProvider.STORAGEFSVM_MIN_CPU_COUNT;
+import static org.apache.cloudstack.storage.fileshare.provider.StorageFsVmFileShareProvider.STORAGEFSVM_MIN_RAM_SIZE;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -51,8 +53,6 @@ import com.cloud.vm.dao.UserVmDao;
 
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.commons.codec.binary.Base64;
@@ -74,15 +74,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
 
-public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Configurable {
-
-    public static final ConfigKey<Integer> STORAGEFSVM_MIN_RAM_SIZE = new ConfigKey<Integer>(Integer.class, "storagefsvm.min.ram.size", "Advanced", "1024",
-            "minimum ram size allowed for the compute offering to be used to create storagefsvm for file shares.",
-            true, ConfigKey.Scope.Zone, null);
-
-    public static final ConfigKey<Integer> STORAGEFSVM_MIN_CPU_COUNT = new ConfigKey<Integer>(Integer.class, "storagefsvm.min.cpu.count", "Advanced", "2",
-            "minimum cpu count allowed for the compute offering to be used to create storagefsvm for file shares.",
-            true, ConfigKey.Scope.Zone, null);
+public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     @Inject
     private AccountManager accountMgr;
@@ -175,7 +167,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
             String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
                     diskOfferingId, diskSize, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
-                    null, null, keypairs, null, addrs, null, null, null,
+                    null, null, keypairs, null, addrs, false, null, null,
                     customParameterMap, null, null, null, null,
                     true, UserVmManager.STORAGEFSVM, null);
         } catch (Exception ex) {
@@ -317,18 +309,5 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle, Config
             throw new CloudRuntimeException("Failed to start VM due to exception " + ex.getMessage());
         }
         return true;
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return StorageFsVmFileShareLifeCycle.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {
-                STORAGEFSVM_MIN_CPU_COUNT,
-                STORAGEFSVM_MIN_RAM_SIZE
-        };
     }
 }

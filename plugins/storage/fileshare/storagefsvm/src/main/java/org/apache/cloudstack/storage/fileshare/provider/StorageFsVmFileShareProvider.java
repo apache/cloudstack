@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.storage.fileshare.provider;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
 import org.apache.cloudstack.storage.fileshare.FileShareProvider;
 import org.apache.cloudstack.storage.fileshare.lifecycle.StorageFsVmFileShareLifeCycle;
@@ -24,8 +27,27 @@ import org.apache.cloudstack.storage.fileshare.lifecycle.StorageFsVmFileShareLif
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentContext;
 
-public class StorageFsVmFileShareProvider extends AdapterBase implements FileShareProvider {
+public class StorageFsVmFileShareProvider extends AdapterBase implements FileShareProvider, Configurable {
     protected String name = String.valueOf(FileShareProviderType.STORAGEFSVM);
+
+    public static final ConfigKey<Integer> STORAGEFSVM_MIN_RAM_SIZE = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "storagefsvm.min.ram.size",
+            "1024",
+            "minimum ram size allowed for the compute offering to be used to create storagefsvm for file shares.",
+            true,
+            ConfigKey.Scope.Zone,
+            FileShare.FileShareFeatureEnabled.key());
+
+    public static final ConfigKey<Integer> STORAGEFSVM_MIN_CPU_COUNT = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "storagefsvm.min.cpu.count",
+            "2",
+            "minimum cpu count allowed for the compute offering to be used to create storagefsvm for file shares.",
+            true,
+            ConfigKey.Scope.Zone,
+            FileShare.FileShareFeatureEnabled.key());
+
     protected FileShareLifeCycle lifecycle;
 
     @Override
@@ -41,5 +63,18 @@ public class StorageFsVmFileShareProvider extends AdapterBase implements FileSha
     @Override
     public FileShareLifeCycle getFileShareLifeCycle() {
         return lifecycle;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return StorageFsVmFileShareProvider.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[] {
+                STORAGEFSVM_MIN_CPU_COUNT,
+                STORAGEFSVM_MIN_RAM_SIZE
+        };
     }
 }

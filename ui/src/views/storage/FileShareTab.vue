@@ -221,6 +221,9 @@ export default {
         id: this.resource.virtualmachineid,
         listall: true
       }
+      if (this.$store.getters.listAllProjects) {
+        params.projectid = '-1'
+      }
       api('listVirtualMachines', params).then(json => {
         this.virtualmachines = json.listvirtualmachinesresponse.virtualmachine || []
         this.vm = this.virtualmachines[0]

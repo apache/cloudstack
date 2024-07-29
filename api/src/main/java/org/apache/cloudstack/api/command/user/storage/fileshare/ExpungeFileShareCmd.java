@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.storage.fileshare;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,8 +35,14 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import com.cloud.event.EventTypes;
 
-@APICommand(name = "expungeFileShare", responseObject= SuccessResponse.class, description = "Recover a File Share by id",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
+@APICommand(name = "expungeFileShare",
+        responseObject= SuccessResponse.class,
+        description = "Recover a File Share by id",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ExpungeFileShareCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject

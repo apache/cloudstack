@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.storage.fileshare;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,8 +33,14 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "destroyFileShare", responseObject= SuccessResponse.class, description = "Destroy a File Share by id",
-        responseView = ResponseObject.ResponseView.Restricted, entityType = FileShare.class, requestHasSensitiveInfo = false, since = "4.20.0")
+@APICommand(name = "destroyFileShare",
+        responseObject= SuccessResponse.class,
+        description = "Destroy a File Share by id",
+        responseView = ResponseObject.ResponseView.Restricted,
+        entityType = FileShare.class,
+        requestHasSensitiveInfo = false,
+        since = "4.20.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
