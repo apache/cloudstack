@@ -618,18 +618,6 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
-          api: 'resizeFileShare',
-          icon: 'fullscreen-outlined',
-          docHelp: 'adminguide/object_storage.html#update-bucket',
-          label: 'label.action.resize.fileshare',
-          message: 'message.action.resize.fileshare',
-          dataView: true,
-          args: ['size'],
-          show: (record) => { return record.state !== 'Destroyed' && record.iscustomdiskoffering === true },
-          groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-        },
-        {
           api: 'changeFileShareDiskOffering',
           icon: 'swap-outlined',
           docHelp: 'adminguide/object_storage.html#update-bucket',

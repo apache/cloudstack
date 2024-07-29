@@ -17,6 +17,10 @@
 
 package org.apache.cloudstack.storage.fileshare;
 
+import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareCleanupDelay;
+import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareCleanupInterval;
+import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareFeatureEnabled;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -117,26 +121,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     static final String DEFAULT_FILE_SHARE_DISK_OFFERING_NAME = "Default Offering for File Share";
 
-    ConfigKey<Integer> FileShareCleanupInterval = new ConfigKey<>(Integer.class,
-            "fileshare.cleanup.interval",
-            "Advanced",
-            "60",
-            "The interval (in seconds) to wait before running the fileshare cleanup thread.",
-            false,
-            ConfigKey.Scope.Global,
-            null,
-            null);
-    ConfigKey<Integer> FileShareCleanupDelay = new ConfigKey<>(Integer.class,
-            "fileshare.cleanup.delay",
-            "Advanced",
-            "60",
-            "Determines how long (in seconds) to wait before actually expunging destroyed file shares. The default value = the default value of fileshare.cleanup.interval.",
-            false,
-            ConfigKey.Scope.Global,
-            null,
-            null);
-
-    ScheduledExecutorService _executor = null;
+   ScheduledExecutorService _executor = null;
 
     public FileShareServiceImpl() {
         this.fileShareStateMachine = FileShare.State.getStateMachine();
@@ -198,18 +183,20 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<>();
-        cmdList.add(ListFileShareProvidersCmd.class);
-        cmdList.add(CreateFileShareCmd.class);
-        cmdList.add(ListFileSharesCmd.class);
-        cmdList.add(UpdateFileShareCmd.class);
-        cmdList.add(DestroyFileShareCmd.class);
-        cmdList.add(RestartFileShareCmd.class);
-        cmdList.add(StartFileShareCmd.class);
-        cmdList.add(StopFileShareCmd.class);
-        cmdList.add(ChangeFileShareDiskOfferingCmd.class);
-        cmdList.add(ChangeFileShareServiceOfferingCmd.class);
-        cmdList.add(RecoverFileShareCmd.class);
-        cmdList.add(ExpungeFileShareCmd.class);
+        if (FileShareFeatureEnabled.value() == true) {
+            cmdList.add(ListFileShareProvidersCmd.class);
+            cmdList.add(CreateFileShareCmd.class);
+            cmdList.add(ListFileSharesCmd.class);
+            cmdList.add(UpdateFileShareCmd.class);
+            cmdList.add(DestroyFileShareCmd.class);
+            cmdList.add(RestartFileShareCmd.class);
+            cmdList.add(StartFileShareCmd.class);
+            cmdList.add(StopFileShareCmd.class);
+            cmdList.add(ChangeFileShareDiskOfferingCmd.class);
+            cmdList.add(ChangeFileShareServiceOfferingCmd.class);
+            cmdList.add(RecoverFileShareCmd.class);
+            cmdList.add(ExpungeFileShareCmd.class);
+        }
         return cmdList;
     }
 
@@ -538,7 +525,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{
                 FileShareCleanupInterval,
-                FileShareCleanupDelay
+                FileShareCleanupDelay,
+                FileShareFeatureEnabled
         };
     }
     protected class FileShareGarbageCollector extends ManagedContextRunnable {

@@ -34,6 +34,26 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             " Indicates whether the File Share feature is enabled or not. Management server restart needed on change",
             false);
 
+    ConfigKey<Integer> FileShareCleanupInterval = new ConfigKey<>(Integer.class,
+            "fileshare.cleanup.interval",
+            "Advanced",
+            "60",
+            "The interval (in seconds) to wait before running the fileshare cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            FileShareFeatureEnabled.key());
+
+    ConfigKey<Integer> FileShareCleanupDelay = new ConfigKey<>(Integer.class,
+            "fileshare.cleanup.delay",
+            "Advanced",
+            "60",
+            "Determines how long (in seconds) to wait before actually expunging destroyed file shares. The default value = the default value of fileshare.cleanup.interval.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            FileShareFeatureEnabled.key());
+
     String FileShareVmNamePrefix = "fsvm";
     String FileSharePath = "/mnt/fs/share";
 
