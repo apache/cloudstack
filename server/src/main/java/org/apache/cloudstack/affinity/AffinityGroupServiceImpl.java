@@ -60,6 +60,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -429,6 +430,9 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         UserVmVO vmInstance = _userVmDao.findById(vmId);
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vmInstance.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         // Check that the VM is stopped

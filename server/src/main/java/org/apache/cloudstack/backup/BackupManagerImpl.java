@@ -286,8 +286,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
-            if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not permitted for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
             }
         }
 
@@ -418,6 +418,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final VMInstanceVO vm = findVmById(vmId);
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
@@ -484,6 +490,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
 
         if (vm.getBackupOfferingId() == null) {
             throw new CloudRuntimeException("VM has not backup offering configured, cannot create backup before assigning it to a backup offering");
@@ -746,6 +759,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         validateForZone(backup.getZoneId());
 
         final VMInstanceVO vm = findVmById(vmId);
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {

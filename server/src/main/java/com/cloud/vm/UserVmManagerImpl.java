@@ -954,6 +954,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
+        if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -997,6 +1000,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+        if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1947,6 +1953,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+
+        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = _vmDao.findById(vmId);
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
+
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
         if (vmInstance == null) {
@@ -2272,6 +2286,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
@@ -2808,6 +2825,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
             }
         }
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+        if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
+
         String userData = cmd.getUserData();
         Long userDataId = cmd.getUserdataId();
         String userDataDetails = null;
@@ -3285,6 +3307,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
+        if (UserVmManager.STORAGEFSVM.equals(vmInstance.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         if (vmInstance.getState() != State.Running) {
             throw new InvalidParameterValueException(String.format("The VM %s (%s) is not running, unable to reboot it",
@@ -3354,6 +3379,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (Arrays.asList(State.Destroyed, State.Expunging).contains(vm.getState()) && !expunge) {
@@ -5336,6 +5364,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
@@ -5420,6 +5451,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (vm.getState() == State.Running) {
@@ -5868,6 +5902,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (vm.getRemoved() != null) {
@@ -7327,6 +7364,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         final Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
         if (oldAccount == null) {
@@ -7846,6 +7886,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 

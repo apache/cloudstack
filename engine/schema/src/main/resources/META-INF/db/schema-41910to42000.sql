@@ -174,8 +174,7 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     PRIMARY KEY (`id`),
     CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
     INDEX `i_storage_fileshare__account_id`(`account_id`),
-    INDEX `i_storage_fileshare__domain_id`(`domain_id`),
-    INDEX `i_storage_fileshare__project_id`(`project_id`)
+    INDEX `i_storage_fileshare__domain_id`(`domain_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`storage_fileshare_view`;

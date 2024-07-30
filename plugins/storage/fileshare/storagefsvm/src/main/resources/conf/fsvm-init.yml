@@ -41,7 +41,7 @@ write_files:
       sudo mkdir -p "$MOUNT_POINT"
 
       FS_TYPE=$(sudo lsblk -no FSTYPE "$PARTITION")
-  
+
       if [ -z "$FS_TYPE" ]; then
         FILESYSTEM={{ fsvm.filesystem }}
         if [ "$FILESYSTEM" == "xfs" ]; then
@@ -112,7 +112,7 @@ write_files:
       }
       log "Running resize script."
       PARTITION="$1"
-      
+
       FILESYSTEM={{ fsvm.filesystem }}
       if [ "$FILESYSTEM" == "xfs" ]; then
         sudo xfs_growfs "$PARTITION"
@@ -146,7 +146,7 @@ write_files:
         echo "$HOSTS_ENTRY" | sudo tee -a /etc/hosts > /dev/null
         log "Added hostname entry to /etc/hosts: $HOSTS_ENTRY"
       fi
-      
+
       HYPERVISOR_INFO=$(dmesg | grep -i hypervisor)
       if echo "$HYPERVISOR_INFO" | grep -i "kvm"; then
         BLOCK_DEVICE="vdb"
@@ -158,7 +158,7 @@ write_files:
         log "Unknown hypervisor"
         exit 1
       fi
-      
+
       PARTITION="/dev/$BLOCK_DEVICE"
       ADD_PARTITION_FILE="/usr/local/bin/add-partition"
       RESIZE_PARTITION_FILE="/usr/local/bin/resize-partition"

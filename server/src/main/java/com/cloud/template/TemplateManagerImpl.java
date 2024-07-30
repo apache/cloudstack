@@ -1191,9 +1191,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
-
         if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not permitted for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);

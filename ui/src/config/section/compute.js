@@ -108,6 +108,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
           popup: true,
+          show: (record) => { return record.vmtype !== 'storagefsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/EditVM.vue')))
         },
         {
@@ -121,7 +122,7 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
           args: ['considerlasthost'],
-          show: (record) => { return ['Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
         {
@@ -134,7 +135,7 @@ export default {
           groupAction: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced'],
-          show: (record) => { return ['Running'].includes(record.state) }
+          show: (record) => { return ['Running'].includes(record.state) && record.vmtype !== 'storagefsvm' }
         },
         {
           api: 'rebootVirtualMachine',
@@ -143,7 +144,7 @@ export default {
           message: 'message.action.reboot.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) },
+          show: (record) => { return ['Running'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []
@@ -166,7 +167,7 @@ export default {
           message: 'message.reinstall.vm',
           dataView: true,
           popup: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ReinstallVm.vue')))
         },
@@ -178,9 +179,9 @@ export default {
           dataView: true,
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
           show: (record) => {
-            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+            return (((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
               (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
-              (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
+              (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex')))) && record.vmtype !== 'storagefsvm')
           },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           mapping: {
@@ -211,7 +212,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
-          show: (record) => { return !record.backupofferingid },
+          show: (record) => { return !record.backupofferingid && record.vmtype !== 'storagefsvm' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -226,7 +227,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           args: ['virtualmachineid'],
-          show: (record) => { return record.backupofferingid },
+          show: (record) => { return record.backupofferingid && record.vmtype !== 'storagefsvm' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -240,7 +241,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,
-          show: (record) => { return record.backupofferingid },
+          show: (record) => { return record.backupofferingid && record.vmtype !== 'storagefsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/BackupScheduleWizard.vue'))),
           mapping: {
             virtualmachineid: {
@@ -259,7 +260,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
           dataView: true,
           args: ['virtualmachineid', 'forced'],
-          show: (record) => { return record.backupofferingid },
+          show: (record) => { return record.backupofferingid && record.vmtype !== 'storagefsvm' },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -273,7 +274,7 @@ export default {
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'storagefsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
@@ -290,7 +291,7 @@ export default {
             }
             return args
           },
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'storagefsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           mapping: {
             virtualmachineid: {
@@ -305,7 +306,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
-          show: (record) => { return ['Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
           popup: true
         },
@@ -315,7 +316,7 @@ export default {
           label: 'label.scale.vm',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC') },
+          show: (record) => { return (['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC')) && record.vmtype !== 'storagefsvm' },
           disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleVM.vue')))
@@ -366,7 +367,7 @@ export default {
           message: 'message.desc.reset.ssh.key.pair',
           docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
         },
@@ -377,7 +378,7 @@ export default {
           message: 'message.desc.reset.userdata',
           docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetUserData')))
         },
@@ -388,7 +389,7 @@ export default {
           dataView: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AssignInstance'))),
           popup: true,
-          show: (record) => { return ['Stopped'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' }
         },
         {
           api: 'recoverVirtualMachine',
@@ -396,7 +397,7 @@ export default {
           label: 'label.recover.vm',
           message: 'message.recover.vm',
           dataView: true,
-          show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm }
+          show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'storagefsvm' }
         },
         {
           api: 'unmanageVirtualMachine',
@@ -404,7 +405,7 @@ export default {
           label: 'label.action.unmanage.virtualmachine',
           message: 'message.action.unmanage.virtualmachine',
           dataView: true,
-          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && ['VMware', 'KVM'].includes(record.hypervisor) }
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && ['VMware', 'KVM'].includes(record.hypervisor) && record.vmtype !== 'storagefsvm' }
         },
         {
           api: 'expungeVirtualMachine',
@@ -413,7 +414,7 @@ export default {
           message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
-          show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }
+          show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm && record.vmtype !== 'storagefsvm' }
         },
         {
           api: 'destroyVirtualMachine',
@@ -429,7 +430,7 @@ export default {
           },
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
-          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
+          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) && record.vmtype !== 'storagefsvm' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DestroyVM.vue')))
         }
       ]
