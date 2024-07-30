@@ -3517,6 +3517,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     response.addIpv4Route(route);
                 }
             }
+            if (view == ResponseView.Full) {
+                List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+                for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
+                    BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
+                    response.addBgpPeer(bgpPeerResponse);
+                }
+            }
         }
 
         response.setObjectName("vpc");

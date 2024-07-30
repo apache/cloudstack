@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -171,6 +172,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @SerializedName(ApiConstants.AS_NUMBER)
     @Param(description = "AS NUMBER")
     private Long asNumber;
+
+    @SerializedName(ApiConstants.BGP_PEERS)
+    @Param(description = "The BGP peers for the VPC", since = "4.20.0")
+    private Set<BgpPeerResponse> bgpPeers;
 
     public void setId(final String id) {
         this.id = id;
@@ -332,5 +337,16 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setAsNumberId(String asNumberId) {
         this.asNumberId = asNumberId;
+    }
+
+    public void setBgpPeers(Set<BgpPeerResponse> bgpPeers) {
+        this.bgpPeers = bgpPeers;
+    }
+
+    public void addBgpPeer(BgpPeerResponse bgpPeer) {
+        if (this.bgpPeers == null) {
+            this.setBgpPeers(new LinkedHashSet<>());
+        }
+        this.bgpPeers.add(bgpPeer);
     }
 }
