@@ -55,7 +55,7 @@ public class ListBgpPeersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.AS_NUMBER,
             type = CommandType.LONG,
             description = "AS number of the Bgp Peer.")
-    private String asNumber;
+    private Long asNumber;
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = CommandType.STRING,
@@ -91,7 +91,7 @@ public class ListBgpPeersCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getAsNumber() {
+    public Long getAsNumber() {
         return asNumber;
     }
 

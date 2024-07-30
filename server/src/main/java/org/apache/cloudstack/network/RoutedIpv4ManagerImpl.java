@@ -95,6 +95,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -1269,18 +1270,19 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd) {
         Long id = listBgpPeersCmd.getId();
         Long zoneId = listBgpPeersCmd.getZoneId();
-        String asNumber = listBgpPeersCmd.getAsNumber();
+        Long asNumber = listBgpPeersCmd.getAsNumber();
         Long domainId = listBgpPeersCmd.getDomainId();
         Long projectId = listBgpPeersCmd.getProjectId();
         String accountName = listBgpPeersCmd.getAccountName();
         Boolean isDedicated = listBgpPeersCmd.getDedicated();
+        String keyword = listBgpPeersCmd.getKeyword();
 
         Long accountId = null;
         if (accountName != null || projectId != null) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (isDedicated != null) {
-            SearchCriteria sc1 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            SearchCriteria sc1 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (Boolean.TRUE.equals(isDedicated)) {
                 sc1.addAnd("domainId", SearchCriteria.Op.NNULL);
             } else {
@@ -1295,14 +1297,14 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             // search via bgpPeerDao
             return bgpPeerDao.search(sc1, null);
         } else {
-            SearchCriteria sc2 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            SearchCriteria sc2 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (domainId == null && accountId == null) {
                 sc2.addAnd("domainId", SearchCriteria.Op.NULL);
                 return bgpPeerDao.search(sc2, null);
             }
             sc2.addAnd("domainId", SearchCriteria.Op.NULL);
             List<? extends BgpPeer> results = bgpPeerDao.search(sc2, null); // non-dedicated BGP peers
-            SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber);
+            SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (domainId != null) {
                 sc3.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             }
@@ -1315,7 +1317,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     }
 
-    private SearchCriteria createSearchCriteriaForListBgpPeersCmd(Long id, Long zoneId, String asNumber) {
+    private SearchCriteria createSearchCriteriaForListBgpPeersCmd(Long id, Long zoneId, Long asNumber, String keyword) {
         SearchCriteria sc = bgpPeerDao.createSearchCriteria();
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1324,7 +1326,14 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         }
         if (asNumber != null) {
-            sc.addAnd("subnet", SearchCriteria.Op.EQ, asNumber);
+            sc.addAnd("asNumber", SearchCriteria.Op.EQ, asNumber);
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            SearchCriteria ssc = bgpPeerDao.createSearchCriteria();
+            ssc.addOr("asNumber", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("ipaddress", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("ip6address", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("ipaddress", SearchCriteria.Op.SC, ssc);
         }
         return sc;
     }
