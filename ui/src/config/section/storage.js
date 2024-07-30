@@ -560,7 +560,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
       }],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid', 'networkid']
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid']
         return filters
       },
       actions: [
@@ -656,7 +656,6 @@ export default {
           message: 'message.action.recover.fileshare',
           dataView: true,
           show: (record) => { return record.state === 'Destroyed' },
-          groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
         {
@@ -666,7 +665,6 @@ export default {
           message: 'message.action.expunge.fileshare',
           dataView: true,
           show: (record) => { return record.state === 'Destroyed' },
-          groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
