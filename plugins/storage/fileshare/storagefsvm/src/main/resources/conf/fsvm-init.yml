@@ -122,7 +122,7 @@ write_files:
         log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
         exit 1
       fi
-      
+
       log "Finished running resize script."
 
   - path: /usr/local/bin/fsvm-setup
