@@ -235,7 +235,7 @@
 
     <a-modal
       :visible="updateBgpPeerModal"
-      :title="$t('label.update.ip.range')"
+      :title="$t('label.update.bgp.peer')"
       v-if="selectedBgpPeer"
       :maskClosable="false"
       :footer="null"
