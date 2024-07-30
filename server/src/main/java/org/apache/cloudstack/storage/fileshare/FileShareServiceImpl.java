@@ -260,6 +260,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     public FileShare startFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
 
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> validStates = new HashSet<>(List.of(State.Stopped, State.Deployed));
         if (!validStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Start file share can be done only if the file share is in " + validStates.toString() + " state");
@@ -285,19 +287,20 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_STOP, eventDescription = "Stopping fileshare", async = true)
     public FileShare stopFileShare(Long fileShareId, Boolean forced) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
+
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> validStates = new HashSet<>(List.of(State.Ready));
         if (!validStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Stop file share can be done only if the file share is in " + validStates.toString() + " state");
         }
-        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
-        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-
         if (fileShare.getState() != State.Ready) {
             throw new InvalidParameterValueException("File Share should be in " + State.Ready + " state");
         }
 
         stateTransitTo(fileShare, Event.StopRequested);
-
+        FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         try {
             lifeCycle.stopFileShare(fileShare, forced);
         } catch (CloudRuntimeException e) {
@@ -329,6 +332,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     public FileShare restartFileShare(Long fileShareId, boolean cleanup) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
 
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> invalidStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
         if (invalidStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Restart file share not allowed in state " + fileShare.getState());
@@ -460,6 +465,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         String description = cmd.getDescription();
 
         FileShareVO fileShare = fileShareDao.findById(id);
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> invalidStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
         if (invalidStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Update file share not allowed in state " + fileShare.getState());
@@ -479,20 +486,37 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> invalidStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
         if (invalidStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Restart file share not allowed in state " + fileShare.getState());
         }
 
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        Long newSize = cmd.getSize();
+        Long newMinIops = cmd.getMinIops();
+        Long newMaxIops = cmd.getMaxIops();
+
+        DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
+        if (!diskOffering.isCustomized() && newSize != null) {
+            throw new InvalidParameterValueException("Size provided with a non-custom disk offering");
+        }
+        if (!diskOffering.isCustomizedIops() && (newMaxIops != null || newMaxIops != null)) {
+            throw new InvalidParameterValueException("Iops provided with a non-custom-iops disk offering");
+        }
+
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-        lifeCycle.changeFileShareDiskOffering(fileShare, cmd.getDiskOfferingId(), cmd.getSize(), cmd.getMinIops(), cmd.getMaxIops());
+        lifeCycle.changeFileShareDiskOffering(fileShare, diskOfferingId, newSize, newMinIops, newMaxIops);
         return fileShare;
     }
 
     @Override
     public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> invalidStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
         if (invalidStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Restart file share not allowed in state " + fileShare.getState());
@@ -515,14 +539,17 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Long fileShareId = cmd.getId();
         Boolean expunge = cmd.isExpunge();
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
+
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> invalidStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
         if (invalidStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Restart file share not allowed in state " + fileShare.getState());
         }
-
         if (!State.Stopped.equals(fileShare.getState()) && !State.Deployed.equals(fileShare.getState())) {
             throw new InvalidParameterValueException("File Share should be in the Stopped state before it is destroyed");
         }
+
         if (!expunge) {
             stateTransitTo(fileShare, Event.DestroyRequested);
         } else {
@@ -534,6 +561,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public FileShare recoverFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         if (!State.Destroyed.equals(fileShare.getState())) {
             throw new InvalidParameterValueException("File Share should be in the Destroyed state to be recovered");
         }
@@ -544,6 +573,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     @Override
     public void deleteFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
         if (!State.Destroyed.equals(fileShare.getState())) {
             throw new InvalidParameterValueException("File Share should be in the Destroyed state to be expunged");
         }
