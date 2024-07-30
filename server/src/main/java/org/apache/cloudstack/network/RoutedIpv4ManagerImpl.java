@@ -1331,9 +1331,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (StringUtils.isNotBlank(keyword)) {
             SearchCriteria ssc = bgpPeerDao.createSearchCriteria();
             ssc.addOr("asNumber", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("ipaddress", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("ip6address", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("ipaddress", SearchCriteria.Op.SC, ssc);
+            ssc.addOr("ip4Address", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("ip6Address", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("ip4Address", SearchCriteria.Op.SC, ssc);
         }
         return sc;
     }

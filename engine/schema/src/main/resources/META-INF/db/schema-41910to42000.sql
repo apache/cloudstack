@@ -274,6 +274,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
     `removed` datetime DEFAULT NULL COMMENT 'date removed',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_bgp_peer_network_map__bgp_peer_id` FOREIGN KEY (`bgp_peer_id`) REFERENCES `bgp_peers`(`id`),
-    CONSTRAINT `fk_bgp_peer_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`)
+    CONSTRAINT `fk_bgp_peer_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
     CONSTRAINT `fk_bgp_peer_network_map__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
