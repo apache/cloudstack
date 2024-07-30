@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaManagerImpl;
 import org.apache.cloudstack.quota.QuotaService;
@@ -135,8 +136,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
+    @Inject
+    private ApiDiscoveryService apiDiscoveryService;
+
     @Override
-    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
+    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
         final QuotaTariffResponse response = new QuotaTariffResponse();
         response.setUsageType(tariff.getUsageType());
         response.setUsageName(tariff.getUsageName());
@@ -146,13 +150,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setEffectiveOn(tariff.getEffectiveOn());
         response.setUsageTypeDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-        response.setActivationRule(tariff.getActivationRule());
         response.setName(tariff.getName());
         response.setEndDate(tariff.getEndDate());
         response.setDescription(tariff.getDescription());
         response.setId(tariff.getUuid());
         response.setRemoved(tariff.getRemoved());
         response.setPosition(tariff.getPosition());
+        if (returnActivationRule) {
+            response.setActivationRule(tariff.getActivationRule());
+        }
         return response;
     }
 
@@ -226,6 +232,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             return new QuotaSummaryResponse();
         }
+    }
+
+    public boolean isUserAllowedToSeeActivationRules(User user) {
+        List<ApiDiscoveryResponse> apiList = (List<ApiDiscoveryResponse>) apiDiscoveryService.listApis(user, null).getResponses();
+        return apiList.stream().anyMatch(response -> StringUtils.equalsAny(response.getName(), "quotaTariffCreate", "quotaTariffUpdate"));
     }
 
     @Override
@@ -400,11 +411,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         boolean listAll = cmd.isListAll();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        String uuid = cmd.getId();
+        boolean listOnlyRemoved = cmd.isListOnlyRemoved();
+        String keyword = cmd.getKeyword();
 
-        logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
-                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
+        logger.debug("Listing quota tariffs for parameters [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType", "uuid", "listOnlyRemoved", "keyword"));
 
-        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
+        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, uuid, listAll, listOnlyRemoved, startIndex, pageSize, keyword);
     }
 
     @Override
