@@ -1299,19 +1299,23 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         } else {
             SearchCriteria sc2 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (domainId == null && accountId == null) {
-                sc2.addAnd("domainId", SearchCriteria.Op.NULL);
                 return bgpPeerDao.search(sc2, null);
             }
             sc2.addAnd("domainId", SearchCriteria.Op.NULL);
             List<? extends BgpPeer> results = bgpPeerDao.search(sc2, null); // non-dedicated BGP peers
-            SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (domainId != null) {
+                SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
                 sc3.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+                if (accountId != null) {
+                    sc3.addAnd("accountId", SearchCriteria.Op.NULL);
+                }
+                results.addAll(bgpPeerDao.search(sc3, null)); // dedicated BGP peers to domain
             }
             if (accountId != null) {
-                sc3.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                SearchCriteria sc4 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
+                sc4.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                results.addAll(bgpPeerDao.search(sc4, null)); // dedicated BGP peers to account
             }
-            results.addAll(bgpPeerDao.search(sc3, null)); // dedicated BGP peers
             return results;
         }
 
