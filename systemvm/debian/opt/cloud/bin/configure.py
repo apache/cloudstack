@@ -870,31 +870,32 @@ class CsVmMetadata(CsDataBag):
         if os.path.exists(datafile):
             os.remove(datafile)
 
+    def __writefile(self, dest, data, mode):
+        fh = open(dest, mode)
+        self.__exflock(fh)
+        fh.write(data)
+        self.__unflock(fh)
+        fh.close()
+        os.chmod(dest, 0o644)
+
     def __createfile(self, ip, folder, file, data):
         dest = "/var/www/html/" + folder + "/" + ip + "/" + file
         metamanifestdir = "/var/www/html/" + folder + "/" + ip
         metamanifest = metamanifestdir + "/meta-data"
 
-        # base64 decode userdata
-        if folder == "userdata" or folder == "user-data":
-            if data is not None:
+        if data is not None:
+            # base64 decode userdata
+            if folder == "userdata" or folder == "user-data":
                 # need to pad data if it is not valid base 64
                 if len(data) % 4 != 0:
                     data += (4 - (len(data) % 4)) * "="
                 data = base64.b64decode(data)
-
-        fh = open(dest, "w")
-        self.__exflock(fh)
-        if data is not None:
             if isinstance(data, str):
-                fh.write(data)
+                self.__writefile(dest, data, "w")
             elif isinstance(data, bytes):
-                fh.write(data.decode())
+                self.__writefile(dest, data, "wb")
         else:
-            fh.write("")
-        self.__unflock(fh)
-        fh.close()
-        os.chmod(dest, 0o644)
+            self.__writefile(dest, "", "w")
 
         if folder == "metadata" or folder == "meta-data":
             try:
