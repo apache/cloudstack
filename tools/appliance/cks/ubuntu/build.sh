@@ -16,15 +16,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# build script which wraps around packer and virtualbox to create the systemvm template
+# build script which wraps around packer and virtualbox to create the CKS template
 
 function usage() {
   cat <<END
 Usage:
    ./build.sh [template] [version] [BUILD_NUMBER]
 
-   * Set \$appliance to provide definition name to build
-     (or use command line arg, default systemvmtemplate)
+   * Set \$template to provide definition name to build
+     (or use command line arg, default ckstemplate)
    * Set \$version to provide version to apply to built appliance
      (or use command line arg, default empty)
    * Set \$BUILD_NUMBER to provide build number to apply to built appliance

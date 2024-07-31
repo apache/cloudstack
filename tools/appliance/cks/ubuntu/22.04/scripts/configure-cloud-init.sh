@@ -19,7 +19,7 @@
 function install_packages() {
     apt-get install -y rsyslog logrotate cron net-tools ifupdown cloud-guest-utils conntrack apt-transport-https ca-certificates curl \
      gnupg gnupg-agent software-properties-common gnupg lsb-release
-    apt-get install -y python3-json-pointer python3-jsonschema cloud-init
+    apt-get install -y python3-json-pointer python3-jsonschema cloud-init resolvconf
 
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
