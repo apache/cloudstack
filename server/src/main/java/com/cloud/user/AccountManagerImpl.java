@@ -2717,13 +2717,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Unable to find user by id");
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
-        checkAccess(CallContext.current().getCallingUser(), account);
+        User caller = CallContext.current().getCallingUser();
+        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
+        checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
+        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
+            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
+            s_logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+    }
+
+    protected boolean isDomainAdminForRootDomain(User callingUser) {
+        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
+        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override
@@ -2760,6 +2775,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
         // don't allow updating system user
