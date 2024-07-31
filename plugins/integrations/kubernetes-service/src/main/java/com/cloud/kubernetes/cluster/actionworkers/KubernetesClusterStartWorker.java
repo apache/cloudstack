@@ -362,7 +362,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private List<String> getEtcdNodeHostnames() {
         List<String> hostnames = new ArrayList<>();
-        for (int etcdNodeIndex = 0; etcdNodeIndex <= kubernetesCluster.getEtcdNodeCount(); etcdNodeIndex++) {
+        for (int etcdNodeIndex = 1; etcdNodeIndex <= kubernetesCluster.getEtcdNodeCount(); etcdNodeIndex++) {
             String suffix = Long.toHexString(System.currentTimeMillis());
             hostnames.add(String.format("%s-%s-%s", getEtcdNodeNameForCluster(), etcdNodeIndex, suffix));
         }
