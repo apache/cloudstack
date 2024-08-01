@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.db.GenericDao;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -54,6 +56,9 @@ public class BackupVO implements Backup {
     @Column(name = "date")
     @Temporal(value = TemporalType.DATE)
     private Date date;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    private Date removed;
 
     @Column(name = "size")
     private Long size;
@@ -153,6 +158,7 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
+    @Override
     public long getBackupOfferingId() {
         return backupOfferingId;
     }
@@ -195,5 +201,13 @@ public class BackupVO implements Backup {
     @Override
     public String getName() {
         return null;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 }

@@ -269,4 +269,11 @@ public class PublicIp implements PublicIpAddress {
     public void setRuleState(State ruleState) {
         _addr.setRuleState(ruleState);
     }
+
+    @Override
+    public boolean isForSystemVms() {
+        return false;
+    }
+
+
 }

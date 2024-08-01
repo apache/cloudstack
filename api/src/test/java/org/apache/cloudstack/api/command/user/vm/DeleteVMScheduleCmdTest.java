@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.vm.schedule.VMSchedule;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,9 +45,16 @@ public class DeleteVMScheduleCmdTest {
     @InjectMocks
     private DeleteVMScheduleCmd deleteVMScheduleCmd = new DeleteVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**

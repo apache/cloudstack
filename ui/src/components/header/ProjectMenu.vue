@@ -81,7 +81,7 @@ export default {
       const projects = []
       const getNextPage = () => {
         this.loading = true
-        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
+        api('listProjects', { listAll: true, page: page, pageSize: 500, showIcon: true }).then(json => {
           if (json?.listprojectsresponse?.project) {
             projects.push(...json.listprojectsresponse.project)
           }
@@ -130,7 +130,7 @@ export default {
 <style lang="less" scoped>
 .project {
   &-select {
-    width: 30vw;
+    width: 27vw;
   }
 
   &-icon {

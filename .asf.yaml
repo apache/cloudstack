@@ -41,6 +41,7 @@ github:
   features:
     wiki: true
     issues: true
+    discussions: true
     projects: true
 
   enabled_merge_buttons:
@@ -49,11 +50,20 @@ github:
     rebase: false
 
   collaborators:
-    - kiranchavala
-    - rajujith
-    - alexandremattioli
-    - vishesh92
-    - soreana
     - acs-robot
+    - rajujith
+    - GaOrtiga
+    - SadiJr
+    - winterhazel
+    - gpordeus
+    - hsato03
+    - bernardodemarco
+    - abh1sar
 
   protected_branches: ~
+
+notifications:
+  commits:      commits@cloudstack.apache.org
+  issues:       commits@cloudstack.apache.org
+  pullrequests: commits@cloudstack.apache.org
+  discussions:  users@cloudstack.apache.org

@@ -26,8 +26,6 @@ import java.util.StringTokenizer;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -65,9 +63,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(ElastistorPrimaryDataStoreLifeCycle.class);
-
+public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     HostDao _hostDao;
     @Inject
@@ -107,6 +103,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         Long capacityBytes = (Long) dsInfos.get("capacityBytes");
         Long capacityIops = (Long) dsInfos.get("capacityIops");
         String tags = (String) dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         boolean managed = (Boolean) dsInfos.get("managed");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         String domainName = details.get("domainname");
@@ -154,7 +151,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         if (details.get("essubnet") != null)
             ElastistorUtil.setElastistorSubnet(details.get("essubnet"));
 
-        s_logger.info("Elastistor details was set successfully.");
+        logger.info("Elastistor details was set successfully.");
 
         if (capacityBytes == null || capacityBytes <= 0) {
             throw new IllegalArgumentException("'capacityBytes' must be present and greater than 0.");
@@ -166,7 +163,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
 
         if (domainName == null) {
             domainName = "ROOT";
-            s_logger.debug("setting the domain to ROOT");
+            logger.debug("setting the domain to ROOT");
         }
 
         // elastistor does not allow same name and ip pools.
@@ -196,6 +193,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
         parameters.setClusterId(clusterId);
 
@@ -218,7 +216,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
 
     private Tsm createElastistorTSM(String storagePoolName, String storageIp, Long capacityBytes, Long capacityIops, String domainName) {
 
-        s_logger.info("Creation of elastistor TSM started.");
+        logger.info("Creation of elastistor TSM started.");
 
         Tsm tsm;
         String elastistorAccountId;
@@ -229,11 +227,11 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
             // create the tsm for the given account id
             tsm = ElastistorUtil.createElastistorTsm(storagePoolName, storageIp, capacityBytes, capacityIops, elastistorAccountId);
         } catch (Throwable e) {
-            s_logger.error("Failed to create TSM in elastistor.", e);
+            logger.error("Failed to create TSM in elastistor.", e);
             throw new CloudRuntimeException("Failed to create TSM in elastistor. " + e.getMessage());
         }
 
-        s_logger.info("Creation of elastistor TSM completed successfully.");
+        logger.info("Creation of elastistor TSM completed successfully.");
 
         return tsm;
     }
@@ -243,7 +241,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
 
         try {
 
-            s_logger.info("Creation of elastistor volume started.");
+            logger.info("Creation of elastistor volume started.");
 
             FileSystem volume = ElastistorUtil.createElastistorVolume(storagePoolName, tsm.getUuid(), capacityBytes, capacityIops, protocoltype, mountpoint);
 
@@ -251,11 +249,11 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                 String accesspath = "/" + volume.getIqn() + "/0";
                 parameters.setPath(accesspath);
             }
-            s_logger.info("Creation of elastistor volume completed successfully.");
+            logger.info("Creation of elastistor volume completed successfully.");
 
             return parameters;
         } catch (Throwable e) {
-            s_logger.error("Failed to create volume in elastistor.", e);
+            logger.error("Failed to create volume in elastistor.", e);
             throw new CloudRuntimeException("Failed to create volume in elastistor. " + e.getMessage());
         }
 
@@ -375,18 +373,18 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
             }
         }
 
-        s_logger.debug("In createPool Adding the pool to each of the hosts");
+        logger.debug("In createPool Adding the pool to each of the hosts");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
                 storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
                 poolHosts.add(h);
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
+                logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
             }
 
             if (poolHosts.isEmpty()) {
-                s_logger.warn("No host can access storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
+                logger.warn("No host can access storage pool " + primarystore + " on cluster " + primarystore.getClusterId());
                 primaryDataStoreDao.expunge(primarystore.getId());
                 throw new CloudRuntimeException("Failed to access storage pool");
             }
@@ -396,12 +394,12 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
     }
 
     private boolean createStoragePool(long hostId, StoragePool pool) {
-        s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
                 && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.RBD
                 && pool.getPoolType() != StoragePoolType.CLVM) {
-            s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
+            logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
@@ -413,10 +411,10 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
             String msg = "";
             if (answer != null) {
                 msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
-                s_logger.warn(msg);
+                logger.warn(msg);
             } else {
                 msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
-                s_logger.warn(msg);
+                logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
         }
@@ -431,18 +429,18 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
         List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
-        s_logger.debug("In createPool. Attaching the pool to each of the hosts.");
+        logger.debug("In createPool. Attaching the pool to each of the hosts.");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
                 storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
         if (poolHosts.isEmpty()) {
-            s_logger.warn("No host can access storage pool " + dataStore + " in this zone.");
+            logger.warn("No host can access storage pool " + dataStore + " in this zone.");
             primaryDataStoreDao.expunge(dataStore.getId());
             throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
         }
@@ -502,7 +500,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                     }
                 } else {
                     if (answer != null) {
-                        s_logger.error("Failed to delete storage pool: " + answer.getResult());
+                        logger.error("Failed to delete storage pool: " + answer.getResult());
                     }
                 }
             }
@@ -525,9 +523,9 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
         }
 
         if (status == true) {
-            s_logger.info("deletion of elastistor primary storage complete");
+            logger.info("deletion of elastistor primary storage complete");
         } else {
-            s_logger.error("deletion of elastistor volume failed");
+            logger.error("deletion of elastistor volume failed");
         }
 
     }
@@ -565,7 +563,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                     // update the cloudstack db
                     _storagePoolDao.updateCapacityBytes(storagePool.getId(), Long.parseLong(capacityBytes));
 
-                    s_logger.info("elastistor TSM storage successfully updated");
+                    logger.info("elastistor TSM storage successfully updated");
                    }else{
                        throw new CloudRuntimeException("Failed to update the storage of Elastistor TSM" + updateTsmStorageCmdResponse.toString());
                    }
@@ -586,7 +584,7 @@ public class ElastistorPrimaryDataStoreLifeCycle implements PrimaryDataStoreLife
                    // update the cloudstack db
                     _storagePoolDao.updateCapacityIops(storagePool.getId(), capacity);
 
-                    s_logger.info("elastistor TSM IOPS successfully updated");
+                    logger.info("elastistor TSM IOPS successfully updated");
 
                    }else{
                        throw new CloudRuntimeException("Failed to update the IOPS of Elastistor TSM" + updateTsmCmdResponse.toString());

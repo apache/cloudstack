@@ -20,6 +20,7 @@ package com.cloud.upgrade;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,12 +30,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class GuestOsMapperTest {
 
     @Spy
@@ -44,9 +45,16 @@ public class GuestOsMapperTest {
     @Mock
     GuestOSHypervisorDao guestOSHypervisorDao;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -75,8 +83,6 @@ public class GuestOsMapperTest {
         guestOSHypervisorVOS.add(guestOSHypervisorVO);
         Mockito.when(guestOSHypervisorDao.listByHypervisorTypeAndVersion(Mockito.anyString(), Mockito.anyString())).thenReturn(guestOSHypervisorVOS);
         Mockito.when(guestOSHypervisorVO.getGuestOsName()).thenReturn("centos");
-        GuestOSHypervisorVO guestOsMapping = Mockito.mock(GuestOSHypervisorVO.class);
-        Mockito.when(guestOSHypervisorDao.persist(guestOsMapping)).thenReturn(guestOsMapping);
 
         boolean result = guestOsMapper.copyGuestOSHypervisorMappings(Hypervisor.HypervisorType.XenServer, "6.0", "7.0");
         Assert.assertTrue(result);

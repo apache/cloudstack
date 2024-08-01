@@ -21,8 +21,9 @@ import logging
 import os
 import re
 import sys
-import urllib
-import urllib2
+import urllib.request
+import urllib.parse
+import urllib.error
 import time
 import copy
 
@@ -41,8 +42,11 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
-ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
+ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, \
+    echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, \
+    nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
 TCP_UDP_PORT_ANY = "{ 0-65535 }"
+
 
 def removeUndesiredCidrs(cidrs, version):
     version_char = ":"
@@ -61,14 +65,16 @@ def removeUndesiredCidrs(cidrs, version):
             return cidrs
     return None
 
+
 def appendStringIfNotEmpty(s1, s2):
     if s2:
-        if type(s2) != str:
+        if not isinstance(s2, str):
             s2 = str(s2)
         if s1:
             return s1 + " " + s2
         return s2
     return s1
+
 
 class CsPassword(CsDataBag):
 
@@ -107,10 +113,10 @@ class CsPassword(CsDataBag):
             if proc.find():
                 url = "http://%s:8080/" % server_ip
                 payload = {"ip": vm_ip, "password": password, "token": token}
-                data = urllib.urlencode(payload)
-                request = urllib2.Request(url, data=data, headers={"DomU_Request": "save_password"})
+                data = urllib.parse.urlencode(payload).encode()
+                request = urllib.request.Request(url, data=data, headers={"DomU_Request": "save_password"})
                 try:
-                    resp = urllib2.urlopen(request, data)
+                    resp = urllib.request.urlopen(request, data)
                     logging.debug("Update password server result: http:%s, content:%s" % (resp.code, resp.read()))
                 except Exception as e:
                     logging.error("Failed to update password server due to: %s" % e)
@@ -165,15 +171,15 @@ class CsAcl(CsDataBag):
             icmp_type = ''
             rule = self.rule
             icmp_type = "any"
-            if "icmp_type" in self.rule.keys() and self.rule['icmp_type'] != -1:
+            if "icmp_type" in list(self.rule.keys()) and self.rule['icmp_type'] != -1:
                 icmp_type = self.rule['icmp_type']
-            if "icmp_code" in self.rule.keys() and rule['icmp_code'] != -1:
+            if "icmp_code" in list(self.rule.keys()) and rule['icmp_code'] != -1:
                 icmp_type = "%s/%s" % (self.rule['icmp_type'], self.rule['icmp_code'])
             rnge = ''
-            if "first_port" in self.rule.keys() and \
+            if "first_port" in list(self.rule.keys()) and \
                self.rule['first_port'] == self.rule['last_port']:
                 rnge = " --dport %s " % self.rule['first_port']
-            if "first_port" in self.rule.keys() and \
+            if "first_port" in list(self.rule.keys()) and \
                self.rule['first_port'] != self.rule['last_port']:
                 rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
 
@@ -278,14 +284,14 @@ class CsAcl(CsDataBag):
             self.device = obj['device']
             self.ip = obj['nic_ip']
             self.ip6_cidr = None
-            if "nic_ip6_cidr" in obj.keys():
+            if "nic_ip6_cidr" in list(obj.keys()):
                 self.ip6_cidr = obj['nic_ip6_cidr']
             self.netmask = obj['nic_netmask']
             self.config = config
             self.cidr = "%s/%s" % (self.ip, self.netmask)
-            if "ingress_rules" in obj.keys():
+            if "ingress_rules" in list(obj.keys()):
                 self.ingress = obj['ingress_rules']
-            if "egress_rules" in obj.keys():
+            if "egress_rules" in list(obj.keys()):
                 self.egress = obj['egress_rules']
             self.fw = config.get_fw()
             self.ipv6_acl = config.get_ipv6_acl()
@@ -308,9 +314,9 @@ class CsAcl(CsDataBag):
             self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain})
             for rule in rule_list:
                 cidr = rule['cidr']
-                if cidr != None and cidr != "":
+                if cidr is not None and cidr != "":
                     cidr = removeUndesiredCidrs(cidr, 4)
-                    if cidr == None or cidr == "":
+                    if cidr is None or cidr == "":
                         continue
                 addr = ""
                 if cidr:
@@ -352,7 +358,7 @@ class CsAcl(CsDataBag):
                         proto = "%s dport %s" % (proto, port)
 
                 action = "drop"
-                if 'allowed' in rule.keys() and rule['allowed']:
+                if 'allowed' in list(rule.keys()) and rule['allowed']:
                     action = "accept"
 
                 rstr = addr
@@ -376,9 +382,9 @@ class CsAcl(CsDataBag):
             for i in rule_list:
                 ruleData = copy.copy(i)
                 cidr = ruleData['cidr']
-                if cidr != None and cidr != "":
+                if cidr is not None and cidr != "":
                     cidr = removeUndesiredCidrs(cidr, 6)
-                    if cidr == None or cidr == "":
+                    if cidr is None or cidr == "":
                         continue
                 ruleData['cidr'] = cidr
                 r = self.AclRule(direction, self, ruleData, self.config, count)
@@ -411,9 +417,9 @@ class CsAcl(CsDataBag):
                 self.type = rule['type']
                 self.icmp_type = "any"
                 self.protocol = self.type
-                if "icmp_type" in rule.keys() and rule['icmp_type'] != -1:
+                if "icmp_type" in list(rule.keys()) and rule['icmp_type'] != -1:
                     self.icmp_type = rule['icmp_type']
-                if "icmp_code" in rule.keys() and rule['icmp_code'] != -1:
+                if "icmp_code" in list(rule.keys()) and rule['icmp_code'] != -1:
                     self.icmp_type = "%s/%s" % (self.icmp_type, rule['icmp_code'])
                 if self.type == "protocol":
                     if rule['protocol'] == 41:
@@ -421,11 +427,11 @@ class CsAcl(CsDataBag):
                     self.protocol = rule['protocol']
                 self.action = "DROP"
                 self.dport = ""
-                if 'allowed' in rule.keys() and rule['allowed']:
+                if 'allowed' in list(rule.keys()) and rule['allowed']:
                     self.action = "ACCEPT"
-                if 'first_port' in rule.keys():
+                if 'first_port' in list(rule.keys()):
                     self.dport = "-m %s --dport %s" % (self.protocol, rule['first_port'])
-                if 'last_port' in rule.keys() and self.dport and \
+                if 'last_port' in list(rule.keys()) and self.dport and \
                    rule['last_port'] != rule['first_port']:
                     self.dport = "%s:%s" % (self.dport, rule['last_port'])
 
@@ -488,7 +494,7 @@ class CsIpv6Firewall(CsDataBag):
                 continue
             rule = self.dbag[item]
 
-            if chains_added == False:
+            if chains_added is False:
                 guest_cidr = rule['guest_ip6_cidr']
                 parent_chain = "fw_forward"
                 chain = "fw_chain_egress"
@@ -624,39 +630,43 @@ class CsVmMetadata(CsDataBag):
         if os.path.exists(datafile):
             os.remove(datafile)
 
+    def __writefile(self, dest, data, mode):
+        fh = open(dest, mode)
+        self.__exflock(fh)
+        fh.write(data)
+        self.__unflock(fh)
+        fh.close()
+        os.chmod(dest, 0o644)
+
     def __createfile(self, ip, folder, file, data):
         dest = "/var/www/html/" + folder + "/" + ip + "/" + file
         metamanifestdir = "/var/www/html/" + folder + "/" + ip
         metamanifest = metamanifestdir + "/meta-data"
 
-        # base64 decode userdata
-        if folder == "userdata" or folder == "user-data":
-            if data is not None:
+        if data is not None:
+            # base64 decode userdata
+            if folder == "userdata" or folder == "user-data":
                 # need to pad data if it is not valid base 64
                 if len(data) % 4 != 0:
                     data += (4 - (len(data) % 4)) * "="
                 data = base64.b64decode(data)
-
-        fh = open(dest, "w")
-        self.__exflock(fh)
-        if data is not None:
-            fh.write(data)
+            if isinstance(data, str):
+                self.__writefile(dest, data, "w")
+            elif isinstance(data, bytes):
+                self.__writefile(dest, data, "wb")
         else:
-            fh.write("")
-        self.__unflock(fh)
-        fh.close()
-        os.chmod(dest, 0644)
+            self.__writefile(dest, "", "w")
 
         if folder == "metadata" or folder == "meta-data":
             try:
-                os.makedirs(metamanifestdir, 0755)
+                os.makedirs(metamanifestdir, 0o755)
             except OSError as e:
                 # error 17 is already exists, we do it this way for concurrency
                 if e.errno != 17:
-                    print "failed to make directories " + metamanifestdir + " due to :" + e.strerror
+                    print("failed to make directories " + metamanifestdir + " due to :" + e.strerror)
                     sys.exit(1)
             if os.path.exists(metamanifest):
-                fh = open(metamanifest, "r+a")
+                fh = open(metamanifest, "a+")
                 self.__exflock(fh)
                 if file not in fh.read():
                     fh.write(file + '\n')
@@ -670,17 +680,17 @@ class CsVmMetadata(CsDataBag):
                 fh.close()
 
         if os.path.exists(metamanifest):
-            os.chmod(metamanifest, 0644)
+            os.chmod(metamanifest, 0o644)
 
     def __htaccess(self, ip, folder, file):
         entry = "RewriteRule ^" + file + "$  ../" + folder + "/%{REMOTE_ADDR}/" + file + " [L,NC,QSA]"
         htaccessFolder = "/var/www/html/latest"
         htaccessFile = htaccessFolder + "/.htaccess"
 
-        CsHelper.mkdir(htaccessFolder, 0755, True)
+        CsHelper.mkdir(htaccessFolder, 0o755, True)
 
         if os.path.exists(htaccessFile):
-            fh = open(htaccessFile, "r+a")
+            fh = open(htaccessFile, "a+")
             self.__exflock(fh)
             if entry not in fh.read():
                 fh.write(entry + '\n')
@@ -699,11 +709,11 @@ class CsVmMetadata(CsDataBag):
         htaccessFile = htaccessFolder+"/.htaccess"
 
         try:
-            os.makedirs(htaccessFolder, 0755)
+            os.makedirs(htaccessFolder, 0o755)
         except OSError as e:
             # error 17 is already exists, we do it this way for sake of concurrency
             if e.errno != 17:
-                print "failed to make directories " + htaccessFolder + " due to :" + e.strerror
+                print("failed to make directories " + htaccessFolder + " due to :" + e.strerror)
                 sys.exit(1)
 
         fh = open(htaccessFile, "w")
@@ -717,7 +727,7 @@ class CsVmMetadata(CsDataBag):
             htaccessFolder = "/var/www/html/latest"
             htaccessFile = htaccessFolder + "/.htaccess"
 
-            fh = open(htaccessFile, "r+a")
+            fh = open(htaccessFile, "a+")
             self.__exflock(fh)
             if entry not in fh.read():
                 fh.write(entry + '\n')
@@ -734,7 +744,7 @@ class CsVmMetadata(CsDataBag):
         try:
             flock(file, LOCK_EX)
         except IOError as e:
-            print "failed to lock file" + file.name + " due to : " + e.strerror
+            print("failed to lock file" + file.name + " due to : " + e.strerror)
             sys.exit(1)  # FIXME
         return True
 
@@ -742,7 +752,7 @@ class CsVmMetadata(CsDataBag):
         try:
             flock(file, LOCK_UN)
         except IOError as e:
-            print "failed to unlock file" + file.name + " due to : " + e.strerror
+            print("failed to unlock file" + file.name + " due to : " + e.strerror)
             sys.exit(1)  # FIXME
         return True
 
@@ -838,9 +848,9 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=%s" % ikeversion)
         file.addeq(" ike=%s" % ikepolicy)
-        file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
+        file.addeq(" ikelifetime=%s" % self.convert_sec_to_min(obj['ike_lifetime']))
         file.addeq(" esp=%s" % esppolicy)
-        file.addeq(" lifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
+        file.addeq(" lifetime=%s" % self.convert_sec_to_min(obj['esp_lifetime']))
         file.addeq(" keyingtries=2")
         file.addeq(" auto=route")
         if 'encap' not in obj:
@@ -868,9 +878,9 @@ class CsSite2SiteVpn(CsDataBag):
 
         # This will load the new config
         CsHelper.execute("ipsec reload")
-        os.chmod(vpnsecretsfile, 0400)
+        os.chmod(vpnsecretsfile, 0o400)
 
-        for i in xrange(3):
+        for i in range(3):
             done = True
             for peeridx in range(0, len(peerlistarr)):
                 # Check for the proper connection and subnet
@@ -891,9 +901,9 @@ class CsSite2SiteVpn(CsDataBag):
             ipinsubnet = '.'.join(octets)
             CsHelper.execute("timeout 5 ping -c 3 %s" % ipinsubnet)
 
-    def convert_sec_to_h(self, val):
-        hrs = int(val) / 3600
-        return "%sh" % hrs
+    def convert_sec_to_min(self, val):
+        mins = int(val / 60)
+        return "%sm" % mins
 
 
 class CsVpnUser(CsDataBag):
@@ -1383,7 +1393,7 @@ def main(argv):
         databag_map.pop("guest_network")
 
     def execDatabag(key, db):
-        if key not in db.keys() or 'executor' not in db[key]:
+        if key not in list(db.keys()) or 'executor' not in db[key]:
             logging.warn("Unable to find config or executor(s) for the databag type %s" % key)
             return
         for executor in db[key]['executor']:
@@ -1397,10 +1407,10 @@ def main(argv):
 
     if json_type == "cmd_line":
         logging.debug("cmd_line.json changed. All other files will be processed as well.")
-        for key in databag_map.keys():
+        for key in list(databag_map.keys()):
             execDatabag(key, databag_map)
         execIptables(config)
-    elif json_type in databag_map.keys():
+    elif json_type in list(databag_map.keys()):
         execDatabag(json_type, databag_map)
         if databag_map[json_type]['process_iptables']:
             execIptables(config)
@@ -1410,6 +1420,7 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
     return 0
+
 
 if __name__ == "__main__":
     main(sys.argv)

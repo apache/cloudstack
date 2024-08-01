@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -60,7 +61,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
-    private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
 
     @Inject
     VMTemplateZoneDao _templateZoneDao;
@@ -99,6 +99,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
     private SearchBuilder<VMTemplateVO> LatestTemplateByHypervisorTypeSearch;
     private SearchBuilder<VMTemplateVO> userDataSearch;
+    private SearchBuilder<VMTemplateVO> templateIdSearch;
     @Inject
     ResourceTagDao _tagsDao;
 
@@ -290,7 +291,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         routerTmpltName = (String)params.get("routing.uniquename");
 
-        s_logger.debug("Found parameter routing unique name " + routerTmpltName);
+        logger.debug("Found parameter routing unique name " + routerTmpltName);
         if (routerTmpltName == null) {
             routerTmpltName = "routing";
         }
@@ -299,8 +300,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         if (consoleProxyTmpltName == null) {
             consoleProxyTmpltName = "routing";
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Use console proxy template : " + consoleProxyTmpltName);
         }
 
         UniqueNameSearch = createSearchBuilder();
@@ -426,6 +427,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         userDataSearch.and("userDataId", userDataSearch.entity().getUserDataId(), SearchCriteria.Op.EQ);
         userDataSearch.and("state", userDataSearch.entity().getState(), SearchCriteria.Op.EQ);
         userDataSearch.done();
+
+
+        templateIdSearch = createSearchBuilder();
+        templateIdSearch.and("idIN", templateIdSearch.entity().getId(), SearchCriteria.Op.IN);
+        templateIdSearch.done();
 
         return result;
     }
@@ -649,6 +655,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateVO> sc = templateIdSearch.create();
+        sc.setParameters("idIN", ids.toArray());
+        return listBy(sc, null);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -668,6 +684,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         boolean result = update(id, template);
         txn.commit();
         return result;
+    }
+
+    @Override
+    public List<VMTemplateVO> listByTemplateTag(String tag) {
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("tag", sb.entity().getTemplateTag(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("tag", tag);
+        return listIncludingRemovedBy(sc);
     }
 
     @Override
@@ -692,7 +718,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         builder.set(vo, "updated", new Date());
 
         int rows = update((VMTemplateVO)vo, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             VMTemplateVO dbTemplate = findByIdIncludingRemoved(vo.getId());
             if (dbTemplate != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -725,7 +751,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
+                logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
             }
         }
         return rows > 0;

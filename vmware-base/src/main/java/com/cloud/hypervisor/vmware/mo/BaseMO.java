@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -25,7 +26,7 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class BaseMO {
-    private static final Logger s_logger = Logger.getLogger(BaseMO.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;
@@ -82,7 +83,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware destroy_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware destroy_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -99,7 +100,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware rename_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware rename_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -144,7 +145,12 @@ public class BaseMO {
     public int getCustomFieldKey(String morType, String fieldName) throws Exception {
         assert (morType != null);
 
-        CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, _context.getServiceContent().getCustomFieldsManager());
+        ManagedObjectReference cfmMor = _context.getServiceContent().getCustomFieldsManager();
+        if (cfmMor == null) {
+            return 0;
+        }
+
+        CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, cfmMor);
 
         return cfmMo.getCustomFieldKey(morType, fieldName);
     }

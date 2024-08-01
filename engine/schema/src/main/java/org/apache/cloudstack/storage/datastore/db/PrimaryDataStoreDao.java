@@ -21,7 +21,10 @@ import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -39,6 +42,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope);
 
+    List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope, String keyword);
+
     /**
      * Set capacity of storage pool in bytes
      * @param id pool id.
@@ -53,7 +58,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     void updateCapacityIops(long id, long capacityIops);
 
-    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags);
+    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule);
 
     /**
      * Find pool by name.
@@ -77,7 +82,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope);
 
-    List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
+    List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, long ruleExecuteTimeout);
 
     List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope);
 
@@ -112,17 +117,25 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> listPoolsByCluster(long clusterId);
 
-    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags);
+    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule);
 
-    List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags);
+    List<StoragePoolVO> findLocalStoragePoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, String keyword);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags, boolean validateTagRule);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByHypervisorAndPoolType(long dataCenterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType);
+
+    List<StoragePoolVO> findClusterWideStoragePoolsByHypervisorAndPoolType(long clusterId, HypervisorType hypervisorType, Storage.StoragePoolType poolType);
 
     List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags);
 
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
 
-    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds);
+    List<StoragePoolVO> findPoolsInClusters(List<Long> clusterIds, String keyword);
 
     void deletePoolTags(long poolId);
 
@@ -130,7 +143,15 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Integer countAll();
 
-    List<StoragePoolVO> findPoolsByStorageType(String storageType);
+    List<StoragePoolVO> findPoolsByStorageType(Storage.StoragePoolType storageType);
+
+    StoragePoolVO findPoolByZoneAndPath(long zoneId, String datastorePath);
 
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
+
+    Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
+            String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status,
+            String keyword, Filter searchFilter);
+
+    List<StoragePoolVO> listByIds(List<Long> ids);
 }

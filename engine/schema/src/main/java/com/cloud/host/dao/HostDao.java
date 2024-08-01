@@ -63,7 +63,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     void loadHostTags(HostVO host);
 
-    List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
+    List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, Long dcId, String hostTag);
 
     List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
@@ -108,6 +108,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
 
+    List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
+
     List<HostVO> listAllHostsByType(Host.Type type);
 
     HostVO findByPublicIp(String publicIp);
@@ -139,6 +141,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
 
+    List<HostVO> listByClusterHypervisorTypeAndHostCapability(Long clusterId, HypervisorType hypervisorType, String hostCapabilty);
+
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 
     HostVO findByName(String name);
@@ -161,4 +165,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return ordered list of hypervisor versions
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
+
+    List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
+
+    List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 }

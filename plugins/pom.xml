@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -74,9 +74,13 @@
         <module>deployment-planners/user-concentrated-pod</module>
         <module>deployment-planners/user-dispersing</module>
 
+        <module>drs/cluster/balanced</module>
+        <module>drs/cluster/condensed</module>
+
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
 
         <module>ha-planners/skip-heurestics</module>
 
@@ -98,7 +102,6 @@
 
         <module>network-elements/bigswitch</module>
         <module>network-elements/dns-notifier</module>
-        <module>network-elements/juniper-contrail</module>
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
@@ -131,12 +134,18 @@
         <module>storage/volume/scaleio</module>
         <module>storage/volume/linstor</module>
         <module>storage/volume/storpool</module>
+        <module>storage/volume/adaptive</module>
+        <module>storage/volume/flasharray</module>
+        <module>storage/volume/primera</module>
+        <module>storage/object/minio</module>
+        <module>storage/object/simulator</module>
 
 
         <module>storage-allocators/random</module>
 
         <module>user-authenticators/ldap</module>
         <module>user-authenticators/md5</module>
+        <module>user-authenticators/oauth2</module>
         <module>user-authenticators/pbkdf2</module>
         <module>user-authenticators/plain-text</module>
         <module>user-authenticators/saml2</module>
@@ -184,6 +193,30 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio-admin</artifactId>
+            <version>8.5.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-object</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>
@@ -199,6 +232,8 @@
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/nsx</module>
+                <module>network-elements/juniper-contrail</module>
             </modules>
         </profile>
         <profile>

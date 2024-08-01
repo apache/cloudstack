@@ -19,11 +19,11 @@ import logging
 from netaddr import IPAddress, IPNetwork
 import subprocess
 import time
-import CsHelper
-from CsDatabag import CsDataBag
-from CsApp import CsApache, CsDnsmasq, CsPasswdSvc
-from CsRoute import CsRoute
-from CsRule import CsRule
+from . import CsHelper
+from .CsDatabag import CsDataBag
+from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
+from .CsRoute import CsRoute
+from .CsRule import CsRule
 
 VRRP_TYPES = ['guest']
 
@@ -321,7 +321,7 @@ class CsIP:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
                 CsHelper.execute(cmd)
-                cmd = "ifconfig %s mtu %s"  % (self.dev, self.mtu())
+                cmd = "ifconfig %s mtu %s" % (self.dev, self.mtu())
                 CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
@@ -364,7 +364,7 @@ class CsIP:
         else:
             # once we start processing public ip's we need to verify there
             # is a default route and add if needed
-            if(self.cl.get_gateway()):
+            if self.cl.get_gateway():
                 route.add_defaultroute(self.cl.get_gateway())
 
         if self.config.is_router() and self.cl.get_ip6gateway():
@@ -453,8 +453,8 @@ class CsIP:
                 ["", "", "-A NETWORK_STATS_%s -o %s ! -i eth0 -p tcp" % (self.dev, self.dev)])
             self.fw.append(
                 ["", "", "-A NETWORK_STATS_%s -i %s ! -o eth0 -p tcp" % (self.dev, self.dev)])
-            self.fw.append(["nat", "",
-                            "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
+            self.fw.append(
+                ["nat", "", "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
@@ -556,7 +556,7 @@ class CsIP:
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
                                 (self.dev, self.address['public_ip'])])
             if self.get_gateway() == self.get_ip_address():
-                for inf, addresses in self.config.address().dbag.iteritems():
+                for inf, addresses in self.config.address().dbag.items():
                     if not inf.startswith("eth"):
                         continue
                     for address in addresses:
@@ -625,7 +625,7 @@ class CsIP:
             if self.config.is_vpc():
                 if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
-                    for inf, addresses in self.config.address().dbag.iteritems():
+                    for inf, addresses in self.config.address().dbag.items():
                         if not inf.startswith("eth"):
                             continue
                         for address in addresses:
@@ -668,8 +668,12 @@ class CsIP:
                 logging.info("Not making dns publicly available")
 
             if self.config.has_metadata():
-                app = CsApache(self)
-                app.setup()
+                if method == "add":
+                    app = CsApache(self)
+                    app.setup()
+                elif method == "delete":
+                    app = CsApache(self)
+                    app.remove()
 
                 # If redundant then this is dealt with
                 # by the primary backup functions
@@ -691,6 +695,9 @@ class CsIP:
                     ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
                 self.fw.append(
                     ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
+            elif cmdline.get_source_nat_ip() and not self.is_private_gateway():
+                self.fw.append(
+                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, cmdline.get_source_nat_ip())])
 
     def list(self):
         self.iplist = {}
@@ -702,7 +709,7 @@ class CsIP:
                 self.iplist[cidr] = self.dev
 
     def configured(self):
-        if self.address['cidr'] in self.iplist.keys():
+        if self.address['cidr'] in list(self.iplist.keys()):
             return True
         return False
 
@@ -731,7 +738,7 @@ class CsIP:
         return self.dev
 
     def hasIP(self, ip):
-        return ip in self.address.values()
+        return ip in list(self.address.values())
 
     def arpPing(self):
         cmd = "arping -c 1 -I %s -A -U -s %s %s" % (
@@ -742,7 +749,7 @@ class CsIP:
 
     # Delete any ips that are configured but not in the bag
     def compare(self, bag):
-        if len(self.iplist) > 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) > 0 and (self.dev not in list(bag.keys()) or len(bag[self.dev]) == 0):
             # Remove all IPs on this device
             logging.info(
                 "Will remove all configured addresses on device %s", self.dev)
@@ -753,13 +760,13 @@ class CsIP:
         # This condition should not really happen but did :)
         # It means an apache file got orphaned after a guest network address
         # was deleted
-        if len(self.iplist) == 0 and (self.dev not in bag.keys() or len(bag[self.dev]) == 0):
+        if len(self.iplist) == 0 and (self.dev not in list(bag.keys()) or len(bag[self.dev]) == 0):
             app = CsApache(self)
             app.remove()
 
         for ip in self.iplist:
             found = False
-            if self.dev in bag.keys():
+            if self.dev in list(bag.keys()):
                 for address in bag[self.dev]:
                     self.setAddress(address)
                     if (self.hasIP(ip) or self.is_guest_gateway(address, ip)) and address["add"]:
@@ -792,7 +799,7 @@ class CsIP:
         remove = []
         if ip == "all":
             logging.info("Removing addresses from device %s", self.dev)
-            remove = self.iplist.keys()
+            remove = list(self.iplist.keys())
         else:
             remove.append(ip)
         for ip in remove:

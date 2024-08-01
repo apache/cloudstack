@@ -25,7 +25,8 @@ import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * This worker validates parameters in a generic way, by using annotated
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
  */
 public class ParamGenericValidationWorker implements DispatchWorker {
 
-    static Logger s_logger = Logger.getLogger(ParamGenericValidationWorker.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected static final List<String> defaultParamNames = new ArrayList<String>();
 
@@ -92,14 +93,16 @@ public class ParamGenericValidationWorker implements DispatchWorker {
                     break;
                 }
             }
-            if (!matchedCurrentParam && !((String)actualParamName).equalsIgnoreCase("expires") && !((String)actualParamName).equalsIgnoreCase("signatureversion")) {
+            if (!matchedCurrentParam && !((String)actualParamName).equalsIgnoreCase("expires") &&
+                !((String)actualParamName).equalsIgnoreCase("signatureversion") &&
+                !((String)actualParamName).equalsIgnoreCase("projectid")) {
                 errorMsg.append(" ").append(actualParamName);
                 foundUnknownParam= true;
             }
         }
 
         if (foundUnknownParam) {
-            s_logger.warn(String.format("Received unknown parameters for command %s. %s", cmd.getActualCommandName(), errorMsg));
+            logger.warn(String.format("Received unknown parameters for command %s. %s", cmd.getActualCommandName(), errorMsg));
         }
     }
 

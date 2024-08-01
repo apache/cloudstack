@@ -36,7 +36,7 @@ import com.cloud.consoleproxy.util.TileInfo;
  */
 public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     private static final long serialVersionUID = 1L;
-    private static final Logger s_logger = Logger.getLogger(BufferedImageCanvas.class);
+    protected Logger logger = Logger.getLogger(BufferedImageCanvas.class);
 
     // Offline screen buffer
     private BufferedImage offlineImage;
@@ -123,7 +123,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image", e);
+            logger.info("[ignored] read error on image", e);
         }
         return imgBits;
     }
@@ -147,7 +147,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image tiles", e);
+            logger.info("[ignored] read error on image tiles", e);
         }
         return imgBits;
     }

@@ -42,6 +42,12 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
+        <a-form-item name="passwordenabled" ref="passwordenabled">
+          <template #label>
+            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.passwordenabled" />
+        </a-form-item>
 
         <a-form-item name="ostypeid" ref="ostypeid" :label="$t('label.ostypeid')">
           <a-select
@@ -60,6 +66,12 @@
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
+          <template #label>
+            <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+          </template>
+          <a-switch v-model:checked="form.isdynamicallyscalable" />
         </a-form-item>
 
         <a-row :gutter="12">
@@ -162,7 +174,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'ostypeid', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'isdynamicallyscalable', 'ostypeid', 'userdataid', 'userdatapolicy']
 
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]

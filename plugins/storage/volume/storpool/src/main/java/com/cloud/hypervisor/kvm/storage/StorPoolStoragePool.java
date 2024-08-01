@@ -18,13 +18,29 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.joda.time.Duration;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 public class StorPoolStoragePool implements KVMStoragePool {
+    protected Logger logger = LogManager.getLogger(StorPoolStoragePool.class);
     private String _uuid;
     private String _sourceHost;
     private int _sourcePort;
@@ -34,6 +50,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
     private String _authSecret;
     private String _sourceDir;
     private String _localPath;
+    private String storageNodeId = getStorPoolConfigParam("SP_OURID");
 
     public StorPoolStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
         _uuid = uuid;
@@ -165,5 +182,124 @@ public class StorPoolStoragePool implements KVMStoragePool {
     @Override
     public Map<String, String> getDetails() {
         return null;
+    }
+
+    @Override
+    public boolean isPoolSupportHA() {
+        return true;
+    }
+
+    @Override
+    public String getHearthBeatPath() {
+        String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+        return Script.findScript(kvmScriptsDir, "kvmspheartbeat.sh");
+    }
+
+    @Override
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
+        boolean isStorageNodeUp = checkingHeartBeat(primaryStoragePool, null);
+        if (!isStorageNodeUp && !hostValidation) {
+            //restart the host
+            logger.debug(String.format("The host [%s] will be restarted because the health check failed for the storage pool [%s]", hostPrivateIp, primaryStoragePool.getPool().getType()));
+            Script cmd = new Script(primaryStoragePool.getPool().getHearthBeatPath(), HeartBeatUpdateTimeout, logger);
+            cmd.add("-c");
+            cmd.execute();
+            return "Down";
+        }
+        return isStorageNodeUp ? null : "Down";
+    }
+
+    @Override
+    public String getStorageNodeId() {
+        return storageNodeId;
+    }
+
+    public static final String getStorPoolConfigParam(String param) {
+        Script sc = new Script("storpool_confget", 0, LogManager.getLogger(StorPoolStoragePool.class));
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String configParam = null;
+        final String err = sc.execute(parser);
+        if (err != null) {
+            StorPoolStorageAdaptor.SP_LOG("Could not execute storpool_confget. Error: %s", err);
+            return configParam;
+        }
+
+        for (String line: parser.getLines().split("\n")) {
+            String[] toks = line.split("=");
+            if( toks.length != 2 ) {
+                continue;
+            }
+            if (toks[0].equals(param)) {
+                configParam = toks[1];
+                return configParam;
+            }
+        }
+        return configParam;
+    }
+
+    @Override
+    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+        boolean isNodeWorking = false;
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        String res = executeStorPoolServiceListCmd(parser);
+
+        if (res != null) {
+            return isNodeWorking;
+        }
+        String response = parser.getLines();
+
+        Integer hostStorageNodeId = null;
+        if (host == null) {
+            hostStorageNodeId = Integer.parseInt(storageNodeId);
+        } else {
+            hostStorageNodeId = host.getParent() != null ? Integer.parseInt(host.getParent()) : null;
+        }
+        if (hostStorageNodeId == null) {
+            return isNodeWorking;
+        }
+        try {
+            isNodeWorking = checkIfNodeIsRunning(response, hostStorageNodeId);
+        } catch (JsonIOException | JsonSyntaxException e) {
+            e.printStackTrace();
+        }
+        return isNodeWorking;
+    }
+
+    private boolean checkIfNodeIsRunning(String response, Integer hostStorageNodeId) {
+        boolean isNodeWorking = false;
+        JsonParser jsonParser = new JsonParser();
+        JsonObject stats = (JsonObject) jsonParser.parse(response);
+        JsonObject data = stats.getAsJsonObject("data");
+        if (data != null) {
+            JsonObject clients = data.getAsJsonObject("clients");
+            for (Entry<String, JsonElement> element : clients.entrySet()) {
+                String storageNodeStatus = element.getValue().getAsJsonObject().get("status").getAsString();
+                int nodeId = element.getValue().getAsJsonObject().get("nodeId").getAsInt();
+                if (hostStorageNodeId == nodeId) {
+                    if (storageNodeStatus.equals("running")) {
+                        return true;
+                    } else {
+                        return isNodeWorking;
+                    }
+                }
+            }
+        }
+        return isNodeWorking;
+    }
+
+    private String executeStorPoolServiceListCmd(OutputInterpreter.AllLinesParser parser) {
+        Script sc = new Script("storpool", 0, logger);
+        sc.add("-j");
+        sc.add("service");
+        sc.add("list");
+        String res = sc.execute(parser);
+        return res;
+    }
+
+    @Override
+    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUuidListString, String vmActivityCheckPath, long duration) {
+        return checkingHeartBeat(pool, host);
     }
 }

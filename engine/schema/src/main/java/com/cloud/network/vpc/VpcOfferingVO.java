@@ -58,6 +58,12 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "default")
     boolean isDefault = false;
 
+    @Column(name = "for_nsx")
+    boolean forNsx = false;
+
+    @Column(name = "nsx_mode")
+    String nsxMode;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
@@ -142,6 +148,22 @@ public class VpcOfferingVO implements VpcOffering {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    public void setForNsx(boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
+    public String getNsxMode() {
+        return nsxMode;
+    }
+
+    public void setNsxMode(String nsxMode) {
+        this.nsxMode =  nsxMode;
     }
 
     public void setUniqueName(String uniqueName) {

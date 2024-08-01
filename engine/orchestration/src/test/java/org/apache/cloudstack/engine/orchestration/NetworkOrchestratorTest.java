@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+import static org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService.NetworkLockTimeout;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -29,13 +31,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.network.IpAddressManager;
+import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import com.cloud.api.query.dao.DomainRouterJoinDao;
@@ -67,6 +73,9 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -90,9 +99,8 @@ import junit.framework.TestCase;
  */
 @RunWith(JUnit4.class)
 public class NetworkOrchestratorTest extends TestCase {
-    static final Logger s_logger = Logger.getLogger(NetworkOrchestratorTest.class);
 
-    NetworkOrchestrator testOrchastrator = Mockito.spy(new NetworkOrchestrator());
+    NetworkOrchestrator testOrchestrator = Mockito.spy(new NetworkOrchestrator());
 
     private String guruName = "GuestNetworkGuru";
     private String dhcpProvider = "VirtualRouter";
@@ -111,20 +119,22 @@ public class NetworkOrchestratorTest extends TestCase {
     @Before
     public void setUp() {
         // make class-scope mocks
-        testOrchastrator._nicDao = mock(NicDao.class);
-        testOrchastrator._networksDao = mock(NetworkDao.class);
-        testOrchastrator._networkModel = mock(NetworkModel.class);
-        testOrchastrator._nicSecondaryIpDao = mock(NicSecondaryIpDao.class);
-        testOrchastrator._ntwkSrvcDao = mock(NetworkServiceMapDao.class);
-        testOrchastrator._nicIpAliasDao = mock(NicIpAliasDao.class);
-        testOrchastrator._ipAddressDao = mock(IPAddressDao.class);
-        testOrchastrator._vlanDao = mock(VlanDao.class);
-        testOrchastrator._networkModel = mock(NetworkModel.class);
-        testOrchastrator._nicExtraDhcpOptionDao = mock(NicExtraDhcpOptionDao.class);
-        testOrchastrator.routerDao = mock(DomainRouterDao.class);
-        testOrchastrator.routerNetworkDao = mock(RouterNetworkDao.class);
-        testOrchastrator._vpcMgr = mock(VpcManager.class);
-        testOrchastrator.routerJoinDao = mock(DomainRouterJoinDao.class);
+        testOrchestrator._nicDao = mock(NicDao.class);
+        testOrchestrator._networksDao = mock(NetworkDao.class);
+        testOrchestrator._networkModel = mock(NetworkModel.class);
+        testOrchestrator._nicSecondaryIpDao = mock(NicSecondaryIpDao.class);
+        testOrchestrator._ntwkSrvcDao = mock(NetworkServiceMapDao.class);
+        testOrchestrator._nicIpAliasDao = mock(NicIpAliasDao.class);
+        testOrchestrator._ipAddressDao = mock(IPAddressDao.class);
+        testOrchestrator._vlanDao = mock(VlanDao.class);
+        testOrchestrator._networkModel = mock(NetworkModel.class);
+        testOrchestrator._nicExtraDhcpOptionDao = mock(NicExtraDhcpOptionDao.class);
+        testOrchestrator.routerDao = mock(DomainRouterDao.class);
+        testOrchestrator.routerNetworkDao = mock(RouterNetworkDao.class);
+        testOrchestrator._vpcMgr = mock(VpcManager.class);
+        testOrchestrator.routerJoinDao = mock(DomainRouterJoinDao.class);
+        testOrchestrator._ipAddrMgr = mock(IpAddressManager.class);
+        testOrchestrator._entityMgr = mock(EntityManager.class);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();
@@ -133,13 +143,13 @@ public class NetworkOrchestratorTest extends TestCase {
         when(provider.getCapabilities()).thenReturn(services);
         capabilities.put(Network.Capability.DhcpAccrossMultipleSubnets, "true");
 
-        when(testOrchastrator._ntwkSrvcDao.getProviderForServiceInNetwork(Matchers.anyLong(), Matchers.eq(Service.Dhcp))).thenReturn(dhcpProvider);
-        when(testOrchastrator._networkModel.getElementImplementingProvider(dhcpProvider)).thenReturn(provider);
+        when(testOrchestrator._ntwkSrvcDao.getProviderForServiceInNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.eq(Service.Dhcp))).thenReturn(dhcpProvider);
+        when(testOrchestrator._networkModel.getElementImplementingProvider(dhcpProvider)).thenReturn(provider);
 
         when(guru.getName()).thenReturn(guruName);
         List<NetworkGuru> networkGurus = new ArrayList<NetworkGuru>();
         networkGurus.add(guru);
-        testOrchastrator.networkGurus = networkGurus;
+        testOrchestrator.networkGurus = networkGurus;
 
         when(networkOffering.getGuestType()).thenReturn(GuestType.L2);
         when(networkOffering.getId()).thenReturn(networkOfferingId);
@@ -154,21 +164,21 @@ public class NetworkOrchestratorTest extends TestCase {
 
         // make sure that release dhcp will be called
         when(vm.getType()).thenReturn(Type.User);
-        when(testOrchastrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(true);
+        when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(true);
         when(network.getTrafficType()).thenReturn(TrafficType.Guest);
         when(network.getGuestType()).thenReturn(GuestType.Shared);
-        when(testOrchastrator._nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()))
+        when(testOrchestrator._nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()))
                 .thenReturn(new ArrayList<NicVO>());
 
         when(network.getGuruName()).thenReturn(guruName);
-        when(testOrchastrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
 
-        testOrchastrator.removeNic(vm, nic);
+        testOrchestrator.removeNic(vm, nic);
 
         verify(nic, times(1)).setState(Nic.State.Deallocating);
-        verify(testOrchastrator._networkModel, times(2)).getElementImplementingProvider(dhcpProvider);
-        verify(testOrchastrator._ntwkSrvcDao, times(2)).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
-        verify(testOrchastrator._networksDao, times(2)).findById(nic.getNetworkId());
+        verify(testOrchestrator._networkModel, times(2)).getElementImplementingProvider(dhcpProvider);
+        verify(testOrchestrator._ntwkSrvcDao, times(2)).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+        verify(testOrchestrator._networksDao, times(2)).findById(nic.getNetworkId());
     }
     @Test
     public void testDontRemoveDhcpServiceFromDomainRouter() {
@@ -181,14 +191,14 @@ public class NetworkOrchestratorTest extends TestCase {
         when(vm.getType()).thenReturn(Type.DomainRouter);
 
         when(network.getGuruName()).thenReturn(guruName);
-        when(testOrchastrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
 
-        testOrchastrator.removeNic(vm, nic);
+        testOrchestrator.removeNic(vm, nic);
 
         verify(nic, times(1)).setState(Nic.State.Deallocating);
-        verify(testOrchastrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
-        verify(testOrchastrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
-        verify(testOrchastrator._networksDao, times(1)).findById(nic.getNetworkId());
+        verify(testOrchestrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
+        verify(testOrchestrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+        verify(testOrchestrator._networksDao, times(1)).findById(nic.getNetworkId());
     }
     @Test
     public void testDontRemoveDhcpServiceWhenNotProvided() {
@@ -199,45 +209,45 @@ public class NetworkOrchestratorTest extends TestCase {
 
         // make sure that release dhcp will *not* be called
         when(vm.getType()).thenReturn(Type.User);
-        when(testOrchastrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(false);
+        when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(false);
 
         when(network.getGuruName()).thenReturn(guruName);
-        when(testOrchastrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
 
-        testOrchastrator.removeNic(vm, nic);
+        testOrchestrator.removeNic(vm, nic);
 
         verify(nic, times(1)).setState(Nic.State.Deallocating);
-        verify(testOrchastrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
-        verify(testOrchastrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
-        verify(testOrchastrator._networksDao, times(1)).findById(nic.getNetworkId());
+        verify(testOrchestrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
+        verify(testOrchestrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+        verify(testOrchestrator._networksDao, times(1)).findById(nic.getNetworkId());
     }
 
     @Test
     public void testCheckL2OfferingServicesEmptyServices() {
-        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(new ArrayList<>());
-        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
-        testOrchastrator.checkL2OfferingServices(networkOffering);
+        when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(new ArrayList<>());
+        when(testOrchestrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
+        testOrchestrator.checkL2OfferingServices(networkOffering);
     }
 
     @Test
     public void testCheckL2OfferingServicesUserDataOnly() {
-        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData));
-        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
-        testOrchastrator.checkL2OfferingServices(networkOffering);
+        when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData));
+        when(testOrchestrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
+        testOrchestrator.checkL2OfferingServices(networkOffering);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckL2OfferingServicesMultipleServicesIncludingUserData() {
-        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData, Service.Dhcp));
-        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
-        testOrchastrator.checkL2OfferingServices(networkOffering);
+        when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData, Service.Dhcp));
+        when(testOrchestrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
+        testOrchestrator.checkL2OfferingServices(networkOffering);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckL2OfferingServicesMultipleServicesNotIncludingUserData() {
-        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
-        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
-        testOrchastrator.checkL2OfferingServices(networkOffering);
+        when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+        when(testOrchestrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
+        testOrchestrator.checkL2OfferingServices(networkOffering);
     }
 
     @Test
@@ -249,7 +259,7 @@ public class NetworkOrchestratorTest extends TestCase {
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
                 requestedNicProfile, null, "192.168.100.150");
 
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
 
         verifyAndAssert("192.168.100.150", "192.168.100.1", "255.255.255.0", nicProfile, 1, 1);
     }
@@ -263,7 +273,7 @@ public class NetworkOrchestratorTest extends TestCase {
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
 
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
 
         verifyAndAssert("192.168.100.150", "192.168.100.1", "255.255.255.0", nicProfile, 1, 0);
     }
@@ -290,7 +300,7 @@ public class NetworkOrchestratorTest extends TestCase {
 
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
                 requestedNicProfile, null, requestedIpv4Address);
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
 
         verifyAndAssert(null, null, null, nicProfile, 0, 0);
     }
@@ -317,7 +327,7 @@ public class NetworkOrchestratorTest extends TestCase {
 
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, ipv4Gateway, "255.255.255.0", "00-88-14-4D-4C-FB",
                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
         verifyAndAssert(null, null, null, nicProfile, 1, 0);
     }
 
@@ -343,7 +353,7 @@ public class NetworkOrchestratorTest extends TestCase {
 
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", ipv4Netmask, "00-88-14-4D-4C-FB",
                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
         verifyAndAssert(null, null, null, nicProfile, 1, 0);
     }
 
@@ -355,9 +365,9 @@ public class NetworkOrchestratorTest extends TestCase {
 
         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
-        when(testOrchastrator._vlanDao.findByNetworkIdAndIpv4(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
+        when(testOrchestrator._vlanDao.findByNetworkIdAndIpv4(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
 
-        testOrchastrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
         verifyAndAssert(null, null, null, nicProfile, 0, 0);
     }
 
@@ -373,21 +383,21 @@ public class NetworkOrchestratorTest extends TestCase {
         when(ipVoSpy.getState()).thenReturn(state);
 
         if (ipVoIsNull) {
-            when(testOrchastrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
+            when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
         } else {
-            when(testOrchastrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
+            when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
         }
 
         VlanVO vlanSpy = Mockito.spy(new VlanVO(Vlan.VlanType.DirectAttached, "vlanTag", vlanGateway, vlanNetmask, 0l, "192.168.100.100 - 192.168.100.200", 0l, new Long(0l),
                 "ip6Gateway", "ip6Cidr", "ip6Range"));
 
         Mockito.doReturn(0l).when(vlanSpy).getId();
-        when(testOrchastrator._vlanDao.findByNetworkIdAndIpv4(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlanSpy);
-        when(testOrchastrator._ipAddressDao.acquireInLockTable(Mockito.anyLong())).thenReturn(ipVoSpy);
-        when(testOrchastrator._ipAddressDao.update(Mockito.anyLong(), Mockito.any(IPAddressVO.class))).thenReturn(true);
-        when(testOrchastrator._ipAddressDao.releaseFromLockTable(Mockito.anyLong())).thenReturn(true);
+        when(testOrchestrator._vlanDao.findByNetworkIdAndIpv4(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlanSpy);
+        when(testOrchestrator._ipAddressDao.acquireInLockTable(Mockito.anyLong())).thenReturn(ipVoSpy);
+        when(testOrchestrator._ipAddressDao.update(Mockito.anyLong(), Mockito.any(IPAddressVO.class))).thenReturn(true);
+        when(testOrchestrator._ipAddressDao.releaseFromLockTable(Mockito.anyLong())).thenReturn(true);
         try {
-            when(testOrchastrator._networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(macAddress);
+            when(testOrchestrator._networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(macAddress);
         } catch (InsufficientAddressCapacityException e) {
             e.printStackTrace();
         }
@@ -395,9 +405,9 @@ public class NetworkOrchestratorTest extends TestCase {
 
     private void verifyAndAssert(String requestedIpv4Address, String ipv4Gateway, String ipv4Netmask, NicProfile nicProfile, int acquireLockAndCheckIfIpv4IsFreeTimes,
             int nextMacAddressTimes) {
-        verify(testOrchastrator, times(acquireLockAndCheckIfIpv4IsFreeTimes)).acquireLockAndCheckIfIpv4IsFree(Mockito.any(Network.class), Mockito.anyString());
+        verify(testOrchestrator, times(acquireLockAndCheckIfIpv4IsFreeTimes)).acquireLockAndCheckIfIpv4IsFree(Mockito.any(Network.class), Mockito.anyString());
         try {
-            verify(testOrchastrator._networkModel, times(nextMacAddressTimes)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
+            verify(testOrchestrator._networkModel, times(nextMacAddressTimes)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         } catch (InsufficientAddressCapacityException e) {
             e.printStackTrace();
         }
@@ -439,27 +449,27 @@ public class NetworkOrchestratorTest extends TestCase {
         ipVoSpy.setState(state);
         ipVoSpy.setState(state);
         if (isIPAddressVONull) {
-            when(testOrchastrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
+            when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
         } else {
-            when(testOrchastrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
+            when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString())).thenReturn(ipVoSpy);
         }
-        when(testOrchastrator._ipAddressDao.acquireInLockTable(Mockito.anyLong())).thenReturn(ipVoSpy);
-        when(testOrchastrator._ipAddressDao.releaseFromLockTable(Mockito.anyLong())).thenReturn(true);
-        when(testOrchastrator._ipAddressDao.update(Mockito.anyLong(), Mockito.any(IPAddressVO.class))).thenReturn(true);
+        when(testOrchestrator._ipAddressDao.acquireInLockTable(Mockito.anyLong())).thenReturn(ipVoSpy);
+        when(testOrchestrator._ipAddressDao.releaseFromLockTable(Mockito.anyLong())).thenReturn(true);
+        when(testOrchestrator._ipAddressDao.update(Mockito.anyLong(), Mockito.any(IPAddressVO.class))).thenReturn(true);
 
-        testOrchastrator.acquireLockAndCheckIfIpv4IsFree(network, "192.168.100.150");
+        testOrchestrator.acquireLockAndCheckIfIpv4IsFree(network, "192.168.100.150");
 
-        verify(testOrchastrator._ipAddressDao, Mockito.times(findByIpTimes)).findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString());
-        verify(testOrchastrator._ipAddressDao, Mockito.times(acquireLockTimes)).acquireInLockTable(Mockito.anyLong());
-        verify(testOrchastrator._ipAddressDao, Mockito.times(releaseFromLockTimes)).releaseFromLockTable(Mockito.anyLong());
-        verify(testOrchastrator._ipAddressDao, Mockito.times(updateTimes)).update(Mockito.anyLong(), Mockito.any(IPAddressVO.class));
-        verify(testOrchastrator, Mockito.times(validateTimes)).validateLockedRequestedIp(Mockito.any(IPAddressVO.class), Mockito.any(IPAddressVO.class));
+        verify(testOrchestrator._ipAddressDao, Mockito.times(findByIpTimes)).findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString());
+        verify(testOrchestrator._ipAddressDao, Mockito.times(acquireLockTimes)).acquireInLockTable(Mockito.anyLong());
+        verify(testOrchestrator._ipAddressDao, Mockito.times(releaseFromLockTimes)).releaseFromLockTable(Mockito.anyLong());
+        verify(testOrchestrator._ipAddressDao, Mockito.times(updateTimes)).update(Mockito.anyLong(), Mockito.any(IPAddressVO.class));
+        verify(testOrchestrator, Mockito.times(validateTimes)).validateLockedRequestedIp(Mockito.any(IPAddressVO.class), Mockito.any(IPAddressVO.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateLockedRequestedIpTestNullLockedIp() {
         IPAddressVO ipVoSpy = Mockito.spy(new IPAddressVO(new Ip("192.168.100.100"), 0l, 0l, 0l, true));
-        testOrchastrator.validateLockedRequestedIp(ipVoSpy, null);
+        testOrchestrator.validateLockedRequestedIp(ipVoSpy, null);
     }
 
     @Test
@@ -474,7 +484,7 @@ public class NetworkOrchestratorTest extends TestCase {
             IPAddressVO lockedIp = ipVoSpy;
             lockedIp.setState(states[i]);
             try {
-                testOrchastrator.validateLockedRequestedIp(ipVoSpy, lockedIp);
+                testOrchestrator.validateLockedRequestedIp(ipVoSpy, lockedIp);
             } catch (InvalidParameterValueException e) {
                 expectedException = true;
             }
@@ -487,7 +497,7 @@ public class NetworkOrchestratorTest extends TestCase {
         IPAddressVO ipVoSpy = Mockito.spy(new IPAddressVO(new Ip("192.168.100.100"), 0l, 0l, 0l, true));
         IPAddressVO lockedIp = ipVoSpy;
         lockedIp.setState(State.Free);
-        testOrchastrator.validateLockedRequestedIp(ipVoSpy, lockedIp);
+        testOrchestrator.validateLockedRequestedIp(ipVoSpy, lockedIp);
     }
 
     @Test
@@ -498,16 +508,16 @@ public class NetworkOrchestratorTest extends TestCase {
 
         when(vm.getType()).thenReturn(Type.User);
         when(network.getGuruName()).thenReturn(guruName);
-        when(testOrchastrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
 
         Long nicId = 1L;
         when(nic.getId()).thenReturn(nicId);
         when(vm.getParameter(VirtualMachineProfile.Param.PreserveNics)).thenReturn(true);
 
-        testOrchastrator.removeNic(vm, nic);
+        testOrchestrator.removeNic(vm, nic);
 
         verify(nic, never()).setState(Nic.State.Deallocating);
-        verify(testOrchastrator._nicDao, never()).remove(nicId);
+        verify(testOrchestrator._nicDao, never()).remove(nicId);
     }
 
     public void encodeVlanIdIntoBroadcastUriTestVxlan() {
@@ -566,7 +576,7 @@ public class NetworkOrchestratorTest extends TestCase {
 
     @Test(expected = InvalidParameterValueException.class)
     public void encodeVlanIdIntoBroadcastUriTestNullNetwork() {
-        URI resultUri = testOrchastrator.encodeVlanIdIntoBroadcastUri("vxlan://123", null);
+        URI resultUri = testOrchestrator.encodeVlanIdIntoBroadcastUri("vxlan://123", null);
     }
 
     private void encodeVlanIdIntoBroadcastUriPrepareAndTest(String vlanId, String isolationMethod, String expectedIsolation, String expectedUri) {
@@ -575,7 +585,7 @@ public class NetworkOrchestratorTest extends TestCase {
         isolationMethods.add(isolationMethod);
         physicalNetwork.setIsolationMethods(isolationMethods);
 
-        URI resultUri = testOrchastrator.encodeVlanIdIntoBroadcastUri(vlanId, physicalNetwork);
+        URI resultUri = testOrchestrator.encodeVlanIdIntoBroadcastUri(vlanId, physicalNetwork);
 
         Assert.assertEquals(expectedIsolation, resultUri.getScheme());
         Assert.assertEquals(expectedUri, resultUri.toString());
@@ -593,17 +603,17 @@ public class NetworkOrchestratorTest extends TestCase {
         Mockito.when(network.getDns2()).thenReturn(ip4Dns[1]);
         Mockito.when(network.getIp6Dns1()).thenReturn(ip6Dns[0]);
         Mockito.when(network.getIp6Dns2()).thenReturn(ip6Dns[1]);
-        Mockito.when(testOrchastrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
+        Mockito.when(testOrchestrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
         NicVO nicVO = Mockito.mock(NicVO.class);
         Mockito.when(nicVO.isDefaultNic()).thenReturn(isDefaultNic);
-        Mockito.when(testOrchastrator._nicDao.findById(nicId)).thenReturn(nicVO);
-        Mockito.when(testOrchastrator._nicDao.update(nicId, nicVO)).thenReturn(true);
-        Mockito.when(testOrchastrator._networkModel.isSecurityGroupSupportedInNetwork(network)).thenReturn(false);
-        Mockito.when(testOrchastrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn(null);
-        Mockito.when(testOrchastrator._ntwkSrvcDao.getDistinctProviders(networkId)).thenReturn(new ArrayList<>());
-        testOrchastrator.networkElements = new ArrayList<>();
-        Mockito.when(testOrchastrator._nicExtraDhcpOptionDao.listByNicId(nicId)).thenReturn(new ArrayList<>());
-        Mockito.when(testOrchastrator._ntwkSrvcDao.areServicesSupportedInNetwork(networkId, Service.Dhcp)).thenReturn(false);
+        Mockito.when(testOrchestrator._nicDao.findById(nicId)).thenReturn(nicVO);
+        Mockito.when(testOrchestrator._nicDao.update(nicId, nicVO)).thenReturn(true);
+        Mockito.when(testOrchestrator._networkModel.isSecurityGroupSupportedInNetwork(network)).thenReturn(false);
+        Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn(null);
+        Mockito.when(testOrchestrator._ntwkSrvcDao.getDistinctProviders(networkId)).thenReturn(new ArrayList<>());
+        testOrchestrator.networkElements = new ArrayList<>();
+        Mockito.when(testOrchestrator._nicExtraDhcpOptionDao.listByNicId(nicId)).thenReturn(new ArrayList<>());
+        Mockito.when(testOrchestrator._ntwkSrvcDao.areServicesSupportedInNetwork(networkId, Service.Dhcp)).thenReturn(false);
         VirtualMachineProfile virtualMachineProfile = Mockito.mock(VirtualMachineProfile.class);
         Mockito.when(virtualMachineProfile.getType()).thenReturn(vmType);
         Mockito.when(virtualMachineProfile.getId()).thenReturn(vmId);
@@ -632,7 +642,7 @@ public class NetworkOrchestratorTest extends TestCase {
                 Mockito.when(vpcVO.getIp4Dns1()).thenReturn(null);
                 Mockito.when(vpcVO.getIp6Dns1()).thenReturn(null);
             }
-            Mockito.when(testOrchastrator._vpcMgr.getActiveVpc(vpcId)).thenReturn(vpcVO);
+            Mockito.when(testOrchestrator._vpcMgr.getActiveVpc(vpcId)).thenReturn(vpcVO);
         } else {
             Mockito.when(routerVO.getVpcId()).thenReturn(null);
             Long routerNetworkId = 2L;
@@ -646,13 +656,13 @@ public class NetworkOrchestratorTest extends TestCase {
                 Mockito.when(routerNetworkVO.getDns1()).thenReturn(null);
                 Mockito.when(routerNetworkVO.getIp6Dns1()).thenReturn(null);
             }
-            Mockito.when(testOrchastrator.routerNetworkDao.getRouterNetworks(vmId)).thenReturn(List.of(routerNetworkId));
-            Mockito.when(testOrchastrator._networksDao.findById(routerNetworkId)).thenReturn(routerNetworkVO);
+            Mockito.when(testOrchestrator.routerNetworkDao.getRouterNetworks(vmId)).thenReturn(List.of(routerNetworkId));
+            Mockito.when(testOrchestrator._networksDao.findById(routerNetworkId)).thenReturn(routerNetworkVO);
         }
-        Mockito.when(testOrchastrator.routerDao.findById(vmId)).thenReturn(routerVO);
+        Mockito.when(testOrchestrator.routerDao.findById(vmId)).thenReturn(routerVO);
         NicProfile profile = null;
         try {
-            profile = testOrchastrator.prepareNic(virtualMachineProfile, deployDestination, reservationContext, nicId, network);
+            profile = testOrchestrator.prepareNic(virtualMachineProfile, deployDestination, reservationContext, nicId, network);
         } catch (InsufficientCapacityException | ResourceUnavailableException e) {
             Assert.fail(String.format("Failure with exception %s", e.getMessage()));
         }
@@ -707,5 +717,296 @@ public class NetworkOrchestratorTest extends TestCase {
         Assert.assertEquals(ip4Dns[1], profile.getIPv4Dns2());
         Assert.assertEquals(ip6Dns[0], profile.getIPv6Dns1());
         Assert.assertEquals(ip6Dns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testGetNetworkGatewayAndNetmaskForNicImportAdvancedZone() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        String ipAddress = "10.1.1.10";
+
+        String networkGateway = "10.1.1.1";
+        String networkNetmask = "255.255.255.0";
+        String networkCidr = "10.1.1.0/24";
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        Mockito.when(network.getGateway()).thenReturn(networkGateway);
+        Mockito.when(network.getCidr()).thenReturn(networkCidr);
+        Pair<String, String> pair = testOrchestrator.getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, ipAddress);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals(networkGateway, pair.first());
+        Assert.assertEquals(networkNetmask, pair.second());
+    }
+
+    @Test
+    public void testGetNetworkGatewayAndNetmaskForNicImportBasicZone() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+        String ipAddress = "172.1.1.10";
+
+        String defaultNetworkGateway = "172.1.1.1";
+        String defaultNetworkNetmask = "255.255.255.0";
+        VlanVO vlan = Mockito.mock(VlanVO.class);
+        Mockito.when(vlan.getVlanGateway()).thenReturn(defaultNetworkGateway);
+        Mockito.when(vlan.getVlanNetmask()).thenReturn(defaultNetworkNetmask);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        Mockito.when(ipAddressVO.getVlanId()).thenReturn(1L);
+        Mockito.when(testOrchestrator._vlanDao.findById(1L)).thenReturn(vlan);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIp(ipAddress)).thenReturn(ipAddressVO);
+        Pair<String, String> pair = testOrchestrator.getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, ipAddress);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals(defaultNetworkGateway, pair.first());
+        Assert.assertEquals(defaultNetworkNetmask, pair.second());
+    }
+
+    @Test
+    public void testGetGuestIpForNicImportL2Network() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.L2);
+        Assert.assertNull(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses));
+    }
+
+    @Test
+    public void testGetGuestIpForNicImportAdvancedZone() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        String ipAddress = "10.1.10.10";
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+        Mockito.when(testOrchestrator._ipAddrMgr.acquireGuestIpAddress(network, ipAddress)).thenReturn(ipAddress);
+        String guestIp = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Assert.assertEquals(ipAddress, guestIp);
+    }
+
+    @Test
+    public void testGetGuestIpForNicImportBasicZoneAutomaticIP() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        long networkId = 1L;
+        long dataCenterId = 1L;
+        String freeIp = "172.10.10.10";
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+        Ip ip = mock(Ip.class);
+        Mockito.when(ip.addr()).thenReturn(freeIp);
+        Mockito.when(ipAddressVO.getAddress()).thenReturn(ip);
+        Mockito.when(ipAddressVO.getState()).thenReturn(State.Free);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
+        Mockito.when(testOrchestrator._ipAddressDao.findBySourceNetworkIdAndDatacenterIdAndState(networkId, dataCenterId, State.Free)).thenReturn(ipAddressVO);
+        String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Assert.assertEquals(freeIp, ipAddress);
+    }
+
+    @Test
+    public void testGetGuestIpForNicImportBasicZoneManualIP() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        long networkId = 1L;
+        long dataCenterId = 1L;
+        String requestedIp = "172.10.10.10";
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+        Ip ip = mock(Ip.class);
+        Mockito.when(ip.addr()).thenReturn(requestedIp);
+        Mockito.when(ipAddressVO.getAddress()).thenReturn(ip);
+        Mockito.when(ipAddressVO.getState()).thenReturn(State.Free);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+        Assert.assertEquals(requestedIp, ipAddress);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetGuestIpForNicImportBasicUsedIP() {
+        Network network = Mockito.mock(Network.class);
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
+        Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+        long networkId = 1L;
+        long dataCenterId = 1L;
+        String requestedIp = "172.10.10.10";
+        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+        Ip ip = mock(Ip.class);
+        Mockito.when(ip.addr()).thenReturn(requestedIp);
+        Mockito.when(ipAddressVO.getAddress()).thenReturn(ip);
+        Mockito.when(ipAddressVO.getState()).thenReturn(State.Allocated);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
+        Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+        testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+    }
+
+    @Test
+    public void testShutdownNetworkAcquireLockFailed() {
+        ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+        NetworkVO network = mock(NetworkVO.class);
+        long networkId = 1;
+        when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(null);
+
+        boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
+        Assert.assertFalse(shutdownNetworkStatus);
+
+        verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
+    }
+
+    @Test
+    public void testShutdownNetworkInAllocatedState() {
+        ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+        NetworkVO network = mock(NetworkVO.class);
+        long networkId = 1;
+        when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
+        when(network.getId()).thenReturn(networkId);
+        when(network.getState()).thenReturn(Network.State.Allocated);
+
+        boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
+        Assert.assertTrue(shutdownNetworkStatus);
+
+        verify(network, times(1)).getState();
+        verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
+        verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);
+    }
+
+    @Test
+    public void testShutdownNetworkInImplementingState() {
+        ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+        NetworkVO network = mock(NetworkVO.class);
+        long networkId = 1;
+        when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
+        when(network.getId()).thenReturn(networkId);
+        when(network.getState()).thenReturn(Network.State.Implementing);
+
+        boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
+        Assert.assertFalse(shutdownNetworkStatus);
+
+        verify(network, times(3)).getState();
+        verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
+        verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);
+    }
+
+    @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+    public void testImportNicAcquireGuestIPFailed() throws Exception {
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        long dataCenterId = 1L;
+        Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        String ipAddress = "10.1.10.10";
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
+        Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+        String macAddress = "02:01:01:82:00:01";
+        int deviceId = 0;
+        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+    }
+
+    @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+    public void testImportNicAutoAcquireGuestIPFailed() throws Exception {
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+        Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        long dataCenterId = 1L;
+        Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        String ipAddress = "auto";
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
+        Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+        String macAddress = "02:01:01:82:00:01";
+        int deviceId = 0;
+        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+    }
+
+    @Test
+    public void testImportNicNoIP4Address() throws Exception {
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Long vmId = 1L;
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getHypervisorType()).thenReturn(hypervisorType);
+        Long networkId = 1L;
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(null);
+        URI broadcastUri = URI.create("vlan://123");
+        NicVO nic = mock(NicVO.class);
+        Mockito.when(nic.getBroadcastUri()).thenReturn(broadcastUri);
+        String macAddress = "02:01:01:82:00:01";
+        int deviceId = 1;
+        Integer networkRate = 200;
+        Mockito.when(testOrchestrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
+        Mockito.when(testOrchestrator._networkModel.isSecurityGroupSupportedInNetwork(network)).thenReturn(false);
+        Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
+            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+            verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
+            verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
+            verify(testOrchestrator._networkModel, times(1)).getNetworkTag(Hypervisor.HypervisorType.KVM, network);
+            assertEquals(deviceId, nicProfileIntegerPair.second().intValue());
+            NicProfile nicProfile = nicProfileIntegerPair.first();
+            assertEquals(broadcastUri, nicProfile.getBroadCastUri());
+            assertEquals(networkRate, nicProfile.getNetworkRate());
+            assertFalse(nicProfile.isSecurityGroupEnabled());
+            assertEquals("testtag", nicProfile.getName());
+        }
+    }
+
+    @Test
+    public void testImportNicWithIP4Address() throws Exception {
+        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+        Long vmId = 1L;
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        VirtualMachine vm = mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getHypervisorType()).thenReturn(hypervisorType);
+        Long networkId = 1L;
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        String ipAddress = "10.1.10.10";
+        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+        URI broadcastUri = URI.create("vlan://123");
+        NicVO nic = mock(NicVO.class);
+        Mockito.when(nic.getBroadcastUri()).thenReturn(broadcastUri);
+        String macAddress = "02:01:01:82:00:01";
+        int deviceId = 1;
+        Integer networkRate = 200;
+        Mockito.when(testOrchestrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
+        Mockito.when(testOrchestrator._networkModel.isSecurityGroupSupportedInNetwork(network)).thenReturn(false);
+        Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
+            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+            verify(testOrchestrator, times(1)).getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+            verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
+            verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
+            verify(testOrchestrator._networkModel, times(1)).getNetworkTag(Hypervisor.HypervisorType.KVM, network);
+            assertEquals(deviceId, nicProfileIntegerPair.second().intValue());
+            NicProfile nicProfile = nicProfileIntegerPair.first();
+            assertEquals(broadcastUri, nicProfile.getBroadCastUri());
+            assertEquals(networkRate, nicProfile.getNetworkRate());
+            assertFalse(nicProfile.isSecurityGroupEnabled());
+            assertEquals("testtag", nicProfile.getName());
+        }
     }
 }

@@ -32,8 +32,8 @@ public class BaseTypeTest {
 
     @Test
     public void testIsSameTypeAs() {
-        Assert.assertTrue("'a' and 'A' should be considdered the same type", new TestType("a").isSameTypeAs("A"));
-        Assert.assertTrue("'B' and 'b' should be considdered the same address", new TestType("B").isSameTypeAs(new TestType("b")));
+        Assert.assertTrue("'a' and 'A' should be considered the same type", new TestType("a").isSameTypeAs("A"));
+        Assert.assertTrue("'B' and 'b' should be considered the same address", new TestType("B").isSameTypeAs(new TestType("b")));
     }
     class TestType extends BaseType {
         String content;

@@ -19,8 +19,11 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsFetchInterfaceAnswer;
@@ -28,36 +31,75 @@ import com.cloud.agent.api.OvsFetchInterfaceCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.script.Script;
+import com.cloud.utils.Ternary;
 
 @ResourceWrapper(handles =  OvsFetchInterfaceCommand.class)
 public final class LibvirtOvsFetchInterfaceCommandWrapper extends CommandWrapper<OvsFetchInterfaceCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsFetchInterfaceCommandWrapper.class);
+
+    private String getSubnetMaskForAddress(NetworkInterface networkInterface, InetAddress inetAddress) {
+        for (InterfaceAddress address : networkInterface.getInterfaceAddresses()) {
+            if (!inetAddress.equals(address.getAddress())) {
+                continue;
+            }
+            int prefixLength = address.getNetworkPrefixLength();
+            int mask = 0xffffffff << (32 - prefixLength);
+            return String.format("%d.%d.%d.%d",
+                    (mask >>> 24) & 0xff,
+                    (mask >>> 16) & 0xff,
+                    (mask >>> 8) & 0xff,
+                    mask & 0xff);
+        }
+        return "";
+    }
+
+    private String getMacAddress(NetworkInterface networkInterface) throws SocketException {
+        byte[] macBytes = networkInterface.getHardwareAddress();
+        if (macBytes == null) {
+            return "";
+        }
+        StringBuilder macAddress = new StringBuilder();
+        for (byte b : macBytes) {
+            macAddress.append(String.format("%02X:", b));
+        }
+        if (macAddress.length() > 0) {
+            macAddress.deleteCharAt(macAddress.length() - 1);  // Remove trailing colon
+        }
+        return macAddress.toString();
+    }
+
+    public Ternary<String, String, String> getInterfaceDetails(String interfaceName) throws SocketException {
+        NetworkInterface networkInterface = NetworkInterface.getByName(interfaceName);
+        if (networkInterface == null) {
+            logger.warn(String.format("Network interface: '%s' not found", interfaceName));
+            return new Ternary<>(null, null, null);
+        }
+        Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+        while (inetAddresses.hasMoreElements()) {
+            InetAddress inetAddress = inetAddresses.nextElement();
+            if (inetAddress instanceof java.net.Inet4Address) {
+                String ipAddress = inetAddress.getHostAddress();
+                String subnetMask = getSubnetMaskForAddress(networkInterface, inetAddress);
+                String macAddress = getMacAddress(networkInterface);
+                return new Ternary<>(ipAddress, subnetMask, macAddress);
+            }
+        }
+        return new Ternary<>(null, null, null);
+    }
 
     @Override
     public Answer execute(final OvsFetchInterfaceCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        final String label = command.getLabel();
+        final String label = "'" + command.getLabel() + "'";
 
-        s_logger.debug("Will look for network with name-label:" + label);
+        logger.debug("Will look for network with name-label:" + label);
         try {
-            String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
-            if (StringUtils.isEmpty(ipadd)) {
-                ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep ' inet ' | awk '{ print $2}'");
-            }
-            String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
-            if (StringUtils.isEmpty(mask)) {
-                mask = Script.runSimpleBashScript("ifconfig " + label + " | grep ' inet ' | awk '{ print $4}'");
-            }
-            String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
-            if (StringUtils.isEmpty(mac)) {
-                mac = Script.runSimpleBashScript("ifconfig " + label + " | grep ' ether ' | awk '{ print $2}'");
-            }
+            Ternary<String, String, String> interfaceDetails = getInterfaceDetails(label);
             return new OvsFetchInterfaceAnswer(command, true, "Interface " + label
-                    + " retrieved successfully", ipadd, mask, mac);
+                    + " retrieved successfully", interfaceDetails.first(), interfaceDetails.second(),
+                    interfaceDetails.third());
 
         } catch (final Exception e) {
-            s_logger.warn("Caught execption when fetching interface", e);
+            logger.warn("Caught execption when fetching interface", e);
             return new OvsFetchInterfaceAnswer(command, false, "EXCEPTION:"
                     + e.getMessage());
         }

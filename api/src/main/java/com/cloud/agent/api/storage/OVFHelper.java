@@ -39,7 +39,8 @@ import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -63,7 +64,7 @@ import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OVFHelper {
-    private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final OVFParser ovfParser;
 
@@ -118,7 +119,7 @@ public class OVFHelper {
         boolean password = StringUtils.isNotBlank(passStr) && passStr.equalsIgnoreCase("true");
         String label = ovfParser.getChildNodeValue(node, "Label");
         String description = ovfParser.getChildNodeValue(node, "Description");
-        s_logger.debug("Creating OVF property index " + index + (category == null ? "" : " for category " + category)
+        logger.debug("Creating OVF property index " + index + (category == null ? "" : " for category " + category)
                 + " with key = " + key);
         return new OVFPropertyTO(key, type, value, qualifiers, userConfigurable,
                 label, description, password, index, category);
@@ -151,7 +152,7 @@ public class OVFHelper {
                     if (child.getNodeName().equalsIgnoreCase("Category") ||
                             child.getNodeName().endsWith(":Category")) {
                         lastCategoryFound = child.getTextContent();
-                        s_logger.info("Category found " + lastCategoryFound);
+                        logger.info("Category found " + lastCategoryFound);
                     } else if (child.getNodeName().equalsIgnoreCase("Property") ||
                             child.getNodeName().endsWith(":Property")) {
                         OVFPropertyTO prop = createOVFPropertyFromNode(child, propertyIndex, lastCategoryFound);
@@ -249,13 +250,13 @@ public class OVFHelper {
         int diskNumber = 0;
         for (OVFVirtualHardwareItemTO diskItem : diskHardwareItems) {
             if (StringUtils.isBlank(diskItem.getHostResource())) {
-                s_logger.error("Missing disk information for hardware item " + diskItem.getElementName() + " " + diskItem.getInstanceId());
+                logger.error("Missing disk information for hardware item " + diskItem.getElementName() + " " + diskItem.getInstanceId());
                 continue;
             }
             String diskId = extractDiskIdFromDiskHostResource(diskItem.getHostResource());
             OVFDisk diskDefinition = getDiskDefinitionFromDiskId(diskId, disks);
             if (diskDefinition == null) {
-                s_logger.error("Missing disk definition for disk ID " + diskId);
+                logger.error("Missing disk definition for disk ID " + diskId);
             }
             OVFFile fileDefinition = getFileDefinitionFromDiskDefinition(diskDefinition._fileRef, files);
             DatadiskTO datadiskTO = generateDiskTO(fileDefinition, diskDefinition, ovfParentPath, diskNumber, diskItem);
@@ -277,7 +278,7 @@ public class OVFHelper {
         if (StringUtils.isNotBlank(path)) {
             File f = new File(path);
             if (!f.exists() || f.isDirectory()) {
-                s_logger.error("One of the attached disk or iso does not exists " + path);
+                logger.error("One of the attached disk or iso does not exists " + path);
                 throw new InternalErrorException("One of the attached disk or iso as stated on OVF does not exists " + path);
             }
         }
@@ -333,8 +334,8 @@ public class OVFHelper {
             od._controller = getControllerType(items, od._diskId);
             vd.add(od);
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("found %d disk definitions",vd.size()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("found %d disk definitions",vd.size()));
         }
         return vd;
     }
@@ -365,8 +366,8 @@ public class OVFHelper {
                 vf.add(of);
             }
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("found %d file definitions in %s",vf.size(), ovfFile.getPath()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("found %d file definitions in %s",vf.size(), ovfFile.getPath()));
         }
         return vf;
     }
@@ -461,7 +462,7 @@ public class OVFHelper {
             Element disk = (Element)disks.item(i);
             String fileRef = ovfParser.getNodeAttribute(disk, "fileRef");
             if (keepfile == null) {
-                s_logger.info("FATAL: OVA format error");
+                logger.info("FATAL: OVA format error");
             } else if (keepfile.equals(fileRef)) {
                 keepdisk = ovfParser.getNodeAttribute(disk, "diskId");
             } else {
@@ -505,7 +506,7 @@ public class OVFHelper {
             outfile.write(writer.toString());
             outfile.close();
         } catch (IOException | TransformerException e) {
-            s_logger.info("Unexpected exception caught while rewriting OVF:" + e.getMessage(), e);
+            logger.info("Unexpected exception caught while rewriting OVF:" + e.getMessage(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -521,8 +522,8 @@ public class OVFHelper {
 
     public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("no document to parse; returning no prerequisite networks");
+            if (logger.isTraceEnabled()) {
+                logger.trace("no document to parse; returning no prerequisite networks");
             }
             return Collections.emptyList();
         }
@@ -539,8 +540,8 @@ public class OVFHelper {
     private void matchNicsToNets(Map<String, OVFNetworkTO> nets, Node systemElement) {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("starting out with %d network-prerequisites, parsing hardware",nets.size()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("starting out with %d network-prerequisites, parsing hardware",nets.size()));
         }
         int nicCount = 0;
         for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
@@ -549,8 +550,8 @@ public class OVFHelper {
                 nicCount++;
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
-                    if(s_logger.isInfoEnabled()) {
-                        s_logger.info(String.format("found a nic definition without a network definition byname %s, adding it to the list.", name));
+                    if(logger.isInfoEnabled()) {
+                        logger.info(String.format("found a nic definition without a network definition byname %s, adding it to the list.", name));
                     }
                     nets.put(name, new OVFNetworkTO());
                 }
@@ -560,8 +561,8 @@ public class OVFHelper {
                 }
             }
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("ending up with %d network-prerequisites, parsed %d nics", nets.size(), nicCount));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("ending up with %d network-prerequisites, parsed %d nics", nets.size(), nicCount));
         }
     }
 
@@ -584,7 +585,7 @@ public class OVFHelper {
             int addressOnParent = Integer.parseInt(addressOnParentStr);
             nic.setAddressOnParent(addressOnParent);
         } catch (NumberFormatException e) {
-            s_logger.warn("Encountered element of type \"AddressOnParent\", that could not be parse to an integer number: " + addressOnParentStr);
+            logger.warn("Encountered element of type \"AddressOnParent\", that could not be parse to an integer number: " + addressOnParentStr);
         }
 
         boolean automaticAllocation = StringUtils.isNotBlank(automaticAllocationStr) && Boolean.parseBoolean(automaticAllocationStr);
@@ -596,7 +597,7 @@ public class OVFHelper {
             int instanceId = Integer.parseInt(instanceIdStr);
             nic.setInstanceID(instanceId);
         } catch (NumberFormatException e) {
-            s_logger.warn("Encountered element of type \"InstanceID\", that could not be parse to an integer number: " + instanceIdStr);
+            logger.warn("Encountered element of type \"InstanceID\", that could not be parse to an integer number: " + instanceIdStr);
         }
 
         nic.setResourceSubType(resourceSubType);
@@ -608,7 +609,7 @@ public class OVFHelper {
         NodeList systemElements = ovfParser.getElementsFromOVFDocument(doc, "VirtualSystem");
         if (systemElements.getLength() != 1) {
             String msg = "found " + systemElements.getLength() + " system definitions in OVA, can only handle exactly one.";
-            s_logger.warn(msg);
+            logger.warn(msg);
             throw new InternalErrorException(msg);
         }
     }
@@ -629,8 +630,8 @@ public class OVFHelper {
 
             nets.put(networkName,network);
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("found %d networks in template", nets.size()));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("found %d networks in template", nets.size()));
         }
         return nets;
     }
@@ -770,7 +771,7 @@ public class OVFHelper {
             try {
                 return Long.parseLong(value);
             } catch (NumberFormatException e) {
-                s_logger.debug("Could not parse the value: " + value + ", ignoring it");
+                logger.debug("Could not parse the value: " + value + ", ignoring it");
             }
         }
         return null;
@@ -781,7 +782,7 @@ public class OVFHelper {
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                s_logger.debug("Could not parse the value: " + value + ", ignoring it");
+                logger.debug("Could not parse the value: " + value + ", ignoring it");
             }
         }
         return null;
@@ -807,9 +808,11 @@ public class OVFHelper {
                 String eulaLicense = null;
                 for (int i = 0; i < eulaChildNodes.getLength(); i++) {
                     Node eulaItem = eulaChildNodes.item(i);
-                    if (eulaItem.getNodeName().equalsIgnoreCase("Info")) {
+                    if (eulaItem.getNodeName().equalsIgnoreCase("Info")
+                            || eulaItem.getNodeName().endsWith(":Info")) {
                         eulaInfo = eulaItem.getTextContent();
-                    } else if (eulaItem.getNodeName().equalsIgnoreCase("License")) {
+                    } else if (eulaItem.getNodeName().equalsIgnoreCase("License")
+                            || eulaItem.getNodeName().endsWith(":License")) {
                         eulaLicense = eulaItem.getTextContent();
                     }
                 }
@@ -817,7 +820,7 @@ public class OVFHelper {
                 try {
                     compressedLicense = compressOVFEula(eulaLicense);
                 } catch (IOException e) {
-                    s_logger.error("Could not compress the license for info " + eulaInfo);
+                    logger.error("Could not compress the license for info " + eulaInfo);
                     continue;
                 }
                 OVFEulaSectionTO eula = new OVFEulaSectionTO(eulaInfo, compressedLicense, eulaIndex);

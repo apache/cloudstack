@@ -155,13 +155,13 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat" name="sourcenatipaddress" ref="sourcenatipaddress">
+        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat && !isNsxNetwork" name="sourcenatipaddress" ref="sourcenatipaddress">
           <template #label>
-            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress.description"/>
+            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress?.description"/>
           </template>
           <a-input
             v-model:value="form.sourcenatipaddress"
-            :placeholder="apiParams.sourcenatipaddress.description"/>
+            :placeholder="apiParams.sourcenatipaddress?.description"/>
         </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
@@ -201,7 +201,8 @@ export default {
       publicMtuMax: 1500,
       minMTU: 68,
       errorPublicMtu: '',
-      selectedVpcOffering: {}
+      selectedVpcOffering: {},
+      isNsxNetwork: false
     }
   },
   beforeCreate () {
@@ -278,6 +279,7 @@ export default {
         if (zone.id === value) {
           this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+          this.isNsxNetwork = zone?.isnsxenabled || false
         }
       }
       this.fetchOfferings()

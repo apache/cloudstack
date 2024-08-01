@@ -22,8 +22,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>cloud.ico">
-    <title>Apache CloudStack</title>
+    <link id="favicon" rel="icon" href="<%= BASE_URL %>cloud.ico">
+    <title id="title" >Apache CloudStack</title>
     <style>
       .loader {
         border: 16px solid #F3F3F3;
@@ -54,4 +54,12 @@
       <div class="loader"></div>
     </div>
   </body>
+  <script type="text/javascript">
+    fetch('./config.json')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("favicon").setAttribute("href", data.loginFavicon);
+        document.getElementById("title").innerHTML = data.loginTitle;
+      }).catch((err) => {});
+  </script>
 </html>

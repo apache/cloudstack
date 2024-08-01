@@ -17,9 +17,12 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -28,7 +31,6 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -46,13 +48,14 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long> implements DataCenterJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DataCenterJoinDaoImpl.class);
 
     private SearchBuilder<DataCenterJoinVO> dofIdSearch;
     @Inject
     public AccountManager _accountMgr;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -117,6 +120,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
                 ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
                 zoneResponse.setResourceIconResponse(iconResponse);
             }
+        }
+
+        NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(dataCenter.getId());
+        if (Objects.nonNull(nsxProviderVO)) {
+            zoneResponse.setNsxEnabled(true);
         }
 
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));

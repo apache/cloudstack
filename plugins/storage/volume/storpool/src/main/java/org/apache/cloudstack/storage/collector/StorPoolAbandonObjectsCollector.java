@@ -37,10 +37,9 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
+//import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -53,14 +52,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 public class StorPoolAbandonObjectsCollector extends ManagerBase implements Configurable {
-    private static Logger log = Logger.getLogger(StorPoolAbandonObjectsCollector.class);
     @Inject
     private PrimaryDataStoreDao storagePoolDao;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
 
     private ScheduledExecutorService _volumeTagsUpdateExecutor;
-    private static final String ABANDON_LOG = "/var/log/cloudstack/management/storpool-abandoned-objects";
+    private static final String ABANDON_LOGGER = "/var/log/cloudstack/management/storpool-abandoned-objects";
 
 
     static final ConfigKey<Integer> volumeCheckupTagsInterval = new ConfigKey<Integer>("Advanced", Integer.class,
@@ -91,7 +89,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
     private void init() {
         List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
         if (CollectionUtils.isNotEmpty(spPools)) {
-            StorPoolHelper.appendLogger(log, ABANDON_LOG, "abandon");
+//            StorPoolHelper.appendLogger(logger, ABANDON_LOGGER, "abandon");
         }
         _volumeTagsUpdateExecutor = Executors.newScheduledThreadPool(2,
                 new NamedThreadFactory("StorPoolAbandonObjectsCollector"));
@@ -121,7 +119,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                     JsonArray arr = StorPoolUtil.volumesList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
                     volumes.putAll(getStorPoolNamesAndCsTag(arr));
                 } catch (Exception e) {
-                    log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()), e);
+                    logger.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()), e);
                 }
             }
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -139,10 +137,10 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                         pstmt.executeUpdate();
 
                     } catch (SQLException e) {
-                        log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
+                        logger.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
                                 e.getLocalizedMessage()));
                     } catch (Throwable e) {
-                        log.info(String.format("[ignored] caught an error during delete vm work job: %s",
+                        logger.info(String.format("[ignored] caught an error during delete vm work job: %s",
                                 e.getLocalizedMessage()));
                     }
 
@@ -164,10 +162,10 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                         String sqlVolumeOnHost = "SELECT f.* FROM `cloud`.`volumes_on_host1` f LEFT JOIN `cloud`.`storage_pool_details` v ON f.name=v.value where v.value is NULL";
                         findMissingRecordsInCS(txn, sqlVolumeOnHost, "volumes_on_host");
                     } catch (SQLException e) {
-                        log.info(String.format("[ignored] SQL failed due to: %s ",
+                        logger.info(String.format("[ignored] SQL failed due to: %s ",
                                 e.getLocalizedMessage()));
                     } catch (Throwable e) {
-                        log.info(String.format("[ignored] caught an error: %s",
+                        logger.info(String.format("[ignored] caught an error: %s",
                                 e.getLocalizedMessage()));
                     } finally {
                         try {
@@ -177,7 +175,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                             pstmt.executeUpdate();
                         } catch (SQLException e) {
                             txn.close();
-                            log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
+                            logger.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
                         }
                         txn.close();
                     }
@@ -201,7 +199,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                     JsonArray arr = StorPoolUtil.snapshotsList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
                     snapshots.putAll(getStorPoolNamesAndCsTag(arr));
                 } catch (Exception e) {
-                    log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                    logger.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
                 }
             }
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -222,10 +220,10 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                                 "CREATE TEMPORARY TABLE `cloud`.`vm_templates1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
                         pstmt.executeUpdate();
                     } catch (SQLException e) {
-                        log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
+                        logger.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
                                 e.getLocalizedMessage()));
                     } catch (Throwable e) {
-                        log.info(String.format("[ignored] caught an error during delete vm work job: %s",
+                        logger.info(String.format("[ignored] caught an error during delete vm work job: %s",
                                 e.getLocalizedMessage()));
                     }
 
@@ -262,10 +260,10 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                                 + " and spool.local_path is NULL";
                         findMissingRecordsInCS(txn, sqlTemplates, "snapshot");
                     } catch (SQLException e) {
-                        log.info(String.format("[ignored] SQL failed due to: %s ",
+                        logger.info(String.format("[ignored] SQL failed due to: %s ",
                                 e.getLocalizedMessage()));
                     } catch (Throwable e) {
-                        log.info(String.format("[ignored] caught an error: %s",
+                        logger.info(String.format("[ignored] caught an error: %s",
                                 e.getLocalizedMessage()));
                     } finally {
                         try {
@@ -277,7 +275,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                             pstmt.executeUpdate();
                         } catch (SQLException e) {
                             txn.close();
-                            log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
+                            logger.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
                         }
                         txn.close();
                     }
@@ -304,7 +302,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         String name = null;
         while (rs.next()) {
             name = rs.getString(2);
-            log.info(String.format(
+            logger.info(String.format(
                     "CloudStack does not know about StorPool %s %s, it had to be a %s", object, name, rs.getString(3)));
         }
     }

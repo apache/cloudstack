@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageNetworkVO;
@@ -33,7 +32,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> implements UsageNetworkDao {
-    private static final Logger s_logger = Logger.getLogger(UsageNetworkDaoImpl.class.getName());
     private static final String SELECT_LATEST_STATS =
         "SELECT u.account_id, u.zone_id, u.host_id, u.host_type, u.network_id, u.bytes_sent, u.bytes_received, u.agg_bytes_received, u.agg_bytes_sent, u.event_time_millis "
             + "FROM cloud_usage.usage_network u INNER JOIN (SELECT netusage.account_id as acct_id, netusage.zone_id as z_id, max(netusage.event_time_millis) as max_date "
@@ -77,7 +75,7 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
             }
             return returnMap;
         } catch (Exception ex) {
-            s_logger.error("error getting recent usage network stats", ex);
+            logger.error("error getting recent usage network stats", ex);
         } finally {
             txn.close();
         }
@@ -97,7 +95,7 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error deleting old usage network stats", ex);
+            logger.error("error deleting old usage network stats", ex);
         }
     }
 
@@ -126,7 +124,7 @@ public class UsageNetworkDaoImpl extends GenericDaoBase<UsageNetworkVO, Long> im
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving usage_network to cloud_usage db", ex);
+            logger.error("error saving usage_network to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }

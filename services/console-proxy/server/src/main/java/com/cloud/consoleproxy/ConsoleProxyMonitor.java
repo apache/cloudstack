@@ -23,9 +23,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 
 //
 //
@@ -33,7 +33,7 @@ import com.cloud.consoleproxy.util.Logger;
 // itself and the shell script will re-launch console proxy
 //
 public class ConsoleProxyMonitor {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyMonitor.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private String[] _argv;
     private Map<String, String> _argMap = new HashMap<String, String>();
@@ -47,11 +47,11 @@ public class ConsoleProxyMonitor {
         for (String arg : _argv) {
             String[] tokens = arg.split("=");
             if (tokens.length == 2) {
-                s_logger.info("Add argument " + tokens[0] + "=" + tokens[1] + " to the argument map");
+                logger.info("Add argument " + tokens[0] + "=" + tokens[1] + " to the argument map");
 
                 _argMap.put(tokens[0].trim(), tokens[1].trim());
             } else {
-                s_logger.warn("unrecognized argument, skip adding it to argument map");
+                logger.warn("unrecognized argument, skip adding it to argument map");
             }
         }
     }
@@ -68,12 +68,12 @@ public class ConsoleProxyMonitor {
         while (!_quit) {
             String cmdLine = getLaunchCommandLine();
 
-            s_logger.info("Launch console proxy process with command line: " + cmdLine);
+            logger.info("Launch console proxy process with command line: " + cmdLine);
 
             try {
                 _process = Runtime.getRuntime().exec(cmdLine);
             } catch (IOException e) {
-                s_logger.error("Unexpected exception ", e);
+                logger.error("Unexpected exception ", e);
                 System.exit(1);
             }
 
@@ -84,11 +84,11 @@ public class ConsoleProxyMonitor {
                     exitCode = _process.waitFor();
                     waitSucceeded = true;
 
-                    if (s_logger.isInfoEnabled())
-                        s_logger.info("Console proxy process exits with code: " + exitCode);
+                    if (logger.isInfoEnabled())
+                        logger.info("Console proxy process exits with code: " + exitCode);
                 } catch (InterruptedException e) {
-                    if (s_logger.isInfoEnabled())
-                        s_logger.info("InterruptedException while waiting for termination of console proxy, will retry");
+                    if (logger.isInfoEnabled())
+                        logger.info("InterruptedException while waiting for termination of console proxy, will retry");
                 }
             }
         }
@@ -111,8 +111,8 @@ public class ConsoleProxyMonitor {
 
     private void onShutdown() {
         if (_process != null) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Console proxy monitor shuts dwon, terminate console proxy process");
+            if (logger.isInfoEnabled())
+                logger.info("Console proxy monitor shuts dwon, terminate console proxy process");
             _process.destroy();
         }
     }
@@ -136,7 +136,7 @@ public class ConsoleProxyMonitor {
                 File file = new File(configUrl.toURI());
 
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+                Configurator.initialize(null, file.getAbsolutePath());
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }

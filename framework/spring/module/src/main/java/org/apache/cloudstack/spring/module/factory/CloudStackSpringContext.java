@@ -24,7 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.Resource;
@@ -36,7 +37,7 @@ import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class CloudStackSpringContext {
 
-    private static final Logger log = Logger.getLogger(CloudStackSpringContext.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String CLOUDSTACK_CONTEXT_SERVLET_KEY = CloudStackSpringContext.class.getSimpleName();
     public static final String CLOUDSTACK_CONTEXT = "META-INF/cloudstack";
@@ -76,7 +77,7 @@ public class CloudStackSpringContext {
         for (String appName : contextMap.keySet()) {
             ApplicationContext contex = contextMap.get(appName);
             if (contex instanceof ConfigurableApplicationContext) {
-                log.trace("registering shutdown hook for bean "+ appName);
+                logger.trace("registering shutdown hook for bean "+ appName);
                 ((ConfigurableApplicationContext)contex).registerShutdownHook();
             }
         }
@@ -129,7 +130,7 @@ public class CloudStackSpringContext {
                 String urlString = r.getURL().toExternalForm();
                 urlList.add(urlString);
             } catch (IOException e) {
-                log.error("Failed to create URL for " + r.getDescription(), e);
+                logger.error("Failed to create URL for " + r.getDescription(), e);
             }
         }
 

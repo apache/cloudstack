@@ -77,6 +77,12 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
+    @Column(name = "for_nsx")
+    boolean forNsx = false;
+
+    @Column(name = "nsx_mode")
+    String nsxMode;
+
     @Column(name = "domain_id")
     private String domainId;
 
@@ -136,6 +142,16 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+
+    @Override
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    @Override
+    public String getNsxMode() {
+        return nsxMode;
     }
 
     @Override

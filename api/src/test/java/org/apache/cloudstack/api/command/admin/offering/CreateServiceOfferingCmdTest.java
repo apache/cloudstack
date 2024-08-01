@@ -21,7 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -37,4 +37,22 @@ public class CreateServiceOfferingCmdTest {
         Assert.assertEquals(createServiceOfferingCmd.getDisplayText(), netName);
     }
 
+    @Test
+    public void testIsPurgeResourcesNoOrNullValue() {
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+    }
+
+    @Test
+    public void testIsPurgeResourcesFalse() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+    }
+
+    @Test
+    public void testIsPurgeResourcesTrue() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", true);
+        Assert.assertTrue(createServiceOfferingCmd.isPurgeResources());
+    }
 }

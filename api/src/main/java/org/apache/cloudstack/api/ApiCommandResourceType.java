@@ -17,7 +17,9 @@
 package org.apache.cloudstack.api;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.commons.collections.CollectionUtils;
@@ -78,15 +80,25 @@ public enum ApiCommandResourceType {
     VmSnapshot(com.cloud.vm.snapshot.VMSnapshot.class),
     Role(org.apache.cloudstack.acl.Role.class),
     VpnCustomerGateway(com.cloud.network.Site2SiteCustomerGateway.class),
-    ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class);
+    ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class),
+    ObjectStore(org.apache.cloudstack.storage.object.ObjectStore.class),
+    Bucket(org.apache.cloudstack.storage.object.Bucket.class),
+    QuotaTariff(org.apache.cloudstack.quota.QuotaTariff.class),
+    KubernetesCluster(null),
+    KubernetesSupportedVersion(null);
 
     private final Class<?> clazz;
+
+    static final Map<ApiCommandResourceType, Class<?>> additionalClassMappings = new HashMap<>();
 
     private ApiCommandResourceType(Class<?> clazz) {
         this.clazz = clazz;
     }
 
     public Class<?> getAssociatedClass() {
+        if (this.clazz == null && additionalClassMappings.containsKey(this)) {
+            return additionalClassMappings.get(this);
+        }
         return this.clazz;
     }
 
@@ -115,5 +127,9 @@ public enum ApiCommandResourceType {
             return valueOf(value);
         }
         return null;
+    }
+
+    public static void setClassMapping(ApiCommandResourceType type, Class<?> clazz) {
+        additionalClassMappings.put(type, clazz);
     }
 }

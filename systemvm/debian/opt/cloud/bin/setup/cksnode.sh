@@ -72,3 +72,4 @@ setup_k8s_node() {
 }
 
 setup_k8s_node
+. /opt/cloud/bin/setup/patch.sh && patch_sshd_config

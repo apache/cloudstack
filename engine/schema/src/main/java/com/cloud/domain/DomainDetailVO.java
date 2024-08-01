@@ -23,7 +23,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -40,7 +39,6 @@ public class DomainDetailVO implements InternalIdentity {
     @Column(name = "name")
     private String name;
 
-    @Encrypt
     @Column(name = "value")
     private String value;
 

@@ -36,7 +36,7 @@ import com.cloud.consoleproxy.vnc.packet.client.SetEncodingsPacket;
 import com.cloud.consoleproxy.vnc.packet.client.SetPixelFormatPacket;
 
 public class VncClientPacketSender implements Runnable, PaintNotificationListener, KeyListener, MouseListener, MouseMotionListener, FrameBufferUpdateListener {
-    private static final Logger s_logger = Logger.getLogger(VncClientPacketSender.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     // Queue for outgoing packets
     private final BlockingQueue<ClientPacket> queue = new ArrayBlockingQueue<ClientPacket>(30);
@@ -75,12 +75,12 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
                 }
             }
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception: ", e);
+            logger.error("Unexpected exception: ", e);
             if (connectionAlive) {
                 closeConnection();
             }
         } finally {
-            s_logger.info("Sending thread exit processing, shutdown connection");
+            logger.info("Sending thread exit processing, shutdown connection");
             vncConnection.shutdown();
         }
     }

@@ -47,6 +47,9 @@ public interface AgentManager {
                             "according to the hosts health check results",
                     true, ConfigKey.Scope.Cluster, null);
 
+    ConfigKey<Integer> ReadyCommandWait = new ConfigKey<Integer>("Advanced", Integer.class, "ready.command.wait",
+            "60", "Time in seconds to wait for Ready command to return", true);
+
     public enum TapAgentsAction {
         Add, Del, Contains,
     }

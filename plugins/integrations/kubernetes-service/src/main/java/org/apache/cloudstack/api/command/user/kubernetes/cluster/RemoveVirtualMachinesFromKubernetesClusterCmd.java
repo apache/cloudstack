@@ -20,6 +20,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -42,7 +42,6 @@ import java.util.List;
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(RemoveVirtualMachinesFromKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -83,6 +82,11 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseListCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
     }
 
     @Override

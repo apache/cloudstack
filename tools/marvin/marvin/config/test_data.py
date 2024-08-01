@@ -177,9 +177,9 @@ test_data = {
     "service_offering_h2": {
         "name": "Tagged h2 Small Instance",
         "displaytext": "Tagged h2 Small Instance",
-        "cpunumber": 1,
-        "cpuspeed": 100,
-        "memory": 256,
+        "cpunumber": 2,
+        "cpuspeed": 200,
+        "memory": 512,
         "hosttags": "h2"
     },
     "disk_offering": {
@@ -1034,7 +1034,18 @@ test_data = {
             "requireshvm": "True",
             "ispublic": "True",
             "deployasis": "True"
-        }
+        },
+        "simulator": {
+            "name": "tiny-simulator",
+            "displaytext": "tiny simulator",
+            "format": "vhd",
+            "hypervisor": "simulator",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina.vhd.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
     },
     "test_ovf_templates": [
         {
@@ -2260,11 +2271,23 @@ test_data = {
             "url": "http://download.cloudstack.org/cks/setup-1.26.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
+        },
+        "1.27.8": {
+            "semanticversion": "1.27.8",
+            "url": "http://download.cloudstack.org/cks/setup-1.27.8.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.28.4": {
+            "semanticversion": "1.28.4",
+            "url": "http://download.cloudstack.org/cks/setup-1.28.4.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
         }
     },
-    "cks_kubernetes_version": "1.26.0",
-    "cks_kubernetes_version_upgrade_from": "1.25.0",
-    "cks_kubernetes_version_upgrade_to": "1.26.0",
+    "cks_kubernetes_version": "1.28.4",
+    "cks_kubernetes_version_upgrade_from": "1.27.8",
+    "cks_kubernetes_version_upgrade_to": "1.28.4",
     "cks_service_offering": {
         "name": "CKS-Instance",
         "displaytext": "CKS Instance",

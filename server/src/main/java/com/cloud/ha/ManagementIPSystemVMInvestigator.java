@@ -20,7 +20,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -32,7 +31,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 
 public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
-    private static final Logger s_logger = Logger.getLogger(ManagementIPSystemVMInvestigator.class);
 
     @Inject
     private final HostDao _hostDao = null;
@@ -42,28 +40,28 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
     @Override
     public boolean isVmAlive(VirtualMachine vm, Host host) throws UnknownVM {
         if (!vm.getType().isUsedBySystem()) {
-            s_logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
+            logger.debug("Not a System Vm, unable to determine state of " + vm + " returning null");
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Testing if " + vm + " is alive");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Testing if " + vm + " is alive");
         }
 
         if (vm.getHostId() == null) {
-            s_logger.debug("There's no host id for " + vm);
+            logger.debug("There's no host id for " + vm);
             throw new UnknownVM();
         }
 
         HostVO vmHost = _hostDao.findById(vm.getHostId());
         if (vmHost == null) {
-            s_logger.debug("Unable to retrieve the host by using id " + vm.getHostId());
+            logger.debug("Unable to retrieve the host by using id " + vm.getHostId());
             throw new UnknownVM();
         }
 
         List<? extends Nic> nics = _networkMgr.getNicsForTraffic(vm.getId(), TrafficType.Management);
         if (nics.size() == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find a management nic, cannot ping this system VM, unable to determine state of " + vm + " returning null");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Unable to find a management nic, cannot ping this system VM, unable to determine state of " + vm + " returning null");
             }
             throw new UnknownVM();
         }
@@ -79,8 +77,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                 assert vmState != null;
                 // In case of Status.Unknown, next host will be tried
                 if (vmState == Status.Up) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("successfully pinged vm's private IP (" + vm.getPrivateIpAddress() + "), returning that the VM is up");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("successfully pinged vm's private IP (" + vm.getPrivateIpAddress() + "), returning that the VM is up");
                     }
                     return Boolean.TRUE;
                 } else if (vmState == Status.Down) {
@@ -89,8 +87,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                     Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
                     assert vmHostState != null;
                     if (vmHostState == Status.Up) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() +
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() +
                                 "), but could not ping VM, returning that the VM is down");
                         }
                         return Boolean.FALSE;
@@ -99,8 +97,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("unable to determine state of " + vm + " returning null");
+        if (logger.isDebugEnabled()) {
+            logger.debug("unable to determine state of " + vm + " returning null");
         }
         throw new UnknownVM();
     }

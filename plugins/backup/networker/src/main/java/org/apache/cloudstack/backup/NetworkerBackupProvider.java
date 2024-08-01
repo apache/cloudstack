@@ -44,7 +44,8 @@ import org.apache.cloudstack.backup.networker.NetworkerClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xml.utils.URI;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
 import javax.inject.Inject;
@@ -68,7 +69,7 @@ import com.cloud.utils.script.Script;
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     public static final String BACKUP_IDENTIFIER = "-CSBKP-";
-    private static final Logger LOG = Logger.getLogger(NetworkerBackupProvider.class);
+    private static final Logger LOG = LogManager.getLogger(NetworkerBackupProvider.class);
 
     public ConfigKey<String> NetworkerUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.networker.url", "https://localhost:9090/nwrestapi/v3",

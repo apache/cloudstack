@@ -32,20 +32,6 @@
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
-                <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px; margin-bottom: 3px"
-                  :checked-children="$t('label.metrics')"
-                  :un-checked-children="$t('label.metrics')"
-                  :checked="$store.getters.metrics"
-                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
-                <a-switch
-                  v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px; margin-bottom: 3px"
-                  :checked-children="$t('label.projects')"
-                  :un-checked-children="$t('label.projects')"
-                  :checked="$store.getters.listAllProjects"
-                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
                   <template #title>
                     {{ $t('label.filterby') }}
@@ -54,7 +40,8 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
-                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
+                    style="min-width: 100px; margin-left: 10px; margin-bottom: 5px"
+                    size=small
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -64,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -79,16 +66,30 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
+                <a-switch
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
+                  :checked-children="$t('label.metrics')"
+                  :un-checked-children="$t('label.metrics')"
+                  :checked="$store.getters.metrics"
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
               </template>
             </breadcrumb>
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
-              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle(), padding: '5px' }"
+              :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle() }"
               :loading="loading"
               :actions="actions"
               :selectedRowKeys="selectedRowKeys"
@@ -99,7 +100,6 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
-              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -183,20 +183,20 @@
                 <template #message>
                   <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
                   <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
               <a-alert v-else type="warning">
                 <template #message>
                   <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
                 <template #message>
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
@@ -229,7 +229,11 @@
                 v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
               >
                 <template #label>
-                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                  <tooltip-label
+                    v-if="['domain', 'guestcidraddress'].includes(field.name) && ['createZone', 'updateZone'].includes(currentAction.api)"
+                    :title="$t('label.default.network.' + field.name + '.isolated.network')"
+                    :tooltip="field.description"/>
+                  <tooltip-label v-else :title="$t('label.' + field.name)" :tooltip="field.description"/>
                 </template>
 
                 <a-switch
@@ -393,8 +397,8 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
-      <div v-if="dataView" style="margin-top: -10px">
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+      <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
           v-else
@@ -444,7 +448,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
@@ -636,7 +641,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/') && to?.query?.tab !== 'browser') {
         if ('page' in to.query) {
           this.page = Number(to.query.page)
           this.pageSize = Number(to.query.pagesize)
@@ -680,7 +685,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -689,7 +694,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -704,7 +709,6 @@ export default {
     },
     getOkProps () {
       if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-        return { props: { type: 'default' } }
       } else {
         return { props: { type: 'primary' } }
       }
@@ -734,7 +738,7 @@ export default {
       })
     },
     fetchData (params = {}) {
-      if (this.$route.name === 'deployVirtualMachine') {
+      if (['deployVirtualMachine', 'usage'].includes(this.$route.name)) {
         return
       }
       if (this.routeName !== this.$route.name) {
@@ -761,12 +765,15 @@ export default {
         }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
-        'templatefilter' in params && this.routeName === 'template') {
+        'templatefilter' in params && (['template'].includes(this.routeName))) {
         params.templatefilter = 'all'
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
         'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
+      }
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering'].includes(this.routeName) && this.$route.params.id) {
+        params.state = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
         if ('page' in this.$route.query) {
@@ -787,8 +794,14 @@ export default {
         this.filters = this.filters()
       }
 
+      if (typeof this.searchFilters === 'function') {
+        this.searchFilters = this.searchFilters()
+      }
+
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
+        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -809,7 +822,7 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = this.$route.meta.permission[0]
+        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -860,7 +873,7 @@ export default {
           key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          sorter: function (a, b) { return genericCompare(a[key] || '', b[key] || '') }
+          sorter: (a, b) => genericCompare(a[key] || '', b[key] || '')
         })
         this.selectedColumns.push(key)
       }
@@ -872,6 +885,9 @@ export default {
           this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
         } else {
           this.selectedColumns = this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] || this.selectedColumns
+          if (this.$store.getters.listAllProjects && !this.projectView) {
+            this.selectedColumns.push('project')
+          }
           this.updateSelectedColumns()
         }
       }
@@ -890,6 +906,8 @@ export default {
 
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
+        delete params.isvnf
+        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp'
       }
 
       this.loading = true
@@ -975,6 +993,12 @@ export default {
         }
         this.itemCount = apiItemCount
 
+        if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
+          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+            this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
+          })
+        }
+
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
@@ -1058,6 +1082,19 @@ export default {
         this.loading = false
         this.searchParams = params
       })
+
+      if ('action' in this.$route.query) {
+        const actionName = this.$route.query.action
+        for (const action of this.actions) {
+          if (action.listView && action.api === actionName) {
+            this.execAction(action, false)
+            const query = Object.assign({}, this.$route.query)
+            delete query.action
+            this.$router.replace({ query })
+            break
+          }
+        }
+      }
     },
     closeAction () {
       this.actionLoading = false
@@ -1087,7 +1124,7 @@ export default {
       this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         const query = {}
-        if (this.$route.path.startsWith('/vm')) {
+        if (this.$route.path.startsWith('/vm') || this.$route.path.startsWith('/vnfapp')) {
           switch (true) {
             case ('templateid' in this.$route.query):
               query.templateid = this.$route.query.templateid
@@ -1121,13 +1158,11 @@ export default {
       this.currentAction.paramFields = []
       this.currentAction.paramFilters = []
       if ('message' in action) {
-        var message = action.message
         if (typeof action.message === 'function') {
-          message = action.message(action.resource)
+          action.message = action.message(action.resource)
         }
-        action.message = message
+        action.message = Array.isArray(action.message) ? this.$t(...action.message) : this.$t(action.message)
       }
-
       this.getArgs(action, isGroupAction, paramFields)
       this.getFilters(action, isGroupAction, paramFields)
       this.getFirstIndexFocus()
@@ -1301,13 +1336,30 @@ export default {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
-              const description = action.response(result.jobresult)
-              if (description) {
-                this.$notification.info({
-                  message: this.$t(action.label),
-                  description: (<span v-html={description}></span>),
-                  duration: 0
-                })
+              const response = action.response(result.jobresult)
+              if (response) {
+                if (typeof response === 'object') {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response.message}></span>),
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(response.copytext)
+                      },
+                      () => [this.$t(response.copybuttontext)]
+                    ),
+                    duration: 0
+                  })
+                } else {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response}></span>),
+                    duration: 0
+                  })
+                }
               }
             }
             if ('successMethod' in action) {
@@ -1439,18 +1491,26 @@ export default {
                   this.selectedItems.filter(item => item === resource)
                 }
               }
-              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-                (resourceName ? ' - ' + resourceName : '')
-              var duration = 2
-              if (action.additionalMessage) {
-                message = message + ' - ' + this.$t(action.successMessage)
-                duration = 5
-              }
               if (this.selectedItems.length === 0) {
+                let message = ''
+                let messageDuration = 2
+                if ('successMessage' in action) {
+                  message = action.successMessage
+                  if (typeof action.successMessage === 'function') {
+                    message = action.successMessage(action.resource)
+                  }
+                  message = Array.isArray(message) ? this.$t(...message) : this.$t(message)
+                } else {
+                  message = this.$t(action.label) + (resourceName ? ' - ' + resourceName : '')
+                }
+                if ('additionalMessage' in action) {
+                  message = `${message} - ${this.$t(action.additionalMessage)}`
+                  messageDuration = 5
+                }
                 this.$message.success({
                   content: message,
                   key: action.label + resourceName,
-                  duration: duration
+                  duration: messageDuration
                 })
               }
               break
@@ -1497,13 +1557,16 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork',
+                'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering',
+                'updateZone', 'updateAccount', 'updateWebhook'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+              'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1716,6 +1779,8 @@ export default {
         } else {
           query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
+      } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
+        query.state = filter
       }
       query.filter = filter
       query.page = '1'
@@ -1745,6 +1810,8 @@ export default {
               query.hypervisor = value
             } else if (this.$route.name === 'guestos') {
               query.description = value
+            } else if (this.$route.name === 'oauthsetting') {
+              query.provider = value
             } else {
               query.keyword = value
             }
@@ -1903,6 +1970,14 @@ export default {
       if (screenWidth <= 768) {
         this.modalWidth = '450px'
       }
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }
@@ -1922,6 +1997,12 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+:deep(.ant-switch-inner) {
+  display: block;
+  font-size: 14px;
+  margin: 0px 14px 0px 28px;
 }
 
 :deep(.ant-alert-message) {

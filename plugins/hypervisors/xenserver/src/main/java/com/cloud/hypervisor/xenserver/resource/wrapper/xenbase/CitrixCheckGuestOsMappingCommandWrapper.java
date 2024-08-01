@@ -22,7 +22,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckGuestOsMappingAnswer;
@@ -36,15 +35,13 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  CheckGuestOsMappingCommand.class)
 public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrapper<CheckGuestOsMappingCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCheckGuestOsMappingCommandWrapper.class);
-
     @Override
     public Answer execute(final CheckGuestOsMappingCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
         String guestOsName = command.getGuestOsName();
         String guestOsMappingName = command.getGuestOsHypervisorMappingName();
         try {
-            s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
+            logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
             if (CollectionUtils.isEmpty(vms)) {
                 return new CheckGuestOsMappingAnswer(command, "Unable to match guest os mapping name: " + guestOsMappingName + " in the hypervisor");
@@ -52,15 +49,15 @@ public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrappe
             for (VM vm : vms) {
                 if (vm != null && vm.getIsATemplate(conn) && guestOsMappingName.equalsIgnoreCase(vm.getNameLabel(conn))) {
                     if (guestOsName.equalsIgnoreCase(vm.getNameLabel(conn))) {
-                        s_logger.debug("Hypervisor guest os name label matches with os name: " + guestOsName);
+                        logger.debug("Hypervisor guest os name label matches with os name: " + guestOsName);
                     }
-                    s_logger.info("Hypervisor guest os name label matches with os mapping: " + guestOsMappingName + " from user");
+                    logger.info("Hypervisor guest os name label matches with os mapping: " + guestOsMappingName + " from user");
                     return new CheckGuestOsMappingAnswer(command);
                 }
             }
             return new CheckGuestOsMappingAnswer(command, "Guest os mapping name: " + guestOsMappingName + " not found in the hypervisor");
         } catch (final Exception e) {
-            s_logger.error("Failed to find the hypervisor guest os mapping name: " + guestOsMappingName, e);
+            logger.error("Failed to find the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(command, e.getLocalizedMessage());
         }
     }

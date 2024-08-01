@@ -17,7 +17,7 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
+    v-if="['vm', 'systemvm', 'router', 'ilbvm', 'vnfapp'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
     @click="consoleUrl">
     <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
       <code-outlined v-if="!copyUrlToClipboard"/>
@@ -56,17 +56,10 @@ export default {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
         if (json.createconsoleendpointresponse.consoleendpoint.success) {
           if (this.copyUrlToClipboard) {
+            this.$copyText(this.url)
             this.$message.success({
               content: this.$t('label.copied.clipboard')
             })
-            const hiddenElement = document.createElement('textarea')
-            hiddenElement.value = this.url
-            document.body.appendChild(hiddenElement)
-            hiddenElement.focus()
-            hiddenElement.select()
-
-            document.execCommand('copy')
-            document.body.removeChild(hiddenElement)
           } else {
             window.open(this.url, '_blank')
           }

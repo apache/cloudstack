@@ -23,17 +23,17 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class UpdateVPCCmdTest extends TestCase {
 
     @Mock
@@ -44,36 +44,42 @@ public class UpdateVPCCmdTest extends TestCase {
     @InjectMocks
     UpdateVPCCmd cmd = new UpdateVPCCmd();
 
+    @Test
     public void testGetVpcName() {
         String vpcName = "updatedVpcName";
         ReflectionTestUtils.setField(cmd, "vpcName", vpcName);
         Assert.assertEquals(cmd.getVpcName(), vpcName);
     }
 
+    @Test
     public void testGetDisplayText() {
         String displayText = "Updated VPC Name";
         ReflectionTestUtils.setField(cmd, "displayText", displayText);
         Assert.assertEquals(cmd.getDisplayText(), displayText);
     }
 
+    @Test
     public void testGetId() {
         Long id = 1L;
         ReflectionTestUtils.setField(cmd, "id", id);
         Assert.assertEquals(cmd.getId(), id);
     }
 
+    @Test
     public void testIsDisplayVpc() {
         Boolean display = true;
         ReflectionTestUtils.setField(cmd, "display", display);
         Assert.assertEquals(cmd.isDisplayVpc(), display);
     }
 
+    @Test
     public void testGetPublicMtu() {
         Integer publicMtu = 1450;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
         Assert.assertEquals(cmd.getPublicMtu(), publicMtu);
     }
 
+    @Test
     public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
         ReflectionTestUtils.setField(cmd, "id", 1L);
         ReflectionTestUtils.setField(cmd, "vpcName", "updatedVpcName");
@@ -86,9 +92,6 @@ public class UpdateVPCCmdTest extends TestCase {
         VpcResponse response = Mockito.mock(VpcResponse.class);
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         cmd._responseGenerator = responseGenerator;
-        Mockito.when(_vpcService.updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString())).thenReturn(vpc);
-        Mockito.when(responseGenerator.createVpcResponse(ResponseObject.ResponseView.Full, vpc)).thenReturn(response);
         Mockito.verify(_vpcService, Mockito.times(0)).updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString());
 

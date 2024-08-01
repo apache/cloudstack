@@ -47,7 +47,7 @@ jobs:
       - name: Set Docker repository name
         run: echo "DOCKER_REPOSITORY=apache" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set ACS version
         run: echo "ACS_VERSION=$(grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 |cut -d'<' -f1)" >> $GITHUB_ENV

@@ -158,7 +158,7 @@
         <a-form-item
           name="networkDomain"
           ref="networkDomain"
-          :label="$t('label.network.domain')"
+          :label="$t('label.default.network.domain.isolated.network')"
           v-bind="formItemLayout"
           has-feedback>
           <a-input v-model:value="form.networkDomain" />
@@ -166,7 +166,7 @@
         <a-form-item
           name="guestcidraddress"
           ref="guestcidraddress"
-          :label="$t('label.guest.cidr')"
+          :label="$t('label.default.network.guestcidraddress.isolated.network')"
           v-bind="formItemLayout"
           v-if="isAdvancedZone && !securityGroupsEnabled"
           has-feedback>

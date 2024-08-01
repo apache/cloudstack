@@ -17,7 +17,7 @@
 
 package com.cloud.usage.dao;
 
-import static org.mockito.Matchers.contains;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,15 +32,11 @@ import com.cloud.usage.UsageStorageVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(TransactionLegacy.class)
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class UsageStorageDaoImplTest {
 
     @Mock
@@ -63,26 +59,26 @@ public class UsageStorageDaoImplTest {
         String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND entity_id = ? AND storage_type = ? AND zone_id = ? and deleted IS NULL";
         Date deleted = new Date();
 
-        PowerMockito.mockStatic(TransactionLegacy.class);
-        Mockito.when(TransactionLegacy.open(TransactionLegacy.USAGE_DB)).thenReturn(transactionMock);
+        try (MockedStatic<TransactionLegacy> ignore = Mockito.mockStatic(TransactionLegacy.class)) {
+            Mockito.when(TransactionLegacy.open(TransactionLegacy.USAGE_DB)).thenReturn(transactionMock);
 
-        when(transactionMock.prepareStatement(contains(UPDATE_DELETED))).thenReturn(preparedStatementMock);
-        when(userStorageVOMock.getAccountId()).thenReturn(accountId);
-        when(userStorageVOMock.getEntityId()).thenReturn(id);
-        when(userStorageVOMock.getStorageType()).thenReturn(storageType);
-        when(userStorageVOMock.getZoneId()).thenReturn(zoneId);
-        when(userStorageVOMock.getDeleted()).thenReturn(deleted);
+            when(transactionMock.prepareStatement(contains(UPDATE_DELETED))).thenReturn(preparedStatementMock);
+            when(userStorageVOMock.getAccountId()).thenReturn(accountId);
+            when(userStorageVOMock.getEntityId()).thenReturn(id);
+            when(userStorageVOMock.getStorageType()).thenReturn(storageType);
+            when(userStorageVOMock.getZoneId()).thenReturn(zoneId);
+            when(userStorageVOMock.getDeleted()).thenReturn(deleted);
 
 
+            usageDao.update(userStorageVOMock);
 
-        usageDao.update(userStorageVOMock);
-
-        verify(transactionMock, times(1)).prepareStatement(UPDATE_DELETED);
-        verify(preparedStatementMock, times(1)).setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), deleted));
-        verify(preparedStatementMock, times(1)).setLong(2, accountId);
-        verify(preparedStatementMock, times(1)).setLong(3, id);
-        verify(preparedStatementMock, times(1)).setInt(4, storageType);
-        verify(preparedStatementMock, times(1)).setLong(5, zoneId);
-        verify(preparedStatementMock, times(1)).executeUpdate();
+            verify(transactionMock, times(1)).prepareStatement(UPDATE_DELETED);
+            verify(preparedStatementMock, times(1)).setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), deleted));
+            verify(preparedStatementMock, times(1)).setLong(2, accountId);
+            verify(preparedStatementMock, times(1)).setLong(3, id);
+            verify(preparedStatementMock, times(1)).setInt(4, storageType);
+            verify(preparedStatementMock, times(1)).setLong(5, zoneId);
+            verify(preparedStatementMock, times(1)).executeUpdate();
+        }
     }
 }

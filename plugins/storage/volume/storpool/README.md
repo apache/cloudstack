@@ -117,6 +117,8 @@ SP_API_HTTP - address of StorPool Api
 SP_AUTH_TOKEN - StorPool's token
 SP_TEMPLATE - name of StorPool's template
 
+> **NOTE:** You can use the alternative format option for the URL - storpool://{SP_AUTH_TOKEN}@{SP_API_HTTP}:{SP_API_HTTP_PORT}/{SP_TEMPLATE}
+
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
 
@@ -292,7 +294,7 @@ This is independent of StorPool as snapshots exist on secondary.
 ### Creating ROOT volume from templates
 
 When creating the first volume based on the given template, if snapshot of the template does not exists on StorPool it will be first downloaded (cached) to PRIMARY storage.
-This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional 
+This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional
 copying of data to PRIMARY storage.
 
 This cached snapshot is garbage collected when the original template is deleted from CloudStack. This cleanup is done

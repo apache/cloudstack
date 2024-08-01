@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -46,7 +45,6 @@ import javax.inject.Inject;
 @APICommand(name = CreateTungstenFabricPublicNetworkCmd.APINAME, description = "create Tungsten-Fabric public network",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricPublicNetworkCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricPublicNetworkCmd.class.getName());
 
     public static final String APINAME = "createTungstenFabricPublicNetwork";
 

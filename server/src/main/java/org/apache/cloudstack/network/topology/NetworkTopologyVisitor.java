@@ -37,8 +37,12 @@ import com.cloud.network.rules.UserdataPwdRules;
 import com.cloud.network.rules.UserdataToRouterRules;
 import com.cloud.network.rules.VirtualNetworkApplianceFactory;
 import com.cloud.network.rules.VpcIpAssociationRules;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class NetworkTopologyVisitor {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public abstract VirtualNetworkApplianceFactory getVirtualNetworkApplianceFactory();
 

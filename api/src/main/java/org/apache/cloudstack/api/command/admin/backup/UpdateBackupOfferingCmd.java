@@ -30,7 +30,6 @@ import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -39,7 +38,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "updateBackupOffering", description = "Updates a backup offering.", responseObject = BackupOfferingResponse.class,
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.16.0")
 public class UpdateBackupOfferingCmd extends BaseCmd {
-    private static final Logger LOGGER = Logger.getLogger(UpdateBackupOfferingCmd.class.getName());
 
     @Inject
     private BackupManager backupManager;
@@ -100,7 +98,7 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
             this.setResponseObject(response);
         } catch (CloudRuntimeException e) {
             ApiErrorCode paramError = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            LOGGER.error(String.format("Failed to update Backup Offering [id: %s] due to: [%s].", id, e.getMessage()), e);
+            logger.error(String.format("Failed to update Backup Offering [id: %s] due to: [%s].", id, e.getMessage()), e);
             throw new ServerApiException(paramError, e.getMessage());
         }
     }

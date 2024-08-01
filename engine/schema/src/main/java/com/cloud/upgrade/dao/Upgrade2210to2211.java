@@ -21,7 +21,7 @@ import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade2210to2211 implements DbUpgrade {
+public class Upgrade2210to2211 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {

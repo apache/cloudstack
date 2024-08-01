@@ -32,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import org.apache.commons.lang3.StringUtils;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -42,7 +41,6 @@ import java.util.List;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final Logger s_logger = Logger.getLogger(AccountDaoImpl.class);
     private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, "
         + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state " + "FROM `cloud`.`user` u, `cloud`.`account` a "
         + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
@@ -161,7 +159,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 userAcctPair = new Pair<User, Account>(u, a);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception finding user/acct by api key: " + apiKey, e);
+            logger.warn("Exception finding user/acct by api key: " + apiKey, e);
         }
         return userAcctPair;
     }
@@ -300,7 +298,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         if (!account.getNeedsCleanup()) {
             account.setNeedsCleanup(true);
             if (!update(accountId, account)) {
-                s_logger.warn("Failed to mark account id=" + accountId + " for cleanup");
+                logger.warn("Failed to mark account id=" + accountId + " for cleanup");
             }
         }
     }
@@ -320,7 +318,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
             domain_id = account_vo.getDomainId();
         }
         catch (Exception e) {
-            s_logger.warn("getDomainIdForGivenAccountId: Exception :" + e.getMessage());
+            logger.warn("getDomainIdForGivenAccountId: Exception :" + e.getMessage());
         }
         finally {
             return domain_id;

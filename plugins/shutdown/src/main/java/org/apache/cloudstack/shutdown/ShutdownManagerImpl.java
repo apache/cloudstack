@@ -36,7 +36,6 @@ import org.apache.cloudstack.shutdown.command.CancelShutdownManagementServerHost
 import org.apache.cloudstack.shutdown.command.PrepareForShutdownManagementServerHostCommand;
 import org.apache.cloudstack.shutdown.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
@@ -49,8 +48,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 
 public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager, PluggableService{
-
-    private static Logger logger = Logger.getLogger(ShutdownManagerImpl.class);
     Gson gson;
 
     @Inject
@@ -107,7 +104,10 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
             this.shutdownTask = null;
         }
         this.shutdownTask = new ShutdownTask(this);
-        timer.scheduleAtFixedRate(shutdownTask, 0, 30L * 1000);
+        long period = 30L * 1000;
+        long delay = period / 2;
+        logger.debug(String.format("Scheduling shutdown task with delay: %d and period: %d", delay, period));
+        timer.scheduleAtFixedRate(shutdownTask, delay, period);
     }
 
     @Override

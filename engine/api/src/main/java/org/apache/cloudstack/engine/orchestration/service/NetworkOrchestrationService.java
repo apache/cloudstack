@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
@@ -49,6 +50,7 @@ import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -102,6 +104,9 @@ public interface NetworkOrchestrationService {
 
     static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
+
+    static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
+            "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -267,6 +272,8 @@ public interface NetworkOrchestrationService {
 
     Map<String, String> finalizeServicesAndProvidersForNetwork(NetworkOffering offering, Long physicalNetworkId);
 
+    boolean stateTransitTo(Network network, Network.Event e) throws NoTransitionException;
+
     List<Provider> getProvidersForServiceInNetwork(Network network, Service service);
 
     StaticNatServiceProvider getStaticNatProviderForNetwork(Network network);
@@ -338,7 +345,9 @@ public interface NetworkOrchestrationService {
      */
     void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile);
 
-    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+    Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter datacenter, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }

@@ -51,7 +51,7 @@ public class WebSocketReverseProxy extends WebSocketClient {
     private static final DefaultExtension defaultExtension = new DefaultExtension();
     private static final Draft_6455 draft = new Draft_6455(Collections.singletonList(defaultExtension), Collections.singletonList(protocol));
 
-    private static final Logger logger = Logger.getLogger(WebSocketReverseProxy.class);
+    protected Logger logger = Logger.getLogger(getClass());
     private Session remoteSession;
 
     private void acceptAllCerts() {

@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -50,7 +50,7 @@ public class ClusterServiceServletAdapterTest {
     @Test
     public void testRunLevel() {
         int runLevel = clusterServiceServletAdapter.getRunLevel();
-        assertTrue(runLevel == ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        assertTrue(runLevel == ComponentLifecycle.RUN_LEVEL_COMPONENT);
         assertTrue(runLevel == clusterManagerImpl.getRunLevel());
     }
 }

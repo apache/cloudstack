@@ -47,7 +47,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -55,7 +54,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
-    private static final Logger s_logger = Logger.getLogger(AdvancedNetworkTopology.class);
 
     @Autowired
     @Qualifier("advancedNetworkVisitor")
@@ -69,7 +67,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public String[] applyVpnUsers(final RemoteAccessVpn remoteAccessVpn, final List<? extends VpnUser> users, final VirtualRouter router) throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING ADVANCED VPN USERS RULES");
+        logger.debug("APPLYING ADVANCED VPN USERS RULES");
 
         final AdvancedVpnRules routesRules = new AdvancedVpnRules(remoteAccessVpn, users);
 
@@ -90,10 +88,10 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean applyStaticRoutes(final List<StaticRouteProfile> staticRoutes, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING STATIC ROUTES RULES");
+        logger.debug("APPLYING STATIC ROUTES RULES");
 
         if (staticRoutes == null || staticRoutes.isEmpty()) {
-            s_logger.debug("No static routes to apply");
+            logger.debug("No static routes to apply");
             return true;
         }
 
@@ -106,9 +104,9 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
                 result = result && routesRules.accept(_advancedVisitor, router);
 
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
+                logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
             } else {
-                s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
+                logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
 
                 throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," + " virtual router is not in the right state", DataCenter.class,
                         router.getDataCenterId());
@@ -120,7 +118,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     @Override
     public boolean setupDhcpForPvlan(final boolean isAddPvlan, final DomainRouterVO router, final Long hostId, final NicProfile nic) throws ResourceUnavailableException {
 
-        s_logger.debug("SETUP DHCP PVLAN RULES");
+        logger.debug("SETUP DHCP PVLAN RULES");
 
         if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
             return false;
@@ -133,7 +131,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     @Override
     public boolean setupPrivateGateway(final PrivateGateway gateway, final VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("SETUP PRIVATE GATEWAY RULES");
+        logger.debug("SETUP PRIVATE GATEWAY RULES");
 
         final PrivateGatewayRules routesRules = new PrivateGatewayRules(gateway);
 
@@ -144,7 +142,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyUserData(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest, final DomainRouterVO router)
             throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING VPC USERDATA RULES");
+        logger.debug("APPLYING VPC USERDATA RULES");
 
         final String typeString = "userdata and password entry";
         final boolean isPodLevelException = false;
@@ -160,7 +158,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
     public boolean applyDhcpEntry(final Network network, final NicProfile nic, final VirtualMachineProfile profile, final DeployDestination dest,
             final DomainRouterVO router) throws ResourceUnavailableException {
 
-        s_logger.debug("APPLYING VPC DHCP ENTRY RULES");
+        logger.debug("APPLYING VPC DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = null;
@@ -174,7 +172,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
     @Override
     public boolean removeDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile profile, VirtualRouter virtualRouter) throws ResourceUnavailableException {
-        s_logger.debug("REMOVE VPC DHCP ENTRY RULES");
+        logger.debug("REMOVE VPC DHCP ENTRY RULES");
 
         final String typeString = "dhcp entry";
         final Long podId = null;
@@ -192,7 +190,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             throws ResourceUnavailableException {
 
         if (ipAddresses == null || ipAddresses.isEmpty()) {
-            s_logger.debug("No ip association rules to be applied for network " + network.getId());
+            logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
 
@@ -200,7 +198,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             return super.associatePublicIP(network, ipAddresses, router);
         }
 
-        s_logger.debug("APPLYING VPC IP RULES");
+        logger.debug("APPLYING VPC IP RULES");
 
         final String typeString = "vpc ip association";
         final boolean isPodLevelException = false;
@@ -215,7 +213,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         if (result) {
             if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending NicPlugInOutRules command to the backend");
+                logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending NicPlugInOutRules command to the backend");
             } else {
                 _advancedVisitor.visit(nicPlugInOutRules);
             }
@@ -229,11 +227,11 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             throws ResourceUnavailableException {
 
         if (rules == null || rules.isEmpty()) {
-            s_logger.debug("No network ACLs to be applied for network " + network.getId());
+            logger.debug("No network ACLs to be applied for network " + network.getId());
             return true;
         }
 
-        s_logger.debug("APPLYING NETWORK ACLs RULES");
+        logger.debug("APPLYING NETWORK ACLs RULES");
 
         final String typeString = "network acls";
         final boolean isPodLevelException = false;

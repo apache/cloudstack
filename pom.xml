@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.19.0.0-SNAPSHOT</version>
+    <version>4.20.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -50,7 +50,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.18.1.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.20.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -64,7 +64,7 @@
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -81,9 +81,9 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
+        <cs.log4j.version>2.19.0</cs.log4j.version>
         <cs.reload4j.version>1.2.25</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-        <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
@@ -114,8 +114,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>3.12.4</cs.mockito.version>
-        <cs.powermock.version>2.0.5</cs.powermock.version>
+        <cs.mockito.version>4.11.0</cs.mockito.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
@@ -152,7 +151,9 @@
         <cs.maven-javadoc-plugin.version>3.1.1</cs.maven-javadoc-plugin.version>
         <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
-        <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
+        <cs.jaxb.impl.version>2.3.9</cs.jaxb.impl.version>
+        <cs.jakarta.xml.bind.version>2.3.3</cs.jakarta.xml.bind.version>
+        <cs.jaxws.version>2.3.7</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
         <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
@@ -160,18 +161,18 @@
         <cs.joda-time.version>2.12.5</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
-        <cs.json.version>20090211</cs.json.version>
+        <cs.json.version>20231013</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>8.0.19</cs.mysql.version>
+        <cs.mysql.version>8.0.33</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
-        <cs.reflections.version>0.9.12</cs.reflections.version>
+        <cs.java-linstor.version>0.5.1</cs.java-linstor.version>
+        <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tink.version>1.7.0</cs.tink.version>
@@ -438,6 +439,21 @@
                 <version>${cs.jstl.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${cs.reload4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>apache-log4j-extras</artifactId>
                 <version>${cs.log4j.extras.version}</version>
@@ -449,13 +465,8 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>ch.qos.reload4j</groupId>
-                <artifactId>reload4j</artifactId>
-                <version>${cs.reload4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${cs.mysql.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -700,6 +711,11 @@
                 <artifactId>xml-apis</artifactId>
                 <version>2.0.2</version>
             </dependency>
+            <dependency>
+                <groupId>com.linbit.linstor.api</groupId>
+                <artifactId>java-linstor</artifactId>
+                <version>${cs.java-linstor.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -713,7 +729,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>mockito-inline</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -739,24 +755,6 @@
             <groupId>com.tngtech.java</groupId>
             <artifactId>junit-dataprovider</artifactId>
             <version>${cs.junit.dataprovider.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-core</artifactId>
-            <version>${cs.powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${cs.powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${cs.powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -1015,6 +1013,7 @@
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
+                            <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
@@ -1044,6 +1043,7 @@
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
                             <exclude>systemvm/agent/noVNC/**</exclude>
+                            <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>test/systemvm/README.md</exclude>

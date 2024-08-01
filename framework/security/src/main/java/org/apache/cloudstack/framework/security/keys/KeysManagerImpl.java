@@ -23,7 +23,8 @@ import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -50,7 +51,7 @@ import com.cloud.utils.db.SearchCriteria;
  *
  */
 public class KeysManagerImpl implements KeysManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(KeysManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     ConfigurationDao _configDao;
@@ -87,7 +88,7 @@ public class KeysManagerImpl implements KeysManager, Configurable {
         return EncryptionIV.value();
     }
 
-    private static String getBase64EncodedRandomKey(int nBits) {
+    private String getBase64EncodedRandomKey(int nBits) {
         SecureRandom random;
         try {
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -95,7 +96,7 @@ public class KeysManagerImpl implements KeysManager, Configurable {
             random.nextBytes(keyBytes);
             return Base64.encodeBase64URLSafeString(keyBytes);
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unhandled exception: ", e);
+            logger.error("Unhandled exception: ", e);
         }
         return null;
     }

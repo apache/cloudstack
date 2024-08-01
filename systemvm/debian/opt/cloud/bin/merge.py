@@ -158,7 +158,7 @@ class updateDataBag:
         dp['mtu'] = str(d['mtu'])
         qf = QueueFile()
         qf.load({'ip_address': [dp], 'type': 'ips'})
-        if 'domain_name' not in d.keys() or d['domain_name'] == '':
+        if 'domain_name' not in list(d.keys()) or d['domain_name'] == '':
             d['domain_name'] = "cloudnine.internal"
         return cs_guestnetwork.merge(dbag, d)
 
@@ -227,7 +227,7 @@ class updateDataBag:
     def processCLItem(self, num, nw_type):
         key = 'eth' + num + 'ip'
         dp = {}
-        if(key in self.qFile.data['cmd_line']):
+        if key in self.qFile.data['cmd_line']:
             dp['public_ip'] = self.qFile.data['cmd_line'][key]
             dp['netmask'] = self.qFile.data['cmd_line']['eth' + num + 'mask']
             dp['source_nat'] = False
@@ -236,7 +236,7 @@ class updateDataBag:
             if nw_type == "public":
                 dp['gateway'] = self.qFile.data['cmd_line']['gateway']
             else:
-                if('localgw' in self.qFile.data['cmd_line']):
+                if 'localgw' in self.qFile.data['cmd_line']:
                     dp['gateway'] = self.qFile.data['cmd_line']['localgw']
                 else:
                     dp['gateway'] = ''
@@ -252,7 +252,7 @@ class updateDataBag:
     def process_ipaliases(self, dbag):
         nic_dev = None
         # Should be a way to deal with this better
-        for intf, data in dbag.items():
+        for intf, data in list(dbag.items()):
             if intf == 'id':
                 continue
             elif any([net['nw_type'] == 'guest' for net in data]):

@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -35,12 +34,11 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  CheckNetworkCommand.class)
 public final class CitrixCheckNetworkCommandWrapper extends CommandWrapper<CheckNetworkCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCheckNetworkCommandWrapper.class);
 
     @Override
     public Answer execute(final CheckNetworkCommand command, final CitrixResourceBase citrixResourceBase) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if network name setup is done on the resource");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Checking if network name setup is done on the resource");
         }
 
         final List<PhysicalNetworkSetupInfo> infoList = command.getPhysicalNetworkInfoList();
@@ -77,7 +75,7 @@ public final class CitrixCheckNetworkCommandWrapper extends CommandWrapper<Check
                 }*/
             }
             if (errorout) {
-                s_logger.error(msg);
+                logger.error(msg);
                 return new CheckNetworkAnswer(command, false, msg);
             } else {
                 return new CheckNetworkAnswer(command, true, "Network Setup check by names is done");
@@ -85,11 +83,11 @@ public final class CitrixCheckNetworkCommandWrapper extends CommandWrapper<Check
 
         } catch (final XenAPIException e) {
             final String msg = "CheckNetworkCommand failed with XenAPIException:" + e.toString() + " host:" + citrixResourceBase.getHost().getUuid();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new CheckNetworkAnswer(command, false, msg);
         } catch (final Exception e) {
             final String msg = "CheckNetworkCommand failed with Exception:" + e.getMessage() + " host:" + citrixResourceBase.getHost().getUuid();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new CheckNetworkAnswer(command, false, msg);
         }
     }

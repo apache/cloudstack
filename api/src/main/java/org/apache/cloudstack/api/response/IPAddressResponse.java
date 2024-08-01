@@ -128,7 +128,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String networkId;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    @Param(description = "State of the ip address. Can be: Allocating, Allocated, Releasing, Reserved and Free")
     private String state;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
@@ -166,6 +166,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @SerializedName(ApiConstants.HAS_RULES)
     @Param(description="whether the ip address has Firewall/PortForwarding/LoadBalancing rules defined")
     private boolean hasRules;
+
+    @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
+    @Param(description="true if range is dedicated for System VMs")
+    private boolean forSystemVms;
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -315,5 +319,9 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
 
     public void setHasRules(final boolean hasRules) {
         this.hasRules = hasRules;
+    }
+
+    public void setForSystemVms(boolean forSystemVms) {
+        this.forSystemVms = forSystemVms;
     }
 }

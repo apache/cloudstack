@@ -28,7 +28,6 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -101,7 +100,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 public class Ovm3HypervisorResource extends ServerResourceBase implements HypervisorResource {
-    private static final Logger LOGGER = Logger.getLogger(Ovm3HypervisorResource.class);
     @Inject
     private VirtualRoutingResource vrResource;
     private StorageSubsystemCommandHandler storageHandler;
@@ -130,7 +128,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
      */
     @Override
     public StartupCommand[] initialize() {
-        LOGGER.debug("Ovm3 resource intializing");
+        logger.debug("Ovm3 resource intializing");
         try {
             StartupRoutingCommand srCmd = new StartupRoutingCommand();
             StartupStorageCommand ssCmd = new StartupStorageCommand();
@@ -138,10 +136,10 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             /* here stuff gets completed, but where should state live ? */
             hypervisorsupport.fillHostInfo(srCmd);
             hypervisorsupport.vmStateMapClear();
-            LOGGER.debug("Ovm3 pool " + ssCmd + " " + srCmd);
+            logger.debug("Ovm3 pool " + ssCmd + " " + srCmd);
             return new StartupCommand[] {srCmd, ssCmd};
         } catch (Exception e) {
-            LOGGER.debug("Ovm3 resource initializes failed", e);
+            logger.debug("Ovm3 resource initializes failed", e);
             return new StartupCommand[] {};
         }
     }
@@ -158,19 +156,19 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                 CloudstackPlugin cSp = new CloudstackPlugin(c);
                 if (!cSp.dom0CheckStorageHealthCheck(configuration.getAgentScriptsDir(), configuration.getAgentCheckStorageScript(), configuration.getCsHostGuid(),
                         configuration.getAgentStorageCheckTimeout(), configuration.getAgentStorageCheckInterval()) && !cSp.dom0CheckStorageHealthCheck()) {
-                    LOGGER.error("Storage health check not running on " + configuration.getAgentHostname());
+                    logger.error("Storage health check not running on " + configuration.getAgentHostname());
                 } else if (cSp.dom0CheckStorageHealthCheck()) {
-                    LOGGER.error("Storage health check started on " + configuration.getAgentHostname());
+                    logger.error("Storage health check started on " + configuration.getAgentHostname());
                 } else {
-                    LOGGER.debug("Storage health check running on " + configuration.getAgentHostname());
+                    logger.debug("Storage health check running on " + configuration.getAgentHostname());
                 }
                 return new PingRoutingCommand(getType(), id, hypervisorsupport.hostVmStateReport());
             } else {
-                LOGGER.debug("Agent did not respond correctly: " + ping + " but got " + pong);
+                logger.debug("Agent did not respond correctly: " + ping + " but got " + pong);
             }
 
         } catch (Ovm3ResourceException | NullPointerException e) {
-            LOGGER.debug("Check agent status failed", e);
+            logger.debug("Check agent status failed", e);
             return null;
         }
         return null;
@@ -179,7 +177,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     @Override
     public Answer executeRequest(Command cmd) {
         Class<? extends Command> clazz = cmd.getClass();
-        LOGGER.debug("executeRequest called: " + cmd.getClass());
+        logger.debug("executeRequest called: " + cmd.getClass());
         if (cmd instanceof NetworkElementCommand) {
             return vrResource.executeRequest((NetworkElementCommand)cmd);
         } else if (clazz == NetworkRulesSystemVmCommand.class) {
@@ -252,24 +250,24 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
         } else if (clazz == RebootCommand.class) {
             return execute((RebootCommand)cmd);
         }
-        LOGGER.debug("Can't find class for executeRequest " + cmd.getClass() + ", is your direct call missing?");
+        logger.debug("Can't find class for executeRequest " + cmd.getClass() + ", is your direct call missing?");
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
     @Override
     public void disconnected() {
-        LOGGER.debug("disconnected seems unused everywhere else");
+        logger.debug("disconnected seems unused everywhere else");
     }
 
     @Override
     public IAgentControl getAgentControl() {
-        LOGGER.debug("we don't use IAgentControl");
+        logger.debug("we don't use IAgentControl");
         return null;
     }
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
-        LOGGER.debug("No use in setting IAgentControl");
+        logger.debug("No use in setting IAgentControl");
     }
 
     @Override
@@ -299,7 +297,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
     @Override
     public void setRunLevel(int level) {
-        LOGGER.debug("runlevel seems unused in other hypervisors");
+        logger.debug("runlevel seems unused in other hypervisors");
     }
 
     /**
@@ -307,7 +305,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
      */
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        LOGGER.debug("configure " + name + " with params: " + params);
+        logger.debug("configure " + name + " with params: " + params);
         /* check if we're primary or not and if we can connect */
         try {
             configuration = new Ovm3Configuration(params);
@@ -343,7 +341,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
     }
 
     public void setConnection(Connection con) {
-        LOGGER.debug("override connection: " + con.getIp());
+        logger.debug("override connection: " + con.getIp());
         c = con;
     }
 
@@ -377,14 +375,14 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             String domType = guesttypes.getOvm3GuestType(vmSpec.getOs());
             if (domType == null || domType.isEmpty()) {
                 domType = "default";
-                LOGGER.debug("VM Virt type missing setting to: " + domType);
+                logger.debug("VM Virt type missing setting to: " + domType);
             } else {
-                LOGGER.debug("VM Virt type set to " + domType + " for " + vmSpec.getOs());
+                logger.debug("VM Virt type set to " + domType + " for " + vmSpec.getOs());
             }
             vm.setVmDomainType(domType);
 
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                LOGGER.warn("CD booting is not supported");
+                logger.warn("CD booting is not supported");
             }
             /*
              * officially CD boot is only supported on HVM, although there is a
@@ -422,19 +420,19 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
                     /* skip a beat to make sure we didn't miss start */
                     if (hypervisorsupport.getVmState(vmName) == null && count > 1) {
                         String msg = "VM " + vmName + " went missing on " + configuration.getAgentHostname() + ", returning stopped";
-                        LOGGER.debug(msg);
+                        logger.debug(msg);
                         state = State.Stopped;
                         return new StartAnswer(cmd, msg);
                     }
                     /* creative fix? */
                     try {
                         Boolean res = cSp.domrCheckSsh(controlIp);
-                        LOGGER.debug("connected to " + controlIp + " on attempt " + count + " result: " + res);
+                        logger.debug("connected to " + controlIp + " on attempt " + count + " result: " + res);
                         if (res) {
                             break;
                         }
                     } catch (Exception x) {
-                        LOGGER.trace("unable to connect to " + controlIp + " on attempt " + count + " " + x.getMessage(), x);
+                        logger.trace("unable to connect to " + controlIp + " on attempt " + count + " " + x.getMessage(), x);
                     }
                     Thread.sleep(5000);
                 }
@@ -449,7 +447,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             state = State.Running;
             return new StartAnswer(cmd);
         } catch (Exception e) {
-            LOGGER.debug("Start vm " + vmName + " failed", e);
+            logger.debug("Start vm " + vmName + " failed", e);
             state = State.Stopped;
             return new StartAnswer(cmd, e.getMessage());
         } finally {
@@ -473,7 +471,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
             if (vm == null) {
                 state = State.Stopping;
-                LOGGER.debug("Unable to get details of vm: " + vmName + ", treating it as Stopping");
+                logger.debug("Unable to get details of vm: " + vmName + ", treating it as Stopping");
                 return new StopAnswer(cmd, "success", true);
             }
             String repoId = ovmObject.deDash(vm.getVmRootDiskPoolId());
@@ -483,7 +481,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             int tries = 30;
             while (vms.getRunningVmConfig(vmName) != null && tries > 0) {
                 String msg = "Waiting for " + vmName + " to stop";
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 tries--;
                 Thread.sleep(10 * 1000);
             }
@@ -492,13 +490,13 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
 
             if (vms.getRunningVmConfig(vmName) != null) {
                 String msg = "Stop " + vmName + " failed ";
-                LOGGER.debug(msg);
+                logger.debug(msg);
                 return new StopAnswer(cmd, msg, false);
             }
             state = State.Stopped;
             return new StopAnswer(cmd, "success", true);
         } catch (Exception e) {
-            LOGGER.debug("Stop " + vmName + " failed ", e);
+            logger.debug("Stop " + vmName + " failed ", e);
             return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
             if (state != null) {
@@ -524,7 +522,7 @@ public class Ovm3HypervisorResource extends ServerResourceBase implements Hyperv
             Integer vncPort = vm.getVncPort();
             return new RebootAnswer(cmd, null, vncPort);
         } catch (Exception e) {
-            LOGGER.debug("Reboot " + vmName + " failed", e);
+            logger.debug("Reboot " + vmName + " failed", e);
             return new RebootAnswer(cmd, e.getMessage(), false);
         } finally {
             hypervisorsupport.setVmState(vmName, State.Running);

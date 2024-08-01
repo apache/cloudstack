@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -129,11 +129,11 @@ config_dnsmasq domain=cloudnine.internal
 config_dnsmasq "
 # Send options to hosts which ask for a DHCP lease.
 # See RFC 2132 for details of available options.
-# Common options can be given to dnsmasq by name: 
+# Common options can be given to dnsmasq by name:
 # run \"dnsmasq --help dhcp\" to get a list.
 # Note that all the common settings, such as netmask and
 # broadcast address, DNS server and default route, are given
-# sane defaults by dnsmasq. You very likely will not need 
+# sane defaults by dnsmasq. You very likely will not need
 # any dhcp-options. If you use Windows clients and Samba, there
 # are some options which are recommended, they are detailed at the
 # end of this section.

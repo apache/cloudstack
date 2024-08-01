@@ -21,9 +21,9 @@ package com.cloud.network.guru;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -168,7 +168,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork != null);
         assertTrue(designednetwork.getBroadcastDomainType() == BroadcastDomainType.Lswitch);
     }
@@ -192,7 +192,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -215,7 +215,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 
@@ -241,7 +241,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designednetwork = guru.design(offering, plan, network, account);
+        final Network designednetwork = guru.design(offering, plan, network, "", 1L, account);
         assertTrue(designednetwork == null);
     }
 

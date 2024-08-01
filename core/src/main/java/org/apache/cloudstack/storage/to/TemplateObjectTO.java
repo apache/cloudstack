@@ -28,7 +28,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
-public class TemplateObjectTO implements DataTO {
+public class TemplateObjectTO extends DownloadableObjectTO implements DataTO {
     private String path;
     private String origUrl;
     private String uuid;
@@ -87,6 +87,7 @@ public class TemplateObjectTO implements DataTO {
         this.deployAsIs = template.isDeployAsIs();
         this.deployAsIsConfiguration = template.getDeployAsIsConfiguration();
         this.directDownload = template.isDirectDownload();
+        this.followRedirects = template.isFollowRedirects();
     }
 
     @Override

@@ -29,15 +29,25 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doReturn;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.net.Ip;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -45,6 +55,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
@@ -52,10 +63,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.IpAddressTO;
@@ -65,6 +72,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -78,10 +86,13 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -90,7 +101,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -98,14 +108,11 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.exception.InvalidParameterValueException;
+import org.junit.After;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@PowerMockIgnore("javax.management.*")
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ComponentContext.class, CallContext.class})
+@RunWith(MockitoJUnitRunner.class)
 public class NetworkServiceImplTest {
     @Mock
     AccountManager accountManager;
@@ -163,8 +170,6 @@ public class NetworkServiceImplTest {
     ServiceOfferingVO serviceOfferingVoMock;
 
     @Mock
-    IpAddressManager ipAddressManager;
-    @Mock
     ConfigKey<Integer> privateMtuKey;
     @Mock
     private CallContext callContextMock;
@@ -177,8 +182,47 @@ public class NetworkServiceImplTest {
     CommandSetupHelper commandSetupHelper;
     @Mock
     private Account accountMock;
+
+    @Mock
+    private AccountVO accountVOMock;
+    @Mock
+    private DomainVO domainVOMock;
     @InjectMocks
     NetworkServiceImpl service = new NetworkServiceImpl();
+
+    @Mock
+    DomainDao domainDaoMock;
+
+    @Mock
+    AccountDao accountDaoMock;
+
+    @Mock
+    UpdateQuarantinedIpCmd updateQuarantinedIpCmdMock;
+
+    @Mock
+    PublicIpQuarantineDao publicIpQuarantineDaoMock;
+
+    @Mock
+    private PublicIpQuarantineVO publicIpQuarantineVOMock;
+
+    @Mock
+    private IPAddressVO ipAddressVOMock;
+
+    @Mock
+    private IpAddressManager ipAddressManagerMock;
+
+    @Mock
+    private Ip ipMock;
+    @Mock
+    private NsxProviderDao nsxProviderDao;
+
+    private static Date beforeDate;
+
+    private static Date afterDate;
+
+    private final Long publicIpId = 1L;
+
+    private final String dummyIpAddress = "192.168.0.1";
 
     private static final String VLAN_ID_900 = "900";
     private static final String VLAN_ID_901 = "901";
@@ -200,6 +244,24 @@ public class NetworkServiceImplTest {
     private  PhysicalNetworkVO phyNet;
     private VpcVO vpc;
 
+    private MockedStatic<CallContext> callContextMocked;
+
+    private AutoCloseable closeable;
+
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        Date date = new Date();
+        Calendar calendar = Calendar.getInstance();
+
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, -1);
+        beforeDate = calendar.getTime();
+
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, 1);
+        afterDate = calendar.getTime();
+    }
+
     private void registerCallContext() {
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
@@ -212,9 +274,8 @@ public class NetworkServiceImplTest {
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        replaceUserChangeMtuField();
-        Mockito.when(userChangeMtuKey.valueIn(anyLong())).thenReturn(Boolean.TRUE);
+        closeable = MockitoAnnotations.openMocks(this);
+        overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "true");
         offering = Mockito.mock(NetworkOfferingVO.class);
         network = Mockito.mock(Network.class);
         dc = Mockito.mock(DataCenterVO.class);
@@ -236,21 +297,33 @@ public class NetworkServiceImplTest {
         service.routerDao = routerDao;
         service.commandSetupHelper = commandSetupHelper;
         service.networkHelper = networkHelper;
-        service._ipAddrMgr = ipAddressManager;
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        accountMock = PowerMockito.mock(Account.class);
+        service._ipAddrMgr = ipAddressManagerMock;
+        service.nsxProviderDao = nsxProviderDao;
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        accountMock = Mockito.mock(Account.class);
         Mockito.when(service._accountMgr.finalizeOwner(any(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(accountMock);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
         NetworkOffering networkOffering = Mockito.mock(NetworkOffering.class);
         Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(networkOffering);
-        Mockito.when(networkService.findPhysicalNetworkId(Mockito.anyLong(), ArgumentMatchers.nullable(String.class), Mockito.any(Networks.TrafficType.class))).thenReturn(1L);
         Mockito.when(networkOfferingDao.findById(1L)).thenReturn(offering);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(phyNet);
         Mockito.when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
         Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, networkOffering, dc);
         Mockito.when(accountManager.isRootAdmin(accountMock.getId())).thenReturn(true);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        callContextMocked.close();
+        closeable.close();
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
     }
 
     @Test
@@ -373,8 +446,6 @@ public class NetworkServiceImplTest {
         Integer publicMtu = 2450;
         Integer privateMtu = 1500;
         Long zoneId = 1L;
-        when(publicMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
-        when(privateMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
         Pair<Integer, Integer> interfaceMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
         Assert.assertNotNull(interfaceMtus);
         Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.first());
@@ -388,8 +459,6 @@ public class NetworkServiceImplTest {
         Integer publicMtu = 1500;
         Integer privateMtu = 2500;
         Long zoneId = 1L;
-        when(publicMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
-        when(privateMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
         Pair<Integer, Integer> interfaceMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
         Assert.assertNotNull(interfaceMtus);
         Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.first());
@@ -445,20 +514,8 @@ public class NetworkServiceImplTest {
         routers.add(routerPrimary);
 
         CallContext.register(callingUser, callingAccount);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Mockito.doReturn(1L).when(callContextMock).getCallingUserId();
-        Mockito.when(userDao.findById(anyLong())).thenReturn(userVO);
-        Mockito.when(accountService.getActiveUser(1L)).thenReturn(callingUser);
-        Mockito.when(callingUser.getAccountId()).thenReturn(1L);
-        Mockito.when(accountService.getActiveAccountById(anyLong())).thenReturn(callingAccount);
-        Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
-        Mockito.when(networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(offering);
-        Mockito.when(offering.isSystemOnly()).thenReturn(false);
-        Mockito.when(networkVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
-        Mockito.when(networkVO.getGuestType()).thenReturn(Network.GuestType.Shared);
-        Mockito.when(nicDao.listByNetworkIdAndType(anyLong(), any(VirtualMachine.Type.class))).thenReturn(List.of(Mockito.mock(NicVO.class)));
+        Mockito.when(CallContext.current()).thenReturn(callContextMock);
         Mockito.when(networkVO.getVpcId()).thenReturn(null);
-        Mockito.when(ipAddressDao.listByNetworkId(anyLong())).thenReturn(addresses);
 
         Pair<Integer, Integer> updatedMtus = service.validateMtuOnUpdate(networkVO, zoneId, publicMtu, privateMtu);
         Assert.assertEquals(publicMtu, updatedMtus.first());
@@ -491,36 +548,19 @@ public class NetworkServiceImplTest {
         Assert.assertEquals(privateMtu, updatedMtus.second());
     }
 
-    private void replaceUserChangeMtuField() throws Exception {
-        Field field = NetworkService.class.getDeclaredField("AllowUsersToSpecifyVRMtu");
-        field.setAccessible(true);
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, userChangeMtuKey);
-    }
-
     private void prepareCreateNetworkDnsMocks(CreateNetworkCmd cmd, Network.GuestType guestType, boolean ipv6, boolean isVpc, boolean dnsServiceSupported) {
         long networkOfferingId = 1L;
         Mockito.when(cmd.getNetworkOfferingId()).thenReturn(networkOfferingId);
         NetworkOfferingVO networkOfferingVO = Mockito.mock(NetworkOfferingVO.class);
         Mockito.when(networkOfferingVO.getId()).thenReturn(networkOfferingId);
         Mockito.when(networkOfferingVO.getGuestType()).thenReturn(guestType);
-        Mockito.when(networkOfferingVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
-        Mockito.when(networkOfferingVO.isSpecifyIpRanges()).thenReturn(true);
         Mockito.when(networkOfferingDao.findById(networkOfferingId)).thenReturn(networkOfferingVO);
         if (Network.GuestType.Shared.equals(guestType)) {
             Mockito.when(networkModel.isProviderForNetworkOffering(Mockito.any(), Mockito.anyLong())).thenReturn(true);
             Mockito.when(cmd.getGateway()).thenReturn(IP4_GATEWAY);
             Mockito.when(cmd.getNetmask()).thenReturn(IP4_NETMASK);
         }
-        Mockito.when(accountManager.isNormalUser(Mockito.anyLong())).thenReturn(true);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(PhysicalNetworkVO.class));
-        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
-        Mockito.when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
-        Mockito.when(networkOrchestrationService.finalizeServicesAndProvidersForNetwork(Mockito.any(), Mockito.anyLong())).thenReturn(new HashMap<>());
         Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkOfferingId, Network.Service.Dns)).thenReturn(dnsServiceSupported);
         if(ipv6 && Network.GuestType.Isolated.equals(guestType)) {
             Mockito.when(networkOfferingDao.isIpv6Supported(networkOfferingId)).thenReturn(true);
@@ -716,10 +756,7 @@ public class NetworkServiceImplTest {
             Assert.fail(String.format("Unable to set network guestType, %s", e.getMessage()));
         }
         networkVO.setIp6Cidr("cidr");
-        Long offeringId = 1L;
         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
-        Mockito.when(offering.getId()).thenReturn(offeringId);
-        Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(offeringId, Network.Service.Dns)).thenReturn(true);
         boolean updated = service.checkAndUpdateNetworkDns(networkVO, offering, "", null, "", null);
         Assert.assertTrue(updated);
         Assert.assertNull(networkVO.getDns1());
@@ -756,10 +793,10 @@ public class NetworkServiceImplTest {
     public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouterTestMustThrowInvalidParameterValueExceptionWhenSystemVmTypeIsNotDomainRouter() {
         doReturn(serviceOfferingVoMock).when(serviceOfferingDaoMock).findById(anyLong());
         doReturn(ServiceOffering.State.Active).when(serviceOfferingVoMock).getState();
-        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getSystemVmType();
+        doReturn(VirtualMachine.Type.ElasticLoadBalancerVm.toString()).when(serviceOfferingVoMock).getVmType();
 
         String expectedMessage = String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering of type [%s].",
-                serviceOfferingVoMock, serviceOfferingVoMock.getSystemVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
+                serviceOfferingVoMock, serviceOfferingVoMock.getVmType(), VirtualMachine.Type.DomainRouter.toString().toLowerCase());
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedException, () -> {
             service.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
         });
@@ -772,6 +809,113 @@ public class NetworkServiceImplTest {
         NetworkServiceImpl networkServiceImplMock = mock(NetworkServiceImpl.class);
 
         networkServiceImplMock.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(1l);
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestQuarantineIsAlreadyExpiredShouldThrowCloudRuntimeException() {
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(afterDate);
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+        Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(accountVOMock);
+        Mockito.when(domainDaoMock.findById(Mockito.anyLong())).thenReturn(domainVOMock);
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
+        Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(beforeDate);
+        String expectedMessage = String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", dummyIpAddress);
+        CloudRuntimeException assertThrows = Assert.assertThrows(CloudRuntimeException.class,
+                () -> service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock));
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestGivenEndDateIsBeforeCurrentDateShouldThrowInvalidParameterValueException() {
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(beforeDate);
+
+        String expectedMessage = String.format("The given end date [%s] is invalid as it is before the current date.", beforeDate);
+        InvalidParameterValueException assertThrows = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock));
+
+        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+    }
+
+    @Test
+    public void updatePublicIpAddressInQuarantineTestQuarantineIsStillValidAndGivenEndDateIsAfterCurrentDateShouldWork() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(afterDate);
+        calendar.add(Calendar.DATE, 5);
+        Date expectedNewEndDate = calendar.getTime();
+
+        Mockito.when(updateQuarantinedIpCmdMock.getId()).thenReturn(publicIpId);
+        Mockito.when(updateQuarantinedIpCmdMock.getEndDate()).thenReturn(expectedNewEndDate);
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+        Mockito.when(accountDaoMock.findById(Mockito.anyLong())).thenReturn(accountVOMock);
+        Mockito.when(domainDaoMock.findById(Mockito.anyLong())).thenReturn(domainVOMock);
+        Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressDao.findById(Mockito.anyLong())).thenReturn(ipAddressVOMock);
+        Mockito.when(ipAddressVOMock.getAddress()).thenReturn(ipMock);
+        Mockito.when(ipMock.toString()).thenReturn(dummyIpAddress);
+        Mockito.when(publicIpQuarantineVOMock.getEndDate()).thenReturn(afterDate);
+        Mockito.when(ipAddressManagerMock.updatePublicIpAddressInQuarantine(anyLong(), Mockito.any(Date.class))).thenReturn(publicIpQuarantineVOMock);
+
+        PublicIpQuarantine actualPublicIpQuarantine = service.updatePublicIpAddressInQuarantine(updateQuarantinedIpCmdMock);
+        Mockito.when(actualPublicIpQuarantine.getEndDate()).thenReturn(expectedNewEndDate);
+
+        Assert.assertEquals(expectedNewEndDate , actualPublicIpQuarantine.getEndDate());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestIpIdNullAndIpAddressNullShouldThrowException() {
+        service.retrievePublicIpQuarantine(null, null);
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestValidIpIdShouldReturnPublicQuarantine() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(1L, null);
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestInvalidIpIdShouldThrowException() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(null);
+
+        service.retrievePublicIpQuarantine(1L, null);
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestValidIpAddressShouldReturnPublicQuarantine() {
+        Mockito.when(publicIpQuarantineDaoMock.findByIpAddress(Mockito.anyString())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(null, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestInvalidIpAddressShouldThrowException() {
+        Mockito.when(publicIpQuarantineDaoMock.findByIpAddress(Mockito.anyString())).thenReturn(null);
+
+        service.retrievePublicIpQuarantine(null, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestIpIdAndAddressInformedShouldUseId() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(1L, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
     }
 
     @Test
@@ -906,7 +1050,7 @@ public class NetworkServiceImplTest {
         when(networkVO.getId()).thenReturn(networkId);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
         try {
-            when(ipAddressManager.allocateIp(any(), anyBoolean(), any(), anyLong(), any(), any(), eq(srcNatIp))).thenReturn(ipAddress);
+            when(ipAddressManagerMock.allocateIp(any(), anyBoolean(), any(), anyLong(), any(), any(), eq(srcNatIp))).thenReturn(ipAddress);
             service.checkAndSetRouterSourceNatIp(account, createNetworkCmd, networkVO);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
             Assert.fail(e.getMessage());

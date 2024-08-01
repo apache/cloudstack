@@ -25,7 +25,6 @@ import java.util.TreeMap;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.utils.NumbersUtil;
@@ -34,7 +33,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public class UserDispersingPlanner extends FirstFitPlanner implements DeploymentClusterPlanner {
 
-    private static final Logger s_logger = Logger.getLogger(UserDispersingPlanner.class);
 
     /**
      * This method should reorder the given list of Cluster Ids by applying any necessary heuristic
@@ -97,8 +95,8 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     }
 
     protected Pair<List<Long>, Map<Long, Double>> listClustersByUserDispersion(long id, boolean isZone, long accountId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Applying Userdispersion heuristic to clusters for account: " + accountId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Applying Userdispersion heuristic to clusters for account: " + accountId);
         }
         Pair<List<Long>, Map<Long, Double>> clusterIdsVmCountInfo;
         if (isZone) {
@@ -106,19 +104,19 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         } else {
             clusterIdsVmCountInfo = vmInstanceDao.listClusterIdsInPodByVmCount(id, accountId);
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("List of clusters in ascending order of number of VMs: " + clusterIdsVmCountInfo.first());
+        if (logger.isTraceEnabled()) {
+            logger.trace("List of clusters in ascending order of number of VMs: " + clusterIdsVmCountInfo.first());
         }
         return clusterIdsVmCountInfo;
     }
 
     protected Pair<List<Long>, Map<Long, Double>> listPodsByUserDispersion(long dataCenterId, long accountId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Applying Userdispersion heuristic to pods for account: " + accountId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Applying Userdispersion heuristic to pods for account: " + accountId);
         }
         Pair<List<Long>, Map<Long, Double>> podIdsVmCountInfo = vmInstanceDao.listPodIdsInZoneByVmCount(dataCenterId, accountId);
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("List of pods in ascending order of number of VMs: " + podIdsVmCountInfo.first());
+        if (logger.isTraceEnabled()) {
+            logger.trace("List of pods in ascending order of number of VMs: " + podIdsVmCountInfo.first());
         }
 
         return podIdsVmCountInfo;
@@ -130,25 +128,25 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
         Map<Long, Double> capacityMap = capacityInfo.second();
         Map<Long, Double> vmCountMap = vmCountInfo.second();
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Capacity Id list: " + capacityOrderedIds + " , capacityMap:" + capacityMap);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Capacity Id list: " + capacityOrderedIds + " , capacityMap:" + capacityMap);
         }
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Vm Count Id list: " + vmCountOrderedIds + " , vmCountMap:" + vmCountMap);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Vm Count Id list: " + vmCountOrderedIds + " , vmCountMap:" + vmCountMap);
         }
 
         List<Long> idsReorderedByWeights = new ArrayList<Long>();
         float capacityWeight = (1.0f - _userDispersionWeight);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Applying userDispersionWeight: " + _userDispersionWeight);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Applying userDispersionWeight: " + _userDispersionWeight);
         }
         //normalize the vmCountMap
         LinkedHashMap<Long, Double> normalisedVmCountIdMap = new LinkedHashMap<Long, Double>();
 
         Long totalVmsOfAccount = vmInstanceDao.countRunningAndStartingByAccount(accountId);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Total VMs for account: " + totalVmsOfAccount);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Total VMs for account: " + totalVmsOfAccount);
         }
         for (Long id : vmCountOrderedIds) {
             Double normalisedCount = vmCountMap.get(id) / totalVmsOfAccount;
@@ -177,8 +175,8 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
             idsReorderedByWeights.addAll(idList);
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Reordered Id list: " + idsReorderedByWeights);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Reordered Id list: " + idsReorderedByWeights);
         }
 
         return idsReorderedByWeights;

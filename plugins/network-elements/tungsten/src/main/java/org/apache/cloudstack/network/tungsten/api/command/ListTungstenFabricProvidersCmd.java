@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricProviderResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenProviderService;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -43,7 +42,6 @@ import javax.inject.Inject;
 @APICommand(name = ListTungstenFabricProvidersCmd.APINAME, responseObject = TungstenFabricProviderResponse.class,
     description = "Lists Tungsten-Fabric providers", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricProvidersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricProvidersCmd.class.getName());
     public static final String APINAME = "listTungstenFabricProviders";
 
     /////////////////////////////////////////////////////

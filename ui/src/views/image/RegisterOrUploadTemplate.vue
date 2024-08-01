@@ -17,7 +17,7 @@
 
 <template>
   <div
-    class="form-layout"
+    :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
@@ -42,7 +42,7 @@
               :placeholder="apiParams.url.description" />
           </a-form-item>
         </div>
-        <div v-if="currentForm === 'Upload'">
+        <div v-else-if="currentForm === 'Upload'">
           <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
             <a-upload-dragger
               :multiple="false"
@@ -66,7 +66,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            v-focus="currentForm !== 'Create'"/>
+            v-focus="currentForm === 'Upload'"/>
         </a-form-item>
         <a-form-item ref="displaytext" name="displaytext">
           <template #label>
@@ -214,7 +214,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm !== 'Upload'">
+        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
           <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
@@ -269,7 +269,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
-            <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
+            <a-form-item ref="nicAdapterType" name="nicAdapterType" :label="$t('label.nicadaptertype')">
               <a-select
                 v-model:value="form.nicAdapterType"
                 showSearch
@@ -323,6 +323,34 @@
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item
+          name="templatetype"
+          ref="templatetype">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.templatetype"
+            :placeholder="apiParams.templatetype.description">
+            <a-select-option v-for="opt in templateTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdminRole">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
@@ -405,17 +433,11 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12" v-if="isAdminRole">
-                    <a-checkbox value="isrouting">
-                      {{ $t('label.isrouting') }}
-                    </a-checkbox>
-                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
           </a-col>
         </a-row>
-
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -465,6 +487,7 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      templateTypes: {},
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
@@ -539,6 +562,7 @@ export default {
       this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
+      this.fetchTemplateTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -658,7 +682,7 @@ export default {
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
         }
-        if (this.currentForm !== 'Upload') {
+        if (this.currentForm === 'Create') {
           listhyperVisors.push({
             name: 'Simulator'
           })
@@ -680,6 +704,33 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
+    },
+    fetchTemplateTypes () {
+      this.templateTypes.opts = []
+      const templatetypes = []
+      templatetypes.push({
+        id: 'USER',
+        description: 'USER'
+      })
+      templatetypes.push({
+        id: 'VNF',
+        description: 'VNF'
+      })
+      if (this.isAdminRole) {
+        templatetypes.push({
+          id: 'SYSTEM',
+          description: 'SYSTEM'
+        })
+        templatetypes.push({
+          id: 'BUILTIN',
+          description: 'BUILTIN'
+        })
+        templatetypes.push({
+          id: 'ROUTING',
+          description: 'ROUTING'
+        })
+      }
+      this.templateTypes.opts = templatetypes
     },
     fetchUserData () {
       const params = {}
@@ -769,30 +820,30 @@ export default {
 
       this.rootDisk.opts = controller
     },
-    fetchNicAdapterType () {
-      const nicAdapterType = []
-      nicAdapterType.push({
+    fetchNicAdapterTypes () {
+      const nicAdapterTypes = []
+      nicAdapterTypes.push({
         id: '',
         description: ''
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'E1000',
         description: 'E1000'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'PCNet32',
         description: 'PCNet32'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet2',
         description: 'Vmxnet2'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet3',
         description: 'Vmxnet3'
       })
 
-      this.nicAdapterType.opts = nicAdapterType
+      this.nicAdapterType.opts = nicAdapterTypes
     },
     fetchKeyboardType () {
       const keyboardType = []
@@ -958,7 +1009,7 @@ export default {
       this.resetSelect(arrSelectReset)
       this.fetchFormat(hyperVisor)
       this.fetchRootDisk(hyperVisor)
-      this.fetchNicAdapterType()
+      this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
@@ -973,10 +1024,10 @@ export default {
           delete this.form.zoneids
         }
         const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
+        const formvalues = this.handleRemoveFields(formRaw)
         let params = {}
-        for (const key in values) {
-          const input = values[key]
+        for (const key in formvalues) {
+          const input = formvalues[key]
 
           if (input === undefined) {
             continue
@@ -1044,7 +1095,7 @@ export default {
           }).finally(() => {
             this.loading = false
           })
-        } else {
+        } else if (this.currentForm === 'Upload') {
           this.loading = true
           if (this.fileList.length > 1) {
             this.$notification.error({

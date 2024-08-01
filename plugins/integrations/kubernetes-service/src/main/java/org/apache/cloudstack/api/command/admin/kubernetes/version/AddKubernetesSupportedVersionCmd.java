@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -31,14 +32,13 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.kubernetes.version.KubernetesVersionService;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "addKubernetesSupportedVersion",
         description = "Add a supported Kubernetes version",
@@ -47,7 +47,6 @@ import org.apache.commons.lang3.StringUtils;
         entityType = {KubernetesSupportedVersion.class},
         authorized = {RoleType.Admin})
 public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCmd {
-    public static final Logger LOGGER = Logger.getLogger(AddKubernetesSupportedVersionCmd.class.getName());
 
     @Inject
     private KubernetesVersionService kubernetesVersionService;
@@ -83,6 +82,10 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     @Parameter(name = ApiConstants.MIN_MEMORY, type = CommandType.INTEGER, required = true,
             description = "the minimum RAM size in MB to be set with the Kubernetes version")
     private Integer minimumRamSize;
+
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
+            description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
+    private Boolean directDownload;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -123,9 +126,18 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
         return minimumRamSize;
     }
 
+    public boolean isDirectDownload() {
+        return (directDownload != null) ? directDownload : false;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccountId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesSupportedVersion;
     }
 
     /////////////////////////////////////////////////////

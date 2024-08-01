@@ -297,7 +297,7 @@ class TestBasicOperations(cloudstackTestCase):
         # Validations:
         # 1. Step 3 should succeed
         # 2. Step 4 should fail
-        # 3. Step 5 should should fail
+        # 3. Step 5 should fail
         # 4. Step 6 should fail
 
         self.account = Account.create(

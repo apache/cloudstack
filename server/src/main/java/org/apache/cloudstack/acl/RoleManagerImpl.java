@@ -18,9 +18,12 @@ package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -44,7 +47,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -62,8 +64,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
-
-    private Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private AccountDao accountDao;
@@ -94,7 +94,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public Role findRole(Long id, boolean removePrivateRoles) {
+    public Role findRole(Long id, boolean ignorePrivateRoles) {
         if (id == null || id < 1L) {
             logger.trace(String.format("Role ID is invalid [%s]", id));
             return null;
@@ -104,11 +104,34 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             logger.trace(String.format("Role not found [id=%s]", id));
             return null;
         }
-        if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && removePrivateRoles))) {
+        if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
             logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", id, role.getName()));
             return null;
         }
         return role;
+    }
+
+    @Override
+    public List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles) {
+        List<Role> result = new ArrayList<>();
+        if (CollectionUtils.isEmpty(ids)) {
+            logger.trace(String.format("Role IDs are invalid [%s]", ids));
+            return result;
+        }
+
+        List<RoleVO> roles = roleDao.searchByIds(ids.toArray(new Long[0]));
+        if (CollectionUtils.isEmpty(roles)) {
+            logger.trace(String.format("Roles not found [ids=%s]", ids));
+            return result;
+        }
+        for (Role role : roles) {
+            if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
+                logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role.getId(), role.getName()));
+                continue;
+            }
+            result.add(role);
+        }
+        return result;
     }
 
     @Override
@@ -385,40 +408,98 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
         if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
             Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit, isCallerRootAdmin());
-            int removed = removeRootAdminRolesIfNeeded(data.first());
+            int removed = removeRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
         return new Pair<List<Role>, Integer>(new ArrayList<Role>(), 0);
     }
 
     /**
-     *  Removes roles of the given list that have the type '{@link RoleType#Admin}' if the user calling the method is not a 'root admin'.
-     *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
+     *  Removes roles from the given list if the role has different or more permissions than the user's calling the method role
      */
-    protected int removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
-        if (!isCallerRootAdmin()) {
-            return removeRootAdminRoles(roles);
+    protected int removeRolesIfNeeded(List<? extends Role> roles) {
+        if (roles.isEmpty()) {
+            return 0;
         }
-        return 0;
+
+        Long callerRoleId = getCurrentAccount().getRoleId();
+        Map<String, Permission> callerRolePermissions = getRoleRulesAndPermissions(callerRoleId);
+
+        int count = 0;
+        Iterator<? extends Role> rolesIterator = roles.iterator();
+        while (rolesIterator.hasNext()) {
+            Role role = rolesIterator.next();
+
+            if (role.getId() == callerRoleId || roleHasPermission(callerRolePermissions, role)) {
+                continue;
+            }
+
+            count++;
+            rolesIterator.remove();
+        }
+
+        return count;
     }
 
     /**
-     * Remove all roles that have the {@link RoleType#Admin}.
+     * Checks if the role of the caller account has compatible permissions of the specified role.
+     * For each permission of the role of the caller, the target role needs to contain the same permission.
+     *
+     * @param sourceRolePermissions the permissions of the caller role.
+     * @param targetRole the role that the caller role wants to access.
+     * @return True if the role can be accessed with the given permissions; false otherwise.
      */
-    protected int removeRootAdminRoles(List<? extends Role> roles) {
-        if (CollectionUtils.isEmpty(roles)) {
-            return 0;
-        }
-        Iterator<? extends Role> rolesIterator = roles.iterator();
-        int count = 0;
-        while (rolesIterator.hasNext()) {
-            Role role = rolesIterator.next();
-            if (RoleType.Admin == role.getRoleType()) {
-                count++;
-                rolesIterator.remove();
+    protected boolean roleHasPermission(Map<String, Permission> sourceRolePermissions, Role targetRole) {
+        Set<String> rulesAlreadyCompared = new HashSet<>();
+        for (RolePermission rolePermission : findAllPermissionsBy(targetRole.getId())) {
+            boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
+
+            for (String apiName : accountManager.getApiNameList()) {
+                if (!rolePermission.getRule().matches(apiName) || rulesAlreadyCompared.contains(apiName)) {
+                    continue;
+                }
+
+                if (rolePermission.getPermission() == Permission.ALLOW && (!sourceRolePermissions.containsKey(apiName) || sourceRolePermissions.get(apiName) == Permission.DENY)) {
+                    return false;
+                }
+
+                rulesAlreadyCompared.add(apiName);
+
+                if (!permissionIsRegex) {
+                    break;
+                }
             }
         }
-        return count;
+
+        return true;
+    }
+
+    /**
+     * Given a role ID, returns a {@link Map} containing the API name as the key and the {@link Permission} for the API as the value.
+     *
+     * @param roleId ID from role.
+     */
+    public Map<String, Permission> getRoleRulesAndPermissions(Long roleId) {
+        Map<String, Permission> roleRulesAndPermissions = new HashMap<>();
+
+        for (RolePermission rolePermission : findAllPermissionsBy(roleId)) {
+            boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
+
+            for (String apiName : accountManager.getApiNameList()) {
+                if (!rolePermission.getRule().matches(apiName)) {
+                    continue;
+                }
+
+                if (!roleRulesAndPermissions.containsKey(apiName)) {
+                    roleRulesAndPermissions.put(apiName, rolePermission.getPermission());
+                }
+
+                if (!permissionIsRegex) {
+                    break;
+                }
+            }
+        }
+        return roleRulesAndPermissions;
     }
 
     @Override
@@ -438,14 +519,14 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @Override
     public List<Role> listRoles() {
         List<? extends Role> roles = roleDao.listAll();
-        removeRootAdminRolesIfNeeded(roles);
+        removeRolesIfNeeded(roles);
         return ListUtils.toListOfInterface(roles);
     }
 
     @Override
     public Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit) {
         Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(startIndex, limit, isCallerRootAdmin());
-        int removed = removeRootAdminRolesIfNeeded(data.first());
+        int removed = removeRolesIfNeeded(data.first());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
     }
 

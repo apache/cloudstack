@@ -18,22 +18,21 @@
 //
 package com.cloud.api.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.never;
-
-import java.util.Arrays;
-import java.util.List;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.db.SearchCriteria;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.db.SearchCriteria;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MutualExclusiveIdsManagerBaseTest {

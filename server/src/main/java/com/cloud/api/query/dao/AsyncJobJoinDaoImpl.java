@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ResponseObject;
@@ -36,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> implements AsyncJobJoinDao {
-    public static final Logger s_logger = Logger.getLogger(AsyncJobJoinDaoImpl.class);
 
     private final SearchBuilder<AsyncJobJoinVO> jobIdSearch;
 

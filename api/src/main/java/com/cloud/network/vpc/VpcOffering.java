@@ -29,6 +29,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     public static final String defaultVPCOfferingName = "Default VPC offering";
     public static final String defaultVPCNSOfferingName = "Default VPC  offering with Netscaler";
     public static final String redundantVPCOfferingName = "Redundant VPC offering";
+    public static final String DEFAULT_VPC_NAT_NSX_OFFERING_NAME = "VPC offering with NSX - NAT Mode";
+    public static final String DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME = "VPC offering with NSX - Route Mode";
 
     /**
      *
@@ -52,6 +54,10 @@ public interface VpcOffering extends InternalIdentity, Identity {
      * @return true if offering is default - came with the cloudStack fresh install; false otherwise
      */
     boolean isDefault();
+
+    boolean isForNsx();
+
+    String getNsxMode();
 
     /**
      * @return service offering id used by VPC virtual router

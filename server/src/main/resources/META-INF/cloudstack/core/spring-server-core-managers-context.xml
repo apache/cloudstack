@@ -81,6 +81,8 @@
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
 
+    <bean id="resourceCleanupServiceImpl" class="org.apache.cloudstack.resource.ResourceCleanupServiceImpl" />
+
     <!-- the new background poll manager -->
     <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
     </bean>
@@ -106,8 +108,9 @@
 
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
-
-    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
+    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
+    </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
         <property name="consoleProxyAllocators"
@@ -144,6 +147,10 @@
         <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
     </bean>
 
+    <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
+    </bean>
+
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
@@ -164,6 +171,7 @@
 
     <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" >
         <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
+        <property name="internalLoadBalancerElementServices" value="#{internalLoadBalancerElementServiceRegistry.registered}" />
     </bean>
 
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
@@ -316,7 +324,7 @@
     </bean>
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
-        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
 
     <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
@@ -337,19 +345,29 @@
         <constructor-arg name="timeout" value="10000" />
     </bean>
 
+    <bean id="storageStorageBrowserImpl" class="org.apache.cloudstack.storage.browser.StorageBrowserImpl" />
+
     <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
 
+    <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
+        <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
     <bean id="resourceManagerUtilImpl"
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
     <bean id="resourceIconManager" class="com.cloud.resourceicon.ResourceIconManagerImpl" />
+    <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
 
     <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
     <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
+
+    <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
 </beans>

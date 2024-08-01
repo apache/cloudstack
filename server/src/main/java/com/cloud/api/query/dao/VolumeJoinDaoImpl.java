@@ -31,7 +31,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -49,7 +48,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
-    public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao  _configDao;
@@ -180,6 +178,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (view == ResponseView.Full) {
             volResponse.setPath(volume.getPath());
+            volResponse.setEncryptionFormat(volume.getEncryptionFormat());
         }
 
         // populate owner.
@@ -187,8 +186,8 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         if (volume.getDiskOfferingId() > 0) {
             DiskOffering computeOnlyDiskOffering  = ApiDBUtils.findComputeOnlyDiskOfferingById(volume.getDiskOfferingId());
-            if (computeOnlyDiskOffering != null) {
-                ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId());
+            ServiceOffering serviceOffering = getServiceOfferingForDiskOffering(volume, computeOnlyDiskOffering);
+            if (serviceOffering != null) {
                 volResponse.setServiceOfferingId(String.valueOf(serviceOffering.getId()));
                 volResponse.setServiceOfferingName(serviceOffering.getName());
                 volResponse.setServiceOfferingDisplayText(serviceOffering.getDisplayText());
@@ -278,7 +277,29 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         volResponse.setObjectName("volume");
         volResponse.setExternalUuid(volume.getExternalUuid());
+        volResponse.setEncryptionFormat(volume.getEncryptionFormat());
         return volResponse;
+    }
+
+    /**
+     * gets the {@see ServiceOffering} for the {@see Volume} with {@see DiskOffering}
+     * It will first try existing ones
+     * If not found it will try to get a removed one
+     *
+     * @param volume
+     * @param computeOnlyDiskOffering
+     * @return the resulting offering or null
+     */
+    private static ServiceOffering getServiceOfferingForDiskOffering(VolumeJoinVO volume, DiskOffering computeOnlyDiskOffering) {
+        ServiceOffering serviceOffering = null;
+        if (computeOnlyDiskOffering != null) {
+            serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), false);
+            if (serviceOffering == null) {
+                // Check again for removed ones
+                serviceOffering = ApiDBUtils.findServiceOfferingByComputeOnlyDiskOffering(volume.getDiskOfferingId(), true);
+            }
+        }
+        return serviceOffering;
     }
 
     @Override

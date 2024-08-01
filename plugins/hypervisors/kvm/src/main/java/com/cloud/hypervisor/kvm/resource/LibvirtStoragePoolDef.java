@@ -16,9 +16,15 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.collections.CollectionUtils;
+
 public class LibvirtStoragePoolDef {
     public enum PoolType {
-        ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs"), POWERFLEX("powerflex");
+        ISCSI("iscsi"), NETFS("netfs"), loggerICAL("logical"), DIR("dir"), RBD("rbd"), GLUSTERFS("glusterfs"), POWERFLEX("powerflex");
         String _poolType;
 
         PoolType(String poolType) {
@@ -55,6 +61,7 @@ public class LibvirtStoragePoolDef {
     private String _authUsername;
     private AuthenticationType _authType;
     private String _secretUuid;
+    private Set<String> _nfsMountOpts = new HashSet<>();
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
@@ -73,6 +80,15 @@ public class LibvirtStoragePoolDef {
         _sourceHost = host;
         _sourceDir = dir;
         _targetPath = targetPath;
+    }
+
+    public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String host, String dir, String targetPath, List<String> nfsMountOpts) {
+        this(type, poolName, uuid, host, dir, targetPath);
+        if (CollectionUtils.isNotEmpty(nfsMountOpts)) {
+            for (String nfsMountOpt : nfsMountOpts) {
+                this._nfsMountOpts.add(nfsMountOpt);
+            }
+        }
     }
 
     public LibvirtStoragePoolDef(PoolType type, String poolName, String uuid, String sourceHost, int sourcePort, String dir, String authUsername, AuthenticationType authType,
@@ -124,68 +140,97 @@ public class LibvirtStoragePoolDef {
         return _authType;
     }
 
+    public Set<String> getNfsMountOpts() {
+        return _nfsMountOpts;
+    }
+
     @Override
     public String toString() {
         StringBuilder storagePoolBuilder = new StringBuilder();
-        if (_poolType == PoolType.GLUSTERFS) {
-            /* libvirt mounts a Gluster volume, similar to NFS */
-            storagePoolBuilder.append("<pool type='netfs'>\n");
-        } else {
-            storagePoolBuilder.append("<pool type='");
-            storagePoolBuilder.append(_poolType);
-            storagePoolBuilder.append("'>\n");
+        String poolTypeXML;
+        switch (_poolType) {
+            case NETFS:
+                if (_nfsMountOpts != null) {
+                    poolTypeXML = "netfs' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0";
+                } else {
+                    poolTypeXML = _poolType.toString();
+                }
+                break;
+            case GLUSTERFS:
+                /* libvirt mounts a Gluster volume, similar to NFS */
+                poolTypeXML = "netfs";
+                break;
+            default:
+                poolTypeXML = _poolType.toString();
         }
+
+        storagePoolBuilder.append("<pool type='");
+        storagePoolBuilder.append(poolTypeXML);
+        storagePoolBuilder.append("'>\n");
 
         storagePoolBuilder.append("<name>" + _poolName + "</name>\n");
         if (_uuid != null)
             storagePoolBuilder.append("<uuid>" + _uuid + "</uuid>\n");
-        if (_poolType == PoolType.NETFS) {
-            storagePoolBuilder.append("<source>\n");
-            storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
-            storagePoolBuilder.append("<dir path='" + _sourceDir + "'/>\n");
-            storagePoolBuilder.append("</source>\n");
-        }
-        if (_poolType == PoolType.RBD) {
-            storagePoolBuilder.append("<source>\n");
-            for (String sourceHost : _sourceHost.split(",")) {
+
+        switch (_poolType) {
+            case NETFS:
+                storagePoolBuilder.append("<source>\n");
+                storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
+                storagePoolBuilder.append("<dir path='" + _sourceDir + "'/>\n");
+                storagePoolBuilder.append("</source>\n");
+                break;
+
+            case RBD:
+                storagePoolBuilder.append("<source>\n");
+                for (String sourceHost : _sourceHost.split(",")) {
+                    storagePoolBuilder.append("<host name='");
+                    storagePoolBuilder.append(sourceHost);
+                    if (_sourcePort != 0) {
+                        storagePoolBuilder.append("' port='");
+                        storagePoolBuilder.append(_sourcePort);
+                    }
+                    storagePoolBuilder.append("'/>\n");
+                }
+
+                storagePoolBuilder.append("<name>" + _sourceDir + "</name>\n");
+                if (_authUsername != null) {
+                    storagePoolBuilder.append("<auth username='" + _authUsername + "' type='" + _authType + "'>\n");
+                    storagePoolBuilder.append("<secret uuid='" + _secretUuid + "'/>\n");
+                    storagePoolBuilder.append("</auth>\n");
+                }
+                storagePoolBuilder.append("</source>\n");
+                break;
+
+            case GLUSTERFS:
+                storagePoolBuilder.append("<source>\n");
                 storagePoolBuilder.append("<host name='");
-                storagePoolBuilder.append(sourceHost);
+                storagePoolBuilder.append(_sourceHost);
                 if (_sourcePort != 0) {
                     storagePoolBuilder.append("' port='");
                     storagePoolBuilder.append(_sourcePort);
                 }
                 storagePoolBuilder.append("'/>\n");
-            }
+                storagePoolBuilder.append("<dir path='");
+                storagePoolBuilder.append(_sourceDir);
+                storagePoolBuilder.append("'/>\n");
+                storagePoolBuilder.append("<format type='");
+                storagePoolBuilder.append(_poolType);
+                storagePoolBuilder.append("'/>\n");
+                storagePoolBuilder.append("</source>\n");
+                break;
+        }
 
-            storagePoolBuilder.append("<name>" + _sourceDir + "</name>\n");
-            if (_authUsername != null) {
-                storagePoolBuilder.append("<auth username='" + _authUsername + "' type='" + _authType + "'>\n");
-                storagePoolBuilder.append("<secret uuid='" + _secretUuid + "'/>\n");
-                storagePoolBuilder.append("</auth>\n");
-            }
-            storagePoolBuilder.append("</source>\n");
-        }
-        if (_poolType == PoolType.GLUSTERFS) {
-            storagePoolBuilder.append("<source>\n");
-            storagePoolBuilder.append("<host name='");
-            storagePoolBuilder.append(_sourceHost);
-            if (_sourcePort != 0) {
-                storagePoolBuilder.append("' port='");
-                storagePoolBuilder.append(_sourcePort);
-            }
-            storagePoolBuilder.append("'/>\n");
-            storagePoolBuilder.append("<dir path='");
-            storagePoolBuilder.append(_sourceDir);
-            storagePoolBuilder.append("'/>\n");
-            storagePoolBuilder.append("<format type='");
-            storagePoolBuilder.append(_poolType);
-            storagePoolBuilder.append("'/>\n");
-            storagePoolBuilder.append("</source>\n");
-        }
         if (_poolType != PoolType.RBD && _poolType != PoolType.POWERFLEX) {
             storagePoolBuilder.append("<target>\n");
             storagePoolBuilder.append("<path>" + _targetPath + "</path>\n");
             storagePoolBuilder.append("</target>\n");
+        }
+        if (_poolType == PoolType.NETFS && _nfsMountOpts != null) {
+            storagePoolBuilder.append("<fs:mount_opts>\n");
+            for (String options : _nfsMountOpts) {
+                storagePoolBuilder.append("<fs:option name='" + options + "'/>\n");
+            }
+            storagePoolBuilder.append("</fs:mount_opts>\n");
         }
         storagePoolBuilder.append("</pool>\n");
         return storagePoolBuilder.toString();

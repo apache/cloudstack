@@ -24,6 +24,7 @@ public class HostTO {
     private NetworkTO publicNetwork;
     private NetworkTO storageNetwork1;
     private NetworkTO storageNetwork2;
+    private String parent;
 
     protected HostTO() {
     }
@@ -39,6 +40,9 @@ public class HostTO {
         }
         if (vo.getStorageIpAddressDeux() != null) {
             storageNetwork2 = new NetworkTO(vo.getStorageIpAddressDeux(), vo.getStorageNetmaskDeux(), vo.getStorageMacAddressDeux());
+        }
+        if (vo.getParent() != null) {
+            parent = vo.getParent();
         }
     }
 
@@ -80,5 +84,13 @@ public class HostTO {
 
     public void setStorageNetwork2(NetworkTO storageNetwork2) {
         this.storageNetwork2 = storageNetwork2;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 }

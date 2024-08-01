@@ -17,7 +17,7 @@
 package org.apache.cloudstack.framework.config.impl;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,13 +75,15 @@ public class ConfigDepotAdminTest extends TestCase {
     @Mock
     ScopedConfigStorage _scopedStorage;
 
+    private AutoCloseable closeable;
+
     /**
      * @throws java.lang.Exception
      */
     @Override
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         _depotAdmin = new ConfigDepotImpl();
         _depotAdmin._configDao = _configDao;
         _depotAdmin._configGroupDao = _configGroupDao;
@@ -91,6 +94,12 @@ public class ConfigDepotAdminTest extends TestCase {
         _depotAdmin._scopedStorages.add(_scopedStorage);
     }
 
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testAutoPopulation() {
         ConfigurationVO dynamicIntCV = new ConfigurationVO("UnitTestComponent", DynamicIntCK);
@@ -98,6 +107,8 @@ public class ConfigDepotAdminTest extends TestCase {
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
         ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
+        ConfigurationGroupVO groupVO = new ConfigurationGroupVO();
+        ConfigurationSubGroupVO subGroupVO = new ConfigurationSubGroupVO();
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
@@ -105,6 +116,8 @@ public class ConfigDepotAdminTest extends TestCase {
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         when(_configDao.findById(TestCK.key())).thenReturn(testCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
+        when(_configGroupDao.persist(any(ConfigurationGroupVO.class))).thenReturn(groupVO);
+        when(_configSubGroupDao.persist(any(ConfigurationSubGroupVO.class))).thenReturn(subGroupVO);
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.

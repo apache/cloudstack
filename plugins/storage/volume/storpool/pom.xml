@@ -1,4 +1,4 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
     license agreements. See the NOTICE file distributed with this work for additional
     information regarding copyright ownership. The ASF licenses this file to
     you under the Apache License, Version 2.0 (the "License"); you may not use
@@ -17,7 +17,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.19.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -42,9 +42,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.reload4j</groupId>
-            <artifactId>reload4j</artifactId>
-            <version>${cs.reload4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -53,13 +56,8 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>4.7.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <version>4.7.0</version>
+            <version>${cs.mockito.version}</version>
         </dependency>
         <dependency>
             <groupId>pl.project13.maven</groupId>

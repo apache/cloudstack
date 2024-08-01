@@ -16,15 +16,18 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import static org.junit.Assert.assertEquals;
-
-import org.apache.cloudstack.api.BaseResponseWithTagInformation;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.powermock.api.mockito.PowerMockito;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.BaseViewWithTagInformationVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.junit.After;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.Assert.assertEquals;
 
 public abstract class GenericDaoBaseWithTagInformationBaseTest<T extends BaseViewWithTagInformationVO,
                                                                 Z extends BaseResponseWithTagInformation> {
@@ -43,10 +46,18 @@ public abstract class GenericDaoBaseWithTagInformationBaseTest<T extends BaseVie
     private final static String TAG_ACCOUNT_NAME = "admin";
 
     private final static String RESPONSE_OBJECT_NAME = "tag";
+    private MockedStatic<ApiDBUtils> apiDBUtilsMocked;
 
     public void prepareSetup(){
-        PowerMockito.spy(ApiDBUtils.class);
-        PowerMockito.stub(PowerMockito.method(ApiDBUtils.class, "newResourceTagResponse")).toReturn(getResourceTagResponse());
+        apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class);
+        apiDBUtilsMocked.when(ReflectionTestUtils.invokeMethod(ApiDBUtils.class, "newResourceTagResponse", Mockito.any(ResourceTagJoinVO.class), Mockito.anyBoolean())).thenReturn(getResourceTagResponse());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (apiDBUtilsMocked != null) {
+            apiDBUtilsMocked.close();
+        }
     }
 
     private ResourceTagResponse getResourceTagResponse(){

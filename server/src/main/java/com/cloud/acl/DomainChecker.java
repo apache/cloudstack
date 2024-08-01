@@ -30,7 +30,6 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -99,7 +98,6 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Inject
     private AccountService accountService;
 
-    public static final Logger s_logger = Logger.getLogger(DomainChecker.class.getName());
     protected DomainChecker() {
         super();
     }

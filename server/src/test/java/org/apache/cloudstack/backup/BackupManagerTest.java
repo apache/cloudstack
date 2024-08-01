@@ -15,15 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.backup;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
+import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
@@ -32,19 +31,26 @@ import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.Pair;
-
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class BackupManagerTest {
     @Spy
     @InjectMocks
@@ -67,23 +73,20 @@ public class BackupManagerTest {
 
     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
     private String[] datastoresPossibleValues = {"e9804933-8609-4de3-bccc-6278072a496c", "datastore-name"};
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         when(backupOfferingDao.findById(null)).thenReturn(null);
         when(backupOfferingDao.findById(123l)).thenReturn(null);
 
         BackupOfferingVO offering = Mockito.spy(BackupOfferingVO.class);
-        when(offering.getId()).thenReturn(1234l);
         when(offering.getName()).thenCallRealMethod();
         when(offering.getDescription()).thenCallRealMethod();
         when(offering.isUserDrivenBackupAllowed()).thenCallRealMethod();
 
         BackupOfferingVO offeringUpdate = Mockito.spy(BackupOfferingVO.class);
-        when(offeringUpdate.getId()).thenReturn(1234l);
-        when(offeringUpdate.getName()).thenReturn("Old name");
-        when(offeringUpdate.getDescription()).thenReturn("Old description");
 
         when(backupOfferingDao.findById(1234l)).thenReturn(offering);
         when(backupOfferingDao.createForUpdate(1234l)).thenReturn(offeringUpdate);
@@ -93,6 +96,11 @@ public class BackupManagerTest {
             offering.setUserDrivenBackupAllowed(true);
             return true;
         });
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -218,18 +226,25 @@ public class BackupManagerTest {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         BackupVO backup = Mockito.mock(BackupVO.class);
 
-        Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
-        Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
-        Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
+        try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.eq(true), Mockito.eq(0))).thenReturn(1L);
+            Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.eq(0))).thenReturn(2L);
 
+            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
+            Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
 
+            Mockito.when(vm.getId()).thenReturn(1L);
+            Mockito.when(offering.getProvider()).thenReturn("veeam");
+            Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(true);
 
-        Mockito.when(vm.getId()).thenReturn(1L);
-        Mockito.when(offering.getProvider()).thenReturn("veeam");
-        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
-        Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(true);
-
-        backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.");
+            backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.");
+        }
     }
 
     @Test
@@ -239,21 +254,30 @@ public class BackupManagerTest {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         BackupVO backup = Mockito.mock(BackupVO.class);
 
-        Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
-        Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
-        Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
-        Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringFailed), Mockito.any())).thenReturn(true);
-        Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
+        try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.eq(true), Mockito.eq(0))).thenReturn(1L);
+            Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.eq(0))).thenReturn(2L);
 
-        Mockito.when(vm.getId()).thenReturn(1L);
-        Mockito.when(offering.getProvider()).thenReturn("veeam");
-        Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
-        Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(false);
-        try {
-            backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.");
-            fail("An exception is needed.");
-        } catch (CloudRuntimeException e) {
-            assertEquals("Error restoring VM from backup [Checking message error.].", e.getMessage());
+            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
+            Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
+            Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringFailed), Mockito.any())).thenReturn(true);
+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
+
+            Mockito.when(vm.getId()).thenReturn(1L);
+            Mockito.when(offering.getProvider()).thenReturn("veeam");
+            Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup)).thenReturn(false);
+            try {
+                backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.");
+                fail("An exception is needed.");
+            } catch (CloudRuntimeException e) {
+                assertEquals("Error restoring VM from backup [Checking message error.].", e.getMessage());
+            }
         }
     }
 }

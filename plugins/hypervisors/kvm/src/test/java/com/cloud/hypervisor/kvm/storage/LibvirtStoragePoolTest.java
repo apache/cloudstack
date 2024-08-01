@@ -87,6 +87,9 @@ public class LibvirtStoragePoolTest extends TestCase {
         StoragePool storage = Mockito.mock(StoragePool.class);
 
         LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage);
+        if (nfsPool.getType() != StoragePoolType.NetworkFilesystem) {
+            System.out.println("tested");
+        }
         assertFalse(nfsPool.isExternalSnapshot());
 
         LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage);

@@ -1,0 +1,75 @@
+{
+  "_license": "Apache License 2.0",
+  "builders": [
+    {
+      "accelerator": "kvm",
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_x86_64.cfg <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "auto <wait>",
+        "language=en locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+        "country=IN keymap=us <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "5s",
+      "disk_interface": "virtio",
+      "disk_size": "5000M",
+      "format": "qcow2",
+      "headless": true,
+      "http_directory": "http",
+      "iso_checksum": "sha512:33c08e56c83d13007e4a5511b9bf2c4926c4aa12fd5dd56d493c0653aecbab380988c5bf1671dbaea75c582827797d98c4a611f7fb2b131fbde2c677d5258ec9",
+      "iso_url": "https://cdimage.debian.org/mirror/cdimage/archive/12.5.0/amd64/iso-cd/debian-12.5.0-amd64-netinst.iso",
+      "net_device": "virtio-net",
+      "output_directory": "../dist",
+      "qemuargs": [
+        [
+          "-m",
+          "500M"
+        ],
+        [
+          "-smp",
+          "1"
+        ]
+      ],
+      "shutdown_command": "sudo halt -p",
+      "ssh_password": "cloud",
+      "ssh_timeout": "30m",
+      "ssh_username": "cloud",
+      "type": "qemu",
+      "vm_name": "systemvmtemplate"
+    }
+  ],
+  "description": "CloudStack SystemVM template",
+  "provisioners": [
+    {
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
+      "scripts": [
+        "scripts/apt_upgrade.sh",
+        "scripts/configure_grub.sh",
+        "scripts/configure_locale.sh",
+        "scripts/configure_networking.sh",
+        "scripts/configure_acpid.sh",
+        "scripts/install_systemvm_packages.sh",
+        "scripts/configure_conntrack.sh",
+        "scripts/authorized_keys.sh",
+        "scripts/configure_persistent_config.sh",
+        "scripts/configure_login.sh",
+        "../cloud_scripts_shar_archive.sh",
+        "scripts/configure_systemvm_services.sh",
+        "scripts/cleanup.sh",
+        "scripts/finalize.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}

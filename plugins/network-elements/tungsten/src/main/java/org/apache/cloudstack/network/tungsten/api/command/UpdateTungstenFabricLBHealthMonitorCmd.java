@@ -37,7 +37,6 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricLBHealthMonitorResponse;
 import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -45,7 +44,6 @@ import javax.inject.Inject;
     responseObject = TungstenFabricLBHealthMonitorResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class UpdateTungstenFabricLBHealthMonitorCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateTungstenFabricLBHealthMonitorCmd.class.getName());
     public static final String APINAME = "updateTungstenFabricLBHealthMonitor";
 
     @Inject

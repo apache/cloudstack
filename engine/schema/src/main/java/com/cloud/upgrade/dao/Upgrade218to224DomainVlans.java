@@ -23,12 +23,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade218to224DomainVlans implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade218to224DomainVlans.class);
+public class Upgrade218to224DomainVlans extends DbUpgradeAbstractImpl {
 
     @Override
     public InputStream[] getPrepareScripts() {
@@ -42,7 +40,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM networks WHERE shared=1 AND traffic_type='Guest' AND guest_type='Direct'");
             ResultSet rs = pstmt.executeQuery();
-            s_logger.debug("query is " + pstmt);
+            logger.debug("query is " + pstmt);
             while (rs.next()) {
                 Long networkId = rs.getLong(1);
                 Long vlanId = null;
@@ -50,7 +48,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
 
                 pstmt = conn.prepareStatement("SELECT id FROM vlan WHERE network_id=? LIMIT 0,1");
                 pstmt.setLong(1, networkId);
-                s_logger.debug("query is " + pstmt);
+                logger.debug("query is " + pstmt);
                 rs = pstmt.executeQuery();
 
                 while (rs.next()) {
@@ -60,7 +58,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
                 if (vlanId != null) {
                     pstmt = conn.prepareStatement("SELECT domain_id FROM account_vlan_map WHERE domain_id IS NOT NULL AND vlan_db_id=? LIMIT 0,1");
                     pstmt.setLong(1, vlanId);
-                    s_logger.debug("query is " + pstmt);
+                    logger.debug("query is " + pstmt);
                     rs = pstmt.executeQuery();
 
                     while (rs.next()) {
@@ -118,7 +116,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
             try {
                 pstmt.executeQuery();
             } catch (SQLException e) {
-                s_logger.debug("Assuming that domain_id field doesn't exist in account_vlan_map table, no need to upgrade");
+                logger.debug("Assuming that domain_id field doesn't exist in account_vlan_map table, no need to upgrade");
                 return;
             }
 

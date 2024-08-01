@@ -80,6 +80,9 @@ public class CapacityVO implements Capacity {
     @Transient
     private Long allocatedCapacity;
 
+    @Transient
+    private String tag;
+
     public CapacityVO() {
     }
 
@@ -132,8 +135,8 @@ public class CapacityVO implements Capacity {
         return podId;
     }
 
-    public void setPodId(long podId) {
-        this.podId = new Long(podId);
+    public void setPodId(Long podId) {
+        this.podId = podId;
     }
 
     @Override
@@ -141,8 +144,8 @@ public class CapacityVO implements Capacity {
         return clusterId;
     }
 
-    public void setClusterId(long clusterId) {
-        this.clusterId = new Long(clusterId);
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
     }
 
     @Override
@@ -219,6 +222,15 @@ public class CapacityVO implements Capacity {
 
     public void setAllocatedCapacity(Long allocatedCapacity) {
         this.allocatedCapacity = allocatedCapacity;
+    }
+
+    @Override
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     @Override

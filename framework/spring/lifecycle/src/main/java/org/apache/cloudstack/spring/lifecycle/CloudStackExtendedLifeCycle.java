@@ -29,7 +29,6 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.SystemIntegrityChecker;
@@ -39,7 +38,6 @@ import com.cloud.utils.mgmt.ManagementBean;
 
 public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
-    private static final Logger log = Logger.getLogger(CloudStackExtendedLifeCycle.class);
 
     Map<Integer, Set<ComponentLifecycle>> sorted = new TreeMap<Integer, Set<ComponentLifecycle>>();
 
@@ -59,14 +57,14 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
 
     protected void checkIntegrity() {
         for (SystemIntegrityChecker checker : getBeans(SystemIntegrityChecker.class)) {
-            log.info("Running system integrity checker " + checker);
+            logger.info("Running system integrity checker " + checker);
 
             checker.check();
         }
     }
 
     public void startBeans() {
-        log.info("Starting CloudStack Components");
+        logger.info("Starting CloudStack Components");
 
         with(new WithComponentLifeCycle() {
             @Override
@@ -78,34 +76,34 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                     try {
                         JmxUtil.registerMBean(mbean);
                     } catch (MalformedObjectNameException e) {
-                        log.warn("Unable to register MBean: " + mbean.getName(), e);
+                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
                     } catch (InstanceAlreadyExistsException e) {
-                        log.warn("Unable to register MBean: " + mbean.getName(), e);
+                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
                     } catch (MBeanRegistrationException e) {
-                        log.warn("Unable to register MBean: " + mbean.getName(), e);
+                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
                     } catch (NotCompliantMBeanException e) {
-                        log.warn("Unable to register MBean: " + mbean.getName(), e);
+                        logger.warn("Unable to register MBean: " + mbean.getName(), e);
                     }
-                    log.info("Registered MBean: " + mbean.getName());
+                    logger.info("Registered MBean: " + mbean.getName());
                 }
             }
         });
 
-        log.info("Done Starting CloudStack Components");
+        logger.info("Done Starting CloudStack Components");
     }
 
     public void stopBeans() {
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
-                log.info("stopping bean " + lifecycle.getName());
+                logger.info("stopping bean " + lifecycle.getName());
                 lifecycle.stop();
             }
         });
     }
 
     private void configure() {
-        log.info("Configuring CloudStack Components");
+        logger.info("Configuring CloudStack Components");
 
         with(new WithComponentLifeCycle() {
             @Override
@@ -113,13 +111,13 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 try {
                     lifecycle.configure(lifecycle.getName(), lifecycle.getConfigParams());
                 } catch (ConfigurationException e) {
-                    log.error("Failed to configure " +  lifecycle.getName(), e);
+                    logger.error("Failed to configure " +  lifecycle.getName(), e);
                     throw new CloudRuntimeException(e);
                 }
             }
         });
 
-        log.info("Done Configuring CloudStack Components");
+        logger.info("Done Configuring CloudStack Components");
     }
 
     private void sortBeans() {

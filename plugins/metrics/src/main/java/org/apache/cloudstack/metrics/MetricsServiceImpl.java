@@ -27,9 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
+import com.cloud.dc.ClusterVO;
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListDbMetricsCmd;
@@ -55,6 +59,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
@@ -71,6 +76,7 @@ import org.apache.cloudstack.response.VolumeMetricsResponse;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 import org.apache.cloudstack.response.ZoneMetricsResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
@@ -78,7 +84,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
@@ -137,7 +142,6 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
 
 public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
-    private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
 
     @Inject
     private DataCenterDao dataCenterDao;
@@ -175,6 +179,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     private VolumeDao volumeDao;
     @Inject
     private VolumeStatsDao volumeStatsDao;
+
+    @Inject
+    private ObjectStoreDao objectStoreDao;
 
     private static Gson gson = new Gson();
 
@@ -557,6 +564,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setHosts(hostDao.countAllByType(Host.Type.Routing));
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
+        response.setObjectStores(objectStoreDao.countAllObjectStores());
         response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
@@ -609,7 +617,6 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
 
             metricsResponse.setHasAnnotation(vmResponse.hasAnnotation());
-            metricsResponse.setIpAddress(vmResponse.getNics());
             metricsResponse.setCpuTotal(vmResponse.getCpuNumber(), vmResponse.getCpuSpeed());
             metricsResponse.setMemTotal(vmResponse.getMemory());
             metricsResponse.setNetworkRead(vmResponse.getNetworkKbsRead());
@@ -626,6 +633,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses) {
         final List<StoragePoolMetricsResponse> metricsResponses = new ArrayList<>();
+        Map<String, Long> clusterUuidToIdMap = clusterDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getClusterId).toArray(String[]::new)).stream().collect(Collectors.toMap(ClusterVO::getUuid, ClusterVO::getId));
         for (final StoragePoolResponse poolResponse: poolResponses) {
             StoragePoolMetricsResponse metricsResponse = new StoragePoolMetricsResponse();
 
@@ -635,11 +643,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate storagepool metrics response");
             }
 
-            Long poolClusterId = null;
-            final Cluster cluster = clusterDao.findByUuid(poolResponse.getClusterId());
-            if (cluster != null) {
-                poolClusterId = cluster.getId();
-            }
+            Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
             final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
 
@@ -757,9 +761,12 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final Long clusterId = cluster.getId();
 
             // CPU and memory capacities
-            final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
-            final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
+            final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity(Capacity.CAPACITY_TYPE_CPU, null, clusterId);
+            final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity(Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+
+            List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
+            List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
 
             for (final Host host: hostDao.findByClusterId(clusterId)) {
                 if (host == null || host.getType() != Host.Type.Routing) {
@@ -769,7 +776,18 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                     hostMetrics.incrUpResources();
                 }
                 hostMetrics.incrTotalResources();
-                updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
+                updateHostMetrics(hostMetrics, hostJoin);
+
+                cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
+                memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
+            }
+
+            try {
+                Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
+                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
+            } catch (ConfigurationException e) {
+                logger.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
@@ -828,19 +846,19 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
+            if(logger.isDebugEnabled()) {
+                logger.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
             try {
                 BeanUtils.copyProperties(metricsResponse, managementServerResponse);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response.");
@@ -857,15 +875,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * Get the transient/in memory data.
      */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
-            LOGGER.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
+            logger.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             if (StatsCollector.MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
                 copyManagementServerStatusToResponse(metricsResponse, status);
@@ -1000,8 +1018,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
         getQueryHistory(response);
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(new ReflectionToStringBuilder(response));
+        if (logger.isTraceEnabled()) {
+            logger.trace(new ReflectionToStringBuilder(response));
         }
 
         response.setObjectName("dbMetrics");
@@ -1059,8 +1077,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         boolean local = false;
         String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("The current usage status is: %s.", usageStatus));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("The current usage status is: %s.", usageStatus));
         }
 
         if (StringUtils.isNotBlank(usageStatus)) {

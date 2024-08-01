@@ -53,7 +53,7 @@ public interface HighAvailabilityManager extends Manager {
     ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
         "time.between.cleanup", "86400", "The time in seconds to wait before the"
         + " cleanup thread runs for the different HA-Worker-Threads. The cleanup thread finds all the work items "
-        + "that were successful and is now ready to be purged from the the database (table: op_ha_work).",
+        + "that were successful and is now ready to be purged from the database (table: op_ha_work).",
         true, Cluster);
 
     ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",
@@ -71,6 +71,9 @@ public interface HighAvailabilityManager extends Manager {
         "time.between.failures", "3600", "The time in seconds before try to cleanup all the VMs"
         + " which are registered for the HA event that were successful and are now ready to be purged.",
         true, Cluster);
+
+    public static final ConfigKey<Boolean> KvmHAFenceHostIfHeartbeatFailsOnStorage = new ConfigKey<>("Advanced", Boolean.class, "kvm.ha.fence.on.storage.heartbeat.failure", "false",
+            "Proceed fencing the host even the heartbeat failed for only one storage pool", false, ConfigKey.Scope.Zone);
 
     public enum WorkType {
         Migration,  // Migrating VMs off of a host.
@@ -153,4 +156,5 @@ public interface HighAvailabilityManager extends Manager {
     String getHaTag();
 
     DeploymentPlanner getHAPlanner();
+    int expungeWorkItemsByVmList(List<Long> vmIds, Long batchSize);
 }

@@ -30,6 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -329,15 +330,7 @@ public class NicVO implements Nic {
 
     @Override
     public String toString() {
-        return new StringBuilder("Nic[").append(id)
-            .append("-")
-            .append(instanceId)
-            .append("-")
-            .append(reservationId)
-            .append("-")
-            .append(iPv4Address)
-            .append("]")
-            .toString();
+        return String.format("Nic %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceId", "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
     }
 
     @Override

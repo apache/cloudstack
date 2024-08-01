@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,7 +29,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listUsageTypes", description = "List Usage Types", responseObject = UsageTypeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUsageTypesCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUsageTypesCmd.class.getName());
 
     @Override
     public long getEntityOwnerId() {

@@ -28,26 +28,33 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class StorPoolStatsCollector extends ManagerBase {
-
-    private static Logger log = Logger.getLogger(StorPoolStatsCollector.class);
 
     @Inject
     private PrimaryDataStoreDao storagePoolDao;
@@ -55,6 +62,12 @@ public class StorPoolStatsCollector extends ManagerBase {
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     private ConfigurationDao configurationDao;
+    @Inject
+    private SnapshotDao snapshotDao;
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
+    @Inject
+    private SnapshotDetailsDao snapshotDetailsDao;
 
     private ScheduledExecutorService executor;
 
@@ -70,7 +83,7 @@ public class StorPoolStatsCollector extends ManagerBase {
     public boolean start() {
         List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
         if (CollectionUtils.isNotEmpty(spPools)) {
-            executor = Executors.newScheduledThreadPool(2,new NamedThreadFactory("StorPoolStatsCollector"));
+            executor = Executors.newScheduledThreadPool(3, new NamedThreadFactory("StorPoolStatsCollector"));
             long storageStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("storage.stats.interval"), 60000L);
             long volumeStatsInterval = NumbersUtil.parseLong(configurationDao.getValue("volume.stats.interval"), 60000L);
 
@@ -79,6 +92,13 @@ public class StorPoolStatsCollector extends ManagerBase {
             }
             if (StorPoolConfigurationManager.StorageStatsInterval.value() > 0 && storageStatsInterval > 0) {
                 executor.scheduleAtFixedRate(new StorPoolStorageStatsMonitorTask(), 120, StorPoolConfigurationManager.StorageStatsInterval.value(), TimeUnit.SECONDS);
+            }
+            for (StoragePoolVO pool: spPools) {
+                Integer deleteAfter = StorPoolConfigurationManager.DeleteAfterInterval.valueIn(pool.getId());
+                if (deleteAfter != null && deleteAfter > 0) {
+                    executor.scheduleAtFixedRate(new StorPoolSnapshotsWithDelayDelete(), 120, StorPoolConfigurationManager.ListSnapshotsWithDeleteAfterInterval.value(), TimeUnit.SECONDS);
+                    break;
+                }
             }
         }
 
@@ -93,19 +113,19 @@ public class StorPoolStatsCollector extends ManagerBase {
             if (CollectionUtils.isNotEmpty(spPools)) {
                 volumesStats.clear();
 
-                log.debug("Collecting StorPool volumes used space");
+                logger.debug("Collecting StorPool volumes used space");
                 Map<Long, StoragePoolVO> onePoolforZone = new HashMap<>();
                 for (StoragePoolVO storagePoolVO : spPools) {
                     onePoolforZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
                     try {
-                        log.debug(String.format("Collecting volumes statistics for zone [%s]", storagePool.getDataCenterId()));
+                        logger.debug(String.format("Collecting volumes statistics for zone [%s]", storagePool.getDataCenterId()));
                         JsonArray arr = StorPoolUtil.volumesSpace(StorPoolUtil.getSpConnection(storagePool.getUuid(),
                                 storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
                         volumesStats.putAll(getClusterVolumeOrTemplateSpace(arr, StorPoolObject.VOLUME));
                     } catch (Exception e) {
-                        log.debug(String.format("Could not collect StorPool volumes statistics due to %s", e.getMessage()));
+                        logger.debug(String.format("Could not collect StorPool volumes statistics due to %s", e.getMessage()));
                     }
                 }
             }
@@ -126,12 +146,12 @@ public class StorPoolStatsCollector extends ManagerBase {
                 }
                 for (StoragePoolVO storagePool : onePoolforZone.values()) {
                     try {
-                        log.debug(String.format("Collecting templates statistics for zone [%s]", storagePool.getDataCenterId()));
+                        logger.debug(String.format("Collecting templates statistics for zone [%s]", storagePool.getDataCenterId()));
                         JsonArray arr = StorPoolUtil.templatesStats(StorPoolUtil.getSpConnection(storagePool.getUuid(),
                                 storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
                         templatesStats.put(storagePool.getDataCenterId(), getClusterVolumeOrTemplateSpace(arr, StorPoolObject.TEMPLATE));
                     } catch (Exception e) {
-                        log.debug(String.format("Could not collect StorPool templates statistics %s", e.getMessage()));
+                        logger.debug(String.format("Could not collect StorPool templates statistics %s", e.getMessage()));
                     }
                 }
             }
@@ -182,6 +202,92 @@ public class StorPoolStatsCollector extends ManagerBase {
                 template.first(template.first() + capacity);
                 template.second(template.second() + used);
                 map.put(templateName, template);
+            }
+        }
+    }
+
+    class StorPoolSnapshotsWithDelayDelete implements Runnable {
+
+        @Override
+        public void run() {
+            List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
+            if (CollectionUtils.isNotEmpty(spPools)) {
+                Map<Long, StoragePoolVO> onePoolForZone = new HashMap<>();
+                for (StoragePoolVO storagePoolVO : spPools) {
+                    onePoolForZone.put(storagePoolVO.getDataCenterId(), storagePoolVO);
+                }
+                for (StoragePoolVO storagePool : onePoolForZone.values()) {
+                    List<SnapshotDetailsVO> snapshotsDetails = snapshotDetailsDao.findDetailsByZoneAndKey(storagePool.getDataCenterId(), StorPoolUtil.SP_DELAY_DELETE);
+                    if (CollectionUtils.isEmpty(snapshotsDetails)) {
+                        return;
+                    }
+                    Map<String, String> snapshotsWithDelayDelete = new HashMap<>();
+
+                    try {
+                        logger.debug(String.format("Collecting snapshots marked to be deleted for zone [%s]", storagePool.getDataCenterId()));
+                        JsonArray arr = StorPoolUtil.snapshotsListAllClusters(StorPoolUtil.getSpConnection(storagePool.getUuid(),
+                                storagePool.getId(), storagePoolDetailsDao, storagePoolDao));
+                         snapshotsWithDelayDelete.putAll(getSnapshotsMarkedForDeletion(arr));
+                         logger.debug(String.format("Found snapshot details [%s] and snapshots on StorPool with delay delete flag [%s]", snapshotsDetails, snapshotsWithDelayDelete));
+                         syncSnapshots(snapshotsDetails, snapshotsWithDelayDelete);
+                    } catch (Exception e) {
+                        logger.debug("Could not fetch the snapshots with delay delete flag " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        private void syncSnapshots(List<SnapshotDetailsVO> snapshotsDetails,
+                Map<String, String> snapshotsWithDelayDelete) {
+            for (SnapshotDetailsVO snapshotDetailsVO : snapshotsDetails) {
+                 if (!snapshotsWithDelayDelete.containsKey(snapshotDetailsVO.getValue())) {
+                     StorPoolUtil.spLog("The snapshot [%s] with delayDelete flag is no longer on StorPool. Removing it from CloudStack", snapshotDetailsVO.getValue());
+                     SnapshotDataStoreVO ss = snapshotDataStoreDao
+                             .findBySourceSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
+                     if (ss != null) {
+                         ss.setState(State.Destroyed);
+                         snapshotDataStoreDao.update(ss.getId(), ss);
+                     }
+                     SnapshotVO snap = snapshotDao.findById(snapshotDetailsVO.getResourceId());
+                     if (snap != null) {
+                         snap.setState(com.cloud.storage.Snapshot.State.Destroyed);
+                         snapshotDao.update(snap.getId(), snap);
+                     }
+                     snapshotDetailsDao.remove(snapshotDetailsVO.getId());
+                 }
+             }
+        }
+
+        private  Map<String, String> getSnapshotsMarkedForDeletion(JsonArray arr) {
+            for (JsonElement jsonElement : arr) {
+                JsonObject error = jsonElement.getAsJsonObject().getAsJsonObject("error");
+                if (error != null) {
+                    throw new CloudRuntimeException(String.format("Could not collect the snapshots marked for deletion from all storage nodes due to: [%s]", error));
+                }
+            }
+            Map<String, String> snapshotsWithDelayDelete = new HashMap<>();
+            for (JsonElement jsonElement : arr) {
+                JsonObject response = jsonElement.getAsJsonObject().getAsJsonObject("response");
+                if (response == null) {
+                    return snapshotsWithDelayDelete;
+                }
+                collectSnapshots(snapshotsWithDelayDelete, response);
+            }
+            logger.debug("Found snapshots on StorPool" + snapshotsWithDelayDelete);
+            return snapshotsWithDelayDelete;
+        }
+
+        private void collectSnapshots(Map<String, String> snapshotsWithDelayDelete, JsonObject response) {
+            JsonArray snapshots = response.getAsJsonObject().getAsJsonArray("data");
+            for (JsonElement snapshot : snapshots) {
+                String name = snapshot.getAsJsonObject().get("name").getAsString();
+                JsonObject tags = snapshot.getAsJsonObject().get("tags").getAsJsonObject();
+                if (!StringUtils.startsWith(name, "*") && StringUtils.containsNone(name, "@") && tags != null && !tags.entrySet().isEmpty()) {
+                    String tag = tags.getAsJsonPrimitive("cs").getAsString();
+                    if (tag != null && tag.equals(StorPoolUtil.DELAY_DELETE)) {
+                        snapshotsWithDelayDelete.put(name, tag);
+                    }
+                }
             }
         }
     }

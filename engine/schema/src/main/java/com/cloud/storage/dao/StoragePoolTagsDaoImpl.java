@@ -18,6 +18,7 @@ package com.cloud.storage.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -28,7 +29,10 @@ import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 
 public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Long> implements StoragePoolTagsDao {
 
@@ -50,7 +54,7 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
     }
 
     @Override
-    public void persist(long poolId, List<String> storagePoolTags) {
+    public void persist(long poolId, List<String> storagePoolTags, Boolean isTagARule) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
@@ -61,11 +65,21 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
         for (String tag : storagePoolTags) {
             tag = tag.trim();
             if (tag.length() > 0) {
-                StoragePoolTagVO vo = new StoragePoolTagVO(poolId, tag);
+                StoragePoolTagVO vo = new StoragePoolTagVO(poolId, tag, isTagARule);
                 persist(vo);
             }
         }
         txn.commit();
+    }
+
+    public void persist(List<StoragePoolTagVO> storagePoolTags) {
+        Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallbackNoReturn() {
+            @Override public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (StoragePoolTagVO storagePoolTagVO : storagePoolTags) {
+                    persist(storagePoolTagVO);
+                }
+            }
+        });
     }
 
     @Override
@@ -155,6 +169,25 @@ public class StoragePoolTagsDaoImpl extends GenericDaoBase<StoragePoolTagVO, Lon
         tagResponse.setObjectName("storagetag");
 
         return tagResponse;
+    }
+
+    @Override
+    public List<StoragePoolTagVO> findStoragePoolTags(long poolId) {
+        SearchCriteria<StoragePoolTagVO> sc = StoragePoolSearch.create();
+        sc.setParameters("poolId", poolId);
+
+        return search(sc, null);
+    }
+
+    @Override
+    public List<Long> listPoolIdsByTag(String tag) {
+        SearchBuilder<StoragePoolTagVO> sb = createSearchBuilder();
+        sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<StoragePoolTagVO> sc = sb.create();
+        sc.setParameters("tag", tag);
+        List<StoragePoolTagVO> poolRefs = search(sc, null);
+        return poolRefs.stream().map(StoragePoolTagVO::getPoolId).collect(Collectors.toList());
     }
 
 }

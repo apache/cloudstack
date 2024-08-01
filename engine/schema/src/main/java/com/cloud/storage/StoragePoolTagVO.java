@@ -23,7 +23,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Entity
 @Table(name = "storage_pool_tags")
@@ -43,9 +45,19 @@ public class StoragePoolTagVO implements InternalIdentity {
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "is_tag_a_rule")
+    private boolean isTagARule;
+
     public StoragePoolTagVO(long poolId, String tag) {
         this.poolId = poolId;
         this.tag = tag;
+        this.isTagARule = false;
+    }
+
+    public StoragePoolTagVO(long poolId, String tag, Boolean isTagARule) {
+        this.poolId = poolId;
+        this.tag = tag;
+        this.isTagARule = BooleanUtils.toBooleanDefaultIfNull(isTagARule, false);
     }
 
     @Override
@@ -61,4 +73,20 @@ public class StoragePoolTagVO implements InternalIdentity {
         return tag;
     }
 
+    public boolean isTagARule() {
+        return this.isTagARule;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof StoragePoolTagVO) {
+            return this.poolId == ((StoragePoolTagVO)obj).getPoolId();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return NumbersUtil.hash(id);
+    }
 }

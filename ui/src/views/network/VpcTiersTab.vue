@@ -112,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="displayCollapsible[network.id] ? null: 'disabled'" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -436,7 +436,10 @@ export default {
         }
       },
       publicLBExists: false,
-      setMTU: false
+      setMTU: false,
+      isNsxEnabled: false,
+      isOfferingNatMode: false,
+      displayCollapsible: []
     }
   },
   created () {
@@ -459,8 +462,8 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
-    showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    showIlb (network, networkOffering) {
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
@@ -473,12 +476,14 @@ export default {
     fetchData () {
       this.networks = this.resource.network
       this.fetchMtuForZone()
+      this.getVpcNetworkOffering()
       if (!this.networks || this.networks.length === 0) {
         return
       }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
+        this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
     },
@@ -488,6 +493,7 @@ export default {
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+        this.isNsxEnabled = json?.listzonesresponse?.zone?.[0]?.isnsxenabled || false
       })
     },
     fetchNetworkAclList () {
@@ -510,6 +516,29 @@ export default {
         }).then(json => {
           var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
           resolve(networkOffering)
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
+    updateDisplayCollapsible (offeringId, network) {
+      api('listNetworkOfferings', {
+        id: offeringId
+      }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        this.displayCollapsible[network.id] = this.showIlb(network, networkOffering)
+      }).catch(e => {
+        this.$notifyError(e)
+      })
+    },
+    getVpcNetworkOffering () {
+      return new Promise((resolve, reject) => {
+        api('listVPCOfferings', {
+          id: this.resource.vpcofferingid
+        }).then(json => {
+          const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
+          resolve(vpcOffering)
+          this.isOfferingNatMode = vpcOffering?.nsxmode === 'NATTED' || false
         }).catch(e => {
           reject(e)
         })
@@ -538,12 +567,15 @@ export default {
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkOfferings', {
+      const params = {
         forvpc: true,
         guestiptype: 'Isolated',
-        supportedServices: 'SourceNat',
         state: 'Enabled'
-      }).then(json => {
+      }
+      if (!this.isNsxEnabled) {
+        params.supportedServices = 'SourceNat'
+      }
+      api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
         if (this.publicLBExists) {
@@ -555,6 +587,9 @@ export default {
             }
           }
           this.networkOfferings = filteredOfferings
+        }
+        if (this.isNsxEnabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.nsxmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {

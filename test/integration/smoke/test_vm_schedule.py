@@ -571,7 +571,7 @@ class TestVMSchedule(cloudstackTestCase):
         stop_vmschedule.delete(self.apiclient)
 
         # To ensure that all vm schedules have been deleted and all of their jobs have been completed
-        time.sleep(15)
+        time.sleep(60)
 
         # Verify VM Schedule is deleted
         self.assertEqual(
@@ -596,6 +596,10 @@ class TestVMSchedule(cloudstackTestCase):
             time.sleep(30)
             current_state = self.virtual_machine.update(self.apiclient).state
             if previous_state != current_state:
+                # Add these checks because VMs can take some time to start or stop
+                if (previous_state == 'Starting' and current_state in ('Starting', 'Running')) or (
+                        previous_state == 'Stopping' and current_state in ('Stopping', 'Stopped')):
+                    continue
                 self.debug(
                     "VM changed state from %s to %s" % (previous_state, current_state)
                 )

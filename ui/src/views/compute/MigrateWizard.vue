@@ -197,7 +197,7 @@ export default {
   },
   computed: {
     isUserVm () {
-      return this.$route.meta.name === 'vm'
+      return this.$route.meta.resourceType === 'UserVm'
     }
   },
   watch: {

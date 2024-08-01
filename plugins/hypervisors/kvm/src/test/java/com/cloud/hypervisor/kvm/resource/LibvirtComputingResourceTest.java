@@ -68,7 +68,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -82,7 +82,6 @@ import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
-import org.libvirt.NodeInfo;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.VcpuInfo;
@@ -175,7 +174,7 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
@@ -270,9 +269,9 @@ public class LibvirtComputingResourceTest {
 
     @Before
     public void setup() throws Exception {
-        libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
+        libvirtComputingResourceSpy.qemuSocketsPath = new File("/var/run/qemu");
         libvirtComputingResourceSpy.parser = parserMock;
-        LibvirtComputingResource.s_logger = loggerMock;
+        LibvirtComputingResource.LOGGER = loggerMock;
     }
 
     /**
@@ -467,8 +466,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testConfigureGuestAndSystemVMToUseKVM() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 100;
-        libvirtComputingResourceSpy._hypervisorQemuVersion = 10;
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 100;
+        libvirtComputingResourceSpy.hypervisorQemuVersion = 10;
         LibvirtVMDef vm = new LibvirtVMDef();
 
         GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
@@ -479,7 +478,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testConfigureGuestAndUserVMToUseLXC() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorType = HypervisorType.LXC;
+        libvirtComputingResourceSpy.hypervisorType = HypervisorType.LXC;
         LibvirtVMDef vm = new LibvirtVMDef();
 
         GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
@@ -546,7 +545,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreateClockDefKvmclock() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 9020;
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9020;
 
         ClockDef clockDef = libvirtComputingResourceSpy.createClockDef(to);
         Document domainDoc = parse(clockDef.toString());
@@ -653,8 +652,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreateVideoDef() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._videoRam = 200;
-        libvirtComputingResourceSpy._videoHw = "vGPU";
+        libvirtComputingResourceSpy.videoRam = 200;
+        libvirtComputingResourceSpy.videoHw = "vGPU";
 
         VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
@@ -936,13 +935,7 @@ public class LibvirtComputingResourceTest {
         Mockito.when(domain.memoryStats(20)).thenReturn(domainMem);
         Mockito.when(domainMem[0].getTag()).thenReturn(4);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
-        final NodeInfo nodeInfo = new NodeInfo();
-        nodeInfo.cpus = 8;
-        nodeInfo.memory = 8 * 1024 * 1024;
-        nodeInfo.sockets = 2;
-        nodeInfo.threads = 2;
-        nodeInfo.model = "Foo processor";
-        Mockito.when(connect.nodeInfo()).thenReturn(nodeInfo);
+
         // this is testing the interface stats, returns an increasing number of sent and received bytes
 
         Mockito.when(domain.interfaceStats(nullable(String.class))).thenAnswer(new org.mockito.stubbing.Answer<DomainInterfaceStats>() {
@@ -1752,8 +1745,6 @@ public class LibvirtComputingResourceTest {
         try {
             when(conn.domainLookupByName(vmName)).thenReturn(dm);
 
-            when(dm.getXMLDesc(8)).thenReturn("<domain type='kvm' id='3'>" + "  <devices>" + "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>"
-                    + "      <listen type='address' address='10.10.10.1'/>" + "    </graphics>" + "  </devices>" + "</domain>");
             when(dm.getXMLDesc(1)).thenReturn("<domain type='kvm' id='3'>" + "  <devices>" + "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>"
                     + "      <listen type='address' address='10.10.10.1'/>" + "    </graphics>" + "  </devices>" + "</domain>");
             when(dm.isPersistent()).thenReturn(1);
@@ -3355,8 +3346,8 @@ public class LibvirtComputingResourceTest {
 
         final KVMHAMonitor monitor = Mockito.mock(KVMHAMonitor.class);
 
-        final NfsStoragePool storagePool = Mockito.mock(NfsStoragePool.class);
-        final List<NfsStoragePool> pools = new ArrayList<NfsStoragePool>();
+        final HAStoragePool storagePool = Mockito.mock(HAStoragePool.class);
+        final List<HAStoragePool> pools = new ArrayList<HAStoragePool>();
         pools.add(storagePool);
 
         when(libvirtComputingResourceMock.getMonitor()).thenReturn(monitor);
@@ -5674,7 +5665,7 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getType()).thenReturn(Type.User);
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
-        libvirtComputingResource._noMemBalloon = true;
+        libvirtComputingResource.noMemBalloon = true;
         long maxMemory = 2048;
 
         long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
@@ -5685,7 +5676,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
-        libvirtComputingResource._noMemBalloon = false;
+        libvirtComputingResource.noMemBalloon = false;
 
         long maxMemory = 2048;
         long minMemory = ByteScaleUtils.mebibytesToBytes(64);
@@ -5902,8 +5893,8 @@ public class LibvirtComputingResourceTest {
             Assert.assertEquals("cloudbr15", keys.get(0));
             Assert.assertEquals("cloudbr28", keys.get(1));
 
-            Assert.assertEquals("cloudbr15", libvirtComputingResourceSpy._privBridgeName);
-            Assert.assertEquals("cloudbr28", libvirtComputingResourceSpy._publicBridgeName);
+            Assert.assertEquals("cloudbr15", libvirtComputingResourceSpy.privBridgeName);
+            Assert.assertEquals("cloudbr28", libvirtComputingResourceSpy.publicBridgeName);
 
             Assert.assertEquals(networkInterfaceMock1, libvirtComputingResourceSpy.getPrivateNic());
             Assert.assertEquals(networkInterfaceMock2, libvirtComputingResourceSpy.getPublicNic());
@@ -6059,7 +6050,7 @@ public class LibvirtComputingResourceTest {
 
         List<Integer> result = libvirtComputingResourceSpy.getVmsToSetMemoryBalloonStatsPeriod(connMock);
 
-        Mockito.verify(loggerMock).error(Mockito.anyString(), Mockito.any());
+        Mockito.verify(loggerMock).error(Mockito.anyString(), (Throwable) Mockito.any());
         Assert.assertTrue(result.isEmpty());
     }
 
@@ -6208,5 +6199,136 @@ public class LibvirtComputingResourceTest {
 
         Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
                 + " VM has no memory balloon.");
+    }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNullAndHostCgroupV1ShouldNotConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 0;
+        int expectedCpuShares = 4000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(null).when(vmTO).getMinSpeed();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNotNullAndHostCgroupV1ShouldNotConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 0;
+        int expectedCpuShares = 4000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getMinSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNullAndHostCgroupV2ShouldConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 5000;
+        int expectedCpuShares = 8000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(null).when(vmTO).getMinSpeed();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void calculateCpuSharesTestMinSpeedNotNullAndHostCgroupV2ShouldConsiderCgroupLimit() {
+        int cpuCores = 2;
+        int cpuSpeed = 2000;
+        int maxCpuShares = 5000;
+        int expectedCpuShares = 8000;
+
+        Mockito.doReturn(cpuCores).when(vmTO).getCpus();
+        Mockito.doReturn(cpuSpeed).when(vmTO).getMinSpeed();
+        Mockito.doReturn(maxCpuShares).when(libvirtComputingResourceSpy).getHostCpuMaxCapacity();
+        int calculatedCpuShares = libvirtComputingResourceSpy.calculateCpuShares(vmTO);
+
+        Assert.assertEquals(expectedCpuShares, calculatedCpuShares);
+    }
+
+    @Test
+    public void setMaxHostCpuSharesIfCGroupV2TestShouldCalculateMaxCpuCapacityIfHostUtilizesCgroupV2() {
+        int cpuCores = 2;
+        long cpuSpeed = 2500L;
+        int expectedShares = 5000;
+
+        String hostCgroupVersion = LibvirtComputingResource.CGROUP_V2;
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(hostCgroupVersion);
+
+            libvirtComputingResourceSpy.calculateHostCpuMaxCapacity(cpuCores, cpuSpeed);
+
+            Assert.assertEquals(expectedShares, libvirtComputingResourceSpy.getHostCpuMaxCapacity());
+        }
+    }
+
+    @Test
+    public void setMaxHostCpuSharesIfCGroupV2TestShouldNotCalculateMaxCpuCapacityIfHostDoesNotUtilizesCgroupV2() {
+        int cpuCores = 2;
+        long cpuSpeed = 2500L;
+        int expectedShares = 0;
+
+        String hostCgroupVersion = "tmpfs";
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString())).thenReturn(hostCgroupVersion);
+
+            libvirtComputingResourceSpy.calculateHostCpuMaxCapacity(cpuCores, cpuSpeed);
+
+            Assert.assertEquals(expectedShares, libvirtComputingResourceSpy.getHostCpuMaxCapacity());
+        }
+    }
+
+    @Test
+    public void testGetHostTags() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn("aa,bb,cc,dd");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(4, hostTagsList.size());
+            Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+        }
+    }
+
+    @Test
+    public void testGetHostTagsWithSpace() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn(" aa, bb , cc , dd ");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(4, hostTagsList.size());
+            Assert.assertEquals("aa,bb,cc,dd", StringUtils.join(hostTagsList, ","));
+        }
+    }
+
+    @Test
+    public void testGetHostTagsWithEmptyPropertyValue() throws ConfigurationException {
+        try (MockedStatic<AgentPropertiesFileHandler> ignored = Mockito.mockStatic(AgentPropertiesFileHandler.class)) {
+            Mockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.HOST_TAGS)))
+                    .thenReturn(" ");
+
+            List<String> hostTagsList = libvirtComputingResourceSpy.getHostTags();
+            Assert.assertEquals(0, hostTagsList.size());
+            Assert.assertEquals("", StringUtils.join(hostTagsList, ","));
+        }
     }
 }

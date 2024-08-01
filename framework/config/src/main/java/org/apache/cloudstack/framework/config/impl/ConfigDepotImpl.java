@@ -37,7 +37,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -71,7 +72,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *     validation class to validate the value the admin input for the key.
  */
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
-    private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -81,6 +82,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
+    Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
@@ -125,7 +127,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         if (_configured.contains(configurable))
             return;
 
-        s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
+        logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
 
         for (ConfigKey<?> key : configurable.getConfigKeys()) {
             Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
@@ -193,6 +195,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             }
 
             _configDao.persist(vo);
+            newConfigs.add(vo.getName());
         } else {
             boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
@@ -342,5 +345,10 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         }
 
         return new Pair<>(groupId, subGroupId);
+    }
+
+    @Override
+    public boolean isNewConfig(ConfigKey<?> configKey) {
+        return newConfigs.contains(configKey.key());
     }
 }

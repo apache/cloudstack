@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -29,7 +30,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -44,12 +45,14 @@ import javax.inject.Inject;
 
 @Component
 public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implements DomainJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DomainJoinDaoImpl.class);
 
     private SearchBuilder<DomainJoinVO> domainIdSearch;
+    private SearchBuilder<DomainJoinVO> domainSearch;
 
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private ConfigurationDao configDao;
     @Inject
     private AccountManager accountManager;
 
@@ -58,6 +61,10 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainIdSearch = createSearchBuilder();
         domainIdSearch.and("id", domainIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         domainIdSearch.done();
+
+        domainSearch = createSearchBuilder();
+        domainSearch.and("idIN", domainSearch.entity().getId(), SearchCriteria.Op.IN);
+        domainSearch.done();
 
         this._count = "select count(distinct id) from domain_view WHERE ";
     }
@@ -205,6 +212,50 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+    }
+
+    @Override
+    public List<DomainJoinVO> searchByIds(Long... domainIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<DomainJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (domainIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= domainIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = domainIds[j];
+                }
+                SearchCriteria<DomainJoinVO> sc = domainSearch.create();
+                sc.setParameters("idIN", ids);
+                List<DomainJoinVO> domains = searchIncludingRemoved(sc, null, null, false);
+                if (domains != null) {
+                    uvList.addAll(domains);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < domainIds.length) {
+            int batch_size = (domainIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = domainIds[j];
+            }
+            SearchCriteria<DomainJoinVO> sc = domainSearch.create();
+            sc.setParameters("idIN", ids);
+            List<DomainJoinVO> domains = searchIncludingRemoved(sc, null, null, false);
+            if (domains != null) {
+                uvList.addAll(domains);
+            }
+        }
+        return uvList;
     }
 
     @Override

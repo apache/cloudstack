@@ -54,7 +54,7 @@ import com.googlecode.ipv6.IPv6Network;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -354,10 +354,10 @@ public class NetUtilsTest {
         final String[] invalidCidrs = {"172.33.1.0/16", "100.128.1.0/10"};
 
         for (String cidr: validCidrs) {
-            assertTrue(NetUtils.validateGuestCidr(cidr));
+            assertTrue(NetUtils.validateGuestCidr(cidr, true));
         }
         for (String cidr: invalidCidrs) {
-            assertFalse(NetUtils.validateGuestCidr(cidr));
+            assertFalse(NetUtils.validateGuestCidr(cidr, true));
         }
     }
 
@@ -716,6 +716,7 @@ public class NetUtilsTest {
         NetUtils.isIpv4("2001:db8:300::/64");
     }
 
+    @Test
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
         if (defaultHostIp != null) {
@@ -841,5 +842,51 @@ public class NetUtilsTest {
 
         Assert.assertEquals(expected, result);
         networkInterfaceMocked.close();
+    }
+
+    @Test
+    public void validateIcmpTypeAndCodesGood1() {
+        NetUtils.validateIcmpTypeAndCode(-1, -1);
+    }
+    @Test
+    public void validateIcmpTypeAndCodesGood2() {
+        NetUtils.validateIcmpTypeAndCode(3, 2);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException1() {
+        NetUtils.validateIcmpTypeAndCode(null, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException2() {
+        NetUtils.validateIcmpTypeAndCode(null, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException3() {
+        NetUtils.validateIcmpTypeAndCode(-1, null);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException4() {
+        NetUtils.validateIcmpTypeAndCode(-1, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException5() {
+        NetUtils.validateIcmpTypeAndCode(3, -1);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException6() {
+        NetUtils.validateIcmpTypeAndCode(-2, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException7() {
+        NetUtils.validateIcmpTypeAndCode(257, 2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException8() {
+        NetUtils.validateIcmpTypeAndCode(3, -2);
+    }
+    @Test(expected=CloudRuntimeException.class)
+    public void validateIcmpTypeAndCodesThrowsException9() {
+        NetUtils.validateIcmpTypeAndCode(3, -257);
     }
 }

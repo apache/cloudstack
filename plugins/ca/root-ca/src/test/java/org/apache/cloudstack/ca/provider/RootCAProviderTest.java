@@ -26,8 +26,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 import javax.net.ssl.SSLEngine;
 
@@ -35,15 +40,16 @@ import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -150,4 +156,56 @@ public class RootCAProviderTest {
         Assert.assertEquals(provider.getProviderName(), "root");
     }
 
+    @Test
+    public void testIsManagementCertificateNotX509() {
+        try {
+            Assert.assertFalse(provider.isManagementCertificate(Mockito.mock(java.security.cert.Certificate.class)));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateNoAltNames() {
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(new ArrayList<>());
+            Assert.assertFalse(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateNoMatch() {
+        ReflectionTestUtils.setField(provider, "managementCertificateCustomSAN", "cloudstack");
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            List<List<?>> altNames = new ArrayList<>();
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            Collection<List<?>> collection = new ArrayList<>(altNames);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
+            Assert.assertFalse(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testIsManagementCertificateMatch() {
+        String customSAN = "cloudstack";
+        ReflectionTestUtils.setField(provider, "managementCertificateCustomSAN", customSAN);
+        try {
+            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+            List<List<?>> altNames = new ArrayList<>();
+            altNames.add(List.of(GeneralName.dNSName, customSAN));
+            altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+            Collection<List<?>> collection = new ArrayList<>(altNames);
+            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
+            Assert.assertTrue(provider.isManagementCertificate(certificate));
+        } catch (CertificateParsingException e) {
+            Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+        }
+    }
 }

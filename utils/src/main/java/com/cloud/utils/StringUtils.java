@@ -19,6 +19,10 @@
 
 package com.cloud.utils;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +31,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringUtils {
+public class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     private static Charset preferredACSCharset;
@@ -281,5 +285,23 @@ public class StringUtils {
         final String key = keyValuePair.substring(0, index);
         final String value = keyValuePair.substring(index + 1);
         return new Pair<>(key.trim(), value.trim());
+    }
+
+    public static Map<String, String> parseJsonToMap(String jsonString) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, String> mapResult = new HashMap<>();
+
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(jsonString)) {
+            try {
+                JsonNode jsonNode = objectMapper.readTree(jsonString);
+                jsonNode.fields().forEachRemaining(entry -> {
+                    mapResult.put(entry.getKey(), entry.getValue().asText());
+                });
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Error while parsing json to convert it to map " + e.getMessage());
+            }
+        }
+
+        return mapResult;
     }
 }

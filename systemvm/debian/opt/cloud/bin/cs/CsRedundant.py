@@ -32,13 +32,13 @@
 # -------------------------------------------------------------------- #
 import os
 import logging
-import CsHelper
-from CsFile import CsFile
-from CsProcess import CsProcess
-from CsApp import CsPasswdSvc
-from CsAddress import CsDevice
-from CsRoute import CsRoute
-from CsStaticRoutes import CsStaticRoutes
+from . import CsHelper
+from .CsFile import CsFile
+from .CsProcess import CsProcess
+from .CsApp import CsPasswdSvc
+from .CsAddress import CsDevice
+from .CsRoute import CsRoute
+from .CsStaticRoutes import CsStaticRoutes
 import socket
 from time import sleep
 
@@ -435,7 +435,7 @@ class CsRedundant(object):
         - public IPv6 for primary VR public NIC as its IPv6 gets lost on link down
         """
         dev = ''
-        if dev == interface.get_device() or not ipv6 :
+        if dev == interface.get_device() or not ipv6:
             return
         dev = interface.get_device()
         command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, ipv6)
@@ -458,7 +458,7 @@ class CsRedundant(object):
         - guest IPv6 gateway for primary VR guest NIC
         """
         dev = ''
-        if dev == interface.get_device() or not ipv6 :
+        if dev == interface.get_device() or not ipv6:
             return
         dev = interface.get_device()
         command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, ipv6)
@@ -494,7 +494,6 @@ class CsRedundant(object):
         CsHelper.service("radvd", "stop")
         CsHelper.service("radvd", "disable")
         logging.info(CsHelper.execute("systemctl status radvd"))
-
 
     def _add_ipv6_guest_gateway(self):
         """

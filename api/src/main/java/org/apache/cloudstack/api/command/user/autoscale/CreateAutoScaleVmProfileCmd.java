@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -51,7 +50,6 @@ import com.cloud.network.as.AutoScaleVmProfile;
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "autoscalevmprofileresponse";
 
@@ -102,7 +100,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576,
             since = "4.18.0")

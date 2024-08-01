@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -56,7 +55,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class ExplicitDedicationProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private static final Logger s_logger = Logger.getLogger(ExplicitDedicationProcessor.class);
     @Inject
     protected UserVmDao _vmDao;
     @Inject
@@ -86,7 +84,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
      * This IncludeList is then used to update the avoid list for a given data center.
      */
     @Override
-    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
@@ -96,8 +94,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
             for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                 if (vmGroupMapping != null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Processing affinity group " + vmGroupMapping.getAffinityGroupId() + "of type 'ExplicitDedication' for VM Id: " + vm.getId());
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Processing affinity group " + vmGroupMapping.getAffinityGroupId() + "of type 'ExplicitDedication' for VM Id: " + vm.getId());
                     }
 
                     long affinityGroupId = vmGroupMapping.getAffinityGroupId();
@@ -234,13 +232,13 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                     avoid = updateAvoidList(resourceList, avoid, dc);
                 } else {
                     avoid.addDataCenter(dc.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("No dedicated resources available for this domain or account under this group");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("No dedicated resources available for this domain or account under this group");
                     }
                 }
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ExplicitDedicationProcessor returns Avoid List as: Deploy avoids pods: " + avoid.getPodsToAvoid() + ", clusters: " +
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ExplicitDedicationProcessor returns Avoid List as: Deploy avoids pods: " + avoid.getPodsToAvoid() + ", clusters: " +
                         avoid.getClustersToAvoid() + ", hosts: " + avoid.getHostsToAvoid());
                 }
             }
@@ -305,8 +303,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                 for (HostPodVO pod : podList) {
                     DedicatedResourceVO dPod = _dedicatedDao.findByPodId(pod.getId());
                     if (dPod != null && !dedicatedResources.contains(dPod)) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug(String.format("Avoiding POD %s [%s] because it is not dedicated.", pod.getName(), pod.getUuid()));
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(String.format("Avoiding POD %s [%s] because it is not dedicated.", pod.getName(), pod.getUuid()));
                         }
                         avoidList.addPod(pod.getId());
                     } else {
@@ -346,8 +344,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
         for (HostPodVO pod : pods) {
             if (podsInIncludeList != null && !podsInIncludeList.contains(pod.getId())) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Avoiding POD %s [%s], as it is not in include list.", pod.getName(), pod.getUuid()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Avoiding POD %s [%s], as it is not in include list.", pod.getName(), pod.getUuid()));
                 }
                 avoidList.addPod(pod.getId());
             }
@@ -413,8 +411,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
         if (group != null) {
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAffinityGroupId(group.getId());
             if (!dedicatedResources.isEmpty()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing the dedicated resources under group: " + group);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Releasing the dedicated resources under group: " + group);
                 }
 
                 Transaction.execute(new TransactionCallbackNoReturn() {
@@ -431,8 +429,8 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                     }
                 });
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("No dedicated resources to releease under group: " + group);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("No dedicated resources to releease under group: " + group);
                 }
             }
         }

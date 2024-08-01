@@ -14,13 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 import os
 from netaddr import *
 from random import randint
 import json
-from CsGuestNetwork import CsGuestNetwork
+from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 from cs.CsAddress import CsIP
@@ -127,7 +127,7 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=%s,26,%s" % (device, i['mtu'])
             self.conf.search(sline, line)
 
-        # Netmask
+            # Netmask
             netmask = ''
             if self.config.is_vpc():
                 netmask = gn.get_netmask()

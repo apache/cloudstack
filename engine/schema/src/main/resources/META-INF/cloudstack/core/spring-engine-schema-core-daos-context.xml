@@ -136,6 +136,7 @@
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
+  <bean id="nsxControllerDaoImpl" class="com.cloud.network.dao.NsxProviderDaoImpl" />
   <bean id="tungstenControllerDaoImpl" class="com.cloud.network.dao.TungstenProviderDaoImpl"/>
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
@@ -157,7 +158,6 @@
   <bean id="projectJoinDaoImpl" class="com.cloud.api.query.dao.ProjectJoinDaoImpl" />
   <bean id="regionDaoImpl" class="org.apache.cloudstack.region.dao.RegionDaoImpl" />
   <bean id="remoteAccessVpnDaoImpl" class="com.cloud.network.dao.RemoteAccessVpnDaoImpl" />
-  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
   <bean id="resourceCountDaoImpl" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
   <bean id="resourceIconDaoImpl" class="com.cloud.resource.icon.dao.ResourceIconDaoImpl" />
   <bean id="resourceLimitDaoImpl" class="com.cloud.configuration.dao.ResourceLimitDaoImpl" />
@@ -176,6 +176,7 @@
   <bean id="site2SiteCustomerGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" />
   <bean id="site2SiteVpnConnectionDaoImpl" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" />
   <bean id="site2SiteVpnGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" />
+  <bean id="snapshotJoinDaoImpl" class="com.cloud.api.query.dao.SnapshotJoinDaoImpl" />
   <bean id="snapshotDetailsDaoImpl" class="com.cloud.storage.dao.SnapshotDetailsDaoImpl" />
   <bean id="snapshotPolicyDaoImpl" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" />
   <bean id="snapshotPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDaoImpl" />
@@ -186,7 +187,6 @@
   <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
-  <bean id="hostTagDaoImpl" class="com.cloud.api.query.dao.HostTagDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
@@ -196,12 +196,14 @@
   <bean id="usageJobDaoImpl" class="com.cloud.usage.dao.UsageJobDaoImpl" />
   <bean id="usageLoadBalancerPolicyDaoImpl" class="com.cloud.usage.dao.UsageLoadBalancerPolicyDaoImpl" />
   <bean id="usageNetworkDaoImpl" class="com.cloud.usage.dao.UsageNetworkDaoImpl" />
+  <bean id="usageNetworksDaoImpl" class="com.cloud.usage.dao.UsageNetworksDaoImpl" />
   <bean id="usageNetworkOfferingDaoImpl" class="com.cloud.usage.dao.UsageNetworkOfferingDaoImpl" />
   <bean id="usagePortForwardingRuleDaoImpl" class="com.cloud.usage.dao.UsagePortForwardingRuleDaoImpl" />
   <bean id="usageSecurityGroupDaoImpl" class="com.cloud.usage.dao.UsageSecurityGroupDaoImpl" />
   <bean id="usageStorageDaoImpl" class="com.cloud.usage.dao.UsageStorageDaoImpl" />
   <bean id="usageVMInstanceDaoImpl" class="com.cloud.usage.dao.UsageVMInstanceDaoImpl" />
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
+  <bean id="usageVpcDaoImpl" class="com.cloud.usage.dao.UsageVpcDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
   <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
   <bean id="usageBackupDaoImpl" class="com.cloud.usage.dao.UsageBackupDaoImpl" />
@@ -275,6 +277,16 @@
   <bean id="UserVmDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDaoImpl" />
   <bean id="NetworkPermissionDaoImpl" class="org.apache.cloudstack.network.dao.NetworkPermissionDaoImpl" />
   <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
+  <bean id="secondaryStorageHeuristicDaoImpl" class="org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDaoImpl" />
+  <bean id="heuristicRuleHelper" class="org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper" />
+  <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
   <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
   <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
+  <bean id="VmwareDatacenterDaoImpl" class="com.cloud.hypervisor.vmware.dao.VmwareDatacenterDaoImpl" />
+  <bean id="vnfTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VnfTemplateDetailsDaoImpl" />
+  <bean id="vnfTemplateNicDaoImpl" class="com.cloud.storage.dao.VnfTemplateNicDaoImpl" />
+  <bean id="ClusterDrsPlanDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanDaoImpl" />
+  <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
+  <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
+  <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
 </beans>

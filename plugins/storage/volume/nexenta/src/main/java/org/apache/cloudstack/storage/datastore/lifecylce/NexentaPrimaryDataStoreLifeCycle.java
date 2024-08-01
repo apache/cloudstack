@@ -30,9 +30,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
@@ -45,9 +45,8 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
+        extends BasePrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
-    private static final Logger logger =
-            Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
 
     @Inject
     private DataCenterDao zoneDao;
@@ -69,6 +68,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
         NexentaUtil.NexentaPluginParameters params = NexentaUtil.parseNexentaPluginUrl(url);
         DataCenterVO zone = zoneDao.findById(zoneId);
@@ -98,6 +98,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         parameters.setCapacityIops(capacityIops);
         parameters.setHypervisorType(Hypervisor.HypervisorType.Any);
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
 
         details.put(NexentaUtil.NMS_URL, params.getNmsUrl().toString());
 
@@ -173,6 +174,15 @@ public class NexentaPrimaryDataStoreLifeCycle
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorType as null.
+         */
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 
     @Override

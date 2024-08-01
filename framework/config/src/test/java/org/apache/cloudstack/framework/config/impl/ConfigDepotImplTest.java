@@ -18,9 +18,14 @@
 //
 package org.apache.cloudstack.framework.config.impl;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ConfigDepotImplTest {
 
@@ -38,6 +43,18 @@ public class ConfigDepotImplTest {
                 Assert.assertTrue(configDepotImpl._scopeLevelConfigsMap.containsKey(configKeyScopeArray[i]));
             }
         }
+    }
+
+    @Test
+    public void testIsNewConfig() {
+        String validNewConfigKey = "CONFIG";
+        ConfigKey<Boolean> validNewConfig = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "CONFIG", "true", "", true);
+        ConfigKey<Boolean> invalidNewConfig = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "CONFIG1", "true", "", true);
+        Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
+        newConfigs.add(validNewConfigKey);
+        ReflectionTestUtils.setField(configDepotImpl, "newConfigs", newConfigs);
+        Assert.assertTrue(configDepotImpl.isNewConfig(validNewConfig));
+        Assert.assertFalse(configDepotImpl.isNewConfig(invalidNewConfig));
     }
 
 }

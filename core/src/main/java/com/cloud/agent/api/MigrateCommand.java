@@ -40,6 +40,9 @@ public class MigrateCommand extends Command {
     private boolean executeInSequence = false;
     private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
     private Map<String, DpdkTO> dpdkInterfaceMapping = new HashMap<>();
+
+    private int newVmCpuShares;
+
     Map<String, Boolean> vlanToPersistenceMap = new HashMap<>();
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
@@ -136,6 +139,14 @@ public class MigrateCommand extends Command {
 
     public void setMigrateDiskInfoList(List<MigrateDiskInfo> migrateDiskInfoList) {
         this.migrateDiskInfoList = migrateDiskInfoList;
+    }
+
+    public int getNewVmCpuShares() {
+        return newVmCpuShares;
+    }
+
+    public void setNewVmCpuShares(int newVmCpuShares) {
+        this.newVmCpuShares = newVmCpuShares;
     }
 
     public static class MigrateDiskInfo {

@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.CloudException;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
-    public static final Logger LOGGER = Logger.getLogger(UsageBackupDaoImpl.class);
     protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and removed IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM usage_backup WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
@@ -55,7 +53,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                 update(vo.getId(), vo);
             }
         } catch (final Exception e) {
-            LOGGER.error("Error updating backup metrics: " + e.getMessage(), e);
+            logger.error("Error updating backup metrics: " + e.getMessage(), e);
         }
     }
 
@@ -72,13 +70,13 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                     pstmt.executeUpdate();
                 }
             } catch (SQLException e) {
-                LOGGER.error("Error removing UsageBackupVO: " + e.getMessage(), e);
+                logger.error("Error removing UsageBackupVO: " + e.getMessage(), e);
                 throw new CloudException("Remove backup usage exception: " + e.getMessage(), e);
             }
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            LOGGER.error("Exception caught while removing UsageBackupVO: " + e.getMessage(), e);
+            logger.error("Exception caught while removing UsageBackupVO: " + e.getMessage(), e);
         } finally {
             txn.close();
         }
@@ -128,7 +126,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
             }
         } catch (Exception e) {
             txn.rollback();
-            LOGGER.warn("Error getting VM backup usage records", e);
+            logger.warn("Error getting VM backup usage records", e);
         } finally {
             txn.close();
         }

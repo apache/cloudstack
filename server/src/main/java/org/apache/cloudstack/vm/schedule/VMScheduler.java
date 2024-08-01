@@ -32,5 +32,5 @@ public interface VMScheduler extends Manager, Scheduler {
 
     void updateScheduledJob(VMScheduleVO vmSchedule);
 
-    Date scheduleNextJob(VMScheduleVO vmSchedule);
+    Date scheduleNextJob(VMScheduleVO vmSchedule, Date timestamp);
 }

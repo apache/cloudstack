@@ -19,12 +19,16 @@
 
 package com.cloud.resource;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import org.apache.log4j.Logger;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public abstract class CommandWrapper<T extends Command, A extends Answer, R extends ServerResource> {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     /**
      * @param T is the command to be used.
@@ -32,4 +36,26 @@ public abstract class CommandWrapper<T extends Command, A extends Answer, R exte
      * @return A and the Answer from the command.
      */
     public abstract A execute(T command, R serverResource);
+
+    protected String sanitizeBashCommandArgument(String input) {
+        StringBuilder sanitized = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            if ("\\\"'`$|&;()<>*?![]{}~".indexOf(c) != -1) {
+                sanitized.append('\\');
+            }
+            sanitized.append(c);
+        }
+        return sanitized.toString();
+    }
+
+    public void removeDpdkPort(String portToRemove) {
+        logger.debug("Removing DPDK port: " + portToRemove);
+        int port;
+        try {
+            port = Integer.valueOf(portToRemove);
+        } catch (NumberFormatException nfe) {
+            throw new CloudRuntimeException(String.format("Invalid DPDK port specified: '%s'", portToRemove));
+        }
+        Script.executeCommand("ovs-vsctl", "del-port", String.valueOf(port));
+    }
 }

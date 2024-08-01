@@ -104,6 +104,11 @@ export default {
     minimumMemory: {
       type: Number,
       default: 0
+    },
+    allowAllOfferings: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -168,7 +173,7 @@ export default {
           disabled = true
         }
         if (disabled === false && maxMemory && this.minimumMemory > 0 &&
-          ((item.iscustomized === false && maxMemory < this.minimumMemory) ||
+          ((item.iscustomized === false && ((maxMemory < this.minimumMemory) || this.exactMatch && maxMemory !== this.minimumMemory)) ||
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }
@@ -177,6 +182,9 @@ export default {
         }
         if (this.autoscale && item.iscustomized) {
           disabled = true
+        }
+        if (this.allowAllOfferings) {
+          disabled = false
         }
         return {
           key: item.id,

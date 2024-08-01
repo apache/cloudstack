@@ -18,7 +18,14 @@
 <template>
   <a-spin :spinning="loading">
     <div class="form-layout" v-ctrl-enter="handleSubmit">
-      <div class="form">
+      <div v-if="isNsxEnabled">
+        <a-alert type="warning">
+          <template #message>
+            <span v-html="$t('message.shared.network.unsupported.for.nsx')" />
+          </template>
+        </a-alert>
+      </div>
+      <div v-else class="form">
         <a-form
           :ref="formRef"
           :model="form"
@@ -546,7 +553,8 @@ export default {
       minMTU: 68,
       setMTU: false,
       errorPublicMtu: '',
-      errorPrivateMtu: ''
+      errorPrivateMtu: '',
+      isNsxEnabled: false
     }
   },
   watch: {
@@ -665,6 +673,7 @@ export default {
       this.setMTU = zone?.allowuserspecifyvrmtu || false
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+      this.isNsxEnabled = zone?.isnsxenabled || false
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {

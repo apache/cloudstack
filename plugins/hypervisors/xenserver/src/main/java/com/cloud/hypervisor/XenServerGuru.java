@@ -33,7 +33,6 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
@@ -59,7 +58,6 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
 
-    private Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private GuestOSDao guestOsDao;
@@ -184,8 +182,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         }
         // only now can we decide, now we now we're only deciding for ourselves
         if (cmd instanceof StorageSubSystemCommand) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("XenServer StrorageSubSystemCommand re always executed in sequence (command of type %s to host %l).", cmd.getClass(), hostId));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("XenServer StrorageSubSystemCommand re always executed in sequence (command of type %s to host %l).", cmd.getClass(), hostId));
             }
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(true);

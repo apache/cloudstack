@@ -155,7 +155,7 @@ export default {
           key: columnKey,
           title: this.$t('label.' + String(columnKey).toLowerCase()),
           dataIndex: columnKey,
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: (a, b) => { return genericCompare(a[columnKey] || '', b[columnKey] || '') }
         })
       }
       if (this.columns.length > 0) {

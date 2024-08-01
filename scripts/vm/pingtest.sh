@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 # $Id: pingtest.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/pingtest.sh $
-# pingtest.sh -- ping 
+# pingtest.sh -- ping
 usage() {
   printf "Usage:\n %s -i <domR eth1 ip>  -p <private-ip-address> \n" $(basename $0) >&2
   printf " %s -h <computing-agent-host-ip>  \n" $(basename $0) >&2

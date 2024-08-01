@@ -27,6 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
+import org.junit.After;
 import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -56,11 +57,13 @@ public class BaseDirectTemplateDownloaderTest {
     private HttpEntity httpEntity;
 
     @InjectMocks
-    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl);
+    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl, 1000, 1000, 1000, false);
+
+    private AutoCloseable closeable;
 
     @Before
     public void init() throws IOException {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         Mockito.when(httpsClient.execute(Mockito.any(HttpGet.class))).thenReturn(response);
         Mockito.when(httpsClient.execute(Mockito.any(HttpHead.class))).thenReturn(response);
         StatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, HttpStatus.SC_OK, "OK");
@@ -68,5 +71,10 @@ public class BaseDirectTemplateDownloaderTest {
         Mockito.when(response.getEntity()).thenReturn(httpEntity);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(httpMetalinkContent.getBytes(StandardCharsets.UTF_8));
         Mockito.when(httpEntity.getContent()).thenReturn(inputStream);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 }

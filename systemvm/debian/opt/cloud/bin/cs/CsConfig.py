@@ -16,8 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from CsDatabag import CsCmdLine, CsGuestNetwork
-from CsAddress import CsAddress
+from .CsDatabag import CsCmdLine, CsGuestNetwork
+from .CsAddress import CsAddress
 import logging
 
 

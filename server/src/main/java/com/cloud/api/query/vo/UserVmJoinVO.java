@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -34,12 +35,16 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -125,7 +130,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String guestOsUuid;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "ha_enabled", updatable = true, nullable = true)
@@ -191,8 +196,14 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_name")
     private String templateName;
 
+    @Column(name = "template_type")
+    private TemplateType templateType;
+
     @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
+
+    @Column(name = "template_format")
+    private Storage.ImageFormat templateFormat;
 
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
@@ -252,7 +263,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String poolUuid;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType poolType;
 
     @Column(name = "volume_id")
@@ -632,8 +643,16 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return templateName;
     }
 
+    public TemplateType getTemplateType() {
+        return templateType;
+    }
+
     public String getTemplateDisplayText() {
         return templateDisplayText;
+    }
+
+    public Storage.ImageFormat getTemplateFormat() {
+        return templateFormat;
     }
 
     public boolean isPasswordEnabled() {
@@ -945,5 +964,4 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     public String getUserDataDetails() {
         return userDataDetails;
     }
-
 }

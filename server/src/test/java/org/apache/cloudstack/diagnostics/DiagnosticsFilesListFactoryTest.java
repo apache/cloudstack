@@ -16,12 +16,8 @@
 // under the License.
 package org.apache.cloudstack.diagnostics;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.diagnostics.fileprocessor.DiagnosticsFilesListFactory;
 import org.apache.cloudstack.diagnostics.fileprocessor.DomainRouterDiagnosticsFiles;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -32,10 +28,13 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DiagnosticsFilesListFactoryTest {

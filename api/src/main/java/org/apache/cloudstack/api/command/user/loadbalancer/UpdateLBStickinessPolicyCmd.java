@@ -19,7 +19,6 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.rules.LoadBalancer;
@@ -29,7 +28,6 @@ import com.cloud.user.Account;
 @APICommand(name = "updateLBStickinessPolicy", description = "Updates load balancer stickiness policy", responseObject = LBStickinessResponse.class, since = "4.4",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateLBStickinessPolicyCmd extends BaseAsyncCustomIdCmd{
-    public static final Logger s_logger = Logger.getLogger(UpdateLBStickinessPolicyCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -76,7 +78,7 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     private String version;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "hypervisor_version")
@@ -171,6 +173,15 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = "tag")
     private String tag;
+
+    @Column(name = "explicit_tag")
+    private String explicitTag;
+
+    @Column(name = "implicit_tag")
+    private String implicitTag;
+
+    @Column(name = "is_tag_a_rule")
+    private Boolean isTagARule;
 
     @Column(name = "memory_used_capacity")
     private long memUsedCapacity;
@@ -386,6 +397,18 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     public String getTag() {
         return tag;
+    }
+
+    public String getExplicitTag() {
+        return explicitTag;
+    }
+
+    public String getImplicitTag() {
+        return implicitTag;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
     }
 
     public String getAnnotation() {

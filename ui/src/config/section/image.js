@@ -16,7 +16,6 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
-import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
@@ -48,21 +47,32 @@ export default {
           fields.push('size')
           fields.push('account')
         }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('templatetype')
           fields.push('order')
         }
         return fields
       },
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
-          'crossZones', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+          'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetype', 'url')
+          fields.push('templatetag', 'templatetype', 'url')
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -77,6 +87,10 @@ export default {
       }, {
         name: 'settings',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
+      }, {
+        name: 'vnf.settings',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/image/TemplateVnfSettings.vue'))),
+        show: (record) => { return record.templatetype === 'VNF' && 'updateVnfTemplate' in store.getters.apis }
       },
       {
         name: 'events',
@@ -209,13 +223,23 @@ export default {
           fields.push('size')
           fields.push('account')
         }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
-      searchFilters: ['name', 'zoneid', 'tags'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'passwordenabled', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -340,11 +364,24 @@ export default {
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: shallowRef(kubernetes),
+      icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
+      searchFilters: ['zoneid', 'minimumsemanticversion'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
       details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'KubernetesSupportedVersion',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

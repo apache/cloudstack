@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
 
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.
@@ -41,7 +40,6 @@ import org.apache.log4j.Logger;
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
     private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
-    private static final Logger LOG = Logger.getLogger(ConstantTimeBackoff.class.getName());
 
     @Override
     public void waitBeforeRetry() {
@@ -52,7 +50,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
             // anyway, no exception to log as this is not an error
-            LOG.info("Thread " + current.getName() + " interrupted while waiting for retry");
+            logger.info("Thread " + current.getName() + " interrupted while waiting for retry");
         } finally {
             _asleep.remove(current.getName());
         }

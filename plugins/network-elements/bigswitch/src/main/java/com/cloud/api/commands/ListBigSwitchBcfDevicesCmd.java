@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -48,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "listBigSwitchBcfDevices", responseObject = BigSwitchBcfDeviceResponse.class, description = "Lists BigSwitch BCF Controller devices", since = "4.6.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBigSwitchBcfDevicesCmd extends BaseListCmd {
-    public static final Logger S_LOGGER = Logger.getLogger(ListBigSwitchBcfDevicesCmd.class.getName());
     private static final String S_NAME = "listbigswitchbcfdeviceresponse";
     @Inject
     private BigSwitchBcfElementService bigswitchBcfElementService;

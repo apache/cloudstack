@@ -27,7 +27,6 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
@@ -44,7 +43,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listUcsManagers", description = "List ucs manager", responseObject = UcsManagerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsManagerCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "the zone id", entityType = ZoneResponse.class)
     private Long zoneId;
@@ -64,7 +62,7 @@ public class ListUcsManagerCmd extends BaseListCmd {
             response.setObjectName("ucsmanager");
             this.setResponseObject(response);
         } catch (Exception e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +40,6 @@ import com.cloud.network.vpc.Vpc;
 @APICommand(name = "createVpnConnection", description = "Create site to site vpn connection", responseObject = Site2SiteVpnConnectionResponse.class, entityType = {Site2SiteVpnConnection.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVpnConnectionCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -135,8 +133,8 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }
         } catch (NetworkRuleConflictException e) {
-            s_logger.info("Network rule conflict: " + e.getMessage());
-            s_logger.trace("Network Rule Conflict: ", e);
+            logger.info("Network rule conflict: " + e.getMessage());
+            logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
     }
@@ -153,7 +151,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create site to site vpn connection");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }

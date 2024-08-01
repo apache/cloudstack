@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -39,7 +39,6 @@ import com.cloud.user.Account;
             description = "Deletes a template from the system. All virtual machines using the deleted template will not be affected.",
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTemplateCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,8 +66,9 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return (forced != null) ? forced : true;
+        return BooleanUtils.toBooleanDefaultIfNull(forced, false);
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

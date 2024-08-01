@@ -157,4 +157,22 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
         return update(id, diskOffering);
     }
+
+    @Override
+    public List<DiskOfferingVO> listByStorageTag(String tag) {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("tagNotNull", sb.entity().getTags(), SearchCriteria.Op.NNULL);
+        sb.and().op("tagEq", sb.entity().getTags(), SearchCriteria.Op.EQ);
+        sb.or("tagStartLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagMidLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagEndLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.cp();
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("tagEq", tag);
+        sc.setParameters("tagStartLike", tag + ",%");
+        sc.setParameters("tagMidLike", "%," + tag + ",%");
+        sc.setParameters("tagEndLike",   "%," + tag);
+        return listBy(sc);
+    }
 }

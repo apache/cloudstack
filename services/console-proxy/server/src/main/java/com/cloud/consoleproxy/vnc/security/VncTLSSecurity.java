@@ -31,7 +31,7 @@ import java.util.ArrayList;
 
 public class VncTLSSecurity implements VncSecurity {
 
-    private static final Logger s_logger = Logger.getLogger(VncTLSSecurity.class);
+    protected Logger logger = Logger.getLogger(getClass());
 
     private SSLContext ctx;
     private SSLEngine engine;
@@ -71,7 +71,7 @@ public class VncTLSSecurity implements VncSecurity {
 
     @Override
     public void process(NioSocketHandler socketHandler) {
-        s_logger.info("Processing VNC TLS security");
+        logger.info("Processing VNC TLS security");
 
         initGlobal();
 

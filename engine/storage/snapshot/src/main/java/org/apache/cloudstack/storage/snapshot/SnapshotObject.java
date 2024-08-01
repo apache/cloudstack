@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -40,7 +41,8 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -59,11 +61,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 public class SnapshotObject implements SnapshotInfo {
-    private static final Logger s_logger = Logger.getLogger(SnapshotObject.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private SnapshotVO snapshot;
     private DataStore store;
     private Object payload;
     private Boolean fullBackup;
+    private String url;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -80,7 +83,11 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    @Inject
+    DataStoreManager dataStoreManager;
     private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
+
+    private Long zoneId = null;
 
     public SnapshotObject() {
 
@@ -142,7 +149,7 @@ public class SnapshotObject implements SnapshotInfo {
         List<SnapshotInfo> children = new ArrayList<>();
         if (vos != null) {
             for (SnapshotDataStoreVO vo : vos) {
-                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), DataStoreRole.Image);
                 if (info != null) {
                     children.add(info);
                 }
@@ -164,7 +171,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public long getPhysicalSize() {
         long physicalSize = 0;
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
         if (snapshotStore != null) {
             physicalSize = snapshotStore.getPhysicalSize();
         }
@@ -176,7 +183,7 @@ public class SnapshotObject implements SnapshotInfo {
         try {
             processEvent(Event.OperationNotPerformed);
         } catch (NoTransitionException ex) {
-            s_logger.error("no transition error: ", ex);
+            logger.error("no transition error: ", ex);
             throw new CloudRuntimeException("Error marking snapshot backed up: " +
                     this.snapshot.getId() + " " + ex.getMessage());
         }
@@ -194,7 +201,14 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getUri() {
+        if (url != null) {
+            return url;
+        }
         return snapshot.getUuid();
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override
@@ -222,7 +236,7 @@ public class SnapshotObject implements SnapshotInfo {
         try {
             objectInStoreMgr.update(this, event);
         } catch (Exception e) {
-            s_logger.debug("Failed to update state:" + e.toString());
+            logger.debug("Failed to update state:" + e.toString());
             throw new CloudRuntimeException("Failed to update state: " + e.toString());
         } finally {
             DataObjectInStore obj = objectInStoreMgr.findObject(this, this.getDataStore());
@@ -309,7 +323,10 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getDataCenterId() {
-        return snapshot.getDataCenterId();
+        if (zoneId == null) {
+            zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
+        }
+        return zoneId;
     }
 
     public void processEvent(Snapshot.Event event) throws NoTransitionException {
@@ -353,12 +370,12 @@ public class SnapshotObject implements SnapshotInfo {
                 if (snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
                     VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
                     if (vol != null) {
-                        s_logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: " + vol.getPath() + "->" +
+                        logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: " + vol.getPath() + "->" +
                             snapshotTO.getVolume().getPath());
                         vol.setPath(snapshotTO.getVolume().getPath());
                         volumeDao.update(vol.getId(), vol);
                     } else {
-                        s_logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
+                        logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
                     }
                 }
             } else {

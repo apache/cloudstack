@@ -66,12 +66,13 @@
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="field.loading"
-                    @input="onchange($event, field.name)">
+                    @input="onchange($event, field.name)"
+                    @change="onSelectFieldChange(field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
-                      :value="opt.id"
-                      :label="$t(opt.path || opt.name)">
+                      :value="['account'].includes(field.name) ? opt.name : opt.id"
+                      :label="$t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">
@@ -79,13 +80,16 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain'))">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.path || opt.name) }}
+                        <span v-if="(field.name.startsWith('managementserver'))">
+                          <status :text="opt.state" />
+                        </span>
+                        {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -154,14 +158,17 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'SearchView',
   components: {
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   props: {
     searchFilters: {
@@ -186,7 +193,8 @@ export default {
       inputKey: null,
       inputValue: null,
       fieldValues: {},
-      isFiltered: false
+      isFiltered: false,
+      alertTypes: []
     }
   },
   created () {
@@ -205,13 +213,7 @@ export default {
       if (to && to.query && 'q' in to.query) {
         this.searchQuery = to.query.q
       }
-      this.isFiltered = false
-      this.searchFilters.some(item => {
-        if (this.searchParams[item]) {
-          this.isFiltered = true
-          return true
-        }
-      })
+      this.updateIsFiltered()
     }
   },
   mounted () {
@@ -219,6 +221,7 @@ export default {
     if (this.$route && this.$route.query && 'q' in this.$route.query) {
       this.searchQuery = this.$route.query.q
     }
+    this.updateIsFiltered()
   },
   computed: {
     styleSearch () {
@@ -239,6 +242,11 @@ export default {
   methods: {
     onchange: async function (event, fieldname) {
       this.fetchDynamicFieldData(fieldname, event.target.value)
+    },
+    onSelectFieldChange (fieldname) {
+      if (fieldname === 'domainid') {
+        this.fetchDynamicFieldData('account')
+      }
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -267,6 +275,9 @@ export default {
         if (item === 'domainid' && !('listDomains' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'account' && !('listAccounts' in this.$store.getters.apis)) {
+          return true
+        }
         if (item === 'account' && !('addAccountToProject' in this.$store.getters.apis || 'createAccount' in this.$store.getters.apis)) {
           return true
         }
@@ -279,7 +290,10 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
+          'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
+        ) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -304,7 +318,19 @@ export default {
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
+        } else if (this.$route.path === '/role' || this.$route.path.includes('/role/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchRoleTypes()
+          this.fields[typeIndex].loading = false
         }
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchScope()
+        this.fields[scopeIndex].loading = false
       }
 
       if (arrayField.includes('state')) {
@@ -328,6 +354,34 @@ export default {
         this.fields[entityTypeIndex].loading = false
       }
 
+      if (arrayField.includes('accounttype')) {
+        const accountTypeIndex = this.fields.findIndex(item => item.name === 'accounttype')
+        this.fields[accountTypeIndex].loading = true
+        this.fields[accountTypeIndex].opts = this.fetchAccountTypes()
+        this.fields[accountTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('systemvmtype')) {
+        const systemVmTypeIndex = this.fields.findIndex(item => item.name === 'systemvmtype')
+        this.fields[systemVmTypeIndex].loading = true
+        this.fields[systemVmTypeIndex].opts = this.fetchSystemVmTypes()
+        this.fields[systemVmTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('scope')) {
+        const scopeIndex = this.fields.findIndex(item => item.name === 'scope')
+        this.fields[scopeIndex].loading = true
+        this.fields[scopeIndex].opts = this.fetchStoragePoolScope()
+        this.fields[scopeIndex].loading = false
+      }
+
+      if (arrayField.includes('provider')) {
+        const providerIndex = this.fields.findIndex(item => item.name === 'provider')
+        this.fields[providerIndex].loading = true
+        this.fields[providerIndex].opts = this.fetchImageStoreProviders()
+        this.fields[providerIndex].loading = false
+      }
+
       if (arrayField.includes('resourcetype')) {
         const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
         this.fields[resourceTypeIndex].loading = true
@@ -339,18 +393,39 @@ export default {
           { value: 'Template' },
           { value: 'User' },
           { value: 'VirtualMachine' },
-          { value: 'Volume' }
+          { value: 'Volume' },
+          { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
       const promises = []
+      let typeIndex = -1
       let zoneIndex = -1
       let domainIndex = -1
+      let accountIndex = -1
+      let hypervisorIndex = -1
+      let imageStoreIndex = -1
+      let storageIndex = -1
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
+      let managementServerIdIndex = -1
+      let serviceOfferingIndex = -1
+      let diskOfferingIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/alert') {
+          typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          promises.push(await this.fetchAlertTypes())
+        } else if (this.$route.path === '/affinitygroup') {
+          typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          promises.push(await this.fetchAffinityGroupTypes())
+        }
+      }
 
       if (arrayField.includes('zoneid')) {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
@@ -362,6 +437,30 @@ export default {
         domainIndex = this.fields.findIndex(item => item.name === 'domainid')
         this.fields[domainIndex].loading = true
         promises.push(await this.fetchDomains(searchKeyword))
+      }
+
+      if (arrayField.includes('account')) {
+        accountIndex = this.fields.findIndex(item => item.name === 'account')
+        this.fields[accountIndex].loading = true
+        promises.push(await this.fetchAccounts(searchKeyword))
+      }
+
+      if (arrayField.includes('hypervisor')) {
+        hypervisorIndex = this.fields.findIndex(item => item.name === 'hypervisor')
+        this.fields[hypervisorIndex].loading = true
+        promises.push(await this.fetchHypervisors())
+      }
+
+      if (arrayField.includes('imagestoreid')) {
+        imageStoreIndex = this.fields.findIndex(item => item.name === 'imagestoreid')
+        this.fields[imageStoreIndex].loading = true
+        promises.push(await this.fetchImageStores(searchKeyword))
+      }
+
+      if (arrayField.includes('storageid')) {
+        storageIndex = this.fields.findIndex(item => item.name === 'storageid')
+        this.fields[storageIndex].loading = true
+        promises.push(await this.fetchStoragePools(searchKeyword))
       }
 
       if (arrayField.includes('podid')) {
@@ -382,7 +481,31 @@ export default {
         promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
+      if (arrayField.includes('managementserverid')) {
+        managementServerIdIndex = this.fields.findIndex(item => item.name === 'managementserverid')
+        this.fields[managementServerIdIndex].loading = true
+        promises.push(await this.fetchManagementServers(searchKeyword))
+      }
+
+      if (arrayField.includes('serviceofferingid')) {
+        serviceOfferingIndex = this.fields.findIndex(item => item.name === 'serviceofferingid')
+        this.fields[serviceOfferingIndex].loading = true
+        promises.push(await this.fetchServiceOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('diskofferingid')) {
+        diskOfferingIndex = this.fields.findIndex(item => item.name === 'diskofferingid')
+        this.fields[diskOfferingIndex].loading = true
+        promises.push(await this.fetchDiskOfferings(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
+        if (typeIndex > -1) {
+          const types = response.filter(item => item.type === 'type')
+          if (types && types.length > 0) {
+            this.fields[typeIndex].opts = this.sortArray(types[0].data)
+          }
+        }
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
@@ -393,6 +516,30 @@ export default {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
             this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
+          }
+        }
+        if (accountIndex > -1) {
+          const account = response.filter(item => item.type === 'account')
+          if (account && account.length > 0) {
+            this.fields[accountIndex].opts = this.sortArray(account[0].data, 'name')
+          }
+        }
+        if (hypervisorIndex > -1) {
+          const hypervisor = response.filter(item => item.type === 'hypervisor')
+          if (hypervisor && hypervisor.length > 0) {
+            this.fields[hypervisorIndex].opts = this.sortArray(hypervisor[0].data, 'name')
+          }
+        }
+        if (imageStoreIndex > -1) {
+          const imageStore = response.filter(item => item.type === 'imagestoreid')
+          if (imageStore && imageStore.length > 0) {
+            this.fields[imageStoreIndex].opts = this.sortArray(imageStore[0].data, 'name')
+          }
+        }
+        if (storageIndex > -1) {
+          const storagePool = response.filter(item => item.type === 'storageid')
+          if (storagePool && storagePool.length > 0) {
+            this.fields[storageIndex].opts = this.sortArray(storagePool[0].data, 'name')
           }
         }
         if (podIndex > -1) {
@@ -413,12 +560,45 @@ export default {
             this.fields[groupIndex].opts = this.sortArray(groups[0].data)
           }
         }
+
+        if (managementServerIdIndex > -1) {
+          const managementServers = response.filter(item => item.type === 'managementserverid')
+          if (managementServers && managementServers.length > 0) {
+            this.fields[managementServerIdIndex].opts = this.sortArray(managementServers[0].data)
+          }
+        }
+
+        if (serviceOfferingIndex > -1) {
+          const serviceOfferings = response.filter(item => item.type === 'serviceofferingid')
+          if (serviceOfferings && serviceOfferings.length > 0) {
+            this.fields[serviceOfferingIndex].opts = this.sortArray(serviceOfferings[0].data)
+          }
+        }
+
+        if (diskOfferingIndex > -1) {
+          const diskOfferings = response.filter(item => item.type === 'diskofferingid')
+          if (diskOfferings && diskOfferings.length > 0) {
+            this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
+          }
+        }
       }).finally(() => {
+        if (typeIndex > -1) {
+          this.fields[typeIndex].loading = false
+        }
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
+        }
+        if (accountIndex > -1) {
+          this.fields[accountIndex].loading = false
+        }
+        if (imageStoreIndex > -1) {
+          this.fields[imageStoreIndex].loading = false
+        }
+        if (storageIndex > -1) {
+          this.fields[storageIndex].loading = false
         }
         if (podIndex > -1) {
           this.fields[podIndex].loading = false
@@ -429,7 +609,18 @@ export default {
         if (groupIndex > -1) {
           this.fields[groupIndex].loading = false
         }
-        this.fillFormFieldValues()
+        if (managementServerIdIndex > -1) {
+          this.fields[managementServerIdIndex].loading = false
+        }
+        if (serviceOfferingIndex > -1) {
+          this.fields[serviceOfferingIndex].loading = false
+        }
+        if (diskOfferingIndex > -1) {
+          this.fields[diskOfferingIndex].loading = false
+        }
+        if (Array.isArray(arrayField)) {
+          this.fillFormFieldValues()
+        }
       })
     },
     initFormFieldData () {
@@ -440,6 +631,9 @@ export default {
       this.fetchDynamicFieldData(arrayField)
     },
     sortArray (data, key = 'name') {
+      if (!data) {
+        return []
+      }
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
         if (a[key] > b[key]) { return 1 }
@@ -487,6 +681,65 @@ export default {
         })
       })
     },
+    fetchAccounts (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        const params = { listAll: true, isrecursive: false, showicon: true, keyword: searchKeyword }
+        if (this.form.domainid) {
+          params.domainid = this.form.domainid
+        }
+        api('listAccounts', params).then(json => {
+          var account = json.listaccountsresponse.account
+          if (this.form.domainid) {
+            account = account.filter(a => a.domainid === this.form.domainid)
+          }
+          resolve({
+            type: 'account',
+            data: account
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchHypervisors () {
+      return new Promise((resolve, reject) => {
+        api('listHypervisors').then(json => {
+          const hypervisor = json.listhypervisorsresponse.hypervisor.map(a => { return { id: a.name, name: a.name } })
+          resolve({
+            type: 'hypervisor',
+            data: hypervisor
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchImageStores (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const imageStore = json.listimagestoresresponse.imagestore
+          resolve({
+            type: 'imagestoreid',
+            data: imageStore
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchStoragePools (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listStoragePools', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const storagePool = json.liststoragepoolsresponse.storagepool
+          resolve({
+            type: 'storageid',
+            data: storagePool
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
         api('listPods', { keyword: searchKeyword }).then(json => {
@@ -526,6 +779,103 @@ export default {
         })
       })
     },
+    fetchServiceOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listServiceOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const serviceOfferings = json.listserviceofferingsresponse.serviceoffering
+          resolve({
+            type: 'serviceofferingid',
+            data: serviceOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchDiskOfferings (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listDiskOfferings', { listAll: true, keyword: searchKeyword }).then(json => {
+          const diskOfferings = json.listdiskofferingsresponse.diskoffering
+          resolve({
+            type: 'diskofferingid',
+            data: diskOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchAlertTypes () {
+      if (this.alertTypes.length > 0) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            type: 'type',
+            data: this.alertTypes
+          })
+        })
+      } else {
+        return new Promise((resolve, reject) => {
+          api('listAlertTypes').then(json => {
+            const alerttypes = json.listalerttypesresponse.alerttype.map(a => { return { id: a.alerttypeid, name: a.name } })
+            this.alertTypes = alerttypes
+            resolve({
+              type: 'type',
+              data: alerttypes
+            })
+          }).catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+        })
+      }
+    },
+    fetchAffinityGroupTypes () {
+      if (this.alertTypes.length > 0) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            type: 'type',
+            data: this.alertTypes
+          })
+        })
+      } else {
+        return new Promise((resolve, reject) => {
+          api('listAffinityGroupTypes').then(json => {
+            const alerttypes = json.listaffinitygrouptypesresponse.affinityGroupType.map(a => {
+              let name = a.type
+              if (a.type === 'host anti-affinity') {
+                name = 'host anti-affinity (Strict)'
+              } else if (a.type === 'host affinity') {
+                name = 'host affinity (Strict)'
+              } else if (a.type === 'non-strict host anti-affinity') {
+                name = 'host anti-affinity (Non-Strict)'
+              } else if (a.type === 'non-strict host affinity') {
+                name = 'host affinity (Non-Strict)'
+              }
+              return { id: a.type, name: name }
+            })
+            this.alertTypes = alerttypes
+            resolve({
+              type: 'type',
+              data: alerttypes
+            })
+          }).catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+        })
+      }
+    },
+    fetchManagementServers (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
+          const managementservers = json.listmanagementserversresponse.managementserver
+          resolve({
+            type: 'managementserverid',
+            data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchGuestNetworkTypes () {
       const types = []
       if (this.apiName.indexOf('listNetworks') > -1) {
@@ -544,29 +894,219 @@ export default {
       }
       return types
     },
+    fetchAccountTypes () {
+      const types = []
+      if (this.apiName.indexOf('listAccounts') > -1) {
+        types.push({
+          id: '1',
+          name: 'Admin'
+        })
+        types.push({
+          id: '2',
+          name: 'DomainAdmin'
+        })
+        types.push({
+          id: '3',
+          name: 'User'
+        })
+      }
+      return types
+    },
+    fetchSystemVmTypes () {
+      const types = []
+      if (this.apiName.indexOf('listSystemVms') > -1) {
+        types.push({
+          id: 'consoleproxy',
+          name: 'label.console.proxy.vm'
+        })
+        types.push({
+          id: 'secondarystoragevm',
+          name: 'label.secondary.storage.vm'
+        })
+      }
+      return types
+    },
+    fetchStoragePoolScope () {
+      const types = []
+      if (this.apiName.indexOf('listStoragePools') > -1) {
+        types.push({
+          id: 'HOST',
+          name: 'label.hostname'
+        })
+        types.push({
+          id: 'CLUSTER',
+          name: 'label.cluster'
+        })
+        types.push({
+          id: 'ZONE',
+          name: 'label.zone'
+        })
+        types.push({
+          id: 'REGION',
+          name: 'label.region'
+        })
+        types.push({
+          id: 'GLOBAL',
+          name: 'label.global'
+        })
+      }
+      return types
+    },
+    fetchImageStoreProviders () {
+      const types = []
+      if (this.apiName.indexOf('listImageStores') > -1) {
+        types.push({
+          id: 'NFS',
+          name: 'NFS'
+        })
+        types.push({
+          id: 'SMB/CIFS',
+          name: 'SMB/CIFS'
+        })
+        types.push({
+          id: 'S3',
+          name: 'S3'
+        })
+        types.push({
+          id: 'Swift',
+          name: 'Swift'
+        })
+      }
+      return types
+    },
+    fetchRoleTypes () {
+      const types = []
+      if (this.apiName.indexOf('listRoles') > -1) {
+        types.push({
+          id: 'Admin',
+          name: 'Admin'
+        })
+        types.push({
+          id: 'ResourceAdmin',
+          name: 'ResourceAdmin'
+        })
+        types.push({
+          id: 'DomainAdmin',
+          name: 'DomainAdmin'
+        })
+        types.push({
+          id: 'User',
+          name: 'User'
+        })
+      }
+      return types
+    },
+    fetchScope () {
+      const scope = []
+      if (this.apiName.indexOf('listWebhooks') > -1) {
+        scope.push({
+          id: 'Local',
+          name: 'label.local'
+        })
+        scope.push({
+          id: 'Domain',
+          name: 'label.domain'
+        })
+        if (isAdmin()) {
+          scope.push({
+            id: 'Global',
+            name: 'label.global'
+          })
+        }
+      }
+      return scope
+    },
     fetchState () {
-      const state = []
-      if (this.apiName.indexOf('listVolumes') > -1) {
-        state.push({
-          id: 'Allocated',
-          name: 'label.allocated'
-        })
-        state.push({
-          id: 'Ready',
-          name: 'label.isready'
-        })
-        state.push({
-          id: 'Destroy',
-          name: 'label.destroy'
-        })
-        state.push({
-          id: 'Expunging',
-          name: 'label.expunging'
-        })
-        state.push({
-          id: 'Expunged',
-          name: 'label.expunged'
-        })
+      var state = []
+      if (this.apiName.includes('listVolumes')) {
+        state = [
+          {
+            id: 'Allocated',
+            name: 'label.allocated'
+          },
+          {
+            id: 'Ready',
+            name: 'label.isready'
+          },
+          {
+            id: 'Destroy',
+            name: 'label.destroy'
+          },
+          {
+            id: 'Expunging',
+            name: 'label.expunging'
+          },
+          {
+            id: 'Expunged',
+            name: 'label.expunged'
+          },
+          {
+            id: 'Migrating',
+            name: 'label.migrating'
+          }
+        ]
+      } else if (this.apiName.includes('listKubernetesClusters')) {
+        state = [
+          {
+            id: 'Created',
+            name: 'label.created'
+          },
+          {
+            id: 'Starting',
+            name: 'label.starting'
+          },
+          {
+            id: 'Running',
+            name: 'label.running'
+          },
+          {
+            id: 'Stopping',
+            name: 'label.stopping'
+          },
+          {
+            id: 'Stopped',
+            name: 'label.stopped'
+          },
+          {
+            id: 'Scaling',
+            name: 'label.scaling'
+          },
+          {
+            id: 'Upgrading',
+            name: 'label.upgrading'
+          },
+          {
+            id: 'Alert',
+            name: 'label.alert'
+          },
+          {
+            id: 'Recovering',
+            name: 'label.recovering'
+          },
+          {
+            id: 'Destroyed',
+            name: 'label.destroyed'
+          },
+          {
+            id: 'Destroying',
+            name: 'label.destroying'
+          },
+          {
+            id: 'Error',
+            name: 'label.error'
+          }
+        ]
+      } else if (this.apiName.indexOf('listWebhooks') > -1) {
+        state = [
+          {
+            id: 'Enabled',
+            name: 'label.enabled'
+          },
+          {
+            id: 'Disabled',
+            name: 'label.disabled'
+          }
+        ]
       }
       return state
     },
@@ -663,6 +1203,13 @@ export default {
     },
     changeFilter (filter) {
       this.$emit('change-filter', filter)
+    },
+    updateIsFiltered () {
+      this.isFiltered = this.searchFilters.some(item => {
+        if (this.searchParams[item]) {
+          return true
+        }
+      })
     }
   }
 }
@@ -697,12 +1244,6 @@ export default {
     &-search {
       position: absolute;
       right: 0;
-    }
-  }
-
-  :deep(.ant-input-group) {
-    .ant-input-affix-wrapper {
-      width: calc(100% - 10px);
     }
   }
 }

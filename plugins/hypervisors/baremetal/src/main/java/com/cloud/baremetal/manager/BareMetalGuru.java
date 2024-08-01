@@ -27,7 +27,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -39,7 +38,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalGuru extends HypervisorGuruBase implements HypervisorGuru {
-    private static final Logger s_logger = Logger.getLogger(BareMetalGuru.class);
     @Inject
     GuestOSDao _guestOsDao;
 

@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -31,10 +31,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DbUpgradeUtilsTest {
 
     @Mock
@@ -45,7 +45,7 @@ public class DbUpgradeUtilsTest {
 
     @Before
     public void setupClass() {
-        Whitebox.setInternalState(DbUpgradeUtils.class, "dao", daoMock);
+        ReflectionTestUtils.setField(DbUpgradeUtils.class, "dao", daoMock);
     }
 
     @Test

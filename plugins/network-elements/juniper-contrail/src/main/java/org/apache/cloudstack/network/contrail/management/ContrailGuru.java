@@ -27,7 +27,6 @@ import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -89,7 +88,6 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Inject
     DataCenterDao _dcDao;
 
-    private static final Logger s_logger = Logger.getLogger(ContrailGuru.class);
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     private boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
@@ -119,12 +117,12 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         // Check of the isolation type of the related physical network is L3VPN
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(),physnet)) {
-            s_logger.debug("Refusing to design this network");
+            logger.debug("Refusing to design this network");
             return null;
         }
         NetworkVO network =
@@ -134,14 +132,19 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             network.setCidr(userSpecified.getCidr());
             network.setGateway(userSpecified.getGateway());
         }
-        s_logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
+        logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
         return network;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
     }
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException {
-        s_logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());
+        logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());
 
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
         if (vnModel == null) {
@@ -154,7 +157,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
                 vnModel.update(_manager.getModelController());
             }
         } catch (Exception ex) {
-            s_logger.warn("virtual-network update: ", ex);
+            logger.warn("virtual-network update: ", ex);
             return network;
         }
         _manager.getDatabase().getVirtualNetworks().add(vnModel);
@@ -162,7 +165,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         if (network.getVpcId() != null) {
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
             if (ips.isEmpty()) {
-                s_logger.debug("Creating a source nat ip for network " + network);
+                logger.debug("Creating a source nat ip for network " + network);
                 Account owner = _accountMgr.getAccount(network.getAccountId());
                 try {
                     PublicIp publicIp = _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
@@ -172,7 +175,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
                     _ipAddressDao.update(ip.getId(), ip);
                     _ipAddressDao.releaseFromLockTable(ip.getId());
                 } catch (Exception e) {
-                    s_logger.error("Unable to allocate source nat ip: " + e);
+                    logger.error("Unable to allocate source nat ip: " + e);
                 }
             }
         }
@@ -188,7 +191,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public NicProfile allocate(Network network, NicProfile profile, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
-        s_logger.debug("allocate NicProfile on " + network.getName());
+        logger.debug("allocate NicProfile on " + network.getName());
 
         if (profile != null && profile.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + profile);
@@ -202,7 +205,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         try {
             broadcastUri = new URI("vlan://untagged");
         } catch (Exception e) {
-            s_logger.warn("unable to instantiate broadcast URI: " + e);
+            logger.warn("unable to instantiate broadcast URI: " + e);
         }
         profile.setBroadcastUri(broadcastUri);
 
@@ -215,8 +218,8 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        s_logger.debug("reserve NicProfile on network id: " + network.getId() + " " + network.getName());
-        s_logger.debug("deviceId: " + nic.getDeviceId());
+        logger.debug("reserve NicProfile on network id: " + network.getId() + " " + network.getName());
+        logger.debug("deviceId: " + nic.getDeviceId());
 
         NicVO nicVO = _nicDao.findById(nic.getId());
         assert nicVO != null;
@@ -242,7 +245,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             vmiModel.build(_manager.getModelController(), (VMInstanceVO)vm.getVirtualMachine(), nicVO);
             vmiModel.setActive();
         } catch (IOException ex) {
-            s_logger.error("virtual-machine-interface set", ex);
+            logger.error("virtual-machine-interface set", ex);
             return;
         }
 
@@ -251,17 +254,17 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             ipModel = new InstanceIpModel(vm.getInstanceName(), nic.getDeviceId());
             ipModel.addToVMInterface(vmiModel);
         } else {
-            s_logger.debug("Reuse existing instance-ip object on " + ipModel.getName());
+            logger.debug("Reuse existing instance-ip object on " + ipModel.getName());
         }
         if (nic.getIPv4Address() != null) {
-            s_logger.debug("Nic using existing IP address " + nic.getIPv4Address());
+            logger.debug("Nic using existing IP address " + nic.getIPv4Address());
             ipModel.setAddress(nic.getIPv4Address());
         }
 
         try {
             vmModel.update(_manager.getModelController());
         } catch (Exception ex) {
-            s_logger.warn("virtual-machine update", ex);
+            logger.warn("virtual-machine update", ex);
             return;
         }
 
@@ -272,15 +275,15 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         if (nic.getMacAddress() == null) {
             MacAddressesType macs = vmi.getMacAddresses();
             if (macs == null) {
-                s_logger.debug("no mac address is allocated for Nic " + nicVO.getUuid());
+                logger.debug("no mac address is allocated for Nic " + nicVO.getUuid());
             } else {
-                s_logger.info("VMI " + _manager.getVifNameByVmUuid(vm.getUuid(), nicVO.getDeviceId()) + " got mac address: " + macs.getMacAddress().get(0));
+                logger.info("VMI " + _manager.getVifNameByVmUuid(vm.getUuid(), nicVO.getDeviceId()) + " got mac address: " + macs.getMacAddress().get(0));
                 nic.setMacAddress(macs.getMacAddress().get(0));
             }
         }
 
         if (nic.getIPv4Address() == null) {
-            s_logger.debug("Allocated IP address " + ipModel.getAddress());
+            logger.debug("Allocated IP address " + ipModel.getAddress());
             nic.setIPv4Address(ipModel.getAddress());
             if (network.getCidr() != null) {
                 nic.setIPv4Netmask(NetUtils.cidr2Netmask(network.getCidr()));
@@ -296,7 +299,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
 
-        s_logger.debug("release NicProfile " + nic.getId());
+        logger.debug("release NicProfile " + nic.getId());
 
         return true;
     }
@@ -306,7 +309,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      */
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        s_logger.debug("deallocate NicProfile " + nic.getId() + " on " + network.getName());
+        logger.debug("deallocate NicProfile " + nic.getId() + " on " + network.getName());
         NicVO nicVO = _nicDao.findById(nic.getId());
         assert nicVO != null;
 
@@ -330,7 +333,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             try {
                 vmModel.delete(_manager.getModelController());
             } catch (IOException ex) {
-                s_logger.warn("virtual-machine delete", ex);
+                logger.warn("virtual-machine delete", ex);
                 return;
             }
         }
@@ -340,12 +343,12 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         // TODO Auto-generated method stub
-        s_logger.debug("update NicProfile " + profile.getId() + " on " + network.getName());
+        logger.debug("update NicProfile " + profile.getId() + " on " + network.getName());
     }
 
     @Override
     public void shutdown(NetworkProfile network, NetworkOffering offering) {
-        s_logger.debug("NetworkGuru shutdown");
+        logger.debug("NetworkGuru shutdown");
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
         if (vnModel == null) {
             return;
@@ -354,21 +357,21 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             _manager.getDatabase().getVirtualNetworks().remove(vnModel);
             vnModel.delete(_manager.getModelController());
         } catch (IOException e) {
-            s_logger.warn("virtual-network delete", e);
+            logger.warn("virtual-network delete", e);
         }
     }
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkGuru trash");
+        logger.debug("NetworkGuru trash");
         return true;
     }
 
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
         // TODO Auto-generated method stub
-        s_logger.debug("NetworkGuru updateNetworkProfile");
+        logger.debug("NetworkGuru updateNetworkProfile");
     }
 
     @Override

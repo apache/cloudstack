@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -37,7 +36,6 @@ import com.cloud.utils.ssh.SshHelper;
 
 @ResourceWrapper(handles = CopyToSecondaryStorageCommand.class)
 public class LibvirtCopyToSecondaryStorageWrapper extends CommandWrapper<CopyToSecondaryStorageCommand, Answer, LibvirtComputingResource> {
-    public static final Logger LOGGER = Logger.getLogger(LibvirtCopyToSecondaryStorageWrapper.class);
 
     @Override
     public Answer execute(CopyToSecondaryStorageCommand command, LibvirtComputingResource libvirtResource) {
@@ -64,7 +62,7 @@ public class LibvirtCopyToSecondaryStorageWrapper extends CommandWrapper<CopyToS
             Path path = Paths.get(dataDirectory.getAbsolutePath());
             setDirFilePermissions(path);
             if (existsInSecondaryStore) {
-                LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsZipFile, vmSshIp, secondaryStorageUrl));
+                logger.info(String.format("Copying %s from %s to secondary store %s", diagnosticsZipFile, vmSshIp, secondaryStorageUrl));
                 int port = Integer.valueOf(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
                 File permKey = new File(LibvirtComputingResource.SSHPRVKEYPATH);
                 SshHelper.scpFrom(vmSshIp, port, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsZipFile);

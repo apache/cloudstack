@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.alert.AlertService;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.consoleproxy.ConsoleProxyAlertEventArgs;
@@ -38,7 +37,6 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 @Component
 public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyAlertAdapter.class);
 
     @Inject
     private AlertManager _alertMgr;
@@ -48,8 +46,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
     private ConsoleProxyDao _consoleProxyDao;
 
     public void onProxyAlert(Object sender, ConsoleProxyAlertEventArgs args) {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("received console proxy alert");
+        if (logger.isDebugEnabled())
+            logger.debug("received console proxy alert");
 
         DataCenterVO dc = _dcDao.findById(args.getZoneId());
         ConsoleProxyVO proxy = args.getProxy();
@@ -82,15 +80,15 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
         switch (args.getType()) {
             case ConsoleProxyAlertEventArgs.PROXY_CREATED:
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("New console proxy created, " + zoneProxyPublicAndPrivateIp);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("New console proxy created, " + zoneProxyPublicAndPrivateIp);
                 }
                 break;
 
             case ConsoleProxyAlertEventArgs.PROXY_UP:
                 message = "Console proxy up in " + zoneProxyPublicAndPrivateIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxyPodIdToDeployIn, message, "Console proxy up " + zone);
@@ -98,8 +96,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
             case ConsoleProxyAlertEventArgs.PROXY_DOWN:
                 message = "Console proxy is down in " + zoneProxyPublicAndPrivateIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxyPodIdToDeployIn, message, "Console proxy down " + zone);
@@ -107,8 +105,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
             case ConsoleProxyAlertEventArgs.PROXY_REBOOTED:
                 message = "Console proxy is rebooted in " + zoneProxyPublicAndPrivateIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxyPodIdToDeployIn, message, "Console proxy rebooted " + zone);
@@ -116,8 +114,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
             case ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE:
                 message = String.format("Console proxy creation failure. Zone [%s].", dc.getName());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), null, message + errorDetails, "Console proxy creation failure " + zone);
@@ -125,8 +123,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
             case ConsoleProxyAlertEventArgs.PROXY_START_FAILURE:
                 message = "Console proxy startup failure in " + zoneProxyPublicAndPrivateIp;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxyPodIdToDeployIn, message + errorDetails,
@@ -134,8 +132,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                 break;
 
             case ConsoleProxyAlertEventArgs.PROXY_FIREWALL_ALERT:
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Console proxy firewall alert, " + zoneProxyPublicAndPrivateIp);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Console proxy firewall alert, " + zoneProxyPublicAndPrivateIp);
                 }
 
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxyPodIdToDeployIn, "Failed to open console proxy firewall port. " +
@@ -144,8 +142,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
 
             case ConsoleProxyAlertEventArgs.PROXY_STORAGE_ALERT:
                 message = zoneProxyPublicAndPrivateIp + ", message: " + args.getMessage();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Console proxy storage alert, " + message);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Console proxy storage alert, " + message);
                 }
                 _alertMgr.sendAlert(AlertService.AlertType.ALERT_TYPE_STORAGE_MISC, args.getZoneId(), proxyPodIdToDeployIn, "Console proxy storage issue. " + message,
                         "Console proxy alert " + zone);
@@ -156,8 +154,8 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Start configuring console proxy alert manager : " + name);
+        if (logger.isInfoEnabled())
+            logger.info("Start configuring console proxy alert manager : " + name);
 
         try {
             SubscriptionMgr.getInstance().subscribe(ConsoleProxyManager.ALERT_SUBJECT, this, "onProxyAlert");
