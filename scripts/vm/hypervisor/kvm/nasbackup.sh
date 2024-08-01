@@ -127,7 +127,7 @@ done
 
 if [ "$OP" = "backup" ]; then
   backup_vm $VM $DEST $NAS
-elif [ "$OP" = "backup" ]; then
+elif [ "$OP" = "delete" ]; then
   delete_backup $DEST $NAS
 fi
 
