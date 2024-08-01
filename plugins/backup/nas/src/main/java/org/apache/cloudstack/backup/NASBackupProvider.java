@@ -141,6 +141,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean takeBackup(final VirtualMachine vm) {
+        // TODO: currently works for only running VMs
+        // TODO: add support for backup of stopped VMs
         final Host host = getRunningVMHypervisorHost(vm);
 
         final String backupStoragePath = getBackupStoragePath(vm.getDataCenterId());
@@ -187,7 +189,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
 
         // Find where the VM was last running
-        final Host hostVO = getLastVMHypervisorHost(vm);
+        final Host host = getLastVMHypervisorHost(vm);
 
         // TODO: get KVM agent to restore VM backup
 

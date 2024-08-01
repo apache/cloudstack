@@ -42,6 +42,7 @@ backup_vm() {
 
   virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml > /dev/null 2>/dev/null
   virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml 2>/dev/null
+  rm -f $dest/backup.xml
 
   until virsh -c qemu:///system domjobinfo $vm --completed 2>/dev/null | grep "Completed" > /dev/null; do
     sleep 5
