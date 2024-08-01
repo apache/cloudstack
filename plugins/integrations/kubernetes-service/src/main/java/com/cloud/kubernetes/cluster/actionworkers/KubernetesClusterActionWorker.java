@@ -388,6 +388,7 @@ public class KubernetesClusterActionWorker {
         if (controlVm != null) {
             return controlVm;
         }
+        Long etcdNodeCount = kubernetesCluster.getEtcdNodeCount();
         List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         if (CollectionUtils.isEmpty(clusterVMs)) {
             logger.warn(String.format("Unable to retrieve VMs for Kubernetes cluster : %s", kubernetesCluster.getName()));
@@ -398,7 +399,8 @@ public class KubernetesClusterActionWorker {
             vmIds.add(vmMap.getVmId());
         }
         Collections.sort(vmIds);
-        return userVmDao.findById(vmIds.get(0));
+        int controlNodeIndex = Objects.nonNull(etcdNodeCount) ? etcdNodeCount.intValue() : 0;
+        return userVmDao.findById(vmIds.get(controlNodeIndex));
     }
 
     protected String getControlVmPrivateIp() {
