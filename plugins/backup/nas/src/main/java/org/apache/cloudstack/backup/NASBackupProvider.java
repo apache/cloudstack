@@ -36,7 +36,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
@@ -133,17 +132,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (hostId == null) {
             throw new CloudRuntimeException("Unable to find the HYPERVISOR for " + vm.getName() + ". Make sure the virtual machine is running");
         }
-        return hostDao.findById(hostId);
-    }
-
-    @Override
-    public boolean takeBackup(VirtualMachine vm) {
-        final Host host = getRunningVMHypervisorHost(vm);
+        final Host host = hostDao.findById(hostId);
         if (host == null || !Status.Up.equals(host.getStatus()) || !Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         }
+        return host;
+    }
 
-        final BackupOfferingVO backupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+    @Override
+    public boolean takeBackup(final VirtualMachine vm) {
+        final Host host = getRunningVMHypervisorHost(vm);
 
         final String backupStoragePath = getBackupStoragePath(vm.getDataCenterId());
         final String nasType = getNasType(vm.getDataCenterId());
@@ -224,11 +222,32 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
-
         final Long zoneId = backup.getZoneId();
-        final String externalBackupId = backup.getExternalId();
+        final String backupStoragePath = getBackupStoragePath(zoneId);
+        final String nasType = getNasType(zoneId);
+        final Map<String, String> backupDetails = Map.of(
+                "type", nasType
+        );
+        final String backupPath = backup.getExternalId().split(":")[1];
 
-        // TODO: delete backup from NAS
+        // TODO: this can be any host in the cluster or last host
+        final VirtualMachine vm  = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        final Host host = getRunningVMHypervisorHost(vm);
+
+        DeleteBackupCommand command = new DeleteBackupCommand(backupPath, backupStoragePath, backupDetails);
+
+        BackupAnswer answer = null;
+        try {
+            answer = (BackupAnswer) agentManager.send(host.getId(), command);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+        }
+
+        if (answer != null && answer.getResult()) {
+            return backupDao.remove(backup.getId());
+        }
 
         return false;
     }

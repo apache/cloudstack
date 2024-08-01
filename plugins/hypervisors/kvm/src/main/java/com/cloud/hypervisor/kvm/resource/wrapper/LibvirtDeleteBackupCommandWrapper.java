@@ -26,39 +26,33 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
-import org.apache.cloudstack.backup.TakeBackupCommand;
+import org.apache.cloudstack.backup.DeleteBackupCommand;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-@ResourceWrapper(handles = TakeBackupCommand.class)
-public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
+@ResourceWrapper(handles = DeleteBackupCommand.class)
+public class LibvirtDeleteBackupCommandWrapper extends CommandWrapper<DeleteBackupCommand, Answer, LibvirtComputingResource> {
     @Override
-    public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
-        final String vmName = command.getVmName();
+    public Answer execute(DeleteBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String backupStoragePath = command.getBackupStoragePath();
         final String backupFolder = command.getBackupPath();
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
                 libvirtComputingResource.getNasBackupPath(),
-                "-b", vmName,
-                "-s", backupStoragePath,
-                "-p", String.format("%s%s%s", vmName, File.separator, backupFolder)
+                "-d", backupFolder,
+                "-s", backupStoragePath
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
 
-        logger.debug("VM Backup Result: " + result.second() + ", exit code: " + result.first());
+        logger.debug("Backup delete result: " + result.second() + ", exit code: " + result.first());
 
         if (result.first() != 0) {
-            logger.debug("Failed to take VM backup: " + result.second());
+            logger.debug("Failed to delete VM backup: " + result.second());
             return new BackupAnswer(command, false, result.second());
         }
-
-        BackupAnswer answer = new BackupAnswer(command, true, null);
-        answer.setSize(Long.parseLong(result.second().trim()));
-        return answer;
+        return new BackupAnswer(command, true, null);
     }
 }

@@ -20,6 +20,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class BackupAnswer extends Answer {
     private Long virtualSize;
     private Map<String, String> volumes;
 
-    public BackupAnswer(final TakeBackupCommand command, final boolean success, final String details) {
+    public BackupAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
 
