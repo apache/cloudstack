@@ -166,7 +166,7 @@
         </a-form-item>
         <a-form-item name="routingmode" ref="routingmode" v-if="networkmode === 'ROUTED' || internetProtocolValue === 'ipv6' || internetProtocolValue === 'dualstack'">
           <template #label>
-            <tooltip-label :title="$t('label.routing.mode')" />
+            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
           </template>
           <a-radio-group
             v-model:value="form.routingmode"

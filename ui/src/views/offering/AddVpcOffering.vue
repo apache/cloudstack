@@ -67,22 +67,6 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item name="routingmode" ref="routingmode">
-          <template #label>
-            <tooltip-label :title="$t('label.routingmode')" />
-          </template>
-          <a-radio-group
-            v-model:value="form.routingmode"
-            buttonStyle="solid"
-            @change="selected => { routingMode = selected.target.value }">
-            <a-radio-button value="static">
-              {{ $t('label.static') }}
-            </a-radio-button>
-            <a-radio-button value="dynamic">
-              {{ $t('label.dynamic') }}
-            </a-radio-button>
-          </a-radio-group>
-        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
             <a-form-item name="fornsx" ref="fornsx">
@@ -127,6 +111,22 @@
               {{ opt.name }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="routingmode" ref="routingmode" v-if="networkmode === 'ROUTED' || internetProtocolValue === 'ipv6' || internetProtocolValue === 'dualstack'">
+          <template #label>
+            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
+          </template>
+          <a-radio-group
+            v-model:value="form.routingmode"
+            buttonStyle="solid"
+            @change="selected => { routingMode = selected.target.value }">
+            <a-radio-button value="static">
+              {{ $t('label.static') }}
+            </a-radio-button>
+            <a-radio-button value="dynamic">
+              {{ $t('label.dynamic') }}
+            </a-radio-button>
+          </a-radio-group>
         </a-form-item>
         <a-form-item>
           <template #label>
