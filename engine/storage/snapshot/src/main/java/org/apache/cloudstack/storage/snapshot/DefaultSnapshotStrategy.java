@@ -102,6 +102,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotZoneDao snapshotZoneDao;
 
+    private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
+
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
@@ -199,9 +201,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
         boolean result = false;
         boolean resultIsSet = false;
-        final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.BackedUp, Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
         try {
-            while (snapshot != null && snapshotStatesAbleToDeleteSnapshot.contains(snapshot.getState())) {
+            do {
                 SnapshotInfo child = snapshot.getChild();
 
                 if (child != null) {
@@ -247,7 +248,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 }
 
                 snapshot = parent;
-            }
+            } while (snapshot != null && snapshotStatesAbleToDeleteSnapshot.contains(snapshot.getState()));
         } catch (Exception e) {
             s_logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
         }
