@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -41,13 +44,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
-
     private final ConfigKey<String> NasType = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.nas.target.type", "nfs",
             "The NAS storage target type. Only supported: nfs and cephfs", true, ConfigKey.Scope.Zone);
@@ -80,6 +84,21 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private AgentManager agentManager;
+
+    protected String getNasType(final Long zoneId) {
+        return NasType.valueIn(zoneId);
+    }
+
+    protected String getBackupStoragePath(final Long zoneId) {
+        final String type = getNasType(zoneId);
+        if ("nfs".equalsIgnoreCase(type)) {
+            return NfsPool.valueIn(zoneId);
+        }
+        throw new CloudRuntimeException("NAS backup plugin not configured");
+    }
 
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
@@ -120,16 +139,46 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean takeBackup(VirtualMachine vm) {
-        // Find where the VM is currently running
-        Host hostVO = getRunningVMHypervisorHost(vm);
-        // Get retention Period for our Backup
-        BackupOfferingVO vmBackupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+        Host host = getRunningVMHypervisorHost(vm);
+        if (host == null || !Status.Up.equals(host.getStatus()) || !Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
+            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+        }
 
-        LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on NAS provider");
-        // TODO: initiate backup to NAS by KVM agent
-        // TODO: perisist object based on Answer: backupDao.persist(backup);
+        BackupOfferingVO backupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+        final String backupStoragePath = getBackupStoragePath(vm.getDataCenterId());
+        final String nasType = getNasType(vm.getDataCenterId());
+        final Map<String, String> backupDetails = Map.of(
+                "type", nasType
+        );
 
-        return true;
+        TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupStoragePath, backupDetails);
+
+        BackupAnswer answer = null;
+        try {
+            answer = (BackupAnswer) agentManager.send(host.getId(), command);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+        }
+
+        if (answer != null) {
+            BackupVO backup = new BackupVO();
+            backup.setVmId(vm.getId());
+            backup.setExternalId(String.format("%s|%s|%s", nasType, backupStoragePath, answer.getPath()));
+            backup.setType("FULL");
+            backup.setDate(new Date());
+            backup.setSize(answer.getSize());
+            backup.setProtectedSize(answer.getVirtualSize());
+            backup.setStatus(Backup.Status.BackedUp);
+            backup.setBackupOfferingId(vm.getBackupOfferingId());
+            backup.setAccountId(vm.getAccountId());
+            backup.setDomainId(vm.getDomainId());
+            backup.setZoneId(vm.getDataCenterId());
+            return backupDao.persist(backup) != null;
+        }
+
+        return false;
     }
 
     @Override
@@ -186,16 +235,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        Long vmBackupSize=0L;
-        Long vmBackupProtectedSize=0L;
-
         if (CollectionUtils.isEmpty(vms)) {
             LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
             return metrics;
         }
 
         for (final VirtualMachine vm : vms) {
-            // TODO: get per VM backup usage
+            Long vmBackupSize = 0L;
+            Long vmBackupProtectedSize = 0L;
+            for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
+                vmBackupSize += backup.getSize();
+                vmBackupProtectedSize += backup.getProtectedSize();
+            }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
                     vm.getInstanceName(), vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
@@ -221,16 +272,17 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+        // TODO: check and sum/return backups metrics on per VM basis
     }
 
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
-        return new ArrayList<>();
+        BackupOffering policy = new BackupOfferingVO(zoneId, "default", getName(), "Default", "Default Backup Offering", true);
+        return List.of(policy);
     }
 
     @Override
     public boolean isValidProviderOffering(Long zoneId, String uuid) {
-        // TODO
         return true;
     }
 
