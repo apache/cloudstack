@@ -4115,6 +4115,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return false;
         }
 
+        // network mode should be the same
+        NetworkOffering.NetworkMode oldNetworkMode = oldNetworkOffering.getNetworkMode() == null ? NetworkOffering.NetworkMode.NATTED: oldNetworkOffering.getNetworkMode();
+        NetworkOffering.NetworkMode newNetworkMode = newNetworkOffering.getNetworkMode() == null ? NetworkOffering.NetworkMode.NATTED: newNetworkOffering.getNetworkMode();
+        if (!oldNetworkMode.equals(newNetworkMode)) {
+            logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for network mode, can't upgrade");
+            return false;
+        }
+
         return canMoveToPhysicalNetwork(network, oldNetworkOfferingId, newNetworkOfferingId);
     }
 
