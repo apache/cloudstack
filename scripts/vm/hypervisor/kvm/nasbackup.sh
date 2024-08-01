@@ -16,30 +16,89 @@
 ## specific language governing permissions and limitations
 ## under the License.
 
-# CloudStack B&R NAS (KVM) Backup and Recovery Tool
+# CloudStack B&R NAS Backup and Recovery Tool for KVM
 
-# TODO: do libvirt version & other dependency checks
+# TODO: do libvirt/logging etc checks
 
-# TODO: logging & args/opts handling
+backup_vm() {
+  vm=$1
+  path=$2
+  storage=$3
 
-backup_domain() {
-  domain=$1 # TODO: get as opt?
-  # TODO: santiy checks on domain
-  # get domblklist
-  # gather external snapshot diskspec/target
-  # ensure the target nas is mounted / path is known or available
-  # virsh snapshot-create-as -> snapshot domain with --no-metadata--atomic --quiesce (?) --disk-only
-  # merge/commit target -> domblklist; blockcommit
-  # backup this domain & its disks, xml completely
-  # cleanup snapshot(s)
+  mount_point=$(mktemp -d -t csbackup.XXXXX)
+  dest="$mount_point/$path"
+
+  mount -t nfs $storage $mount_point
+  mkdir -p $dest
+
+  echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
+  for disk in $(virsh -c qemu:///system domblklist $vm --details | awk '/disk/{print$3}'); do
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$disk' /></disk>" >> $dest/backup.xml
+  done
+  echo "</disks></domainbackup>" > $dest/backup.xml
+
+  virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml
+  virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml
+  sync
+
+  # Print directory size
+  du -sb $dest | cut -f1
+  umount $mount_point
+  rmdir $mount_point
 }
 
-restore_all_volumes() {
-  # check and mount nas target & copy files
-  # check and restore all volumes
+OP=""
+VM=""
+PATH=""
+NAS=""
+TYPE=""
+
+function usage {
+  echo ""
+  echo "Usage: $0 -b <domain> -s <NAS storage mount path> -p <backup dest path>"
+  echo ""
+  exit 1
 }
 
-restore_volume() {
-  # check and mount nas target & copy files
-  # check and restore specific volume (qcow2)
-}
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -b|--backup)
+      OP="backup"
+      VM="$2"
+      shift
+      shift
+      ;;
+    -s|--storage)
+      NAS="$2"
+      TYPE="nfs"
+      shift
+      shift
+      ;;
+    -p|--path)
+      PATH="$2"
+      shift
+      shift
+      ;;
+    -r|--recover)
+      OP="recover"
+      shift
+      ;;
+    -rv|--recover)
+      OP="recover-volume"
+      shift
+      ;;
+    -h|--help)
+      usage
+      shift
+      ;;
+    *)
+      echo "Invalid option: $1"
+      usage
+      ;;
+  esac
+done
+
+if [ "$OP" = "backup" ]; then
+  backup_vm $VM $PATH $NAS
+fi
+

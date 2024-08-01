@@ -21,16 +21,15 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Answer;
 
+import java.util.Map;
+
 public class BackupAnswer extends Answer {
     Long size;
     Long virtualSize;
-    String path;
+    Map<String, String> volumes;
 
-    public BackupAnswer(TakeBackupCommand command, Long size, Long virtualSize, String path) {
-        super(command);
-        this.size = size;
-        this.virtualSize = virtualSize;
-        this.path = path;
+    public BackupAnswer(final TakeBackupCommand command, final boolean success, final String details) {
+        super(command, success, details);
     }
 
     public Long getSize() {
@@ -49,11 +48,11 @@ public class BackupAnswer extends Answer {
         this.virtualSize = virtualSize;
     }
 
-    public String getPath() {
-        return path;
+    public Map<String, String> getVolumes() {
+        return volumes;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setVolumes(Map<String, String> volumes) {
+        this.volumes = volumes;
     }
 }

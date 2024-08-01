@@ -43,6 +43,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -139,19 +140,21 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean takeBackup(VirtualMachine vm) {
-        Host host = getRunningVMHypervisorHost(vm);
+        final Host host = getRunningVMHypervisorHost(vm);
         if (host == null || !Status.Up.equals(host.getStatus()) || !Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         }
 
-        BackupOfferingVO backupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+        final BackupOfferingVO backupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+
         final String backupStoragePath = getBackupStoragePath(vm.getDataCenterId());
         final String nasType = getNasType(vm.getDataCenterId());
         final Map<String, String> backupDetails = Map.of(
                 "type", nasType
         );
+        final String backupPath = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date());
 
-        TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupStoragePath, backupDetails);
+        TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath, backupStoragePath, backupDetails);
 
         BackupAnswer answer = null;
         try {
@@ -165,7 +168,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (answer != null) {
             BackupVO backup = new BackupVO();
             backup.setVmId(vm.getId());
-            backup.setExternalId(String.format("%s|%s|%s", nasType, backupStoragePath, answer.getPath()));
+            backup.setExternalId(String.format("%s|%s|%s", nasType, backupStoragePath, backupPath));
             backup.setType("FULL");
             backup.setDate(new Date());
             backup.setSize(answer.getSize());

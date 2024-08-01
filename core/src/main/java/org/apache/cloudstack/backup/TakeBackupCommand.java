@@ -26,13 +26,15 @@ import java.util.Map;
 
 public class TakeBackupCommand extends Command {
     private String vmName;
+    private String backupPath;
     private String backupStoragePath;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map<String, String> details;
 
-    public TakeBackupCommand(String vmName, String backupStoragePath, Map<String, String> details) {
+    public TakeBackupCommand(String vmName, String backupPath, String backupStoragePath, Map<String, String> details) {
         super();
         this.vmName = vmName;
+        this.backupPath = backupPath;
         this.backupStoragePath = backupStoragePath;
         this.details = details;
     }
@@ -43,6 +45,14 @@ public class TakeBackupCommand extends Command {
 
     public void setVmName(String vmName) {
         this.vmName = vmName;
+    }
+
+    public String getBackupPath() {
+        return backupPath;
+    }
+
+    public void setBackupPath(String backupPath) {
+        this.backupPath = backupPath;
     }
 
     public String getBackupStoragePath() {
