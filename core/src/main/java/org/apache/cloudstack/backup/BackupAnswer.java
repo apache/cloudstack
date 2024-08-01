@@ -24,9 +24,9 @@ import com.cloud.agent.api.Answer;
 import java.util.Map;
 
 public class BackupAnswer extends Answer {
-    Long size;
-    Long virtualSize;
-    Map<String, String> volumes;
+    private Long size;
+    private Long virtualSize;
+    private Map<String, String> volumes;
 
     public BackupAnswer(final TakeBackupCommand command, final boolean success, final String details) {
         super(command, success, details);

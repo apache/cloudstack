@@ -23,11 +23,14 @@ import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
@@ -36,17 +39,22 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String vmName = command.getVmName();
         final String backupStoragePath = command.getBackupStoragePath();
         final String backupFolder = command.getBackupPath();
-        Script cmd = new Script(libvirtComputingResource.getNasBackupPath(), libvirtComputingResource.getCmdsTimeout(), logger);
-        cmd.add("-b", vmName);
-        cmd.add("-s", backupStoragePath);
-        cmd.add("-p", String.format("%s%s%s", vmName, File.separator, backupFolder));
-        String result = cmd.execute();
-        if (result == null) {
-            logger.debug("Failed to take VM backup: " + result);
-            return new BackupAnswer(command, false, result);
+
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{libvirtComputingResource.getNasBackupPath(),
+                "-b", vmName,
+                "-s", backupStoragePath,
+                "-p", String.format("%s%s%s", vmName, File.separator, backupFolder) });
+
+        Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+
+        if (result.first() != 0) {
+            logger.debug("Failed to take VM backup: " + result.second());
+            return new BackupAnswer(command, false, result.second());
         }
+
         BackupAnswer answer = new BackupAnswer(command, true, null);
-        answer.setSize(Long.valueOf(result));
+        answer.setSize(Long.valueOf(result.second()));
         return answer;
     }
 }

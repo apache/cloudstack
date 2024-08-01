@@ -166,7 +166,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (answer != null) {
             BackupVO backup = new BackupVO();
             backup.setVmId(vm.getId());
-            backup.setExternalId(String.format("%s|%s|%s", nasType, backupStoragePath, backupPath));
+            backup.setExternalId(String.format("%s:%s/%s", nasType, vm.getInstanceName(), backupPath));
             backup.setType("FULL");
             backup.setDate(new Date());
             backup.setSize(answer.getSize());
