@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -16,11 +16,15 @@
 ## specific language governing permissions and limitations
 ## under the License.
 
+set -e
+
 # CloudStack B&R NAS Backup and Recovery Tool for KVM
 
 # TODO: do libvirt/logging etc checks
 
+
 backup_vm() {
+  export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   vm=$1
   path=$2
   storage=$3
@@ -32,16 +36,20 @@ backup_vm() {
   mkdir -p $dest
 
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
-  for disk in $(virsh -c qemu:///system domblklist $vm --details | awk '/disk/{print$3}'); do
+  for disk in $(virsh -c qemu:///system domblklist $vm --details 2>/dev/null | awk '/disk/{print$3}'); do
     echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$disk' /></disk>" >> $dest/backup.xml
   done
-  echo "</disks></domainbackup>" > $dest/backup.xml
+  echo "</disks></domainbackup>" >> $dest/backup.xml
 
-  virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml
-  virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml
-  sync
+  virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml > /dev/null 2>/dev/null
+  virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml 2>/dev/null
+
+  until virsh -c qemu:///system domjobinfo $vm --completed 2>/dev/null | grep "Completed" > /dev/null; do
+    sleep 5
+  done
 
   # Print directory size
+  sync
   du -sb $dest | cut -f1
   umount $mount_point
   rmdir $mount_point
