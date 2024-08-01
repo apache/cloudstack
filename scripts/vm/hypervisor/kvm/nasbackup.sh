@@ -24,7 +24,6 @@ set -e
 
 
 backup_vm() {
-  export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   vm=$1
   path=$2
   storage=$3
@@ -55,9 +54,23 @@ backup_vm() {
   rmdir $mount_point
 }
 
+delete_backup() {
+  path=$1
+  storage=$2
+
+  mount_point=$(mktemp -d -t csbackup.XXXXX)
+  dest="$mount_point/$path"
+
+  mount -t nfs $storage $mount_point
+  rm -frv $dest
+  sync
+  umount $mount_point
+  rmdir $mount_point
+}
+
 OP=""
 VM=""
-PATH=""
+DEST=""
 NAS=""
 TYPE=""
 
@@ -76,6 +89,12 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -d|--delete)
+      OP="delete"
+      DEST="$2"
+      shift
+      shift
+      ;;
     -s|--storage)
       NAS="$2"
       TYPE="nfs"
@@ -83,7 +102,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -p|--path)
-      PATH="$2"
+      DEST="$2"
       shift
       shift
       ;;
@@ -107,6 +126,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$OP" = "backup" ]; then
-  backup_vm $VM $PATH $NAS
+  backup_vm $VM $DEST $NAS
+elif [ "$OP" = "backup" ]; then
+  delete_backup $DEST $NAS
 fi
 
