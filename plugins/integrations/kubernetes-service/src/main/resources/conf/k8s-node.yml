@@ -104,7 +104,7 @@ write_files:
             ### Download from ROUTER_IP/cks-iso into ISO_MOUNT_DIR
             AUX_DOWNLOAD_DIR=/aux-dwnld
             mkdir -p $AUX_DOWNLOAD_DIR
-            wget -r -R "index.html*" $ROUTER_IP/cks-iso -P $AUX_DOWNLOAD_DIR
+            wget -r -R "index.html*" $ROUTER_IP/cks-iso -P $AUX_DOWNLOAD_DIR || echo 'Cannot download some files from virtual router'
             mv $AUX_DOWNLOAD_DIR/$ROUTER_IP/cks-iso/* $ISO_MOUNT_DIR
             rm -rf $AUX_DOWNLOAD_DIR
           fi
