@@ -17,20 +17,24 @@
 
 package org.apache.cloudstack.storage.fileshare;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
 public interface FileShareLifeCycle {
-    void checkPrerequisites(Long zoneId, Long serviceOfferingId);
+    void checkPrerequisites(DataCenter zone, Long serviceOfferingId);
 
-    Pair<Long, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size);
+    Pair<Long, Long> commitFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size, Long minIops, Long maxIops) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
-    boolean startFileShare(FileShare fileShare);
+    void startFileShare(FileShare fileShare) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException;
 
     boolean stopFileShare(FileShare fileShare, Boolean forced);
 
     boolean deleteFileShare(FileShare fileShare);
 
-    Long reDeployFileShare(FileShare fileShare);
+    Pair<Boolean, Long> reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
-    boolean changeFileShareDiskOffering(FileShare fileShare, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops);
 }

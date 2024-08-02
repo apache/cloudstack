@@ -28,16 +28,23 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "restartFileShare",
-        responseObject= FileShareResponse.class,
+        responseObject= SuccessResponse.class,
         description = "Restart a File Share.. ",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
@@ -99,9 +106,31 @@ public class RestartFileShareCmd extends BaseAsyncCmd implements UserCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
+    private String getRestartExceptionMsg(Exception ex) {
+        return "File share restart failed with exception" + ex.getMessage();
+    }
+
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.restartFileShare(id, cleanup);
+        FileShare fileShare;
+        try {
+            fileShare = fileShareService.restartFileShare(this.getId(), this.getCleanup());
+        } catch (ResourceUnavailableException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getRestartExceptionMsg(ex));
+        } catch (ConcurrentOperationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getRestartExceptionMsg(ex));
+        } catch (InsufficientCapacityException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getRestartExceptionMsg(ex));
+        } catch (ResourceAllocationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (OperationTimedoutException ex) {
+            throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
+        }
+
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
@@ -113,7 +142,7 @@ public class RestartFileShareCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update file share");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start file share");
         }
     }
 }

@@ -66,16 +66,15 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
     }
 
     enum State {
-        Allocated(false, "The file share is allocated in db but hasn't been created or initialized yet."),
-        Deploying(true, "The file share is being created."),
-        Deployed(false, "The file share is deployed but not initialized yet."),
-        Initializing(true, "The file share is being initialized."),
+        Allocated(false, "The file share is allocated in db but hasn't been created or started yet."),
         Ready(false, "The file share is ready to use."),
         Stopping(true, "The file share is being stopped"),
         Stopped(false, "The file share is in stopped state. It can not be used but the data is still there."),
-        Starting(false, "The file share is being started."),
-        Destroyed(true, "The file share is destroyed."),
-        Expunging(false, "The file share is being expunged.");
+        Starting(true, "The file share is being started."),
+        Detached(false, "The file share Data is not attached to any VM."),
+        Destroyed(false, "The file share is destroyed."),
+        Expunging(false, "The file share is being expunged."),
+        Error(false, "The file share is in error state.");
 
         boolean _transitional;
         String _description;
@@ -106,25 +105,22 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
         }
 
         static {
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DeployRequested, Deploying, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.DestroyRequested, Destroyed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationSucceeded, Deployed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deploying, Event.OperationFailed, Allocated, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.StartRequested, Initializing, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Deployed, Event.DestroyRequested, Destroyed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Initializing, Event.OperationFailed, Deployed, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.OperationFailed, Error, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Allocated, Event.OperationSucceeded, Stopped, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Error, Event.DestroyRequested, Destroyed, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.StartRequested, Starting, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationFailed, Stopped, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Detached, Event.OperationSucceeded, Stopped, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Detached, Event.OperationFailed, Detached, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.StopRequested, Stopping, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationSucceeded, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationFailed, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.InitializationRequested, Initializing, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.StartRequested, Starting, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.Detach, Detached, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.DestroyRequested, Destroyed, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationFailed, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.RecoveryRequested, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.ExpungeOperation, Expunging, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationFailed, Destroyed, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.ExpungeOperation, Expunging, null));
         }
     }
 
@@ -133,6 +129,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
         InitializationRequested,
         StopRequested,
         StartRequested,
+        Detach,
         DestroyRequested,
         OperationSucceeded,
         OperationFailed,
@@ -171,8 +168,6 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
     Long getVmId();
 
     void setVmId(Long vmId);
-
-    String getMountOptions();
 
     FileSystemType getFsType();
 

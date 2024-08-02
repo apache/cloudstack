@@ -122,7 +122,7 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
           args: ['considerlasthost'],
-          show: (record) => { return ['Stopped'].includes(record.state) && record.vmtype !== 'storagefsvm' },
+          show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
         {
@@ -135,7 +135,7 @@ export default {
           groupAction: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced'],
-          show: (record) => { return ['Running'].includes(record.state) && record.vmtype !== 'storagefsvm' }
+          show: (record) => { return ['Running'].includes(record.state) }
         },
         {
           api: 'rebootVirtualMachine',
@@ -144,7 +144,7 @@ export default {
           message: 'message.action.reboot.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
-          show: (record) => { return ['Running'].includes(record.state) && record.vmtype !== 'storagefsvm' },
+          show: (record) => { return ['Running'].includes(record.state) },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' },
           args: (record, store) => {
             var fields = []

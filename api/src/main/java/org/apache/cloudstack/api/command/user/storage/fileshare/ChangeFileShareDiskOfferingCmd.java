@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 
@@ -129,7 +130,7 @@ public class ChangeFileShareDiskOfferingCmd extends BaseAsyncCmd implements User
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceAllocationException {
         FileShare fileShare = fileShareService.changeFileShareDiskOffering(this);
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();

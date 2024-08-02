@@ -28,6 +28,10 @@ import org.apache.cloudstack.api.command.user.storage.fileshare.CreateFileShareC
 import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShareCmd;
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
@@ -41,27 +45,27 @@ public interface FileShareService extends PluggableService {
 
     List<FileShareProvider> getFileShareProviders();
 
+    boolean stateTransitTo(FileShare fileShare, FileShare.Event event);
+
     void setFileShareProviders(List<FileShareProvider> fileShareProviders);
 
     FileShareProvider getFileShareProvider(String fileShareProviderName);
 
-    FileShare allocFileShare(CreateFileShareCmd cmd);
+    FileShare createFileShare(CreateFileShareCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
-    FileShare deployFileShare(Long fileShareId, Long networkId, Long diskOfferingId, Long size);
-
-    FileShare startFileShare(Long fileShareId);
+    FileShare startFileShare(Long fileShareId) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     FileShare stopFileShare(Long fileShareId, Boolean forced);
 
-    FileShare restartFileShare(Long fileShareId, boolean cleanup);
+    FileShare restartFileShare(Long fileShareId, boolean cleanup) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     ListResponse<FileShareResponse> searchForFileShares(ResponseObject.ResponseView respView, ListFileSharesCmd cmd);
 
     FileShare updateFileShare(UpdateFileShareCmd cmd);
 
-    FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd);
+    FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) throws ResourceAllocationException;
 
-    FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd);
+    FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     Boolean destroyFileShare(DestroyFileShareCmd cmd);
 

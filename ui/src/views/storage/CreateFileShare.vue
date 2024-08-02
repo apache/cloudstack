@@ -434,6 +434,8 @@ export default {
           diskofferingid: values.diskofferingid,
           networkid: values.networkid,
           size: values.size,
+          miniops: values.miniops,
+          maxiops: values.maxiops,
           provider: values.provider,
           domainid: this.owner.domainid
         }

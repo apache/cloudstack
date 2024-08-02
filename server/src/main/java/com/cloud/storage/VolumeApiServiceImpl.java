@@ -2333,6 +2333,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * the actual disk size.
              */
             if (currentSize > newSize) {
+                if (shrinkOk) {
+                    VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+                    if (vm != null && vm.getType().equals(VirtualMachine.Type.User)) {
+                        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+                        if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                            throw new InvalidParameterValueException("Shrink volume cannot be done for the vm type " + UserVmManager.STORAGEFSVM.toString());
+                        }
+                    }
+                }
+
                 if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
@@ -2461,14 +2471,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
-    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean fileShare) {
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForFileShare) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
 
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
-        checkUserVmType(vm, fileShare);
+        if (!allowAttachForFileShare && UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't attach a data volume to a VM of type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
 
@@ -2564,12 +2576,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
         if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
             throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
-        }
-    }
-
-    private void checkUserVmType(UserVmVO vm, Boolean fileShare) {
-        if (!fileShare && UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't attach/detach a data volume to/from the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
     }
 
@@ -2891,7 +2897,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Check that the VM is in the correct state
         UserVmVO vm = _userVmDao.findById(vmId);
 
-        checkUserVmType(vm, false);
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't detach a data volume from a VM of type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");

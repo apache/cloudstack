@@ -34,8 +34,14 @@ import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "changeFileShareServiceOffering",
         responseObject= FileShareResponse.class,
@@ -67,6 +73,7 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
+            required = true,
             description = "the offering to use for the file share vm.")
     private Long serviceOfferingId;
 
@@ -101,9 +108,31 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
         return CallContext.current().getCallingAccount().getId();
     }
 
+    private String getExceptionMsg(Exception ex) {
+        return "File share restart failed with exception" + ex.getMessage();
+    }
+
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.changeFileShareServiceOffering(this);
+        FileShare fileShare;
+        try {
+            fileShare = fileShareService.changeFileShareServiceOffering(this);
+        } catch (ResourceUnavailableException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getExceptionMsg(ex));
+        } catch (ConcurrentOperationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getExceptionMsg(ex));
+        } catch (InsufficientCapacityException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getExceptionMsg(ex));
+        } catch (ResourceAllocationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (OperationTimedoutException ex) {
+            throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
+        }
+
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();

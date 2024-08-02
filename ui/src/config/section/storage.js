@@ -580,8 +580,7 @@ export default {
           label: 'label.update.fileshare',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue')))
         },
         {
           api: 'startFileShare',
@@ -590,9 +589,7 @@ export default {
           message: 'message.action.start.fileshare',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
-          groupAction: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
-          show: (record) => { return ['Stopped', 'Deployed'].includes(record.state) }
+          show: (record) => { return ['Stopped', 'Detached'].includes(record.state) }
         },
         {
           api: 'stopFileShare',
@@ -602,8 +599,6 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           args: ['forced'],
-          groupAction: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           show: (record) => { return ['Ready'].includes(record.state) }
         },
         {
@@ -614,9 +609,7 @@ export default {
           message: 'message.action.restart.fileshare',
           dataView: true,
           args: ['cleanup'],
-          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' },
-          groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
         },
         {
           api: 'changeFileShareDiskOffering',
@@ -626,7 +619,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareDiskOffering.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' }
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
         },
         {
           api: 'changeFileShareServiceOffering',
@@ -636,7 +629,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareServiceOffering.vue'))),
-          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' }
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
         },
         {
           api: 'destroyFileShare',
@@ -655,8 +648,7 @@ export default {
           label: 'label.recover.fileshare',
           message: 'message.action.recover.fileshare',
           dataView: true,
-          show: (record) => { return record.state === 'Destroyed' },
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          show: (record) => { return record.state === 'Destroyed' }
         },
         {
           api: 'expungeFileShare',
@@ -664,8 +656,7 @@ export default {
           label: 'label.expunge.fileshare',
           message: 'message.action.expunge.fileshare',
           dataView: true,
-          show: (record) => { return record.state === 'Destroyed' },
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          show: (record) => { return ['Destroyed', 'Expunging'].includes(record.state) }
         }
       ]
     }

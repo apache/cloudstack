@@ -3307,9 +3307,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
-        if (UserVmManager.STORAGEFSVM.equals(vmInstance.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
-        }
 
         if (vmInstance.getState() != State.Running) {
             throw new InvalidParameterValueException(String.format("The VM %s (%s) is not running, unable to reboot it",
@@ -5364,9 +5361,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
-        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
-        }
 
         // check if vm belongs to AutoScale vm group in Disabled state
         autoScaleManager.checkIfVmActionAllowed(vmId);
@@ -5451,9 +5445,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
-        }
-        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (vm.getState() == State.Running) {

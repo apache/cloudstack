@@ -19,9 +19,14 @@ package org.apache.cloudstack.api.command.user.storage.fileshare;
 import javax.inject.Inject;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -109,6 +114,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
             type = CommandType.UUID,
+            required = true,
             entityType = DiskOfferingResponse.class,
             description = "the disk offering to use for the underlying storage.")
     private Long diskOfferingId;
@@ -129,11 +135,6 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             entityType = ServiceOfferingResponse.class,
             description = "the offering to use for the file share vm.")
     private Long serviceOfferingId;
-
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS,
-            type = CommandType.STRING,
-            description = "the comma separated list of mount options to use for mounting this file share.")
-    private String mountOptions;
 
     @Parameter(name = ApiConstants.FORMAT,
             type = CommandType.STRING,
@@ -201,10 +202,6 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return minIops;
     }
 
-    public String getMountOptions() {
-        return mountOptions;
-    }
-
     public String getFsFormat() {
         return fsFormat;
     }
@@ -249,24 +246,60 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return "Creating fileshare " + name;
     }
 
+    private String getCreateExceptionMsg(Exception ex) {
+        return "File share create failed with exception" + ex.getMessage();
+    }
+
+    private String getStartExceptionMsg(Exception ex) {
+        return "File share start failed with exception" + ex.getMessage();
+    }
+
     public void create() throws ResourceAllocationException {
-        FileShare fileShare = fileShareService.allocFileShare(this);
-        if (fileShare != null) {
-            setEntityId(fileShare.getId());
-            setEntityUuid(fileShare.getUuid());
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to allocate Fileshare");
+        FileShare fileShare;
+        try {
+            fileShare = fileShareService.createFileShare(this);
+            if (fileShare != null) {
+                setEntityId(fileShare.getId());
+                setEntityUuid(fileShare.getUuid());
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Fileshare");
+            }
+        } catch (ResourceUnavailableException ex) {
+            logger.warn("File share create exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getCreateExceptionMsg(ex));
+        } catch (ResourceAllocationException ex) {
+            logger.warn("File share create exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, getCreateExceptionMsg(ex));
+        } catch (ConcurrentOperationException ex) {
+            logger.warn("File share create exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getCreateExceptionMsg(ex));
+        } catch (InsufficientCapacityException ex) {
+            logger.warn("File share create exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getCreateExceptionMsg(ex));
         }
     }
 
     @Override
     public void execute() {
-        FileShare fileShare = fileShareService.deployFileShare(this.getEntityId(), this.getNetworkId(), this.getDiskOfferingId(), this.getSize());
-        if (fileShare == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy file share");
+        FileShare fileShare;
+        try {
+            fileShare = fileShareService.startFileShare(this.getEntityId());
+        } catch (ResourceUnavailableException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getStartExceptionMsg(ex));
+        } catch (ConcurrentOperationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getStartExceptionMsg(ex));
+        } catch (InsufficientCapacityException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getStartExceptionMsg(ex));
+        } catch (ResourceAllocationException ex) {
+            logger.warn("File share start exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (OperationTimedoutException ex) {
+            throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
         }
 
-        fileShare = fileShareService.startFileShare(this.getEntityId());
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
@@ -278,8 +311,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            //revert changes?
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to initialize file share");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start file share");
         }
     }
 }
