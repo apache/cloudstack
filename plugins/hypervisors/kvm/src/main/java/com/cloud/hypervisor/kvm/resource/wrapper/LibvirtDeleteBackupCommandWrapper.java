@@ -35,14 +35,19 @@ import java.util.List;
 public class LibvirtDeleteBackupCommandWrapper extends CommandWrapper<DeleteBackupCommand, Answer, LibvirtComputingResource> {
     @Override
     public Answer execute(DeleteBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
-        final String backupStoragePath = command.getBackupStoragePath();
-        final String backupFolder = command.getBackupPath();
+        final String backupPath = command.getBackupPath();
+        final String backupRepoType = command.getBackupRepoType();
+        final String backupRepoAddress = command.getBackupRepoAddress();
+        final String mountOptions = command.getMountOptions();
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
                 libvirtComputingResource.getNasBackupPath(),
-                "-d", backupFolder,
-                "-s", backupStoragePath
+                "-o", "delete",
+                "-t", backupRepoType,
+                "-s", backupRepoAddress,
+                "-m", mountOptions,
+                "-p", backupPath
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());

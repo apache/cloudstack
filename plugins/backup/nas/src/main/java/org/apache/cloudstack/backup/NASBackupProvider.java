@@ -36,6 +36,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
@@ -43,6 +45,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -50,23 +53,15 @@ import java.util.HashMap;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
-    private final ConfigKey<String> NasType = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.nas.target.type", "nfs",
-            "The NAS storage target type. Only supported: nfs and cephfs", true, ConfigKey.Scope.Zone);
-    private final ConfigKey<String> NfsPool = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.nas.nfs.pool", "",
-            "The NFS NAS storage pool URL (format <domain|ip>:<path>", true, ConfigKey.Scope.Zone);
-
-    private final ConfigKey<String> CephFSPool = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.nas.cephfs.pool", "",
-            "The CephFS storage pool URL (format: <comma-separated domain|ip>:<path>)", true, ConfigKey.Scope.Zone);
-
-    private final ConfigKey<String> CephFSPoolCredentials = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.nas.cephfs.credentials", "",
-            "The CephFS storage pool URL (format: <name=username,secret=secretkey>)", true, ConfigKey.Scope.Zone);
 
     @Inject
     private BackupDao backupDao;
+
+    @Inject
+    private BackupRepositoryDao backupRepositoryDao;
+
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
 
     @Inject
     private HostDao hostDao;
@@ -85,18 +80,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private AgentManager agentManager;
-
-    protected String getNasType(final Long zoneId) {
-        return NasType.valueIn(zoneId);
-    }
-
-    protected String getBackupStoragePath(final Long zoneId) {
-        final String type = getNasType(zoneId);
-        if ("nfs".equalsIgnoreCase(type)) {
-            return NfsPool.valueIn(zoneId);
-        }
-        throw new CloudRuntimeException("NAS backup plugin not configured");
-    }
 
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
@@ -145,14 +128,18 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // TODO: add support for backup of stopped VMs
         final Host host = getRunningVMHypervisorHost(vm);
 
-        final String backupStoragePath = getBackupStoragePath(vm.getDataCenterId());
-        final String nasType = getNasType(vm.getDataCenterId());
-        final Map<String, String> backupDetails = Map.of(
-                "type", nasType
-        );
-        final String backupPath = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date());
+        final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
+        if (backupRepository == null) {
+            throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
+        }
 
-        TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath, backupStoragePath, backupDetails);
+        final String backupPath = String.format("%s/%s", vm.getInstanceName(),
+                new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date()));
+
+        TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
+        command.setBackupRepoType(backupRepository.getType());
+        command.setBackupRepoAddress(backupRepository.getAddress());
+        command.setMountOptions(backupRepository.getMountOptions());
 
         BackupAnswer answer = null;
         try {
@@ -166,7 +153,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (answer != null) {
             BackupVO backup = new BackupVO();
             backup.setVmId(vm.getId());
-            backup.setExternalId(String.format("%s:%s/%s", nasType, vm.getInstanceName(), backupPath));
+            backup.setExternalId(backupPath);
             backup.setType("FULL");
             backup.setDate(new Date());
             backup.setSize(answer.getSize());
@@ -224,19 +211,17 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
-        final Long zoneId = backup.getZoneId();
-        final String backupStoragePath = getBackupStoragePath(zoneId);
-        final String nasType = getNasType(zoneId);
-        final Map<String, String> backupDetails = Map.of(
-                "type", nasType
-        );
-        final String backupPath = backup.getExternalId().split(":")[1];
+        final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
+        if (backupRepository == null) {
+            throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
+        }
 
         // TODO: this can be any host in the cluster or last host
         final VirtualMachine vm  = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         final Host host = getRunningVMHypervisorHost(vm);
 
-        DeleteBackupCommand command = new DeleteBackupCommand(backupPath, backupStoragePath, backupDetails);
+        DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
+                backupRepository.getAddress(), backupRepository.getMountOptions());
 
         BackupAnswer answer = null;
         try {
@@ -299,8 +284,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
-        BackupOffering policy = new BackupOfferingVO(zoneId, "default", getName(), "Default", "Default Backup Offering", true);
-        return List.of(policy);
+        final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
+        final List<BackupOffering> offerings = new ArrayList<>();
+        for (final BackupRepository repository : repositories) {
+            offerings.add(new NasBackupOffering(repository.getName(), repository.getUuid()));
+        }
+        return offerings;
     }
 
     @Override
@@ -311,10 +300,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                NasType,
-                NfsPool,
-                CephFSPool,
-                CephFSPoolCredentials
         };
     }
 
@@ -325,7 +310,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public String getDescription() {
-        return "NAS KVM Backup Plugin";
+        return "NAS Backup Plugin";
     }
 
     @Override

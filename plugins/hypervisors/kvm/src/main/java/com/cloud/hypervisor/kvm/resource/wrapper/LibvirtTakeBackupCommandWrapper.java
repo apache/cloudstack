@@ -29,6 +29,8 @@ import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,15 +39,20 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
     @Override
     public Answer execute(TakeBackupCommand command, LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
-        final String backupStoragePath = command.getBackupStoragePath();
-        final String backupFolder = command.getBackupPath();
+        final String backupPath = command.getBackupPath();
+        final String backupRepoType = command.getBackupRepoType();
+        final String backupRepoAddress = command.getBackupRepoAddress();
+        final String mountOptions = command.getMountOptions();
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
                 libvirtComputingResource.getNasBackupPath(),
-                "-b", vmName,
-                "-s", backupStoragePath,
-                "-p", String.format("%s%s%s", vmName, File.separator, backupFolder)
+                "-b", "backup",
+                "-v", vmName,
+                "-t", backupRepoType,
+                "-s", backupRepoAddress,
+                "-m", mountOptions,
+                "-p", backupPath
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());

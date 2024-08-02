@@ -22,19 +22,19 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 
-import java.util.Map;
-
 public class DeleteBackupCommand extends Command {
     private String backupPath;
-    private String backupStoragePath;
+    private String backupRepoType;
+    private String backupRepoAddress;
     @LogLevel(LogLevel.Log4jLevel.Off)
-    private Map<String, String> details;
+    private String mountOptions;
 
-    public DeleteBackupCommand(String backupPath, String backupStoragePath, Map<String, String> details) {
+    public DeleteBackupCommand(String backupPath, String backupRepoType, String backupRepoAddress, String mountOptions) {
         super();
         this.backupPath = backupPath;
-        this.backupStoragePath = backupStoragePath;
-        this.details = details;
+        this.backupRepoType = backupRepoType;
+        this.backupRepoAddress = backupRepoAddress;
+        this.mountOptions = mountOptions;
     }
 
     public String getBackupPath() {
@@ -45,20 +45,28 @@ public class DeleteBackupCommand extends Command {
         this.backupPath = backupPath;
     }
 
-    public String getBackupStoragePath() {
-        return backupStoragePath;
+    public String getBackupRepoType() {
+        return backupRepoType;
     }
 
-    public void setBackupStoragePath(String backupStoragePath) {
-        this.backupStoragePath = backupStoragePath;
+    public void setBackupRepoType(String backupRepoType) {
+        this.backupRepoType = backupRepoType;
     }
 
-    public Map<String, String> getDetails() {
-        return details;
+    public String getBackupRepoAddress() {
+        return backupRepoAddress;
     }
 
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
+    public void setBackupRepoAddress(String backupRepoAddress) {
+        this.backupRepoAddress = backupRepoAddress;
+    }
+
+    public String getMountOptions() {
+        return mountOptions;
+    }
+
+    public void setMountOptions(String mountOptions) {
+        this.mountOptions = mountOptions;
     }
 
     @Override

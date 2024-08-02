@@ -22,16 +22,22 @@ set -e
 
 # TODO: do libvirt/logging etc checks
 
+### Declare variables ###
+
+OP=""
+VM=""
+NAS_TYPE=""
+NAS_ADDRESS=""
+MOUNT_OPTS=""
+BACKUP_DIR=""
+
+### Operation methods ###
 
 backup_vm() {
-  vm=$1
-  path=$2
-  storage=$3
-
   mount_point=$(mktemp -d -t csbackup.XXXXX)
-  dest="$mount_point/$path"
+  dest="$mount_point/${BACKUP_DIR}"
 
-  mount -t nfs $storage $mount_point
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
   mkdir -p $dest
 
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
@@ -42,11 +48,11 @@ backup_vm() {
 
   virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml > /dev/null 2>/dev/null
   virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml 2>/dev/null
-  rm -f $dest/backup.xml
 
   until virsh -c qemu:///system domjobinfo $vm --completed 2>/dev/null | grep "Completed" > /dev/null; do
     sleep 5
   done
+  rm -f $dest/backup.xml
 
   # Print directory size
   sync
@@ -56,24 +62,17 @@ backup_vm() {
 }
 
 delete_backup() {
-  path=$1
-  storage=$2
-
   mount_point=$(mktemp -d -t csbackup.XXXXX)
-  dest="$mount_point/$path"
+  dest="$mount_point/${BACKUP_DIR}"
 
-  mount -t nfs $storage $mount_point
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+
   rm -frv $dest
   sync
+
   umount $mount_point
   rmdir $mount_point
 }
-
-OP=""
-VM=""
-DEST=""
-NAS=""
-TYPE=""
 
 function usage {
   echo ""
@@ -84,35 +83,34 @@ function usage {
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -b|--backup)
-      OP="backup"
+    -o|--operation)
+      OP="$2"
+      shift
+      shift
+      ;;
+    -v|--vm)
       VM="$2"
       shift
       shift
       ;;
-    -d|--delete)
-      OP="delete"
-      DEST="$2"
+    -t|--type)
+      NAS_TYPE="$2"
       shift
       shift
       ;;
     -s|--storage)
-      NAS="$2"
-      TYPE="nfs"
+      NAS_ADDRESS="$2"
+      shift
+      shift
+      ;;
+    -m|--mount)
+      MOUNT_OPTS="$2"
       shift
       shift
       ;;
     -p|--path)
-      DEST="$2"
+      BACKUP_DIR="$2"
       shift
-      shift
-      ;;
-    -r|--recover)
-      OP="recover"
-      shift
-      ;;
-    -rv|--recover)
-      OP="recover-volume"
       shift
       ;;
     -h|--help)
@@ -127,8 +125,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$OP" = "backup" ]; then
-  backup_vm $VM $DEST $NAS
+  backup_vm
 elif [ "$OP" = "delete" ]; then
-  delete_backup $DEST $NAS
+  delete_backup
 fi
-
