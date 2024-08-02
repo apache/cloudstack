@@ -132,6 +132,27 @@ export default {
       ]
     },
     {
+      name: 'backuprepository',
+      title: 'label.backup.repository',
+      icon: 'inbox-outlined',
+      docHelp: 'adminguide/backup_and_recovery.html',
+      permission: ['listBackupRepositories'],
+      searchFilters: ['zoneid'],
+      columns: ['name', 'type', 'address', 'provider', 'zoneid'],
+      details: ['name', 'type', 'address', 'provider', 'zoneid'],
+      actions: [
+        {
+          api: 'addBackupRepository',
+          icon: 'plus-outlined',
+          label: 'label.backup.repository.add',
+          listView: true,
+          args: [
+            'name', 'provider', 'address', 'opts', 'zoneid'
+          ]
+        }
+      ]
+    },
+    {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
       icon: 'database-outlined',
