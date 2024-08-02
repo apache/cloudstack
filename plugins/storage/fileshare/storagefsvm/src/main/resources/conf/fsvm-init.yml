@@ -35,7 +35,6 @@ write_files:
       PARTITION="$1"
       MOUNT_POINT="/mnt/fs"
       EXPORT_DIR="$MOUNT_POINT/share"
-      NETWORK="10.1.1.0/24"
       PERMISSIONS="rw,sync,no_subtree_check"
 
       mkdir -p "$MOUNT_POINT"
@@ -87,7 +86,7 @@ write_files:
       fi
 
       log "Configuring NFS export..."
-      EXPORT_ENTRY="$EXPORT_DIR $NETWORK($PERMISSIONS)"
+      EXPORT_ENTRY="$EXPORT_DIR *($PERMISSIONS)"
       if ! grep -qF "$EXPORT_ENTRY" /etc/exports; then
         echo "$EXPORT_ENTRY" | tee -a /etc/exports > /dev/null
       fi
