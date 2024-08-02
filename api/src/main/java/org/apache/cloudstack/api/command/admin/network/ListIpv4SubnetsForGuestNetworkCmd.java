@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 
 @APICommand(name = "listIpv4SubnetsForGuestNetwork",
-        description = "Lists IPv4 subnets for zone.",
+        description = "Lists IPv4 subnets for guest networks.",
         responseObject = Ipv4SubnetForGuestNetworkResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,

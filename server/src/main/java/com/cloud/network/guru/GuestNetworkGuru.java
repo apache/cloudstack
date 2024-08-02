@@ -411,14 +411,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (network.getVpcId() != null) {
                 final Vpc vpc = _vpcDao.findById(network.getVpcId());
                 // Redundant Networks need a guest IP that is not the same as the gateway IP.
-                if ((_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter)
-                        || _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VPCVirtualRouter))
+                if (_networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VPCVirtualRouter, Service.SourceNat, Service.Gateway)
                         && !vpc.isRedundant()) {
                     isGateway = true;
                 }
             } else {
-                if (_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)
-                        || _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Gateway, Provider.VirtualRouter)) {
+                if (_networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VirtualRouter, Service.SourceNat, Service.Gateway)) {
                     isGateway = true;
                 }
             }
