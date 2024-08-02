@@ -251,7 +251,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     private String getStartExceptionMsg(Exception ex) {
-        return "File share start failed with exception" + ex.getMessage();
+        return "File share start failed with exception: " + ex.getMessage();
     }
 
     public void create() throws ResourceAllocationException {

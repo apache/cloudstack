@@ -86,7 +86,7 @@ public class StartFileShareCmd extends BaseCmd implements UserCmd {
     }
 
     private String getStartExceptionMsg(Exception ex) {
-        return "File share start failed with exception" + ex.getMessage();
+        return "File share start failed with exception: " + ex.getMessage();
     }
 
     @Override

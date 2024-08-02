@@ -33,7 +33,16 @@
         <a-input v-model:value="form.name" v-focus="true" />
       </a-form-item>
       <a-form-item name="description" ref="description" :label="$t('label.description')">
-        <a-input v-model:value="form.description" v-focus="true" />
+        <a-input v-model:value="form.description" />
+      </a-form-item>
+      <a-form-item
+        name="format"
+        ref="format"
+        :placeholder="apiParams.format.description" >
+        <a-input v-model:value="form.format" />
+        <template #label>
+          <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+        </template>
       </a-form-item>
       <a-form-item ref="zoneid" name="zoneid">
         <template #label>
@@ -242,6 +251,7 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+    this.form.format = 'XFS'
   },
   methods: {
     initForm () {
@@ -434,6 +444,7 @@ export default {
           diskofferingid: values.diskofferingid,
           networkid: values.networkid,
           size: values.size,
+          format: values.format,
           miniops: values.miniops,
           maxiops: values.maxiops,
           provider: values.provider,

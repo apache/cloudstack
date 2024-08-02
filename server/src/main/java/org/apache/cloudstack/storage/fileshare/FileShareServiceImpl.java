@@ -257,9 +257,16 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         lifeCycle.checkPrerequisites(zone, cmd.getServiceOfferingId());
 
+        FileShare.FileSystemType fsType;
+        try {
+            fsType = FileShare.FileSystemType.valueOf(cmd.getFsFormat().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidParameterValueException("Invalid File system format specified. Supported formats are EXT4 and XFS");
+        }
+
         FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(),
                 ownerId, cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
-                FileShare.FileSystemType.XFS, cmd.getServiceOfferingId());
+                fsType, cmd.getServiceOfferingId());
         fileShareDao.persist(fileShare);
 
         fileShare = fileShareDao.findById(fileShare.getId());
