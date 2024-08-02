@@ -6617,7 +6617,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(msg);
         }
 
-        if (specifyAsNumber && Objects.nonNull(forVpc) && forVpc) {
+        if (specifyAsNumber && Boolean.TRUE.equals(forVpc)) {
             String msg = "SpecifyAsNumber cannot be set for VPC network tiers. It needs to be defined at VPC level";
             logger.error(msg);
             throw new InvalidParameterValueException(msg);
