@@ -34,52 +34,19 @@
           <br>
         </a-card>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.volume')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
-        <volumes-tab :resource="vm" :items="volumes" :loading="loading" />
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.instance')" key="instance" v-if="'listVirtualMachines' in $store.getters.apis">
-        <a-table
-          class="table"
-          size="small"
-          :columns="vmColumns"
-          :dataSource="virtualmachines"
-          :rowKey="item => item.id"
-          :pagination="false"
-          >
-            <template #bodyCell="{ column, text, record }">
-              <template v-if="column.key === 'name'" :name="text">
-              <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
-            </template>
-            <template v-if="column.key === 'state'">
-              <status class="status" :text="record.state" displayText />
-            </template>
-          </template>
-        </a-table>
-      </a-tab-pane>
-      <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
+      <a-tab-pane :tab="$t('label.networks')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
       </a-tab-pane>
       <a-tab-pane v-if="$store.getters.features.instancesdisksstatsretentionenabled" :tab="$t('label.volume.metrics')" key="volumestats">
         <StatsTab :resource="volume" :resourceType="'Volume'"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.instance.metrics')" key="vmstats">
+      <a-tab-pane :tab="$t('label.metrics')" key="vmstats">
         <StatsTab :resource="vm"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="resource" resourceType="FileShare" :loading="loading" />
       </a-tab-pane>
     </a-tabs>
-
-    <a-modal
-      :visible="showAddVolumeModal"
-      :title="$t('label.action.create.volume.add')"
-      :maskClosable="false"
-      :closable="true"
-      :footer="null"
-      @cancel="closeModals">
-      <CreateVolume :resource="resource" @close-action="closeModals" />
-    </a-modal>
-
   </a-spin>
 </template>
 
@@ -88,36 +55,20 @@
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import Status from '@/components/widgets/Status'
-import ResourceLayout from '@/layouts/ResourceLayout'
 import DetailsTab from '@/components/view/DetailsTab'
 import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
-import DetailSettings from '@/components/view/DetailSettings'
-import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTab from '@/views/network/NicsTab.vue'
-import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
-import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
-import ResourceIcon from '@/components/view/ResourceIcon'
-import AnnotationsTab from '@/components/view/AnnotationsTab'
-import VolumesTab from '@/components/view/VolumesTab.vue'
 
 export default {
   name: 'FileShareTab',
   components: {
-    ResourceLayout,
     DetailsTab,
     StatsTab,
     EventsTab,
-    DetailSettings,
-    CreateVolume,
     NicsTab,
-    InstanceSchedules,
-    ListResourceTable,
     TooltipButton,
-    ResourceIcon,
-    AnnotationsTab,
-    VolumesTab,
     Status
   },
   mixins: [mixinDevice],
@@ -136,10 +87,7 @@ export default {
     return {
       vm: {},
       virtualmachines: [],
-      totalStorage: 0,
       currentTab: 'details',
-      showAddVolumeModal: false,
-      diskOfferings: [],
       dataResource: {}
     }
   },
@@ -150,32 +98,6 @@ export default {
     window.addEventListener('popstate', function () {
       self.setCurrentTab()
     })
-    this.vmColumns = [
-      {
-        key: 'name',
-        title: this.$t('label.name'),
-        dataIndex: 'name'
-      },
-      {
-        key: 'state',
-        title: this.$t('label.state'),
-        dataIndex: 'state'
-      },
-      {
-        key: 'instancename',
-        title: this.$t('label.instancename'),
-        dataIndex: 'instancename'
-      },
-      {
-        key: 'hostname',
-        title: this.$t('label.hostname'),
-        dataIndex: 'hostname'
-      },
-      {
-        title: this.$t('label.zonename'),
-        dataIndex: 'zonename'
-      }
-    ]
   },
   watch: {
     resource: {
@@ -249,21 +171,6 @@ export default {
     fetchData () {
       this.fetchInstances()
       this.fetchVolumes()
-    },
-    listDiskOfferings () {
-      api('listDiskOfferings', {
-        listAll: 'true',
-        zoneid: this.vm.zoneid
-      }).then(response => {
-        this.diskOfferings = response.listdiskofferingsresponse.diskoffering
-      })
-    },
-    showAddVolModal () {
-      this.showAddVolumeModal = true
-      this.listDiskOfferings()
-    },
-    closeModals () {
-      this.showAddVolumeModal = false
     }
   }
 }
@@ -275,16 +182,6 @@ export default {
     height: 100%;
     min-height: 100%;
     transition: 0.3s;
-    .vm-detail {
-      .svg-inline--fa {
-        margin-left: -1px;
-        margin-right: 8px;
-      }
-      span {
-        margin-left: 10px;
-      }
-      margin-bottom: 8px;
-    }
   }
 
   .list {
@@ -298,21 +195,6 @@ export default {
       @media (min-width: 760px) {
         flex-direction: row;
         align-items: center;
-      }
-    }
-  }
-
-  .modal-form {
-    display: flex;
-    flex-direction: column;
-
-    &__label {
-      margin-top: 20px;
-      margin-bottom: 5px;
-      font-weight: bold;
-
-      &--no-margin {
-        margin-top: 0;
       }
     }
   }
@@ -389,15 +271,4 @@ export default {
     }
 
   }
-</style>
-
-<style scoped>
-.wide-modal {
-  min-width: 50vw;
-}
-
-:deep(.ant-list-item) {
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
 </style>

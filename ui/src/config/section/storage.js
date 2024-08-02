@@ -532,12 +532,7 @@ export default {
       resourceType: 'FileShare',
       columns: () => {
         const fields = ['name', 'state', 'sizegb']
-        const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
-
-        if (store.getters.userInfo.roletype === 'Admin') {
-          metricsFields.push('physicalsize')
-        }
-        metricsFields.push('utilization')
+        const metricsFields = ['diskkbsread', 'diskkbswrite', 'utilization', 'physicalsize']
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
@@ -567,7 +562,7 @@ export default {
         {
           api: 'createFileShare',
           icon: 'plus-outlined',
-          docHelp: 'installguide/configuration.html#create-bucket',
+          docHelp: 'to-be-updated',
           label: 'label.create.fileshare',
           listView: true,
           popup: true,
@@ -576,7 +571,7 @@ export default {
         {
           api: 'updateFileShare',
           icon: 'edit-outlined',
-          docHelp: 'adminguide/object_storage.html#update-bucket',
+          docHelp: 'to-be-updated',
           label: 'label.update.fileshare',
           dataView: true,
           popup: true,
@@ -587,7 +582,7 @@ export default {
           icon: 'caret-right-outlined',
           label: 'label.action.start.fileshare',
           message: 'message.action.start.fileshare',
-          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          docHelp: 'to-be-updated',
           dataView: true,
           show: (record) => { return ['Stopped', 'Detached'].includes(record.state) }
         },
@@ -596,7 +591,7 @@ export default {
           icon: 'poweroff-outlined',
           label: 'label.action.stop.fileshare',
           message: 'message.action.stop.fileshare',
-          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          docHelp: 'to-be-updated',
           dataView: true,
           args: ['forced'],
           show: (record) => { return ['Ready'].includes(record.state) }
@@ -604,7 +599,7 @@ export default {
         {
           api: 'restartFileShare',
           icon: 'reload-outlined',
-          docHelp: 'adminguide/object_storage.html#update-bucket',
+          docHelp: 'to-be-updated',
           label: 'label.action.restart.fileshare',
           message: 'message.action.restart.fileshare',
           dataView: true,
@@ -614,7 +609,7 @@ export default {
         {
           api: 'changeFileShareDiskOffering',
           icon: 'swap-outlined',
-          docHelp: 'adminguide/object_storage.html#update-bucket',
+          docHelp: 'to-be-updated',
           label: 'label.change.disk.offering',
           dataView: true,
           popup: true,
@@ -624,7 +619,7 @@ export default {
         {
           api: 'changeFileShareServiceOffering',
           icon: 'arrows-alt-outlined',
-          docHelp: 'adminguide/object_storage.html#update-bucket',
+          docHelp: 'to-be-updated',
           label: 'label.change.service.offering',
           dataView: true,
           popup: true,
@@ -638,7 +633,7 @@ export default {
           message: 'message.action.destroy.fileshare',
           dataView: true,
           args: ['expunge'],
-          show: (record) => { return record.state !== 'Destroyed' && record.state !== 'Expunging' },
+          show: (record) => { return !['Destroyed', 'Expunging'].includes(record.state) },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },

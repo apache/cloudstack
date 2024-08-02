@@ -1152,7 +1152,6 @@ export default {
             projectid: this.owner.projectid,
             domainid: this.owner.domainid,
             account: this.owner.account,
-            fileshare: false,
             page: 1,
             pageSize: 10,
             keyword: undefined
