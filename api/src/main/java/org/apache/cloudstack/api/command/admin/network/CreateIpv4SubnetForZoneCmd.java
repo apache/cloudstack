@@ -41,7 +41,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class CreateIpv4GuestSubnetCmd extends BaseAsyncCmd {
+public class CreateIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
 
     /////////////////////////////////////////////////////

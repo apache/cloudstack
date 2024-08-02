@@ -31,14 +31,14 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 
-@APICommand(name = "listIpv4GuestSubnetsForZone",
+@APICommand(name = "listIpv4SubnetsForZone",
         description = "Lists IPv4 subnets for zone.",
         responseObject = DataCenterIpv4SubnetResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class ListIpv4GuestSubnetsCmd extends BaseListCmd {
+public class ListIpv4SubnetsForZoneCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,

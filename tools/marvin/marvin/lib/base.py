@@ -7335,41 +7335,41 @@ class ZoneIpv4Subnet:
 
     @classmethod
     def list(cls, apiclient, **kwargs):
-        cmd = listIpv4GuestSubnetsForZone.listIpv4GuestSubnetsForZoneCmd()
+        cmd = listIpv4SubnetsForZone.listIpv4SubnetsForZoneCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
-        return apiclient.listIpv4GuestSubnetsForZone(cmd)
+        return apiclient.listIpv4SubnetsForZone(cmd)
 
     def delete(self, apiclient):
         """Delete IPv4 Subnet for Zone"""
-        cmd = deleteIpv4GuestSubnetForZone.deleteIpv4GuestSubnetForZoneCmd()
+        cmd = deleteIpv4SubnetForZone.deleteIpv4SubnetForZoneCmd()
         cmd.id = self.id
-        apiclient.deleteIpv4GuestSubnetForZone(cmd)
+        apiclient.deleteIpv4SubnetForZone(cmd)
 
     def update(self, apiclient, **kwargs):
         """Update IPv4 Subnet for Zone"""
 
-        cmd = updateIpv4GuestSubnetForZone.updateIpv4GuestSubnetForZoneCmd()
+        cmd = updateIpv4SubnetForZone.updateIpv4SubnetForZoneCmd()
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
-        return apiclient.updateIpv4GuestSubnetForZone(cmd)
+        return apiclient.updateIpv4SubnetForZone(cmd)
 
     @classmethod
     def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
         """Dedicate IPv4 Subnet for Zone"""
 
-        cmd = dedicateIpv4GuestSubnetForZone.dedicateIpv4GuestSubnetForZoneCmd()
+        cmd = dedicateIpv4SubnetForZone.dedicateIpv4SubnetForZoneCmd()
         cmd.id = id
         cmd.account = account
         cmd.domainid = domainid
         cmd.projectid = projectid
-        return ZoneIpv4Subnet(apiclient.dedicateIpv4GuestSubnetForZone(cmd).__dict__)
+        return ZoneIpv4Subnet(apiclient.dedicateIpv4SubnetForZone(cmd).__dict__)
 
     def release(self, apiclient):
         """Release IPv4 Subnet for Zone"""
 
-        cmd = releaseIpv4GuestSubnetForZone.releaseIpv4GuestSubnetForZoneCmd()
+        cmd = releaseIpv4SubnetForZone.releaseIpv4SubnetForZoneCmd()
         cmd.id = self.id
-        return apiclient.releaseIpv4GuestSubnetForZone(cmd)
+        return apiclient.releaseIpv4SubnetForZone(cmd)
 
 class Ipv4SubnetForGuestNetwork:
     """Manage IPv4 Subnet for Guest Network"""

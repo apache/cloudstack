@@ -26,15 +26,15 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 
-import org.apache.cloudstack.api.command.admin.network.CreateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.DedicateIpv4GuestSubnetCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.DedicateIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
+import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForVpcCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
@@ -81,19 +81,19 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
             ConfigKey.Scope.Account);
 
     // Methods for DataCenterIpv4GuestSubnet APIs
-    DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4GuestSubnetCmd createIpv4GuestSubnetCmd);
+    DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4SubnetForZoneCmd createIpv4SubnetForZoneCmd);
 
     DataCenterIpv4SubnetResponse createDataCenterIpv4SubnetResponse(DataCenterIpv4GuestSubnet result);
 
-    boolean deleteDataCenterIpv4GuestSubnet(DeleteIpv4GuestSubnetCmd deleteIpv4GuestSubnetCmd);
+    boolean deleteDataCenterIpv4GuestSubnet(DeleteIpv4SubnetForZoneCmd deleteIpv4SubnetForZoneCmd);
 
-    DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4GuestSubnetCmd updateIpv4GuestSubnetCmd);
+    DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4SubnetForZoneCmd updateIpv4SubnetForZoneCmd);
 
-    List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4GuestSubnetsCmd listIpv4GuestSubnetsCmd);
+    List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd listIpv4SubnetsForZoneCmd);
 
-    DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4GuestSubnetCmd dedicateIpv4GuestSubnetCmd);
+    DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4SubnetForZoneCmd dedicateIpv4SubnetForZoneCmd);
 
-    DataCenterIpv4GuestSubnet releaseDedicatedDataCenterIpv4GuestSubnet(ReleaseDedicatedIpv4GuestSubnetCmd releaseDedicatedIpv4GuestSubnetCmd);
+    DataCenterIpv4GuestSubnet releaseDedicatedDataCenterIpv4GuestSubnet(ReleaseDedicatedIpv4SubnetForZoneCmd releaseDedicatedIpv4SubnetForZoneCmd);
 
     // Methods for Ipv4SubnetForGuestNetwork APIs
     Ipv4GuestSubnetNetworkMap createIpv4SubnetForGuestNetwork(CreateIpv4SubnetForGuestNetworkCmd createIpv4SubnetForGuestNetworkCmd);

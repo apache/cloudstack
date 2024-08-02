@@ -57,15 +57,15 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-import org.apache.cloudstack.api.command.admin.network.CreateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.DedicateIpv4GuestSubnetCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.DedicateIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteIpv4SubnetForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.ListIpv4GuestSubnetsCmd;
+import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.ListIpv4SubnetsForGuestNetworkCmd;
-import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4GuestSubnetCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateIpv4GuestSubnetCmd;
+import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedIpv4SubnetForZoneCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ChangeBgpPeersForVpcCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.CreateBgpPeerCmd;
@@ -162,12 +162,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(CreateIpv4GuestSubnetCmd.class);
-        cmdList.add(DeleteIpv4GuestSubnetCmd.class);
-        cmdList.add(ListIpv4GuestSubnetsCmd.class);
-        cmdList.add(UpdateIpv4GuestSubnetCmd.class);
-        cmdList.add(DedicateIpv4GuestSubnetCmd.class);
-        cmdList.add(ReleaseDedicatedIpv4GuestSubnetCmd.class);
+        cmdList.add(CreateIpv4SubnetForZoneCmd.class);
+        cmdList.add(DeleteIpv4SubnetForZoneCmd.class);
+        cmdList.add(ListIpv4SubnetsForZoneCmd.class);
+        cmdList.add(UpdateIpv4SubnetForZoneCmd.class);
+        cmdList.add(DedicateIpv4SubnetForZoneCmd.class);
+        cmdList.add(ReleaseDedicatedIpv4SubnetForZoneCmd.class);
         cmdList.add(CreateIpv4SubnetForGuestNetworkCmd.class);
         cmdList.add(ListIpv4SubnetsForGuestNetworkCmd.class);
         cmdList.add(DeleteIpv4SubnetForGuestNetworkCmd.class);
@@ -188,7 +188,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
 
     @Override
-    public DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4GuestSubnetCmd cmd) {
+    public DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4SubnetForZoneCmd cmd) {
         Long zoneId = cmd.getZoneId();
         String subnet = cmd.getSubnet();
         if (!NetUtils.isValidIp4Cidr(subnet)) {
@@ -263,7 +263,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public boolean deleteDataCenterIpv4GuestSubnet(DeleteIpv4GuestSubnetCmd cmd) {
+    public boolean deleteDataCenterIpv4GuestSubnet(DeleteIpv4SubnetForZoneCmd cmd) {
         // check if subnet is in use
         Long subnetId = cmd.getId();
         List<Ipv4GuestSubnetNetworkMapVO> usedNetworks = ipv4GuestSubnetNetworkMapDao.listUsedByParent(subnetId);
@@ -278,7 +278,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4GuestSubnetCmd cmd) {
+    public DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4SubnetForZoneCmd cmd) {
         Long subnetId = cmd.getId();
         String newSubnet = cmd.getSubnet();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(subnetId);
@@ -319,7 +319,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4GuestSubnetsCmd cmd) {
+    public List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd cmd) {
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String subnet = cmd.getSubnet();
@@ -349,7 +349,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4GuestSubnetCmd cmd) {
+    public DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4SubnetForZoneCmd cmd) {
         final Long id = cmd.getId();
         Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
@@ -390,7 +390,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public DataCenterIpv4GuestSubnet releaseDedicatedDataCenterIpv4GuestSubnet(ReleaseDedicatedIpv4GuestSubnetCmd cmd) {
+    public DataCenterIpv4GuestSubnet releaseDedicatedDataCenterIpv4GuestSubnet(ReleaseDedicatedIpv4SubnetForZoneCmd cmd) {
         final Long id = cmd.getId();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
         if (subnetVO == null) {

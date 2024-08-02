@@ -60,7 +60,7 @@
               :tooltip="$t('label.add.account')"
               icon="user-add-outlined"
               @onClick="() => handleOpenAddAccountForIpv4GuestSubnetModal(record)"
-              :disabled="!('dedicateIpv4GuestSubnetForZone' in $store.getters.apis)" />
+              :disabled="!('dedicateIpv4SubnetForZone' in $store.getters.apis)" />
             <tooltip-button
               v-if="record.domain"
               tooltipPlacement="bottom"
@@ -69,7 +69,7 @@
               type="primary"
               :danger="true"
               @onClick="() => handleRemoveAccountFromIpv4GuestSubnet(record.id)"
-              :disabled="!('releaseIpv4GuestSubnetForZone' in $store.getters.apis)" />
+              :disabled="!('releaseIpv4SubnetForZone' in $store.getters.apis)" />
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.update.ipv4.subnet')"
@@ -77,7 +77,7 @@
               type="primary"
               :danger="true"
               @onClick="() => handleUpdateIpv4SubnetModal(record)"
-              :disabled="!('updateIpv4GuestSubnetForZone' in $store.getters.apis)" />
+              :disabled="!('updateIpv4SubnetForZone' in $store.getters.apis)" />
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.remove.ipv4.subnet')"
@@ -85,7 +85,7 @@
               type="primary"
               :danger="true"
               @onClick="handleDeleteIpv4Subnet(record.id)"
-              :disabled="!('deleteIpv4GuestSubnetForZone' in $store.getters.apis)" />
+              :disabled="!('deleteIpv4SubnetForZone' in $store.getters.apis)" />
           </div>
         </template>
       </template>
@@ -380,7 +380,7 @@ export default {
     },
     fetchZoneIpv4Subnet () {
       this.componentLoading = true
-      api('listIpv4GuestSubnetsForZone', {
+      api('listIpv4SubnetsForZone', {
         zoneid: this.resource.id,
         showicon: true,
         page: this.ipv4SubnetPage,
@@ -413,7 +413,7 @@ export default {
         params.account = this.addAccountForIpv4GuestSubnet.account
       }
 
-      api('dedicateIpv4GuestSubnetForZone', params).then(response => {
+      api('dedicateIpv4SubnetForZone', params).then(response => {
         this.$pollJob({
           jobId: response.dedicateipv4guestsubnetforzoneresponse.jobid,
           title: this.$t('label.dedicate.ipv4.subnet'),
@@ -443,7 +443,7 @@ export default {
     },
     handleRemoveAccountFromIpv4GuestSubnet (id) {
       this.componentLoading = true
-      api('releaseIpv4GuestSubnetForZone', { id }).then(response => {
+      api('releaseIpv4SubnetForZone', { id }).then(response => {
         this.$pollJob({
           jobId: response.releaseipv4guestsubnetforzoneresponse.jobid,
           title: this.$t('label.release.dedicated.ipv4.subnet'),
@@ -493,7 +493,7 @@ export default {
     },
     handleDeleteIpv4Subnet (id) {
       this.componentLoading = true
-      api('deleteIpv4GuestSubnetForZone', { id }).then(response => {
+      api('deleteIpv4SubnetForZone', { id }).then(response => {
         this.$pollJob({
           jobId: response.deleteipv4guestsubnetforzoneresponse.jobid,
           successMessage: this.$t('message.success.delete.ipv4.subnet'),
@@ -578,7 +578,7 @@ export default {
           id: this.selectedIpv4GuestSubnet.id,
           subnet: values.subnet
         }
-        api('updateIpv4GuestSubnetForZone', params).then(response => {
+        api('updateIpv4SubnetForZone', params).then(response => {
           this.$pollJob({
             jobId: response.updateipv4guestsubnetforzoneresponse.jobid,
             title: this.$t('label.update.ipv4.subnet'),

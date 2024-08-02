@@ -32,14 +32,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteIpv4GuestSubnetForZone",
+@APICommand(name = "deleteIpv4SubnetForZone",
         description = "Deletes an existing IPv4 subnet for a zone.",
         responseObject = SuccessResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class DeleteIpv4GuestSubnetCmd extends BaseAsyncCmd {
+public class DeleteIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

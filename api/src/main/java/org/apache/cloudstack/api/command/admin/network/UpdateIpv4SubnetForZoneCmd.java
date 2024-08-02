@@ -32,14 +32,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "updateIpv4GuestSubnetForZone",
+@APICommand(name = "updateIpv4SubnetForZone",
         description = "Updates an existing IPv4 subnet for a zone.",
         responseObject = DataCenterIpv4SubnetResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class UpdateIpv4GuestSubnetCmd extends BaseAsyncCmd {
+public class UpdateIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

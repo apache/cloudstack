@@ -34,14 +34,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "dedicateIpv4GuestSubnetForZone",
+@APICommand(name = "dedicateIpv4SubnetForZone",
         description = "Dedicates an existing IPv4 subnet for a zone to an account or a domain.",
         responseObject = DataCenterIpv4SubnetResponse.class,
         since = "4.20.0",
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin})
-public class DedicateIpv4GuestSubnetCmd extends BaseAsyncCmd {
+public class DedicateIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
