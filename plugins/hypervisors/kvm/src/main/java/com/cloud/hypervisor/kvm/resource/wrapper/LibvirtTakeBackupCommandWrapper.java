@@ -28,10 +28,8 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
@@ -64,8 +62,14 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return new BackupAnswer(command, false, result.second());
         }
 
-        BackupAnswer answer = new BackupAnswer(command, true, null);
-        answer.setSize(Long.parseLong(result.second().trim()));
+        List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
+        Long backupSize = 0L;
+        if (outputLines.size() > 0) {
+            backupSize = Long.parseLong(outputLines.get(outputLines.size()-1).trim());
+        }
+
+        BackupAnswer answer = new BackupAnswer(command, true, result.second());
+        answer.setSize(backupSize);
         return answer;
     }
 }

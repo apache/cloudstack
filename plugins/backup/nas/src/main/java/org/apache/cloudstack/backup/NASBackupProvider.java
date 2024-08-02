@@ -46,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -157,7 +158,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backup.setType("FULL");
             backup.setDate(new Date());
             backup.setSize(answer.getSize());
-            backup.setProtectedSize(answer.getVirtualSize());
+            Long virtualSize = 0L;
+            for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
+                if (Volume.State.Ready.equals(volume.getState())) {
+                    virtualSize += volume.getSize();
+                }
+            }
+            backup.setProtectedSize(virtualSize);
             backup.setStatus(Backup.Status.BackedUp);
             backup.setBackupOfferingId(vm.getBackupOfferingId());
             backup.setAccountId(vm.getAccountId());
@@ -172,6 +179,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         final Long zoneId = backup.getZoneId();
+
+        List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
+        volumes.removeIf(x -> !Volume.State.Ready.equals(x.getState()));
+        volumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
 
         LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
 
@@ -192,6 +203,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final Long zoneId = backup.getZoneId();
 
         // TODO: Find volume from backup volumes
+        volume.getDeviceId(); // restore by device ID
 
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,

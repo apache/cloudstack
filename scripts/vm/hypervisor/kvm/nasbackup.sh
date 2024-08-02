@@ -40,23 +40,29 @@ backup_vm() {
   mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
   mkdir -p $dest
 
+  deviceId=0
+  name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
   for disk in $(virsh -c qemu:///system domblklist $vm --details 2>/dev/null | awk '/disk/{print$3}'); do
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$disk' /></disk>" >> $dest/backup.xml
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$deviceId.$name.$disk' /></disk>" >> $dest/backup.xml
+    deviceId=$((devideId+1))
+    name="datadisk"
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
 
   virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml > /dev/null 2>/dev/null
   virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml 2>/dev/null
 
-  until virsh -c qemu:///system domjobinfo $vm --completed 2>/dev/null | grep "Completed" > /dev/null; do
+  until virsh -c qemu:///system domjobinfo $vm --completed --keep-completed 2>/dev/null | grep "Completed" > /dev/null; do
     sleep 5
   done
   rm -f $dest/backup.xml
-
-  # Print directory size
   sync
+
+  # Print statistics
+  virsh -c qemu:///system domjobinfo $vm --completed
   du -sb $dest | cut -f1
+
   umount $mount_point
   rmdir $mount_point
 }
