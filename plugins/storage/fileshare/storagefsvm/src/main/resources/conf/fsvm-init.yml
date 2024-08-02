@@ -131,10 +131,10 @@ write_files:
     content: |
       [Unit]
       Description=CloudStack service to start dhclient
-  
+
       [Install]
       WantedBy=multi-user.target
-  
+
       [Service]
       Type=simple
       ExecStart=/usr/sbin/dhclient %I
