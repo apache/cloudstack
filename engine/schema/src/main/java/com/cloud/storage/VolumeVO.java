@@ -100,7 +100,7 @@ public class VolumeVO implements Volume {
     private long dataCenterId;
 
     @Column(name = "host_ip")
-    private String hostip;
+    private String hostIp;
 
     @Column(name = "disk_offering_id")
     private long diskOfferingId;
@@ -428,11 +428,11 @@ public class VolumeVO implements Volume {
     }
 
     public String getHostIp() {
-        return hostip;
+        return hostIp;
     }
 
     public void setHostIp(String hostip) {
-        this.hostip = hostip;
+        this.hostIp = hostip;
     }
 
     public void setPodId(Long podId) {
