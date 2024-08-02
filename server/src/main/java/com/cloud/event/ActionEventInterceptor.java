@@ -88,13 +88,14 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         for (ActionEvent actionEvent : getActionEvents(method)) {
             CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
-            long accountId = ctx.getProject() != null ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
             long startEventId = ctx.getStartEventId();
             String eventDescription = getEventDescription(actionEvent, ctx);
             Long eventResourceId = getEventResourceId(actionEvent, ctx);
             String eventResourceType = getEventResourceType(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
             boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
+            boolean projectCreateEvent = "project".equalsIgnoreCase(eventResourceType) && actionEvent.create();
+            long accountId = ctx.getProject() != null && !projectCreateEvent ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
 
             if (eventType.equals(""))
                 return;
@@ -118,13 +119,14 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
         for (ActionEvent actionEvent : getActionEvents(method)) {
             CallContext ctx = CallContext.current();
             long userId = ctx.getCallingUserId();
-            long accountId = ctx.getCallingAccountId();
             long startEventId = ctx.getStartEventId();
             String eventDescription = getEventDescription(actionEvent, ctx);
             Long eventResourceId = getEventResourceId(actionEvent, ctx);
             String eventResourceType = getEventResourceType(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
             boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
+            boolean projectCreateEvent = "project".equalsIgnoreCase(eventResourceType) && actionEvent.create();
+            long accountId = ctx.getProject() != null && !projectCreateEvent ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
 
             if (eventType.equals(""))
                 return;
