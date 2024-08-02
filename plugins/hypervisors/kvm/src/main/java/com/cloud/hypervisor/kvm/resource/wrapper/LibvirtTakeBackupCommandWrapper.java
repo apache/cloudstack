@@ -45,7 +45,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
                 libvirtComputingResource.getNasBackupPath(),
-                "-b", "backup",
+                "-o", "backup",
                 "-v", vmName,
                 "-t", backupRepoType,
                 "-s", backupRepoAddress,
@@ -55,11 +55,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
 
-        logger.debug("VM Backup Result: " + result.second() + ", exit code: " + result.first());
-
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
-            return new BackupAnswer(command, false, result.second());
+            return new BackupAnswer(command, false, result.second().trim());
         }
 
         List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
@@ -68,7 +66,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             backupSize = Long.parseLong(outputLines.get(outputLines.size()-1).trim());
         }
 
-        BackupAnswer answer = new BackupAnswer(command, true, result.second());
+        BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());
         answer.setSize(backupSize);
         return answer;
     }

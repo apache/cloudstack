@@ -134,8 +134,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
         }
 
+        final Date creationDate = new Date();
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
-                new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new java.util.Date()));
+                new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
@@ -151,12 +152,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
 
-        if (answer != null) {
+        if (answer != null && answer.getResult()) {
             BackupVO backup = new BackupVO();
             backup.setVmId(vm.getId());
             backup.setExternalId(backupPath);
             backup.setType("FULL");
-            backup.setDate(new Date());
+            backup.setDate(creationDate);
             backup.setSize(answer.getSize());
             Long virtualSize = 0L;
             for (final Volume volume: volumeDao.findByInstance(vm.getId())) {

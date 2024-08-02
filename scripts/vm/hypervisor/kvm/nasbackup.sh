@@ -43,24 +43,31 @@ backup_vm() {
   deviceId=0
   name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
-  for disk in $(virsh -c qemu:///system domblklist $vm --details 2>/dev/null | awk '/disk/{print$3}'); do
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$deviceId.$name.$disk' /></disk>" >> $dest/backup.xml
+  for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
+    volpath=$(virsh -c qemu:///system domblklist $VM --details | awk "/$disk/{print $4}" | sed 's/.*\///')
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$deviceId.$name.$volpath.qcow2' /></disk>" >> $dest/backup.xml
     deviceId=$((devideId+1))
     name="datadisk"
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
 
-  virsh -c qemu:///system backup-begin --domain $vm --backupxml $dest/backup.xml > /dev/null 2>/dev/null
-  virsh -c qemu:///system dumpxml $vm > $dest/domain-$vm.xml 2>/dev/null
+  # Start push backup
+  virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>/dev/null
 
-  until virsh -c qemu:///system domjobinfo $vm --completed --keep-completed 2>/dev/null | grep "Completed" > /dev/null; do
+  # Backup domain information
+  virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
+  virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null
+  virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
+  virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
+
+  until virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>/dev/null | grep "Completed" > /dev/null; do
     sleep 5
   done
   rm -f $dest/backup.xml
   sync
 
   # Print statistics
-  virsh -c qemu:///system domjobinfo $vm --completed
+  virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
 
   umount $mount_point
