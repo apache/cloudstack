@@ -132,9 +132,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     private final StateMachine2<State, Event, FileShare> fileShareStateMachine;
 
-    static final String DEFAULT_FILE_SHARE_DISK_OFFERING_NAME = "Default Offering for File Share";
-
-   ScheduledExecutorService _executor = null;
+    ScheduledExecutorService _executor = null;
 
     public FileShareServiceImpl() {
         this.fileShareStateMachine = State.getStateMachine();
@@ -500,7 +498,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "Updating fileshare")
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_UPDATE, eventDescription = "Updating fileshare")
     public FileShare updateFileShare(UpdateFileShareCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getName();
@@ -522,6 +520,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_UPDATE, eventDescription = "Change file share disk offering")
     public FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) throws ResourceAllocationException {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
@@ -543,6 +542,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_UPDATE, eventDescription = "Change file share service offering")
     public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
@@ -569,6 +569,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_DESTROY, eventDescription = "Destroy file share")
     public Boolean destroyFileShare(DestroyFileShareCmd cmd) {
         Long fileShareId = cmd.getId();
         Boolean expunge = cmd.isExpunge();
@@ -589,6 +590,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_RECOVER, eventDescription = "Recover file share")
     public FileShare recoverFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         Account caller = CallContext.current().getCallingAccount();
@@ -602,6 +604,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_EXPUNGE, eventDescription = "Expunge file share")
     public void deleteFileShare(Long fileShareId) {
         FileShareVO fileShare = fileShareDao.findById(fileShareId);
         Account caller = CallContext.current().getCallingAccount();

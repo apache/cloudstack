@@ -57,9 +57,7 @@ SELECT
     `disk_offering`.`name` AS `disk_offering_name`,
     `disk_offering`.`display_text` AS `disk_offering_display_text`,
     `disk_offering`.`disk_size` AS `disk_offering_size`,
-    `disk_offering`.`customized` AS `disk_offering_custom`,
-    GROUP_CONCAT(DISTINCT(nics.uuid) ORDER BY nics.id) AS nic_uuid,
-    GROUP_CONCAT(DISTINCT(nics.ip4_address) ORDER BY nics.id) AS ip_address
+    `disk_offering`.`customized` AS `disk_offering_custom`
 FROM
     `cloud`.`storage_fileshare`
         LEFT JOIN
@@ -70,8 +68,6 @@ FROM
     `cloud`.`volumes` AS `volumes` ON `storage_fileshare`.`volume_id` = `volumes`.`id`
         LEFT JOIN
     `cloud`.`storage_pool` AS `storage_pool` ON `volumes`.`pool_id` = `storage_pool`.`id`
-        LEFT JOIN
-    `cloud`.`nics` AS `nics` ON `storage_fileshare`.`vm_id` = `nics`.`instance_id`
         LEFT JOIN
     `cloud`.`account` AS `account` ON `storage_fileshare`.`account_id` = `account`.`id`
         LEFT JOIN

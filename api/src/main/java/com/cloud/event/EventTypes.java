@@ -743,13 +743,13 @@ public class EventTypes {
 
     // FileShare
     public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
-    public static final String EVENT_FILESHARE_DEPLOY = "FILESHARE.DEPLOY";
     public static final String EVENT_FILESHARE_START = "FILESHARE.START";
+    public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
     public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
     public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
     public static final String EVENT_FILESHARE_EXPUNGE = "FILESHARE.EXPUNGE";
-    public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
+    public static final String EVENT_FILESHARE_RECOVER = "FILESHARE.RECOVER";
 
     static {
 
@@ -1209,7 +1209,13 @@ public class EventTypes {
 
         // FileShare
         entityEventDetails.put(EVENT_FILESHARE_CREATE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_START, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_STOP, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_UPDATE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_RESTART, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_DESTROY, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_EXPUNGE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_RECOVER, FileShare.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

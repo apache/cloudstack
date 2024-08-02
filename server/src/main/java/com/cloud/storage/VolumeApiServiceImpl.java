@@ -691,7 +691,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * If the retrieved volume name is null, empty or blank, then A random name
      * will be generated using getRandomVolumeName method.
      *
-     * @param userSpecifiedName
+     * @param cmd
      * @return Either the retrieved name or a random name.
      */
     public String getVolumeNameFromCommand(CreateVolumeCmd cmd) {
@@ -2660,10 +2660,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *
      * @return the user vm vo object correcponding to the vmId to attach to
      */
-    private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach) {
+    @NotNull private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach) {
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Please specify a valid VM.");
+            throw new InvalidParameterValueException("Please specify a valid User VM.");
         }
 
         // Check that the VM is in the correct state

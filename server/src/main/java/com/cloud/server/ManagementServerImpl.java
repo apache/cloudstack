@@ -4233,7 +4233,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (type != null) {
             sc.setParameters("type", type);
-        } else if (id == null){
+        } else {
             sc.setParameters("nulltype", VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy);
         }
 

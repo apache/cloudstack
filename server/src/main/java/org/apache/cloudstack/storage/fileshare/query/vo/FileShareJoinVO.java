@@ -158,12 +158,6 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
     @Column(name = "disk_offering_custom")
     private boolean diskOfferingCustom;
 
-    @Column(name = "nic_uuid")
-    private String nicUuid;
-
-    @Column(name = "ip_address")
-    private String ipAddress;
-
     public FileShareJoinVO() {
     }
 
@@ -311,14 +305,6 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     public long getDiskOfferingSize() {
         return diskOfferingSize;
-    }
-
-    public String getNicUuid() {
-        return nicUuid;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
     }
 
     public boolean isDiskOfferingCustom() {

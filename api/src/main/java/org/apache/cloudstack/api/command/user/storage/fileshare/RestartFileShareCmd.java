@@ -45,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "restartFileShare",
         responseObject= SuccessResponse.class,
-        description = "Restart a File Share.. ",
+        description = "Restart a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
@@ -116,18 +116,19 @@ public class RestartFileShareCmd extends BaseAsyncCmd implements UserCmd {
         try {
             fileShare = fileShareService.restartFileShare(this.getId(), this.getCleanup());
         } catch (ResourceUnavailableException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share restart exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getRestartExceptionMsg(ex));
         } catch (ConcurrentOperationException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share restart exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getRestartExceptionMsg(ex));
         } catch (InsufficientCapacityException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share restart exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getRestartExceptionMsg(ex));
         } catch (ResourceAllocationException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share restart exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (OperationTimedoutException ex) {
+            logger.warn("File share restart exception: ", ex);
             throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
         }
 
@@ -142,7 +143,7 @@ public class RestartFileShareCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start file share");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to restart file share");
         }
     }
 }

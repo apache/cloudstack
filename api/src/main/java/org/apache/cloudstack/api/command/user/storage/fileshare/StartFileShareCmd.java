@@ -43,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "startFileShare",
         responseObject= FileShareResponse.class,
-        description = "Start a File Share.. ",
+        description = "Start a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
@@ -107,6 +107,7 @@ public class StartFileShareCmd extends BaseCmd implements UserCmd {
             logger.warn("File share start exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (OperationTimedoutException ex) {
+            logger.warn("File share start exception: ", ex);
             throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
         }
 

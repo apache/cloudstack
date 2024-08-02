@@ -32,7 +32,6 @@ import javax.persistence.TableGenerator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -106,8 +105,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     NetworkDetailsDao networkDetailsDao;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
-    @Inject
-    VMNetworkMapDao vmNetworkMapDao;
 
     TableGenerator _tgMacAddress;
 

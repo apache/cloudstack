@@ -43,7 +43,6 @@ import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -494,9 +493,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Inject
     ObjectStoreDao _objectStoreDao;
-
-    @Inject
-    NicDao nicDao;
 
     @Override
     public UserResponse createUserResponse(User user) {

@@ -88,7 +88,7 @@ public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implemen
                 str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatecount=").append(oldUpdated)
                         .append("; updatedTime=").append(oldUpdatedTime);
             } else {
-                logger.debug("Unable to update volume: id=" + vo.getId() + ", as there is no such volume exists in the database anymore");
+                logger.debug("Unable to update fileshare: id=" + vo.getId() + ", as it is not present in the database anymore");
             }
         }
         return rows > 0;

@@ -117,7 +117,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String networkName;
 
     @SerializedName(ApiConstants.NIC)
-    @Param(description = "the list of nics associated with vm", responseObject = NicResponse.class)
+    @Param(description = "the list of nics associated with the fileshare", responseObject = NicResponse.class)
     private List<NicResponse> nics;
 
     @SerializedName(ApiConstants.IP_ADDRESS)

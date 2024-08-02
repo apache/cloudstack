@@ -37,7 +37,7 @@ import com.cloud.event.EventTypes;
 
 @APICommand(name = "expungeFileShare",
         responseObject= SuccessResponse.class,
-        description = "Recover a File Share by id",
+        description = "Expunge a File Share by id",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
@@ -52,7 +52,7 @@ public class ExpungeFileShareCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to expunge")
     private Long id;
 
     /////////////////////////////////////////////////////

@@ -40,7 +40,7 @@ import com.cloud.user.AccountService;
 
 @APICommand(name = "changeFileShareDiskOffering",
         responseObject= FileShareResponse.class,
-        description = "Change Disk offering of a File Share.. ",
+        description = "Change Disk offering of a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,

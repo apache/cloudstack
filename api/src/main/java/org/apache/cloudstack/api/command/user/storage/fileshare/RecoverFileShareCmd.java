@@ -50,7 +50,7 @@ public class RecoverFileShareCmd extends BaseCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to delete")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FileShareResponse.class, description = "the ID of the file share to recover")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class RecoverFileShareCmd extends BaseCmd implements UserCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete fileShare");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to recover fileShare");
         }
     }
 }

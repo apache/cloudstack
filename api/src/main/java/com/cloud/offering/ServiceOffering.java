@@ -31,7 +31,6 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
     static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
     static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
-    static final String storageFsVMDefaultOffUniqueName = "Cloud.Com-StorageFsVm";
     // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
 

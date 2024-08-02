@@ -313,7 +313,6 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
-    public static final String MOUNT_OPTIONS = "mountoptions";
     public static final String NSX_MODE = "nsxmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";

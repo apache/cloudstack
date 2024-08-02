@@ -36,7 +36,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "listFileShares",
         responseObject= FileShareResponse.class,
-        description = "Lists File Shares by.. ",
+        description = "List File Shares",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,

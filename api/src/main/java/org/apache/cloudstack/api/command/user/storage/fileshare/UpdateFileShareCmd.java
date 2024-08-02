@@ -37,7 +37,7 @@ import com.cloud.user.AccountService;
 
 @APICommand(name = "updateFileShare",
         responseObject= FileShareResponse.class,
-        description = "Update a File Share.. ",
+        description = "Update a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,

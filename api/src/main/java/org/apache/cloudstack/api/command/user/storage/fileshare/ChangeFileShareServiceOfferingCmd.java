@@ -45,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "changeFileShareServiceOffering",
         responseObject= FileShareResponse.class,
-        description = "Change service offering of a File Share.. ",
+        description = "Change Service offering of a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
@@ -118,19 +118,20 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
         try {
             fileShare = fileShareService.changeFileShareServiceOffering(this);
         } catch (ResourceUnavailableException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getExceptionMsg(ex));
         } catch (ConcurrentOperationException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getExceptionMsg(ex));
         } catch (InsufficientCapacityException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getExceptionMsg(ex));
         } catch (ResourceAllocationException ex) {
-            logger.warn("File share start exception: ", ex);
+            logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (OperationTimedoutException ex) {
-            throw new CloudRuntimeException("File share start timed out due to " + ex.getMessage());
+            logger.warn("File share change service offering exception: ", ex);
+            throw new CloudRuntimeException("File share change service offering timed out due to " + ex.getMessage());
         }
 
         if (fileShare != null) {

@@ -37,7 +37,7 @@ import com.cloud.user.AccountService;
 
 @APICommand(name = "stopFileShare",
         responseObject= FileShareResponse.class,
-        description = "Stop a File Share.. ",
+        description = "Stop a File Share",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
@@ -102,7 +102,7 @@ public class StopFileShareCmd extends BaseCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start file share");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop file share");
         }
     }
 }

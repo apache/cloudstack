@@ -52,7 +52,7 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 @APICommand(name = "createFileShare",
         responseObject= FileShareResponse.class,
-        description = "Creates a new file share of specified size and disk offering and attached to the given guest network",
+        description = "Create a new File Share of specified size and disk offering, attached to the given network",
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = FileShare.class,
         requestHasSensitiveInfo = false,
