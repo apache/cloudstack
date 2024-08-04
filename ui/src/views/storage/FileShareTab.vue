@@ -27,7 +27,6 @@
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.mount.fileshare')">
-          <h3>NFS</h3>
           <div class="title">{{ $t('label.nfs.mount') }}</div>
           <div class="content">{{ $t('message.server') }} {{ resource.ipaddress }}</div>
           <div class="content">{{ $t('message.path') }} {{ resource.path }}</div>

@@ -44,6 +44,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
@@ -140,6 +141,21 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         return fsVmConfig;
     }
 
+    private String getStorageFsVmName(String fileShareName) {
+        String prefix = String.format("%s-%s", FileShareVmNamePrefix, fileShareName);
+        String suffix = Long.toHexString(System.currentTimeMillis());
+
+        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
+            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
+        }
+        int nameLength = prefix.length() + suffix.length() + FileShareVmNamePrefix.length();
+        if (nameLength > 63) {
+            int prefixLength = prefix.length() - (nameLength - 63);
+            prefix = prefix.substring(0, prefixLength);
+        }
+        return (String.format("%s-%s", prefix, suffix));
+    }
+
     private UserVm createFileShareVM(Long zoneId, Account owner, List<Long> networkIds, String name, Long serviceOfferingId, Long diskOfferingId, FileShare.FileSystemType fileSystem, Long size, Long minIops, Long maxIops) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
 
@@ -161,8 +177,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
             launchPermissionDao.persist(launchPermission);
         }
 
-        String suffix = Long.toHexString(System.currentTimeMillis());
-        String hostName = String.format("%s-%s-%s", FileShareVmNamePrefix, name, suffix);
+        String hostName = getStorageFsVmName(name);
 
         Network.IpAddresses addrs = new Network.IpAddresses(null, null);
         Map<String, String> customParameterMap = new HashMap<String, String>();

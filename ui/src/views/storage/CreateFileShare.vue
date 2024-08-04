@@ -35,15 +35,6 @@
       <a-form-item name="description" ref="description" :label="$t('label.description')">
         <a-input v-model:value="form.description" />
       </a-form-item>
-      <a-form-item
-        name="format"
-        ref="format"
-        :placeholder="apiParams.format.description" >
-        <a-input v-model:value="form.format" />
-        <template #label>
-          <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
-        </template>
-      </a-form-item>
       <a-form-item ref="zoneid" name="zoneid">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
@@ -90,6 +81,15 @@
             :label="provider.name">
           </a-select-option>
         </a-select>
+      </a-form-item>
+      <a-form-item
+        name="format"
+        ref="format"
+        :placeholder="apiParams.format.description" >
+        <a-input v-model:value="form.format" />
+        <template #label>
+          <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+        </template>
       </a-form-item>
       <a-form-item ref="networkid" name="networkid">
         <template #label>

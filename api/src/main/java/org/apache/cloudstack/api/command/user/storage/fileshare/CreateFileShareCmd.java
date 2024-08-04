@@ -151,7 +151,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             type = CommandType.UUID,
             required = true,
             entityType = NetworkResponse.class,
-            description = "list of network id to attach file share to")
+            description = "network to attach the file share to")
     private Long networkId;
 
     /////////////////////////////////////////////////////

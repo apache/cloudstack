@@ -2479,7 +2479,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
         if (!allowAttachForFileShare && UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't attach a data volume to a VM of type " + UserVmManager.STORAGEFSVM.toString());
+            throw new InvalidParameterValueException("Can't attach a volume to a VM of type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
@@ -2898,7 +2898,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = _userVmDao.findById(vmId);
 
         if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't detach a data volume from a VM of type " + UserVmManager.STORAGEFSVM.toString());
+            throw new InvalidParameterValueException("Can't detach a volume from a VM of type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {

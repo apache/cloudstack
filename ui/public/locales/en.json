@@ -1422,7 +1422,7 @@
 "label.monitor.url": "URL Path",
 "label.monthly": "Monthly",
 "label.more.access.dashboard.ui": "More about accessing dashboard UI",
-"label.mount.fileshare": "Mount File Share",
+"label.mount.fileshare": "Mount File Share via NFS",
 "label.move.down.row": "Move down one row",
 "label.move.to.bottom": "Move to bottom",
 "label.move.to.top": "Move to top",
