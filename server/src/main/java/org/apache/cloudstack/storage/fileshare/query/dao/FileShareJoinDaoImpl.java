@@ -84,7 +84,7 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
         response.setState(fileShare.getState().toString());
         response.setProvider(fileShare.getProvider());
         response.setFormat(fileShare.getFsType().toString());
-        response.setPath(FileShare.getFileSharePathFromNameAndUuid(fileShare.getName(), fileShare.getUuid()));
+        response.setPath(FileShare.getFileSharePath());
         response.setObjectName(FileShare.class.getSimpleName().toLowerCase());
         response.setZoneId(fileShare.getZoneUuid());
         response.setZoneName(fileShare.getZoneName());
@@ -103,7 +103,6 @@ public class FileShareJoinDaoImpl extends GenericDaoBase<FileShareJoinVO, Long> 
         if (nics.size() > 0) {
             for (NicVO nicVO : nics) {
                 final NetworkVO network = networkDao.findById(nicVO.getNetworkId());
-                response.setIpAddress(nicVO.getIPv4Address());
                 NicResponse nicResponse = new NicResponse();
                 nicResponse.setId(nicVO.getUuid());
                 nicResponse.setNetworkid(network.getUuid());

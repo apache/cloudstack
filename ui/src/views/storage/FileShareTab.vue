@@ -26,12 +26,26 @@
         <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
-        <a-card :title="$t('label.mount.fileshare')">
-          <div class="title">{{ $t('label.nfs.mount') }}</div>
-          <div class="content">{{ $t('message.server') }} {{ resource.ipaddress }}</div>
-          <div class="content">{{ $t('message.path') }} {{ resource.path }}</div>
-          <br>
-        </a-card>
+        <h3>{{ $t('label.mount.fileshare') }}</h3>
+        <div v-for="(nic, index) in resource.nic" :key="index" class="content">
+          <a-card>
+            <template #title>
+              <router-link :to="{ path: '/guestnetwork/' + nic.networkid }">
+                {{ nic.networkname }}
+              </router-link>
+            </template>
+            <timeline>
+              <a-timeline-item color="blue">
+                <h3>mount -t nfs -o rw,sync {{ nic.ipaddress }}:{{ resource.path }} [local_mount_path]</h3>
+                <p class="info"><i>(This mount command can be used to mount the NFS share using the default options given.)</i></p>
+              </a-timeline-item>
+              <a-timeline-item color="blue">
+                <h3>showmount -e {{ nic.ipaddress }}</h3>
+                <p class="info"><i>(It might take a few minutes for the NFS server to start after the File Share is created for the first time.<br>The showmount command can be used to check the status of the NFS server.)</i></p>
+              </a-timeline-item>
+            </timeline>
+          </a-card>
+        </div>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.networks')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
@@ -182,92 +196,7 @@ export default {
     min-height: 100%;
     transition: 0.3s;
   }
-
-  .list {
-    margin-top: 20px;
-
-    &__item {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-
-      @media (min-width: 760px) {
-        flex-direction: row;
-        align-items: center;
-      }
-    }
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-
-    button {
-      padding: 5px;
-      height: auto;
-      margin-bottom: 10px;
-      align-self: flex-start;
-
-      &:not(:last-child) {
-        margin-right: 10px;
-      }
-    }
-
-  }
-
-  .label {
-    font-weight: bold;
-  }
-
-  .attribute {
-    margin-bottom: 10px;
-  }
-
-  .ant-tag {
-    padding: 4px 10px;
-    height: auto;
-    margin-left: 5px;
-  }
-
-  .title {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-
-    a {
-      margin-right: 30px;
-      margin-bottom: 10px;
-    }
-
-    .ant-tag {
-      margin-bottom: 10px;
-    }
-
-    &__details {
-      display: flex;
-    }
-
-    .tags {
-      margin-left: 10px;
-    }
-
-  }
-
-  .ant-list-item-meta-title {
-    margin-bottom: -10px;
-  }
-
-  .divider-small {
-    margin-top: 20px;
-    margin-bottom: 20px;
-  }
-
-  .list-item {
-
-    &:not(:first-child) {
-      padding-top: 25px;
-    }
-
+  .info {
+    font-size: 0.8rem;
   }
 </style>

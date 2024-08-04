@@ -137,7 +137,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
         RecoveryRequested,
     }
 
-    static String getFileSharePathFromNameAndUuid(String name, String uuid) {
+    static String getFileSharePath() {
         return FileSharePath;
     }
 

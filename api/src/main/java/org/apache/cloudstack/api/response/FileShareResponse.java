@@ -120,10 +120,6 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "the list of nics associated with the fileshare", responseObject = NicResponse.class)
     private List<NicResponse> nics;
 
-    @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "ip address of the fileshare")
-    private String ipAddress;
-
     @SerializedName(ApiConstants.PATH)
     @Param(description = "path to mount the fileshare")
     private String path;
@@ -262,10 +258,6 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
             this.nics = new ArrayList<>();
         }
         this.nics.add(nic);
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
     }
 
     public void setSize(Long size) {
