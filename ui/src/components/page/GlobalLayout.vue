@@ -17,7 +17,18 @@
 
 <template>
   <div>
-    <a-affix v-if="numberOfAlerts > 0" >
+    <a-affix v-if="getNumberOfAlerts() > 0" >
+      <a-alert
+        v-if="this.$config.alertMessage && this.$config.alertMessage !== ''"
+        :type="this.$config.alertMessageType ? this.$config.alertMessageType : 'info'"
+        :showIcon="false"
+        banner
+        class="alertHeader">
+        <template #message>
+          <span v-html="$config.alertMessage"></span>
+        </template>
+        </a-alert>
+
       <a-alert
         v-if="this.$store.getters.shutdownTriggered"
         :message="$t('message.shutdown.triggered')"
@@ -26,45 +37,9 @@
         :showIcon="false"
         class="alertHeader" />
 
-        <a-alert
-        v-if="newVersionAvailable"
-        type="info"
-        banner
-        :showIcon="true"
-        class="alertHeader">
-          <template #message>
-              <a :href="'https://github.com/apache/cloudstack/releases/tag/' + this.$store.getters.latestVersion.version" target="_blank">
-                {{ $t('message.new.version.available') }}: {{  this.$store.getters.latestVersion.version }}
-              </a>
-          </template>
-      </a-alert>
-
-      <a-alert
-        v-if="this.$store.getters.networkRestartRequired"
-        type="warning"
-        :showIcon="true"
-        class="alertHeader">
-        <template #message>
-          <router-link to="/guestnetwork?restartrequired=true">
-                {{ $t('message.restart.required.network') }}
-          </router-link>
-        </template>
-      </a-alert>
-
-      <a-alert
-        v-if="this.$store.getters.vpcRestartRequired"
-        type="warning"
-        :showIcon="true"
-        class="alertHeader">
-        <template #message>
-          <router-link to="/vpc?restartrequired=true">
-                {{ $t('message.restart.required.vpc') }}
-          </router-link>
-        </template>
-      </a-alert>
     </a-affix>
     <a-layout class="layout" :class="[device]">
-      <a-affix style="z-index: 200" :offsetTop="numberOfAlerts * 25">
+      <a-affix style="z-index: 200" :offsetTop="this.getNumberOfAlerts() * 25">
         <template v-if="isSideMenu()">
           <a-drawer
             v-if="isMobile()"
@@ -127,7 +102,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="'margin-top: ' + numberOfAlerts * 25 + 'px;'"
+            :style="'margin-top: ' + this.getNumberOfAlerts() * 25 + 'px;'"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"
@@ -168,7 +143,6 @@ import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import { isAdmin } from '@/role'
-import { numberOfAlerts, newVersionAvailable } from '@/store/modules/user'
 import { api } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
@@ -188,7 +162,8 @@ export default {
       collapsed: false,
       menus: [],
       showSetting: false,
-      showClear: false
+      showClear: false,
+      numberOfAlerts: 0
     }
   },
   computed: {
@@ -197,12 +172,6 @@ export default {
     }),
     isAdmin () {
       return isAdmin()
-    },
-    numberOfAlerts () {
-      return numberOfAlerts()
-    },
-    newVersionAvailable () {
-      return newVersionAvailable()
     },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
@@ -310,6 +279,16 @@ export default {
       api('readyForShutdown', {}).then(json => {
         this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
       })
+    },
+    getNumberOfAlerts () {
+      let count = 0
+      if (this.$store.getters.shutdownTriggered) {
+        count++
+      }
+      if (this.$config.alertMessage && this.$config.alertMessage !== '') {
+        count++
+      }
+      return count
     }
   }
 }

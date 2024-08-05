@@ -18,6 +18,7 @@
 import Cookies from 'js-cookie'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
+import semver from 'semver'
 
 import { vueProps } from '@/vue-app'
 import router from '@/router'
@@ -25,6 +26,7 @@ import store from '@/store'
 import { oauthlogin, login, logout, api } from '@/api'
 import { i18n } from '@/locales'
 import { axios } from '../../utils/request'
+import { getParsedVersion } from '@/utils/util'
 
 import {
   ACCESS_TOKEN,
@@ -40,9 +42,7 @@ import {
   CUSTOM_COLUMNS,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
-  LATEST_CS_VERSION,
-  NETWORK_RESTART_REQUIRED,
-  VPC_RESTART_REQUIRED
+  LATEST_CS_VERSION
 } from '@/store/mutation-types'
 
 const user = {
@@ -173,16 +173,10 @@ const user = {
       vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
     },
     SET_LATEST_VERSION: (state, version) => {
+      // if (version?.fetchedTs > 0) {
       vueProps.$localStorage.set(LATEST_CS_VERSION, version)
       state.latestVersion = version
-    },
-    SET_NETWORK_RESTART_REQUIRED: (state, flag) => {
-      vueProps.$localStorage.set(NETWORK_RESTART_REQUIRED, flag)
-      state.networkRestartRequired = flag
-    },
-    SET_VPC_RESTART_REQUIRED: (state, flag) => {
-      vueProps.$localStorage.set(VPC_RESTART_REQUIRED, flag)
-      state.vpcRestartRequired = flag
+      // }
     }
   },
 
@@ -229,11 +223,7 @@ const user = {
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-          const networkRestartRequired = vueProps.$localStorage.get(NETWORK_RESTART_REQUIRED, false)
-          const vpcRestartRequired = vueProps.$localStorage.get(VPC_RESTART_REQUIRED, false)
           commit('SET_LATEST_VERSION', latestVersion)
-          commit('SET_NETWORK_RESTART_REQUIRED', networkRestartRequired)
-          commit('SET_VPC_RESTART_REQUIRED', vpcRestartRequired)
           notification.destroy()
 
           resolve()
@@ -300,15 +290,11 @@ const user = {
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
         const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
-        const networkRestartRequired = vueProps.$localStorage.get(NETWORK_RESTART_REQUIRED, false)
-        const vpcRestartRequired = vueProps.$localStorage.get(VPC_RESTART_REQUIRED, false)
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
-        commit('SET_NETWORK_RESTART_REQUIRED', networkRestartRequired)
-        commit('SET_VPC_RESTART_REQUIRED', vpcRestartRequired)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -363,11 +349,31 @@ const user = {
           })
 
           api('listNetworks', { restartrequired: true }).then(response => {
-            commit('SET_NETWORK_RESTART_REQUIRED', response.listnetworksresponse.count > 0)
+            if (response.listnetworksresponse.count > 0) {
+              store.dispatch('AddHeaderNotice', {
+                key: 'NETWORK_RESTART_REQUIRED',
+                title: i18n.global.t('label.network.restart.required'),
+                description: i18n.global.t('message.network.restart.required'),
+                path: '/guestnetwork/',
+                query: { restartrequired: true },
+                status: 'done',
+                timestamp: new Date()
+              })
+            }
           }).catch(ignored => {})
 
           api('listVPCs', { restartrequired: true }).then(response => {
-            commit('SET_VPC_RESTART_REQUIRED', response.listvpcsresponse.count > 0)
+            if (response.listvpcsresponse.count > 0) {
+              store.dispatch('AddHeaderNotice', {
+                key: 'VPC_RESTART_REQUIRED',
+                title: i18n.global.t('label.vpc.restart.required'),
+                description: i18n.global.t('message.vpc.restart.required'),
+                path: '/vpc/',
+                query: { restartrequired: true },
+                status: 'done',
+                timestamp: new Date()
+              })
+            }
           }).catch(ignored => {})
         }
 
@@ -527,16 +533,23 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
-      if (rolename === 'Root Admin' && (+new Date() - store.getters.latestVersion.fetchedTs) > 24 * 60 * 60 * 1000) {
+      const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
+      if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
         axios.get(
           'https://api.github.com/repos/apache/cloudstack/releases'
         ).then(response => {
+          let latestReleaseVersion = getParsedVersion(response[0].tag_name)
+          let latestTag = response[0].tag_name
+
           for (const release of response) {
             if (release.tag_name.toLowerCase().includes('rc')) {
               continue
-            } else {
-              commit('SET_LATEST_VERSION', { version: release.tag_name, fetchedTs: (+new Date()) })
-              break
+            }
+            const parsedVersion = getParsedVersion(release.tag_name)
+            if (semver.gte(parsedVersion, latestReleaseVersion)) {
+              latestReleaseVersion = parsedVersion
+              latestTag = release.tag_name
+              commit('SET_LATEST_VERSION', { version: latestTag, fetchedTs: (+new Date()) })
             }
           }
         }).catch(ignored => {})
@@ -552,18 +565,6 @@ const user = {
       commit('SET_CUSTOM_HYPERVISOR_NAME', name)
     }
   }
-}
-
-export function newVersionAvailable () {
-  return store.getters.userInfo.rolename === 'Root Admin' && store.getters.features.cloudstackversion &&
-    store.getters?.latestVersion?.version &&
-    store.getters.features.cloudstackversion.split('-')[0] !== store.getters.latestVersion.version
-}
-
-export function numberOfAlerts () {
-  return store.getters.shutdownTriggered +
-    store.getters.networkRestartRequired +
-    store.getters.vpcRestartRequired + newVersionAvailable()
 }
 
 export default user
