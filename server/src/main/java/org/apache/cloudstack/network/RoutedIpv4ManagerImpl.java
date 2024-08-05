@@ -680,6 +680,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
+        validateNetworkCidrSize(accountId, networkCidrSize);
         List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
             try {
