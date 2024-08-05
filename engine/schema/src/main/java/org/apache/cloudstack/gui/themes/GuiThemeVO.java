@@ -17,8 +17,6 @@
 package org.apache.cloudstack.gui.themes;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
@@ -34,7 +32,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "gui_themes")
-public class GuiThemeVO implements InternalIdentity, Identity {
+public class GuiThemeVO implements GuiTheme {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -94,78 +92,95 @@ public class GuiThemeVO implements InternalIdentity, Identity {
         return uuid;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public String getCss() {
         return css;
     }
 
+    @Override
     public String getJsonConfiguration() {
         return jsonConfiguration;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }
 
+    @Override
     public boolean getIsPublic() {
         return isPublic;
     }
 
+    @Override
     public void setId(Long id) {
         this.id = id;
     }
 
+    @Override
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public void setDescription(String description) {
         this.description = description;
     }
 
+    @Override
     public void setCss(String css) {
         this.css = css;
     }
 
+    @Override
     public void setJsonConfiguration(String jsonConfiguration) {
         this.jsonConfiguration = jsonConfiguration;
     }
 
+    @Override
     public void setCreated(Date created) {
         this.created = created;
     }
 
+    @Override
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
 
+    @Override
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
     }
 
+    @Override
     public boolean isRecursiveDomains() {
         return recursiveDomains;
     }
 
+    @Override
     public void setRecursiveDomains(boolean recursiveDomains) {
         this.recursiveDomains = recursiveDomains;
     }
-
 
     @Override
     public String toString() {
