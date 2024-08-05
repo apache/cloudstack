@@ -14,23 +14,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes;
+package org.apache.cloudstack.gui.theme;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface GuiThemeDetails extends InternalIdentity {
+import java.util.Date;
 
-    void setId(Long id);
+public interface GuiThemeJoin extends InternalIdentity, Identity {
 
-    Long getGuiThemeId();
+    String getName();
 
-    void setGuiThemeId(Long guiThemeId);
+    String getDescription();
 
-    String getType();
+    String getCss();
 
-    void setType(String type);
+    String getJsonConfiguration();
 
-    String getValue();
+    String getCommonNames();
 
-    void setValue(String value);
+    String getDomains();
+
+    String getAccounts();
+
+    boolean isRecursiveDomains();
+
+    boolean getIsPublic();
+
+    Date getCreated();
+
+    Date getRemoved();
 }

@@ -14,13 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes.dao;
+package org.apache.cloudstack.gui.theme;
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
-import org.springframework.stereotype.Component;
+import org.apache.cloudstack.api.InternalIdentity;
 
-@Component
-public class GuiThemeDaoImpl extends GenericDaoBase<GuiThemeVO, Long> implements GenericDao<GuiThemeVO, Long> {
+public interface GuiThemeDetails extends InternalIdentity {
+
+    void setId(Long id);
+
+    Long getGuiThemeId();
+
+    void setGuiThemeId(Long guiThemeId);
+
+    String getType();
+
+    void setType(String type);
+
+    String getValue();
+
+    void setValue(String value);
 }

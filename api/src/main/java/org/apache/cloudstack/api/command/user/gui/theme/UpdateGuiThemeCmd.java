@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.gui.themes;
+package org.apache.cloudstack.api.command.user.gui.theme;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -25,21 +25,24 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.GuiTheme;
-import org.apache.cloudstack.gui.themes.GuiThemeJoin;
-import org.apache.cloudstack.gui.themes.GuiThemeService;
+import org.apache.cloudstack.gui.theme.GuiTheme;
+import org.apache.cloudstack.gui.theme.GuiThemeJoin;
+import org.apache.cloudstack.gui.theme.GuiThemeService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "createGuiTheme", description = "Creates a customized GUI theme for a set of Common Names (fixed or wildcard), a set of domain UUIDs, and/or a set of " +
-        "account UUIDs.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.20.0.0", authorized = {RoleType.Admin})
-public class CreateGuiThemeCmd extends BaseCmd {
+
+@APICommand(name = "updateGuiTheme", description = "Updates an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
+        since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+public class UpdateGuiThemeCmd extends BaseCmd {
 
     @Inject
     GuiThemeService guiThemeService;
 
-    @Parameter(name = ApiConstants.NAME, required = true, type = CommandType.STRING, length = 2048, description = "A name to identify the theme.")
+    @Parameter(name = ApiConstants.ID, required = true, type = CommandType.UUID, entityType = GuiThemeResponse.class, description = "The ID of the theme to be updated.")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, length = 2048, description = "A name to identify the theme.")
     private String name;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, length = 4096, description = "A description for the theme.")
@@ -61,6 +64,10 @@ public class CreateGuiThemeCmd extends BaseCmd {
             "the end-user) separated by comma that can retrieve the theme.")
     private String domainIds;
 
+    @Parameter(name = ApiConstants.RECURSIVE_DOMAINS, type = CommandType.BOOLEAN, description = "Defines whether the subdomains of the informed domains are considered. Default " +
+            "value is false.")
+    private Boolean recursiveDomains = false;
+
     @Parameter(name = ApiConstants.ACCOUNT_IDS, type = CommandType.STRING, length = 65535, description = "A set of account UUIDs (also known as ID for" +
             " the end-user) separated by comma that can retrieve the theme.")
     private String accountIds;
@@ -69,9 +76,9 @@ public class CreateGuiThemeCmd extends BaseCmd {
             "the `commonNames` is informed. If the `domainIds` or `accountIds` is informed, it is considered as `false`.")
     private Boolean isPublic = true;
 
-    @Parameter(name = ApiConstants.RECURSIVE_DOMAINS, type = CommandType.BOOLEAN, description = "Defines whether the subdomains of the informed domains are considered. Default " +
-            "value is false.")
-    private Boolean recursiveDomains = false;
+    public Long getId() {
+        return id;
+    }
 
     public String getName() {
         return name;
@@ -101,20 +108,20 @@ public class CreateGuiThemeCmd extends BaseCmd {
         return accountIds;
     }
 
-    public Boolean getPublic() {
-        return isPublic;
-    }
-
     public Boolean getRecursiveDomains() {
         return recursiveDomains;
     }
 
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
+
     @Override
     public void execute() {
-        GuiThemeJoin guiThemeJoin = guiThemeService.createGuiTheme(this);
+        GuiThemeJoin guiThemeJoin = guiThemeService.updateGuiTheme(this);
 
         if (guiThemeJoin == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create the GUI theme.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update the GUI theme.");
         }
 
         GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeJoin);

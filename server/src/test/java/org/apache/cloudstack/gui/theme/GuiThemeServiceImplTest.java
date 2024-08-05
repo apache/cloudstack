@@ -14,15 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes;
+package org.apache.cloudstack.gui.theme;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.dao.GuiThemeJoinDaoImpl;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

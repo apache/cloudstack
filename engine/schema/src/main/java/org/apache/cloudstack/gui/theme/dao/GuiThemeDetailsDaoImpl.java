@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes.dao;
+package org.apache.cloudstack.gui.theme.dao;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -24,8 +24,8 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.gui.themes.GuiThemeDetailsVO;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.theme.GuiThemeDetailsVO;
+import org.apache.cloudstack.gui.theme.GuiThemeVO;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
