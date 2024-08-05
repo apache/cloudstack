@@ -1173,7 +1173,7 @@
 "label.ipv4.cidr": "IPv4 CIDR",
 "label.ipv4.dns1": "IPv4 DNS1",
 "label.ipv4.dns2": "IPv4 DNS2",
-"label.ipv4.subnets": "IPv4 subnets",
+"label.ipv4.subnets": "IPv4 Subnets",
 "label.ipv4.subnet.set.reservation.desc": "(optional) Please specify a domain or an Account to be associated with this IPv4 subnet.",
 "label.ipv6.dns1": "IPv6 DNS1",
 "label.ipv6.dns2": "IPv6 DNS2",

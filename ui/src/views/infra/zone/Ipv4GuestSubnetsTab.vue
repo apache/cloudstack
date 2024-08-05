@@ -386,8 +386,8 @@ export default {
         page: this.ipv4SubnetPage,
         pagesize: this.ipv4SubnetPageSize
       }).then(response => {
-        this.ipv4Subnets = response?.listipv4guestsubnetsforzoneresponse?.zoneipv4subnet || []
-        this.ipv4SubnetsTotal = response?.listipv4guestsubnetsforzoneresponse?.count || 0
+        this.ipv4Subnets = response?.listipv4subnetsforzoneresponse?.zoneipv4subnet || []
+        this.ipv4SubnetsTotal = response?.listipv4subnetsforzoneresponse?.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -415,7 +415,7 @@ export default {
 
       api('dedicateIpv4SubnetForZone', params).then(response => {
         this.$pollJob({
-          jobId: response.dedicateipv4guestsubnetforzoneresponse.jobid,
+          jobId: response.dedicateipv4subnetforzoneresponse.jobid,
           title: this.$t('label.dedicate.ipv4.subnet'),
           successMessage: this.$t('message.success.dedicate.ipv4.subnet'),
           successMethod: () => {
@@ -445,7 +445,7 @@ export default {
       this.componentLoading = true
       api('releaseIpv4SubnetForZone', { id }).then(response => {
         this.$pollJob({
-          jobId: response.releaseipv4guestsubnetforzoneresponse.jobid,
+          jobId: response.releaseipv4subnetforzoneresponse.jobid,
           title: this.$t('label.release.dedicated.ipv4.subnet'),
           successMessage: this.$t('message.success.release.dedicated.ipv4.subnet'),
           successMethod: () => {
@@ -495,7 +495,7 @@ export default {
       this.componentLoading = true
       api('deleteIpv4SubnetForZone', { id }).then(response => {
         this.$pollJob({
-          jobId: response.deleteipv4guestsubnetforzoneresponse.jobid,
+          jobId: response.deleteipv4subnetforzoneresponse.jobid,
           successMessage: this.$t('message.success.delete.ipv4.subnet'),
           successMethod: () => {
             this.componentLoading = false
@@ -580,7 +580,7 @@ export default {
         }
         api('updateIpv4SubnetForZone', params).then(response => {
           this.$pollJob({
-            jobId: response.updateipv4guestsubnetforzoneresponse.jobid,
+            jobId: response.updateipv4subnetforzoneresponse.jobid,
             title: this.$t('label.update.ipv4.subnet'),
             description: values.subnet,
             successMessage: this.$t('message.success.update.ipv4.subnet'),
@@ -602,7 +602,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updateipv4guestsubnetforzoneresponse?.errortext || error.response.data.errorresponse.errortext,
+            description: error.response.data.updateipv4subnetforzoneresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {

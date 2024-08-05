@@ -163,7 +163,7 @@ export default {
         listall: true
       }
       api('listIpv4SubnetsForZone', params).then(json => {
-        this.parentSubnets = json.listipv4guestsubnetsforzoneresponse.zoneipv4subnet || []
+        this.parentSubnets = json.listipv4subnetsforzoneresponse.zoneipv4subnet || []
       }).finally(() => {
         this.loading = false
       })
