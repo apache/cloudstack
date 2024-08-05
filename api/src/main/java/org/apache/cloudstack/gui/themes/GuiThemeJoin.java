@@ -14,18 +14,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.theme.dao;
+package org.apache.cloudstack.gui.themes;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.List;
+import java.util.Date;
 
-public interface GuiThemeJoinDao extends GenericDao<GuiThemeJoinVO, Long> {
-    GuiThemeJoinVO findDefaultTheme();
+public interface GuiThemeJoin extends InternalIdentity, Identity {
 
-    Pair<List<GuiThemeJoinVO>, Integer> listGuiThemesWithNoAuthentication(String commonName);
+    String getName();
 
-    Pair<List<GuiThemeJoinVO>, Integer> listGuiThemes(Long id, String name, String commonName, String domainUuid, String accountUuid, boolean listAll, boolean showRemoved, Boolean showPublic);
+    String getDescription();
+
+    String getCss();
+
+    String getJsonConfiguration();
+
+    String getCommonNames();
+
+    String getDomains();
+
+    String getAccounts();
+
+    boolean isRecursiveDomains();
+
+    boolean getIsPublic();
+
+    Date getCreated();
+
+    Date getRemoved();
 }

@@ -25,12 +25,12 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiTheme;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listGuiThemes", description = "Lists GUI themes.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class},
+@APICommand(name = "listGuiThemes", description = "Lists GUI themes.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
         since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.User, RoleType.DomainAdmin,
         RoleType.ResourceAdmin})
 public class ListGuiThemesCmd extends BaseListCmd {

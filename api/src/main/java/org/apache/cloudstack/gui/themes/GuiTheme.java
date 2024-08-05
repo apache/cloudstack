@@ -16,20 +16,46 @@
 // under the License.
 package org.apache.cloudstack.gui.themes;
 
-import org.apache.cloudstack.api.command.user.gui.themes.CreateGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.RemoveGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.UpdateGuiThemeCmd;
-import org.apache.cloudstack.api.response.GuiThemeResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public interface GuiThemeService {
+import java.util.Date;
 
-    ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd);
+public interface GuiTheme extends InternalIdentity, Identity {
 
-    GuiThemeJoin createGuiTheme(CreateGuiThemeCmd cmd);
+    String getName();
 
-    GuiThemeJoin updateGuiTheme(UpdateGuiThemeCmd cmd);
+    String getDescription();
 
-    void removeGuiTheme(RemoveGuiThemeCmd cmd);
+    String getCss();
+
+    String getJsonConfiguration();
+
+    Date getCreated();
+
+    Date getRemoved();
+
+    boolean getIsPublic();
+
+    void setId(Long id);
+
+    void setUuid(String uuid);
+
+    void setName(String name);
+
+    void setDescription(String description);
+
+    void setCss(String css);
+
+    void setJsonConfiguration(String jsonConfiguration);
+
+    void setCreated(Date created);
+
+    void setRemoved(Date removed);
+
+    void setIsPublic(boolean isPublic);
+
+    boolean isRecursiveDomains();
+
+    void setRecursiveDomains(boolean recursiveDomains);
 }

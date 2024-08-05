@@ -14,10 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.theme.dao;
+package org.apache.cloudstack.gui.themes.dao;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -32,13 +33,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class GuiThemeJoinDaoImpl extends GenericDaoBase<GuiThemeJoinVO, Long> implements GuiThemeJoinDao {
+public class GuiThemeJoinDaoImpl extends GenericDaoBase<GuiThemeJoinVO, Long> implements GenericDao<GuiThemeJoinVO, Long> {
     @Inject
-    GuiThemeDetailsDao guiThemeDetailsDao;
+    GuiThemeDetailsDaoImpl guiThemeDetailsDao;
 
     public static final Long INVALID_ID = -1L;
 
-    @Override
     public GuiThemeJoinVO findDefaultTheme() {
         SearchBuilder<GuiThemeJoinVO> searchBuilder = createSearchBuilder();
         searchBuilder.and("commonNames", searchBuilder.entity().getCommonNames(), SearchCriteria.Op.NULL);
@@ -51,13 +51,11 @@ public class GuiThemeJoinDaoImpl extends GenericDaoBase<GuiThemeJoinVO, Long> im
         return findOneBy(searchCriteria);
     }
 
-    @Override
     public Pair<List<GuiThemeJoinVO>, Integer> listGuiThemesWithNoAuthentication(String commonName) {
         SearchCriteria<GuiThemeJoinVO> searchCriteria = createGuiThemeSearchCriteria(null, null, commonName, null, null, null, false);
         return searchOrderByCreatedDate(searchCriteria, false);
     }
 
-    @Override
     public Pair<List<GuiThemeJoinVO>, Integer> listGuiThemes(Long id, String name, String commonName, String domainUuid, String accountUuid, boolean listAll,
                                                              boolean showRemoved, Boolean showPublic) {
         SearchCriteria<GuiThemeJoinVO> searchCriteria = createGuiThemeSearchCriteria(id, name, commonName, domainUuid, accountUuid, showPublic, listAll);

@@ -14,10 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.theme.dao;
+package org.apache.cloudstack.gui.themes.dao;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -32,15 +33,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Long> implements GuiThemeDetailsDao {
+public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Long> implements GenericDao<GuiThemeDetailsVO, Long> {
 
     @Inject
     DomainDao domainDao;
 
     @Inject
-    GuiThemeDao guiThemeDao;
+    GuiThemeDaoImpl guiThemeDao;
 
-    @Override
     public List<Long> listGuiThemeIdsByCommonName(String commonName) {
         GenericSearchBuilder<GuiThemeDetailsVO, Long> detailsDaoSearchBuilder = createSearchBuilder(Long.class);
         detailsDaoSearchBuilder.selectFields(detailsDaoSearchBuilder.entity().getGuiThemeId());
@@ -57,7 +57,6 @@ public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Lo
         return customSearch(searchCriteria, null);
     }
 
-    @Override
     public List<Long> listGuiThemeIdsByDomainUuids(String domainUuid) {
         List<Long> guiThemeIds = new ArrayList<>();
         String requestedDomainPath = domainDao.findByUuid(domainUuid).getPath();
@@ -116,7 +115,6 @@ public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Lo
         return guiThemesDetailsJoinDomainJoinGuiThemesSearchBuilder;
     }
 
-    @Override
     public void expungeByGuiThemeId(long guiThemeId) {
         SearchBuilder<GuiThemeDetailsVO> searchBuilder = createSearchBuilder();
         searchBuilder.and("guiThemeId", searchBuilder.entity().getGuiThemeId(), SearchCriteria.Op.EQ);

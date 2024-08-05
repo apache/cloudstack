@@ -207,7 +207,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoin;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -5554,25 +5554,25 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public GuiThemeResponse createGuiThemeResponse(GuiThemeJoinVO guiThemeJoinVO) {
+    public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
 
         Long callerId = CallContext.current().getCallingAccount().getAccountId();
         if (callerId != Account.ACCOUNT_ID_SYSTEM && _accountMgr.isRootAdmin(callerId)) {
-            guiThemeResponse.setId(guiThemeJoinVO.getUuid());
-            guiThemeResponse.setName(guiThemeJoinVO.getName());
-            guiThemeResponse.setDescription(guiThemeJoinVO.getDescription());
-            guiThemeResponse.setCommonNames(guiThemeJoinVO.getCommonNames());
-            guiThemeResponse.setDomainIds(guiThemeJoinVO.getDomains());
-            guiThemeResponse.setRecursiveDomains(guiThemeJoinVO.isRecursiveDomains());
-            guiThemeResponse.setAccountIds(guiThemeJoinVO.getAccounts());
-            guiThemeResponse.setPublic(guiThemeJoinVO.getIsPublic());
-            guiThemeResponse.setCreated(guiThemeJoinVO.getCreated());
-            guiThemeResponse.setRemoved(guiThemeJoinVO.getRemoved());
+            guiThemeResponse.setId(guiThemeJoin.getUuid());
+            guiThemeResponse.setName(guiThemeJoin.getName());
+            guiThemeResponse.setDescription(guiThemeJoin.getDescription());
+            guiThemeResponse.setCommonNames(guiThemeJoin.getCommonNames());
+            guiThemeResponse.setDomainIds(guiThemeJoin.getDomains());
+            guiThemeResponse.setRecursiveDomains(guiThemeJoin.isRecursiveDomains());
+            guiThemeResponse.setAccountIds(guiThemeJoin.getAccounts());
+            guiThemeResponse.setPublic(guiThemeJoin.getIsPublic());
+            guiThemeResponse.setCreated(guiThemeJoin.getCreated());
+            guiThemeResponse.setRemoved(guiThemeJoin.getRemoved());
         }
 
-        guiThemeResponse.setJsonConfiguration(guiThemeJoinVO.getJsonConfiguration());
-        guiThemeResponse.setCss(guiThemeJoinVO.getCss());
+        guiThemeResponse.setJsonConfiguration(guiThemeJoin.getJsonConfiguration());
+        guiThemeResponse.setCss(guiThemeJoin.getCss());
         guiThemeResponse.setResponseName("guithemes");
 
         return guiThemeResponse;

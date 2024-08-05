@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.gui.themes;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -27,7 +25,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "gui_themes_details")
-public class GuiThemeDetailsVO implements InternalIdentity {
+public class GuiThemeDetailsVO implements GuiThemeDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -56,30 +54,37 @@ public class GuiThemeDetailsVO implements InternalIdentity {
         return id;
     }
 
+    @Override
     public void setId(Long id) {
         this.id = id;
     }
 
+    @Override
     public Long getGuiThemeId() {
         return guiThemeId;
     }
 
+    @Override
     public void setGuiThemeId(Long guiThemeId) {
         this.guiThemeId = guiThemeId;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
+    @Override
     public void setType(String type) {
         this.type = type;
     }
 
+    @Override
     public String getValue() {
         return value;
     }
 
+    @Override
     public void setValue(String value) {
         this.value = value;
     }

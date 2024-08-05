@@ -25,14 +25,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiTheme;
+import org.apache.cloudstack.gui.themes.GuiThemeJoin;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
 import javax.inject.Inject;
 
 @APICommand(name = "createGuiTheme", description = "Creates a customized GUI theme for a set of Common Names (fixed or wildcard), a set of domain UUIDs, and/or a set of " +
-        "account UUIDs.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        "account UUIDs.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.20.0.0", authorized = {RoleType.Admin})
 public class CreateGuiThemeCmd extends BaseCmd {
 
@@ -111,13 +111,13 @@ public class CreateGuiThemeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        GuiThemeJoinVO guiTheme = guiThemeService.createGuiTheme(this);
+        GuiThemeJoin guiThemeJoin = guiThemeService.createGuiTheme(this);
 
-        if (guiTheme == null) {
+        if (guiThemeJoin == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create the GUI theme.");
         }
 
-        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiTheme);
+        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeJoin);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
