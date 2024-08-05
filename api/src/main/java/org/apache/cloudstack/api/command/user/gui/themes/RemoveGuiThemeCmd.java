@@ -24,12 +24,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiTheme;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "removeGuiTheme", description = "Removes an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class},
+@APICommand(name = "removeGuiTheme", description = "Removes an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
         since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class RemoveGuiThemeCmd extends BaseCmd {
 

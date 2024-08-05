@@ -17,7 +17,6 @@
 package org.apache.cloudstack.gui.themes;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,7 +28,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "gui_themes_view")
-public class GuiThemeJoinVO implements InternalIdentity {
+public class GuiThemeJoinVO implements GuiThemeJoin {
     @Id
     @Column(name = "id", nullable = false)
     private Long id;
@@ -75,75 +74,67 @@ public class GuiThemeJoinVO implements InternalIdentity {
     public GuiThemeJoinVO() {
     }
 
-    public GuiThemeJoinVO(Long id, String uuid, String name, String description, String css, String jsonConfiguration, String commonNames, String domains,
-                          String accounts, boolean recursiveDomains, boolean isPublic, Date created, Date removed) {
-        this.id = id;
-        this.uuid = uuid;
-        this.name = name;
-        this.description = description;
-        this.css = css;
-        this.jsonConfiguration = jsonConfiguration;
-        this.commonNames = commonNames;
-        this.domains = domains;
-        this.accounts = accounts;
-        this.recursiveDomains = recursiveDomains;
-        this.isPublic = isPublic;
-        this.created = created;
-        this.removed = removed;
-    }
-
+    @Override
     public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    @Override
     public String getUuid() {
         return uuid;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public String getCss() {
         return css;
     }
 
+    @Override
     public String getJsonConfiguration() {
         return jsonConfiguration;
     }
 
+    @Override
     public String getCommonNames() {
         return commonNames;
     }
 
+    @Override
     public String getDomains() {
         return domains;
     }
 
+    @Override
     public String getAccounts() {
         return accounts;
     }
 
+    @Override
     public boolean isRecursiveDomains() {
         return recursiveDomains;
     }
 
+    @Override
     public boolean getIsPublic() {
         return isPublic;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }

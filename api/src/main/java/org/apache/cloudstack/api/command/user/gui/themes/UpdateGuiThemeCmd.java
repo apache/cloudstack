@@ -25,14 +25,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.GuiTheme;
+import org.apache.cloudstack.gui.themes.GuiThemeJoin;
 import org.apache.cloudstack.gui.themes.GuiThemeService;
 
 import javax.inject.Inject;
 
 
-@APICommand(name = "updateGuiTheme", description = "Updates an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiThemeVO.class},
+@APICommand(name = "updateGuiTheme", description = "Updates an existing GUI theme.", responseObject = GuiThemeResponse.class, entityType = {GuiTheme.class},
         since = "4.20.0.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class UpdateGuiThemeCmd extends BaseCmd {
 
@@ -118,13 +118,13 @@ public class UpdateGuiThemeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        GuiThemeJoinVO guiThemeJoinVO = guiThemeService.updateGuiTheme(this);
+        GuiThemeJoin guiThemeJoin = guiThemeService.updateGuiTheme(this);
 
-        if (guiThemeJoinVO == null) {
+        if (guiThemeJoin == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update the GUI theme.");
         }
 
-        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeJoinVO);
+        GuiThemeResponse response = _responseGenerator.createGuiThemeResponse(guiThemeJoin);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
