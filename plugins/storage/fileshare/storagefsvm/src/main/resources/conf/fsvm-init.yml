@@ -150,17 +150,6 @@ write_files:
         echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
       }
 
-      VM_HOSTNAME=$(hostname)
-      VM_IP="127.0.0.1"
-      HOSTS_ENTRY="$VM_IP     $VM_HOSTNAME"
-      if grep -q "$VM_HOSTNAME" /etc/hosts; then
-        log "Hostname entry already exists in /etc/hosts"
-      else
-        # Append the hostname to /etc/hosts
-        echo "$HOSTS_ENTRY" | tee -a /etc/hosts > /dev/null
-        log "Added hostname entry to /etc/hosts: $HOSTS_ENTRY"
-      fi
-
       HYPERVISOR_INFO=$(dmesg | grep -i hypervisor)
       if echo "$HYPERVISOR_INFO" | grep -i "kvm"; then
         BLOCK_DEVICE="vdb"
