@@ -14,22 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes;
+package org.apache.cloudstack.gui.theme.dao;
 
-import org.apache.cloudstack.api.command.user.gui.themes.CreateGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.RemoveGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.UpdateGuiThemeCmd;
-import org.apache.cloudstack.api.response.GuiThemeResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.gui.theme.GuiThemeVO;
+import org.springframework.stereotype.Component;
 
-public interface GuiThemeService {
-
-    ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd);
-
-    GuiThemeJoin createGuiTheme(CreateGuiThemeCmd cmd);
-
-    GuiThemeJoin updateGuiTheme(UpdateGuiThemeCmd cmd);
-
-    void removeGuiTheme(RemoveGuiThemeCmd cmd);
+@Component
+public class GuiThemeDaoImpl extends GenericDaoBase<GuiThemeVO, Long> implements GenericDao<GuiThemeVO, Long> {
 }
