@@ -121,6 +121,14 @@ public class BGPServiceImpl implements BGPService {
             throw new InvalidParameterException(msg);
         }
 
+        List<ASNumberRangeVO> asNumberRanges = asNumberRangeDao.listByZoneId(zoneId);
+        for (ASNumberRangeVO asNumberRange : asNumberRanges) {
+            if (isASNumbersOverlap(asNumberRange.getStartASNumber(), asNumberRange.getEndASNumber(), startASNumber, endASNumber)) {
+                throw new InvalidParameterException(String.format("New AS number range (%s-%s) has conflict with an existing AS number range (%s-%s)",
+                        startASNumber, endASNumber, asNumberRange.getStartASNumber(), asNumberRange.getEndASNumber()));
+            }
+        }
+
         try {
             return Transaction.execute((TransactionCallback<ASNumberRange>) status -> {
                 LOGGER.debug(String.format("Persisting AS Number Range %s-%s for the zone %s", startASNumber, endASNumber, zone.getName()));
@@ -139,6 +147,13 @@ public class BGPServiceImpl implements BGPService {
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }
+    }
+
+    protected boolean isASNumbersOverlap(long startNumber1, long endNumber1, long startNumber2, long endNumber2) {
+        if (startNumber1 > endNumber2 || startNumber2 > endNumber1) {
+            return false;
+        }
+        return true;
     }
 
     @Override
