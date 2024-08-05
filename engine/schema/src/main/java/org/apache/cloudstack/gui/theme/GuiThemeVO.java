@@ -47,10 +47,10 @@ public class GuiThemeVO implements GuiTheme {
     @Column(name = "description", length = 4096)
     private String description;
 
-    @Column(name = "css", nullable = false, length = 65535)
+    @Column(name = "css", length = 65535)
     private String css;
 
-    @Column(name = "json_configuration", nullable = false, length = 65535)
+    @Column(name = "json_configuration", length = 65535)
     private String jsonConfiguration;
 
     @Column(name = "is_public")
