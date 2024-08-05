@@ -188,6 +188,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_IP4_SUBNET_CREATE,
+            eventDescription = "Creating IPv4 subnet for a zone",
+            async = true, create = true)
     public DataCenterIpv4GuestSubnet createDataCenterIpv4GuestSubnet(CreateIpv4SubnetForZoneCmd cmd) {
         Long zoneId = cmd.getZoneId();
         String subnet = cmd.getSubnet();
@@ -263,6 +266,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_IP4_SUBNET_DELETE,
+            eventDescription = "Deleting IPv4 subnet for a zone",
+            async = true)
     public boolean deleteDataCenterIpv4GuestSubnet(DeleteIpv4SubnetForZoneCmd cmd) {
         // check if subnet is in use
         Long subnetId = cmd.getId();
@@ -278,6 +284,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_IP4_SUBNET_UPDATE,
+            eventDescription = "Updating IPv4 subnet for a zone",
+            async = true)
     public DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4SubnetForZoneCmd cmd) {
         Long subnetId = cmd.getId();
         String newSubnet = cmd.getSubnet();
@@ -349,6 +358,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_IP4_SUBNET_DEDICATE,
+            eventDescription = "Dedicating IPv4 subnet for a zone to a domain or an account",
+            async = true)
     public DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4SubnetForZoneCmd cmd) {
         final Long id = cmd.getId();
         Long domainId = cmd.getDomainId();
@@ -390,6 +402,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_IP4_SUBNET_RELEASE,
+            eventDescription = "Releasing dedicated IPv4 subnet for a zone from a domain or an account",
+            async = true)
     public DataCenterIpv4GuestSubnet releaseDedicatedDataCenterIpv4GuestSubnet(ReleaseDedicatedIpv4SubnetForZoneCmd cmd) {
         final Long id = cmd.getId();
         DataCenterIpv4GuestSubnetVO subnetVO = dataCenterIpv4GuestSubnetDao.findById(id);
@@ -405,6 +420,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_IP4_GUEST_SUBNET_CREATE,
+            eventDescription = "Creating IPv4 subnet for guest network",
+            async = true, create = true)
     public Ipv4GuestSubnetNetworkMap createIpv4SubnetForGuestNetwork(CreateIpv4SubnetForGuestNetworkCmd cmd) {
         if (ObjectUtils.allNull(cmd.getSubnet(), cmd.getCidrSize())) {
             throw new InvalidParameterValueException("One of subnet and cidrsize must be specified");
@@ -425,6 +443,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_IP4_GUEST_SUBNET_DELETE,
+            eventDescription = "Deleting IPv4 subnet for guest network",
+            async = true)
     public boolean deleteIpv4SubnetForGuestNetwork(DeleteIpv4SubnetForGuestNetworkCmd cmd) {
         Long mapId = cmd.getId();
         Ipv4GuestSubnetNetworkMapVO mapVO = ipv4GuestSubnetNetworkMapDao.findById(mapId);
@@ -790,7 +811,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTING_IPV4_FIREWALL_RULE_CREATE,
-            eventDescription = "creating routing firewall rule", async = true)
+            eventDescription = "Creating routing firewall rule", async = true)
     public FirewallRule createRoutingFirewallRule(CreateRoutingFirewallRuleCmd createRoutingFirewallRuleCmd) throws NetworkRuleConflictException {
         final Account caller = CallContext.current().getCallingAccount();
         final long networkId = createRoutingFirewallRuleCmd.getNetworkId();
@@ -894,7 +915,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROUTING_IPV4_FIREWALL_RULE_UPDATE,
-            eventDescription = "updating routing firewall rule", async = true)
+            eventDescription = "Updating routing firewall rule", async = true)
     public FirewallRule updateRoutingFirewallRule(UpdateRoutingFirewallRuleCmd updateRoutingFirewallRuleCmd) {
         final long id = updateRoutingFirewallRuleCmd.getId();
         final boolean forDisplay = updateRoutingFirewallRuleCmd.isDisplay();
@@ -993,6 +1014,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BGP_PEER_CREATE,
+            eventDescription = "Creating BGP Peer",
+            async = true, create = true)
     public BgpPeer createBgpPeer(CreateBgpPeerCmd createBgpPeerCmd) {
         Long zoneId = createBgpPeerCmd.getZoneId();
         Long asNumber = createBgpPeerCmd.getAsNumber();
@@ -1105,6 +1129,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BGP_PEER_DELETE,
+            eventDescription = "Deleting BGP Peer",
+            async = true)
     public boolean deleteBgpPeer(DeleteBgpPeerCmd deleteBgpPeerCmd) {
         // check if BGP peer is in use
         Long bgpPeerId = deleteBgpPeerCmd.getId();
@@ -1118,6 +1145,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BGP_PEER_UPDATE,
+            eventDescription = "Updating a BGP Peer",
+            async = true)
     public BgpPeer updateBgpPeer(UpdateBgpPeerCmd updateBgpPeerCmd) {
         Long bgpPeerId = updateBgpPeerCmd.getId();
         Long newAsNumber = updateBgpPeerCmd.getAsNumber();
@@ -1204,6 +1234,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BGP_PEER_DEDICATE,
+            eventDescription = "Dedicating BGP Peer to a domain or an account",
+            async = true)
     public BgpPeer dedicateBgpPeer(DedicateBgpPeerCmd dedicateBgpPeerCmd) {
         final Long id = dedicateBgpPeerCmd.getId();
         Long domainId = dedicateBgpPeerCmd.getDomainId();
@@ -1253,6 +1286,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BGP_PEER_RELEASE,
+            eventDescription = "Releasing a dedicated BGP Peer from a domain or an account",
+            async = true)
     public BgpPeer releaseDedicatedBgpPeer(ReleaseDedicatedBgpPeerCmd releaseDedicatedBgpPeerCmd) {
         final Long id = releaseDedicatedBgpPeerCmd.getId();
         BgpPeerVO bgpPeerVO = bgpPeerDao.findById(id);
@@ -1344,6 +1380,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_BGP_PEER_UPDATE,
+            eventDescription = "Changing BGP peers for network", async = true)
     public Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd) {
         Long networkId = changeBgpPeersForNetworkCmd.getNetworkId();
         List<Long> bgpPeerIds = changeBgpPeersForNetworkCmd.getBgpPeerIds();
@@ -1476,6 +1514,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_BGP_PEER_UPDATE,
+            eventDescription = "Changing BGP peers for VPC", async = true)
     public Vpc changeBgpPeersForVpc(ChangeBgpPeersForVpcCmd changeBgpPeersForVpcCmd) {
         Long vpcId = changeBgpPeersForVpcCmd.getVpcId();
         List<Long> bgpPeerIds = changeBgpPeersForVpcCmd.getBgpPeerIds();
