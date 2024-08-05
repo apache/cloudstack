@@ -14,34 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes;
+package org.apache.cloudstack.gui.theme;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.command.user.gui.theme.CreateGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.RemoveGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.UpdateGuiThemeCmd;
+import org.apache.cloudstack.api.response.GuiThemeResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
-import java.util.Date;
+public interface GuiThemeService {
 
-public interface GuiThemeJoin extends InternalIdentity, Identity {
+    ListResponse<GuiThemeResponse> listGuiThemes(ListGuiThemesCmd cmd);
 
-    String getName();
+    GuiThemeJoin createGuiTheme(CreateGuiThemeCmd cmd);
 
-    String getDescription();
+    GuiThemeJoin updateGuiTheme(UpdateGuiThemeCmd cmd);
 
-    String getCss();
-
-    String getJsonConfiguration();
-
-    String getCommonNames();
-
-    String getDomains();
-
-    String getAccounts();
-
-    boolean isRecursiveDomains();
-
-    boolean getIsPublic();
-
-    Date getCreated();
-
-    Date getRemoved();
+    void removeGuiTheme(RemoveGuiThemeCmd cmd);
 }
