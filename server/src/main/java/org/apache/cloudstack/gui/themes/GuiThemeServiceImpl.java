@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.theme;
+package org.apache.cloudstack.gui.themes;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -40,13 +40,9 @@ import org.apache.cloudstack.api.command.user.gui.themes.UpdateGuiThemeCmd;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeDao;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
-import org.apache.cloudstack.gui.themes.GuiThemeDetailsVO;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
-import org.apache.cloudstack.gui.themes.GuiThemeService;
-import org.apache.cloudstack.gui.themes.GuiThemeVO;
+import org.apache.cloudstack.gui.themes.dao.GuiThemeDaoImpl;
+import org.apache.cloudstack.gui.themes.dao.GuiThemeDetailsDaoImpl;
+import org.apache.cloudstack.gui.themes.dao.GuiThemeJoinDaoImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,13 +69,13 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     private static final String PLUGINS = "plugins";
 
     @Inject
-    GuiThemeDao guiThemeDao;
+    GuiThemeDaoImpl guiThemeDao;
 
     @Inject
-    GuiThemeDetailsDao guiThemeDetailsDao;
+    GuiThemeDetailsDaoImpl guiThemeDetailsDao;
 
     @Inject
-    GuiThemeJoinDao guiThemeJoinDao;
+    GuiThemeJoinDaoImpl guiThemeJoinDao;
 
     @Inject
     ResponseGenerator responseGenerator;
@@ -109,8 +105,8 @@ public class GuiThemeServiceImpl implements GuiThemeService {
         }
         List<GuiThemeResponse> guiThemeResponses = new ArrayList<>();
 
-        for (GuiThemeJoinVO guiThemeJoinVO : result.first()) {
-            GuiThemeResponse guiThemeResponse = responseGenerator.createGuiThemeResponse(guiThemeJoinVO);
+        for (GuiThemeJoin guiThemeJoin : result.first()) {
+            GuiThemeResponse guiThemeResponse = responseGenerator.createGuiThemeResponse(guiThemeJoin);
             guiThemeResponses.add(guiThemeResponse);
         }
 
@@ -131,7 +127,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_GUI_THEME_CREATE, eventDescription = "Creating GUI theme")
-    public GuiThemeJoinVO createGuiTheme(CreateGuiThemeCmd cmd) {
+    public GuiThemeJoin createGuiTheme(CreateGuiThemeCmd cmd) {
         String name = cmd.getName();
         String description = cmd.getDescription();
         String css = cmd.getCss();
@@ -358,7 +354,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_GUI_THEME_UPDATE, eventDescription = "Updating GUI theme")
-    public GuiThemeJoinVO updateGuiTheme(UpdateGuiThemeCmd cmd) {
+    public GuiThemeJoin updateGuiTheme(UpdateGuiThemeCmd cmd) {
         Long guiThemeId = cmd.getId();
         GuiThemeJoinVO guiThemeJoinVO = guiThemeJoinDao.findById(guiThemeId);
 

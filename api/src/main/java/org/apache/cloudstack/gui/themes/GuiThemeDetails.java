@@ -14,17 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.theme.dao;
+package org.apache.cloudstack.gui.themes;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.gui.themes.GuiThemeDetailsVO;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.List;
+public interface GuiThemeDetails extends InternalIdentity {
 
-public interface GuiThemeDetailsDao extends GenericDao<GuiThemeDetailsVO, Long> {
-    List<Long> listGuiThemeIdsByCommonName(String commonName);
+    void setId(Long id);
 
-    List<Long> listGuiThemeIdsByDomainUuids(String domainUuid);
+    Long getGuiThemeId();
 
-    void expungeByGuiThemeId(long guiThemeId);
+    void setGuiThemeId(Long guiThemeId);
+
+    String getType();
+
+    void setType(String type);
+
+    String getValue();
+
+    void setValue(String value);
 }
