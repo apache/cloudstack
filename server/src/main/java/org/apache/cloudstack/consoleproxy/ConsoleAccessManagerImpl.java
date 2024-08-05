@@ -248,8 +248,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
-    public void acquireSession(String sessionUuid) {
-        consoleSessionDao.acquireSession(sessionUuid);
+    public void acquireSession(String sessionUuid, String clientAddress) {
+        consoleSessionDao.acquireSession(sessionUuid, clientAddress);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
