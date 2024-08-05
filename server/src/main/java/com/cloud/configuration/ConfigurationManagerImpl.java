@@ -6633,32 +6633,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (type != GuestType.Isolated) {
                 throw new InvalidParameterValueException("networkMode should be set only for Isolated network offerings");
             }
-        }
-
-        if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
-            boolean useVirtualRouterOnly = true;
-            for (Service service : serviceProviderMap.keySet()) {
-                Set<Provider> providers = serviceProviderMap.get(service);
-                if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
-                    if (providers != null) {
-                        throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
+            if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+                boolean useVirtualRouterOnly = true;
+                for (Service service : serviceProviderMap.keySet()) {
+                    Set<Provider> providers = serviceProviderMap.get(service);
+                    if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
+                        if (providers != null) {
+                            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
+                        }
                     }
-                }
-                if (useVirtualRouterOnly && Arrays.asList(Service.Firewall, Service.NetworkACL).contains(service)) {
-                    for (Provider provider : providers) {
-                        if (!Provider.VirtualRouter.equals(provider) && !Provider.VPCVirtualRouter.equals(provider)) {
-                            useVirtualRouterOnly = false;
-                            break;
+                    if (useVirtualRouterOnly && Arrays.asList(Service.Firewall, Service.NetworkACL).contains(service)) {
+                        for (Provider provider : providers) {
+                            if (!Provider.VirtualRouter.equals(provider) && !Provider.VPCVirtualRouter.equals(provider)) {
+                                useVirtualRouterOnly = false;
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            if (useVirtualRouterOnly) {
-                // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
-                if (forVpc) {
-                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
-                } else {
-                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
+                if (useVirtualRouterOnly) {
+                    // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
+                    if (forVpc) {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+                    } else {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
+                    }
                 }
             }
         }
