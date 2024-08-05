@@ -21,11 +21,11 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.gui.themes.GuiThemeJoinVO;
+import org.apache.cloudstack.gui.themes.GuiThemeJoin;
 
 import java.util.Date;
 
-@EntityReference(value = {GuiThemeJoinVO.class})
+@EntityReference(value = {GuiThemeJoin.class})
 public class GuiThemeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
