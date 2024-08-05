@@ -157,7 +157,7 @@ html{
   background-color:var(--main-secondary-claro) !important;
 }
 
-/* BARRA LATERAL */
+/* SIDE BAR */
 
 .vm-info-card .ant-card-body .ant-card-bordered{
   border-top:2px solid var(--main-primary-escuro) !important;
@@ -177,7 +177,7 @@ html{
   font-weight:900;
 }
 
-/* TELA USER LOGIN */
+/* USER LOGIN SCREEN */
 
 .ant-tabs-tab,
 .user-layout{
@@ -272,7 +272,7 @@ html{
   background-color:var(--main-primary-claro)  !important;
 }
 
-/* PAGINACAO */
+/* PAGINATION */
 .ant-pagination .ant-pagination-item.ant-pagination-item-active{
   background-color:var(--main-primary-escuro) !important;
   border-color:#fff;
@@ -739,7 +739,7 @@ button.ant-btn:not(.ant-btn-icon-only):hover{
   color:#fff !important;
 }
 
-/* GRAFICOS  */
+/* CHARTS  */
 
 .ant-progress .ant-progress-status-normal path{
   stroke:var(--main-exception) !important;
@@ -769,7 +769,7 @@ button.ant-btn:not(.ant-btn-icon-only):hover{
   font-weight: bold
 }
 
-/* lISTAS TABELADAS  */
+/* LIST TABLES  */
 .ant-list .ant-list-item{
   border-left:5px solid transparent !important;
   padding-left:10px;
@@ -798,7 +798,7 @@ button.ant-btn:not(.ant-btn-icon-only):hover{
   background-color:var(--main-secondary-escuro) !important;
 }
 
-/* OUTROS  */
+/* OTHERS  */
 
 .ant-tree li .ant-tree-node-content-wrapper.ant-tree-node-selected{
   background-color:var(--main-primary-claro)
@@ -875,7 +875,7 @@ button.ant-btn:not(.ant-btn-icon-only):hover{
   transform: scale(1.3);
 }
 
-/* CADASTROS FORMS E ADDS */
+/* REGISTRATIONS FORMS AND ADDS */
 .ant-steps-item-tail{
   margin-top:15px;
 }

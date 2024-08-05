@@ -222,8 +222,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes` (
 CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
     `id` bigint(20) unsigned NOT NULL auto_increment,
     `gui_theme_id` bigint(20) unsigned NOT NULL COMMENT 'Foreign key referencing the GUI theme on `gui_themes` table.',
-    `type` varchar(100) DEFAULT NULL COMMENT 'The type of GUI theme details. Valid options are: `account`, `domain` and `commonName`',
-    `value` text COMMENT 'The value of the `type` details. Can be an UUID (account or domain) or internet common name.',
+    `type` varchar(100) DEFAULT NOT NULL COMMENT 'The type of GUI theme details. Valid options are: `account`, `domain` and `commonName`',
+    `value` text NOT NULL COMMENT 'The value of the `type` details. Can be an UUID (account or domain) or internet common name.',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
 );
