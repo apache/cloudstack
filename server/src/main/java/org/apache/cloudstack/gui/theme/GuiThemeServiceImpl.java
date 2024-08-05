@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.gui.themes;
+package org.apache.cloudstack.gui.theme;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -33,16 +33,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.command.user.gui.themes.CreateGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.ListGuiThemesCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.RemoveGuiThemeCmd;
-import org.apache.cloudstack.api.command.user.gui.themes.UpdateGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.CreateGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.RemoveGuiThemeCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.UpdateGuiThemeCmd;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.themes.dao.GuiThemeDaoImpl;
-import org.apache.cloudstack.gui.themes.dao.GuiThemeDetailsDaoImpl;
-import org.apache.cloudstack.gui.themes.dao.GuiThemeJoinDaoImpl;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDaoImpl;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDaoImpl;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

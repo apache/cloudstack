@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.gui.themes;
+package org.apache.cloudstack.api.command.user.gui.theme;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -25,8 +25,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.gui.themes.GuiTheme;
-import org.apache.cloudstack.gui.themes.GuiThemeService;
+import org.apache.cloudstack.gui.theme.GuiTheme;
+import org.apache.cloudstack.gui.theme.GuiThemeService;
 
 import javax.inject.Inject;
 
