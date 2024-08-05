@@ -165,7 +165,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             return fileShareStateMachine.transitTo(fileShare, event, null, fileShareDao);
         } catch (NoTransitionException e) {
             logger.debug(String.format("Failed during event % for File Share %s [%s] due to exception %",
-                    Event.DeployRequested.toString(), fileShare.getName(), fileShare.getId(), e));
+                    event.toString(), fileShare.getName(), fileShare.getId(), e));
             return false;
         }
     }
@@ -625,6 +625,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         lifeCycle.deleteFileShare(fileShare);
+        stateTransitTo(fileShare, Event.OperationSucceeded);
         fileShareDao.remove(fileShare.getId());
     }
 

@@ -562,7 +562,7 @@ export default {
         {
           api: 'createFileShare',
           icon: 'plus-outlined',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#creating-a-new-file-share',
           label: 'label.create.fileshare',
           listView: true,
           popup: true,
@@ -571,7 +571,7 @@ export default {
         {
           api: 'updateFileShare',
           icon: 'edit-outlined',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.update.fileshare',
           dataView: true,
           popup: true,
@@ -582,7 +582,7 @@ export default {
           icon: 'caret-right-outlined',
           label: 'label.action.start.fileshare',
           message: 'message.action.start.fileshare',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
           show: (record) => { return ['Stopped', 'Detached'].includes(record.state) }
         },
@@ -591,7 +591,7 @@ export default {
           icon: 'poweroff-outlined',
           label: 'label.action.stop.fileshare',
           message: 'message.action.stop.fileshare',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
           args: ['forced'],
           show: (record) => { return ['Ready'].includes(record.state) }
@@ -599,7 +599,7 @@ export default {
         {
           api: 'restartFileShare',
           icon: 'reload-outlined',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.action.restart.fileshare',
           message: 'message.action.restart.fileshare',
           dataView: true,
@@ -609,7 +609,7 @@ export default {
         {
           api: 'changeFileShareDiskOffering',
           icon: 'swap-outlined',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.change.disk.offering',
           dataView: true,
           popup: true,
@@ -619,7 +619,7 @@ export default {
         {
           api: 'changeFileShareServiceOffering',
           icon: 'arrows-alt-outlined',
-          docHelp: 'to-be-updated',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.change.service.offering',
           dataView: true,
           popup: true,
@@ -629,6 +629,7 @@ export default {
         {
           api: 'destroyFileShare',
           icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.destroy.fileshare',
           message: 'message.action.destroy.fileshare',
           dataView: true,
@@ -640,6 +641,7 @@ export default {
         {
           api: 'recoverFileShare',
           icon: 'medicine-box-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.recover.fileshare',
           message: 'message.action.recover.fileshare',
           dataView: true,
@@ -648,6 +650,7 @@ export default {
         {
           api: 'expungeFileShare',
           icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.expunge.fileshare',
           message: 'message.action.expunge.fileshare',
           dataView: true,

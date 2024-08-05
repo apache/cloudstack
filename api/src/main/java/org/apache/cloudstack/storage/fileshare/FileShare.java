@@ -29,7 +29,7 @@ import java.util.Date;
 public interface FileShare extends ControlledEntity, Identity, InternalIdentity, StateObject<FileShare.State> {
 
     static final ConfigKey<Boolean> FileShareFeatureEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
-            "file.share.feature.enabled",
+            "fileshare.feature.enabled",
             "true",
             " Indicates whether the File Share feature is enabled or not. Management server restart needed on change",
             false);
@@ -37,7 +37,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
     ConfigKey<Integer> FileShareCleanupInterval = new ConfigKey<>(Integer.class,
             "fileshare.cleanup.interval",
             "Advanced",
-            "3600",
+            "14400",
             "The interval (in seconds) to wait before running the fileshare cleanup thread.",
             false,
             ConfigKey.Scope.Global,
@@ -48,7 +48,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             "fileshare.cleanup.delay",
             "Advanced",
             "86400",
-            "Determines how long (in seconds) to wait before actually expunging destroyed file shares. The default value = the default value of fileshare.cleanup.interval.",
+            "Determines how long (in seconds) to wait before actually expunging destroyed file shares.",
             false,
             ConfigKey.Scope.Global,
             null,
@@ -73,7 +73,8 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
         Starting(true, "The file share is being started."),
         Detached(false, "The file share Data is not attached to any VM."),
         Destroyed(false, "The file share is destroyed."),
-        Expunging(false, "The file share is being expunged."),
+        Expunging(true, "The file share is being expunged."),
+        Expunged(false, "The file share has been expunged."),
         Error(false, "The file share is in error state.");
 
         boolean _transitional;
@@ -121,12 +122,11 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.RecoveryRequested, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.ExpungeOperation, Expunging, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.ExpungeOperation, Expunging, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationSucceeded, Expunged, null));
         }
     }
 
     enum Event {
-        DeployRequested,
-        InitializationRequested,
         StopRequested,
         StartRequested,
         Detach,

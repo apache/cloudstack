@@ -164,7 +164,6 @@ CREATE TABLE `cloud`.`storage_fileshare`(
     `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
     `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
     `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
-    `mount_options` varchar(255) COMMENT 'default mount options to be used while mounting the file share',
     `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',
     `service_offering_id` bigint unsigned COMMENT 'Service offering for the vm',
     `update_count` bigint unsigned COMMENT 'Update count for state change',
