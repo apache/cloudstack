@@ -217,7 +217,7 @@ public class KubernetesClusterUtil {
                                                           final int port, final String user, final File sshKeyFile) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                "sudo /opt/bin/kubectl get nodes | awk '{if ($2 == \"Ready\") print $1}' | wc -l",
+                "sudo /opt/bin/kubectl get nodes | grep -w 'Ready' | wc -l",
                 10000, 10000, 20000);
         if (Boolean.TRUE.equals(result.first())) {
             return Integer.parseInt(result.second().trim().replace("\"", "")) + kubernetesCluster.getEtcdNodeCount().intValue();
