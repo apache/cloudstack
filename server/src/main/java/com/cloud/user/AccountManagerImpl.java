@@ -2783,7 +2783,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
         if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
             String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new PermissionDeniedException(msg);
         }
     }

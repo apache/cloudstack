@@ -234,7 +234,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
         Account owner = _accountDao.findById(entity.getAccountId());
         if (owner == null) {
-            s_logger.error(String.format("Owner not found for %s", entityLog));
+            logger.error(String.format("Owner not found for %s", entityLog));
             throw exception;
         }
 
@@ -248,12 +248,12 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             // only project owner can delete/modify the project
             if (accessType == AccessType.ModifyProject) {
                 if (!_projectMgr.canModifyProjectAccount(caller, owner.getId())) {
-                    s_logger.error(String.format("Caller ID: %d does not have permission to modify project with " +
+                    logger.error(String.format("Caller ID: %d does not have permission to modify project with " +
                             "owner ID: %d", caller.getId(), owner.getId()));
                     throw exception;
                 }
             } else if (!_projectMgr.canAccessProjectAccount(caller, owner.getId())) {
-                s_logger.error(String.format("Caller ID: %d does not have permission to access project with " +
+                logger.error(String.format("Caller ID: %d does not have permission to access project with " +
                         "owner ID: %d", caller.getId(), owner.getId()));
                 throw exception;
             }
@@ -261,7 +261,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return;
         }
 
-        s_logger.error(String.format("Caller ID: %d does not have permission to access %s", caller.getId(), entityLog));
+        logger.error(String.format("Caller ID: %d does not have permission to access %s", caller.getId(), entityLog));
         throw exception;
     }
 
