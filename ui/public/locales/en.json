@@ -3058,6 +3058,7 @@
 "message.failed.to.remove": "Failed to remove",
 "message.generate.keys": "Please confirm that you would like to generate new API/Secret keys for this User.",
 "message.chart.statistic.info": "The shown charts are self-adjustable, that means, if the value gets close to the limit or overpass it, it will grow to adjust the shown value",
+"message.chart.statistic.info.hypervisor.additionals": "The metrics data depend on the hypervisor plugin used for each hypervisor. The behavior can vary across different hypervisors. For instance, with KVM, metrics are real-time statistics provided by libvirt. In contrast, with VMware, the metrics are averaged data for a given time interval controlled by configuration.",
 "message.guest.traffic.in.advanced.zone": "Guest Network traffic is communication between end-user Instances. Specify a range of VLAN IDs or VXLAN Network identifiers (VNIs) to carry guest traffic for each physical Network.",
 "message.guest.traffic.in.basic.zone": "Guest Network traffic is communication between end-user Instances. Specify a range of IP addresses that CloudStack can assign to guest Instances. Make sure this range does not overlap the reserved system IP range.",
 "message.host.controlstate": "The Control Plane Status of this Instance is ",
