@@ -133,7 +133,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 Network.Service[] services = { Network.Service.SourceNat };
                 long networkOfferingId = vpc.getVpcOfferingId();
                 VpcOfferingVO vpcVO = vpcOfferingDao.findById(networkOfferingId);
-                boolean sourceNatEnabled = !NetworkOffering.NsxMode.ROUTED.name().equals(vpcVO.getNsxMode()) &&
+                boolean sourceNatEnabled = !NetworkOffering.NetworkMode.ROUTED.equals(vpcVO.getNetworkMode()) &&
                         vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
                 logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
@@ -146,7 +146,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
                 boolean hasNatSupport = false;
                 VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
-                hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
+                hasNatSupport = NetworkOffering.NetworkMode.NATTED.equals(vpcOffering.getNetworkMode());
 
                 if (!hasNatSupport) {
                     return nic;

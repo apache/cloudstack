@@ -1201,28 +1201,28 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 // Offering #9 - network offering for NSX provider - NATTED mode
                 createAndPersistDefaultNsxOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
-                        NetworkOffering.NsxMode.NATTED, false, true);
+                        NetworkOffering.NetworkMode.NATTED, false, true);
 
                 // Offering #10 - network offering for NSX provider - ROUTED mode
                 createAndPersistDefaultNsxOffering(NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING, "Offering for NSX enabled networks - ROUTED mode",
-                        NetworkOffering.NsxMode.ROUTED, false, true);
+                        NetworkOffering.NetworkMode.ROUTED, false, true);
 
                 // Offering #11 - network offering for NSX provider for VPCs - NATTED mode
                 createAndPersistDefaultNsxOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC, "Offering for NSX enabled networks on VPCs - NAT mode",
-                        NetworkOffering.NsxMode.NATTED, true, true);
+                        NetworkOffering.NetworkMode.NATTED, true, true);
 
                 // Offering #12 - network offering for NSX provider for VPCs - ROUTED mode
                 createAndPersistDefaultNsxOffering(NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC, "Offering for NSX enabled networks on VPCs - ROUTED mode",
-                        NetworkOffering.NsxMode.ROUTED, true, true);
+                        NetworkOffering.NetworkMode.ROUTED, true, true);
 
                 // Offering #13 - network offering for NSX provider for VPCs with Internal LB - NATTED mode
                 createAndPersistDefaultNsxOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB, "Offering for NSX enabled networks on VPCs with internal LB - NAT mode",
-                        NetworkOffering.NsxMode.NATTED, true, false);
+                        NetworkOffering.NetworkMode.NATTED, true, false);
             }
         });
     }
 
-    private void createAndPersistDefaultNsxOffering(String name, String displayText, NetworkOffering.NsxMode nsxMode,
+    private void createAndPersistDefaultNsxOffering(String name, String displayText, NetworkOffering.NetworkMode networkMode,
                                                     boolean forVpc, boolean publicLB) {
         NetworkOfferingVO defaultNatNSXNetworkOffering =
                 new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, false, null,
@@ -1231,11 +1231,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultNatNSXNetworkOffering.setPublicLb(publicLB);
         defaultNatNSXNetworkOffering.setInternalLb(!publicLB);
         defaultNatNSXNetworkOffering.setForNsx(true);
-        defaultNatNSXNetworkOffering.setNsxMode(nsxMode.name());
+        defaultNatNSXNetworkOffering.setNetworkMode(networkMode);
         defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNatNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatNSXNetworkOffering);
 
-        Map<Service, Provider> serviceProviderMap = getServicesAndProvidersForNSXNetwork(nsxMode, forVpc, publicLB);
+        Map<Service, Provider> serviceProviderMap = getServicesAndProvidersForNSXNetwork(networkMode, forVpc, publicLB);
         for (Map.Entry<Network.Service, Network.Provider> service : serviceProviderMap.entrySet()) {
             NetworkOfferingServiceMapVO offService =
                     new NetworkOfferingServiceMapVO(defaultNatNSXNetworkOffering.getId(), service.getKey(), service.getValue());
@@ -1244,7 +1244,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         }
     }
 
-    private Map<Service, Provider> getServicesAndProvidersForNSXNetwork(NetworkOffering.NsxMode nsxMode, boolean forVpc, boolean publicLB) {
+    private Map<Service, Provider> getServicesAndProvidersForNSXNetwork(NetworkOffering.NetworkMode networkMode, boolean forVpc, boolean publicLB) {
         final Map<Network.Service, Network.Provider> serviceProviderMap = new HashMap<>();
         Provider routerProvider = forVpc ? Provider.VPCVirtualRouter : Provider.VirtualRouter;
         serviceProviderMap.put(Service.Dhcp, routerProvider);
@@ -1255,7 +1255,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         } else {
             serviceProviderMap.put(Service.Firewall, Provider.Nsx);
         }
-        if (nsxMode == NetworkOffering.NsxMode.NATTED) {
+        if (networkMode == NetworkOffering.NetworkMode.NATTED) {
             serviceProviderMap.put(Service.SourceNat, Provider.Nsx);
             serviceProviderMap.put(Service.StaticNat, Provider.Nsx);
             serviceProviderMap.put(Service.PortForwarding, Provider.Nsx);

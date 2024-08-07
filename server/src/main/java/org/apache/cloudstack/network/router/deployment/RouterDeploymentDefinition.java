@@ -353,7 +353,7 @@ public class RouterDeploymentDefinition {
         setupAccountOwner();
 
         // Check if public network has to be set on VR
-        isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
+        isPublicNetwork = networkModel.isAnyServiceSupportedInNetwork(guestNetwork.getId(), Provider.VirtualRouter, Service.SourceNat, Service.Gateway);
 
         boolean canProceed = true;
         if (isRedundant() && !isPublicNetwork) {

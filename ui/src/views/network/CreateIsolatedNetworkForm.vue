@@ -97,6 +97,25 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="apiParams.asnumber.description"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-row :gutter="12" v-if="setMTU">
             <a-col :md="12" :lg="12">
               <a-form-item
@@ -173,6 +192,7 @@
               :placeholder="apiParams.externalid.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="gateway"
             name="gateway">
             <template #label>
@@ -183,6 +203,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="netmask"
             name="netmask">
             <template #label>
@@ -191,6 +212,17 @@
             <a-input
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
+          </a-form-item>
+          <a-form-item
+            v-if="selectedNetworkOffering && selectedNetworkOffering.networkmode === 'ROUTED'"
+            ref="cidrsize"
+            name="cidrsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+            </template>
+            <a-input
+              v-model:value="form.cidrsize"
+              :placeholder="apiParams.cidrsize.description"/>
           </a-form-item>
           <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
             <template #label>
@@ -334,7 +366,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       errorPrivateMtu: '',
-      setMTU: false
+      setMTU: false,
+      asNumberLoading: false,
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   watch: {
@@ -387,8 +422,14 @@ export default {
     },
     allowSettingMTU () {
     },
+    isAdmin () {
+      return isAdmin()
+    },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
+    },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering?.routingmode.toLowerCase() === 'dynamic'
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
@@ -427,6 +468,23 @@ export default {
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {
@@ -512,6 +570,9 @@ export default {
       if (networkOffering.forvpc) {
         this.fetchVpcData()
       }
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
     },
     fetchVpcData () {
       this.vpcLoading = true
@@ -537,7 +598,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -545,7 +605,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
@@ -567,6 +627,10 @@ export default {
         } else if (this.owner.projectid) {
           params.domainid = this.owner.domainid
           params.projectid = this.owner.projectid
+        }
+
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
 
         api('createNetwork', params).then(json => {

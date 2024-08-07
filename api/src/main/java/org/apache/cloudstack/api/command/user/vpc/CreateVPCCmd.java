@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -41,6 +42,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.vpc.Vpc;
+
+import java.util.List;
 
 @APICommand(name = "createVPC", description = "Creates a VPC", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -75,9 +78,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     private String displayText;
 
-    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC " +
-            "guest networks' cidrs should be within this CIDR")
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING,
+            description = "the cidr of the VPC. All VPC guest networks' cidrs should be within this CIDR")
     private String cidr;
+
+    @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
+            description = "the CIDR size of VPC. For regular users, this is required for VPC with ROUTED mode.",
+            since = "4.20")
+    private Integer cidrSize;
 
     @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class,
                required = true, description = "the ID of the VPC offering")
@@ -117,6 +125,17 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the VPC tiers")
+    private Long asNumber;
+
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            description = "Ids of the Bgp Peer for the VPC",
+            since = "4.20")
+    private List<Long> bgpPeerIds;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -139,6 +158,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getCidr() {
         return cidr;
+    }
+
+    public Integer getCidrSize() {
+        return cidrSize;
     }
 
     public String getDisplayText() {
@@ -187,6 +210,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
     }
 
     /////////////////////////////////////////////////////

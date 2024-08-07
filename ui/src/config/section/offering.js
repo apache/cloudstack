@@ -375,7 +375,7 @@ export default {
       permission: ['listNetworkOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'tags'],
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'nsxmode', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
@@ -475,7 +475,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'fornsx', 'nsxmode', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

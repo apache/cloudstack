@@ -29,6 +29,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.AdvancedVpnRules;
+import com.cloud.network.rules.BgpPeersRules;
 import com.cloud.network.rules.DhcpEntryRules;
 import com.cloud.network.rules.DhcpPvlanRules;
 import com.cloud.network.rules.NetworkAclsRules;
@@ -47,6 +48,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 
+import org.apache.cloudstack.network.BgpPeer;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -241,6 +244,29 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         final NetworkAclsRules aclsRules = new NetworkAclsRules(network, rules, isPrivateGateway);
 
         final boolean result = applyRules(network, router, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(aclsRules));
+        return result;
+    }
+
+    @Override
+    public boolean applyBgpPeers(Network network, List<? extends BgpPeer> bpgPeers, VirtualRouter router) throws ResourceUnavailableException {
+        logger.debug("APPLYING BGP Peers");
+
+        if (CollectionUtils.isEmpty(bpgPeers)) {
+            logger.debug("No bgp peers to apply. However, apply BGP peers to clear the existing configuration in the VRs.");
+        }
+
+        final BgpPeersRules bgpPeersRules = new BgpPeersRules(bpgPeers, network);
+
+        boolean result = true;
+        if (router.getState() == State.Running) {
+            result = bgpPeersRules.accept(_advancedVisitor, router);
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending BgpPeer command to the backend");
+        } else {
+            logger.warn("Unable to apply BgpPeer, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply BgpPeer on the backend," + " virtual router is not in the right state", DataCenter.class,
+                    router.getDataCenterId());
+        }
         return result;
     }
 }

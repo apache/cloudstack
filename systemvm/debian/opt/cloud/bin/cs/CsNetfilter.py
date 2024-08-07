@@ -233,6 +233,57 @@ class CsNetfilters(object):
             CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, \
                 nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
 
+    def add_ip4_chain(self, address_family, table, chain, hook, action):
+        chain_policy = ""
+        if hook:
+            chain_policy = "type filter hook %s priority 0;" % hook
+        if chain_policy and action:
+            chain_policy = "%s policy %s;" % (chain_policy, action)
+        CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
+        if hook == "input" or hook == "output":
+            CsHelper.execute("nft add rule %s %s %s icmp type { echo-request, echo-reply } accept" % (address_family, table, chain))
+
+    def apply_nft_ipv4_rules(self, rules, type):
+        if len(rules) == 0:
+            return
+
+        address_family = 'ip'
+        table = 'ip4_firewall'
+        default_chains = [
+            {"chain": "INPUT", "hook": "input", "action": "drop"},
+            {"chain": "FORWARD", "hook": "forward", "action": "accept"},
+            {"chain": "OUTPUT", "hook": "output", "action": "accept"}
+        ]
+        if type == "acl":
+            table = 'ip4_acl'
+            default_chains = [
+                {"chain": "INPUT", "hook": "input", "action": "drop"},
+                {"chain": "FORWARD", "hook": "forward", "action": "accept"},
+                {"chain": "OUTPUT", "hook": "output", "action": "accept"}
+            ]
+        tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
+        if any(table in t for t in tables):
+            CsHelper.execute("nft delete table %s %s" % (address_family, table))
+        CsHelper.execute("nft add table %s %s" % (address_family, table))
+        for chain in default_chains:
+            self.add_ip4_chain(address_family, table, chain['chain'], chain['hook'], chain['action'])
+        for fw in rules:
+            chain = fw['chain']
+            type = fw['type']
+            rule = None
+            if 'rule' in fw:
+                rule = fw['rule']
+            if type == "chain":
+                hook = ""
+                if "output" in chain:
+                    hook = "output"
+                elif "input" in chain:
+                    hook = "input"
+                self.add_ip4_chain(address_family, table, chain, hook, rule)
+            else:
+                logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
+                CsHelper.execute("nft add rule %s %s %s %s" % (address_family, table, chain, rule))
+
     def apply_ip6_rules(self, rules, type):
         if len(rules) == 0:
             return

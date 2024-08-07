@@ -90,6 +90,13 @@
                           <status :text="opt.state" />
                         </span>
                         {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        <span v-if="(field.name.startsWith('associatednetwork'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <block-outlined v-else style="margin-right: 5px" />
+                        </span>
+                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -290,6 +297,9 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'associatednetworkid' && this.$route.meta.name === 'asnumbers') {
+          item = 'networkid'
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
@@ -414,6 +424,7 @@ export default {
       let managementServerIdIndex = -1
       let serviceOfferingIndex = -1
       let diskOfferingIndex = -1
+      let networkIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -499,6 +510,12 @@ export default {
         promises.push(await this.fetchDiskOfferings(searchKeyword))
       }
 
+      if (arrayField.includes('networkid')) {
+        networkIndex = this.fields.findIndex(item => item.name === 'networkid')
+        this.fields[networkIndex].loading = true
+        promises.push(await this.fetchNetworks(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -581,6 +598,13 @@ export default {
             this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
           }
         }
+
+        if (networkIndex > -1) {
+          const networks = response.filter(item => item.type === 'associatednetworkid')
+          if (networks && networks.length > 0) {
+            this.fields[networkIndex].opts = this.sortArray(networks[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -621,6 +645,10 @@ export default {
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
+        }
+        this.fillFormFieldValues()
       })
     },
     initFormFieldData () {
@@ -870,6 +898,19 @@ export default {
           resolve({
             type: 'managementserverid',
             data: managementservers
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchNetworks (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+          const networks = json.listnetworksresponse.network
+          resolve({
+            type: 'associatednetworkid',
+            data: networks
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])

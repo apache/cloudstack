@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -157,7 +159,6 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -175,7 +176,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1998,7 +1998,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
         if (forNsx) {
-            defaultKubernetesServiceNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
+            defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
             defaultKubernetesServiceNetworkOffering.setForNsx(true);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);

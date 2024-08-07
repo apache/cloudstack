@@ -139,8 +139,8 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_nsx")
     boolean forNsx = false;
 
-    @Column(name = "nsx_mode")
-    String nsxMode;
+    @Column(name = "network_mode")
+    NetworkMode networkMode;
 
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
@@ -173,6 +173,13 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Column(name="service_package_id")
     String servicePackageUuid = null;
+
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
 
     @Override
     public boolean isKeepAliveEnabled() {
@@ -211,12 +218,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public String getNsxMode() {
-        return nsxMode;
+    public NetworkMode getNetworkMode() {
+        return networkMode;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setNetworkMode(NetworkMode networkMode) {
+        this.networkMode = networkMode;
     }
 
     @Override
@@ -581,5 +588,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
+    }
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 }

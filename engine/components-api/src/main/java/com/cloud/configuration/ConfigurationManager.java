@@ -223,7 +223,8 @@ public interface ConfigurationManager {
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                             Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                            Boolean forTungsten, boolean forNsx, String mode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol);
+                                            Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                            NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr, boolean forNsx)

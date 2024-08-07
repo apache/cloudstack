@@ -107,6 +107,18 @@ class CsCmdLine(CsDataBag):
         else:
             return "unknown"
 
+    def get_eth0_ip(self):
+        if "eth0ip" in self.idata():
+            return self.idata()['eth0ip']
+        else:
+            return False
+
+    def get_cidr_size(self):
+        if "cidrsize" in self.idata():
+            return self.idata()['cidrsize']
+        else:
+            return False
+
     def get_eth2_ip(self):
         if "eth2ip" in self.idata():
             return self.idata()['eth2ip']

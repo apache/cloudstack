@@ -34,7 +34,7 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange'],
   related: [{
     name: 'pod',
     title: 'label.pods',
@@ -72,6 +72,15 @@ export default {
   }, {
     name: 'physical.network',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
+  }, {
+    name: 'ipv4.subnets',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/Ipv4GuestSubnetsTab.vue')))
+  }, {
+    name: 'asnumber',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue')))
+  }, {
+    name: 'bgp.peers',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue')))
   }, {
     name: 'system.vms',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),

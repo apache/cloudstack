@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.network.rules.BgpPeersRules;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -322,5 +323,10 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
         throw new CloudRuntimeException("AdvancedVpnRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final BgpPeersRules bgpPeersRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("BgpPeersRules not implemented in Basic Network Topology.");
     }
 }

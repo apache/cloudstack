@@ -241,6 +241,9 @@
           <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
         </a>
       </template>
+      <template v-if="column.key === 'networkname'">
+        <router-link :to="{ path: '/guestnetwork/' + record.networkid }">{{ text }}</router-link>
+      </template>
       <template v-if="column.key === 'guestnetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
       </template>
@@ -252,6 +255,11 @@
           <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text || record.vpcid }}</router-link>
         </a>
         <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'subnet'">
+        <a href="javascript:;">
+          <router-link v-if="$route.path === '/ipv4subnets'" :to="{ path: '/ipv4subnets/' + record.id }">{{ text }}</router-link>
+        </a>
       </template>
       <template v-if="column.key === 'hostname'">
         <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
@@ -372,7 +380,7 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
+      <template v-if="['created', 'sent'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip'].includes($route.meta.name) && text)">
         {{ $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
@@ -675,7 +683,8 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries',
+        '/ipv4subnets'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -683,7 +692,7 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries'
+        'webhook', 'webhookdeliveries', 'ipv4subnets', 'asnumbers'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {

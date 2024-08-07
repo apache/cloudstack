@@ -249,7 +249,6 @@ export default {
         if (values.tags) {
           values.tags = values.tags.join()
         }
-        console.log(values)
         api('createPhysicalNetwork', values).then(response => {
           this.$pollJob({
             jobId: response.createphysicalnetworkresponse.jobid,

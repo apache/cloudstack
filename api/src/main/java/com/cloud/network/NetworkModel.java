@@ -173,6 +173,8 @@ public interface NetworkModel {
 
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
 
+    boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services);
+
     boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
     String getNetworkTag(HypervisorType hType, Network network);
