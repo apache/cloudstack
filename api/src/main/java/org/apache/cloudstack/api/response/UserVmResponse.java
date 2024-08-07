@@ -1144,5 +1144,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public String getVmType() {
         return vmType;
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
