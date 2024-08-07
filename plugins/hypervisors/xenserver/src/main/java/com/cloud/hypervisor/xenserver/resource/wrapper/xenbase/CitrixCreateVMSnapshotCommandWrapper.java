@@ -100,6 +100,7 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                     vm = citrixResourceBase.getVM(conn, vmName);
                     vmState = vm.getPowerState(conn);
                 } catch (final Exception e) {
+                    s_logger.debug(String.format("Failed to find VM with name: %s due to:", vmName), e);
                     if (!snapshotMemory) {
                         vm = citrixResourceBase.createWorkingVM(conn, vmName, guestOSType, platformEmulator, listVolumeTo);
                     }
@@ -178,13 +179,11 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
                                 vdi.destroy(conn);
                             }
                         }
-                        vmSnapshot.destroy(conn);
+                        citrixResourceBase.destroyVm(vmSnapshot, conn, true);
                     }
                 }
-                if (vmState == VmPowerState.HALTED) {
-                    if (vm != null) {
-                        vm.destroy(conn);
-                    }
+                if (vmState == VmPowerState.HALTED && vm != null) {
+                    citrixResourceBase.destroyVm(vm, conn);
                 }
             } catch (final Exception e2) {
                 s_logger.error("delete snapshot error due to " + e2.getMessage());
