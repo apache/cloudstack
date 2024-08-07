@@ -15,26 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api;
+export function validateLinks (router, isStatic, resource) {
+  const validLinks = {
+    volume: false
+  }
 
-public enum ApiArgValidator {
-    /**
-     * Validates if the parameter is null or empty with the method {@link Strings#isNullOrEmpty(String)}.
-     */
-    NotNullOrEmpty,
+  if (isStatic) {
+    return validLinks
+  }
 
-    /**
-     * Validates if the parameter is different from null (parameter != null) and greater than zero (parameter > 0).
-     */
-    PositiveNumber,
+  if (resource.volumeid && router.resolve('/volume/' + resource.volumeid).matched[0].redirect !== '/exception/404') {
+    if (resource.volumestate) {
+      validLinks.volume = resource.volumestate !== 'Expunged'
+    } else {
+      validLinks.volume = true
+    }
+  }
 
-    /**
-     * Validates if the parameter is an UUID with the method {@link UuidUtils#isUuid(String)}.
-     */
-    UuidString,
-
-    /**
-     * Validates if the parameter is a valid RFC Compliance domain name.
-     */
-    RFCComplianceDomainName,
+  return validLinks
 }

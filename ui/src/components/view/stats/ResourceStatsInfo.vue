@@ -45,7 +45,8 @@ export default {
         {
           resourceType: 'CHART',
           messageList: [
-            this.$t('message.chart.statistic.info')
+            this.$t('message.chart.statistic.info'),
+            this.$t('message.chart.statistic.info.hypervisor.additionals')
           ]
         },
         {

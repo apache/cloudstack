@@ -31,6 +31,30 @@ export default {
     name: 'accountuser',
     title: 'label.users',
     param: 'account'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'account'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'account'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'account'
+  }, {
+    name: 'ssh',
+    title: 'label.sshkeypairs',
+    param: 'account'
+  }, {
+    name: 'userdata',
+    title: 'label.userdata',
+    param: 'account'
+  }, {
+    name: 'template',
+    title: 'label.templates',
+    param: 'account'
   }],
   filters: () => {
     const filters = ['enabled', 'disabled', 'locked']
