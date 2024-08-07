@@ -38,6 +38,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -55,7 +56,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -103,7 +103,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     private AccountManager accountMgr;
 
     @Inject
-    private EntityManager entityMgr;
+    private DataCenterDao dataCenterDao;
 
     @Inject
     private ConfigurationManager configMgr;
@@ -130,7 +130,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     private Map<String, FileShareProvider> fileShareProviderMap = new HashMap<>();
 
-    private final StateMachine2<State, Event, FileShare> fileShareStateMachine;
+    protected final StateMachine2<State, Event, FileShare> fileShareStateMachine;
 
     ScheduledExecutorService _executor = null;
 
@@ -164,9 +164,10 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         try {
             return fileShareStateMachine.transitTo(fileShare, event, null, fileShareDao);
         } catch (NoTransitionException e) {
-            logger.debug(String.format("Failed during event % for File Share %s [%s] due to exception %",
-                    event.toString(), fileShare.getName(), fileShare.getId(), e));
-            return false;
+            String message = String.format("State transit error for File share %s [%s] due to exception: %s.",
+                    fileShare.getName(), fileShare.getId(), e.getMessage());
+            logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
         }
     }
 
@@ -213,7 +214,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     private DataCenter validateAndGetZone(Long zoneId) {
-        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
+        DataCenter zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by ID: " + zoneId);
         }
@@ -223,7 +224,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return zone;
     }
 
-    private DiskOfferingVO validateAndGetDiskOffering(Long diskOfferingId, Long size, Long minIops, Long maxIops, DataCenter zone) {
+    private void validateDiskOffering(Long diskOfferingId, Long size, Long minIops, Long maxIops, DataCenter zone) {
         Account caller = CallContext.current().getCallingAccount();
         DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
         configMgr.checkDiskOfferingAccess(caller, diskOffering, zone);
@@ -234,7 +235,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         if ((diskOffering.isCustomizedIops() == null || diskOffering.isCustomizedIops() == false) && (minIops != null || maxIops != null)) {
             throw new InvalidParameterValueException("Iops provided with a non-custom-iops disk offering");
         }
-        return diskOffering;
     }
 
     @Override
@@ -244,14 +244,14 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
         long ownerId = cmd.getEntityOwnerId();
         Account owner = accountMgr.getActiveAccountById(ownerId);
-        accountMgr.checkAccess(caller, null, true, accountMgr.getActiveAccountById(ownerId));
+        accountMgr.checkAccess(caller, null, true, owner);
         DataCenter zone = validateAndGetZone(cmd.getZoneId());
 
         Long diskOfferingId = cmd.getDiskOfferingId();
         Long size = cmd.getSize();
         Long minIops = cmd.getMinIops();
         Long maxIops = cmd.getMaxIops();
-        DiskOfferingVO diskOffering = validateAndGetDiskOffering(diskOfferingId, size, minIops, maxIops, zone);
+        validateDiskOffering(diskOfferingId, size, minIops, maxIops, zone);
 
         FileShareProvider provider = getFileShareProvider(cmd.getFileShareProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
@@ -543,7 +543,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
         DataCenter zone = validateAndGetZone(fileShare.getDataCenterId());
-        DiskOfferingVO diskOffering = validateAndGetDiskOffering(diskOfferingId, newSize, newMinIops, newMaxIops, zone);
+        validateDiskOffering(diskOfferingId, newSize, newMinIops, newMaxIops, zone);
         volumeApiService.changeDiskOfferingForVolumeInternal(fileShare.getVolumeId(), diskOfferingId, newSize, newMinIops, newMaxIops, true, false);
         return fileShare;
     }

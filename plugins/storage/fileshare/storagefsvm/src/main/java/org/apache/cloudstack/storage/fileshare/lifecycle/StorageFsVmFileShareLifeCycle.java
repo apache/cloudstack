@@ -21,10 +21,12 @@ import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareVmNameP
 import static org.apache.cloudstack.storage.fileshare.provider.StorageFsVmFileShareProvider.STORAGEFSVM_MIN_CPU_COUNT;
 import static org.apache.cloudstack.storage.fileshare.provider.StorageFsVmFileShareProvider.STORAGEFSVM_MIN_RAM_SIZE;
 
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -32,6 +34,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 
 import java.io.IOException;
@@ -39,7 +42,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -56,9 +58,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareLifeCycle;
-import org.apache.cloudstack.storage.fileshare.FileShareService;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,15 +66,11 @@ import com.cloud.dc.DataCenter;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
 
@@ -82,13 +78,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
-    private FileShareService fileShareService;
-
-    @Inject
     private AccountManager accountMgr;
-
-    @Inject
-    private EntityManager entityMgr;
 
     @Inject
     protected ResourceManager resourceMgr;
@@ -106,6 +96,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     protected UserVmManager userVmManager;
 
     @Inject
+    private DataCenterDao dataCenterDao;
+
+    @Inject
     private VMTemplateDao templateDao;
 
     @Inject
@@ -121,14 +114,14 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     ServiceOfferingDao serviceOfferingDao;
 
     @Inject
-    private DiskOfferingDao diskOfferingDao;
+    FileUtil fileUtil;
 
     @Inject
     protected LaunchPermissionDao launchPermissionDao;
 
     private String readResourceFile(String resource) {
         try {
-            return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
+            return fileUtil.readResourceFile(resource);
         } catch (IOException e) {
             throw new CloudRuntimeException("Unable to read the user data resource file due to exception " + e.getMessage());
         }
@@ -157,17 +150,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     }
 
     private UserVm createFileShareVM(Long zoneId, Account owner, List<Long> networkIds, String name, Long serviceOfferingId, Long diskOfferingId, FileShare.FileSystemType fileSystem, Long size, Long minIops, Long maxIops) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+        ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
 
-        Long diskSize = null;
-        if (diskOfferingId != null) {
-            DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
-            if (diskOffering.isCustomized()) {
-                diskSize = size;
-            }
-        }
-
-        DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
+        DataCenter zone = dataCenterDao.findById(zoneId);
         Hypervisor.HypervisorType availableHypervisor = resourceMgr.getAvailableHypervisor(zoneId);
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, availableHypervisor);
 
@@ -191,7 +176,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         String fsVmConfig = getStorageFsVmConfig(fileSystem.toString().toLowerCase());
         String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
-                diskOfferingId, diskSize, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
+                diskOfferingId, size, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
                 null, null, keypairs, null, addrs, null, null, null,
                 customParameterMap, null, null, null, null,
                 true, UserVmManager.STORAGEFSVM, null);
@@ -200,7 +185,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
     @Override
     public void checkPrerequisites(DataCenter zone, Long serviceOfferingId) {
-        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+        ServiceOffering serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
         if (serviceOffering.getCpu() < STORAGEFSVM_MIN_CPU_COUNT.valueIn(zone.getId())) {
             throw new InvalidParameterValueException("Service offering's number of cpu should be greater than or equal to " + STORAGEFSVM_MIN_CPU_COUNT.key());
         }
@@ -293,7 +278,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         try {
             newVm = createFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, fileShare.getFsType(), null, null, null);
         } catch (Exception ex) {
-            logger.error(String.format("Redeploy fileshare [%]: VM deploy failed with error %", fileShare.toString(), ex.getMessage()));
+            logger.error(String.format("Redeploy fileshare [%s]: VM deploy failed with error %s", fileShare.toString(), ex.getMessage()));
             throw ex;
         }
 
@@ -301,10 +286,9 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         if (!fileShare.getState().equals(FileShare.State.Detached)) {
             volume = volumeApiService.detachVolumeViaDestroyVM(oldVmId, volumeId);
             if (volume == null) {
-                UserVmVO oldVM = userVmDao.findById(oldVmId);
                 volume = volumeDao.findById(volumeId);
                 expungeVm(newVm.getId());
-                String message = String.format("Redeploy fileshare [%]: volume % couldn't be detached from the old VM %", fileShare.toString(), volume.toString(), oldVmId.toString());
+                String message = String.format("Redeploy fileshare [%s]: volume %s couldn't be detached from the old VM", fileShare.toString(), volume.toString());
                 logger.error(message);
                 throw new CloudRuntimeException(message);
             }
@@ -314,7 +298,8 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
 
         volume = volumeApiService.attachVolumeToVM(newVm.getId(), volume.getId(), null, true);
         if (volume == null) {
-            logger.error(String.format("Redeploy fileshare [%]: volume % couldn't be attached to the new VM %", fileShare.toString(), volume.toString(), oldVmId.toString()));
+            volume = volumeDao.findById(volumeId);
+            logger.error(String.format("Redeploy fileshare [%s]: volume %s couldn't be attached to the VM %s", fileShare.toString(), volume.toString(), newVm.toString()));
             expungeVm(newVm.getId());
             return new Pair<>(false, 0L);
         }

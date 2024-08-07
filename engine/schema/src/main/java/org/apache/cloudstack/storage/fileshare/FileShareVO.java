@@ -217,7 +217,7 @@ public class FileShareVO implements FileShare {
 
     @Override
     public void setServiceOfferingId(Long serviceOfferingId) {
-        serviceOfferingId = serviceOfferingId;
+        this.serviceOfferingId = serviceOfferingId;
     }
 
     @Override
