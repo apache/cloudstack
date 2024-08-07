@@ -32,4 +32,9 @@ public enum ApiArgValidator {
      * Validates if the parameter is an UUID with the method {@link UuidUtils#isUuid(String)}.
      */
     UuidString,
+
+    /**
+     * Validates if the parameter is a valid RFC Compliance domain name.
+     */
+    RFCComplianceDomainName,
 }
