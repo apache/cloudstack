@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.fileshare.dao;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareVO;
 
@@ -27,7 +26,5 @@ import java.util.Date;
 import java.util.List;
 
 public interface FileShareDao extends GenericDao<FileShareVO, Long>, StateDao<FileShare.State, FileShare.Event, FileShare> {
-    Pair<List<FileShareVO>, Integer> searchAndCount(Long fileShareId, Long accountId, Long networkId, Long startIndex, Long pageSizeVal);
-
     List<FileShareVO> listFileSharesToBeDestroyed(Date date);
 }

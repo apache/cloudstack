@@ -91,7 +91,7 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
 
     @Column(name = "instance_state")
     @Enumerated(value = EnumType.STRING)
-    private VirtualMachine.State intanceState;
+    private VirtualMachine.State instanceState;
 
     @Column(name = "volume_id")
     private long volumeId;
@@ -223,8 +223,8 @@ public class FileShareJoinVO extends BaseViewVO implements InternalIdentity, Ide
         return instanceName;
     }
 
-    public VirtualMachine.State getIntanceState() {
-        return intanceState;
+    public VirtualMachine.State getInstanceState() {
+        return instanceState;
     }
 
     public long getVolumeId() {

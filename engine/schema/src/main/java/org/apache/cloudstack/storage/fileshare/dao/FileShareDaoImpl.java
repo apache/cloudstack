@@ -17,15 +17,11 @@
 package org.apache.cloudstack.storage.fileshare.dao;
 
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.UpdateBuilder;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareVO;
@@ -92,37 +88,6 @@ public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implemen
             }
         }
         return rows > 0;
-    }
-
-    @Override
-    public Pair<List<FileShareVO>, Integer> searchAndCount(Long fileShareId, Long accountId, Long networkId, Long startIndex, Long pageSizeVal) {
-        final SearchBuilder<FileShareVO> sb = createSearchBuilder();
-        if (fileShareId != null) {
-            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        }
-        if (accountId != null) {
-            sb.and("account_id", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        }
-        if (networkId != null) {
-            SearchBuilder<VMNetworkMapVO> vmNetSearch = vmNetworkMapDao.createSearchBuilder();
-            vmNetSearch.and("network_id", vmNetSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            sb.join("vmNetSearch", vmNetSearch, vmNetSearch.entity().getVmId(), sb.entity().getVmId(), JoinBuilder.JoinType.INNER);
-        }
-
-        Filter searchFilter = new Filter(FileShareVO.class, "id", Boolean.TRUE, startIndex, pageSizeVal);
-        final SearchCriteria<FileShareVO> sc = sb.create();
-
-        if (fileShareId != null) {
-            sc.setParameters("id", fileShareId);
-        }
-        if (accountId != null) {
-            sc.setParameters("account_id", accountId);
-        }
-        if (networkId != null) {
-            sc.setJoinParameters("vmNetSearch", "network_id", networkId);
-        }
-
-        return searchAndCount(sc, searchFilter);
     }
 
     @Override
