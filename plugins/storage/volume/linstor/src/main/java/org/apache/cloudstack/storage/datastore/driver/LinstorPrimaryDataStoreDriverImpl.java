@@ -833,7 +833,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VolumeInfo volume = sinfo.getBaseVolume();
                 deleteSnapshot(
                     srcData.getDataStore(),
-                    LinstorUtil.RSC_PREFIX + volume.getUuid(),
+                    LinstorUtil.RSC_PREFIX + volume.getPath(),
                     LinstorUtil.RSC_PREFIX + sinfo.getUuid());
             }
             res = new CopyCommandResult(null, answer);
@@ -969,7 +969,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         VolumeInfo srcVolInfo = (VolumeInfo) srcData;
         final StoragePoolVO pool = _storagePoolDao.findById(srcVolInfo.getDataStore().getId());
         final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
-        final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getUuid();
+        final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getPath();
 
         VolumeObjectTO to = (VolumeObjectTO) srcVolInfo.getTO();
         // patch source format
@@ -1082,7 +1082,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         options.put("volumeSize", snapshotObject.getBaseVolume().getSize() + "");
 
         try {
-            final String rscName = LinstorUtil.RSC_PREFIX + snapshotObject.getBaseVolume().getUuid();
+            final String rscName = LinstorUtil.RSC_PREFIX + snapshotObject.getBaseVolume().getPath();
             String snapshotName = setCorrectSnapshotPath(api, rscName, snapshotObject);
 
             CopyCommand cmd = new LinstorBackupSnapshotCommand(
