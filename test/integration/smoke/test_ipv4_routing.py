@@ -1543,3 +1543,90 @@ class TestIpv4Routing(cloudstackTestCase):
                        {"config": "network %s" % test_vpc_tier_dynamic_2.cidr,
                         "exists": False}]
         self.verifyFrrConf(vpc_router, frr_configs)
+
+
+    @attr(tags=['advanced'], required_hardware=False)
+    def test_13_asn_ranges(self):
+        """ Test for ASN ranges"""
+        """
+            # 1. Create an ASN range without overlap
+            # 2. List ASN ranges by zoneid
+            # 3. List ASN numbers by ASN range id
+            # 4. Create an ASN range with overlap, it should fail
+            # 5. Delete ASN range
+        """
+        self.message("Running test_13_asn_ranges")
+
+        # 1. Create an ASN range without overlap
+        asnrange_2 = ASNRange.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            startasn=END_ASN+100,
+            endasn=END_ASN+200
+        )
+        self.cleanup.append(asnrange_2)
+
+        # 2. List ASN ranges by zoneid
+        ranges = ASNRange.list(
+            self.apiclient,
+            zoneid = self.zone.id
+        )
+        self.assertEqual(
+            isinstance(ranges, list),
+            True,
+            "List ASN ranges by zoneid should return a valid list"
+        )
+        self.assertEqual(
+            len(ranges) >= 1,
+            True,
+            "The number of ASN ranges (%s) should be at least 1" % (len(ranges))
+        )
+        asnrange_2_new = None
+        for range in ranges:
+            if range.startasn == asnrange_2.startasn:
+                asnrange_2_new = range
+                break
+        if asnrange_2_new:
+            self.assertEqual(
+                asnrange_2_new.endasn == asnrange_2.endasn,
+                True,
+                "The end ASN of ASN range (%s-%s) should be equal to %s" % (asnrange_2_new.startasn, asnrange_2_new.endasn, asnrange_2.endasn)
+            )
+        else:
+            self.fail("Unable to find ASN range (%s-%s)" % (asnrange_2.startasn, asnrange_2.endasn))
+
+        # 3. List ASN numbers by ASN range id
+        asnumbers = ASNRange.listAsNumbers(
+            self.apiclient,
+            zoneid = self.zone.id,
+            asnrangeid = asnrange_2.id
+        )
+        self.assertEqual(
+            isinstance(asnumbers, list),
+            True,
+            "List AS numbers should return a valid list"
+        )
+        self.assertEqual(
+            len(asnumbers) == asnrange_2.endasn - asnrange_2.startasn + 1,
+            True,
+            "The number of asnumbers (%s) should be equal to %s" % (len(asnumbers), (asnrange_2.endasn - asnrange_2.startasn + 1))
+        )
+
+        # 4. Create an ASN range with overlap, it should fail
+        try:
+            asnrange_3 = ASNRange.create(
+                self.apiclient,
+                zoneid=self.zone.id,
+                startasn=END_ASN+150,
+                endasn=END_ASN+250
+            )
+            self.cleanup.append(asnrange_3)
+            self.fail("Succeeded to create ASN range (%s-%s) but it should fail" % (asnrange_3.startasn, asnrange_3.endasn))
+        except Exception as e:
+            self.message("Failed to create ASN range but it is expected")
+
+        # 5. Delete ASN range
+        asnrange_2.delete(
+            self.apiclient
+        )
+        self.cleanup.remove(asnrange_2)

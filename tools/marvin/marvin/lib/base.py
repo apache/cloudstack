@@ -7495,6 +7495,13 @@ class ASNRange:
         cmd.id = self.id
         apiclient.deleteASNRange(cmd)
 
+    @classmethod
+    def listAsNumbers(cls, apiclient, **kwargs):
+        """List AS numbers of an ASN range"""
+        cmd = listASNumbers.listASNumbersCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listASNumbers(cmd)
+
 
 class BgpPeer:
     """Manage BGP Peers for Zone"""
