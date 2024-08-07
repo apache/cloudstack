@@ -4485,8 +4485,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String certificate = cmd.getCertificate();
         final String key = cmd.getPrivateKey();
 
-        if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix())) {
-            throw new InvalidParameterValueException("Failed to pass certificate validation check");
+        if (key != null) {
+            Pair<Boolean, String> result = _ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix());
+            if (!result.first()) {
+                throw new InvalidParameterValueException(String.format("Failed to pass certificate validation check with error: %s", result.second()));
+            }
         }
 
         if (cmd.getPrivateKey() != null) {
