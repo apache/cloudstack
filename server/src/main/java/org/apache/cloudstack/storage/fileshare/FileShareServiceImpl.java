@@ -664,7 +664,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         GlobalLock scanLock = GlobalLock.getInternLock("fileshareservice.cleanup");
 
         try {
-            if (scanLock.lock(3)) {
+            if (scanLock.lock(30)) {
                 try {
 
                     List<FileShareVO> fileShares = fileShareDao.listFileSharesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)FileShareCleanupDelay.value() << 10)));
