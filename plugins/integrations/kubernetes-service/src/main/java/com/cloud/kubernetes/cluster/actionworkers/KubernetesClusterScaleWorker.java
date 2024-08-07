@@ -498,7 +498,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         } else { // upscale, same node count handled above
             scaleUpKubernetesClusterSize(newVmRequiredCount);
         }
-        kubernetesCluster = updateKubernetesClusterEntryForNodeType(clusterSize, nodeType, null, false, false);
+        boolean updateNodeOffering = serviceOfferingNodeTypeMap.containsKey(nodeType.name());
+        ServiceOffering nodeOffering = serviceOfferingNodeTypeMap.getOrDefault(nodeType.name(), null);
+        kubernetesCluster = updateKubernetesClusterEntryForNodeType(clusterSize, nodeType, nodeOffering, updateNodeOffering, false);
     }
 
     private boolean isAutoscalingChanged() {
