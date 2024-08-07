@@ -53,11 +53,11 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String zoneName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "id of the storage fs vm")
+    @Param(description = "ID of the storage fs vm")
     private String virtualMachineId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
-    @Param(description = "id of the storage fs vm")
+    @Param(description = "ID of the storage fs vm")
     private String virtualMachineState;
 
     @SerializedName(ApiConstants.VOLUME_NAME)
@@ -65,7 +65,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String volumeName;
 
     @SerializedName(ApiConstants.VOLUME_ID)
-    @Param(description = "id of the storage fs data volume")
+    @Param(description = "ID of the storage fs data volume")
     private String volumeId;
 
     @SerializedName(ApiConstants.STORAGE)
@@ -73,7 +73,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String storagePoolName;
 
     @SerializedName(ApiConstants.STORAGE_ID)
-    @Param(description = "id of the storage pool hosting the data volume")
+    @Param(description = "ID of the storage pool hosting the data volume")
     private String storagePoolId;
 
     @SerializedName(ApiConstants.SIZE)
@@ -85,7 +85,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String sizeGB;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID)
-    @Param(description = "disk offering for the file share")
+    @Param(description = "disk offering ID for the file share")
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
@@ -101,7 +101,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String diskOfferingDisplayText;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "service offering for the file share")
+    @Param(description = "service offering ID for the file share")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
@@ -141,7 +141,7 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the file share")
+    @Param(description = "the project ID of the file share")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)

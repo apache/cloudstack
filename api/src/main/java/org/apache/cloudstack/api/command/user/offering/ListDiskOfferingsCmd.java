@@ -82,12 +82,6 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
             since = "4.20.0")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.FILESHARE,
-            type = CommandType.BOOLEAN,
-            description = "Disk offering is meant for File shares",
-            since = "4.20.0")
-    private Boolean fileShare;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,10 +123,6 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
-    }
-
-    public Boolean getFileShare() {
-        return fileShare;
     }
 
     /////////////////////////////////////////////////////

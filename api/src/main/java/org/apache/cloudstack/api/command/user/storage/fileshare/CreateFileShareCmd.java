@@ -25,7 +25,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -62,9 +61,6 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
-
-    @Inject
-    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -144,7 +140,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.PROVIDER,
             type = CommandType.STRING,
             required = true,
-            description = "the provider to be used for the file share.")
+            description = "the provider to be used for the file share. The list of providers can be fetched by using the listFileShareProviders API.")
     private String fileShareProviderName;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
@@ -303,7 +299,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
-            if (accountService.isRootAdmin(caller.getId())) {
+            if (_accountService.isRootAdmin(caller.getId())) {
                 respView = ResponseObject.ResponseView.Full;
             }
             FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);

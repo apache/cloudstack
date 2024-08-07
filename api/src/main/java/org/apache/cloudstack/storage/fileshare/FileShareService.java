@@ -17,9 +17,6 @@
 package org.apache.cloudstack.storage.fileshare;
 
 import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ChangeFileShareDiskOfferingCmd;
@@ -32,16 +29,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-public interface FileShareService extends PluggableService {
-
-    boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
-
-    List<Class<?>> getCommands();
+public interface FileShareService {
 
     List<FileShareProvider> getFileShareProviders();
 

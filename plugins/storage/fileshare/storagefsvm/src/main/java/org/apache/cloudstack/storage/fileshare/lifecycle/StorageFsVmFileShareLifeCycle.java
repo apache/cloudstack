@@ -114,14 +114,11 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     ServiceOfferingDao serviceOfferingDao;
 
     @Inject
-    FileUtil fileUtil;
-
-    @Inject
     protected LaunchPermissionDao launchPermissionDao;
 
     private String readResourceFile(String resource) {
         try {
-            return fileUtil.readResourceFile(resource);
+            return FileUtil.readResourceFile(resource);
         } catch (IOException e) {
             throw new CloudRuntimeException("Unable to read the user data resource file due to exception " + e.getMessage());
         }
@@ -192,7 +189,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         if (serviceOffering.getRamSize() < STORAGEFSVM_MIN_RAM_SIZE.valueIn(zone.getId())) {
             throw new InvalidParameterValueException("Service offering's ram size should be greater than or equal to " + STORAGEFSVM_MIN_RAM_SIZE.key());
         }
-        if (serviceOffering.isOfferHA() == false) {
+        if (!serviceOffering.isOfferHA()) {
             throw new InvalidParameterValueException("Service offering's should be HA enabled");
         }
 

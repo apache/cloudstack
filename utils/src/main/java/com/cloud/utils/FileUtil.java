@@ -157,7 +157,7 @@ public class FileUtil {
         return false;
     }
 
-    public String readResourceFile(String resource) throws IOException {
+    public static String readResourceFile(String resource) throws IOException {
         return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
 }

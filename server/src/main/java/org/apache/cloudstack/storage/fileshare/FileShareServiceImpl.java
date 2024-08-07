@@ -55,6 +55,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -97,7 +98,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class FileShareServiceImpl extends ManagerBase implements FileShareService, Configurable {
+public class FileShareServiceImpl extends ManagerBase implements FileShareService, Configurable, PluggableService {
 
     @Inject
     private AccountManager accountMgr;
@@ -184,7 +185,6 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         throw new CloudRuntimeException("Invalid file share provider name!");
     }
 
-    @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
         String workers = configs.get("expunge.workers");
@@ -193,10 +193,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return true;
     }
 
-    @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<>();
-        if (FileShareFeatureEnabled.value() == true) {
+        if (FileShareFeatureEnabled.value()) {
             cmdList.add(ListFileShareProvidersCmd.class);
             cmdList.add(CreateFileShareCmd.class);
             cmdList.add(ListFileSharesCmd.class);
@@ -220,6 +219,10 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         }
         if (zone.getAllocationState() == Grouping.AllocationState.Disabled) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
+        }
+        if (zone.getNetworkType() == DataCenter.NetworkType.Basic ||
+            zone.isSecurityGroupEnabled()) {
+            throw new PermissionDeniedException("This feature is supported only on Advanced Zone without security groups");
         }
         return zone;
     }
@@ -384,7 +387,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             throw new InvalidParameterValueException("Stop file share can be done only if the file share is in " + validStates.toString() + " states");
         }
 
-        if (cleanup == false) {
+        if (!cleanup) {
             if (!fileShare.getState().equals(State.Stopped)) {
                 stopFileShare(fileShare.getId(), false);
             }
@@ -427,7 +430,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         fileShareSearchBuilder.and("dataCenterId", fileShareSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
-            fileShareSearchBuilder.and().op("keywordName", fileShareSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
+            fileShareSearchBuilder.and("keywordName", fileShareSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
         }
 
         fileShareSearchBuilder.and("serviceOfferingId", fileShareSearchBuilder.entity().getServiceOfferingId(), SearchCriteria.Op.EQ);
@@ -527,7 +530,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_UPDATE, eventDescription = "Change file share disk offering")
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CHANGE_DISK_OFFERING, eventDescription = "Change file share disk offering")
     public FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) throws ResourceAllocationException {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
@@ -549,7 +552,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_UPDATE, eventDescription = "Change file share service offering")
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CHANGE_SVC_OFFERING, eventDescription = "Change file share service offering")
     public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();

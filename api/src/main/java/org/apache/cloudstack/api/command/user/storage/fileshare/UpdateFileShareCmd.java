@@ -33,7 +33,6 @@ import org.apache.cloudstack.storage.fileshare.FileShareService;
 import javax.inject.Inject;
 
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
 
 @APICommand(name = "updateFileShare",
         responseObject= FileShareResponse.class,
@@ -47,9 +46,6 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
 
     @Inject
     FileShareService fileShareService;
-
-    @Inject
-    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -103,7 +99,7 @@ public class UpdateFileShareCmd extends BaseCmd implements UserCmd {
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
-            if (accountService.isRootAdmin(caller.getId())) {
+            if (_accountService.isRootAdmin(caller.getId())) {
                 respView = ResponseObject.ResponseView.Full;
             }
             FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);

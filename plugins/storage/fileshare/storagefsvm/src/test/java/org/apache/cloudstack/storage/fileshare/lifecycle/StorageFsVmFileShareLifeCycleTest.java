@@ -45,6 +45,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -105,9 +106,6 @@ public class StorageFsVmFileShareLifeCycleTest {
     protected UserVmManager userVmManager;
 
     @Mock
-    FileUtil fileUtil;
-
-    @Mock
     private DataCenterDao dataCenterDao;
 
     @Mock
@@ -149,29 +147,17 @@ public class StorageFsVmFileShareLifeCycleTest {
     private static final String s_fsFormat = "EXT4";
     private static final String s_name = "TestFileShare";
 
-    @Mock
-    Account owner;
-
-    private MockedStatic<CallContext> callContextMocked;
+    MockedStatic<FileUtil> fileUtilMocked;
 
     @Before
     public void setUp() {
-        callContextMocked = mockStatic(CallContext.class);
-        CallContext callContextMock = mock(CallContext.class);
-        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-        when(callContextMock.getCallingAccount()).thenReturn(owner);
-
+        fileUtilMocked = mockStatic(FileUtil.class);
+        fileUtilMocked.when(() -> FileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
     }
 
     @After
     public void tearDown() {
-        callContextMocked.close();
-    }
-
-    private FileShare getMockFileShare() {
-        FileShare fileShare = mock(FileShare.class);
-        when(fileShare.getDataCenterId()).thenReturn(s_zoneId);
-        return fileShare;
+        fileUtilMocked.close();
     }
 
     @Test
@@ -256,7 +242,6 @@ public class StorageFsVmFileShareLifeCycleTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(templateDao.findSystemVMReadyTemplate(s_zoneId, null)).thenReturn(template);
         when(template.getId()).thenReturn(s_templateId);
-        when(fileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
 
         UserVm vm = mock(UserVm.class);
         when(vm.getId()).thenReturn(s_vmId);
@@ -270,9 +255,10 @@ public class StorageFsVmFileShareLifeCycleTest {
         VolumeVO volume = mock(VolumeVO.class);
         when(volume.getId()).thenReturn(s_volumeId);
         when(volumeDao.findByInstanceAndType(s_vmId, Volume.Type.DATADISK)).thenReturn(List.of(volume));
-        Pair<Long, Long> result = lifeCycle.commitFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
-        Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
-        Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(s_vmId));
+
+         Pair<Long, Long> result = lifeCycle.commitFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
+         Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
+         Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(s_vmId));
     }
 
     @Test
@@ -292,7 +278,13 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(volume.getId()).thenReturn(s_volumeId);
         when(volume.getState()).thenReturn(Volume.State.Allocated);
 
-        Assert.assertEquals(lifeCycle.deleteFileShare(fileShare), true);
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Account owner = mock(Account.class);
+            when(callContextMock.getCallingAccount()).thenReturn(owner);
+            Assert.assertEquals(lifeCycle.deleteFileShare(fileShare), true);
+        }
     }
 
     private FileShare prepareReDeployFileShare(Long newVmId) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
@@ -332,7 +324,6 @@ public class StorageFsVmFileShareLifeCycleTest {
                 isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
                 anyMap(), isNull(), isNull(), isNull(), isNull(),
                 anyBoolean(), anyString(), isNull())).thenReturn(vm);
-
         return fileShare;
     }
 
@@ -345,7 +336,6 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(volume.getId()).thenReturn(s_volumeId);
         when(volumeApiService.detachVolumeViaDestroyVM(s_vmId, s_volumeId)).thenReturn(volume);
         when(volumeApiService.attachVolumeToVM(newVmId, s_volumeId, null, true)).thenReturn(volume);
-        when(fileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
 
         Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
         Assert.assertEquals(result.first(), true);
@@ -356,7 +346,6 @@ public class StorageFsVmFileShareLifeCycleTest {
     public void testReDeployFileShareDetachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException {
         Long newVmId = 100L;
         FileShare fileShare = prepareReDeployFileShare(newVmId);
-        when(fileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
 
         VolumeVO volume = mock(VolumeVO.class);
         when(volumeDao.findById(s_volumeId)).thenReturn(volume);
@@ -372,7 +361,6 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(volume.getId()).thenReturn(s_volumeId);
         when(volumeDao.findById(s_volumeId)).thenReturn(volume);
         when(volumeApiService.detachVolumeViaDestroyVM(s_vmId, s_volumeId)).thenReturn(volume);
-        when(fileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
 
         Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
         Assert.assertEquals(result.first(), false);

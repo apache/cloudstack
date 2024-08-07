@@ -745,6 +745,8 @@ public class EventTypes {
     public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
     public static final String EVENT_FILESHARE_START = "FILESHARE.START";
     public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
+    public static final String EVENT_FILESHARE_CHANGE_SVC_OFFERING = "FILESHARE.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_FILESHARE_CHANGE_DISK_OFFERING = "FILESHARE.CHANGE.DISK.OFFERING";
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
     public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
     public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
@@ -1212,6 +1214,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_FILESHARE_START, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_STOP, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_UPDATE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_CHANGE_SVC_OFFERING, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_CHANGE_DISK_OFFERING, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_RESTART, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_DESTROY, FileShare.class);
         entityEventDetails.put(EVENT_FILESHARE_EXPUNGE, FileShare.class);

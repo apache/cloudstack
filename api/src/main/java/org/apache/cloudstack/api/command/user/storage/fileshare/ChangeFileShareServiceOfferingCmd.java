@@ -40,7 +40,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "changeFileShareServiceOffering",
@@ -55,9 +54,6 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
 
     @Inject
     FileShareService fileShareService;
-
-    @Inject
-    protected AccountService accountService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -95,7 +91,7 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_FILESHARE_UPDATE;
+        return EventTypes.EVENT_FILESHARE_CHANGE_SVC_OFFERING;
     }
 
     @Override
@@ -137,7 +133,7 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
         if (fileShare != null) {
             ResponseObject.ResponseView respView = getResponseView();
             Account caller = CallContext.current().getCallingAccount();
-            if (accountService.isRootAdmin(caller.getId())) {
+            if (_accountService.isRootAdmin(caller.getId())) {
                 respView = ResponseObject.ResponseView.Full;
             }
             FileShareResponse response = _responseGenerator.createFileShareResponse(respView, fileShare);

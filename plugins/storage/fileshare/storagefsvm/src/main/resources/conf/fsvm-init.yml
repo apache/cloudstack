@@ -190,7 +190,9 @@ write_files:
       udevadm trigger
 
       log "Script execution finished successfully."
+      
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
 
 runcmd:
-  - echo "test" > test
   - /usr/local/bin/fsvm-setup

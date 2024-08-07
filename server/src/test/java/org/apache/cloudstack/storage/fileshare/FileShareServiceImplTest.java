@@ -50,6 +50,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -138,8 +139,11 @@ public class FileShareServiceImplTest {
 
     private MockedStatic<CallContext> callContextMocked;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
         callContextMocked = mockStatic(CallContext.class);
         CallContext callContextMock = mock(CallContext.class);
         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
@@ -155,8 +159,9 @@ public class FileShareServiceImplTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         callContextMocked.close();
+        closeable.close();
     }
 
     private CreateFileShareCmd getMockCreateFileShareCmd() {
