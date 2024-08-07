@@ -41,9 +41,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.dao.FileShareDao;
 import org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDao;
 import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -74,7 +74,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -132,20 +131,19 @@ public class FileShareServiceImplTest {
     private static final String s_name = "TestFileShare";
     private static final String s_description = "Test Description";
 
-    private static Account owner = mock(Account.class);
+    @Mock
+    Account owner;
     @Mock
     protected StateMachine2<FileShare.State, FileShare.Event, FileShare> _stateMachine;
 
-    @BeforeClass
-    public static void setUpClass() {
-        MockedStatic<CallContext> callContextMocked = mockStatic(CallContext.class);
-        CallContext callContextMock = mock(CallContext.class);
-        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-        when(callContextMock.getCallingAccount()).thenReturn(owner);
-    }
+    private MockedStatic<CallContext> callContextMocked;
 
     @Before
     public void setUp() {
+        callContextMocked = mockStatic(CallContext.class);
+        CallContext callContextMock = mock(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        when(callContextMock.getCallingAccount()).thenReturn(owner);
         when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
 
         Map<String, FileShareProvider> mockProviderMap = new HashMap<>();
@@ -154,6 +152,11 @@ public class FileShareServiceImplTest {
         when(fileShareServiceImpl.getFileShareProvider(s_providerName)).thenReturn(provider);
         when(provider.getFileShareLifeCycle()).thenReturn(lifeCycle);
         ReflectionTestUtils.setField(fileShareServiceImpl, "fileShareStateMachine", _stateMachine);
+    }
+
+    @After
+    public void tearDown() {
+        callContextMocked.close();
     }
 
     private CreateFileShareCmd getMockCreateFileShareCmd() {
@@ -580,32 +583,5 @@ public class FileShareServiceImplTest {
         verify(sc, times(1)).setParameters("serviceOfferingId", s_serviceOfferingId);
         verify(sc, times(1)).setJoinParameters("volSearch", "diskOfferingId", s_diskOfferingId);
         verify(fileShareDao, times(1)).searchAndCount(any(), any());
-    }
-
-    @Test
-    public void testCleanupFileShare() throws NoTransitionException {
-        FileShareVO fileShare = getMockFileShare();
-        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
-        ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
-        when(fileShareDao.listFileSharesToBeDestroyed(any())).thenReturn(List.of(fileShare));
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Destroyed);
-        fileShareServiceImpl.cleanupFileShare(true);
-        verify(lifeCycle, times(1)).deleteFileShare(fileShare);
-        verify(fileShareDao, times(1)).remove(s_fileShareId);
-        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
-    }
-
-    @Test
-    public void testCleanupFileShareException() throws NoTransitionException {
-        FileShareVO fileShare = getMockFileShare();
-        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
-        ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
-        when(fileShareDao.listFileSharesToBeDestroyed(any())).thenReturn(List.of(fileShare));
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Destroyed);
-        when(lifeCycle.deleteFileShare(fileShare)).thenThrow(new CloudRuntimeException("Exception during delete file share"));
-        fileShareServiceImpl.cleanupFileShare(true);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
-        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
     }
 }

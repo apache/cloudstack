@@ -37,8 +37,9 @@ import java.util.Optional;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -148,14 +149,23 @@ public class StorageFsVmFileShareLifeCycleTest {
     private static final String s_fsFormat = "EXT4";
     private static final String s_name = "TestFileShare";
 
-    private static Account owner = mock(Account.class);
+    @Mock
+    Account owner;
 
-    @BeforeClass
-    public static void setUpClass() {
-        MockedStatic<CallContext> callContextMocked = mockStatic(CallContext.class);
+    private MockedStatic<CallContext> callContextMocked;
+
+    @Before
+    public void setUp() {
+        callContextMocked = mockStatic(CallContext.class);
         CallContext callContextMock = mock(CallContext.class);
         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
         when(callContextMock.getCallingAccount()).thenReturn(owner);
+
+    }
+
+    @After
+    public void tearDown() {
+        callContextMocked.close();
     }
 
     private FileShare getMockFileShare() {
