@@ -977,7 +977,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'description', 'type', 'account', 'domain'],
+      details: ['name', 'id', 'description', 'type', 'account', 'domain', 'dedicatedresources'],
       related: [{
         name: 'vm',
         title: 'label.instances',
