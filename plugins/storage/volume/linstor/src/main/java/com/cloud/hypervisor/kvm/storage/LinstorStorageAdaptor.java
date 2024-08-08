@@ -495,6 +495,15 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
+        final DevelopersApi api = getLinstorAPI(destPools);
+        final String rscName = LinstorUtil.RSC_PREFIX + name;
+        try {
+            LinstorUtil.applyAuxProps(api, rscName, disk.getDispName(), disk.getVmName());
+        } catch (ApiException apiExc) {
+            s_logger.error(String.format("Error setting aux properties for %s", rscName));
+            logLinstorAnswers(apiExc.getApiCallRcList());
+        }
+
         s_logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
