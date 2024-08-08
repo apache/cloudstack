@@ -207,6 +207,39 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test (expected = InvalidParameterValueException.class)
+    public void deleteUserAccountTestIfAccountIdIsEqualToCallerIdShouldThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            long accountId = 1L;
+
+            Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+            Mockito.doReturn(1L).when(accountVoMock).getId();
+
+            accountManagerImpl.deleteUserAccount(accountId);
+        }
+    }
+
+    @Test
+    public void deleteUserAccountTestIfAccountIdIsNotEqualToCallerAccountIdShouldNotThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            long accountId = 1L;
+
+            Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(2L).when(accountVoMock).getId();
+            Mockito.doReturn(true).when(accountManagerImpl).isDeleteNeeded(Mockito.any(), Mockito.anyLong(), Mockito.any());
+            Mockito.doReturn(new ArrayList<Long>()).when(_projectAccountDao).listAdministratedProjectIds(Mockito.anyLong());
+
+            accountManagerImpl.deleteUserAccount(accountId);
+        }
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
     public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
             DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
