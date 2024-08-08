@@ -3203,6 +3203,19 @@ public class VirtualMachineMO extends BaseMO {
         return null;
     }
 
+    public List<VirtualDevice> getIsoDevices() throws Exception {
+        List<VirtualDevice> isoDevices = new ArrayList<>();
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualCdrom) {
+                    isoDevices.add(device);
+                }
+            }
+        }
+        return isoDevices;
+    }
+
     public VirtualDevice getIsoDevice(int key) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
         if (devices != null && devices.size() > 0) {
