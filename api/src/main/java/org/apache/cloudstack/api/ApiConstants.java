@@ -1144,6 +1144,8 @@ public class ApiConstants {
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
     public static final String FILESHARE = "fileshare";
+    public static final String STORAGEFSVM_MIN_CPU_COUNT = "storagefsvmmincpucount";
+    public static final String STORAGEFSVM_MIN_RAM_SIZE = "storagefsvmminramsize";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

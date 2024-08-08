@@ -4500,8 +4500,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
         }
-        capabilities.put("storageFsVmMinCpuCount", fsVmMinCpu);
-        capabilities.put("storageFsVmMinRamSize", fsVmMinRam);
+        capabilities.put(ApiConstants.STORAGEFSVM_MIN_CPU_COUNT, fsVmMinCpu);
+        capabilities.put(ApiConstants.STORAGEFSVM_MIN_RAM_SIZE, fsVmMinRam);
 
         return capabilities;
     }

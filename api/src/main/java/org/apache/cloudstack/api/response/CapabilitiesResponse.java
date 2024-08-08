@@ -124,12 +124,12 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
     private Integer instancesDisksStatsRetentionTime;
 
-    @SerializedName("storagefsvmmincpucount")
-    @Param(description = "the min CPU count for the serive offering used by the file share VM", since = "4.20.0")
+    @SerializedName(ApiConstants.STORAGEFSVM_MIN_CPU_COUNT)
+    @Param(description = "the min CPU count for the service offering used by the file share VM", since = "4.20.0")
     private Integer storageFsVmMinCpuCount;
 
-    @SerializedName("storagefsvmminramsize")
-    @Param(description = "the min CPU count for the serive offering used by the file share VM", since = "4.20.0")
+    @SerializedName(ApiConstants.STORAGEFSVM_MIN_RAM_SIZE)
+    @Param(description = "the min Ram size for the service offering used by the file share VM", since = "4.20.0")
     private Integer storageFsVmMinRamSize;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {

@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.fileshare;
 import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareCleanupDelay;
 import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareCleanupInterval;
 import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareFeatureEnabled;
+import static org.apache.cloudstack.storage.fileshare.FileShare.FileShareExpungeWorkers;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,7 +53,6 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.PluggableService;
@@ -186,9 +186,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
-        String workers = configs.get("expunge.workers");
-        int wrks = NumbersUtil.parseInt(workers, 10);
+        int wrks = FileShareExpungeWorkers.value();
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("FileShare-Scavenger"));
         return true;
     }
@@ -642,7 +640,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return new ConfigKey<?>[]{
                 FileShareCleanupInterval,
                 FileShareCleanupDelay,
-                FileShareFeatureEnabled
+                FileShareFeatureEnabled,
+                FileShareExpungeWorkers
         };
     }
     protected class FileShareGarbageCollector extends ManagedContextRunnable {

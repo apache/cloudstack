@@ -307,6 +307,8 @@ export default {
       this.fetchData()
     },
     fetchData () {
+      this.minCpu = store.getters.features.storagefsvmmincpucount
+      this.minMemory = store.getters.features.storagefsvmminramsize
       this.fetchZones()
       this.fetchFileShareProviders()
     },
@@ -342,15 +344,7 @@ export default {
         this.providersLoading = false
       })
     },
-    fetchCapabilities (id) {
-      api('listCapabilities').then(json => {
-        this.capability = json.listcapabilitiesresponse.capability || []
-        this.minCpu = this.capability.storagefsvmmincpucount
-        this.minMemory = this.capability.storagefsvmminramsize
-      })
-    },
     fetchServiceOfferings () {
-      this.fetchCapabilities()
       this.serviceofferingLoading = true
       this.serviceofferings = []
       var params = {

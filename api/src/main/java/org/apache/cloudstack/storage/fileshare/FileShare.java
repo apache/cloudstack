@@ -54,6 +54,16 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             null,
             FileShareFeatureEnabled.key());
 
+    ConfigKey<Integer> FileShareExpungeWorkers = new ConfigKey<>(Integer.class,
+            "fileshare.expunge.workers",
+            "Advanced",
+            "2",
+            "Determines how many threads are created to do the work of expunging destroyed file shares.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            FileShareFeatureEnabled.key());
+
     String FileShareVmNamePrefix = "fsvm";
     String FileSharePath = "/mnt/fs/share";
 
