@@ -233,14 +233,20 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
                     new Date(answer.getLastModified().get(i)));
             String filePath = paths.get(i);
             if (pathTemplateMap.get(filePath) != null) {
-                response.setTemplateId(pathTemplateMap.get(filePath).getUuid());
-                response.setFormat(pathTemplateMap.get(filePath).getFormat().toString());
+                VMTemplateVO vmTemplateVO = pathTemplateMap.get(filePath);
+                response.setTemplateId(vmTemplateVO.getUuid());
+                response.setFormat(vmTemplateVO.getFormat().toString());
+                response.setTemplateName(vmTemplateVO.getName());
             }
             if (pathSnapshotMap.get(filePath) != null) {
-                response.setSnapshotId(pathSnapshotMap.get(filePath).getUuid());
+                SnapshotVO snapshotVO = pathSnapshotMap.get(filePath);
+                response.setSnapshotId(snapshotVO.getUuid());
+                response.setSnapshotName(snapshotVO.getName());
             }
             if (pathVolumeMap.get(filePath) != null) {
-                response.setVolumeId(pathVolumeMap.get(filePath).getUuid());
+                VolumeVO volumeVO = pathVolumeMap.get(filePath);
+                response.setVolumeId(volumeVO.getUuid());
+                response.setVolumeName(volumeVO.getName());
             }
             responses.add(response);
         }

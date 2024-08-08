@@ -127,20 +127,20 @@
           <template v-if="column.key == 'associatedResource'">
             <template v-if="record.snapshotid">
               <router-link :to="{ path: '/snapshot/' + record.snapshotid }" target='_blank' >
-                {{ $t('label.snapshot') }}
+                {{ record.snapshotname }}
               </router-link>
             </template>
             <template v-else-if="record.volumeid">
               <router-link :to="{ path: '/volume/' + record.volumeid }" target='_blank' >
-                {{ $t('label.volume') }}
+                {{ record.volumename }}
               </router-link>
             </template>
             <template v-else-if="record.templateid">
               <router-link v-if="record.format === 'ISO'" :to="{ path: '/iso/' + record.templateid }" target='_blank' >
-                {{ $t('label.iso') }}
+                {{ record.templatename }}
               </router-link>
               <router-link v-else :to="{ path: '/template/' + record.templateid }" target='_blank'>
-                {{ $t('label.templatename') }}
+                {{ record.templatename }}
               </router-link>
             </template>
             <template v-else>
