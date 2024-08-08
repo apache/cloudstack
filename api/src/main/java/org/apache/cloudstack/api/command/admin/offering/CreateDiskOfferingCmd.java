@@ -167,6 +167,8 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
     private Map details;
 
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////

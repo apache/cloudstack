@@ -240,8 +240,9 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
 
         VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, null)).thenReturn(template);
+        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(template);
         when(template.getId()).thenReturn(s_templateId);
+        when(resourceMgr.getAvailableHypervisor(s_zoneId)).thenReturn(Hypervisor.HypervisorType.KVM);
 
         UserVm vm = mock(UserVm.class);
         when(vm.getId()).thenReturn(s_vmId);
@@ -313,8 +314,9 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
 
         VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, null)).thenReturn(template);
+        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(template);
         when(template.getId()).thenReturn(s_templateId);
+        when(resourceMgr.getAvailableHypervisor(s_zoneId)).thenReturn(Hypervisor.HypervisorType.KVM);
 
         UserVm vm = mock(UserVm.class);
         when(vm.getId()).thenReturn(newVmId);

@@ -124,10 +124,12 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         }
     }
 
-    private String getStorageFsVmConfig(final String fileSystem) {
+    private String getStorageFsVmConfig(final String fileSystem, final String hypervisorType) {
         String fsVmConfig = readResourceFile("/conf/fsvm-init.yml");
         final String filesystem = "{{ fsvm.filesystem }}";
+        final String hypervisor = "{{ fsvm.hypervisor }}";
         fsVmConfig = fsVmConfig.replace(filesystem, fileSystem);
+        fsVmConfig = fsVmConfig.replace(hypervisor, hypervisorType);
         return fsVmConfig;
     }
 
@@ -170,7 +172,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
         List<String> keypairs = new ArrayList<String>();
 
         UserVm vm;
-        String fsVmConfig = getStorageFsVmConfig(fileSystem.toString().toLowerCase());
+        String fsVmConfig = getStorageFsVmConfig(fileSystem.toString().toLowerCase(), availableHypervisor.toString().toLowerCase());
         String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
         vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, hostName, hostName,
                 diskOfferingId, size, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData,
