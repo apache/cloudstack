@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -199,4 +200,9 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
         return volumeSize;
     }
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
 }
