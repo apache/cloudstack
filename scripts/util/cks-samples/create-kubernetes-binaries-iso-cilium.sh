@@ -18,9 +18,9 @@
 
 set -e
 
-if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4"
+if [ $# -lt 8 ]; then
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso-cilium.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION CILIUM_VERSION HELM_VERSION DASHBOARD_YAML_CONFIG BUILD_NAME"
+    echo "eg: ./create-kubernetes-binaries-iso-cilium.sh ./ 1.27.14 1.4.0 1.29.0 1.15.1 3.14.2 https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml setup-v1.27.14"
     exit 1
 fi
 
@@ -31,7 +31,7 @@ start_dir="$PWD"
 iso_dir="/tmp/iso"
 working_dir="${iso_dir}/"
 mkdir -p "${working_dir}"
-build_name="${7}.iso"
+build_name="${8}.iso"
 [ -z "${build_name}" ] && build_name="setup-${RELEASE}.iso"
 
 CNI_VERSION="v${3}"
@@ -76,15 +76,23 @@ else
   curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 fi
 
-NETWORK_CONFIG_URL="${5}"
-echo "Downloading network config ${NETWORK_CONFIG_URL}"
-network_conf_file="${working_dir}/network.yaml"
-curl -sSL ${NETWORK_CONFIG_URL} -o ${network_conf_file}
+HELM_VERSION="${6}"
+mkdir -p ${iso_dir}/installs
+curl -L -o ${iso_dir}/installs/helm-v${HELM_VERSION}-linux-amd64.tar.gz https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
 
-DASHBORAD_CONFIG_URL="${6}"
-echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
+CILIUM_VERSION="${5}"
+echo "Downloading Cilium Helm chart version ${CILIUM_VERSION} and cilium cli"
+mkdir -p ${iso_dir}/installs/charts
+curl -Lo ${iso_dir}/installs/charts/cilium-${CILIUM_VERSION}.tgz https://helm.cilium.io/cilium-${CILIUM_VERSION}.tgz
+
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+curl -Lo ${iso_dir}/installs/cilium-linux-${CLI_ARCH}-cli-${CILIUM_CLI_VERSION}.tar.gz --fail https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz
+
+DASHBOARD_CONFIG_URL="${7}"
+echo "Downloading dashboard config ${DASHBOARD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
-curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
+curl -sSL ${DASHBOARD_CONFIG_URL} -o ${dashboard_conf_file}
 
 # TODO : Change the url once merged
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
@@ -128,20 +136,29 @@ output=`printf "%s\n" ${output} ${autoscaler_image}`
 provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
 output=`printf "%s\n" ${output} ${provider_image}`
 
-if [ -d scripts ]; then
-    /bin/cp -r scripts ${iso_dir}
-fi
+cp -r helm-overrides/ ${iso_dir}/installs
+
+chart_images=`for chart in ${iso_dir}/installs/charts/*; do chartfile=${chart##*/}; chartbase=${chartfile%-*}; if [ -f ${iso_dir}/installs/helm-overrides/${chartbase}-overrides.yaml ]; then helm template -f ${iso_dir}/installs/helm-overrides/${chartbase}-overrides.yaml ${chart}; else helm template ${chart}; fi; done | grep "[[:space:]]image:" | cut -d ':' -f2- | tr -d ' ' | tr -d '\r' | tr -d "'" | tr -d '"' | sort -u`
+output=`printf "%s\n" ${output} ${chart_images}`
 
 while read -r line; do
     echo "Downloading image $line ---"
-    if [[ $line == kubernetesui* ]] || [[ $line == apache* ]] || [[ $line == weaveworks* ]]; then
+    if [[ $line == kubernetesui* ]] || [[ $line == apache* ]]; then
       line="docker.io/${line}"
     fi
-    sudo ctr image pull "$line"
+    if [ ! -z "${https_proxy}" ]; then
+      sudo https_proxy=${https_proxy} ctr image pull "$line"
+    else
+      sudo ctr image pull "$line"
+    fi
     image_name=`echo "$line" | grep -oE "[^/]+$"`
     sudo ctr image export "${working_dir}/docker/$image_name.tar" "$line"
     sudo ctr image rm "$line"
 done <<< "$output"
+
+if [ -d scripts ]; then
+    /bin/cp -r scripts ${iso_dir}
+fi
 
 echo "Restore kubeadm permissions..."
 if [ -z "${kubeadm_file_permissions}" ]; then
