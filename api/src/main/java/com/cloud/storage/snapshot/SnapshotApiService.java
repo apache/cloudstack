@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
@@ -105,6 +106,16 @@ public interface SnapshotApiService {
      * @return the Snapshot that was created
      */
     Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);
+
+    /**
+     * Extracts the snapshot to a particular location.
+     *
+     * @param cmd
+     *            the command specifying url (where the snapshot needs to be extracted to), zoneId (zone where the snapshot exists) and
+     *            id (the id of the snapshot)
+     *
+     */
+    String extractSnapshot(ExtractSnapshotCmd cmd);
 
     /**
      * Archives a snapshot from primary storage to secondary storage.
