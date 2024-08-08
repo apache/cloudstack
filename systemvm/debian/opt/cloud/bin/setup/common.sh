@@ -918,9 +918,6 @@ parse_cmd_line() {
         privateMtu)
           export PRIVATEMTU=$VALUE
           ;;
-        useHttpsToUpload)
-          export USEHTTPS=$VALUE
-          ;;
         vncport)
           export VNCPORT=$VALUE
           ;;
