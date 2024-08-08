@@ -38,7 +38,10 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -350,6 +353,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private AccountManager accountMgr;
+
+    @Inject
+    private RoleService roleService;
+
+    @Inject
+    private RoleDao roleDao;
 
     @Inject
     private ProjectManager _projectMgr;
@@ -800,6 +809,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return _userAccountJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public List<Long> searchForAccessableUsers() {
+        List<Long> permittedAccounts = new ArrayList<>();
+        Account callingAccount = CallContext.current().getCallingAccount();
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true);
+        List<RoleVO> allowedRoles = roleDao.listAll();
+        roleService.removeRolesIfNeeded(allowedRoles);
+        List<Long> allowedRolesId = allowedRoles.stream().map(RoleVO::getId).collect(Collectors.toList());
+
+        Pair<List<UserAccountJoinVO>, Integer> usersPair = getUserListInternal(callingAccount, permittedAccounts,
+                true, null, null, null, null, null, null, callingAccount.getDomainId(), true, searchFilter);
+        return usersPair.first().stream().filter(userAccount -> allowedRolesId.contains(userAccount.getAccountRoleId())).map(UserAccountJoinVO::getId).collect(Collectors.toList());
     }
 
     @Override

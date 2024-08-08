@@ -22,8 +22,10 @@ import java.util.Map;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
@@ -34,6 +36,8 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 
 public interface AccountService {
@@ -92,7 +96,7 @@ public interface AccountService {
 
     void markUserRegistered(long userId);
 
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+    public ApiKeyPair createApiKeyAndSecretKey(RegisterCmd cmd);
 
     public String[] createApiKeyAndSecretKey(final long userId);
 
@@ -125,9 +129,9 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    public Map<String, String> getKeys(GetUserKeysCmd cmd);
+    Map<String, String> getKeys(GetUserKeysCmd cmd);
 
-    public Map<String, String> getKeys(Long userId);
+    ListResponse<ApiKeyPairResponse> getKeys(ListUserKeysCmd cmd);
 
     /**
      * Lists user two-factor authentication provider plugins
@@ -141,5 +145,9 @@ public interface AccountService {
      * @return backup provider
      */
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final Long domainId);
+
+    ApiKeyPair getLatestUserKeyPair(Long userId);
+
+    ApiKeyPair getKeyPairById(Long id);
 
 }

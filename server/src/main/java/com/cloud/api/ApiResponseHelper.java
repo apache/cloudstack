@@ -45,6 +45,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -58,6 +60,7 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
@@ -68,6 +71,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
@@ -5280,5 +5284,61 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+    @Override
+    public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
+        ApiKeyPairResponse apiKeyPairResponse = new ApiKeyPairResponse();
+
+        User user = ApiDBUtils.findUserById(keyPair.getUserId());
+        apiKeyPairResponse.setName(keyPair.getName());
+        apiKeyPairResponse.setApiKey(keyPair.getApiKey());
+        apiKeyPairResponse.setSecretKey(keyPair.getSecretKey());
+        apiKeyPairResponse.setDescription(keyPair.getDescription());
+        apiKeyPairResponse.setUuid(keyPair.getUuid());
+        apiKeyPairResponse.setCreated(keyPair.getCreated());
+        apiKeyPairResponse.setStartDate(keyPair.getStartDate());
+        apiKeyPairResponse.setEndDate(keyPair.getEndDate());
+        apiKeyPairResponse.setUserId(keyPair.getUserId().toString());
+        AccountJoinVO account = ApiDBUtils.findAccountViewById(user.getAccountId());
+        apiKeyPairResponse.setUserId(String.valueOf(user.getId()));
+        apiKeyPairResponse.setUserName(user.getFirstname());
+        apiKeyPairResponse.setAccountType(account.getType().ordinal());
+        apiKeyPairResponse.setDomainId(account.getDomainUuid());
+        apiKeyPairResponse.setDomainName(account.getDomainName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(account.getDomainPath())).deleteCharAt(domainPath.length() - 1);
+        apiKeyPairResponse.setDomainPath(domainPath.toString());
+
+        Account.State state = Account.State.ENABLED;
+        if (keyPair.getRemoved() != null) {
+            state = Account.State.REMOVED;
+        } else if (!keyPair.validateDate(false)) {
+            state = Account.State.DISABLED;
+        }
+        apiKeyPairResponse.setState(state.toString());
+
+        // set async job
+        if (account.getJobId() != null) {
+            apiKeyPairResponse.setJobId(account.getJobUuid());
+            apiKeyPairResponse.setJobStatus(account.getJobStatus());
+        }
+
+        return apiKeyPairResponse;
+    }
+
+    @Override
+    public ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(final List<ApiKeyPairPermission> permissions) {
+        final ListResponse<BaseRolePermissionResponse> response = new ListResponse<>();
+        final List<BaseRolePermissionResponse> permissionResponses = new ArrayList<>();
+        for (final ApiKeyPairPermission permission : permissions) {
+            BaseRolePermissionResponse permissionResponse = new BaseRolePermissionResponse();
+            permissionResponse.setRule(permission.getRule());
+            permissionResponse.setRulePermission(permission.getPermission());
+            permissionResponse.setDescription(permission.getDescription());
+            permissionResponse.setObjectName("keypermission");
+            permissionResponses.add(permissionResponse);
+        }
+        response.setResponses(permissionResponses);
+        return response;
     }
 }

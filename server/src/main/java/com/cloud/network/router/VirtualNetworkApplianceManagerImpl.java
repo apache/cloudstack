@@ -48,6 +48,8 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.ApiDBUtils;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -2093,8 +2095,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 logger.warn(String
                         .format("global setting[baremetal.provision.done.notification] is enabled but user baremetal-system-account is not found. Baremetal provision done notification will not be enabled"));
             } else {
-                buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
-                buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
+                ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+                buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
+                buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
                 buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }

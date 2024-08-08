@@ -417,7 +417,8 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     /**
      *  Removes roles from the given list if the role has different or more permissions than the user's calling the method role
      */
-    protected int removeRolesIfNeeded(List<? extends Role> roles) {
+    @Override
+    public int removeRolesIfNeeded(List<? extends Role> roles) {
         if (roles.isEmpty()) {
             return 0;
         }

@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -42,13 +43,23 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
+import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
+import org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
@@ -58,9 +69,12 @@ import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
@@ -73,6 +87,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
@@ -81,8 +96,10 @@ import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
@@ -218,6 +235,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private InstanceGroupDao _vmGroupDao;
     @Inject
     private UserAccountDao _userAccountDao;
+    @Inject
+    private ApiKeyPairDao apiKeyPairDao;
+    @Inject
+    private ApiKeyPairService apiKeyPairService;
+    @Inject
+    private ApiKeyPairManagerImpl keyPairManager;
+    @Inject
+    private QueryService queryService;
+    @Inject
+    private ApiKeyPairPermissionsDao apiKeyPairPermissionsDao;
     @Inject
     private VolumeDao _volumeDao;
     @Inject
@@ -369,8 +396,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
+    private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<>();
+
     protected AccountManagerImpl() {
         super();
+        for (RoleType roleType : RoleType.values()) {
+            annotationRoleBasedApisMap.put(roleType, new HashSet<>());
+        }
     }
 
     public List<UserAuthenticator> getUserAuthenticators() {
@@ -850,6 +882,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // cleanup the users from the account
             List<UserVO> users = _userDao.listByAccount(accountId);
             for (UserVO user : users) {
+                // remove apikeys
+                List<ApiKeyPairVO> apiKeyPairs = apiKeyPairDao.listApiKeysByUserOrApiKeyId(user.getId(), null).first();
+                apiKeyPairs.stream().forEach(keyPair -> apiKeyPairService.deleteApiKey(keyPair));
+
                 if (!_userDao.remove(user.getId())) {
                     logger.error("Unable to delete user: " + user + " as a part of account " + account + " cleanup");
                     accountCleanupNeeded = true;
@@ -1433,7 +1469,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = retrieveAndValidateUser(updateUserCmd);
         logger.debug("Updating user with Id: " + user.getUuid());
 
-        validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        ApiKeyPairVO keyPair = validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
@@ -1452,6 +1488,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Boolean mandate2FA = updateUserCmd.getMandate2FA();
         if (mandate2FA != null && mandate2FA) {
             user.setUser2faEnabled(true);
+        }
+        if (keyPair != null) {
+            apiKeyPairDao.update(keyPair.getId(), keyPair);
         }
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
@@ -1629,7 +1668,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * <li>If a pair of keys is provided, we validate to see if there is an user already using the provided API key. If there is someone else using, we throw an {@link InvalidParameterValueException} because two users cannot have the same API key.
      * </ul>
      */
-    protected void validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+    protected ApiKeyPairVO validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
         String apiKey = updateUserCmd.getApiKey();
         String secretKey = updateUserCmd.getSecretKey();
 
@@ -1639,17 +1678,31 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Please provide a userApiKey/userSecretKey pair");
         }
         if (isApiKeyBlank && isSecretKeyBlank) {
-            return;
+            return null;
         }
-        Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
-        if (apiKeyOwner != null) {
-            User userThatHasTheProvidedApiKey = apiKeyOwner.first();
-            if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
-                throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
-            }
+
+        Ternary<User, Account, ApiKeyPair> keyPairTernary = _accountDao.findUserAccountByApiKey(apiKey);
+
+        if (keyPairTernary == null) {
+            throw new InvalidParameterValueException(String.format("The API key [%s] does not exist in the system. Please provide a valid key.", apiKey));
         }
-        user.setApiKey(apiKey);
-        user.setSecretKey(secretKey);
+
+        User userThatHasTheProvidedApiKey = keyPairTernary.first();
+        if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
+            throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
+        }
+
+        ApiKeyPairVO keyPair = (ApiKeyPairVO) keyPairTernary.third();
+
+        Account account = _accountDao.findById(user.getAccountId());
+        keyPair.setApiKey(apiKey);
+        keyPair.setSecretKey(secretKey);
+        keyPair.setDomainId(account.getDomainId());
+        keyPair.setUserId(user.getId());
+        keyPair.setAccountId(account.getId());
+        keyPair.setName(keyPair.getUuid());
+        return keyPair;
+
     }
 
     /**
@@ -2098,6 +2151,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
+        // remove apikeys
+        List<ApiKeyPairVO> apiKeyPairs = apiKeyPairDao.listApiKeysByUserOrApiKeyId(id, null).first();
+        apiKeyPairs.stream().forEach(keyPair -> apiKeyPairService.deleteApiKey(keyPair));
+
         return _userDao.remove(id);
     }
 
@@ -2136,8 +2193,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 UserVO newUser = new UserVO(user);
                 user.setExternalEntity(user.getUuid());
                 user.setUuid(UUID.randomUUID().toString());
-                user.setApiKey(null);
-                user.setSecretKey(null);
                 _userDao.update(user.getId(), user);
                 newUser.setAccountId(newAccountId);
                 boolean success = _userDao.remove(user.getId());
@@ -2752,18 +2807,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Pair<User, Account> findUserByApiKey(String apiKey) {
+    public Ternary<User, Account, ApiKeyPair> findUserByApiKey(String apiKey) {
         return _accountDao.findUserAccountByApiKey(apiKey);
     }
 
     @Override
     public Map<String, String> getKeys(GetUserKeysCmd cmd) {
         final long userId = cmd.getID();
-        return getKeys(userId);
-    }
-
-    @Override
-    public Map<String, String> getKeys(Long userId) {
         User user = getActiveUser(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");
@@ -2774,10 +2824,77 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
-        keys.put("apikey", user.getApiKey());
-        keys.put("secretkey", user.getSecretKey());
+
+        ApiKeyPair keyPair = getLatestUserKeyPair(cmd.getID());
+        keys.put("apikey", keyPair.getApiKey());
+        keys.put("secretkey", keyPair.getSecretKey());
 
         return keys;
+    }
+
+    public ListResponse<ApiKeyPairResponse> getKeys(ListUserKeysCmd cmd) {
+        ListResponse<ApiKeyPairResponse> finalResponse = new ListResponse<>();
+        List<ApiKeyPairResponse> responses = new ArrayList<>();
+
+        if (!cmd.listAll() || cmd.getKeyId() != null) {
+            fetchOnlyOneKeypair(responses, cmd);
+            finalResponse.setResponses(responses);
+            return finalResponse;
+        }
+        Integer total = fetchMultipleKeypairs(responses, cmd);
+        finalResponse.setResponses(responses, total);
+        return finalResponse;
+    }
+
+    public ApiKeyPair getLatestUserKeyPair(Long userId) {
+        return ApiDBUtils.searchForLatestUserKeyPair(userId);
+    }
+
+    private void fetchOnlyOneKeypair(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        ApiKeyPair keyPair;
+        if (cmd.getKeyId() != null) {
+            keyPair = _accountService.getKeyPairById(cmd.getKeyId());
+        } else if (cmd.getUserId() != null) {
+            keyPair = _accountService.getLatestUserKeyPair(cmd.getUserId());
+        } else {
+            keyPair = _accountService.getLatestUserKeyPair(CallContext.current().getCallingUser().getId());
+        }
+        if (keyPair == null) {
+            throw new InvalidParameterValueException("No api key was found with the parameters specified");
+        }
+        apiKeyPairService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
+        addKeypairResponse(keyPair, responses, cmd);
+    }
+
+    private Integer fetchMultipleKeypairs(List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        List<Long> users;
+        if (cmd.getUserId() != null) {
+            apiKeyPairService.validateCallingUserHasAccessToDesiredUser(cmd.getUserId());
+            users = List.of(cmd.getUserId());
+        } else {
+            User callerUser = CallContext.current().getCallingUser();
+            users = isAdmin(callerUser.getAccountId()) ? queryService.searchForAccessableUsers() : List.of(callerUser.getId());
+        }
+
+        Pair<List<ApiKeyPairVO>,  Integer> keyPairs = apiKeyPairDao.listByUserIdsPaginated(users, cmd);
+        for (ApiKeyPairVO keyPair : keyPairs.first()) {
+            addKeypairResponse(keyPair, responses, cmd);
+        }
+        return keyPairs.second();
+    }
+
+    private void addKeypairResponse(ApiKeyPair keyPair, List<ApiKeyPairResponse> responses, ListUserKeysCmd cmd) {
+        if (keyPair == null) {
+            return;
+        }
+        ApiKeyPairResponse response = cmd._responseGenerator.createKeyPairResponse(keyPair);
+        response.setObjectName(ApiConstants.USER_API_KEY);
+        responses.add(response);
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairById(Long id) {
+        return apiKeyPairDao.findById(id);
     }
 
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
@@ -2817,40 +2934,55 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+    public ApiKeyPair createApiKeyAndSecretKey(RegisterCmd cmd) {
         Account caller = getCurrentCallingAccount();
-        final Long userId = cmd.getId();
-
-        User user = getUserIncludingRemoved(userId);
+        User user = _userDao.findById(cmd.getUserId());
         if (user == null) {
-            throw new InvalidParameterValueException("unable to find user by id");
+            throw new InvalidParameterValueException(String.format("Unable to find user by id: %d", cmd.getUserId()));
         }
+
+        final String name = cmd.getName();
+        final Long userId = user.getId();
+        final String description = cmd.getDescription();
+        final Date startDate = cmd.getStartDate();
+        final Date endDate = cmd.getEndDate();
+        final List<Map<String, Object>> rules = cmd.getRules();
 
         Account account = _accountDao.findById(user.getAccountId());
         preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
-        // don't allow updating system user
-        if (user.getId() == User.UID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
-        }
-        // don't allow baremetal system user
-        if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername())) {
-            throw new PermissionDeniedException("user id : " + user.getId() + " is system account, update is not allowed");
+        // don't allow baremetal or system user
+        if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(user.getUsername()) || user.getId() == User.UID_SYSTEM) {
+            throw new PermissionDeniedException("User id : " + user.getId() + " is system account, update is not allowed.");
         }
 
-        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
-        final String[] keys = new String[2];
+        Date now = DateTime.now().toDate();
+
+        if (endDate != null && endDate.compareTo(now) <= 0) {
+            throw new InvalidParameterValueException("Keypair cannot be created with expired date, please input a date on the future.");
+        }
+        if (ObjectUtils.allNotNull(startDate, endDate) && startDate.compareTo(endDate) > -1) {
+            throw new InvalidParameterValueException("Please specify an end date that is after the start date.");
+        }
+
+        // this is only used to determine if we should use api key permissions or account permissions to base our new key on
+        Boolean accessedByApiKey = cmd.getFullUrlParams().containsKey(ApiConstants.SIGNATURE);
+        String apiKey = cmd.getFullUrlParams().get("apiKey");
+
+        // generate both an api key and a secret key, return the keypair to the user
+        final ApiKeyPairVO[] newApiKeyPair = {new ApiKeyPairVO(name, userId, description, startDate, endDate, account)};
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                keys[0] = createUserApiKey(userId);
-                keys[1] = createUserSecretKey(userId);
+                createUserApiKey(userId, newApiKeyPair[0]);
+                createUserSecretKey(userId, newApiKeyPair[0]);
+                newApiKeyPair[0] = validateAndPersistKeyPairAndPermissions(account, newApiKeyPair[0], rules, accessedByApiKey, apiKey);
             }
         });
-
-        return keys;
+        return newApiKeyPair[0];
     }
+
 
     @Override
     @DB
@@ -2864,37 +2996,41 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         Account account = _accountDao.findById(user.getAccountId());
         checkAccess(caller, null, true, account);
         final String[] keys = new String[2];
+        ApiKeyPairVO newTokenKeyPair = new ApiKeyPairVO();
+        newTokenKeyPair.setName(String.valueOf(userId));
+        newTokenKeyPair.setAccountId(user.getAccountId());
+        newTokenKeyPair.setDomainId(account.getDomainId());
+        newTokenKeyPair.setUserId(userId);
+
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                keys[0] = AccountManagerImpl.this.createUserApiKey(userId);
-                keys[1] = AccountManagerImpl.this.createUserSecretKey(userId);
+                keys[0] = createUserApiKey(userId, newTokenKeyPair);
+                keys[1] = createUserSecretKey(userId, newTokenKeyPair);
+                apiKeyPairDao.persist(newTokenKeyPair);
             }
         });
         return keys;
     }
 
-    private String createUserApiKey(long userId) {
+    private String createUserApiKey(long userId, ApiKeyPairVO newApiKeyPair) {
         try {
-            UserVO updatedUser = _userDao.createForUpdate();
-
             String encodedKey = null;
-            Pair<User, Account> userAcct = null;
+            ApiKeyPair keyPair = null;
             int retryLimit = 10;
             do {
                 // FIXME: what algorithm should we use for API keys?
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
                 encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                userAcct = _accountDao.findUserAccountByApiKey(encodedKey);
+                keyPair = apiKeyPairDao.findByApiKey(encodedKey);
                 retryLimit--;
-            } while ((userAcct != null) && (retryLimit >= 0));
+            } while ((keyPair != null) && (retryLimit >= 0));
 
-            if (userAcct != null) {
+            if (keyPair != null) {
                 return null;
             }
-            updatedUser.setApiKey(encodedKey);
-            _userDao.update(userId, updatedUser);
+            newApiKeyPair.setApiKey(encodedKey);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating secret key for user id=" + userId, ex);
@@ -2902,31 +3038,124 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return null;
     }
 
-    private String createUserSecretKey(long userId) {
+    private String createUserSecretKey(long userId, ApiKeyPairVO newApiKeyPair) {
         try {
-            UserVO updatedUser = _userDao.createForUpdate();
             String encodedKey = null;
             int retryLimit = 10;
-            UserVO userBySecretKey = null;
+            ApiKeyPairVO keyPairVO = null;
             do {
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
                 encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                userBySecretKey = _userDao.findUserBySecretKey(encodedKey);
+                keyPairVO = apiKeyPairDao.findBySecretKey(encodedKey);
                 retryLimit--;
-            } while ((userBySecretKey != null) && (retryLimit >= 0));
+            } while ((keyPairVO != null) && (retryLimit >= 0));
 
-            if (userBySecretKey != null) {
+            if (keyPairVO != null) {
                 return null;
             }
 
-            updatedUser.setSecretKey(encodedKey);
-            _userDao.update(userId, updatedUser);
+            newApiKeyPair.setSecretKey(encodedKey);
             return encodedKey;
         } catch (NoSuchAlgorithmException ex) {
             logger.error("error generating secret key for user id=" + userId, ex);
         }
         return null;
+    }
+
+    /***
+     * Validates if the Keypair has at least one rule, then gets all account role permissions and calls a method that
+     * validates if the user permissions are a superset of permissions of the Keypair that is being created
+     * @param account is the user's account, from which the default permissions are pulled.
+     * @param newApiKeyPair is the new keypair being created
+     * @param rules are the rules passed to the API which are being validated, if no rules were passed, defaults to all
+     *              account permissions
+     * @throws InvalidParameterValueException if the user's permissions are not a superset of the Keypair, or there are
+     * no rules associated with the Keypair
+     */
+    @DB
+    private ApiKeyPairVO validateAndPersistKeyPairAndPermissions(Account account, ApiKeyPairVO newApiKeyPair, List<Map<String, Object>> rules, Boolean accessedByApiKey, String apiKey) {
+        final ApiKeyPairVO savedApiKeyPair = apiKeyPairDao.persist(newApiKeyPair);
+
+        final Role accountRole = roleService.findRole(account.getRoleId());
+
+        List<RolePermissionEntity> allPermissions = (accessedByApiKey == null || BooleanUtils.isFalse(accessedByApiKey)) ? getAllAccountRolePermissions(accountRole) : getAllKeypairPermissions(apiKey);
+
+        List<ApiKeyPairPermissionVO> validatedPermissions;
+
+        if (CollectionUtils.isEmpty(rules)) {
+            validatedPermissions = allPermissions.stream().map(permission -> new ApiKeyPairPermissionVO(savedApiKeyPair.getId(),
+                    permission.getRule().toString(), permission.getPermission(), permission.getDescription())).collect(Collectors.toList());
+        } else {
+            validatedPermissions = validatePermissions(rules, savedApiKeyPair, allPermissions);
+        }
+
+        validatedPermissions.forEach(permission -> apiKeyPairPermissionsDao.persist(permission));
+        return savedApiKeyPair;
+    }
+
+    /***
+     * Gets all account role permissions
+     * @param accountRole base account role of the user.
+     */
+    private List<RolePermissionEntity> getAllAccountRolePermissions(Role accountRole) {
+        List<RolePermission> allAccountRolePermissions = roleService.findAllPermissionsBy(accountRole.getId());
+        return allAccountRolePermissions.stream().map(permission -> (RolePermissionEntity) permission)
+                .collect(Collectors.toList());
+    }
+
+    /***
+     * Gets all api keypair permissions
+     * @return
+     */
+    private List<RolePermissionEntity> getAllKeypairPermissions(String apiKey) {
+        if (apiKey == null) {
+            throw new InvalidParameterValueException("API key not present in URL, cannot fetch API key rules");
+        }
+        ApiKeyPair apiKeyPair = keyPairManager.findByApiKey(apiKey);
+        List<ApiKeyPairPermission> allApiKeyRolePermissions = keyPairManager.findAllPermissionsByKeyPairId(apiKeyPair.getId());
+        return allApiKeyRolePermissions.stream().map(permission -> (RolePermissionEntity) permission)
+                .collect(Collectors.toList());
+    }
+
+    /***
+     * Validates if the user permissions are a superset of permissions of the Keypair that is being created
+     * @param rules are the rules passed to the API which are being validated
+     * @param savedApiKeyPair is the new keypair being created
+     * @throws InvalidParameterValueException if the user's permissions are not a superset of the Keypair.
+     */
+    private List<ApiKeyPairPermissionVO> validatePermissions(List<Map<String, Object>> rules, ApiKeyPairVO savedApiKeyPair,
+                                                             List<RolePermissionEntity> allAccountPermissions) {
+
+        List<ApiKeyPairPermissionVO> validatedPermissions = new ArrayList<>();
+        for (Map<String, Object> ruleDetail : rules) {
+            String apiName = ruleDetail.get(ApiConstants.RULE).toString();
+            RolePermission.Permission rulePermission = (RolePermission.Permission) ruleDetail.get(ApiConstants.PERMISSION);
+            String ruleDescription = (String) ruleDetail.get(ApiConstants.DESCRIPTION);
+
+            matchARuleWithAccountRules(allAccountPermissions, apiName, rulePermission, savedApiKeyPair, ruleDescription, validatedPermissions);
+        }
+        return validatedPermissions;
+    }
+
+    private void matchARuleWithAccountRules(List<RolePermissionEntity> allAccountPermissions, String apiName, RolePermission.Permission rulePermission,
+                                            ApiKeyPairVO savedApiKeyPair, String ruleDescription, List<ApiKeyPairPermissionVO> validatedPermissions) {
+        for (RolePermissionEntity accountPermission : allAccountPermissions) {
+            if (!accountPermission.getRule().matches(apiName)) {
+                continue;
+            }
+
+            if (!accountPermission.getPermission().equals(RolePermissionEntity.Permission.ALLOW) && rulePermission.equals(RolePermissionEntity.Permission.ALLOW)) {
+                apiKeyPairDao.remove(savedApiKeyPair.getId());
+                throw new InvalidParameterValueException(String.format("API %s is not allowed based on the user's account, a valid " +
+                        "keypair rule must be also allowed at the account level", apiName));
+            }
+            validatedPermissions.add(new ApiKeyPairPermissionVO(savedApiKeyPair.getId(), apiName, rulePermission, ruleDescription));
+            return;
+        }
+        apiKeyPairDao.remove(savedApiKeyPair.getId());
+        throw new InvalidParameterValueException(String.format("API %s was not found on the user's account, a valid " +
+                "keypair rule must be also present at the account level", apiName));
     }
 
     @Override
@@ -3135,7 +3364,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount getUserByApiKey(String apiKey) {
-        return _userAccountDao.getUserByApiKey(apiKey);
+        ApiKeyPairVO keyPair = apiKeyPairDao.findByApiKey(apiKey);
+        return _userAccountDao.findById(keyPair.getUserId());
     }
 
     @Override

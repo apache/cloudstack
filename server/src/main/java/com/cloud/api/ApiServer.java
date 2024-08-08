@@ -55,7 +55,11 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -221,6 +225,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Inject
     private ApiAsyncJobDispatcher asyncDispatcher;
+    @Inject
+    private ApiKeyPairManagerImpl keyPairManager;
+
 
     private EventDistributor eventDistributor = null;
     private static int s_workerCount = 0;
@@ -969,18 +976,19 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             txn.close();
             User user = null;
             // verify there is a user with this api key
-            final Pair<User, Account> userAcctPair = accountMgr.findUserByApiKey(apiKey);
-            if (userAcctPair == null) {
+            final Ternary<User, Account, ApiKeyPair> keyPairTernary = accountMgr.findUserByApiKey(apiKey);
+            if (keyPairTernary == null) {
                 logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
-            user = userAcctPair.first();
-            final Account account = userAcctPair.second();
+            user = keyPairTernary.first();
+            Account account = keyPairTernary.second();
+            ApiKeyPair keyPair = keyPairTernary.third();
 
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
-                logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                        "; accountState: " + account.getState());
+                logger.info(String.format("Disabled or locked user accessing the api, userid = %d; name = %s; state: %s; accountState: %s",
+                        user.getId(), user.getUsername(), user.getState(), account.getState()));
                 return false;
             }
 
@@ -988,10 +996,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return false;
             }
 
-            // verify secret key exists
-            secretKey = user.getSecretKey();
+            if (keyPair.getRemoved() != null) {
+                logger.info(String.format("Invalid request, as used API keypair [%s] has been removed.", keyPair.getUuid()));
+                return false;
+            }
+
+            keyPair.validateDate(true);
+
+            secretKey = keyPair.getSecretKey();
             if (secretKey == null) {
-                logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                logger.info(String.format("User does not have a secret key associated with the API key -- ignoring request, username: [%s].", user.getUsername()));
                 return false;
             }
 
@@ -1009,21 +1023,28 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!equalSig) {
                 signature = signature.replaceAll(SANITIZATION_REGEX, "_");
                 logger.info(String.format("User signature [%s] is not equaled to computed signature [%s].", signature, computedSignature));
-            } else {
-                CallContext.register(user, account);
+                return false;
             }
-            return equalSig;
+            CallContext.register(user, account);
+
+            List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPair.getId());
+
+            if (commandAvailable(remoteAddress, commandName, user, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
+                return true;
+            }
         } catch (final ServerApiException ex) {
             throw ex;
+        } catch (PermissionDeniedException ex) {
+            logger.error(String.format("Permission denied for keypair, reason: %s", ex.getMessage()));
         } catch (final Exception ex) {
             logger.error("unable to verify request signature");
         }
         return false;
     }
 
-    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user) {
+    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPairPermission ... rolePermissions) {
         try {
-            checkCommandAvailable(user, commandName, remoteAddress);
+            checkCommandAvailable(user, commandName, remoteAddress, rolePermissions);
         } catch (final RequestLimitException ex) {
             logger.debug(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
@@ -1223,7 +1244,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return true;
     }
 
-    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
+    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress, ApiKeyPairPermission ... apiKeyPairPermissions)
+            throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
@@ -1237,12 +1259,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
                 logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
-                }
+            }
         }
 
-
         for (final APIChecker apiChecker : apiAccessCheckers) {
-            apiChecker.checkAccess(user, commandName);
+            apiChecker.checkAccess(user, commandName, apiKeyPairPermissions);
         }
     }
 

@@ -27,6 +27,7 @@ import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
 import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
 import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.dc.DataCenter;
@@ -103,6 +104,8 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -295,9 +298,6 @@ public class AutoScaleManagerImplTest {
     private static final Map<String, HashMap<String, String>> otherDeployParams = new HashMap<>();
     private static final Map<String, HashMap<String, String>> counterParamList = new HashMap<>();
     private static final Integer expungeVmGracePeriod = 33;
-    private static final String cloudStackApiUrl = "cloudstack url";
-    private static final String autoScaleUserApiKey = "cloudstack api key";
-    private static final String autoScaleUserSecretKey = "cloudstack secret key";
     private static final String vmName = "vm name";
     private static final String networkUuid = "1111-1111-1116";
     private static final Long vmProfileId = 23L;
@@ -388,6 +388,9 @@ public class AutoScaleManagerImplTest {
     DomainRouterVO domainRouterMock;
     @Mock
     LoadBalancerVMMapVO loadBalancerVMMapMock;
+    @Mock
+    ApiKeyPairDao apiKeyPairDaoMock;
+    MockedStatic<ApiDBUtils> apiDBUtilsMocked;
 
     @Before
     public void setUp() {
@@ -411,11 +414,20 @@ public class AutoScaleManagerImplTest {
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
         Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+
+        ApiKeyPairVO apiKeyPairVO = new ApiKeyPairVO(1L, 1L);
+        apiKeyPairVO.setApiKey("apikey");
+        apiKeyPairVO.setSecretKey("secretkey");
+        apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class);
+        apiDBUtilsMocked.when(ReflectionTestUtils.invokeMethod(ApiDBUtils.class, "searchForLatestUserKeyPair", Mockito.anyLong())).thenReturn(apiKeyPairVO);
     }
 
     @After
     public void tearDown() {
         CallContext.unregister();
+        if (apiDBUtilsMocked != null) {
+            apiDBUtilsMocked.close();
+        }
     }
 
     @Test
@@ -862,8 +874,6 @@ public class AutoScaleManagerImplTest {
     public void testCheckAutoScaleUserSucceed() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
 
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
@@ -875,9 +885,7 @@ public class AutoScaleManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckAutoScaleUserFail1() {
         when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(null);
+        when(userMock.getAccountId()).thenReturn(accountId + 1L);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
@@ -885,8 +893,7 @@ public class AutoScaleManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckAutoScaleUserFail2() {
         when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(null);
+        when(userMock.getAccountId()).thenReturn(accountId + 1);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
@@ -910,8 +917,6 @@ public class AutoScaleManagerImplTest {
     public void testCheckAutoScaleUserFail5() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
 
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);

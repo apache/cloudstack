@@ -96,4 +96,6 @@ public interface RoleService {
     List<RolePermission> findAllPermissionsBy(Long roleId);
 
     Permission getRolePermission(String permission);
+
+    int removeRolesIfNeeded(List<? extends Role> roles);
 }

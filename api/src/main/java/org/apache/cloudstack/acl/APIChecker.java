@@ -20,6 +20,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 
 import java.util.List;
 
@@ -31,8 +32,9 @@ public interface APIChecker extends Adapter {
     // If true, apiChecker has checked the operation
     // If false, apiChecker is unable to handle the operation or not implemented
     // On exception, checkAccess failed don't allow
-    boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException;
-    boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException;
+    boolean checkAccess(User user, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
+    boolean checkAccess(Account account, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException;
+
     /**
      * Verifies if the account has permission for the given list of APIs and returns only the allowed ones.
      *

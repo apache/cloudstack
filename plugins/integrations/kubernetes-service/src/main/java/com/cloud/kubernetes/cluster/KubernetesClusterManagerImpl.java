@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -1384,8 +1385,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
             keys = accountService.createApiKeyAndSecretKey(kube.getId());
         } else {
-            String apiKey = kubeadmin.getApiKey();
-            String secretKey = kubeadmin.getSecretKey();
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(kubeadmin.getId());
+            String apiKey = latestKeypair.getApiKey();
+            String secretKey = latestKeypair.getSecretKey();
             if (StringUtils.isAnyEmpty(apiKey, secretKey)) {
                 keys = accountService.createApiKeyAndSecretKey(kubeadmin.getId());
             } else {

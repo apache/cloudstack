@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.UnavailableCommandException;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.APICommand;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -90,7 +91,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -104,7 +105,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
     }
 
     @Override
-    public boolean checkAccess(Account account, String commandName) {
+    public boolean checkAccess(Account account, String commandName, ApiKeyPairPermission... apiKeyPairPermissions) {
         if (!isEnabled()) {
             return true;
         }

@@ -29,8 +29,10 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -348,8 +350,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (user == null) {
                 throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
             }
-            apiKey = user.getApiKey();
-            secretKey = user.getSecretKey();
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+            apiKey = latestKeypair.getApiKey();
+            secretKey = latestKeypair.getSecretKey();
             if (apiKey == null) {
                 throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
             }

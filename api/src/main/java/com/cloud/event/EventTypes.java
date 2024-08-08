@@ -284,8 +284,9 @@ public class EventTypes {
     //registering userdata events
     public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
 
-    //register for user API and secret keys
+    // User API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String EVENT_DELETE_SECRET_API_KEY = "DELETE.USER.KEY";
 
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
