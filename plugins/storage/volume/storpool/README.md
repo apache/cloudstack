@@ -11,7 +11,6 @@ Secondary storage stores the following:
 * ISO images — disc images containing data or bootable media for operating systems
 * Disk volume snapshots — saved copies of VM data which can be used for data recovery or to create new templates
 
-
 ### ROOT and DATA volumes
 
 ROOT volumes correspond to the boot disk of a VM. They are created automatically by CloudStack during VM creation.
@@ -20,7 +19,6 @@ is based on. We may change the ROOT volume disk offering but only to another sys
 
 DATA volumes correspond to additional disks. These can be created by users and then attached/detached to VMs.
 DATA volumes are created based on a user-defined disk offering.
-
 
 ## Plugin Organization
 
@@ -48,7 +46,6 @@ that does pretty much the same.
 
 Note that for the present the StorPool plugin may only be used for a single primary storage cluster; support for
 multiple clusters is planned.
-
 
 ## Build, Install, Setup
 
@@ -121,7 +118,6 @@ SP_TEMPLATE - name of StorPool's template
 
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
-
 
 ## Plugin Functionality
 
