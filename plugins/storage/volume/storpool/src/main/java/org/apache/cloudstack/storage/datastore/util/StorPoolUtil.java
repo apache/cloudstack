@@ -135,6 +135,9 @@ public class StorPoolUtil {
 
     public static final String DELAY_DELETE = "delayDelete";
 
+    public static final String SP_RECOVERED_SNAPSHOT = "SP_RECOVERED_SNAPSHOT";
+
+    public static final String SP_REMOTE_LOCATION = "SP_REMOTE_LOCATION";
 
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
@@ -425,6 +428,14 @@ public class StorPoolUtil {
         return resp.getError() == null ? true : objectExists(resp.getError());
     }
 
+    public static boolean snapshotRecovered(final String name, SpConnectionDesc conn) {
+        SpApiResponse resp = GET("Snapshot/" + name, conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        JsonObject data = obj.getAsJsonArray("data").get(0).getAsJsonObject();
+        boolean recoveringFromRemote = data.getAsJsonPrimitive("recoveringFromRemote").getAsBoolean();
+        return recoveringFromRemote;
+    }
+
     public static JsonArray snapshotsList(SpConnectionDesc conn) {
         SpApiResponse resp = GET("MultiCluster/SnapshotsList", conn);
         JsonObject obj = resp.fullJson.getAsJsonObject();
@@ -642,6 +653,40 @@ public class StorPoolUtil {
     public static SpApiResponse snapshotDelete(final String name, SpConnectionDesc conn) {
         SpApiResponse resp = detachAllForced(name, true, conn);
         return resp.getError() == null ? POST("MultiCluster/SnapshotDelete/" + name, null, conn) : resp;
+    }
+
+    public static SpApiResponse snapshotExport(String name, String location, SpConnectionDesc conn) {
+        Map<String, Object> json = new HashMap<>();
+        json.put("snapshot", name);
+        json.put("location", location);
+        return POST("SnapshotExport", json, conn);
+    }
+
+    public static SpApiResponse snapshotUnexport(String name, String location, SpConnectionDesc conn) {
+        Map<String, Object> json = new HashMap<>();
+        json.put("snapshot", name);
+        json.put("location", location);
+        return POST("SnapshotUnexport", json, conn);
+    }
+
+    public static String getSnapshotClusterId(String snapshotName, SpConnectionDesc conn) {
+        SpApiResponse resp = POST("MultiCluster/SnapshotUpdate/" + snapshotName, new HashMap<>(), conn);
+        JsonObject json = resp.fullJson.getAsJsonObject();
+        return json.get("clusterId").getAsString();
+    }
+
+    public static SpApiResponse snapshotFromRemote(String name, String remoteLocation, String template,
+            SpConnectionDesc conn) {
+        Map<String, Object> json = new HashMap<>();
+        json.put("remoteId", name);
+        json.put("remoteLocation", remoteLocation);
+        json.put("template", template);
+        json.put("name", "");
+        return POST("SnapshotFromRemote", json, conn);
+    }
+
+    public static SpApiResponse snapshotReconcile(String name, SpConnectionDesc conn) {
+        return POST("SnapshotReconcile/" + name, null, conn);
     }
 
     public static SpApiResponse detachAllForced(final String name, final boolean snapshot, SpConnectionDesc conn) {
