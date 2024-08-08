@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
@@ -88,6 +89,13 @@ public class UpdateCfgCmd extends BaseCmd {
             validations = ApiArgValidator.PositiveNumber)
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "the ID of the Network to update the parameter value for corresponding network",
+               since = "4.18.0")
+    private Long networkId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -126,6 +134,10 @@ public class UpdateCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////
@@ -192,6 +204,9 @@ public class UpdateCfgCmd extends BaseCmd {
         }
         if (getDomainId() != null) {
             response.setScope("domain");
+        }
+        if (getNetworkId() != null) {
+            response.setScope("network");
         }
         return response;
     }

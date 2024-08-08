@@ -45,6 +45,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
     String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
     String VirtualRouterServiceOfferingCK = "router.service.offering";
+    String NetworkVirtualRouterServiceOfferingCK = "network.router.service.offering";
 
     String RouterHealthChecksConfigRefreshIntervalCK = "router.health.checks.config.refresh.interval";
     String RouterHealthChecksResultFetchIntervalCK = "router.health.checks.results.fetch.interval";
@@ -78,6 +79,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     ConfigKey<String> VirtualRouterServiceOffering = new ConfigKey<>(String.class, VirtualRouterServiceOfferingCK, "Advanced", "",
             "Uuid of the service offering used by virtual routers; if NULL - system offering will be used", true, ConfigKey.Scope.Account, null);
+    ConfigKey<String> NetworkVirtualRouterServiceOffering = new ConfigKey<String>(String.class, NetworkVirtualRouterServiceOfferingCK, "Advanced", "",
+            "Uuid of the service offering used by virtual routers of this network; if NULL - account/system offering will be used", true, ConfigKey.Scope.Network, null);
 
     // Health checks
     ConfigKey<Boolean> RouterHealthChecksEnabled = new ConfigKey<>(Boolean.class, "router.health.checks.enabled", "Advanced", "true",

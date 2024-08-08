@@ -98,14 +98,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
      * This map must contain all ConfigKey.Scope values, except the ConfigKey.Scope.Global.
      */
     protected void createEmptyScopeLevelMappings() {
-        _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.ImageStore, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Domain, new HashSet<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.ManagementServer, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap = new HashMap<>();
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.ImageStore, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Domain, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.ManagementServer, new HashSet<>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Network, new HashSet<>());
     }
 
     @Override

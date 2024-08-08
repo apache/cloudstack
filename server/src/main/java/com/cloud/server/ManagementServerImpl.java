@@ -2189,6 +2189,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String groupName = cmd.getGroupName();
         final String subGroupName = cmd.getSubGroupName();
         final String parentName = cmd.getParentName();
+        final Long networkId = cmd.getNetworkId();
+
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -2225,6 +2227,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
             scope = ConfigKey.Scope.Domain.toString();
             id = domainId;
+            paramCountCheck++;
+        }
+        if (networkId != null) {
+            scope = ConfigKey.Scope.Network.toString();
+            id = networkId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {

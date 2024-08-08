@@ -105,6 +105,11 @@ export default {
         show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) && !record.projectid }
       },
       {
+        name: 'settings',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
+        show: () => { return 'listConfigurations' in store.getters.apis }
+      },
+      {
         name: 'events',
         resourceType: 'Network',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
