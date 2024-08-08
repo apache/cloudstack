@@ -122,7 +122,7 @@ public interface VpcManager {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc, Long podId, boolean forNsx) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Validates network offering to find if it can be used for network creation in VPC

@@ -1752,7 +1752,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
-        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2, GuestType.Shared).contains(guestType)) {
+        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2).contains(guestType)) {
             throw new InvalidParameterValueException(
                     String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
             );
