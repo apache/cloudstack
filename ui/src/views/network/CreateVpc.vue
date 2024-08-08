@@ -340,7 +340,7 @@ export default {
         }
         this.loading = true
         const title = this.$t('label.add.vpc')
-        const description = this.$t('message.success.add.vpc.network')
+        const description = this.$t('message.success.add.vpc')
         api('createVPC', params).then(json => {
           const jobId = json.createvpcresponse.jobid
           if (jobId) {
