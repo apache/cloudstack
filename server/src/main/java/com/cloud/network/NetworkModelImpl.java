@@ -2174,7 +2174,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
-//        NetworkGuru guru = _networkGurus.get(network.getGuruName());
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
@@ -2184,7 +2183,17 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
             profile.setMtu(network.getPrivateMtu());
         }
-//        guru.updateNicProfile(profile, network);
+
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+
+        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dc);
+        profile.setIPv4Dns1(ip4Dns.first());
+        profile.setIPv4Dns2(ip4Dns.second());
+
+        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dc);
+        profile.setIPv6Dns1(ip6Dns.first());
+        profile.setIPv6Dns2(ip6Dns.second());
+
         return profile;
     }
 

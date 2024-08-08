@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
@@ -143,6 +144,8 @@ public interface NetworkOrchestrationService {
     void removeNics(VirtualMachineProfile vm);
 
     List<NicProfile> getNicProfiles(VirtualMachine vm);
+
+    List<NicProfile> getNicProfiles(Long vmId, Hypervisor.HypervisorType hypervisorType);
 
     Map<String, String> getSystemVMAccessDetails(VirtualMachine vm);
 
