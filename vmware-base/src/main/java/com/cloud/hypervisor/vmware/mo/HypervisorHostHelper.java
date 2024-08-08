@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,6 +55,7 @@ import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.SAXException;
 
 import com.cloud.exception.CloudException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -579,12 +579,12 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
+                throw new InvalidParameterValueException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
             }
             /**
              * Nicira NVP requires all vms to be connected to a single port-group.
@@ -636,7 +636,7 @@ public class HypervisorHostHelper {
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
-                    throw new InvalidParameterException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
+                    throw new InvalidParameterValueException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
                 }
                 bWaitPortGroupReady = false;
             } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
@@ -1315,7 +1315,7 @@ public class HypervisorHostHelper {
                 BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -1525,7 +1525,7 @@ public class HypervisorHostHelper {
             }
         }
         if (nvpVlanId == 4095) {
-            throw new InvalidParameterException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
+            throw new InvalidParameterValueException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
         }
 
         // Strict security policy

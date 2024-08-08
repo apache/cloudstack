@@ -18,7 +18,6 @@
 package com.cloud.network;
 
 import java.math.BigInteger;
-import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -417,10 +416,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
         // Since it's non-conserve mode, only one service should used for IP
         if (services.size() != 1) {
-            throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterValueException("There are multiple services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
-            throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " +
+            throw new InvalidParameterValueException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " +
                 service.getName());
         }
         return true;
@@ -458,7 +457,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // Since IP already has service to bind with, the oldProvider can't be null
         Set<Provider> newProviders = serviceToProviders.get(service);
         if (newProviders == null || newProviders.isEmpty()) {
-            throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
+            throw new InvalidParameterValueException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
         Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
@@ -471,7 +470,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
             // FIXME: I ignored this check
         } else {
-            throw new InvalidParameterException("Ip cannot be applied for new provider!");
+            throw new InvalidParameterValueException("Ip cannot be applied for new provider!");
         }
         return true;
     }
