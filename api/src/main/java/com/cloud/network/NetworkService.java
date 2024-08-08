@@ -220,8 +220,8 @@ public interface NetworkService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway, String netmask, String description,
+        long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException;
 
     /**

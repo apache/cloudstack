@@ -5615,7 +5615,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @DB
     public Network createPrivateNetwork(final String networkName, final String displayText, long physicalNetworkId, String broadcastUriString, final String startIp, String endIp, final String gateway,
-            String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId)
+            String netmask, final String description, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         final Account caller = CallContext.current().getCallingAccount();
