@@ -1369,7 +1369,19 @@ export default {
       return tabList
     },
     showSecurityGroupSection () {
-      return (this.networks.length > 0 && this.zone?.securitygroupsenabled) || (this.zone?.networktype === 'Basic')
+      if (this.networks.length < 1) {
+        return false
+      }
+      for (const network of this.options.networks) {
+        if (this.form.networkids && this.form.networkids.includes(network.id)) {
+          for (const service of network.service) {
+            if (service.name === 'SecurityGroup') {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
