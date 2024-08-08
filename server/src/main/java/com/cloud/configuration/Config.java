@@ -1621,7 +1621,6 @@ DefaultMaxAccountProjects(
             "3600",
             "The interval (in seconds) between cleanup for Inactive VPCs",
             null),
-    VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
     NetworkIPv6SearchRetryMax(
             "Network",

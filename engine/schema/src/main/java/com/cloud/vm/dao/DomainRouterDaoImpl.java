@@ -61,6 +61,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected SearchBuilder<DomainRouterVO> OutsidePodSearch;
     protected SearchBuilder<DomainRouterVO> clusterSearch;
     protected SearchBuilder<DomainRouterVO> SearchByStateAndManagementServerId;
+    protected SearchBuilder<DomainRouterVO> VpcSingleRouterSearch;
     @Inject
     HostDao _hostsDao;
     @Inject
@@ -97,6 +98,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         VpcSearch.and("role", VpcSearch.entity().getRole(), Op.EQ);
         VpcSearch.and("vpcId", VpcSearch.entity().getVpcId(), Op.EQ);
         VpcSearch.done();
+
+        VpcSingleRouterSearch = createSearchBuilder();
+        VpcSingleRouterSearch.and("role", VpcSingleRouterSearch.entity().getRole(), Op.EQ);
+        VpcSingleRouterSearch.and("vpcId", VpcSingleRouterSearch.entity().getVpcId(), Op.EQ);
+        VpcSingleRouterSearch.groupBy(VpcSingleRouterSearch.entity().getVpcId());
+        VpcSingleRouterSearch.done();
 
         IdNetworkIdStatesSearch = createSearchBuilder();
         IdNetworkIdStatesSearch.and("id", IdNetworkIdStatesSearch.entity().getId(), Op.EQ);
@@ -449,5 +456,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public DomainRouterVO findOneByVpcId(final long vpcId) {
+        final SearchCriteria<DomainRouterVO> sc = VpcSingleRouterSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("role", Role.VIRTUAL_ROUTER);
+        return findOneBy(sc);
     }
 }

@@ -145,7 +145,8 @@ jobs:
                   smoke/test_vpc_ipv6
                   smoke/test_vpc_redundant
                   smoke/test_vpc_router_nics
-                  smoke/test_vpc_vpn",
+                  smoke/test_vpc_vpn
+                  smoke/test_vpc_hypervisor_max_networks",
                 "component/find_hosts_for_migration
                   component/test_acl_isolatednetwork
                   component/test_acl_isolatednetwork_delete

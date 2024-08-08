@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -59,9 +60,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     private AnnotationDao annotationDao;
 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
-
     private final SearchBuilder<DomainRouterJoinVO> vrIdSearch;
     private final SearchBuilder<DomainRouterJoinVO> vrIdTrafficSearch;
+    private final GenericSearchBuilder<DomainRouterJoinVO, Integer> defaultNetworksSearch;
 
     protected DomainRouterJoinDaoImpl() {
 
@@ -77,6 +78,13 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         vrIdTrafficSearch.and("id", vrIdTrafficSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdTrafficSearch.and("trafficType", vrIdTrafficSearch.entity().getTrafficType(), SearchCriteria.Op.IN);
         vrIdTrafficSearch.done();
+
+        defaultNetworksSearch = createSearchBuilder(Integer.class);
+        defaultNetworksSearch.select(null, SearchCriteria.Func.COUNT, defaultNetworksSearch.entity().getId());
+        defaultNetworksSearch.and("id", defaultNetworksSearch.entity().getId(), SearchCriteria.Op.EQ);
+        defaultNetworksSearch.and("network_name", defaultNetworksSearch.entity().getNetworkName(), SearchCriteria.Op.NULL);
+        defaultNetworksSearch.and("removed", defaultNetworksSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        defaultNetworksSearch.done();
 
         _count = "select count(distinct id) from domain_router_view WHERE ";
     }
@@ -347,6 +355,14 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         sc.setParameters("id", id);
         sc.setParameters("trafficType", (Object[])trafficType);
         return searchIncludingRemoved(sc, null, null, false);
+    }
+
+    @Override
+    public int countDefaultNetworksById(long routerId) {
+        SearchCriteria<Integer> sc = defaultNetworksSearch.create();
+        sc.setParameters("id", routerId);
+        final List<Integer> count = customSearch(sc, null);
+        return count.get(0);
     }
 
     @Override

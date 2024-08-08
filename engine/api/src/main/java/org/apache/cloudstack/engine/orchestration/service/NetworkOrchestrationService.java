@@ -104,6 +104,14 @@ public interface NetworkOrchestrationService {
 
     static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
+    ConfigKey<Integer> VirtualMachineMaxNicsKvm = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.kvm", "23",
+            "The maximum number of NICs supported by the KVM hypervsior.", true, Scope.Cluster);
+
+    ConfigKey<Integer> VirtualMachineMaxNicsVmware = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.vmware", "10",
+            "The maximum number of NICs supported by the VMware hypervsior.", true, Scope.Cluster);
+
+    ConfigKey<Integer> VirtualMachineMaxNicsXenserver = new ConfigKey<>("Advanced", Integer.class, "virtual.machine.max.nics.xenserver", "7",
+            "The maximum number of NICs supported by the XenServer hypervsior.", true, Scope.Cluster);
 
     static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
@@ -348,6 +356,17 @@ public interface NetworkOrchestrationService {
     Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter datacenter, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    /**
+     * Returns the maximum number of NICs that the given virtual machine can have considering its hypervisor.
+     * <br/><br/>
+     * First we try to retrieve the setting value from the cluster where the virtual machine is deployed. If the cluster does not exist, we try to retrieve the setting value from the virtual machine hypervisor type.
+     * Returns null if the setting value could not be extracted.
+     *
+     * @param virtualMachine Virtual machine to get the maximum number of NICs.
+     * @return The maximum number of NICs that the virtual machine can have.
+     */
+    Integer getVirtualMachineMaxNicsValue(VirtualMachine virtualMachine);
 
     void expungeLbVmRefs(List<Long> vmIds, Long batchSize);
 }
