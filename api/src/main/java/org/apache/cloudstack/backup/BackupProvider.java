@@ -61,7 +61,7 @@ public interface BackupProvider {
      * @param vm
      * @return
      */
-    boolean removeVMFromBackupOffering(VirtualMachine vm);
+    boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups);
 
     /**
      * Whether the provide will delete backups on removal of VM from the offfering

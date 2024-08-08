@@ -204,6 +204,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_volumes", length = 65535)
     protected String backupVolumes;
 
+    @Column(name = "backup_name")
+    private String backupName;
+
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
         this.id = id;
@@ -621,5 +624,13 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setBackupVolumes(String backupVolumes) {
         this.backupVolumes = backupVolumes;
+    }
+
+    public String getBackupName() {
+        return backupName;
+    }
+
+    public void setBackupName(String backupName) {
+        this.backupName = backupName;
     }
 }

@@ -22,9 +22,11 @@ import java.util.Date;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.storage.Volume;
+
+import java.util.List;
 
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
@@ -62,6 +64,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private String id;
         private Date created;
         private String type;
+        private List<String> paths;
+
+        public RestorePoint(String id, Date created, String type, List<String> paths) {
+            this.id = id;
+            this.created = created;
+            this.type = type;
+            this.paths = paths;
+        }
 
         public RestorePoint(String id, Date created, String type) {
             this.id = id;
@@ -92,6 +102,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         public void setType(String type) {
             this.type = type;
         }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths;
+        }
+
+        public List<String> getPaths() {
+            return paths;
+        }
     }
 
     class VolumeInfo {
@@ -99,12 +117,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private Volume.Type type;
         private Long size;
         private String path;
+        private Long deviceId;
 
-        public VolumeInfo(String uuid, String path, Volume.Type type, Long size) {
+        public VolumeInfo(String uuid, String path, Volume.Type type, Long size, Long deviceId) {
             this.uuid = uuid;
             this.type = type;
             this.size = size;
             this.path = path;
+            this.deviceId = deviceId;
         }
 
         public String getUuid() {
@@ -127,14 +147,21 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
             return size;
         }
 
+        public void setDeviceId(Long deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public Long getDeviceId() {
+            return deviceId;
+        }
+
         @Override
         public String toString() {
-            return StringUtils.join(":", uuid, path, type, size);
+            return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "path", "type", "size", "deviceId");
         }
     }
 
     long getVmId();
-    long getBackupOfferingId();
     String getExternalId();
     String getType();
     Date getDate();
@@ -142,4 +169,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Long getSize();
     Long getProtectedSize();
     long getZoneId();
+    long getBackupOfferingId();
+    List<Backup.VolumeInfo> getBackupVolumeList();
 }

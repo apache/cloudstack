@@ -148,7 +148,7 @@ public class VeeamClientTest {
     @Test
     public void getRepositoryNameFromJobTestSuccess() throws Exception {
         String backupName = "TEST-BACKUP3";
-        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\r\nName : test");
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "\r\n\r\nName : test");
         Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
         String repositoryNameFromJob = mockClient.getRepositoryNameFromJob(backupName);
         Assert.assertEquals("test", repositoryNameFromJob);
@@ -239,7 +239,17 @@ public class VeeamClientTest {
 
         Map<String, Backup.Metric> metrics = client.processPowerShellResultForBackupMetrics(result);
 
-        verifyBackupMetrics(metrics);
+        Assert.assertEquals(2, metrics.size());
+
+        String vmName1 = "i-2-3-VM";
+        Assert.assertTrue(metrics.containsKey(vmName1));
+        Assert.assertEquals(537776128L, (long) metrics.get(vmName1).getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get(vmName1).getDataSize());
+
+        String vmName2 = "i-2-5-VM";
+        Assert.assertTrue(metrics.containsKey(vmName2));
+        Assert.assertEquals(1268682752L, (long) metrics.get(vmName2).getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get(vmName2).getDataSize());
     }
 
     @Test
@@ -427,7 +437,15 @@ public class VeeamClientTest {
         InputStream inputStream = new ByteArrayInputStream(xmlResponse.getBytes());
         Map<String, Backup.Metric> metrics = client.processHttpResponseForBackupMetrics(inputStream);
 
-        verifyBackupMetrics(metrics);
+        Assert.assertEquals(2, metrics.size());
+
+        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
+        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
+
+        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
+        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
     }
 
     @Test
