@@ -236,7 +236,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        UriUtils.validateUrl(cmd.getFormat(), url);
         Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
         boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {

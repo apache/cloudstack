@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.Bucket;
+import com.cloud.agent.api.to.BucketTO;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -128,10 +129,11 @@ public class MinIOObjectStoreDriverImplTest {
     @Test
     public void testDeleteBucket() throws Exception {
         String bucketName = "test-bucket";
+        BucketTO bucket = new BucketTO(bucketName);
         doReturn(minioClient).when(minioObjectStoreDriverImpl).getMinIOClient(anyLong());
         when(minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())).thenReturn(true);
         doNothing().when(minioClient).removeBucket(RemoveBucketArgs.builder().bucket(bucketName).build());
-        boolean success = minioObjectStoreDriverImpl.deleteBucket(bucketName, 1L);
+        boolean success = minioObjectStoreDriverImpl.deleteBucket(bucket, 1L);
         assertTrue(success);
         verify(minioClient, times(1)).bucketExists(any());
         verify(minioClient, times(1)).removeBucket(any());
