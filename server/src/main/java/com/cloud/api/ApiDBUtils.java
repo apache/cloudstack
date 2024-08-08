@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
@@ -93,6 +94,9 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDao;
+import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -491,6 +495,8 @@ public class ApiDBUtils {
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
     static ObjectStoreDao s_objectStoreDao;
 
+    static FileShareJoinDao s_fileShareJoinDao;
+
     static BucketDao s_bucketDao;
     static VirtualMachineManager s_virtualMachineManager;
 
@@ -758,6 +764,8 @@ public class ApiDBUtils {
     private BucketDao bucketDao;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private FileShareJoinDao fileShareJoinDao;
 
     @PostConstruct
     void init() {
@@ -893,6 +901,7 @@ public class ApiDBUtils {
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
+        s_fileShareJoinDao = fileShareJoinDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2268,5 +2277,13 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
+    }
+
+    public static FileShareResponse newFileShareResponse(ResponseView view, FileShareJoinVO fileShareView) {
+        return s_fileShareJoinDao.newFileShareResponse(view, fileShareView);
+    }
+
+    public static FileShareJoinVO newFileShareView(FileShare fileShare) {
+        return s_fileShareJoinDao.newFileShareView(fileShare);
     }
 }

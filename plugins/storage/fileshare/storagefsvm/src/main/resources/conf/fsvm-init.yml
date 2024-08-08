@@ -1,0 +1,198 @@
+#cloud-config
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+---
+write_files:
+  - path: /usr/local/bin/add-partition
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+
+      log "Running add script"
+
+      # Variables
+      PARTITION="$1"
+      MOUNT_POINT="/mnt/fs"
+      EXPORT_DIR="$MOUNT_POINT/share"
+      PERMISSIONS="rw,sync,no_subtree_check"
+
+      mkdir -p "$MOUNT_POINT"
+
+      FS_TYPE=$(lsblk -no FSTYPE "$PARTITION")
+
+      if [ -z "$FS_TYPE" ]; then
+        FILESYSTEM={{ fsvm.filesystem }}
+        if [ "$FILESYSTEM" == "xfs" ]; then
+          mkfs.xfs "$PARTITION"
+          log "Formatted Partition $PARTITION with XFS Filesystem."
+        elif [ "$FILESYSTEM" == "ext4" ]; then
+          mkfs.ext4 "$PARTITION"
+          log "Formatted Partition $PARTITION with EXT4 Filesystem."
+        else
+          log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
+          exit 1
+        fi
+      else
+        log "Partition $PARTITION already has a filesystem of type $FS_TYPE. Skipping format."
+      fi
+
+      FS_INFO=$(blkid "$PARTITION")
+      UUID=$(echo "$FS_INFO" | grep -oP "UUID=\"\K[^\"]+")
+      TYPE=$(echo "$FS_INFO" | grep -oP "TYPE=\"\K[^\"]+")
+
+      if [ -z "$UUID" ] || [ -z "$TYPE" ]; then
+        log "Failed to retrieve UUID or TYPE for $PARTITION"
+        exit 1
+      fi
+
+      echo "UUID=$UUID $MOUNT_POINT $TYPE defaults 0 2" >> /etc/fstab
+      log "Added fstab entry."
+
+      mount -a
+
+      if mountpoint -q "$MOUNT_POINT"; then
+        log "$PARTITION is successfully mounted on $MOUNT_POINT"
+      else
+        log "Failed to mount $PARTITION on $MOUNT_POINT"
+        exit 1
+      fi
+
+      if [ ! -d "$EXPORT_DIR" ]; then
+        log "Creating export directory..."
+        mkdir -p "$EXPORT_DIR"
+        chown nobody:nogroup "$EXPORT_DIR"
+        chmod 777 "$EXPORT_DIR"
+      fi
+
+      log "Configuring NFS export..."
+      EXPORT_ENTRY="$EXPORT_DIR *($PERMISSIONS)"
+      if ! grep -qF "$EXPORT_ENTRY" /etc/exports; then
+        echo "$EXPORT_ENTRY" | tee -a /etc/exports > /dev/null
+      fi
+      exportfs -ra
+
+      log "Enable and restart NFS server..."
+      systemctl enable nfs-kernel-server
+      systemctl restart nfs-kernel-server
+
+      log "NFS share created successfully."
+      log "Finished running add script."
+
+  - path: /usr/local/bin/resize-partition
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+      log "Running resize script."
+      PARTITION="$1"
+
+      FILESYSTEM={{ fsvm.filesystem }}
+      if [ "$FILESYSTEM" == "xfs" ]; then
+        xfs_growfs "$PARTITION"
+      elif [ "$FILESYSTEM" == "ext4" ]; then
+        resize2fs "$PARTITION"
+      else
+        log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
+        exit 1
+      fi
+
+      log "Finished running resize script."
+
+  - path: /etc/systemd/system/cloud-dhclient@.service
+    permissions: '0700'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=CloudStack service to start dhclient
+
+      [Install]
+      WantedBy=multi-user.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/sbin/dhclient %I
+      Restart=on-failure
+
+  - path: /usr/local/bin/fsvm-setup
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      LOG_FILE="/var/log/userdata.log"
+      log() {
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+      }
+
+      HYPERVISOR={{ fsvm.hypervisor }}
+      if [ "$HYPERVISOR" == "kvm" ]; then
+        BLOCK_DEVICE="vdb"
+      elif [ "$HYPERVISOR" == "xenserver" ]; then
+        BLOCK_DEVICE="xvdb"
+      elif [ "$HYPERVISOR" == "vmware" ]; then
+        BLOCK_DEVICE="sdb"
+      else
+        log "Unknown hypervisor"
+        exit 1
+      fi
+
+      PARTITION="/dev/$BLOCK_DEVICE"
+      ADD_PARTITION_FILE="/usr/local/bin/add-partition"
+      RESIZE_PARTITION_FILE="/usr/local/bin/resize-partition"
+
+      UDEV_ADD_RULE='KERNEL=="$BLOCK_DEVICE", ACTION=="add", SUBSYSTEM=="block", RUN+="$ADD_PARTITION_FILE /dev/%k"'
+      UDEV_RESIZE_RULE='KERNEL=="$BLOCK_DEVICE", ACTION=="change", SUBSYSTEM=="block", RUN+="$RESIZE_PARTITION_FILE /dev/%k"'
+      UDEV_ADD_NIC_RULE='ACTION=="add", SUBSYSTEM=="net", DRIVERS=="?*", ENV{SYSTEMD_WANTS}="cloud-dhclient@%k.service"'
+
+      # Add udev rules
+      echo "$UDEV_RESIZE_RULE" > /etc/udev/rules.d/99-resize-partition.rules
+
+      echo "$UDEV_ADD_NIC_RULE" > /etc/udev/rules.d/99-add-nic.rules
+
+      if [ ! -b "$PARTITION" ]; then
+        log "Partition $PARTITION does not exist. Adding udev rule for adding the partition"
+        echo "$UDEV_ADD_RULE" > /etc/udev/rules.d/99-add-partition.rules
+      else
+        log "Partition $PARTITION already exists. Running the $ADD_PARTITION_FILE script"
+        $ADD_PARTITION_FILE "$PARTITION"
+      fi
+
+      log "Udev rules added."
+
+      # Reload udev rules
+      udevadm control --reload-rules
+      udevadm trigger
+
+      log "Script execution finished successfully."
+
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
+
+runcmd:
+  - /usr/local/bin/fsvm-setup

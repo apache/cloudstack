@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.quota.QuotaTariff;
+import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -740,6 +741,18 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
+    // FileShare
+    public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
+    public static final String EVENT_FILESHARE_START = "FILESHARE.START";
+    public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
+    public static final String EVENT_FILESHARE_CHANGE_SVC_OFFERING = "FILESHARE.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_FILESHARE_CHANGE_DISK_OFFERING = "FILESHARE.CHANGE.DISK.OFFERING";
+    public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
+    public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
+    public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
+    public static final String EVENT_FILESHARE_EXPUNGE = "FILESHARE.EXPUNGE";
+    public static final String EVENT_FILESHARE_RECOVER = "FILESHARE.RECOVER";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1195,6 +1208,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
+
+        // FileShare
+        entityEventDetails.put(EVENT_FILESHARE_CREATE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_START, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_STOP, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_UPDATE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_CHANGE_SVC_OFFERING, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_CHANGE_DISK_OFFERING, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_RESTART, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_DESTROY, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_EXPUNGE, FileShare.class);
+        entityEventDetails.put(EVENT_FILESHARE_RECOVER, FileShare.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

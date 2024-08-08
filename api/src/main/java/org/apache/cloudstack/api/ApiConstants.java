@@ -431,6 +431,7 @@ public class ApiConstants {
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
     public static final String SIZE = "size";
+    public static final String SIZEGB = "sizegb";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
@@ -503,6 +504,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String VIRTUAL_MACHINE_TYPE = "virtualmachinetype";
+    public static final String VIRTUAL_MACHINE_STATE = "vmstate";
     public static final String VIRTUAL_MACHINES = "virtualmachines";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
@@ -1140,6 +1142,10 @@ public class ApiConstants {
     public static final String WEBHOOK_NAME = "webhookname";
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
+
+    public static final String FILESHARE = "fileshare";
+    public static final String STORAGEFSVM_MIN_CPU_COUNT = "storagefsvmmincpucount";
+    public static final String STORAGEFSVM_MIN_RAM_SIZE = "storagefsvmminramsize";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

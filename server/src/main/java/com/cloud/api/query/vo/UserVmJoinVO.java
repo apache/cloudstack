@@ -365,6 +365,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
+    @Column(name = "user_vm_type")
+    private String userVmType;
+
     @Column(name = "project_id")
     private long projectId;
 
@@ -817,6 +820,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getUserData() {
         return userData;
+    }
+
+    public String getUserVmType() {
+        return userVmType;
     }
 
     public long getGuestOsId() {

@@ -25,6 +25,7 @@ SELECT
     `vm_instance`.`name` AS `name`,
     `user_vm`.`display_name` AS `display_name`,
     `user_vm`.`user_data` AS `user_data`,
+    `user_vm`.`user_vm_type` AS `user_vm_type`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,
     `account`.`account_name` AS `account_name`,

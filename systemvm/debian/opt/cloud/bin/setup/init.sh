@@ -204,7 +204,11 @@ setup_interface_sshd() {
     else
       setup_sshd $ETH1_IP "eth1"
     fi
+
   elif [ "$TYPE" == "cksnode" ]; then
+    setup_common eth0
+
+  elif [ "$TYPE" == "storagefsvm" ]; then
     setup_common eth0
   fi
 

@@ -954,6 +954,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
+        if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -997,6 +1000,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+        if (UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1947,6 +1953,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+
+        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = _vmDao.findById(vmId);
+            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            }
+        }
+
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
         if (vmInstance == null) {
@@ -2272,6 +2286,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
@@ -2808,6 +2825,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
             }
         }
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+        if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
+
         String userData = cmd.getUserData();
         Long userDataId = cmd.getUserdataId();
         String userDataDetails = null;
@@ -3355,6 +3377,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         if (Arrays.asList(State.Destroyed, State.Expunging).contains(vm.getState()) && !expunge) {
             logger.debug("Vm id=" + vmId + " is already destroyed");
@@ -3796,7 +3821,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify that owner can use the service offering
         _accountMgr.checkAccess(owner, serviceOffering, zone);
-        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
+
+        DiskOffering diskOffering =_diskOfferingDao.findById(diskOfferingId);
+        _accountMgr.checkAccess(owner, diskOffering, zone);
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {
@@ -4213,7 +4240,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType)) {
+            if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType) && !STORAGEFSVM.equals(vmType)) {
                 throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
             }
             List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
@@ -5053,10 +5080,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void addUserVMCmdlineArgs(Long vmId, VirtualMachineProfile profile, DeployDestination dest, StringBuilder buf) {
-        UserVmVO k8sVM = _vmDao.findById(vmId);
+        UserVmVO vm = _vmDao.findById(vmId);
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
-        buf.append(" type=").append(k8sVM.getUserVmType());
+        buf.append(" type=").append(vm.getUserVmType());
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
@@ -5097,7 +5124,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
         StringBuilder buf = profile.getBootArgsBuilder();
-        if (CKS_NODE.equals(vm.getUserVmType())) {
+        if (CKS_NODE.equals(vm.getUserVmType()) || STORAGEFSVM.equals(vm.getUserVmType())) {
             addUserVMCmdlineArgs(vm.getId(), profile, dest, buf);
         }
         // add userdata info into vm profile
@@ -5866,6 +5893,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
 
         if (vm.getRemoved() != null) {
@@ -7325,6 +7355,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        }
 
         final Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
         if (oldAccount == null) {
@@ -7844,6 +7877,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
+        }
+        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 

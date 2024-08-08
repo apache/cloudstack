@@ -523,6 +523,140 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'fileshare',
+      title: 'label.fileshares',
+      icon: 'file-text-outlined',
+      permission: ['listFileShares'],
+      resourceType: 'FileShare',
+      columns: () => {
+        const fields = ['name', 'state', 'sizegb']
+        const metricsFields = ['diskkbsread', 'diskkbswrite', 'utilization', 'physicalsize']
+
+        if (store.getters.metrics) {
+          fields.push(...metricsFields)
+        }
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.push('storage')
+          fields.push('account')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('zonename')
+
+        return fields
+      },
+      details: ['id', 'name', 'description', 'state', 'format', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
+      tabs: [{
+        component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
+      }],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid']
+        return filters
+      },
+      actions: [
+        {
+          api: 'createFileShare',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#creating-a-new-file-share',
+          label: 'label.create.fileshare',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateFileShare.vue')))
+        },
+        {
+          api: 'updateFileShare',
+          icon: 'edit-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.update.fileshare',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue')))
+        },
+        {
+          api: 'startFileShare',
+          icon: 'caret-right-outlined',
+          label: 'label.action.start.fileshare',
+          message: 'message.action.start.fileshare',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          dataView: true,
+          show: (record) => { return ['Stopped', 'Detached'].includes(record.state) }
+        },
+        {
+          api: 'stopFileShare',
+          icon: 'poweroff-outlined',
+          label: 'label.action.stop.fileshare',
+          message: 'message.action.stop.fileshare',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          dataView: true,
+          args: ['forced'],
+          show: (record) => { return ['Ready'].includes(record.state) }
+        },
+        {
+          api: 'restartFileShare',
+          icon: 'reload-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.action.restart.fileshare',
+          message: 'message.action.restart.fileshare',
+          dataView: true,
+          args: ['cleanup'],
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+        },
+        {
+          api: 'changeFileShareDiskOffering',
+          icon: 'swap-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.change.disk.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareDiskOffering.vue'))),
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+        },
+        {
+          api: 'changeFileShareServiceOffering',
+          icon: 'arrows-alt-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.change.service.offering',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareServiceOffering.vue'))),
+          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+        },
+        {
+          api: 'destroyFileShare',
+          icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.destroy.fileshare',
+          message: 'message.action.destroy.fileshare',
+          dataView: true,
+          args: ['expunge'],
+          show: (record) => { return !['Destroyed', 'Expunging'].includes(record.state) },
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'recoverFileShare',
+          icon: 'medicine-box-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.recover.fileshare',
+          message: 'message.action.recover.fileshare',
+          dataView: true,
+          show: (record) => { return record.state === 'Destroyed' }
+        },
+        {
+          api: 'expungeFileShare',
+          icon: 'delete-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.expunge.fileshare',
+          message: 'message.action.expunge.fileshare',
+          dataView: true,
+          show: (record) => { return ['Destroyed', 'Expunging'].includes(record.state) }
+        }
+      ]
     }
   ]
 }

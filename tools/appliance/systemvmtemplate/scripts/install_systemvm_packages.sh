@@ -60,7 +60,7 @@ function install_packages() {
     sysstat \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
-    nfs-common \
+    nfs-common nfs-server xfsprogs \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
     xenstore-utils libxenstore4 \
