@@ -1017,8 +1017,9 @@
                             <exclude>.gitignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
-                            <exclude>README.md</exclude>
                             <exclude>INSTALL.md</exclude>
+                            <exclude>Makefile</exclude>
+                            <exclude>README.md</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>
