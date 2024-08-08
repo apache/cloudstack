@@ -78,7 +78,7 @@ Clear old database (if any) and deploy the database schema:
 
 Export the following variable if you need to run and debug the management server:
 
-    $ export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
+    $ export MAVEN_OPTS="-Xmx1024m -XX:MaxMetaspaceSize=500m -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
 
 Start the management server:
 

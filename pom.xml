@@ -58,7 +58,7 @@
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
-        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/javax.net.ssl=ALL-UNNAMED</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
@@ -79,6 +79,7 @@
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
+        <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>2.19.0</cs.log4j.version>
@@ -137,6 +138,7 @@
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.gmavenplus.version>3.0.2</cs.gmavenplus.version>
         <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
@@ -185,7 +187,6 @@
         <cs.xstream.version>1.4.20</cs.xstream.version>
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
-        <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
 
     <distributionManagement>
@@ -931,20 +932,6 @@
                                     </pluginExecutionFilter>
                                     <action>
                                         <ignore />
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.codehaus.gmaven</groupId>
-                                        <artifactId>gmaven-plugin</artifactId>
-                                        <versionRange>[1.3,)</versionRange>
-                                        <goals>
-                                            <goal>compile</goal>
-                                            <goal>testCompile</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
