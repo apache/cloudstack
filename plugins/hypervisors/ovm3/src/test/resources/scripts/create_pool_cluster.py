@@ -29,7 +29,7 @@ normalRepo = 0
 
 try:
   if normalRepo:
-    print "normal repo"
+    print("normal repo")
     # this literally throws EVERYTHING away on the repo
     repoDom = parseString(server.discover_repository_db())
     for node in repoDom.getElementsByTagName('Repository'):
@@ -43,16 +43,16 @@ try:
         # in which repo it lives....
         for dirname, dirnames, filenames in os.walk('%s/VirtualMachines/' % localMount):
             for vm in dirnames:
-                print "Destroying vm: %s on repo %s" % (vm, repoUuid.value)
+                print("Destroying vm: %s on repo %s" % (vm, repoUuid.value))
                 try:
                     mVm = server.list_vm(repoUuid.value, vm)
-                    if mVm != None:
-                        print server.stop_vm(repoUuid.value, vm)
-                        print server.delete_vm(repoUuid.value, vm)
+                    if mVm is not None:
+                        print(server.stop_vm(repoUuid.value, vm))
+                        print(server.delete_vm(repoUuid.value, vm))
                     else:
-                        print "%s already not in repo %s" % (repoUuid.value, vm)
-                except Error, v:
-                    print "Unable to destroy: %s" % (v)
+                        print("%s already not in repo %s" % (repoUuid.value, vm))
+                except Error as v:
+                    print("Unable to destroy: %s" % v)
                     continue
 
         # VMs = server.list_vms()
@@ -63,15 +63,15 @@ try:
 
         rc = server.delete_repository(repoUuid.value, True)
         # Set to false if you want to keep data:      ^^^^
-        print "Repository: %s" % repoUuid.value
-        if (rc == None):
-            print "Ok repo: %s destroyed!" % repoUuid.value
+        print("Repository: %s" % repoUuid.value)
+        if rc is None:
+            print("Ok repo: %s destroyed!" % repoUuid.value)
             # now unmount the FS
             # print server.unmount_repository_fs(localMount)
         else:
-            print "Failed repo: %s not destroyed!" % repoUuid.value
+            print("Failed repo: %s not destroyed!" % repoUuid.value)
 
-    # for now only treat NFS stuff as we're testing with that..
+    # for now only treat NFS stuff as we're testing with that.
     nfsHost = 'cs-mgmt'
     nfsDom = server.storage_plugin_listMountPoints(
         'oracle.generic.NFSPlugin.GenericNFSPlugin',
@@ -111,19 +111,18 @@ try:
     nfsDom = parseString(server.discover_mounted_file_systems('nfs'))
     for node in nfsDom.getElementsByTagName('Mount'):
         nfsMnt = node.attributes['Dir'].value
-        print 'Mountpoint: %s' % (nfsMnt)
+        print('Mountpoint: %s' % nfsMnt)
         fsStamp = '%s/.generic_fs_stamp' % nfsMnt
         # remove this so we don't cock up next run
         if os.path.isfile(fsStamp):
-            print "Stamp found: %s" % fsStamp
+            print("Stamp found: %s" % fsStamp)
             os.unlink(fsStamp)
 
         rc = server.storage_plugin_unmount('oracle.generic.NFSPlugin.GenericNFSPlugin', props, extprops, nfsMnt, True)
-        print rc
-
+        print(rc)
 
   if pooledFs:
-    print "pooling"
+    print("pooling")
     # pool stuff
     poolalias = "ItsMyPool"
     poolmvip = "192.168.1.161"
@@ -153,7 +152,7 @@ try:
     # eventually cluster cleanup can be done by removing
     #   stuff from /etc/ovs-agent/db
     #   also clean /etc/ocfs2/cluster.conf
-    print server.create_pool_filesystem(
+    print(server.create_pool_filesystem(
         fstype,
         fstarget,
         clusterid,
@@ -161,7 +160,7 @@ try:
         poolfsnfsbaseuuid,
         manageruuid,
         pooluuid
-    )
+    ))
 
     # poolDom = server.discover_server_pool()
     # print poolDom
@@ -169,24 +168,24 @@ try:
     # if poolDom.getElementsByTagName('Server_Pool'):
     # get unique id
     cluster = server.is_cluster_online()
-    if cluster == True:
-        print "clean up pool"
+    if cluster:
+        print("clean up pool")
         # print server.destroy_cluster(poolfsuuid)
         # deconfigure cluster
         # print server.destroy_server_pool(poolid)
 
-    if cluster == False:
-        print "create_server_pool"
+    if not cluster:
+        print("create_server_pool")
         # first take ownership. without an owner nothing happens
-        print server.take_ownership(manageruuid, "")
+        print(server.take_ownership(manageruuid, ""))
         # we need to add the first host first to the pool....
         poolDom = server.discover_server_pool()
-        print poolDom
+        print(poolDom)
         poolDom = parseString(server.discover_server_pool())
         if poolDom.getElementsByTagName('Server_Pool'):
-            print server.destroy_server_pool(pooluuid)
+            print(server.destroy_server_pool(pooluuid))
 
-        print server.create_pool_filesystem(
+        print(server.create_pool_filesystem(
             fstype,
             fstarget,
             clusterid,
@@ -194,19 +193,19 @@ try:
             poolfsnfsbaseuuid,
             manageruuid,
             pooluuid
-        )
-        print server.create_server_pool(poolalias,
+        ))
+        print(server.create_server_pool(poolalias,
             pooluuid,
             poolmvip,
             poolfirsthost['id'],
             poolfirsthost['hn'],
             poolfirsthost['ip'],
-            poolfirsthost['role'])
+            poolfirsthost['role']))
 
-        print "configure_virtual_ip"
+        print("configure_virtual_ip")
         server.configure_virtual_ip(poolmvip, poolfirsthost['ip'])
         server.set_pool_member_ip_list(['192.168.1.64', '192.168.1.65'],)
-        print "configure for cluster"
+        print("configure for cluster")
         server.configure_server_for_cluster(
             {
                 'O2CB_HEARTBEAT_THRESHOLD': '61',
@@ -247,7 +246,7 @@ try:
             poolfsuuid,
             poolfsnfsbaseuuid
         )
-        print "create cluster"
+        print("create cluster")
         server.create_cluster(poolfsuuid,)
 
     poolDom = parseString(server.discover_server_pool())
@@ -255,17 +254,17 @@ try:
         id = node.getElementsByTagName('Unique_Id')[0].firstChild.nodeValue
         alias = node.getElementsByTagName('Pool_Alias')[0].firstChild.nodeValue
         mvip = node.getElementsByTagName('Primary_Virtual_Ip')[0].firstChild.nodeValue
-        print "pool: %s, %s, %s" % (id, mvip, alias)
+        print("pool: %s, %s, %s" % (id, mvip, alias))
         members = node.getElementsByTagName('Member')
         for member in members:
             mip = member.getElementsByTagName('Registered_IP')[0].firstChild.nodeValue
-            print "member: %s" % (mip)
+            print("member: %s" % mip)
 
-    print server.is_cluster_online()
-    print server.discover_cluster()
-    print server.discover_pool_filesystem()
-    print server.discover_server_pool()
+    print(server.is_cluster_online())
+    print(server.discover_cluster())
+    print(server.discover_pool_filesystem())
+    print(server.discover_server_pool())
     # server.destroy_server_pool(pooluuid)
 
-except Error, v:
-    print "ERROR", v
+except Error as v:
+    print("ERROR", v)
