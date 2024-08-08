@@ -2080,7 +2080,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
-                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
+                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
                         if (imageStoreRefs.size() <= 1) {
                             _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
                         }

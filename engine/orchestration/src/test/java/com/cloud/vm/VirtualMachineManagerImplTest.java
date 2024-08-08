@@ -45,10 +45,13 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.context.CallContext;
@@ -56,6 +59,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -149,6 +153,9 @@ public class VirtualMachineManagerImplTest {
 
     @Mock
     private ServiceOfferingVO serviceOfferingMock;
+
+    @Mock
+    private SnapshotManager snapshotManagerMock;
 
     @Mock
     private DiskOfferingVO diskOfferingMock;
@@ -1235,5 +1242,75 @@ public class VirtualMachineManagerImplTest {
         assertEquals(2, result.keySet().size());
         assertFalse(result.get(1L));
         assertTrue(result.get(2L));
+    }
+
+    @Test
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestReturnIfNotKvm() {
+        Mockito.doReturn(HypervisorType.VMware).when(vmInstanceMock).getHypervisorType();
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(volumeDaoMock, Mockito.never()).findByInstance(Mockito.anyLong());
+    }
+
+    @Test
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestReturnIfVolumesDoNotHaveCheckpoints() throws OperationTimedoutException, AgentUnavailableException {
+        Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
+        Mockito.doReturn(new ArrayList<VolumeObjectTO>()).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(agentManagerMock, Mockito.never()).send(Mockito.anyLong(), (Command) any());
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestAgentUnavailableThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException {
+        Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
+        Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
+
+        Mockito.doThrow(new AgentUnavailableException(0)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestOperationTimedoutExceptionThrowsCloudRuntimeExceptionAndEndsSnapshotChains() throws OperationTimedoutException, AgentUnavailableException {
+        Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
+        Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
+
+        Mockito.doThrow(new OperationTimedoutException(null, 0, 0, 0, false)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+    }
+
+    @Test
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationFails() throws OperationTimedoutException, AgentUnavailableException {
+        Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
+        Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
+
+        Mockito.doReturn(new com.cloud.agent.api.Answer(null, false, null)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+        Mockito.doNothing().when(snapshotManagerMock).endSnapshotChainForVolume(Mockito.anyLong(), Mockito.any());
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(snapshotManagerMock, Mockito.times(1)).endSnapshotChainForVolume(Mockito.anyLong(),any());
+    }
+
+    @Test
+    public void recreateCheckpointsKvmOnVmAfterMigrationTestRecreationSucceeds() throws OperationTimedoutException, AgentUnavailableException {
+        Mockito.doReturn(HypervisorType.KVM).when(vmInstanceMock).getHypervisorType();
+        Mockito.doReturn(List.of(new VolumeObjectTO())).when(virtualMachineManagerImpl).getVmVolumesWithCheckpointsToRecreate(Mockito.any());
+
+        Mockito.doReturn(new com.cloud.agent.api.Answer(null, true, null)).when(agentManagerMock).send(Mockito.anyLong(), (Command) any());
+
+        virtualMachineManagerImpl.recreateCheckpointsKvmOnVmAfterMigration(vmInstanceMock, 0);
+
+        Mockito.verify(snapshotManagerMock, Mockito.never()).endSnapshotChainForVolume(Mockito.anyLong(),any());
     }
 }

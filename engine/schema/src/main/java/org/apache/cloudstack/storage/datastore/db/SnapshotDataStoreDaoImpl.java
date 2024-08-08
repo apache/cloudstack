@@ -58,6 +58,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String SNAPSHOT_ID = "snapshot_id";
     private static final String VOLUME_ID = "volume_id";
     private static final String CREATED = "created";
+    private static final String KVM_CHECKPOINT_PATH = "kvm_checkpoint_path";
+    private static final String URL_CREATED_BEFORE = "url_created_before";
+    public static final String DOWNLOAD_URL = "downloadUrl";
+
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
@@ -67,6 +71,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeAndSnapshotIdsSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
@@ -150,6 +155,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSnapshotDownloadStatusSearch.and(STORE_ID, storeSnapshotDownloadStatusSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSnapshotDownloadStatusSearch.and("downloadState", storeSnapshotDownloadStatusSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
         storeSnapshotDownloadStatusSearch.done();
+
+        searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull = createSearchBuilder();
+        searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.and(VOLUME_ID, searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.and(STATE, searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.and(KVM_CHECKPOINT_PATH, searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.entity().getKvmCheckpointPath(), SearchCriteria.Op.NNULL);
+        searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.done();
 
         return true;
     }
@@ -283,7 +294,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
-        if (!isSnapshotChainingRequired(volumeId)) {
+        return findParent(role, storeId, volumeId, false, null);
+    }
+
+    @Override
+    @DB
+    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
+        if (!isSnapshotChainingRequired(volumeId, kvmIncrementalSnapshot)) {
             logger.trace(String.format("Snapshot chaining is not required for snapshots of volume [%s]. Returning null as parent.", volumeId));
             return null;
         }
@@ -292,17 +309,46 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role.toString());
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
-        sc.setParameters(STORE_ID, storeId);
+        sc.setParametersIfNotNull(STORE_ID, storeId);
 
         List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, CREATED, false, null, null));
-        if (CollectionUtils.isNotEmpty(snapshotList)) {
-            return snapshotList.get(0);
+        if (CollectionUtils.isEmpty(snapshotList)) {
+            return null;
         }
-        return null;
+
+        SnapshotDataStoreVO parent = snapshotList.get(0);
+
+        if (kvmIncrementalSnapshot && parent.getKvmCheckpointPath() == null && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            return null;
+        }
+
+        return parent;
+
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role) {
+    public SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, State state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        sc.setParameters(STATE, state);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findOneBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnapshotId(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnapshotAndDataStoreRole(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         return listBy(sc);
     }
@@ -485,13 +531,26 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         return sc;
     }
 
-    protected boolean isSnapshotChainingRequired(long volumeId) {
+    protected boolean isSnapshotChainingRequired(long volumeId, boolean kvmIncrementalSnapshot) {
         SearchCriteria<SnapshotVO> sc = snapshotVOSearch.create();
         sc.setParameters(VOLUME_ID, volumeId);
 
         SnapshotVO snapshot = snapshotDao.findOneBy(sc);
 
-        return snapshot != null && HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING.contains(snapshot.getHypervisorType());
+        if (snapshot == null) {
+            return false;
+        }
+
+        Hypervisor.HypervisorType hypervisorType = snapshot.getHypervisorType();
+        return HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING.contains(hypervisorType) || (Hypervisor.HypervisorType.KVM.equals(hypervisorType) && kvmIncrementalSnapshot);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.create();
+        sc.setParameters(VOLUME_ID, volumeId);
+        sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
     }
 
     @Override

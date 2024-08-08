@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.db;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
@@ -46,7 +47,17 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
-    List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role);
+    SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
+
+    SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
+
+    List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId);
+
+    SnapshotDataStoreVO findOneBySnapshotId(long snapshotId);
+
+    List<SnapshotDataStoreVO> listBySnapshotId(long snapshotId);
+
+    List<SnapshotDataStoreVO> listBySnapshotAndDataStoreRole(long snapshotId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listReadyBySnapshot(long snapshotId, DataStoreRole role);
 
