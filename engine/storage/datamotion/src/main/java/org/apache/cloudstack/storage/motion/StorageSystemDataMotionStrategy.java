@@ -2470,14 +2470,53 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pool with ID " + dataStore.getId() + " was not located.");
             }
 
-            if (srcStoragePoolVO.isManaged() && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
-                throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
-            }
-
             if (storageTypeConsistency == null) {
                 storageTypeConsistency = destStoragePoolVO.isManaged();
             } else if (storageTypeConsistency != destStoragePoolVO.isManaged()) {
                 throw new CloudRuntimeException("Destination storage pools must be either all managed or all not managed");
+            }
+
+            addSourcePoolToPoolsMap(sourcePools, srcStoragePoolVO, destStoragePoolVO);
+        }
+        verifyDestinationStorage(sourcePools, destHost);
+    }
+
+    /**
+     * Adds source storage pool to the migration map if the destination pool is not managed and it is NFS.
+     */
+    protected void addSourcePoolToPoolsMap(Map<String, Storage.StoragePoolType> sourcePools, StoragePoolVO srcStoragePoolVO, StoragePoolVO destStoragePoolVO) {
+        if (destStoragePoolVO.isManaged() || !StoragePoolType.NetworkFilesystem.equals(destStoragePoolVO.getPoolType())) {
+            logger.trace(String.format("Skipping adding source pool [%s] to map due to destination pool [%s] is managed or not NFS.", srcStoragePoolVO, destStoragePoolVO));
+            return;
+        }
+
+        String sourceStoragePoolUuid = srcStoragePoolVO.getUuid();
+        if (!sourcePools.containsKey(sourceStoragePoolUuid)) {
+            sourcePools.put(sourceStoragePoolUuid, srcStoragePoolVO.getPoolType());
+        }
+    }
+
+    /**
+     * Perform storage validation on destination host for KVM live storage migrations.
+     * Validate that volume source storage pools are mounted on the destination host prior the migration
+     * @throws CloudRuntimeException if any source storage pool is not mounted on the destination host
+     */
+    private void verifyDestinationStorage(Map<String, Storage.StoragePoolType> sourcePools, Host destHost) {
+        if (MapUtils.isNotEmpty(sourcePools)) {
+            logger.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
+            CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
+            try {
+                Answer answer = agentManager.send(destHost.getId(), cmd);
+                if (answer == null) {
+                    throw new CloudRuntimeException(String.format("Storage verification failed on host %s: no answer received", destHost.getUuid()));
+                }
+                if (!answer.getResult()) {
+                    throw new CloudRuntimeException(String.format("Storage verification failed on host %s: %s", destHost.getUuid(), answer.getDetails()));
+                }
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                e.printStackTrace();
+                throw new CloudRuntimeException("Cannot perform storage verification on host " + destHost.getUuid() +
+                        "due to: " + e.getMessage());
             }
         }
     }
