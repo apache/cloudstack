@@ -398,6 +398,7 @@
 "label.backup.offering.assign": "Assign Instance to backup offering",
 "label.backup.offering.remove": "Remove Instance from backup offering",
 "label.backup.offerings": "Backup offerings",
+"label.backup.repository": "Backup Repository",
 "label.backup.restore": "Restore Instance backup",
 "label.backupofferingid": "Backup offering",
 "label.backupofferingname": "Backup offering",

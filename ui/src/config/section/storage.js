@@ -412,7 +412,7 @@ export default {
       title: 'label.backup',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'virtualmachinename', 'type', 'created', 'account', 'domain', 'zone'],
+      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'size', 'virtualsize', 'type', 'created', 'account', 'domain', 'zone'],
       details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       actions: [
         {

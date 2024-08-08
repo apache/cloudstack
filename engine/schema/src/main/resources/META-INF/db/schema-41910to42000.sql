@@ -134,6 +134,26 @@ CREATE TABLE `cloud`.`webhook_delivery` (
   CONSTRAINT `fk_webhook__webhook_id` FOREIGN KEY (`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Backup Repository NAS feature
+DROP TABLE IF EXISTS `cloud`.`backup_repository`;
+CREATE TABLE `cloud`.`backup_repository` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the backup repository',
+  `uuid` varchar(255) NOT NULL COMMENT 'uuid of the backup repository',
+  `name` varchar(255) NOT NULL COMMENT 'name of the backup repository',
+  `zone_id` bigint unsigned NOT NULL COMMENT 'id of zone',
+  `provider` varchar(255) NOT NULL COMMENT 'backup provider name',
+  `type` varchar(255) NOT NULL COMMENT 'backup repo type',
+  `address` varchar(1024) NOT NULL COMMENT 'url of the backup repository',
+  `mount_opts` varchar(1024) COMMENT 'mount options for the backup repository',
+  `used_bytes` bigint unsigned,
+  `capacity_bytes` bigint unsigned,
+  `created` datetime,
+  `removed` datetime,
+  PRIMARY KEY(`id`),
+  INDEX `i_backup_repository__uuid`(`uuid`),
+  INDEX `i_backup_repository__zone_id_provider`(`zone_id`, `provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Normalize quota.usage.smtp.useStartTLS, quota.usage.smtp.useAuth, alert.smtp.useAuth and project.smtp.useAuth values
 UPDATE
     `cloud`.`configuration`
