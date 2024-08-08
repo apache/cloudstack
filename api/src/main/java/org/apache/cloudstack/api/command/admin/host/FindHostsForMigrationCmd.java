@@ -78,7 +78,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
         for (Host host : result.first()) {
             HostForMigrationResponse hostResponse = _responseGenerator.createHostForMigrationResponse(host);
             Boolean suitableForMigration = false;
-            if (hostsWithCapacity.contains(host)) {
+            if (hostsWithCapacity != null && hostsWithCapacity.contains(host)) {
                 suitableForMigration = true;
             }
             hostResponse.setSuitableForMigration(suitableForMigration);
