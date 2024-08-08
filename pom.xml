@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>11</version>
+        <version>27</version>
         <relativePath />
     </parent>
 
@@ -47,6 +47,7 @@
 
     <properties>
         <!-- keep in alphabetic order -->
+        <project.build.outputTimestamp>10</project.build.outputTimestamp>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
@@ -886,7 +887,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>${cs.release-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>default</id>
