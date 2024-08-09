@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.servlet.http.HttpSession;
 
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.user.UserAccount;
 
 public interface ApiServerService {
     public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId, InetAddress remoteAddress) throws ServerApiException;
@@ -42,4 +43,8 @@ public interface ApiServerService {
     public String handleRequest(Map<String, Object[]> params, String responseType, StringBuilder auditTrailSb) throws ServerApiException;
 
     public Class<?> getCmdClass(String cmdName);
+
+    boolean forgotPassword(UserAccount userAccount);
+
+    boolean resetPassword(UserAccount userAccount, String token, String password);
 }
