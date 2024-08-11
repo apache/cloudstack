@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
@@ -45,7 +46,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -54,6 +55,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
@@ -147,17 +149,31 @@ public class StorageFsVmFileShareLifeCycleTest {
     private static final String s_fsFormat = "EXT4";
     private static final String s_name = "TestFileShare";
 
-    MockedStatic<FileUtil> fileUtilMocked;
+    private MockedStatic<FileUtil> fileUtilMocked;
+    private MockedStatic<CallContext> callContextMocked;
+
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
+        callContextMocked = mockStatic(CallContext.class);
+        CallContext callContextMock = mock(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        Account owner = mock(Account.class);
+        when(callContextMock.getCallingAccount()).thenReturn(owner);
+        CallContext vmContext = mock(CallContext.class);
+        when(callContextMock.register(CallContext.current(), ApiCommandResourceType.VirtualMachine)).thenReturn(vmContext);
+
         fileUtilMocked = mockStatic(FileUtil.class);
         fileUtilMocked.when(() -> FileUtil.readResourceFile("/conf/fsvm-init.yml")).thenReturn("");
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         fileUtilMocked.close();
+        callContextMocked.close();
+        closeable.close();
     }
 
     @Test
@@ -169,8 +185,6 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(serviceOfferingVO.getRamSize()).thenReturn(1024);
         when(serviceOfferingVO.isOfferHA()).thenReturn(true);
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOfferingVO);
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, null)).thenReturn(template);
         lifeCycle.checkPrerequisites(zone, s_serviceOfferingId);
     }
 
@@ -207,21 +221,7 @@ public class StorageFsVmFileShareLifeCycleTest {
         Assert.assertEquals(exception.getMessage(), "Service offering's should be HA enabled");
     }
 
-    @Test
-    public void testCheckPrerequisitesTemplateException() {
-        DataCenterVO zone = mock(DataCenterVO.class);
-        when(zone.getId()).thenReturn(s_zoneId);
-        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
-        when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOfferingVO);
-        when(serviceOfferingVO.getCpu()).thenReturn(4);
-        when(serviceOfferingVO.getRamSize()).thenReturn(1024);
-        when(serviceOfferingVO.isOfferHA()).thenReturn(true);
-        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class, () -> lifeCycle.checkPrerequisites(zone, s_serviceOfferingId));
-        Assert.assertEquals(exception.getMessage(), String.format("Unable to find the system templates or it was not downloaded in %s.", zone.toString()));
-    }
-
-    @Test
-    public void testCommitFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException {
+    private FileShare prepareDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         FileShare fileShare = mock(FileShare.class);
         when(fileShare.getDataCenterId()).thenReturn(s_zoneId);
         when(fileShare.getName()).thenReturn(s_name);
@@ -229,12 +229,9 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(fileShare.getFsType()).thenReturn(FileShare.FileSystemType.valueOf(s_fsFormat));
         when(fileShare.getAccountId()).thenReturn(s_ownerId);
 
-        Account owner = mock(Account.class);
-        when(owner.getId()).thenReturn(s_ownerId);
-        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
-
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
@@ -242,7 +239,18 @@ public class StorageFsVmFileShareLifeCycleTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(template);
         when(template.getId()).thenReturn(s_templateId);
-        when(resourceMgr.getAvailableHypervisor(s_zoneId)).thenReturn(Hypervisor.HypervisorType.KVM);
+
+        return fileShare;
+    }
+
+    @Test
+    public void testDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+        FileShare fileShare = prepareDeployFileShare();
+        when(fileShare.getAccountId()).thenReturn(s_ownerId);
+
+        Account owner = mock(Account.class);
+        when(owner.getId()).thenReturn(s_ownerId);
+        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
 
         UserVm vm = mock(UserVm.class);
         when(vm.getId()).thenReturn(s_vmId);
@@ -257,9 +265,42 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(volume.getId()).thenReturn(s_volumeId);
         when(volumeDao.findByInstanceAndType(s_vmId, Volume.Type.DATADISK)).thenReturn(List.of(volume));
 
-         Pair<Long, Long> result = lifeCycle.commitFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
+         Pair<Long, Long> result = lifeCycle.deployFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
          Assert.assertEquals(Optional.ofNullable(result.first()), Optional.ofNullable(s_volumeId));
          Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(s_vmId));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeployFileShareHypervisorNotFound() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+        FileShare fileShare = mock(FileShare.class);
+        when(fileShare.getDataCenterId()).thenReturn(s_zoneId);
+        when(fileShare.getName()).thenReturn(s_name);
+        when(fileShare.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+        when(fileShare.getFsType()).thenReturn(FileShare.FileSystemType.valueOf(s_fsFormat));
+        when(fileShare.getAccountId()).thenReturn(s_ownerId);
+
+        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+        lifeCycle.deployFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeployFileShareTemplateNotFound() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+        FileShare fileShare = mock(FileShare.class);
+        when(fileShare.getDataCenterId()).thenReturn(s_zoneId);
+        when(fileShare.getName()).thenReturn(s_name);
+        when(fileShare.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+        when(fileShare.getFsType()).thenReturn(FileShare.FileSystemType.valueOf(s_fsFormat));
+        when(fileShare.getAccountId()).thenReturn(s_ownerId);
+
+        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
+        DataCenterVO zone = mock(DataCenterVO.class);
+        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+        when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, false, null)).thenReturn(List.of(Hypervisor.HypervisorType.KVM));
+
+        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(null);
+        lifeCycle.deployFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops);
     }
 
     @Test
@@ -279,58 +320,38 @@ public class StorageFsVmFileShareLifeCycleTest {
         when(volume.getId()).thenReturn(s_volumeId);
         when(volume.getState()).thenReturn(Volume.State.Allocated);
 
-        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
-            CallContext callContextMock = mock(CallContext.class);
-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
-            Account owner = mock(Account.class);
-            when(callContextMock.getCallingAccount()).thenReturn(owner);
-            Assert.assertEquals(lifeCycle.deleteFileShare(fileShare), true);
-        }
+        Assert.assertEquals(lifeCycle.deleteFileShare(fileShare), true);
     }
 
-    private FileShare prepareReDeployFileShare(Long newVmId) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        FileShare fileShare = mock(FileShare.class);
+   private FileShare prepareReDeployFileShare(Long newVmId) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        FileShare fileShare = prepareDeployFileShare();
         when(fileShare.getVmId()).thenReturn(s_vmId);
+       when(fileShare.getAccountId()).thenReturn(s_ownerId);
         when(fileShare.getVolumeId()).thenReturn(s_volumeId);
-        when(fileShare.getDataCenterId()).thenReturn(s_zoneId);
-        when(fileShare.getName()).thenReturn(s_name);
         when(fileShare.getState()).thenReturn(FileShare.State.Stopped);
-        when(fileShare.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
-        when(fileShare.getFsType()).thenReturn(FileShare.FileSystemType.valueOf(s_fsFormat));
-        when(fileShare.getAccountId()).thenReturn(s_ownerId);
 
-        Account owner = mock(Account.class);
-        when(owner.getId()).thenReturn(s_ownerId);
-        when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
+       Account owner = mock(Account.class);
+       when(owner.getId()).thenReturn(s_ownerId);
+       when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
 
         NicVO nic = mock(NicVO.class);
         when(nic.getNetworkId()).thenReturn(s_networkId);
         when(nicDao.listByVmId(s_vmId)).thenReturn(List.of(nic));
 
-        DataCenterVO zone = mock(DataCenterVO.class);
-        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+       UserVm vm = mock(UserVm.class);
+       when(vm.getId()).thenReturn(newVmId);
+       when(userVmService.createAdvancedVirtualMachine(
+               any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
+               anyString(), isNull(), isNull(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
+               isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
+               anyMap(), isNull(), isNull(), isNull(), isNull(),
+               anyBoolean(), anyString(), isNull())).thenReturn(vm);
 
-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
-        when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
-
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findSystemVMReadyTemplate(s_zoneId, Hypervisor.HypervisorType.KVM)).thenReturn(template);
-        when(template.getId()).thenReturn(s_templateId);
-        when(resourceMgr.getAvailableHypervisor(s_zoneId)).thenReturn(Hypervisor.HypervisorType.KVM);
-
-        UserVm vm = mock(UserVm.class);
-        when(vm.getId()).thenReturn(newVmId);
-        when(userVmService.createAdvancedVirtualMachine(
-                any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
-                anyString(), isNull(), isNull(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
-                isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
-                anyMap(), isNull(), isNull(), isNull(), isNull(),
-                anyBoolean(), anyString(), isNull())).thenReturn(vm);
-        return fileShare;
+       return fileShare;
     }
 
     @Test
-    public void testReDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException {
+    public void testReDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
         Long newVmId = 100L;
         FileShare fileShare = prepareReDeployFileShare(newVmId);
 
@@ -345,7 +366,7 @@ public class StorageFsVmFileShareLifeCycleTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testReDeployFileShareDetachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException {
+    public void testReDeployFileShareDetachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
         Long newVmId = 100L;
         FileShare fileShare = prepareReDeployFileShare(newVmId);
 
@@ -355,7 +376,7 @@ public class StorageFsVmFileShareLifeCycleTest {
     }
 
     @Test
-    public void testReDeployFileShareAttachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException {
+    public void testReDeployFileShareAttachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
         Long newVmId = 100L;
         FileShare fileShare = prepareReDeployFileShare(newVmId);
 

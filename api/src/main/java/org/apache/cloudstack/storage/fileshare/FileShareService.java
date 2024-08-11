@@ -43,7 +43,9 @@ public interface FileShareService {
 
     FileShareProvider getFileShareProvider(String fileShareProviderName);
 
-    FileShare createFileShare(CreateFileShareCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
+    FileShare allocFileShare(CreateFileShareCmd cmd);
+
+    FileShare deployFileShare(CreateFileShareCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException;
 
     FileShare startFileShare(Long fileShareId) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 

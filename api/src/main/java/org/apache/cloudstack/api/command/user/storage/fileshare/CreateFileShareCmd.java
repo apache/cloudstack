@@ -250,28 +250,14 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
         return "File share start failed with exception: " + ex.getMessage();
     }
 
-    public void create() throws ResourceAllocationException {
+    public void create() {
         FileShare fileShare;
-        try {
-            fileShare = fileShareService.createFileShare(this);
-            if (fileShare != null) {
-                setEntityId(fileShare.getId());
-                setEntityUuid(fileShare.getUuid());
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Fileshare");
-            }
-        } catch (ResourceUnavailableException ex) {
-            logger.warn("File share create exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getCreateExceptionMsg(ex));
-        } catch (ResourceAllocationException ex) {
-            logger.warn("File share create exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, getCreateExceptionMsg(ex));
-        } catch (ConcurrentOperationException ex) {
-            logger.warn("File share create exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getCreateExceptionMsg(ex));
-        } catch (InsufficientCapacityException ex) {
-            logger.warn("File share create exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getCreateExceptionMsg(ex));
+        fileShare = fileShareService.allocFileShare(this);
+        if (fileShare != null) {
+            setEntityId(fileShare.getId());
+            setEntityUuid(fileShare.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create File Share");
         }
     }
 
@@ -279,7 +265,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     public void execute() {
         FileShare fileShare;
         try {
-            fileShare = fileShareService.startFileShare(this.getEntityId());
+            fileShare = fileShareService.deployFileShare(this);
         } catch (ResourceUnavailableException ex) {
             logger.warn("File share start exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getStartExceptionMsg(ex));

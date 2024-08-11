@@ -176,8 +176,6 @@ public class FileShareServiceImplTest {
         when(cmd.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
         when(cmd.getNetworkId()).thenReturn(s_networkId);
         when(cmd.getFsFormat()).thenReturn(s_fsFormat);
-        when(cmd.getName()).thenReturn(s_name);
-        when(cmd.getDescription()).thenReturn(s_description);
         return cmd;
     }
 
@@ -188,8 +186,28 @@ public class FileShareServiceImplTest {
     }
 
     @Test
-    public void testCreateFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException {
+    public void testDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException, OperationTimedoutException {
         CreateFileShareCmd cmd = getMockCreateFileShareCmd();
+
+        FileShareVO fileShare = getMockFileShare();
+        when(fileShareDao.findById(0L)).thenReturn(fileShare);
+
+        Pair<Long, Long> result = new Pair<>(s_volumeId, s_vmId);
+        when(lifeCycle.deployFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops)).thenReturn(result);
+        when(fileShareDao.update(fileShare.getId(), fileShare)).thenReturn(true);
+
+        Assert.assertEquals(fileShareServiceImpl.deployFileShare(cmd), fileShare);
+        Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(s_vmId));
+        Assert.assertEquals(Optional.ofNullable(fileShare.getVolumeId()), Optional.ofNullable(s_volumeId));
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
+    }
+
+    @Test
+    public void testAllocFileShare() throws NoTransitionException {
+        CreateFileShareCmd cmd = getMockCreateFileShareCmd();
+
+        when(dataCenterDao.findById(s_zoneId)).thenReturn(null);
+        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
 
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
@@ -201,33 +219,29 @@ public class FileShareServiceImplTest {
         when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
 
         FileShareVO fileShare = getMockFileShare();
-        when(fileShareDao.findById(0L)).thenReturn(fileShare);
+        ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
 
-        Pair<Long, Long> result = new Pair<>(s_volumeId, s_vmId);
-        when(lifeCycle.commitFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops)).thenReturn(result);
-        when(fileShareDao.update(fileShare.getId(), fileShare)).thenReturn(true);
-
-        Assert.assertEquals(fileShareServiceImpl.createFileShare(cmd), fileShare);
-        Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(s_vmId));
-        Assert.assertEquals(Optional.ofNullable(fileShare.getVolumeId()), Optional.ofNullable(s_volumeId));
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
+        fileShareServiceImpl.allocFileShare(cmd);
+        Assert.assertEquals(Optional.ofNullable(fileShare.getAccountId()), Optional.ofNullable(s_ownerId));
+        Assert.assertEquals(Optional.ofNullable(fileShare.getDataCenterId()), Optional.ofNullable(s_zoneId));
+        Assert.assertEquals(Optional.ofNullable(fileShare.getServiceOfferingId()), Optional.ofNullable(s_serviceOfferingId));
     }
 
     @Test
-    public void testCreateFileShareInvalidZone() {
+    public void testAllocFileShareInvalidZone() {
         CreateFileShareCmd cmd = getMockCreateFileShareCmd();
 
         when(dataCenterDao.findById(s_zoneId)).thenReturn(null);
-        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.createFileShare(cmd));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
 
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
-        Assert.assertThrows(PermissionDeniedException.class, () -> fileShareServiceImpl.createFileShare(cmd));
+        Assert.assertThrows(PermissionDeniedException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
     }
 
     @Test
-    public void tesCreateFileShareInvalidDiskOffering() {
+    public void tesAllocFileShareInvalidDiskOffering() {
         CreateFileShareCmd cmd = getMockCreateFileShareCmd();
 
         DataCenterVO zone = mock(DataCenterVO.class);
@@ -237,15 +251,15 @@ public class FileShareServiceImplTest {
         DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
         when(diskOfferingDao.findById(s_diskOfferingId)).thenReturn(diskOfferingVO);
         when(diskOfferingVO.isCustomized()).thenReturn(false);
-        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.createFileShare(cmd));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
 
         when(diskOfferingVO.isCustomized()).thenReturn(true);
         when(diskOfferingVO.isCustomizedIops()).thenReturn(false);
-        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.createFileShare(cmd));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
     }
 
     @Test
-    public void testCreateFileShareInvalidFsFormat() {
+    public void testAllocFileShareInvalidFsFormat() {
         CreateFileShareCmd cmd = getMockCreateFileShareCmd();
 
         DataCenterVO zone = mock(DataCenterVO.class);
@@ -258,23 +272,19 @@ public class FileShareServiceImplTest {
         when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
 
         when(cmd.getFsFormat()).thenReturn("ext2");
-        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.createFileShare(cmd));
+        Assert.assertThrows(InvalidParameterValueException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
     }
 
     @Test
     public void testStartFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException, NoTransitionException {
         FileShareVO fileShare = getMockFileShare();
         when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Detached);
-
-        Long newVmId = 1000L;
-        Pair<Boolean, Long> result = new Pair<>(true, newVmId);
-        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(result);
+        ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Stopped);
 
         Assert.assertEquals(fileShareServiceImpl.startFileShare(s_fileShareId), fileShare);
-        Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
         verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
-        verify(_stateMachine, times(2)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -283,23 +293,6 @@ public class FileShareServiceImplTest {
         when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
         ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Ready);
         fileShareServiceImpl.startFileShare(s_fileShareId);
-    }
-
-    @Test
-    public void testStartFileShareRedeployFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException, NoTransitionException {
-        FileShareVO fileShare = getMockFileShare();
-        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Detached);
-
-        Long newVmId = 1000L;
-        Pair<Boolean, Long> result = new Pair<>(false, newVmId);
-        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(result);
-
-        Assert.assertNull(fileShareServiceImpl.startFileShare(s_fileShareId));
-        Assert.assertNotEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
-        verify(lifeCycle, never()).startFileShare(any());
-        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
     }
 
     @Test
@@ -338,7 +331,7 @@ public class FileShareServiceImplTest {
     public void testRestartFileShareWithCleanup() throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException {
         FileShareVO fileShare = getMockFileShare();
         ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Stopped);
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Detached);
         when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
 
         DataCenterVO zone = mock(DataCenterVO.class);
@@ -461,7 +454,7 @@ public class FileShareServiceImplTest {
         fileShareServiceImpl.changeFileShareServiceOffering(cmd);
         Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
         Assert.assertEquals(Optional.ofNullable(fileShare.getServiceOfferingId()), Optional.ofNullable(newServiceOfferingId));
-        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
     }
 
     @Test(expected = InvalidParameterValueException.class)

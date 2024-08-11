@@ -27,7 +27,7 @@ import com.cloud.utils.Pair;
 public interface FileShareLifeCycle {
     void checkPrerequisites(DataCenter zone, Long serviceOfferingId);
 
-    Pair<Long, Long> commitFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size, Long minIops, Long maxIops) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
+    Pair<Long, Long> deployFileShare(FileShare fileShare, Long networkId, Long diskOfferingId, Long size, Long minIops, Long maxIops) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException;
 
     void startFileShare(FileShare fileShare) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException;
 
@@ -35,6 +35,5 @@ public interface FileShareLifeCycle {
 
     boolean deleteFileShare(FileShare fileShare);
 
-    Pair<Boolean, Long> reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
-
+    Pair<Boolean, Long> reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException;
 }

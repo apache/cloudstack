@@ -239,8 +239,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "creating fileshare", create = true)
-    public FileShare createFileShare(CreateFileShareCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "allocating fileshare", create = true)
+    public FileShare allocFileShare(CreateFileShareCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
 
         long ownerId = cmd.getEntityOwnerId();
@@ -265,15 +265,25 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             throw new InvalidParameterValueException("Invalid File system format specified. Supported formats are EXT4 and XFS");
         }
 
-        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(),owner.getDomainId(),
+        FileShareVO fileShare = new FileShareVO(cmd.getName(), cmd.getDescription(), owner.getDomainId(),
                 ownerId, cmd.getZoneId(), cmd.getFileShareProviderName(), FileShare.Protocol.NFS,
                 fsType, cmd.getServiceOfferingId());
-        fileShareDao.persist(fileShare);
+        return fileShareDao.persist(fileShare);
+    }
 
-        fileShare = fileShareDao.findById(fileShare.getId());
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CREATE, eventDescription = "deploying fileshare", create = true)
+    public FileShare deployFileShare(CreateFileShareCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException {
+        FileShareVO fileShare = fileShareDao.findById(cmd.getEntityId());
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        Long size = cmd.getSize();
+        Long minIops = cmd.getMinIops();
+        Long maxIops = cmd.getMaxIops();
+        FileShareProvider provider = getFileShareProvider(cmd.getFileShareProviderName());
+        FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         Pair<Long, Long> result = null;
         try {
-            result = lifeCycle.commitFileShare(fileShare, cmd.getNetworkId(), diskOfferingId, size, minIops, maxIops);
+            result = lifeCycle.deployFileShare(fileShare, cmd.getNetworkId(), diskOfferingId, size, minIops, maxIops);
         } catch (Exception ex) {
             stateTransitTo(fileShare, Event.OperationFailed);
             throw ex;
@@ -285,32 +295,9 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return fileShare;
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_START, eventDescription = "Starting fileshare", async = true)
-    public FileShare startFileShare(Long fileShareId) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        FileShareVO fileShare = fileShareDao.findById(fileShareId);
-
-        Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, false, fileShare);
-        Set<State> validStates = new HashSet<>(List.of(State.Stopped, State.Detached));
-        if (!validStates.contains(fileShare.getState())) {
-            throw new InvalidParameterValueException("File share can be started only if it is in the " + validStates.toString() + " states");
-        }
-
+    private FileShare startFileShare(FileShare fileShare) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-
-        if (fileShare.getState().equals(State.Detached)) {
-            Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
-            if (result.first() == true) {
-                fileShare.setVmId(result.second());
-                fileShareDao.update(fileShare.getId(), fileShare);
-                stateTransitTo(fileShare, Event.OperationSucceeded);
-            } else {
-                stateTransitTo(fileShare, Event.OperationFailed);
-                return null;
-            }
-        }
 
         stateTransitTo(fileShare, Event.StartRequested);
         try {
@@ -320,8 +307,22 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
             throw ex;
         }
         stateTransitTo(fileShare, Event.OperationSucceeded);
-        fileShare = fileShareDao.findById(fileShareId);
+        fileShare = fileShareDao.findById(fileShare.getId());
         return fileShare;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_START, eventDescription = "Starting fileshare", async = true)
+    public FileShare startFileShare(Long fileShareId) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        FileShareVO fileShare = fileShareDao.findById(fileShareId);
+
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, false, fileShare);
+        Set<State> validStates = new HashSet<>(List.of(State.Stopped));
+        if (!validStates.contains(fileShare.getState())) {
+            throw new InvalidParameterValueException("File share can be started only if it is in the " + validStates.toString() + " states");
+        }
+        return startFileShare(fileShare);
     }
 
     @Override
@@ -348,13 +349,13 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         return fileShare;
     }
 
-    private FileShareVO reDeployFileShare(FileShareVO fileShare, Boolean startVm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+    private FileShareVO reDeployFileShare(FileShareVO fileShare) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         DataCenter zone = validateAndGetZone(fileShare.getDataCenterId());
         lifeCycle.checkPrerequisites(zone, fileShare.getServiceOfferingId());
 
-        if (!fileShare.getState().equals(State.Stopped)) {
+        if (fileShare.getState().equals(State.Ready)) {
             stopFileShare(fileShare.getId(), false);
         }
 
@@ -362,13 +363,11 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         if (result.first() == true) {
             fileShare.setVmId(result.second());
             fileShareDao.update(fileShare.getId(), fileShare);
-            if (startVm) {
-                startFileShare(fileShare.getId());
-            }
+            startFileShare(fileShare);
             return fileShare;
         } else {
             stateTransitTo(fileShare, Event.Detach);
-            logger.error("Redeploy failed for fileshare " +  fileShare.toString() + ". File share is left in detached state.");
+            logger.error("Redeploy failed for fileshare " + fileShare.toString() + ". File share is left in detached state. Please do Restart with Cleanup after fixing the errors.");
             return null;
         }
     }
@@ -380,18 +379,21 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, false, fileShare);
 
-        Set<State> validStates = new HashSet<>(List.of(State.Ready, State.Stopped));
+        Set<State> validStates = new HashSet<>(List.of(State.Ready, State.Stopped, State.Detached));
         if (!validStates.contains(fileShare.getState())) {
-            throw new InvalidParameterValueException("Stop file share can be done only if the file share is in " + validStates.toString() + " states");
+            throw new InvalidParameterValueException("Restart file share can be done only if the file share is in " + validStates.toString() + " states");
         }
 
         if (!cleanup) {
+            if (fileShare.getState().equals(State.Detached)) {
+                throw new InvalidParameterValueException("File Share is in " + State.Detached.toString() + " state. Please do Restart with Cleanup to recover it.");
+            }
             if (!fileShare.getState().equals(State.Stopped)) {
                 stopFileShare(fileShare.getId(), false);
             }
             return startFileShare(fileShare.getId());
         } else {
-            return reDeployFileShare(fileShare, true);
+            return reDeployFileShare(fileShare);
         }
     }
 
@@ -566,14 +568,12 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         lifeCycle.checkPrerequisites(zone, cmd.getServiceOfferingId());
         fileShare.setServiceOfferingId(cmd.getServiceOfferingId());
 
-        Boolean startVm = false;
         if (!fileShare.getState().equals(State.Stopped)) {
             stopFileShare(fileShare.getId(), false);
-            startVm = true;
         }
 
         fileShare = fileShareDao.findById(cmd.getId());
-        return reDeployFileShare(fileShare, startVm);
+        return reDeployFileShare(fileShare);
     }
 
     @Override

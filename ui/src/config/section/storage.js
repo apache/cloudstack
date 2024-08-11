@@ -584,7 +584,7 @@ export default {
           message: 'message.action.start.fileshare',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
-          show: (record) => { return ['Stopped', 'Detached'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'stopFileShare',
@@ -604,7 +604,7 @@ export default {
           message: 'message.action.restart.fileshare',
           dataView: true,
           args: ['cleanup'],
-          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+          show: (record) => { return ['Stopped', 'Ready', 'Detached'].includes(record.state) }
         },
         {
           api: 'changeFileShareDiskOffering',
