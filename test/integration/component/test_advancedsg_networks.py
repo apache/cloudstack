@@ -121,7 +121,7 @@ class TestCreateZoneSG(cloudstackTestCase):
                         % listzones[0].securitygroupsenabled)
         return
 
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_01_createZone_secGrp_enabled(self):
         """ Test to verify Advance Zone with security group enabled can be created"""
 
@@ -139,7 +139,7 @@ class TestCreateZoneSG(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_02_createZone_secGrp_disabled(self):
         """ Test to verify Advance Zone created with flag
             securitygroupsenabled=False"""
@@ -160,7 +160,9 @@ class TestCreateZoneSG(cloudstackTestCase):
         return
 
 class TestNetworksInAdvancedSG(cloudstackTestCase):
-    """Test Creation of different types of networks in SG enabled advanced zone"""
+    """Test Creation of different types of networks in
+        - SG enabled advanced zone, or
+        - advanced zone without SG but with SG provider enabled"""
 
     @classmethod
     def setUpClass(cls):
@@ -353,7 +355,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
                         Exception: %s" % e)
         return
 
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_04_createSharedNetwork_withoutSG(self):
         """ Test Shared Network creation without Security Group Service Provider in Network Offering"""
 
@@ -627,7 +629,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_08_SharedNwSGAccountSpecific_samevlan_samesubnet(self):
         """ Test Account specific shared network creation with SG in multiple accounts
             with same subnet and vlan"""
@@ -697,7 +699,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         return
 
     @unittest.skip("Skip - Failing - WIP")
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_09_SharedNwDomainWide_samevlan_samesubnet(self):
         """ Test Domain wide shared network creation with SG in different domains
             with same vlan and same subnet"""
@@ -2997,7 +2999,7 @@ class TestSharedNetworkOperations(cloudstackTestCase):
 
     @unittest.skip("Testing pending on multihost setup")
     @data("account","domain","zone")
-    @attr(tags = ["advancedsg", "advanced"])
+    @attr(tags = ["advancedsg"])
     def test_35_Enable_Host_Maintenance(self, value):
         """ Test security group rules of VM after putting host in maintenance mode"""
 
@@ -3089,26 +3091,6 @@ class TestAccountBasedIngressRules(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        if cls.zone.securitygroupsenabled is False:
-            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
-            selected_physical_network = None
-            for net in physical_networks:
-                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
-                for traffic_type in traffic_types:
-                    if traffic_type.traffictype == 'Guest':
-                        selected_physical_network = net
-                        break
-                if selected_physical_network is not None:
-                    break
-            if selected_physical_network is None:
-                raise Exception("No physical network found with guest traffic type")
-
-            # Enable security group provider for physical network
-            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
-            if len(nsps) == 0:
-                raise Exception("No security group provider found for physical network")
-            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
-
         cls.template = get_template(cls.api_client,cls.zone.id,cls.services["ostype"])
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
