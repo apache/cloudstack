@@ -999,7 +999,7 @@ export default {
           if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
             this.usageTypes = json.listusagetypesresponse.usagetype.map(x => {
               return {
-                id: x.usagetypeid,
+                id: x.id,
                 value: x.description
               }
             })
