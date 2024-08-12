@@ -184,7 +184,7 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
                 launchPermissionDao.persist(launchPermission);
             }
 
-            UserVm vm;
+            UserVm vm = null;
             String fsVmConfig = getStorageFsVmConfig(fileSystem.toString().toLowerCase(), hypervisor.toString().toLowerCase());
             String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             CallContext vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
@@ -194,22 +194,12 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
                         null, null, keypairs, null, addrs, null, null, null,
                         customParameterMap, null, null, null, null,
                         true, UserVmManager.STORAGEFSVM, null);
-            } catch (InsufficientCapacityException ex) {
-                if (iter.hasNext()) {
-                    continue;
-                } else {
-                    throw ex;
-                }
-            } finally {
-                CallContext.unregister();
-            }
-
-            vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
-            vmContext.setEventResourceId(vm.getId());
-            try {
+                vmContext.setEventResourceId(vm.getId());
                 userVmService.startVirtualMachine(vm);
             } catch (InsufficientCapacityException ex) {
-                expungeVm(vm.getId());
+                if (vm != null) {
+                    expungeVm(vm.getId());
+                }
                 if (iter.hasNext()) {
                     continue;
                 } else {
