@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.BackupRepositoryResponse;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -549,4 +551,6 @@ public interface ResponseGenerator {
     ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
 
     BucketResponse createBucketResponse(Bucket bucket);
+
+    BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository repository);
 }

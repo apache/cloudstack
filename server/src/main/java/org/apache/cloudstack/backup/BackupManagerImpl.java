@@ -52,6 +52,9 @@ import org.apache.cloudstack.api.command.user.backup.RemoveVirtualMachineFromBac
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -945,6 +948,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(RestoreBackupCmd.class);
         cmdList.add(DeleteBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
+        cmdList.add(AddBackupRepositoryCmd.class);
+        cmdList.add(DeleteBackupRepositoryCmd.class);
+        cmdList.add(ListBackupRepositoriesCmd.class);
         return cmdList;
     }
 

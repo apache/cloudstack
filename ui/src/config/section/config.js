@@ -147,8 +147,16 @@ export default {
           label: 'label.backup.repository.add',
           listView: true,
           args: [
-            'name', 'provider', 'address', 'opts', 'zoneid'
-          ]
+            'name', 'provider', 'address', 'type', 'mountopts', 'zoneid'
+          ],
+          mapping: {
+            type: {
+              value: (record) => { return 'nfs' }
+            },
+            provider: {
+              value: (record) => { return 'nas' }
+            }
+          }
         }
       ]
     },

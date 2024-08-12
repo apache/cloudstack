@@ -30,14 +30,12 @@ NAS_TYPE=""
 NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
+DISK_PATHS=""
 
 ### Operation methods ###
 
-backup_vm() {
-  mount_point=$(mktemp -d -t csbackup.XXXXX)
-  dest="$mount_point/${BACKUP_DIR}"
-
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+backup_running_vm() {
+  mount_operation
   mkdir -p $dest
 
   deviceId=0
@@ -74,17 +72,32 @@ backup_vm() {
   rmdir $mount_point
 }
 
-delete_backup() {
-  mount_point=$(mktemp -d -t csbackup.XXXXX)
-  dest="$mount_point/${BACKUP_DIR}"
+backup_stopped_vm() {
+  mount_operation
+  mkdir -p $dest
 
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+  IFS=","
+
+  for disk in $DISK_PATHS; do
+    rsync -az $disk $dest
+  done
+}
+
+delete_backup() {
+  mount_operation
 
   rm -frv $dest
   sync
 
   umount $mount_point
   rmdir $mount_point
+}
+
+mount_operation() {
+  mount_point=$(mktemp -d -t csbackup.XXXXX)
+  dest="$mount_point/${BACKUP_DIR}"
+
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
 }
 
 function usage {
@@ -126,6 +139,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -d|--diskpaths)
+      DISK_PATHS="$2"
+      shift
+      shift
+      ;;
     -h|--help)
       usage
       shift
@@ -138,7 +156,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$OP" = "backup" ]; then
-  backup_vm
+  STATE=$(virsh -c qemu:///system list | grep $VM | awk '{print $3}')
+  if [ "$STATE" = "running" ]; then
+    backup_running_vm
+  else
+    backup_stopped_vm
+  fi
 elif [ "$OP" = "delete" ]; then
   delete_backup
 fi

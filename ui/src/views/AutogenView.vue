@@ -1169,6 +1169,7 @@ export default {
 
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      console.log(this.currentAction.paramFields)
       for (const param of this.currentAction.paramFields) {
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'

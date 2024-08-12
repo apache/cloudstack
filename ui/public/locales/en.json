@@ -402,6 +402,7 @@
 "label.backup.restore": "Restore Instance backup",
 "label.backupofferingid": "Backup offering",
 "label.backupofferingname": "Backup offering",
+"label.backup.repository.add": "Add backup repository",
 "label.balance": "Balance",
 "label.bandwidth": "Bandwidth",
 "label.baremetal.dhcp.devices": "Bare metal DHCP devices",

@@ -41,6 +41,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String backupRepoType = command.getBackupRepoType();
         final String backupRepoAddress = command.getBackupRepoAddress();
         final String mountOptions = command.getMountOptions();
+        final List<String> diskPaths = command.getVolumePaths();
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
@@ -50,7 +51,8 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-t", backupRepoType,
                 "-s", backupRepoAddress,
                 "-m", mountOptions,
-                "-p", backupPath
+                "-p", backupPath,
+                "-d", String.join(",", diskPaths)
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());

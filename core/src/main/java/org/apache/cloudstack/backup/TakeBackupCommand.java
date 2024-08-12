@@ -22,11 +22,14 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 
+import java.util.List;
+
 public class TakeBackupCommand extends Command {
     private String vmName;
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
+    private List<String> volumePaths;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
 
@@ -74,6 +77,14 @@ public class TakeBackupCommand extends Command {
 
     public void setMountOptions(String mountOptions) {
         this.mountOptions = mountOptions;
+    }
+
+    public List<String> getVolumePaths() {
+        return volumePaths;
+    }
+
+    public void setVolumePaths(List<String> volumePaths) {
+        this.volumePaths = volumePaths;
     }
 
     @Override
