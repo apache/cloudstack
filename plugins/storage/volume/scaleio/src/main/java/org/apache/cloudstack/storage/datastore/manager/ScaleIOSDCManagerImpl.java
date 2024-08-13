@@ -115,7 +115,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
             long poolId = dataStore.getId();
             long hostId = host.getId();
-            String sdcId = getConnectedSdc(poolId, hostId);
+            String sdcId = getConnectedSdc(host, dataStore);
             if (StringUtils.isNotBlank(sdcId)) {
                 LOGGER.debug(String.format("SDC %s already connected for the pool: %d on host: %d, no need to prepare/start it", sdcId, poolId, hostId));
                 return sdcId;
@@ -245,9 +245,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
                 throw new CloudRuntimeException("Unable to unprepare SDC, couldn't lock on " + hostIdStorageSystemIdLockString);
             }
 
-            long poolId = dataStore.getId();
-            long hostId = host.getId();
-            String sdcId = getConnectedSdc(poolId, hostId);
+            String sdcId = getConnectedSdc(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 LOGGER.debug("SDC not connected, no need to unprepare it");
                 return true;
@@ -296,7 +294,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
         }
     }
 
-    private String getConnectedSdc(long poolId, long hostId) {
+    @Override
+    public String getConnectedSdc(Host host, DataStore dataStore) {
+        long poolId = dataStore.getId();
+        long hostId = host.getId();
+
         try {
             StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(poolId, hostId);
             if (poolHostVO == null) {

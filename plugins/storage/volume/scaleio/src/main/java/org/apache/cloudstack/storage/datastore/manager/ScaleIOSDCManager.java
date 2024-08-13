@@ -30,6 +30,14 @@ public interface ScaleIOSDCManager {
     boolean areSDCConnectionsWithinLimit(Long storagePoolId);
 
     /**
+     * Returns connected SDC Id.
+     * @param host the host
+     * @param dataStore the datastore
+     * @return SDC Id of the host
+     */
+    String getConnectedSdc(Host host, DataStore dataStore);
+
+    /**
      * Prepares/starts the SDC on the host.
      * @param host the host
      * @param dataStore the datastore
