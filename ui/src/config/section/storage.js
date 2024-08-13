@@ -633,7 +633,7 @@ export default {
           label: 'label.destroy.fileshare',
           message: 'message.action.destroy.fileshare',
           dataView: true,
-          args: ['expunge'],
+          args: ['expunge', 'forced'],
           show: (record) => { return !['Destroyed', 'Expunging'].includes(record.state) },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

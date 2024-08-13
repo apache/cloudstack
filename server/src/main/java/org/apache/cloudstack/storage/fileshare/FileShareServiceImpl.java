@@ -585,6 +585,12 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, false, fileShare);
+
+        if (fileShare.getState().equals(State.Ready) && cmd.isForced()) {
+            stopFileShare(fileShare.getId(), false);
+        }
+
+        fileShare = fileShareDao.findById(fileShareId);
         Set<State> validStates = new HashSet<>(List.of(State.Stopped, State.Error));
         if (!validStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("File share can be destroyed only if it is in the " + validStates.toString() + " states");
@@ -672,6 +678,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
                     List<FileShareVO> fileShares = fileShareDao.listFileSharesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)FileShareCleanupDelay.value() << 10)));
                     for (FileShareVO fileShare : fileShares) {
                         try {
+                            stateTransitTo(fileShare, Event.ExpungeOperation);
                             deleteFileShare(fileShare.getId());
                         } catch (Exception e) {
                             stateTransitTo(fileShare, Event.OperationFailed);

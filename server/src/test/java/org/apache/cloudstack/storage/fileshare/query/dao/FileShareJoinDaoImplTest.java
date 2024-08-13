@@ -25,21 +25,31 @@ import java.util.List;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareVO;
 import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeStats;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.VmDiskStatisticsDao;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
@@ -58,6 +68,42 @@ public class FileShareJoinDaoImplTest {
     @Spy
     @InjectMocks
     FileShareJoinDaoImpl fileShareJoinDao;
+
+    private AutoCloseable closeable;
+
+    @Before
+    public void setUp() throws Exception {
+        closeable = MockitoAnnotations.openMocks(this);
+        Long hostId = null;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
+    @Test
+    public void testNewFileShareView() {
+        FileShareVO fileshare = mock(FileShareVO.class);
+        Long id = 1L;
+        when(fileshare.getId()).thenReturn(id);
+        FileShareJoinVO fileShareJoinVO = mock(FileShareJoinVO.class);
+
+        SearchBuilder<FileShareVO> sb = Mockito.mock(SearchBuilder.class);
+        ReflectionTestUtils.setField(fileShareJoinDao, "fsSearch", sb);
+        SearchCriteria<FileShareVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sb.create()).thenReturn(sc);
+        Mockito.doReturn(List.of(fileShareJoinVO)).when(fileShareJoinDao).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.eq(null), Mockito.eq(null),
+                Mockito.eq(false));
+
+        fileShareJoinDao.newFileShareView(fileshare);
+
+        Mockito.verify(sc).setParameters("id", id);
+        Mockito.verify(fileShareJoinDao, Mockito.times(1)).searchIncludingRemoved(
+                Mockito.any(SearchCriteria.class), Mockito.eq(null), Mockito.eq(null),
+                Mockito.eq(false));
+    }
 
     @Test
     public void newFileShareResponse() {
@@ -90,9 +136,18 @@ public class FileShareJoinDaoImplTest {
         VmDiskStatisticsVO diskStats = mock(VmDiskStatisticsVO.class);
         when(vmDiskStatsDao.findBy(s_ownerId, s_zoneId, s_vmId, s_volumeId)).thenReturn(diskStats);
 
-        FileShareResponse response = fileShareJoinDao.newFileShareResponse(ResponseObject.ResponseView.Restricted, fileShareJoinVO);
-        Assert.assertEquals(ReflectionTestUtils.getField(response, "state"), state.toString());
-        Assert.assertEquals(ReflectionTestUtils.getField(response, "virtualMachineState"), vmState.toString());
-        Assert.assertEquals(ReflectionTestUtils.getField(response, "provisioningType"), provisioningType.toString());
+        VolumeStats vs = mock(VolumeStats.class);
+        String path = "volumepath";
+        when(fileShareJoinVO.getVolumeFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(fileShareJoinVO.getVolumePath()).thenReturn(path);
+
+        try (MockedStatic<ApiDBUtils> apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class)) {
+            when(ApiDBUtils.getVolumeStatistics(path)).thenReturn(vs);
+            FileShareResponse response = fileShareJoinDao.newFileShareResponse(ResponseObject.ResponseView.Restricted, fileShareJoinVO);
+            Assert.assertEquals(ReflectionTestUtils.getField(response, "state"), state.toString());
+            Assert.assertEquals(ReflectionTestUtils.getField(response, "virtualMachineState"), vmState.toString());
+            Assert.assertEquals(ReflectionTestUtils.getField(response, "provisioningType"), provisioningType.toString());
+        }
+
     }
 }

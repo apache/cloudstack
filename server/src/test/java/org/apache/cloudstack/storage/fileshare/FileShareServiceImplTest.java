@@ -18,6 +18,7 @@
 package org.apache.cloudstack.storage.fileshare;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
@@ -203,6 +206,20 @@ public class FileShareServiceImplTest {
     }
 
     @Test
+    public void testDeployFileShareException() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException, OperationTimedoutException {
+        CreateFileShareCmd cmd = getMockCreateFileShareCmd();
+
+        FileShareVO fileShare = getMockFileShare();
+        when(fileShareDao.findById(0L)).thenReturn(fileShare);
+
+        when(lifeCycle.deployFileShare(fileShare, s_networkId, s_diskOfferingId, s_size, s_minIops, s_maxIops)).thenThrow(new CloudRuntimeException(""));
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> fileShareServiceImpl.deployFileShare(cmd));
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
+    }
+
+    @Test
     public void testAllocFileShare() throws NoTransitionException {
         CreateFileShareCmd cmd = getMockCreateFileShareCmd();
 
@@ -237,6 +254,10 @@ public class FileShareServiceImplTest {
         DataCenterVO zone = mock(DataCenterVO.class);
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
+        Assert.assertThrows(PermissionDeniedException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
+
+        when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+        when(zone.isSecurityGroupEnabled()).thenReturn(true);
         Assert.assertThrows(PermissionDeniedException.class, () -> fileShareServiceImpl.allocFileShare(cmd));
     }
 
@@ -287,6 +308,18 @@ public class FileShareServiceImplTest {
         verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
     }
 
+    @Test
+    public void testStartFileShareException() throws ResourceUnavailableException, InsufficientCapacityException, OperationTimedoutException, NoTransitionException {
+        FileShareVO fileShare = getMockFileShare();
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Stopped);
+        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
+        doThrow(CloudRuntimeException.class).when(lifeCycle).startFileShare(fileShare);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> fileShareServiceImpl.startFileShare(s_fileShareId));
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+    }
+
     @Test(expected = InvalidParameterValueException.class)
     public void testStartFileShareInvalidState() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException {
         FileShareVO fileShare = getMockFileShare();
@@ -304,6 +337,19 @@ public class FileShareServiceImplTest {
         verify(lifeCycle, Mockito.times(1)).stopFileShare(any(), any());
         verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StopRequested, null, fileShareDao);
         verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
+    }
+
+    @Test
+    public void testStopFileShareException() throws NoTransitionException {
+        FileShareVO fileShare = getMockFileShare();
+        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Ready);
+        doThrow(CloudRuntimeException.class).when(lifeCycle).stopFileShare(fileShare, false);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> fileShareServiceImpl.stopFileShare(s_fileShareId, false));
+        verify(lifeCycle, Mockito.times(1)).stopFileShare(any(), any());
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StopRequested, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -491,6 +537,7 @@ public class FileShareServiceImplTest {
         DestroyFileShareCmd cmd = mock(DestroyFileShareCmd.class);
         when(cmd.getId()).thenReturn(s_fileShareId);
         when(cmd.isExpunge()).thenReturn(false);
+        when(cmd.isForced()).thenReturn(false);
 
         FileShareVO fileShare = getMockFileShare();
         when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
@@ -524,6 +571,15 @@ public class FileShareServiceImplTest {
         fileShareServiceImpl.deleteFileShare(s_fileShareId);
         verify(lifeCycle, Mockito.times(1)).deleteFileShare(any());
         verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void testDeleteFileShareTransitionException() throws NoTransitionException {
+        FileShareVO fileShare = getMockFileShare();
+        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Destroyed);
+        when(_stateMachine.transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao)).thenThrow(new NoTransitionException(""));
+        fileShareServiceImpl.deleteFileShare(s_fileShareId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -581,5 +637,25 @@ public class FileShareServiceImplTest {
         verify(sc, times(1)).setParameters("serviceOfferingId", s_serviceOfferingId);
         verify(sc, times(1)).setJoinParameters("volSearch", "diskOfferingId", s_diskOfferingId);
         verify(fileShareDao, times(1)).searchAndCount(any(), any());
+    }
+
+    @Test
+    public void testCleanupFileShare() throws NoTransitionException {
+        FileShareVO fileShare = getMockFileShare();
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Destroyed);
+        when(fileShareDao.listFileSharesToBeDestroyed(any(Date.class))).thenReturn(List.of(fileShare));
+        fileShareServiceImpl.cleanupFileShare(true);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+    }
+
+    @Test
+    public void testCleanupFileShareInvalidState() throws NoTransitionException {
+        FileShareVO fileShare = getMockFileShare();
+        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Stopped);
+        when(fileShareDao.listFileSharesToBeDestroyed(any(Date.class))).thenReturn(List.of(fileShare));
+        fileShareServiceImpl.cleanupFileShare(true);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
+        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
     }
 }

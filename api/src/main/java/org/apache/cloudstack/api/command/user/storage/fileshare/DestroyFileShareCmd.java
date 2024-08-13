@@ -61,6 +61,11 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
             description = "If true is passed, the file share is expunged immediately. False by default.")
     private Boolean expunge;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            description = "If true is passed, the file share can be destroyed without stopping it first.")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +76,10 @@ public class DestroyFileShareCmd extends BaseCmd implements UserCmd {
 
     public boolean isExpunge() {
         return (expunge != null) ? expunge : false;
+    }
+
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     /////////////////////////////////////////////////////
