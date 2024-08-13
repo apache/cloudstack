@@ -7290,3 +7290,87 @@ class Webhook:
         cmd.webhookid = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
+
+class FileShare:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage File Shares"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, account=None, domainid=None, projectid=None,
+               size=None, zoneid=None, diskofferingid=None, serviceofferingid=None,
+               format=None, provider=None, networkid=None):
+        """Create File Share"""
+        cmd = createFileShare.createFileShareCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
+
+        if account:
+            cmd.account = account
+        elif "account" in services:
+            cmd.account = services["account"]
+
+        if domainid:
+            cmd.domainid = domainid
+        elif "domainid" in services:
+            cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if size:
+            cmd.size = size
+
+        if networkid:
+            cmd.networkid = networkid
+        elif "networkid" in services:
+            cmd.networkid = services["networkid"]
+
+        if format:
+            cmd.format = format
+
+        if provider:
+            cmd.provider = provider
+
+        if serviceofferingid:
+            cmd.serviceofferingid = serviceofferingid
+        elif "serviceofferingid" in services:
+            cmd.serviceofferingid = services["serviceofferingid"]
+
+        return FileShare(apiclient.createFileShare(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete File Share"""
+        cmd = destroyFileShare.destroyFileShareCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.destroyFileShare(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listFileShares.listFileSharesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listFileShares(cmd))
+
+    def update(self, apiclient, name=None, description=None):
+        """Update the File Share"""
+        cmd = updateFileShare.updateFileShareCmd()
+        cmd.id = self.id
+        if name:
+            cmd.name = name
+        if description:
+            cmd.description = description
+        return (apiclient.updateFileShare(cmd))
