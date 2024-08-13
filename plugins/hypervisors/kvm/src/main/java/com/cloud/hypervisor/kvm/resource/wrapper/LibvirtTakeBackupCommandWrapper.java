@@ -31,6 +31,7 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
 public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCommand, Answer, LibvirtComputingResource> {
@@ -50,9 +51,9 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-v", vmName,
                 "-t", backupRepoType,
                 "-s", backupRepoAddress,
-                "-m", mountOptions,
+                "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
-                "-d", String.join(",", diskPaths)
+                "-d", (Objects.nonNull(diskPaths) && !diskPaths.isEmpty()) ? String.join(",", diskPaths) : ""
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
@@ -62,10 +63,14 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return new BackupAnswer(command, false, result.second().trim());
         }
 
-        List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
         Long backupSize = 0L;
-        if (outputLines.size() > 0) {
-            backupSize = Long.parseLong(outputLines.get(outputLines.size()-1).trim());
+        if (Objects.nonNull(diskPaths) && diskPaths.isEmpty()) {
+            List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
+            if (!outputLines.isEmpty()) {
+                backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
+            }
+        } else {
+            backupSize = Long.parseLong(result.second().trim());
         }
 
         BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());

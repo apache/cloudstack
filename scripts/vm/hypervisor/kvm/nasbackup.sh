@@ -81,6 +81,8 @@ backup_stopped_vm() {
   for disk in $DISK_PATHS; do
     rsync -az $disk $dest
   done
+
+  ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
 
 delete_backup() {

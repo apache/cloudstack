@@ -155,7 +155,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
 
-        if (VirtualMachine.State.Shutdown.equals(vm.getState())) {
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             List<String> volumePaths = new ArrayList<>();
             for (VolumeVO volume : vmVolumes) {
@@ -163,7 +163,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 if (Objects.isNull(storagePool)) {
                     throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
                 }
-                String volumePathPrefix = String.format("/mnt/%s", storagePool.getPath());
+                String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
                 if (ScopeType.HOST.equals(storagePool.getScope())) {
                     volumePathPrefix = storagePool.getPath();
                 }
