@@ -75,6 +75,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -644,9 +645,14 @@ public class FileShareServiceImplTest {
         FileShareVO fileShare = getMockFileShare();
         ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Destroyed);
         when(fileShareDao.listFileSharesToBeDestroyed(any(Date.class))).thenReturn(List.of(fileShare));
-        fileShareServiceImpl.cleanupFileShare(true);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock scanlock = mock(GlobalLock.class);
+            when(GlobalLock.getInternLock("fileshareservice.cleanup")).thenReturn(scanlock);
+            when(scanlock.lock(30)).thenReturn(true);
+            fileShareServiceImpl.cleanupFileShare(true);
+            verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
+            verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+        }
     }
 
     @Test
@@ -654,8 +660,14 @@ public class FileShareServiceImplTest {
         FileShareVO fileShare = getMockFileShare();
         ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Stopped);
         when(fileShareDao.listFileSharesToBeDestroyed(any(Date.class))).thenReturn(List.of(fileShare));
-        fileShareServiceImpl.cleanupFileShare(true);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+        try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+            GlobalLock scanlock = mock(GlobalLock.class);
+            when(GlobalLock.getInternLock("fileshareservice.cleanup")).thenReturn(scanlock);
+            when(scanlock.lock(30)).thenReturn(true);
+            fileShareServiceImpl.cleanupFileShare(true);
+            verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.ExpungeOperation, null, fileShareDao);
+            verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationFailed, null, fileShareDao);
+        }
     }
 }
+

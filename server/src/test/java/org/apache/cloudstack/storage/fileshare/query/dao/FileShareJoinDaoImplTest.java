@@ -74,7 +74,6 @@ public class FileShareJoinDaoImplTest {
     @Before
     public void setUp() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
-        Long hostId = null;
     }
 
     @After
