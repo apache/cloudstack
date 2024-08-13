@@ -173,10 +173,10 @@ const user = {
       vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
     },
     SET_LATEST_VERSION: (state, version) => {
-      // if (version?.fetchedTs > 0) {
-      vueProps.$localStorage.set(LATEST_CS_VERSION, version)
-      state.latestVersion = version
-      // }
+      if (version?.fetchedTs > 0) {
+        vueProps.$localStorage.set(LATEST_CS_VERSION, version)
+        state.latestVersion = version
+      }
     }
   },
 

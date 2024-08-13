@@ -71,6 +71,14 @@ export function sanitizeReverse (value) {
     .replace(/&gt;/g, '>')
 }
 
+export function getParsedVersion (version) {
+  version = version.split('-')[0]
+  if (semver.valid(version) === null) {
+    version = version.split('.').slice(1).join('.')
+  }
+  return version
+}
+
 export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
   if (data === null || !data.length) {
     return null
@@ -93,11 +101,4 @@ export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDe
   })
 
   return result
-}
-
-export function getParsedVersion (version) {
-  if (semver.valid(version) === null) {
-    version = version.split('4.')[1]
-  }
-  return version
 }

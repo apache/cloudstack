@@ -162,8 +162,7 @@ export default {
       collapsed: false,
       menus: [],
       showSetting: false,
-      showClear: false,
-      numberOfAlerts: 0
+      showClear: false
     }
   },
   computed: {
