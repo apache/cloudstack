@@ -63,7 +63,9 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                    _affinityGroupDao.listByIds(affinityGroupIdList, true);
+                    if (!affinityGroupIdList.isEmpty()) {
+                        _affinityGroupDao.listByIds(affinityGroupIdList, true);
+                    }
                     for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                         processAffinityGroup(vmGroupMapping, plan, vm, vmList);
                     }
@@ -149,7 +151,9 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                _affinityGroupDao.listByIds(affinityGroupIds, true);
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
+                }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                     if (!checkAffinityGroup(vmGroupMapping, vm, plannedHostId)) {
                         return false;
