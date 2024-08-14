@@ -73,7 +73,7 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     @SerializedName("capacity")
     @Param(description = "the capacity of the Cluster", responseObject = CapacityResponse.class)
-    private List<CapacityResponse> capacitites;
+    private List<CapacityResponse> capacities;
 
     @SerializedName("cpuovercommitratio")
     @Param(description = "The cpu overcommit ratio of the cluster")
@@ -171,12 +171,12 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
         this.managedState = managedState;
     }
 
-    public List<CapacityResponse> getCapacitites() {
-        return capacitites;
+    public List<CapacityResponse> getCapacities() {
+        return capacities;
     }
 
-    public void setCapacitites(ArrayList<CapacityResponse> arrayList) {
-        this.capacitites = arrayList;
+    public void setCapacities(ArrayList<CapacityResponse> arrayList) {
+        this.capacities = arrayList;
     }
 
     public void setCpuOvercommitRatio(String cpuovercommitratio) {
@@ -218,5 +218,33 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public String getCpuovercommitratio() {
+        return cpuovercommitratio;
+    }
+
+    public void setCpuovercommitratio(String cpuovercommitratio) {
+        this.cpuovercommitratio = cpuovercommitratio;
+    }
+
+    public String getMemoryovercommitratio() {
+        return memoryovercommitratio;
+    }
+
+    public void setMemoryovercommitratio(String memoryovercommitratio) {
+        this.memoryovercommitratio = memoryovercommitratio;
+    }
+
+    public String getOvm3vip() {
+        return ovm3vip;
+    }
+
+    public void setOvm3vip(String ovm3vip) {
+        this.ovm3vip = ovm3vip;
+    }
+
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
     }
 }

@@ -34,7 +34,7 @@ import threading
 import urllib.parse
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from socketserver import ThreadingMixIn #, ForkingMixIn
+from socketserver import ThreadingMixIn
 
 
 passMap = {}
