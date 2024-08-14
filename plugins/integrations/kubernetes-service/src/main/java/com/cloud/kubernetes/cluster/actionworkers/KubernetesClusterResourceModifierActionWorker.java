@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -175,11 +174,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String joinIpKey = "{{ k8s_control_node.join_ip }}";
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
-        final String installWaitTime = "{{ k8s.install.wait.time }}";
-        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
 
-        final Long waitTime = KubernetesClusterService.KubernetesWorkerNodeInstallAttemptWait.value();
-        final Long reattempts = KubernetesClusterService.KubernetesWorkerNodeInstallReattempts.value();
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -192,8 +187,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        k8sNodeConfig = k8sNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
-        k8sNodeConfig = k8sNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 
         return k8sNodeConfig;

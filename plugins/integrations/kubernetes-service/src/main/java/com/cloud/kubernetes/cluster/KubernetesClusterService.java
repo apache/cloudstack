@@ -92,30 +92,6 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             true,
             ConfigKey.Scope.Account,
             KubernetesServiceEnabled.key());
-    static final ConfigKey<Long> KubernetesControlNodeInstallAttemptWait = new ConfigKey<Long>("Advanced", Long.class,
-            "cloud.kubernetes.control.node.install.attempt.wait.duration",
-            "15",
-            "Time in seconds for the installation process to wait before it re-attempts",
-            true,
-            KubernetesServiceEnabled.key());
-    static final ConfigKey<Long> KubernetesControlNodeInstallReattempts = new ConfigKey<Long>("Advanced", Long.class,
-            "cloud.kubernetes.control.node.install.reattempt.count",
-            "100",
-            "Number of times the offline installation of K8S will be re-attempted",
-            true,
-            KubernetesServiceEnabled.key());
-    final ConfigKey<Long> KubernetesWorkerNodeInstallAttemptWait = new ConfigKey<Long>("Advanced", Long.class,
-            "cloud.kubernetes.worker.node.install.attempt.wait.duration",
-            "30",
-            "Time in seconds for the installation process to wait before it re-attempts",
-            true,
-            KubernetesServiceEnabled.key());
-    static final ConfigKey<Long> KubernetesWorkerNodeInstallReattempts = new ConfigKey<Long>("Advanced", Long.class,
-            "cloud.kubernetes.worker.node.install.reattempt.count",
-            "40",
-            "Number of times the offline installation of K8S will be re-attempted",
-            true,
-            KubernetesServiceEnabled.key());
 
     KubernetesCluster findById(final Long id);
 

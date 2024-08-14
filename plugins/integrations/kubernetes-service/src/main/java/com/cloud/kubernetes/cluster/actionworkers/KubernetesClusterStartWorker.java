@@ -139,8 +139,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String clusterToken = "{{ k8s_control_node.cluster.token }}";
         final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
-        final String installWaitTime = "{{ k8s.install.wait.time }}";
-        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
 
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
@@ -153,8 +151,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
-        final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
-        final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
@@ -166,8 +162,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         String initArgs = "";
@@ -248,11 +242,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterHACertificateKey = "{{ k8s_control_node.cluster.ha.certificate.key }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
-        final String installWaitTime = "{{ k8s.install.wait.time }}";
-        final String installReattemptsCount = "{{ k8s.install.reattempts.count }}";
 
-        final Long waitTime = KubernetesClusterService.KubernetesControlNodeInstallAttemptWait.value();
-        final Long reattempts = KubernetesClusterService.KubernetesControlNodeInstallReattempts.value();
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -261,8 +251,6 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(installWaitTime, String.valueOf(waitTime));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(installReattemptsCount, String.valueOf(reattempts));
         k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpKey, joinIp);
         k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
