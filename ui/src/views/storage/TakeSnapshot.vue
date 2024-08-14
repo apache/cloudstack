@@ -66,6 +66,30 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="storageids" name="storageids">
+          <template #label>
+            <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
+          </template>
+          <a-select
+            id="storagepool-selection"
+            v-model:value="form.storageids"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storagePoolLoading"
+            :placeholder="''">
+            <a-select-option v-for="opt in storagePools" :key="opt.id" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
           <a-switch v-model:checked="form.asyncbackup" />
         </a-form-item>
@@ -158,6 +182,8 @@ export default {
       inputVisible: '',
       zones: [],
       zoneLoading: false,
+      storagePools: [],
+      storagePoolLoading: false,
       tags: [],
       dataSource: []
     }
@@ -170,6 +196,7 @@ export default {
     this.quiescevm = this.resource.quiescevm
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
     this.fetchZoneData()
+    this.fetchStoragePoolData()
   },
   computed: {
     formattedAdditionalZoneMessage () {
@@ -200,6 +227,20 @@ export default {
         this.zoneLoading = false
       })
     },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      api('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.actionLoading) return
@@ -222,6 +263,9 @@ export default {
         }
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
+        }
+        if (values.storageids && values.storageids.length > 0) {
+          params.storageids = values.storageids.join()
         }
         for (let i = 0; i < this.tags.length; i++) {
           const formattedTagData = {}
