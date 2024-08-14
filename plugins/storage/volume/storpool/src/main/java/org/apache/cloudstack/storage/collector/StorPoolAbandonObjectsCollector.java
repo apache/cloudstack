@@ -41,7 +41,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
-import org.apache.cloudstack.storage.snapshot.StorPoolSnapshotStrategy;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.inject.Inject;
@@ -379,12 +378,13 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                         }
                         if (snapshots.contains(name)) {
                             Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId(name, conn), clusterDao);
-                            conn = StorPoolSnapshotStrategy.getSpConnectionDesc(conn, clusterId);
+                            conn = StorPoolHelper.getSpConnectionDesc(conn, clusterId);
                             SpApiResponse resp = StorPoolUtil.snapshotUnexport(name, location, conn);
                             if (resp.getError() == null) {
+                                StorPoolUtil.spLog("Unexport of snapshot %s was successful", name);
                                 recoveredSnapshots.add(snapshot.getId());
                             } else {
-                                logger.debug(String.format("Could not recover StorPool snapshot %s", resp.getError()));
+                                StorPoolUtil.spLog("Could not recover StorPool snapshot %s", resp.getError());
                             }
                         }
                     }

@@ -64,6 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class StorPoolHelper {
 
@@ -304,5 +305,16 @@ public class StorPoolHelper {
             return true;
         }
         return true;
+    }
+
+    public static StorPoolUtil.SpConnectionDesc getSpConnectionDesc(StorPoolUtil.SpConnectionDesc connectionLocal, Long clusterId) {
+
+        String subClusterEndPoint = StorPoolConfigurationManager.StorPoolSubclusterEndpoint.valueIn(clusterId);
+        if (StringUtils.isNotEmpty(subClusterEndPoint)) {
+            String host = subClusterEndPoint.split(";")[0].split("=")[1];
+            String token = subClusterEndPoint.split(";")[1].split("=")[1];
+            connectionLocal = new StorPoolUtil.SpConnectionDesc(host, token, connectionLocal.getTemplateName());
+        }
+        return connectionLocal;
     }
 }
