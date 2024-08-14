@@ -1072,6 +1072,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return null;
             }
 
+            if (isNicAllocatedForNsxPublicNetworkOnVR(network, profile, vm)) {
+                String guruName = "NsxPublicNetworkGuru";
+                NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
+                nsxGuru.allocate(network, profile, vm);
+            }
+
             if (isDefaultNic != null) {
                 profile.setDefaultNic(isDefaultNic);
             }
