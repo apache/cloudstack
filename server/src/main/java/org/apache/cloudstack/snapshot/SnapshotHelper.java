@@ -51,7 +51,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -303,10 +305,25 @@ public class SnapshotHelper {
     }
 
     public SnapshotInfo convertSnapshotIfNeeded(SnapshotInfo snapshotInfo) {
+
         if (snapshotInfo.getParent() == null || !HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
             return snapshotInfo;
         }
 
         return snapshotService.convertSnapshot(snapshotInfo);
+    }
+
+    public void checkIfThereAreMoreThanOnePoolInTheZone(List<Long> poolIds) {
+        List<Long> poolsInOneZone = new ArrayList<>();
+        for (Long poolId : poolIds) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
+            if (pool != null) {
+                poolsInOneZone.add(pool.getDataCenterId());
+            }
+        }
+        boolean moreThanOnePoolForZone = poolsInOneZone.stream().filter(itr -> Collections.frequency(poolsInOneZone, itr) > 1).count() > 1;
+        if (moreThanOnePoolForZone) {
+            throw new CloudRuntimeException("Cannot copy the snapshot on multiple storage pools in one zone");
+        }
     }
 }
