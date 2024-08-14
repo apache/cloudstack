@@ -1027,6 +1027,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
         if (hasPools) {
+            snapshotHelper.checkIfThereAreMoreThanOnePoolInTheZone(poolIds);
             for (Long poolId : poolIds) {
                 getCheckedDestinationStorageForSnapshotCopy(poolId, isRootAdminCaller);
             }
@@ -2101,6 +2102,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException(String.format("There is no snapshot ID: %s ready on image store", snapshot.getUuid()));
         }
         if (canCopyBetweenStoragePools) {
+            snapshotHelper.checkIfThereAreMoreThanOnePoolInTheZone(storagePoolIds);
             copySnapshotToPrimaryDifferentZone(storagePoolIds, snapshot);
         }
         List<String> failedZones = copySnapshotToZones(snapshot, srcSecStore, new ArrayList<>(dataCenterVOs.values()));

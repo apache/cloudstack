@@ -57,7 +57,6 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -194,6 +193,12 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         }
         List<StoragePoolVO> pools = _primaryDataStoreDao.findPoolsByStorageType(Storage.StoragePoolType.StorPool);
         if (CollectionUtils.isEmpty(pools)) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+        List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getId());
+        boolean snapshotNotOnStorPool = snapshots.stream().filter(s -> s.getStoreRole().equals(DataStoreRole.Primary)).count() == 0;
+
+        if (snapshotNotOnStorPool) {
             return StrategyPriority.CANT_HANDLE;
         }
         for (StoragePoolVO pool : pools) {
@@ -391,7 +396,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     snapshot.getDataStore().getId(), storagePoolDetailsDao, _primaryDataStoreDao);
             String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcSnapshot.getPath(), false);
             Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId("~" + snapshotName, connectionLocal), clusterDao);
-            connectionLocal = getSpConnectionDesc(connectionLocal, clusterId);
+            connectionLocal = StorPoolHelper.getSpConnectionDesc(connectionLocal, clusterId);
             SpApiResponse resp = StorPoolUtil.snapshotExport("~" + snapshotName, location, connectionLocal);
             if (resp.getError() != null) {
                 StorPoolUtil.spLog("Failed to export snapshot %s from %s due to %s", snapshotName, location, resp.getError());
@@ -401,6 +406,9 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 callback.complete(res);
                 return;
             }
+            String detail = "~" + snapshotName + ";" + location;
+            SnapshotDetailsVO snapshotForRecovery = new SnapshotDetailsVO(snapshot.getId(), StorPoolUtil.SP_RECOVERED_SNAPSHOT, detail, true);
+            _snapshotDetailsDao.persist(snapshotForRecovery);
             SpConnectionDesc connectionRemote = StorPoolUtil.getSpConnection(storagePoolVO.getUuid(),
                     storagePoolVO.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
             String localLocation = StorPoolConfigurationManager.StorPoolClusterLocation
@@ -418,9 +426,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 return;
             }
             StorPoolUtil.spLog("The snapshot [%s] was copied from remote", snapshotName);
-            String detail = "~" + snapshotName + ";" + location;
-            SnapshotDetailsVO snapshotForRecovery = new SnapshotDetailsVO(snapshot.getId(), StorPoolUtil.SP_RECOVERED_SNAPSHOT, detail, true);
-            _snapshotDetailsDao.persist(snapshotForRecovery);
+
             respFromRemote = StorPoolUtil.snapshotReconcile("~" + snapshotName, connectionRemote);
             if (respFromRemote.getError() != null) {
                 StorPoolUtil.spLog("Failed to reconcile snapshot %s from %s due to %s", snapshotName, location, respFromRemote.getError());
@@ -446,16 +452,5 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         res = new CreateCmdResult(destSnapshot.getPath(), answer);
         res.setResult(err);
         callback.complete(res);
-    }
-
-    public static SpConnectionDesc getSpConnectionDesc(SpConnectionDesc connectionLocal, Long clusterId) {
-
-        String subClusterEndPoint = StorPoolConfigurationManager.StorPoolSubclusterEndpoint.valueIn(clusterId);
-        if (StringUtils.isNotEmpty(subClusterEndPoint)) {
-            String host = subClusterEndPoint.split(";")[0].split("=")[1];
-            String token = subClusterEndPoint.split(";")[1].split("=")[1];
-            connectionLocal = new SpConnectionDesc(host, token, connectionLocal.getTemplateName());
-        }
-        return connectionLocal;
     }
 }

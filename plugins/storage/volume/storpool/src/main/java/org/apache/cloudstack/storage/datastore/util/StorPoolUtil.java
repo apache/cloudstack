@@ -683,7 +683,8 @@ public class StorPoolUtil {
     public static SpApiResponse snapshotUnexport(String name, String location, SpConnectionDesc conn) {
         Map<String, Object> json = new HashMap<>();
         json.put("snapshot", name);
-        json.put("location", location);
+        json.put("force", true);
+        json.put("all", true);
         return POST("SnapshotUnexport", json, conn);
     }
 
