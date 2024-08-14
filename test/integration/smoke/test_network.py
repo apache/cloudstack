@@ -2144,7 +2144,7 @@ class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
 
         template = Template.register(
             cls.apiclient,
-            cls.services["test_templates_cloud_init"][cls.hv],
+            cls.services["test_templates_cloud_init"][cls.hv.lower()],
             zoneid=cls.zone.id,
             hypervisor=cls.hv,
         )
@@ -2201,11 +2201,11 @@ class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
         )
 
         cls._cleanup.extend([
-            cls.shared_network,
             cls.service_offering,
             cls.shared_network,
             cls.shared_network_offering,
-            cls.isolated_network
+            cls.isolated_network,
+            cls.isolated_network_offering,
         ])
         cls.tmp_files = []
         cls.keypair = cls.generate_ssh_keys()
