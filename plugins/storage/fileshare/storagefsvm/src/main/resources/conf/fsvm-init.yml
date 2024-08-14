@@ -166,9 +166,9 @@ write_files:
       ADD_PARTITION_FILE="/usr/local/bin/add-partition"
       RESIZE_PARTITION_FILE="/usr/local/bin/resize-partition"
 
-      UDEV_ADD_RULE='KERNEL=="$BLOCK_DEVICE", ACTION=="add", SUBSYSTEM=="block", RUN+="$ADD_PARTITION_FILE /dev/%k"'
-      UDEV_RESIZE_RULE='KERNEL=="$BLOCK_DEVICE", ACTION=="change", SUBSYSTEM=="block", RUN+="$RESIZE_PARTITION_FILE /dev/%k"'
-      UDEV_ADD_NIC_RULE='ACTION=="add", SUBSYSTEM=="net", DRIVERS=="?*", ENV{SYSTEMD_WANTS}="cloud-dhclient@%k.service"'
+      UDEV_ADD_RULE="KERNEL==$BLOCK_DEVICE, ACTION==\"add\", SUBSYSTEM==\"block\", RUN+=\"$ADD_PARTITION_FILE /dev/%k\""
+      UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"change\", SUBSYSTEM==\"block\", RUN+=\"$RESIZE_PARTITION_FILE /dev/%k\""
+      UDEV_ADD_NIC_RULE="ACTION==\"add\", SUBSYSTEM==\"net\", DRIVERS==\"?*\", ENV{SYSTEMD_WANTS}=\"cloud-dhclient@%k.service\""
 
       # Add udev rules
       echo "$UDEV_RESIZE_RULE" > /etc/udev/rules.d/99-resize-partition.rules
