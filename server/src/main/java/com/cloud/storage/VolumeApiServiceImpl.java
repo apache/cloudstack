@@ -4063,6 +4063,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             return false;
         }
+        snapshotHelper.checkIfThereAreMoreThanOnePoolInTheZone(poolIds);
         return true;
     }
 

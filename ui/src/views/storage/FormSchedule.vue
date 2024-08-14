@@ -169,6 +169,32 @@
                 </a-select>
               </a-form-item>
             </a-col>
+            <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
+              <a-form-item ref="storageids" name="storageids">
+                <template #label>
+                  <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
+                </template>
+                <a-select
+                  id="storagepool-selection"
+                  v-model:value="form.storageids"
+                  mode="multiple"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :loading="storagePoolLoading"
+                  :placeholder="''">
+                  <a-select-option v-for="opt in this.storagePools" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <global-outlined v-else style="margin-right: 5px"/>
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
           </a-row>
           <a-divider/>
           <div class="tagsTitle">{{ $t('label.tags') }}</div>
@@ -272,7 +298,8 @@ export default {
       timeZoneMap: [],
       fetching: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      zones: []
+      zones: [],
+      storagePools: []
     }
   },
   created () {
@@ -307,6 +334,7 @@ export default {
       })
       if (this.resourceType === 'Volume') {
         this.fetchZoneData()
+        this.fetchStoragePoolData()
       }
     },
     fetchZoneData () {
@@ -321,6 +349,20 @@ export default {
         }
       }).finally(() => {
         this.zoneLoading = false
+      })
+    },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      api('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
       })
     },
     fetchTimeZone (value) {
@@ -421,6 +463,9 @@ export default {
         params.maxsnaps = values.maxsnaps
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
+        }
+        if (values.storageids && values.storageids.length > 0) {
+          params.storageids = values.storageids.join()
         }
         switch (values.intervaltype) {
           case 'hourly':
