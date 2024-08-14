@@ -306,4 +306,15 @@ public class StorPoolHelper {
         }
         return true;
     }
+
+    public static StorPoolUtil.SpConnectionDesc getSpConnectionDesc(StorPoolUtil.SpConnectionDesc connectionLocal, Long clusterId) {
+
+        String subClusterEndPoint = StorPoolConfigurationManager.StorPoolSubclusterEndpoint.valueIn(clusterId);
+        if (StringUtils.isNotEmpty(subClusterEndPoint)) {
+            String host = subClusterEndPoint.split(";")[0].split("=")[1];
+            String token = subClusterEndPoint.split(";")[1].split("=")[1];
+            connectionLocal = new StorPoolUtil.SpConnectionDesc(host, token, connectionLocal.getTemplateName());
+        }
+        return connectionLocal;
+    }
 }
