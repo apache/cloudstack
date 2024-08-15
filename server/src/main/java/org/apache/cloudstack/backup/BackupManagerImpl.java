@@ -611,11 +611,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
 
-        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
+        String errorMessage = "Failed to find backup offering of the VM backup.";
         if (offering == null) {
-            throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
+            logger.warn(errorMessage);
         }
-
+        logger.debug("Attempting to get backup offering from VM backup");
+        offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            throw new CloudRuntimeException(errorMessage);
+        }
         String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "type", "status", "date");
         tryRestoreVM(backup, vm, offering, backupDetailsInMessage);
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);

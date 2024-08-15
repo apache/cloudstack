@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -58,7 +59,6 @@ import java.util.Objects;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
-    private static final String SHARED_VOLUME_PATH_PREFIX = "/mnt";
 
     @Inject
     private BackupDao backupDao;
@@ -157,18 +157,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
-            List<String> volumePaths = new ArrayList<>();
-            for (VolumeVO volume : vmVolumes) {
-                StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
-                if (Objects.isNull(storagePool)) {
-                    throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
-                }
-                String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
-                if (ScopeType.HOST.equals(storagePool.getScope())) {
-                    volumePathPrefix = storagePool.getPath();
-                }
-                volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
-            }
+            List<String> volumePaths = getVolumePaths(vmVolumes);
             command.setVolumePaths(volumePaths);
         }
 
@@ -215,14 +204,54 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         volumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
 
         LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
+        BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
+        final String errorMessage = "No valid backup repository found for the VM, please check the attached backup offering";
+        if (backupRepository == null) {
+            logger.warn(errorMessage + "Re-attempting with the backup offering associated with the backup");
+        }
+        backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
+        if (backupRepository == null) {
+            throw new CloudRuntimeException(errorMessage);
+        }
 
         // Find where the VM was last running
         final Host host = getLastVMHypervisorHost(vm);
+        RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
+        restoreCommand.setBackupPath(backup.getExternalId());
+        restoreCommand.setBackupRepoType(backupRepository.getType());
+        restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
+        restoreCommand.setVmName(vm.getName());
+        List<String> volumePaths = getVolumePaths(volumes);
 
+        restoreCommand.setVolumePaths(volumePaths);
+        restoreCommand.setVmExists(vm.getRemoved() == null);
         // TODO: get KVM agent to restore VM backup
 
-
+        Answer answer = null;
+        try {
+            answer = agentManager.send(host.getId(), restoreCommand);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
+        }
         return true;
+    }
+
+    private List<String> getVolumePaths(List<VolumeVO> volumes) {
+        List<String> volumePaths = new ArrayList<>();
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+            if (Objects.isNull(storagePool)) {
+                throw new CloudRuntimeException("Unable to find storage pool associated to the volume");
+            }
+            String volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            if (ScopeType.HOST.equals(storagePool.getScope())) {
+                volumePathPrefix = storagePool.getPath();
+            }
+            volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
+        }
+        return volumePaths;
     }
 
     @Override

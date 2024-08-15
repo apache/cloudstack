@@ -78,8 +78,13 @@ backup_stopped_vm() {
 
   IFS=","
 
+  deviceId=0
+  name="root"
   for disk in $DISK_PATHS; do
-    rsync -az $disk $dest
+    volUuid="${disk##*/}"
+    rsync -az $disk $dest/$deviceId.$name.$volUuid
+    deviceId=$((devideId+1))
+    name="datadisk"
   done
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
