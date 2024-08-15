@@ -53,6 +53,12 @@ public class JsInterpreter implements Closeable {
     private String timeoutDefaultMessage;
     protected Map<String, String> variables = new LinkedHashMap<>();
 
+    /**
+     * Constructor created exclusively for unit testing.
+     */
+    protected JsInterpreter() {
+    }
+
     public JsInterpreter(long timeout) {
         this.timeout = timeout;
         this.timeoutDefaultMessage = String.format("Timeout (in milliseconds) defined in the global setting [quota.activationrule.timeout]: [%s].", this.timeout);
