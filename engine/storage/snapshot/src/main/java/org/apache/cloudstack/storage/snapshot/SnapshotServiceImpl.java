@@ -242,27 +242,27 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotResult takeSnapshot(SnapshotInfo snap) {
         SnapshotObject snapshot = (SnapshotObject)snap;
 
-        SnapshotObject snapshotOnStorage = null;
+        SnapshotObject snapshotOnPrimaryStorage = null;
         try {
-            snapshotOnStorage = (SnapshotObject)snap.getDataStore().create(snapshot);
+            snapshotOnPrimaryStorage = (SnapshotObject)snap.getDataStore().create(snapshot);
         } catch (Exception e) {
             logger.debug("Failed to create snapshot state on data store due to " + e.getMessage());
             throw new CloudRuntimeException(e);
         }
 
         try {
-            snapshotOnStorage.processEvent(Snapshot.Event.CreateRequested);
+            snapshotOnPrimaryStorage.processEvent(Snapshot.Event.CreateRequested);
         } catch (NoTransitionException e) {
             logger.debug("Failed to change snapshot state: " + e.toString());
             throw new CloudRuntimeException(e);
         }
 
         try {
-            snapshotOnStorage.processEvent(Event.CreateOnlyRequested);
+            snapshotOnPrimaryStorage.processEvent(Event.CreateOnlyRequested);
         } catch (Exception e) {
             logger.debug("Failed to change snapshot state: " + e.toString());
             try {
-                snapshotOnStorage.processEvent(Snapshot.Event.OperationFailed);
+                snapshotOnPrimaryStorage.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 logger.debug("Failed to change snapshot state: " + e1.toString());
             }
@@ -271,10 +271,10 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         try {
-            CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(null, snap.getBaseVolume(), snapshotOnStorage, future);
+            CreateSnapshotContext<CommandResult> context = new CreateSnapshotContext<CommandResult>(null, snap.getBaseVolume(), snapshotOnPrimaryStorage, future);
             AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null)).setContext(context);
-            PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnStorage.getDataStore().getDriver();
+            PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimaryStorage.getDataStore().getDriver();
             primaryStore.takeSnapshot(snapshot, caller);
         } catch (Exception e) {
             logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
@@ -295,7 +295,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             updateSnapSizeAndCheckpointPathIfPossible(result, snap);
 
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
-                    snap.getName(), null, null, snapshotOnStorage.getSize(), snapshotOnStorage.getSize(), snap.getClass().getName(), snap.getUuid());
+                    snap.getName(), null, null, snapshotOnPrimaryStorage.getSize(), snapshotOnPrimaryStorage.getSize(), snap.getClass().getName(), snap.getUuid());
             return result;
         } catch (InterruptedException | ExecutionException e) {
             String message = String.format("Failed to create snapshot [%s] due to [%s].", snapshot, e.getMessage());

@@ -17,7 +17,6 @@
 
 package com.cloud.hypervisor.kvm.storage;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -213,11 +212,6 @@ public class ScaleIOStoragePool implements KVMStoragePool {
     @Override
     public Map<String, String> getDetails() {
         return this.details;
-    }
-
-    @Override
-    public String getLocalPathFor(String relativePath) {
-        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
     }
 
     @Override
