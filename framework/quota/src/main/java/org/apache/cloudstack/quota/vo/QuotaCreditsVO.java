@@ -17,6 +17,7 @@
 package org.apache.cloudstack.quota.vo;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -112,5 +113,10 @@ public class QuotaCreditsVO implements InternalIdentity {
     @Override
     public long getId() {
         return this.id;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "accountId", "domainId", "credit");
     }
 }
