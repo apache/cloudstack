@@ -34,15 +34,16 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Objects;
 
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIx = "csbackup";
-//    private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s $([[ ! -z '%s' ]] && echo -o %s)";
     private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String VIRSH_DEFINE = "sudo virsh define %s";
     private static final String VM_DOMAIN_XML = "domain-config.xml";
+    private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
 
     @Override
     public Answer execute(RestoreBackupCommand command, LibvirtComputingResource serverResource) {
@@ -51,10 +52,14 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String backupRepoAddress = command.getBackupRepoAddress();
         String backupRepoType = command.getBackupRepoType();
         String mountOptions = command.getMountOptions();
-        boolean vmExists = command.isVmExists();
+        Boolean vmExists = command.isVmExists();
+        String diskType = command.getDiskType();
+        Long deviceId = command.getDeviceId();
         List<String> volumePaths = command.getVolumePaths();
 
-        if (vmExists) {
+        if (Objects.isNull(vmExists)) {
+            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePaths.get(0), diskType, deviceId);
+        } else if (vmExists) {
             restoreVolumesOfExistingVM(volumePaths, backupPath, backupRepoType, backupRepoAddress, mountOptions);
         } else {
             restoreVolumesOfDestroyedVMs(volumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
@@ -105,8 +110,27 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             unmountBackupDirectory(mountDirectory);
             deleteTemporaryDirectory(mountDirectory);
         }
-
     }
+
+    private void restoreVolume(String backupPath, String backupRepoType, String backupRepoAddress, String volumePath,
+                               String diskType, Long deviceId) {
+        String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
+        try {
+            Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, deviceId.intValue());
+            volumePath = String.format(FILE_PATH_PLACEHOLDER, volumePath, bkpPathAndVolUuid.second());
+            try {
+                replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
+            } catch (IOException e) {
+                throw new CloudRuntimeException(String.format("Unable to revert backup for volume [%s] due to [%s].", bkpPathAndVolUuid.second(), e.getMessage()), e);
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to restore volume", e);
+        } finally {
+            unmountBackupDirectory(mountDirectory);
+            deleteTemporaryDirectory(mountDirectory);
+        }
+    }
+
 
     private String mountBackupDirectory(String backupRepoAddress, String backupRepoType) {
         String randomChars = RandomStringUtils.random(5, true, false);
@@ -147,12 +171,12 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private Pair<String, String> getBackupPath(String mountDirectory, String volumePath, String backupPath, String diskType, int deviceId) {
-        String bkpPath = String.format("%s/%s", mountDirectory, backupPath);
+        String bkpPath = String.format(FILE_PATH_PLACEHOLDER, mountDirectory, backupPath);
         int lastIndex = volumePath.lastIndexOf("/");
         String volUuid = volumePath.substring(lastIndex + 1);
         String backupFileName = String.format("%s.%s.%s", deviceId, diskType, volUuid);
         logger.debug("BACKUP file name: " + backupFileName);
-        bkpPath = String.format("%s/%s", bkpPath, backupFileName);
+        bkpPath = String.format(FILE_PATH_PLACEHOLDER, bkpPath, backupFileName);
         return new Pair<>(bkpPath, volUuid);
     }
 

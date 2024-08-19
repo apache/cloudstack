@@ -30,7 +30,9 @@ public class RestoreBackupCommand extends Command  {
     private String backupRepoType;
     private String backupRepoAddress;
     private List<String> volumePaths;
-    private boolean vmExists;
+    private String diskType;
+    private Long deviceId;
+    private Boolean vmExists;
 
     protected RestoreBackupCommand() {
         super();
@@ -76,16 +78,32 @@ public class RestoreBackupCommand extends Command  {
         this.volumePaths = volumePaths;
     }
 
-    public String getMountOptions() {
-        return mountOptions;
-    }
-
-    public boolean isVmExists() {
+    public Boolean isVmExists() {
         return vmExists;
     }
 
-    public void setVmExists(boolean vmExists) {
+    public void setVmExists(Boolean vmExists) {
         this.vmExists = vmExists;
+    }
+
+    public String getDiskType() {
+        return diskType;
+    }
+
+    public void setDiskType(String diskType) {
+        this.diskType = diskType;
+    }
+
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(Long deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getMountOptions() {
+        return mountOptions;
     }
 
     public void setMountOptions(String mountOptions) {

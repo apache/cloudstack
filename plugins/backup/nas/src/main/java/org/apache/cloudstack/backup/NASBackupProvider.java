@@ -50,12 +50,15 @@ import org.apache.logging.log4j.LogManager;
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
@@ -177,13 +180,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backup.setType("FULL");
             backup.setDate(creationDate);
             backup.setSize(answer.getSize());
-            Long virtualSize = 0L;
+            long virtualSize = 0L;
             for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
                 if (Volume.State.Ready.equals(volume.getState())) {
                     virtualSize += volume.getSize();
                 }
             }
-            backup.setProtectedSize(virtualSize);
+            backup.setProtectedSize(Long.valueOf(virtualSize));
             backup.setStatus(Backup.Status.BackedUp);
             backup.setBackupOfferingId(vm.getBackupOfferingId());
             backup.setAccountId(vm.getAccountId());
@@ -192,27 +195,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return backupDao.persist(backup) != null;
         }
 
-        return false;
+        return answer.getResult();
     }
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        final Long zoneId = backup.getZoneId();
-
         List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
-        volumes.removeIf(x -> !Volume.State.Ready.equals(x.getState()));
         volumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
 
-        LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
-        BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
-        final String errorMessage = "No valid backup repository found for the VM, please check the attached backup offering";
-        if (backupRepository == null) {
-            logger.warn(errorMessage + "Re-attempting with the backup offering associated with the backup");
-        }
-        backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
-        if (backupRepository == null) {
-            throw new CloudRuntimeException(errorMessage);
-        }
+        LOG.debug(String.format("Restoring vm %s from backup %s on the NAS Backup Provider", vm.getUuid(), backup.getUuid()));
+        BackupRepository backupRepository = getBackupRepository(vm, backup);
 
         // Find where the VM was last running
         final Host host = getLastVMHypervisorHost(vm);
@@ -221,9 +213,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vm.getName());
-        List<String> volumePaths = getVolumePaths(volumes);
-
-        restoreCommand.setVolumePaths(volumePaths);
+        restoreCommand.setVolumePaths(getVolumePaths(volumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
         // TODO: get KVM agent to restore VM backup
 
@@ -235,7 +225,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
-        return true;
+        return answer.getResult();
     }
 
     private List<String> getVolumePaths(List<VolumeVO> volumes) {
@@ -256,27 +246,83 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
-        final Volume volume = volumeDao.findByUuid(volumeUuid);
+        final VolumeVO volume = volumeDao.findByUuid(volumeUuid);
         final VirtualMachine backupSourceVm = vmInstanceDao.findById(backup.getVmId());
         final StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
         final HostVO hostVO = hostDao.findByIp(hostIp);
         final Long zoneId = backup.getZoneId();
 
         // TODO: Find volume from backup volumes
+        Optional<Backup.VolumeInfo> matchingVolume = getBackedUpVolumeInfo(backupSourceVm.getBackupVolumeList(), volumeUuid);
+        Long backedUpVolumeSize = matchingVolume.isPresent() ? matchingVolume.get().getSize() : 0L;
         volume.getDeviceId(); // restore by device ID
+
+        LOG.debug("Restoring vm volume" + volumeUuid + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
+        BackupRepository backupRepository = getBackupRepository(backupSourceVm, backup);
 
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,
                 backup.getSize(), null, null, null);
+        String volumeUUID = UUID.randomUUID().toString();
+        restoredVolume.setName("RV-"+volume.getName());
+        restoredVolume.setProvisioningType(volume.getProvisioningType());
+        restoredVolume.setUpdated(new Date());
+        restoredVolume.setUuid(volumeUUID);
+        restoredVolume.setRemoved(null);
+        restoredVolume.setDisplayVolume(true);
+        restoredVolume.setPoolId(volume.getPoolId());
+        restoredVolume.setPath(restoredVolume.getUuid());
+        restoredVolume.setState(Volume.State.Copying);
+        restoredVolume.setSize(backedUpVolumeSize);
+        restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
 
-        // TODO: fill restored volume VO
+        RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
+        restoreCommand.setBackupPath(backup.getExternalId());
+        restoreCommand.setBackupRepoType(backupRepository.getType());
+        restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
+        restoreCommand.setVmName(backupSourceVm.getName());
+        restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
+        restoreCommand.setDiskType(volume.getVolumeType().name());
+        restoreCommand.setDeviceId(volume.getDeviceId());
+        restoreCommand.setVmExists(null);
+
+        Answer answer = null;
         try {
-            volumeDao.persist(restoredVolume);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
+            answer = agentManager.send(hostVO.getId(), restoreCommand);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Operation to initiate backup timed out, please try again");
         }
-        // TODO: get KVM agent to copy/restore the specific volume to
-        return null;
+
+        if (answer.getResult()) {
+            try {
+                volumeDao.persist(restoredVolume);
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
+            }
+        }
+
+        return new Pair<>(answer.getResult(), answer.getDetails());
+    }
+
+    private BackupRepository getBackupRepository(VirtualMachine vm, Backup backup) {
+        BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
+        final String errorMessage = "No valid backup repository found for the VM, please check the attached backup offering";
+        if (backupRepository == null) {
+            logger.warn(errorMessage + "Re-attempting with the backup offering associated with the backup");
+        }
+        backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
+        if (backupRepository == null) {
+            throw new CloudRuntimeException(errorMessage);
+        }
+        return backupRepository;
+    }
+
+    private Optional<Backup.VolumeInfo> getBackedUpVolumeInfo(List<Backup.VolumeInfo> backedUpVolumes, String volumeUuid) {
+        return backedUpVolumes.stream()
+                .filter(v -> v.getUuid().equals(volumeUuid))
+                .findFirst();
     }
 
     @Override
