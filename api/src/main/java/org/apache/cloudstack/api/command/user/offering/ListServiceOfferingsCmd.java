@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import static com.cloud.offering.ServiceOffering.State.Active;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -28,7 +26,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.offering.ServiceOffering.State;
 
@@ -157,14 +154,7 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     }
 
     public State getState() {
-        if (StringUtils.isBlank(serviceOfferingState)) {
-            return Active;
-        }
-        State state = EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
-        if (!serviceOfferingState.equalsIgnoreCase("all") && state == null) {
-            throw new IllegalArgumentException("Invalid state value: " + serviceOfferingState);
-        }
-        return state;
+        return EnumUtils.getEnumIgnoreCase(State.class, serviceOfferingState);
     }
 
     public Long getTemplateId() {

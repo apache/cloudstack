@@ -16,8 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import static com.cloud.offering.DiskOffering.State.Active;
-
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
@@ -29,7 +28,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.offering.DiskOffering.State;
 
@@ -111,14 +109,7 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
     }
 
     public State getState() {
-        if (StringUtils.isBlank(diskOfferingState)) {
-            return Active;
-        }
-        State state = EnumUtils.getEnumIgnoreCase(State.class, diskOfferingState);
-        if (!diskOfferingState.equalsIgnoreCase("all") && state == null) {
-            throw new IllegalArgumentException("Invalid state value: " + diskOfferingState);
-        }
-        return state;
+        return EnumUtils.getEnumIgnoreCase(DiskOffering.State.class, diskOfferingState);
     }
 
     public Long getVirtualMachineId() {

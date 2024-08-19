@@ -3430,7 +3430,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
 
         if (state != null) {
-            diskOfferingSearch.and("state", diskOfferingSearch.entity().getState(), Op.EQ);
+            diskOfferingSearch.and("state", diskOfferingSearch.entity().getState(), Op.IN);
         }
 
         // Keeping this logic consistent with domain specific zones
@@ -3547,6 +3547,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (state != null) {
             sc.setParameters("state", state);
+        } else {
+            sc.setParameters("state", Arrays.asList(ServiceOffering.State.Active, ServiceOffering.State.Inactive));
         }
 
         if (keyword != null) {
@@ -3756,7 +3758,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         serviceOfferingSearch.select(null, Func.DISTINCT, serviceOfferingSearch.entity().getId()); // select distinct
 
         if (state != null) {
-            serviceOfferingSearch.and("state", serviceOfferingSearch.entity().getState(), Op.EQ);
+            serviceOfferingSearch.and("state", serviceOfferingSearch.entity().getState(), Op.IN);
         }
 
         if (vmId != null) {
@@ -3913,8 +3915,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
 
             serviceOfferingSearch.join("diskOfferingSearch", diskOfferingSearch, JoinBuilder.JoinType.INNER, JoinBuilder.JoinCondition.AND,
-                    serviceOfferingSearch.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(),
-                    serviceOfferingSearch.entity().setString("Active"), diskOfferingSearch.entity().getState());
+                    serviceOfferingSearch.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId());
         }
 
         if (cpuNumber != null) {
@@ -4043,6 +4044,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
         if (state != null) {
             sc.setParameters("state", state);
+        } else {
+            sc.setParameters("state", Arrays.asList(ServiceOffering.State.Active, ServiceOffering.State.Inactive));
         }
 
         if (vmId != null) {

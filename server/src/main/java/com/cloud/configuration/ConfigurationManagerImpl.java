@@ -55,6 +55,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.host.HostTagVO;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.vm.VMInstanceVO;
 import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -4324,8 +4325,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
-        offering.setState(DiskOffering.State.Inactive);
-        if (_diskOfferingDao.update(offering.getId(), offering)) {
+        List<VolumeVO> volumesUsingOffering = _volumeDao.findByDiskOfferingId(diskOfferingId);
+        if (!volumesUsingOffering.isEmpty()) {
+            throw new InvalidParameterValueException(String.format("Unable to delete disk offering: %s [%s] because there are volumes using it", offering.getUuid(), offering.getName()));
+        }
+        if (_diskOfferingDao.remove(offering.getId())) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
         } else {
@@ -4397,15 +4401,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete service offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        List<VMInstanceVO> vmsUsingOffering = _vmInstanceDao.listByOfferingId(offeringId);
+        if (!vmsUsingOffering.isEmpty()) {
+            throw new CloudRuntimeException(String.format("Unable to delete service offering %s as it is in use", offering.getUuid()));
+        }
         annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
         if (diskOffering.isComputeOnly()) {
-            diskOffering.setState(DiskOffering.State.Inactive);
-            if (!_diskOfferingDao.update(diskOffering.getId(), diskOffering)) {
+            if (!_diskOfferingDao.remove(diskOffering.getId())) {
                 throw new CloudRuntimeException(String.format("Unable to delete disk offering %s mapped to the service offering %s", diskOffering.getUuid(), offering.getUuid()));
             }
         }
-        offering.setState(ServiceOffering.State.Inactive);
-        if (_serviceOfferingDao.update(offeringId, offering)) {
+        if (_serviceOfferingDao.remove(offeringId)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
         } else {

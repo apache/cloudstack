@@ -170,4 +170,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
              List<Long> skippedVmIds);
 
     Pair<List<VMInstanceVO>, Integer> listByVmsNotInClusterUsingPool(long clusterId, long poolId);
+
+    List<VMInstanceVO> listByOfferingId(long offeringId);
 }

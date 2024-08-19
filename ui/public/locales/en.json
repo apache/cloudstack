@@ -93,6 +93,7 @@
 "label.action.delete.primary.storage": "Delete primary storage",
 "label.action.delete.secondary.storage": "Delete secondary storage",
 "label.action.delete.security.group": "Delete security group",
+"label.action.delete.service.offering": "Delete compute offering",
 "label.action.delete.snapshot": "Delete Snapshot",
 "label.action.delete.template": "Delete Template",
 "label.action.delete.tungsten.router.table": "Remove Tungsten Fabric route table from Network",
