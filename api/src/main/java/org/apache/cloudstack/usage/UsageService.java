@@ -20,7 +20,6 @@ import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
-import org.apache.cloudstack.api.response.UsageTypeResponse;
 
 import java.util.List;
 import java.util.TimeZone;
@@ -62,6 +61,4 @@ public interface UsageService {
     TimeZone getUsageTimezone();
 
     boolean removeRawUsageRecords(RemoveRawUsageRecordsCmd cmd);
-
-    List<UsageTypeResponse> listUsageTypes();
 }

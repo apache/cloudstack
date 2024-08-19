@@ -423,7 +423,7 @@
           @update-selected-columns="updateSelectedColumns"
           @selection-change="onRowSelectionChange"
           @refresh="fetchData"
-          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        />
         <a-pagination
           class="row-element"
           style="margin-top: 10px"
@@ -699,7 +699,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -958,6 +958,11 @@ export default {
 
       if (this.$showIcon()) {
         params.showIcon = true
+      }
+
+      const customParamHandler = this.$route.meta.customParamHandler
+      if (customParamHandler && typeof customParamHandler === 'function') {
+        params = customParamHandler(params, this.$route.query)
       }
 
       if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',
