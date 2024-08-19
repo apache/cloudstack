@@ -1447,13 +1447,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyword != null) {
-            userVmSearchBuilder.and().op("keywordDisplayName", userVmSearchBuilder.entity().getDisplayName(), Op.LIKE);
-            userVmSearchBuilder.or("keywordName", userVmSearchBuilder.entity().getHostName(), Op.LIKE);
-            userVmSearchBuilder.or("keywordState", userVmSearchBuilder.entity().getState(), Op.EQ);
+            SearchBuilder<UserVmJoinVO> userVmJoinSearchBuilder = _userVmJoinDao.createSearchBuilder();
+            userVmJoinSearchBuilder.and().op("keywordDisplayName", userVmJoinSearchBuilder.entity().getDisplayName(), Op.LIKE);
+            userVmJoinSearchBuilder.or("keywordName", userVmJoinSearchBuilder.entity().getHostName(), Op.LIKE);
+            userVmJoinSearchBuilder.or("keywordState", userVmJoinSearchBuilder.entity().getState(), Op.EQ);
+            userVmJoinSearchBuilder.or("keywordIpAddress", userVmJoinSearchBuilder.entity().getIpAddress(), Op.LIKE);
+            userVmJoinSearchBuilder.or("keywordPublicIpAddress", userVmJoinSearchBuilder.entity().getPublicIpAddress(), Op.LIKE);
+            userVmJoinSearchBuilder.or("keywordIp6Address", userVmJoinSearchBuilder.entity().getIp6Address(), Op.LIKE);
             if (isRootAdmin) {
-                userVmSearchBuilder.or("keywordInstanceName", userVmSearchBuilder.entity().getInstanceName(), Op.LIKE );
+                userVmJoinSearchBuilder.or("keywordInstanceName", userVmJoinSearchBuilder.entity().getInstanceName(), Op.LIKE );
             }
-            userVmSearchBuilder.cp();
+            userVmJoinSearchBuilder.cp();
+            userVmSearchBuilder.join("keyword", userVmJoinSearchBuilder, userVmJoinSearchBuilder.entity().getId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if (backupOfferingId != null) {
@@ -1543,11 +1548,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
-            userVmSearchCriteria.setParameters("keywordDisplayName", keywordMatch);
-            userVmSearchCriteria.setParameters("keywordName", keywordMatch);
-            userVmSearchCriteria.setParameters("keywordState", keyword);
+            userVmSearchCriteria.setJoinParameters("keyword","keywordDisplayName", keywordMatch);
+            userVmSearchCriteria.setJoinParameters("keyword","keywordName", keywordMatch);
+            userVmSearchCriteria.setJoinParameters("keyword","keywordState", keywordMatch);
+            userVmSearchCriteria.setJoinParameters("keyword","keywordIpAddress", keywordMatch);
+            userVmSearchCriteria.setJoinParameters("keyword","keywordPublicIpAddress", keywordMatch);
+            userVmSearchCriteria.setJoinParameters("keyword", "keywordIp6Address", keywordMatch);
             if (isRootAdmin) {
-                userVmSearchCriteria.setParameters("keywordInstanceName", keywordMatch);
+                userVmSearchCriteria.setJoinParameters("keyword", "keywordInstanceName", keywordMatch);
             }
         }
 
