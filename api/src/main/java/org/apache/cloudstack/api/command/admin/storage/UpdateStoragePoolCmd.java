@@ -147,7 +147,22 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        StoragePool result = _storageService.updateStoragePool(this);
+        StoragePool result = null;
+        if (name != null ||
+                (tags != null && !tags.isEmpty()) ||
+                capacityIops != null ||
+                capacityBytes != null ||
+                (details != null && !details.isEmpty()) ||
+                url != null ||
+                isTagARule != null) {
+            result = _storageService.updateStoragePool(this);
+        }
+
+        if (enabled != null) {
+            result = enabled ? _storageService.enablePrimaryStoragePool(id)
+                    : _storageService.disablePrimaryStoragePool(id);
+        }
+
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());
