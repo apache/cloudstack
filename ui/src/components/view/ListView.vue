@@ -242,7 +242,16 @@
         </a>
       </template>
       <template v-if="column.key === 'guestnetworkname'">
-        <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+        <span v-if="['/router'].includes($route.path) && record.vpcid">
+          <router-link :to="{ path: '/vpc/' + record.vpcid }">
+            <deployment-unit-outlined/>
+            {{ record.vpcname || record.vpcid }}
+          </router-link>
+        </span>
+        <router-link v-else :to="{ path: '/guestnetwork/' + record.guestnetworkid }">
+          <apartment-outlined/>
+          {{ text }}
+        </router-link>
       </template>
       <template v-if="column.key === 'associatednetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
