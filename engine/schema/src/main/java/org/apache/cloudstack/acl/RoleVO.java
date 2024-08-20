@@ -58,6 +58,10 @@ public class RoleVO implements Role {
     @Column(name = "public_role")
     private boolean publicRole = true;
 
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private State state;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -130,5 +134,13 @@ public class RoleVO implements Role {
 
     public void setPublicRole(boolean publicRole) {
         this.publicRole = publicRole;
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

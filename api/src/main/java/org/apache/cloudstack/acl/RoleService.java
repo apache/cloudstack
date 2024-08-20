@@ -54,6 +54,10 @@ public interface RoleService {
 
     boolean deleteRole(Role role);
 
+    boolean enableRole(Role role);
+
+    boolean disableRole(Role role);
+
     RolePermission findRolePermission(Long id);
 
     RolePermission findRolePermissionByRoleIdAndRule(Long roleId, String rule);

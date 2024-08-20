@@ -36,6 +36,8 @@ import org.apache.cloudstack.api.command.admin.acl.CreateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.CreateRolePermissionCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRolePermissionCmd;
+import org.apache.cloudstack.api.command.admin.acl.DisableRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.EnableRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ImportRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
@@ -349,6 +351,36 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         throw new PermissionDeniedException("Found accounts that have role in use, won't allow to delete role");
     }
 
+    protected boolean updateRoleState(Role role, Role.State state) {
+        checkCallerAccess();
+        if (role == null) {
+            return false;
+        }
+        if (role.getState().equals(state)) {
+            throw new PermissionDeniedException(String.format("Role is already %s", state));
+        }
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                RoleVO roleVO = roleDao.findById(role.getId());
+                roleVO.setState(state);
+                return roleDao.update(role.getId(), roleVO);
+            }
+        });
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_ENABLE, eventDescription = "enabling Role")
+    public boolean enableRole(Role role) {
+        return updateRoleState(role, Role.State.ENABLED);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_DISABLE, eventDescription = "disabling Role")
+    public boolean disableRole(Role role) {
+        return updateRoleState(role, Role.State.DISABLED);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_CREATE, eventDescription = "creating Role Permission")
     public RolePermission createRolePermission(final Role role, final Rule rule, final Permission permission, final String description) {
@@ -577,6 +609,8 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         cmdList.add(ListRolePermissionsCmd.class);
         cmdList.add(UpdateRolePermissionCmd.class);
         cmdList.add(DeleteRolePermissionCmd.class);
+        cmdList.add(EnableRoleCmd.class);
+        cmdList.add(DisableRoleCmd.class);
         return cmdList;
     }
 }
