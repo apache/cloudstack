@@ -50,6 +50,7 @@ import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
+import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
 
 public class LinstorStorageAdaptor implements StorageAdaptor {
@@ -453,6 +454,40 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
+    /**
+     * Checks if all diskful resource are on a zeroed block device.
+     * @param destPool Linstor pool to use
+     * @param resName Linstor resource name
+     * @return true if all resources are on a provider with zeroed blocks.
+     */
+    private boolean resourceSupportZeroBlocks(KVMStoragePool destPool, String resName) {
+        final DevelopersApi api = getLinstorAPI(destPool);
+
+        try {
+            List<ResourceWithVolumes> resWithVols = api.viewResources(
+                    Collections.emptyList(),
+                    Collections.singletonList(resName),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null);
+
+            if (resWithVols != null) {
+                return resWithVols.stream()
+                        .allMatch(res -> {
+                            Volume vol0 = res.getVolumes().get(0);
+                            return vol0 != null && (vol0.getProviderKind() == ProviderKind.LVM_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS ||
+                                    vol0.getProviderKind() == ProviderKind.ZFS_THIN ||
+                                    vol0.getProviderKind() == ProviderKind.DISKLESS);
+                        } );
+            }
+        } catch (ApiException apiExc) {
+            s_logger.error(apiExc.getMessage());
+        }
+        return false;
+    }
+
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
@@ -470,8 +505,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
+        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, LinstorUtil.RSC_PREFIX + name);
+
         try {
-            final QemuImg qemu = new QemuImg(timeout);
+            final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);
         } catch (QemuImgException | LibvirtException e) {
             logger.error(e);
