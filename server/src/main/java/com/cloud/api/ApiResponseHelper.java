@@ -659,6 +659,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            snapshotResponse.setVolumeState(volume.getState().name());
             snapshotResponse.setVirtualSize(volume.getSize());
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
@@ -1439,7 +1440,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public StoragePoolResponse createStoragePoolResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(false, viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
     }
@@ -1511,7 +1512,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
-            clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+            clusterResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

@@ -118,7 +118,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.disk.wait",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently supported for PowerFlex only.",
             true,
             ConfigKey.Scope.StoragePool,
             null);
@@ -127,7 +127,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.timeout",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the API client connection timeout of storage pool (for managed pools). Currently supported for PowerFlex only.",
             false,
             ConfigKey.Scope.StoragePool,
             null);
@@ -136,8 +136,17 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.max.connections",
             "Storage",
             "100",
-            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            "Maximum connections for the API client of storage pool (for managed pools). Currently supported for PowerFlex only.",
             false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CONNECTED_CLIENTS_LIMIT = new ConfigKey<>(Integer.class,
+            "storage.pool.connected.clients.limit",
+            "Storage",
+            "-1",
+            "Maximum connected storage pool clients supported for the storage (for managed pools), <= 0 for unlimited (default: -1). Currently supported for PowerFlex only.",
+            true,
             ConfigKey.Scope.StoragePool,
             null);
 
@@ -252,6 +261,10 @@ public interface StorageManager extends StorageService {
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
+    boolean poolProvidesCustomStorageStats(StoragePool pool);
+
+    Map<String, String> getCustomStorageStats(StoragePool pool);
+
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -285,6 +298,8 @@ public interface StorageManager extends StorageService {
     List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
     Host getHost(long hostId);
 

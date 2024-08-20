@@ -1612,6 +1612,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new CloudRuntimeException("Could not find network associated with public IP.");
+        }
+
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.getGuestType() != GuestType.Isolated) {
             return true;

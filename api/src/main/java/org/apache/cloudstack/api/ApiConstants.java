@@ -439,6 +439,7 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -575,6 +576,7 @@ public class ApiConstants {
     public static final String AGGREGATE_NAME = "aggregatename";
     public static final String POOL_NAME = "poolname";
     public static final String VOLUME_NAME = "volumename";
+    public static final String VOLUME_STATE = "volumestate";
     public static final String SNAPSHOT_POLICY = "snapshotpolicy";
     public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
     public static final String IP_NETWORK_LIST = "iptonetworklist";

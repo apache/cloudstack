@@ -54,6 +54,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -257,6 +258,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
@@ -411,6 +413,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     private long _serverId;
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
+
+    private final Set<HypervisorType> zoneWidePoolSupportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
+            HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
 
     private static final String NFS_MOUNT_OPTIONS_INCORRECT = "An incorrect mount option was specified";
 
@@ -571,6 +576,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canProvideStorageStats();
+    }
+
+    @Override
+    public boolean poolProvidesCustomStorageStats(StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).poolProvidesCustomStorageStats();
+    }
+
+    @Override
+    public Map<String, String> getCustomStorageStats(StoragePool pool) {
+        if (pool == null) {
+            return null;
+        }
+
+        if (!pool.isManaged()) {
+            return null;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            return ((PrimaryDataStoreDriver)storeDriver).getCustomStorageStats(pool);
+        }
+        return null;
     }
 
     @Override
@@ -942,9 +972,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
 
-            Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
-                    HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
-            if (!supportedHypervisorTypes.contains(hypervisorType)) {
+            if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
                 throw new InvalidParameterValueException("Zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         } else {
@@ -1222,6 +1250,115 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+    private void changeStoragePoolScopeToZone(StoragePoolVO primaryStorage) {
+        /*
+         * For cluster wide primary storage the hypervisor type might not be set.
+         * So, get it from the clusterVO.
+         */
+        Long clusterId = primaryStorage.getClusterId();
+        ClusterVO clusterVO = _clusterDao.findById(clusterId);
+        HypervisorType hypervisorType = clusterVO.getHypervisorType();
+        if (!zoneWidePoolSupportedHypervisorTypes.contains(hypervisorType)) {
+            throw new InvalidParameterValueException("Primary storage scope change to Zone is not supported for hypervisor type " + hypervisorType);
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
+
+        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(primaryStorage.getId());
+        ClusterScope clusterScope = new ClusterScope(primaryStorage.getClusterId(), null, primaryStorage.getDataCenterId());
+
+        lifeCycle.changeStoragePoolScopeToZone(primaryStore, clusterScope, hypervisorType);
+    }
+
+    private void changeStoragePoolScopeToCluster(StoragePoolVO primaryStorage, Long clusterId) {
+        if (clusterId == null) {
+            throw new InvalidParameterValueException("Cluster ID not provided");
+        }
+        ClusterVO clusterVO = _clusterDao.findById(clusterId);
+        if (clusterVO == null) {
+            throw new InvalidParameterValueException("Unable to find cluster by id " + clusterId);
+        }
+        if (clusterVO.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
+            throw new PermissionDeniedException("Cannot perform this operation, Cluster is currently disabled: " + clusterId);
+        }
+
+        List<VirtualMachine.State> states = Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);
+
+        Long id = primaryStorage.getId();
+        Pair<List<VMInstanceVO>, Integer> vmsNotInClusterUsingPool = _vmInstanceDao.listByVmsNotInClusterUsingPool(clusterId, id);
+        if (vmsNotInClusterUsingPool.second() != 0) {
+            throw new CloudRuntimeException(String.format("Cannot change scope of the storage pool [%s] to cluster [%s] " +
+                    "as there are %s VMs with volumes in this pool that are running on other clusters. " +
+                    "All such User VMs must be stopped and System VMs must be destroyed before proceeding. " +
+                    "Please use the API listAffectedVmsForStorageScopeChange to get the list.",
+                    primaryStorage.getName(), clusterVO.getName(), vmsNotInClusterUsingPool.second()));
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
+        PrimaryDataStoreLifeCycle lifeCycle = (PrimaryDataStoreLifeCycle) storeProvider.getDataStoreLifeCycle();
+
+        DataStore primaryStore = _dataStoreMgr.getPrimaryDataStore(id);
+        ClusterScope clusterScope = new ClusterScope(clusterId, clusterVO.getPodId(), primaryStorage.getDataCenterId());
+
+        lifeCycle.changeStoragePoolScopeToCluster(primaryStore, clusterScope, primaryStorage.getHypervisor());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CHANGE_STORAGE_POOL_SCOPE, eventDescription = "changing storage pool scope")
+    public void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
+        Long id = cmd.getId();
+
+        Long accountId = cmd.getEntityOwnerId();
+        if (!_accountMgr.isRootAdmin(accountId)) {
+            throw new PermissionDeniedException("Only root admin can perform this operation");
+        }
+
+        ScopeType newScope = EnumUtils.getEnumIgnoreCase(ScopeType.class, cmd.getScope());
+        if (newScope != ScopeType.ZONE && newScope != ScopeType.CLUSTER) {
+            throw new InvalidParameterValueException("Invalid scope " + cmd.getScope() + "for Primary storage");
+        }
+
+        StoragePoolVO primaryStorage = _storagePoolDao.findById(id);
+        if (primaryStorage == null) {
+            throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
+        }
+
+        String eventDetails = String.format(" Storage pool Id: %s to %s",primaryStorage.getUuid(), newScope);
+        CallContext.current().setEventDetails(eventDetails);
+
+        ScopeType currentScope = primaryStorage.getScope();
+        if (currentScope.equals(newScope)) {
+            throw new InvalidParameterValueException("New scope must be different than the current scope");
+        }
+
+        if (currentScope != ScopeType.ZONE && currentScope != ScopeType.CLUSTER) {
+            throw new InvalidParameterValueException("This operation is supported only for Primary storages having scope "
+                    + ScopeType.CLUSTER + " or " + ScopeType.ZONE);
+        }
+
+        if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
+            throw new InvalidParameterValueException("Scope of the Primary storage with id "
+                    + primaryStorage.getUuid() +
+                    " cannot be changed, as it is not in the Disabled state");
+        }
+
+        Long zoneId = primaryStorage.getDataCenterId();
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
+        }
+        if (zone.getAllocationState().equals(Grouping.AllocationState.Disabled)) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+        }
+
+        if (newScope.equals(ScopeType.ZONE)) {
+            changeStoragePoolScopeToZone(primaryStorage);
+        } else {
+            changeStoragePoolScopeToCluster(primaryStorage, cmd.getClusterId());
+        }
     }
 
     @Override
@@ -2650,6 +2787,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
+        if (host == null || pool == null || !pool.isManaged()) {
+            return false;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canHostPrepareStoragePoolAccess(host, pool);
+    }
+
+    @Override
     @DB
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);
@@ -3824,6 +3972,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_DISK_WAIT,
                 STORAGE_POOL_CLIENT_TIMEOUT,
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
+                STORAGE_POOL_CONNECTED_CLIENTS_LIMIT,
                 STORAGE_POOL_IO_POLICY,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,

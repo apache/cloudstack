@@ -97,6 +97,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "total min IOPS currently in use by volumes")
     private Long allocatedIops;
 
+    @SerializedName(ApiConstants.STORAGE_CUSTOM_STATS)
+    @Param(description = "the storage pool custom stats", since = "4.18.1")
+    private Map<String, String> customStats;
+
     @SerializedName("tags")
     @Param(description = "the tags for the storage pool")
     private String tags;
@@ -304,6 +308,14 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
        this.allocatedIops = allocatedIops;
     }
 
+    public Map<String, String> getCustomStats() {
+        return customStats;
+    }
+
+    public void setCustomStats(Map<String, String> customStats) {
+        this.customStats = customStats;
+    }
+
     public String getTags() {
         return tags;
     }
@@ -358,5 +370,17 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setNfsMountOpts(String nfsMountOpts) {
         this.nfsMountOpts = nfsMountOpts;
+    }
+
+    public Long getAllocatedIops() {
+        return allocatedIops;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
     }
 }
