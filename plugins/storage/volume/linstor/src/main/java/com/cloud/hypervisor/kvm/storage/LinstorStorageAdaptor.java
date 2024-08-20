@@ -483,7 +483,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                         } );
             }
         } catch (ApiException apiExc) {
-            s_logger.error(apiExc.getMessage());
+            logger.error(apiExc.getMessage());
         }
         return false;
     }
