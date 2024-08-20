@@ -538,12 +538,16 @@ export default {
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkOfferings', {
+      const params = {
         forvpc: true,
         guestiptype: 'Isolated',
-        supportedServices: 'SourceNat',
         state: 'Enabled'
-      }).then(json => {
+      }
+      params.supportedServices = 'SourceNat'
+      if (this.resource.service.map(svc => { return svc.name }).indexOf('Lb') > -1) {
+        params.supportedServices += ',Lb'
+      }
+      api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
         if (this.publicLBExists) {
