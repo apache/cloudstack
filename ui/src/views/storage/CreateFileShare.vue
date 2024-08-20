@@ -304,6 +304,7 @@ export default {
       api('listZones', params).then(json => {
         var listZones = json.listzonesresponse.zone
         if (listZones) {
+          this.zones = []
           listZones = listZones.filter(x => (x.allocationstate === 'Enabled' && x.networktype === 'Advanced' && x.securitygroupsenabled === false))
           this.zones = this.zones.concat(listZones)
         }

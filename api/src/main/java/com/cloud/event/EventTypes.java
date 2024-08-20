@@ -745,7 +745,7 @@ public class EventTypes {
     public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
     public static final String EVENT_FILESHARE_START = "FILESHARE.START";
     public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
-    public static final String EVENT_FILESHARE_CHANGE_SVC_OFFERING = "FILESHARE.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_FILESHARE_CHANGE_SVC_OFFERING = "FILESHARE.CHANGE.SVC.OFFERING";
     public static final String EVENT_FILESHARE_CHANGE_DISK_OFFERING = "FILESHARE.CHANGE.DISK.OFFERING";
     public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
     public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
