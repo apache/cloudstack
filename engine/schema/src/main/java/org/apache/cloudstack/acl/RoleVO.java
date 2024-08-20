@@ -67,6 +67,7 @@ public class RoleVO implements Role {
 
     public RoleVO() {
         this.uuid = UUID.randomUUID().toString();
+        this.state = State.ENABLED;
     }
 
     public RoleVO(final String name, final RoleType roleType, final String description) {

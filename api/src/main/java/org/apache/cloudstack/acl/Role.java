@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.acl;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -29,10 +28,6 @@ public interface Role extends RoleEntity, InternalIdentity, Identity {
         @Override
         public String toString(){
             return super.toString().toLowerCase();
-        }
-
-        public static Account.State getValueOf(String name){
-            return Account.State.valueOf(name.toUpperCase());
         }
     }
 

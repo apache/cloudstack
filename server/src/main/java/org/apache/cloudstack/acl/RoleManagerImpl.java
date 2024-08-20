@@ -433,13 +433,13 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        return findRolesByName(name, null, null, null).first();
+        return findRolesByName(name, null, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
+    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, String state, Long startIndex, Long limit) {
         if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
-            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit, isCallerRootAdmin());
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, state, startIndex, limit, isCallerRootAdmin());
             int removed = removeRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
@@ -536,15 +536,15 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByType(RoleType roleType) {
-        return findRolesByType(roleType, null, null).first();
+        return findRolesByType(roleType, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit) {
+    public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, String state, Long startIndex, Long limit) {
         if (roleType == null || RoleType.Admin == roleType && !isCallerRootAdmin()) {
             return new Pair<List<Role>, Integer>(Collections.emptyList(), 0);
         }
-        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, startIndex, limit, isCallerRootAdmin());
+        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, state, startIndex, limit, isCallerRootAdmin());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second()));
     }
 
@@ -556,8 +556,8 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit) {
-        Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(startIndex, limit, isCallerRootAdmin());
+    public Pair<List<Role>, Integer> listRoles(String state, Long startIndex, Long limit) {
+        Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(state, startIndex, limit, isCallerRootAdmin());
         int removed = removeRolesIfNeeded(data.first());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
     }
