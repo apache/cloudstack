@@ -156,6 +156,16 @@
       </template>
       <template v-if="column.key === 'publicip'">
         <router-link v-if="['/autoscalevmgroup'].includes($route.path)" :to="{ path: '/publicip' + '/' + record.publicipid }">{{ text }}</router-link>
+        <span v-else-if="['/router'].includes($route.path)">
+          <div
+          v-for="(eth) in record.nic"
+          :key="eth.id">
+          <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
+          <a-tag v-if="eth.isdefault">
+            {{ $t('label.default') }}
+          </a-tag ><br/>
+        </div>
+        </span>
         <router-link v-else :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'traffictype'">
@@ -242,7 +252,12 @@
         </a>
       </template>
       <template v-if="column.key === 'guestnetworkname'">
-        <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+        <span v-if="['/router'].includes($route.path) && record.vpcid">
+          <template v-for="(item, idx) in record.nic.filter(x => x.traffictype === 'Guest' && x.type === 'Isolated')" :key="idx">
+            <router-link :to="{ path: '/guestnetwork/' + item.networkid }">{{ item.networkname }}</router-link><br/>
+          </template>
+        </span>
+        <router-link v-else :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'associatednetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
