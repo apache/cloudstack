@@ -3547,8 +3547,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (state != null) {
             sc.setParameters("state", state);
-        } else {
-            sc.setParameters("state", Arrays.asList(ServiceOffering.State.Active, ServiceOffering.State.Inactive));
         }
 
         if (keyword != null) {
@@ -4044,8 +4042,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
         if (state != null) {
             sc.setParameters("state", state);
-        } else {
-            sc.setParameters("state", Arrays.asList(ServiceOffering.State.Active, ServiceOffering.State.Inactive));
         }
 
         if (vmId != null) {

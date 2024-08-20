@@ -329,7 +329,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         ServiceOfferingSearch = createSearchBuilder();
         ServiceOfferingSearch.and("serviceOfferingId", ServiceOfferingSearch.entity().getServiceOfferingId(), Op.EQ);
-        BackupSearch.done();
+        ServiceOfferingSearch.done();
     }
 
     @Override

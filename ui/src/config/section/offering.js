@@ -158,7 +158,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
-      params: { issystem: 'true', isrecursive: 'true' },
+      params: { issystem: 'true', isrecursive: 'true', state: 'all' },
       columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
@@ -253,9 +253,9 @@ export default {
       permission: ['listDiskOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'storageid'],
       params: () => {
-        var params = {}
+        var params = { state: 'all' }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          params.isrecursive = 'true'
         }
         return params
       },
