@@ -1364,7 +1364,7 @@ export default {
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],
-      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename'],
+      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename', 'guest.networks'],
       details: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'isdedicated', 'zonename'],
       searchFilters: ['zoneid'],
       tabs: [{

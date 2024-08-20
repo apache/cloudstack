@@ -240,6 +240,12 @@
       <template v-if="column.key === 'guestnetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
       </template>
+      <template v-if="column.key === 'guest.networks' && record.network">
+        <template v-for="(item, idx) in record.network" :key="idx">
+          <router-link :to="{ path: '/guestnetwork/' + item.id }">{{ item.name }}</router-link>
+          <span v-if="idx < (record.network.length - 1)">, </span>
+        </template>
+      </template>
       <template v-if="column.key === 'associatednetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
       </template>
