@@ -554,7 +554,7 @@ class CsIP:
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
-                                (self.dev, self.address['public_ip'])])
+                                (self.address['device'], self.address['public_ip'])])
             if self.get_gateway() == self.get_ip_address():
                 for inf, addresses in self.config.address().dbag.iteritems():
                     if not inf.startswith("eth"):
