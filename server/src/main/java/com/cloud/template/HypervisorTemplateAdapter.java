@@ -35,12 +35,14 @@ import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -357,6 +359,16 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 if (template == null) {
                     throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
+                }
+
+                // Set Event Details for Template/ISO Upload
+                String eventType = template.getFormat().equals(ImageFormat.ISO) ? "Iso" : "Template";
+                String eventResourceId = template.getUuid();
+                CallContext.current().setEventDetails(String.format("%s Id: %s", eventType, eventResourceId));
+                CallContext.current().putContextParameter(eventType.equals("Iso") ? eventType : VirtualMachineTemplate.class, eventResourceId);
+                if (template.getFormat().equals(ImageFormat.ISO)) {
+                    CallContext.current().setEventResourceType(ApiCommandResourceType.Iso);
+                    CallContext.current().setEventResourceId(template.getId());
                 }
 
                 if (profile.getZoneIdList() != null && profile.getZoneIdList().size() > 1)
