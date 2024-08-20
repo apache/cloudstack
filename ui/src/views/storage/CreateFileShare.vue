@@ -62,34 +62,20 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="provider" name="provider">
+      <a-form-item ref="format" name="format">
         <template #label>
-          <tooltip-label :title="$t('label.provider')" :tooltip="apiParams.provider.description"/>
+          <tooltip-label :title="$t('label.filesystem.format')" :tooltip="apiParams.format.description"/>
         </template>
         <a-select
-          v-model:value="form.provider"
-          :loading="providersLoading"
+          v-model:value="form.format"
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option
-            v-for="(provider, index) in providers"
-            :value="provider.name"
-            :key="index"
-            :label="provider.name">
-          </a-select-option>
+          <a-select-option value="XFS" label="XFS">XFS</a-select-option>
+          <a-select-option value="EXT4" label="EXT4">EXT4</a-select-option>
         </a-select>
-      </a-form-item>
-      <a-form-item
-        name="format"
-        ref="format"
-        :placeholder="apiParams.format.description" >
-        <a-input v-model:value="form.format" />
-        <template #label>
-          <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
-        </template>
       </a-form-item>
       <a-form-item ref="networkid" name="networkid">
         <template #label>

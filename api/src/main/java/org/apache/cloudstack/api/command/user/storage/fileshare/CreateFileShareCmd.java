@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.fileshare.FileShareProvider;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 @APICommand(name = "createFileShare",
@@ -134,12 +135,12 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.FORMAT,
             type = CommandType.STRING,
+            required = true,
             description = "the filesystem format (XFS / EXT4) which will be installed on the file share.")
     private String fsFormat;
 
     @Parameter(name = ApiConstants.PROVIDER,
             type = CommandType.STRING,
-            required = true,
             description = "the provider to be used for the file share. The list of providers can be fetched by using the listFileShareProviders API.")
     private String fileShareProviderName;
 
@@ -207,7 +208,11 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public String getFileShareProviderName() {
-        return fileShareProviderName;
+        if (fileShareProviderName != null) {
+            return fileShareProviderName;
+        } else {
+            return FileShareProvider.FileShareProviderType.STORAGEFSVM.toString();
+        }
     }
 
     /////////////////////////////////////////////////////
