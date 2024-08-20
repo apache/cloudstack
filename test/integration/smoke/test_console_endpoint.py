@@ -69,8 +69,8 @@ class TestConsoleEndpoint(cloudstackTestCase):
         )
 
         cls._cleanup = [
-            cls.service_offering,
             cls.vm1,
+            cls.service_offering,
             cls.account
         ]
         return

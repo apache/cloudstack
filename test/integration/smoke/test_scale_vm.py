@@ -211,7 +211,6 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"]
         )
-        self.cleanup.append(self.virtual_machine)
 
         # If hypervisor is Vmware, then check if
         # the vmware tools are installed and the process is running
@@ -259,6 +258,7 @@ class TestScaleVm(cloudstackTestCase):
                 offering_data
             )
             self.cleanup.append(self.bigger_offering)
+            self.cleanup.append(self.virtual_machine)
         else:
             self.bigger_offering = self.big_offering
 
@@ -599,7 +599,7 @@ class TestScaleVm(cloudstackTestCase):
             self.cleanup.append(self.bigger_offering)
         else:
             self.bigger_offering = self.big_offering
-
+        self.cleanup.append(self.virtual_machine_in_user_account)
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine_in_user_account.id,
             self.bigger_offering.id,
@@ -694,7 +694,7 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.ServiceOffering1WithDiskOffering1.id,
             mode=self.services["mode"]
         )
-
+        self._cleanup.append(self.virtual_machine_test)
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_test.get_ssh_client()
             result = str(

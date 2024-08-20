@@ -116,6 +116,7 @@ class TestDeployVM(cloudstackTestCase):
         )
 
         cls.cleanup = [
+            cls.virtual_machine,
             cls.service_offering,
             cls.account
         ]

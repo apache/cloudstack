@@ -431,6 +431,7 @@ class TestServiceOfferings(cloudstackTestCase):
             mode=cls.services["mode"]
         )
         cls._cleanup = [
+            cls.medium_virtual_machine,
             cls.small_offering,
             cls.medium_offering,
             cls.account

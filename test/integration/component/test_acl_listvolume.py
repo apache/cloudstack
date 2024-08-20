@@ -340,8 +340,19 @@ class TestVolumeList(cloudstackTestCase):
             cls.vm_a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_a.id)
 
             cls.cleanup = [
+                cls.vm_d1,
+                cls.vm_d1a,
+                cls.vm_d1b,
+                cls.vm_d11,
+                cls.vm_d11a,
+                cls.vm_d11b,
+                cls.vm_d111a,
+                cls.vm_d12a,
+                cls.vm_d12b,
+                cls.vm_d2,
+                cls.vm_a
                 cls.account_a,
-                cls.service_offering,
+                cls.service_offering
             ]
         except Exception as e:
             cls.domain_2.delete(cls.apiclient, cleanup="true")

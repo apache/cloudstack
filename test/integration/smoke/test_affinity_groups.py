@@ -88,6 +88,10 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         ]
         return
 
+    def setUp(self):
+            self.apiclient = self.testClient.getApiClient()
+            self.cleanup = []
+
     @attr(tags=["basic", "advanced", "multihost"], required_hardware="false")
     def test_DeployVmAntiAffinityGroup(self):
         """
@@ -106,6 +110,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
+
+        self.cleanup.append(vm1)
 
         list_vm1 = list_virtual_machines(
             self.apiclient,
@@ -139,6 +145,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
+
+        self.cleanup.append(vm2)
         list_vm2 = list_virtual_machines(
             self.apiclient,
             id=vm2.id
@@ -183,6 +191,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             affinitygroupnames=[self.affinity.name]
         )
 
+        self.cleanup.append(vm1)
         list_vm1 = list_virtual_machines(
             self.apiclient,
             id=vm1.id
@@ -215,6 +224,8 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.affinity.name]
         )
+
+        self.cleanup.append(vm2)
         list_vm2 = list_virtual_machines(
             self.apiclient,
             id=vm2.id
@@ -239,6 +250,14 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
         self.assertEqual(host_of_vm1, host_of_vm2,
             msg="Both VMs of affinity group %s are on different hosts" % self.affinity.name)
+
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created instance, volumes and snapshots
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
 
     @classmethod
     def tearDownClass(cls):

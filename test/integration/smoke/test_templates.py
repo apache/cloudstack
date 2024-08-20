@@ -323,6 +323,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+            cls._cleanup(cls.virtual_machine)
             #Stop virtual machine
             cls.virtual_machine.stop(cls.apiclient)
 
@@ -560,6 +561,7 @@ class TestTemplates(cloudstackTestCase):
                                          domainid=cls.account.domainid
                                          )
         cls._cleanup = [
+                        cls.virtual_machine,
                         cls.service_offering,
                         cls.disk_offering,
                         cls.account,

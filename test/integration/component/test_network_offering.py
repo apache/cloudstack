@@ -1449,7 +1449,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
 
         self.debug("Deploying VM in account: %s on the network %s" % (self.account.name, self.network.id))
         # Spawn an instance in that network
-        VirtualMachine.create(
+        self.vm1 = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             accountid=self.account.name,
@@ -1457,6 +1457,8 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(self.network.id)]
         )
+        self.cleanup.append(self.vm1)
+        self.cleanup.append(self.network)
         self.debug("Deployed VM in network: %s" % self.network.id)
 
         src_nat_list = PublicIPAddress.list(

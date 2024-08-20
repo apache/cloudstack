@@ -62,7 +62,7 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
                                        mode=cls.services["mode"])
-        cls._cleanup = [cls.offering, cls.account]
+        cls._cleanup = [cls.vm, cls.offering, cls.account]
 
         # Import a dummy backup offering to use on tests
 

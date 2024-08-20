@@ -543,7 +543,7 @@ class TestVolumeUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        cls._cleanup.append(cls.service_offering)
+
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -552,6 +552,8 @@ class TestVolumeUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
+        cls._cleanup.append(cls.service_offering)
         return
 
     @classmethod
@@ -842,7 +844,6 @@ class TestTemplateUsage(cloudstackTestCase):
                 cls.api_client,
                 cls.services["service_offering"]
             )
-            cls._cleanup.append(cls.service_offering)
             # create virtual machine
             cls.virtual_machine = VirtualMachine.create(
                 cls.api_client,
@@ -853,6 +854,8 @@ class TestTemplateUsage(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 mode=cls.services["mode"]
             )
+            cls._cleanup.append(cls.virtual_machine)
+            cls._cleanup.append(cls.service_offering)
 
             # Stop virtual machine
             cls.virtual_machine.stop(cls.api_client)
@@ -1190,6 +1193,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             services=cls.services["server"]
         )
         cls._cleanup = [
+            cls.virtual_machine,
             cls.service_offering,
             cls.account,
         ]
@@ -1362,6 +1366,7 @@ class TestSnapshotUsage(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id
         )
         cls._cleanup = [
+            cls.virtual_machine,
             cls.service_offering,
             cls.account,
         ]
@@ -1555,6 +1560,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             services=cls.services["server"]
         )
         cls._cleanup = [
+            cls.virtual_machine,
             cls.service_offering,
             cls.account,
         ]

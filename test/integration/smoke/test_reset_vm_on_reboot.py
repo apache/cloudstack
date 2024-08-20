@@ -76,6 +76,7 @@ class TestResetVmOnReboot(cloudstackTestCase):
             mode=cls.services["mode"]
         )
         cls._cleanup = [
+            cls.virtual_machine
             cls.small_offering,
             cls.account
         ]

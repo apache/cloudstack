@@ -324,7 +324,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     self.apiclient,
                     self.services["service_offerings"]["tiny"]
                 )
-                self.cleanup.append(service_offering)
 
                 self.virtual_machine = VirtualMachine.create(
                     self.apiclient,
@@ -336,6 +335,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     serviceofferingid=service_offering.id
                 )
                 self.cleanup.append(self.virtual_machine)
+                self.cleanup.append(service_offering)
                 self.cleanup.append(account)
             finally:
                 # cancel maintenance
@@ -438,7 +438,6 @@ class TestStorageTags(cloudstackTestCase):
                 cls.services["service_offerings"]["tiny"],
                 tags=cls.services["storage_tags"]["a"]
             )
-            cls._cleanup.append(cls.service_offering_1)
             cls.service_offering_2 = ServiceOffering.create(
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"],
@@ -479,6 +478,8 @@ class TestStorageTags(cloudstackTestCase):
                 hypervisor=cls.hypervisor,
                 mode=cls.zone.networktype
             )
+            cls._cleanup.append(cls.virtual_machine_1)
+            cls._cleanup.append(cls.service_offering_1)
             # VM-1 not appended to _cleanup, it is expunged on tearDownClass before cleaning up resources
 
         return
