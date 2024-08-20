@@ -1167,6 +1167,7 @@
 "label.isdedicated": "Dedicated",
 "label.isdefault": "Is default",
 "label.isdynamicallyscalable": "Dynamically scalable",
+"label.isencrypted": "Encrypted",
 "label.istagarule": "Tag as JS rule",
 "label.isextractable": "Extractable",
 "label.isfeatured": "Featured",
