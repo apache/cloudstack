@@ -333,6 +333,7 @@ public class EventTypes {
     public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
     public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
+    public static final String EVENT_SNAPSHOT_EXTRACT = "SNAPSHOT.EXTRACT";
     public static final String EVENT_SNAPSHOT_POLICY_CREATE = "SNAPSHOTPOLICY.CREATE";
     public static final String EVENT_SNAPSHOT_POLICY_UPDATE = "SNAPSHOTPOLICY.UPDATE";
     public static final String EVENT_SNAPSHOT_POLICY_DELETE = "SNAPSHOTPOLICY.DELETE";
@@ -897,6 +898,7 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_EXTRACT, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_ON_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_OFF_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);

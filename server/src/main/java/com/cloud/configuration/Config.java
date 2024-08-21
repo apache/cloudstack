@@ -556,7 +556,7 @@ public enum Config {
             Boolean.class,
             "disable.extraction",
             "false",
-            "Flag for disabling extraction of template, isos and volumes",
+            "Flag for disabling extraction of templates, isos, snapshots and volumes",
             null),
     ExtractURLExpirationInterval(
             "Advanced",

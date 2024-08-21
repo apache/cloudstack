@@ -94,6 +94,13 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "kvm_checkpoint_path")
     private String kvmCheckpointPath;
 
+    @Column(name = "download_url", length = 2048)
+    private String extractUrl;
+
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
@@ -309,6 +316,22 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setVolumeId(Long volumeId) {
         this.volumeId = volumeId;
+    }
+
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
     }
 
     public void setCreated(Date created) {

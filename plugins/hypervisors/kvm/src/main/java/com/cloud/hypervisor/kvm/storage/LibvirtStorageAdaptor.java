@@ -774,6 +774,42 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean destroyStoragePool(Connect conn, String uuid) throws LibvirtException {
+        StoragePool sp;
+        try {
+            sp = conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException exc) {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            logger.warn(exc.getStackTrace());
+            return true;
+        }
+
+        if (sp != null) {
+            if (sp.isPersistent() == 1) {
+                sp.destroy();
+                sp.undefine();
+            } else {
+                sp.destroy();
+            }
+            sp.free();
+
+            return true;
+        } else {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            return false;
+        }
+    }
+
+    private boolean destroyStoragePoolHandleException(Connect conn, String uuid)
+    {
+        try {
+            return destroyStoragePool(conn, uuid);
+        } catch (LibvirtException e) {
+            logger.error(String.format("Failed to destroy libvirt pool %s: %s", uuid, e));
+        }
+        return false;
+    }
+
     @Override
     public boolean deleteStoragePool(String uuid) {
         logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
@@ -784,15 +820,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(e.toString());
         }
 
-        StoragePool sp = null;
         Secret s = null;
-
-        try {
-            sp = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
-            return true;
-        }
 
         /*
          * Some storage pools, like RBD also have 'secret' information stored in libvirt
@@ -805,13 +833,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            if (sp.isPersistent() == 1) {
-                sp.destroy();
-                sp.undefine();
-            } else {
-                sp.destroy();
-            }
-            sp.free();
+            destroyStoragePool(conn, uuid);
             if (s != null) {
                 s.undefine();
                 s.free();
@@ -829,6 +851,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
                     logger.info("Succeeded in unmounting " + targetPath);
+                    destroyStoragePoolHandleException(conn, uuid);
                     return true;
                 }
                 logger.error("Failed to unmount " + targetPath);
