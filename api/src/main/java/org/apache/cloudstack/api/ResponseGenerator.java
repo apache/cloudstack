@@ -349,9 +349,11 @@ public interface ResponseGenerator {
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
-    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url);
+    ExtractResponse createImageExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
 
-    ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
+    ExtractResponse createVolumeExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
+
+    ExtractResponse createSnapshotExtractResponse(Long id, Long zoneId, Long accountId, String url);
 
     String toSerializedString(CreateCmdResponse response, String responseType);
 

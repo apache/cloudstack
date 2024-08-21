@@ -118,6 +118,10 @@
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-switch
+                    v-else-if="field.type==='boolean'"
+                    v-model:checked="form[field.name]"
+                  />
                   <a-auto-complete
                     v-else-if="field.type==='autocomplete'"
                     v-model:value="form[field.name]"
@@ -304,7 +308,9 @@ export default {
         if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
           return true
         }
-
+        if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
+          return true
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype'].includes(item)
@@ -314,6 +320,8 @@ export default {
           type = 'tag'
         } else if (item === 'resourcetype') {
           type = 'autocomplete'
+        } else if (item === 'isencrypted') {
+          type = 'boolean'
         }
 
         this.fields.push({
@@ -431,6 +439,7 @@ export default {
       let diskOfferingIndex = -1
       let networkIndex = -1
       let usageTypeIndex = -1
+      let volumeIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -526,6 +535,12 @@ export default {
         usageTypeIndex = this.fields.findIndex(item => item.name === 'usagetype')
         this.fields[usageTypeIndex].loading = true
         promises.push(await this.fetchUsageTypes())
+      }
+
+      if (arrayField.includes('isencrypted')) {
+        volumeIndex = this.fields.findIndex(item => item.name === 'isencrypted')
+        this.fields[volumeIndex].loading = true
+        promises.push(await this.fetchVolumes(searchKeyword))
       }
 
       Promise.all(promises).then(response => {
@@ -912,6 +927,19 @@ export default {
           })
         })
       }
+    },
+    fetchVolumes (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listvolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
+          const volumes = json.listvolumesresponse.volume
+          resolve({
+            type: 'isencrypted',
+            data: volumes
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
     },
     fetchManagementServers (searchKeyword) {
       return new Promise((resolve, reject) => {
