@@ -155,7 +155,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
                 RoutedNetworkIPv4MaxCidrSize, RoutedNetworkIPv4MinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled,
-                RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize
+                RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize, UseSystemBgpPeers
         };
     }
 
@@ -1537,7 +1537,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public List<Long> getBgpPeersForAccount(Account owner, long zoneId) {
-        return bgpPeerDao.listAvailableBgpPeerIdsForAccount(zoneId, owner.getDomainId(), owner.getId());
+        return bgpPeerDao.listAvailableBgpPeerIdsForAccount(zoneId, owner.getDomainId(), owner.getId(), UseSystemBgpPeers.valueIn(owner.getId()));
     }
 
     private Vpc changeBgpPeersForVpcInternal(Vpc vpc, List<Long> bgpPeerIds) {

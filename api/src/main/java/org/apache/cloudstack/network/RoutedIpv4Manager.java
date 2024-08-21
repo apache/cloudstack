@@ -66,17 +66,24 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
             true, ConfigKey.Scope.Account);
 
     ConfigKey<Integer> RoutedVpcIPv4MaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
-            "routed.ipv4.vpc.max.cidr.size", "29", "The maximum value of the cidr size for VPC in ROUTED mode",
+            "routed.ipv4.vpc.max.cidr.size", "28", "The maximum value of the cidr size for VPC in ROUTED mode",
             true, ConfigKey.Scope.Account);
 
     ConfigKey<Integer> RoutedVpcIPv4MinCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
-            "routed.ipv4.vpc.min.cidr.size", "23", "The minimum value of the cidr size for VPC in ROUTED mode",
+            "routed.ipv4.vpc.min.cidr.size", "22", "The minimum value of the cidr size for VPC in ROUTED mode",
             true, ConfigKey.Scope.Account);
 
-    ConfigKey<Boolean> RoutedIPv4NetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+    ConfigKey<Boolean> RoutedIPv4NetworkCidrAutoAllocationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Boolean.class,
             "routed.ipv4.network.cidr.auto.allocation.enabled",
             "true",
             "Indicates whether the auto-allocation of network CIDR for routed network is enabled or not.",
+            true,
+            ConfigKey.Scope.Account);
+
+    ConfigKey<Boolean> UseSystemBgpPeers = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Boolean.class,
+            "use.system.bgp.peers",
+            "true",
+            "If true, when account has dedicated bgp peers(s), the guest networks with dynamic routing will use both system and dedicated bgp peers. If false, only dedicated bgp peers will be used.",
             true,
             ConfigKey.Scope.Account);
 
