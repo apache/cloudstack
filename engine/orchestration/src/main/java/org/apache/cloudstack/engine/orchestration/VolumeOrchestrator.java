@@ -349,16 +349,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = null;
+        String clusterPreferredStoragePoolUuid = null;
+        Long clusterId = null;
         if (vm != null) {
-            accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+            HostVO host = _hostDao.findById(vm.getHostId());
+            if (host != null) {
+                clusterId = host.getClusterId();
+                clusterPreferredStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(clusterId);
+            }
         }
-        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+        Optional<StoragePool> storagePool = getMatchingStoragePool(clusterPreferredStoragePoolUuid, poolList);
 
         if (storagePool.isPresent()) {
             String storagePoolToString = getReflectOnlySelectedFields(storagePool.get());
-            logger.debug("The storage pool [{}] was specified for this account [{}] and will be used for allocation.", storagePoolToString, vm.getAccountId());
-
+            logger.debug("The storage pool [{}] was specified for this cluster [{}] and will be used for allocation.", storagePoolToString, clusterId);
         } else {
             String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
             storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);

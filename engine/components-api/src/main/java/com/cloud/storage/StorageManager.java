@@ -174,8 +174,8 @@ public interface StorageManager extends StorageService {
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
             true, ConfigKey.Scope.Zone);
-    ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
-            "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
+    ConfigKey<String> PreferredStoragePool = new ConfigKey<>(String.class, "preferred.storage.pool", "Advanced", "",
+            "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Cluster, null);
 
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
             "mount.disabled.storage.pool",

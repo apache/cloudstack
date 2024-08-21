@@ -1903,11 +1903,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
-        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
-        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+        Optional<StoragePool> storagePool = Optional.empty();
+        if (vm.getHostId() != null) {
+            HostVO host = _hostDao.findById(vm.getHostId());
+            if (host != null) {
+                String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(host.getClusterId());
+                storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+            }
+        }
 
         if (storagePool.isPresent()) {
-            logger.debug("A storage pool is specified for this account, so we will use this storage pool for allocation: "
+            logger.debug("A storage pool is specified for this cluster, so we will use this storage pool for allocation: "
                     + storagePool.get().getUuid());
         } else {
             String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
