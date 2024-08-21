@@ -132,9 +132,9 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
     @Param(description = "the file share provider")
     private String provider;
 
-    @SerializedName(ApiConstants.FORMAT)
-    @Param(description = "the file system format")
-    private String format;
+    @SerializedName(ApiConstants.FILESYSTEM)
+    @Param(description = "the filesystem format")
+    private String filesystem;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the file share")
@@ -288,8 +288,8 @@ public class FileShareResponse extends BaseResponseWithTagInformation implements
         this.provider = provider;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
+    public void setFilesystem(String filesystem) {
+        this.filesystem = filesystem;
     }
 
     public void setSizeGB(Long size) {

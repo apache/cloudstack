@@ -550,7 +550,7 @@ export default {
 
         return fields
       },
-      details: ['id', 'name', 'description', 'state', 'format', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
+      details: ['id', 'name', 'description', 'state', 'filesystem', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'virtualsize', 'physicalsize', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
       tabs: [{
         component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
       }],

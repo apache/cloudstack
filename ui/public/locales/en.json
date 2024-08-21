@@ -942,7 +942,7 @@
 "label.files": "Alternate files to retrieve",
 "label.fileshares": "File Shares",
 "label.fileshare": "File Share",
-"label.filesystem.format": "Filesystem Format",
+"label.filesystem": "Filesystem",
 "label.filter": "Filter",
 "label.filter.annotations.all": "All comments",
 "label.filter.annotations.self": "Created by me",

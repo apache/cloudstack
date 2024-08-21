@@ -62,12 +62,12 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="format" name="format">
+      <a-form-item ref="filesystem" name="filesystem">
         <template #label>
-          <tooltip-label :title="$t('label.filesystem.format')" :tooltip="apiParams.format.description"/>
+          <tooltip-label :title="$t('label.filesystem')" :tooltip="apiParams.filesystem.description"/>
         </template>
         <a-select
-          v-model:value="form.format"
+          v-model:value="form.filesystem"
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
@@ -237,7 +237,7 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
-    this.form.format = 'XFS'
+    this.form.filesystem = 'XFS'
   },
   methods: {
     initForm () {
@@ -425,7 +425,7 @@ export default {
           diskofferingid: values.diskofferingid,
           networkid: values.networkid,
           size: values.size,
-          format: values.format,
+          filesystem: values.filesystem,
           miniops: values.miniops,
           maxiops: values.maxiops,
           provider: values.provider,

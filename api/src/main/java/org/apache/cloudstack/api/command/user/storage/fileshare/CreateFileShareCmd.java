@@ -133,7 +133,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "the offering to use for the file share vm.")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.FORMAT,
+    @Parameter(name = ApiConstants.FILESYSTEM,
             type = CommandType.STRING,
             required = true,
             description = "the filesystem format (XFS / EXT4) which will be installed on the file share.")
