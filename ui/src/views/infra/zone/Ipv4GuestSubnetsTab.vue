@@ -499,17 +499,17 @@ export default {
           successMessage: this.$t('message.success.delete.ipv4.subnet'),
           successMethod: () => {
             this.componentLoading = false
-            this.fetchZoneBgpPeer()
+            this.fetchZoneIpv4Subnet()
           },
           errorMessage: this.$t('message.delete.failed'),
           errorMethod: () => {
             this.componentLoading = false
-            this.fetchZoneBgpPeer()
+            this.fetchZoneIpv4Subnet()
           },
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.componentLoading = false
-            this.fetchZoneBgpPeer()
+            this.fetchZoneIpv4Subnet()
           }
         })
       }).catch(error => {
