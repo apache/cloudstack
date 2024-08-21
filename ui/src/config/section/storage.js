@@ -593,6 +593,7 @@ export default {
           message: 'message.action.stop.fileshare',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
+          popup: true,
           args: ['forced'],
           show: (record) => { return ['Ready'].includes(record.state) }
         },
@@ -633,10 +634,11 @@ export default {
           label: 'label.destroy.fileshare',
           message: 'message.action.destroy.fileshare',
           dataView: true,
-          args: ['expunge', 'forced'],
-          show: (record) => { return !['Destroyed', 'Expunging', 'Error'].includes(record.state) },
+          popup: true,
           groupAction: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge, forced: values.forced } }) },
+          args: ['expunge', 'forced'],
+          show: (record) => { return !['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         },
         {
           api: 'recoverFileShare',
