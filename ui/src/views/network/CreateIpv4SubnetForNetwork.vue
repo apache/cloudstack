@@ -54,7 +54,7 @@
       </a-form-item>
       <a-form-item ref="parentid" name="parentid">
         <template #label>
-          <tooltip-label :title="$t('label.parentname')" :tooltip="apiParams.parentid.description"/>
+          <tooltip-label :title="$t('label.parentsubnet')" :tooltip="apiParams.parentid.description"/>
         </template>
         <a-select
           v-model:value="form.parentid"

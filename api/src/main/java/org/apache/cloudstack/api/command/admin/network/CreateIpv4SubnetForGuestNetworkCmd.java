@@ -48,7 +48,7 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = DataCenterIpv4SubnetResponse.class,
             required = true,
-            description = "UUID of zone Ipv4 subnet which the IPv4 subnet belongs to.")
+            description = "The zone Ipv4 subnet which the IPv4 subnet belongs to.")
     private Long parentId;
 
     @Parameter(name = ApiConstants.SUBNET,
@@ -58,7 +58,7 @@ public class CreateIpv4SubnetForGuestNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CIDR_SIZE,
             type = CommandType.INTEGER,
-            description = "the CIDR size of IPv4 network. This is manutally exclusive with subnet.")
+            description = "the CIDR size of IPv4 network. This is mutually exclusive with subnet.")
     private Integer cidrSize;
 
     /////////////////////////////////////////////////////
