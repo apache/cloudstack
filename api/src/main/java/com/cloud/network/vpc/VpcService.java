@@ -57,7 +57,7 @@ public interface VpcService {
      */
     Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain,
                   String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Boolean displayVpc, Integer publicMtu, Integer cidrSize,
-                  List<Long> bgpPeerIds)
+                  Long asNumber, List<Long> bgpPeerIds)
             throws ResourceAllocationException;
 
     /**

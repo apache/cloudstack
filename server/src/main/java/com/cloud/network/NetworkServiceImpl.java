@@ -1652,8 +1652,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && asNumber == null) {
-            throw new InvalidParameterValueException("AS number is required but not passed.");
+        if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && ntwkOff.isSpecifyAsNumber() && asNumber == null) {
+            throw new InvalidParameterValueException("AS number is required for the network but not passed.");
         }
 
         validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId());

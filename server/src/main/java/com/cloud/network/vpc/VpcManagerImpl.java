@@ -1122,7 +1122,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
                          final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu,
-                         final Integer cidrSize, List<Long> bgpPeerIds) throws ResourceAllocationException {
+                         final Integer cidrSize, final Long asNumber, final List<Long> bgpPeerIds) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1149,6 +1149,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 ex.addProxyObject(vpcOff.getUuid(), "vpcOfferingId");
             }
             throw ex;
+        }
+
+        if (NetworkOffering.RoutingMode.Dynamic.equals(vpcOff.getRoutingMode()) && vpcOff.isSpecifyAsNumber() && asNumber == null) {
+            throw new InvalidParameterValueException("AS number is required for the VPC but not passed.");
         }
 
         // Validate VPC cidr/cidrsize
@@ -1272,7 +1276,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getBgpPeerIds());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), cmd.getBgpPeerIds());
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForNsx(vpc);
