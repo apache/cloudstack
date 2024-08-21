@@ -113,7 +113,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             type = CommandType.UUID,
             required = true,
             entityType = DiskOfferingResponse.class,
-            description = "the disk offering to use for the underlying storage.")
+            description = "the disk offering to use for the underlying storage. This will define the size and other specifications like encryption and qos for the file share.")
     private Long diskOfferingId;
 
     @Parameter(name = ApiConstants.MIN_IOPS,
@@ -130,7 +130,7 @@ public class CreateFileShareCmd extends BaseAsyncCreateCmd implements UserCmd {
             type = CommandType.UUID,
             required = true,
             entityType = ServiceOfferingResponse.class,
-            description = "the offering to use for the file share vm.")
+            description = "the service offering to use for the file share VM hosting the data. The offering should be HA enabled and the cpu count and memory size should be greater than equal to storagefsvm.min.cpu.count and storagefsvm.min.ram.size respectively")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.FILESYSTEM,

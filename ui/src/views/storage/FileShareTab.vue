@@ -36,7 +36,7 @@
             </template>
             <timeline>
               <a-timeline-item color="blue">
-                <h3>mount -t nfs -o rw,sync {{ nic.ipaddress }}:{{ resource.path }} [local_mount_path]</h3>
+                <h3>mount -t nfs {{ nic.ipaddress }}:{{ resource.path }} [local_mount_path]</h3>
                 <p class="info"><i>(This mount command can be used to mount the NFS share using the default options given.)</i></p>
               </a-timeline-item>
               <a-timeline-item color="blue">

@@ -98,28 +98,6 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="serviceofferingid" name="serviceofferingid">
-        <template #label>
-          <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
-        </template>
-        <a-select
-          v-model:value="form.serviceofferingid"
-          :loading="serviceofferingLoading"
-          :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option
-            v-for="(serviceoffering, index) in serviceofferings"
-            :value="serviceoffering.id"
-            :key="index"
-            :label="serviceoffering.displaytext || serviceoffering.name">
-            {{ serviceoffering.displaytext || serviceoffering.name }}
-          </a-select-option>
-        </a-select>
-      </a-form-item>
       <a-form-item ref="diskofferingid" name="diskofferingid">
         <template #label>
           <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
@@ -171,6 +149,28 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
+      <a-form-item ref="serviceofferingid" name="serviceofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.compute.offering.for.vm')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+        </template>
+        <a-select
+          v-model:value="form.serviceofferingid"
+          :loading="serviceofferingLoading"
+          :placeholder="apiParams.serviceofferingid.description || $t('label.serviceofferingid')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="(serviceoffering, index) in serviceofferings"
+            :value="serviceoffering.id"
+            :key="index"
+            :label="serviceoffering.displaytext || serviceoffering.name">
+            {{ serviceoffering.displaytext || serviceoffering.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
