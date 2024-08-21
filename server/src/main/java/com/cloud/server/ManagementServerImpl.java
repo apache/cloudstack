@@ -17,6 +17,7 @@
 package com.cloud.server;
 
 import java.lang.reflect.Field;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -43,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -4488,6 +4490,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             Pair<Boolean, String> result = _ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix());
             if (!result.first()) {
                 throw new InvalidParameterValueException(String.format("Failed to pass certificate validation check with error: %s", result.second()));
+            }
+        } else {
+            try {
+                s_logger.debug(String.format("Trying to validate the root certificate format"));
+                CertificateHelper.buildCertificate(certificate);
+            } catch (CertificateException e) {
+                String errorMsg = String.format("Failed to pass certificate validation check with error: Certificate validation failed due to exception: %s", e.getMessage());
+                s_logger.error(errorMsg);
+                throw new InvalidParameterValueException(errorMsg);
             }
         }
 

@@ -56,12 +56,6 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             return new Pair<>(false, errMsg);
         }
 
-        if (!verifyCertificateHeaders(certificate)) {
-            errMsg = "Certificate delimiters verification failed: Invalid PEM format.";
-            s_logger.error(errMsg);
-            return new Pair<>(false, errMsg);
-        }
-
         try {
             String ksPassword = "passwordForValidation";
             byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, getKeyContent(key), ksPassword);
@@ -75,11 +69,6 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             s_logger.error(errMsg, e);
         }
         return new Pair<>(false, errMsg);
-    }
-
-    private boolean verifyCertificateHeaders(String certificate) {
-        return certificate.startsWith("-----BEGIN CERTIFICATE-----") &&
-                certificate.endsWith("-----END CERTIFICATE-----");
     }
 
     @Override
