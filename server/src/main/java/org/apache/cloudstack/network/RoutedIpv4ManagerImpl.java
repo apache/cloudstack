@@ -1536,7 +1536,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public List<Long> getBgpPeersForAccount(Account owner, long zoneId) {
+    public List<Long> getBgpPeerIdsForAccount(Account owner, long zoneId) {
         return bgpPeerDao.listAvailableBgpPeerIdsForAccount(zoneId, owner.getDomainId(), owner.getId(), UseSystemBgpPeers.valueIn(owner.getId()));
     }
 

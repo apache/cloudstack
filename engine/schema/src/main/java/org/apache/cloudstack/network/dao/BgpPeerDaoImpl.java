@@ -47,12 +47,12 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
     protected SearchBuilder<BgpPeerVO> VpcIdSearch;
     protected SearchBuilder<BgpPeerVO> AllFieldsSearch;
 
-    private static final String LIST_ALL_BGP_PEERS_IDS_FOR_ACCOUNT = "SELECT id FROM `cloud`.`bgp_peers` WHERE data_center_id = ? " +
+    private static final String LIST_ALL_BGP_PEERS_IDS_FOR_ACCOUNT = "SELECT id FROM `cloud`.`bgp_peers` WHERE removed IS NULL AND data_center_id = ? " +
             "AND ((domain_id IS NULL AND account_id IS NULL) " +
             "OR (domain_id = ? AND account_id IS NULL) " +
             "OR (domain_id = ? AND account_id = ?))";
 
-    private static final String LIST_DEDICATED_BGP_PEERS_IDS_FOR_ACCOUNT = "SELECT id FROM `cloud`.`bgp_peers` WHERE data_center_id = ? " +
+    private static final String LIST_DEDICATED_BGP_PEERS_IDS_FOR_ACCOUNT = "SELECT id FROM `cloud`.`bgp_peers` WHERE removed IS NULL AND data_center_id = ? " +
             "AND ((domain_id = ? AND account_id IS NULL) " +
             "OR (domain_id = ? AND account_id = ?))";
 

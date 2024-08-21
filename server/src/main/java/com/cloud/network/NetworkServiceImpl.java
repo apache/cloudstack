@@ -1707,15 +1707,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // Validate BGP peers
-        if (vpcId != null && CollectionUtils.isNotEmpty(bgpPeerIds)) {
-            throw new InvalidParameterValueException("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.");
-        }
-        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedNetwork(ntwkOff)) {
-            throw new InvalidParameterValueException("The network offering does not support Dynamic routing");
-        }
-        if (CollectionUtils.isEmpty(bgpPeerIds)) {
-            bgpPeerIds = routedIpv4Manager.getBgpPeersForAccount(owner, zone.getId());
-        } else {
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            if (vpcId != null) {
+                throw new InvalidParameterValueException("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.");
+            }
+            if (!routedIpv4Manager.isDynamicRoutedNetwork(ntwkOff)) {
+                throw new InvalidParameterValueException("The network offering does not support Dynamic routing");
+            }
             routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
         }
 

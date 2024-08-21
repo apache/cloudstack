@@ -1155,12 +1155,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
 
         // Validate BGP peers
-        if (CollectionUtils.isNotEmpty(bgpPeerIds) && !routedIpv4Manager.isDynamicRoutedVpc(vpcOff)) {
-            throw new InvalidParameterValueException("The VPC offering does not support Dynamic routing");
-        }
-        if (CollectionUtils.isEmpty(bgpPeerIds)) {
-            bgpPeerIds = routedIpv4Manager.getBgpPeersForAccount(owner, zone.getId());
-        } else {
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            if (!routedIpv4Manager.isDynamicRoutedVpc(vpcOff)) {
+                throw new InvalidParameterValueException("The VPC offering does not support Dynamic routing");
+            }
             routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
         }
 

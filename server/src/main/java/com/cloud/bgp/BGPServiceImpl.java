@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class BGPServiceImpl implements BGPService {
 
@@ -391,6 +392,13 @@ public class BGPServiceImpl implements BGPService {
                     bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
                 } else {
                     bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+                }
+                if (CollectionUtils.isEmpty(bgpPeers)) {
+                    Account owner = accountDao.findByIdIncludingRemoved(network.getAccountId());
+                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, network.getDataCenterId());
+                    bgpPeers = bgpPeerIds.stream()
+                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                            .collect(Collectors.toList());
                 }
                 LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
