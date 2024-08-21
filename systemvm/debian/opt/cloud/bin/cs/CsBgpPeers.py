@@ -45,7 +45,7 @@ class CsBgpPeers(CsDataBag):
 
         restart_frr = False
 
-        CsHelper.mkdir("FRR_DIR", 0o755, False)
+        CsHelper.mkdir(FRR_DIR, 0o755, False)
         self.frr_daemon = CsFile(FRR_DAEMONS)
         self.frr_daemon.replaceIfFound("bgpd=no", "bgpd=yes")
         if self.frr_daemon.commit():
