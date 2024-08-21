@@ -634,7 +634,7 @@ export default {
           message: 'message.action.destroy.fileshare',
           dataView: true,
           args: ['expunge', 'forced'],
-          show: (record) => { return !['Destroyed', 'Expunging'].includes(record.state) },
+          show: (record) => { return !['Destroyed', 'Expunging', 'Error'].includes(record.state) },
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         },
@@ -654,7 +654,7 @@ export default {
           label: 'label.expunge.fileshare',
           message: 'message.action.expunge.fileshare',
           dataView: true,
-          show: (record) => { return ['Destroyed', 'Expunging'].includes(record.state) }
+          show: (record) => { return ['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         }
       ]
     }

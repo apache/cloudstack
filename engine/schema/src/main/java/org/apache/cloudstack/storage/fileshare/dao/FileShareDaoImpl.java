@@ -50,7 +50,7 @@ public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implemen
         StateUpdateCountSearch.done();
 
         DestroyedByTimeSearch = createSearchBuilder();
-        DestroyedByTimeSearch.and("state", DestroyedByTimeSearch.entity().getState(), SearchCriteria.Op.EQ);
+        DestroyedByTimeSearch.and("state", DestroyedByTimeSearch.entity().getState(), SearchCriteria.Op.IN);
         DestroyedByTimeSearch.and("accountId", DestroyedByTimeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         DestroyedByTimeSearch.done();
     }
@@ -93,7 +93,7 @@ public class FileShareDaoImpl extends GenericDaoBase<FileShareVO, Long> implemen
     @Override
     public List<FileShareVO> listFileSharesToBeDestroyed(Date date) {
         SearchCriteria<FileShareVO> sc = DestroyedByTimeSearch.create();
-        sc.setParameters("state", FileShare.State.Destroyed);
+        sc.setParameters("state", FileShare.State.Destroyed, FileShare.State.Expunging, FileShare.State.Error);
         sc.setParameters("updateTime", date);
         return listBy(sc);
     }

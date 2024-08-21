@@ -624,7 +624,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, false, fileShare);
 
-        Set<State> validStates = new HashSet<>(List.of(State.Destroyed, State.Expunging));
+        Set<State> validStates = new HashSet<>(List.of(State.Destroyed, State.Expunging, State.Error));
         if (!validStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("File share can be expunged only if it is in the " + validStates.toString() + " states");
         }

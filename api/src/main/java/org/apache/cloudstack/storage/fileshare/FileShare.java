@@ -131,6 +131,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.DestroyRequested, Destroyed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.RecoveryRequested, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.ExpungeOperation, Expunging, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Error, Event.ExpungeOperation, Expunging, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.ExpungeOperation, Expunging, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Expunging, Event.OperationSucceeded, Expunged, null));
         }
