@@ -18,7 +18,7 @@
 """
 Tests for File Share
 """
-from asyncio import sleep
+import time
 
 # Import Local Modules
 from nose.plugins.attrib import attr
@@ -124,13 +124,28 @@ class TestFileShareLifecycle(cloudstackTestCase):
             cls.apiclient,
             cls.services,
             name='Test File Share 1',
-            size=1,
+            size=2,
             format='XFS',
             provider='STORAGEFSVM'
         )
         cls._cleanup.insert(0, cls.fileshare)
 
-        return
+        cls.virtual_machine1 = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["virtual_machine"],
+            templateid=cls.template.id,
+            serviceofferingid=cls.service_offering.id,
+            networkids=cls.user_network.id,
+            domainid=cls.domain.id,
+            accountid=cls.adminaccount.name,
+            zoneid=cls.zone.id
+        )
+        cls._cleanup.insert(0, cls.virtual_machine1)
+
+        cls.public_ipaddress = cls.setUpSNAT(cls, cls.user_network)
+        cls.debug("Public ipaddress: " + cls.public_ipaddress.ipaddress)
+        port = cls.setUpPortForwarding(cls, cls.virtual_machine1.id)
+        cls.vm1_ssh_client = cls.getSSHClient(cls, cls.virtual_machine1, port)
 
     @classmethod
     def tearDownClass(cls):
@@ -186,7 +201,7 @@ class TestFileShareLifecycle(cloudstackTestCase):
             cmd = "showmount -e " + fileshare_ip  + " | grep /mnt/fs/share"
             res = ssh_client.execute(cmd)[0]
             if res == "/mnt/fs/share *":
-                sleep(10)
+                time.sleep(15)
                 return True, res
             else:
                 return False, None
@@ -213,41 +228,25 @@ class TestFileShareLifecycle(cloudstackTestCase):
     def test_mount_file_share(self):
         """Mount File Share on two VMs and match contents
         """
+        self.mountFileShareOnVM(self.vm1_ssh_client, self.fileshare)
+        self.vm1_ssh_client.execute("df -Th /mnt/fs1")
+        self.vm1_ssh_client.execute("touch /mnt/fs1/test")
 
-        self.virtual_machine1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
-            networkids=self.user_network.id,
-            domainid=self.domain.id,
-            accountid=self.adminaccount.name,
-            zoneid=self.zone.id
-        )
-        self.cleanup.append(self.virtual_machine1)
+        try:
+            self.virtual_machine2 = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                templateid=self.template.id,
+                serviceofferingid=self.service_offering.id,
+                networkids=self.user_network.id,
+                domainid=self.domain.id,
+                accountid=self.adminaccount.name,
+                zoneid=self.zone.id
+            )
+        except Exception as e:
+            self.vm1_ssh_client.execute("rm /mnt/fs1/test")
+            self.fail(e)
 
-        if self.public_ipaddress == None:
-            self.public_ipaddress = self.setUpSNAT(self.user_network)
-        self.debug("Public ipaddress: " + self.public_ipaddress.ipaddress)
-
-        port = self.setUpPortForwarding(self.virtual_machine1.id)
-        ssh_client = self.getSSHClient(self.virtual_machine1, port)
-        self.assertIsNotNone(ssh_client)
-
-        self.mountFileShareOnVM(ssh_client, self.fileshare)
-        ssh_client.execute("df -Th /mnt/fs1")
-        ssh_client.execute("touch /mnt/fs1/test")
-
-        self.virtual_machine2 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
-            networkids=self.user_network.id,
-            domainid=self.domain.id,
-            accountid=self.adminaccount.name,
-            zoneid=self.zone.id
-        )
         self.cleanup.append(self.virtual_machine2)
 
         port = self.setUpPortForwarding(self.virtual_machine2.id)
@@ -258,3 +257,22 @@ class TestFileShareLifecycle(cloudstackTestCase):
         ssh_client.execute("df -Th /mnt/fs1")
         result = ssh_client.execute("ls /mnt/fs1/test")
         self.assertEqual(result[0], "/mnt/fs1/test")
+
+    @attr( tags=[ "advanced", "advancedns", "smokes"], required_hardware="true")
+    def test_resize_file_share(self):
+        """Resize the file share by changing the disk offering and validate
+        """
+        self.mountFileShareOnVM(self.vm1_ssh_client, self.fileshare)
+        result = self.vm1_ssh_client.execute("df -Th /mnt/fs1 | grep nfs")[0]
+        self.debug(result)
+        size = result.split()[-5]
+        self.debug("Size of the filesystem is " + size)
+        self.assertEqual(size, "2.0G", "Fileshare size should be 2.0G")
+
+        response = FileShare.changediskoffering(self.fileshare, self.apiclient, self.disk_offering.id, 3)
+        self.debug(response)
+
+        result = self.vm1_ssh_client.execute("df -Th /mnt/fs1 | grep nfs")[0]
+        size = result.split()[-5]
+        self.debug("Size of the filesystem is " + size)
+        self.assertEqual(size, "3.0G", "Fileshare size should be 3.0G")

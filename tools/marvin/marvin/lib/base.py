@@ -7374,3 +7374,11 @@ class FileShare:
         if description:
             cmd.description = description
         return (apiclient.updateFileShare(cmd))
+
+    def changediskoffering(self, apiclient, diskofferingid=None, size=None):
+        """Change Disk Offering/Size of the File Share"""
+        cmd = changeFileShareDiskOffering.changeFileShareDiskOfferingCmd()
+        cmd.id = self.id
+        cmd.diskofferingid = diskofferingid
+        cmd.size = size
+        return (apiclient.changeFileShareDiskOffering(cmd))
