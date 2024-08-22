@@ -1317,14 +1317,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (type.equals(String.class)) {
-            if (name.equals(SecStorageAllowedInternalDownloadSites.key())) {
-                if (StringUtils.isNotEmpty(value)) {
-                    final String[] cidrs = value.split(",");
-                    for (final String cidr : cidrs) {
-                        if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
-                            s_logger.error(String.format("Invalid CIDR %s value specified for the config value %s", cidr, name));
-                            throw new InvalidParameterValueException(String.format("Invalid CIDR %s value specified for the config value %s", cidr, name));
-                        }
+            if (name.equalsIgnoreCase(SecStorageAllowedInternalDownloadSites.key()) && StringUtils.isNotEmpty(value)) {
+                final String[] cidrs = value.split(",");
+                for (final String cidr : cidrs) {
+                    if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                        s_logger.error(String.format("Invalid CIDR %s value specified for the config value %s", cidr, name));
+                        throw new InvalidParameterValueException(String.format("Invalid CIDR %s value specified for the config value %s", cidr, name));
                     }
                 }
             }
