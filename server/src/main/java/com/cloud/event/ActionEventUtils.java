@@ -111,8 +111,7 @@ public class ActionEventUtils {
     public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
         CallContext ctx = CallContext.current();
-        boolean projectCreateEvent = "project".equalsIgnoreCase(resourceType) && EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(type);
-        accountId = ctx.getProject() != null && !projectCreateEvent ? ctx.getProject().getProjectAccountId() : accountId;    //This should be the entity owner id rather than the Calling User Account Id.
+        accountId = ctx.getProject() != null && !EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(type) ? ctx.getProject().getProjectAccountId() : accountId;    //This should be the entity owner id rather than the Calling User Account Id.
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
         return event.getId();
@@ -126,8 +125,7 @@ public class ActionEventUtils {
     public static void onStartedActionEventFromContext(String eventType, String eventDescription, Long resourceId, String resourceType, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
-        boolean projectCreateEvent = "project".equalsIgnoreCase(resourceType) && EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(eventType);
-        long accountId = ctx.getProject() != null && !projectCreateEvent ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
+        long accountId = ctx.getProject() != null && !EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(eventType) ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
