@@ -29,6 +29,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerDetailsVO;
 import org.apache.cloudstack.network.BgpPeerNetworkMapVO;
 import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -140,11 +141,23 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
 
     @Override
     public List<Long> listAvailableBgpPeerIdsForAccount(long zoneId, long domainId, long accountId, boolean useSystemBgpPeers) {
+        if (useSystemBgpPeers) {
+            return listBgpPeerIdsForAccount(zoneId, domainId, accountId, false);
+        } else {
+            List<Long> dedicatedBgpPeerIds = listBgpPeerIdsForAccount(zoneId, domainId, accountId, true);
+            if (CollectionUtils.isNotEmpty(dedicatedBgpPeerIds)) {
+                return dedicatedBgpPeerIds;
+            }
+            return listBgpPeerIdsForAccount(zoneId, domainId, accountId, false);
+        }
+    }
+
+    private List<Long> listBgpPeerIdsForAccount(long zoneId, long domainId, long accountId, boolean isDedicated) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
 
-        StringBuilder sql = useSystemBgpPeers ? new StringBuilder(LIST_ALL_BGP_PEERS_IDS_FOR_ACCOUNT): new StringBuilder(LIST_DEDICATED_BGP_PEERS_IDS_FOR_ACCOUNT);
+        StringBuilder sql = isDedicated ? new StringBuilder(LIST_DEDICATED_BGP_PEERS_IDS_FOR_ACCOUNT): new StringBuilder(LIST_ALL_BGP_PEERS_IDS_FOR_ACCOUNT);
 
         try {
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
