@@ -555,7 +555,7 @@ export default {
           } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
             const vpcLbServiceProvider = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider[0].name
             const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
-            if (vpcLbServiceProvider && offeringLbServiceProvider && vpcLbServiceProvider === offeringLbServiceProvider) {
+            if (vpcLbServiceProvider && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProvider === offeringLbServiceProvider))) {
               filteredOfferings.push(offering)
             }
           } else {
