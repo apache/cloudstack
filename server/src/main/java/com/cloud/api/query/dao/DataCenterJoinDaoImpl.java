@@ -87,7 +87,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
 
             if (showCapacities != null && showCapacities) {
-                zoneResponse.setCapacitites(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
+                zoneResponse.setCapacities(ApiResponseHelper.getDataCenterCapacityResponse(dataCenter.getId()));
             }
         }
 

@@ -1133,4 +1133,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         }
         this.vnfDetails.put(key,value);
     }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
 }

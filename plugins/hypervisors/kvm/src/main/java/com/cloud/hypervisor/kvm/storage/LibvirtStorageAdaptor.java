@@ -766,26 +766,53 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean destroyStoragePool(Connect conn, String uuid) throws LibvirtException {
+        StoragePool sp;
+        try {
+            sp = conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException exc) {
+            s_logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            s_logger.warn(exc.getStackTrace());
+            return true;
+        }
+
+        if (sp != null) {
+            if (sp.isPersistent() == 1) {
+                sp.destroy();
+                sp.undefine();
+            } else {
+                sp.destroy();
+            }
+            sp.free();
+
+            return true;
+        } else {
+            s_logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            return false;
+        }
+    }
+
+    private boolean destroyStoragePoolHandleException(Connect conn, String uuid)
+    {
+        try {
+            return destroyStoragePool(conn, uuid);
+        } catch (LibvirtException e) {
+            s_logger.error(String.format("Failed to destroy libvirt pool %s: %s", uuid, e));
+        }
+        return false;
+    }
+
     @Override
     public boolean deleteStoragePool(String uuid) {
         s_logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
-        Connect conn = null;
+        Connect conn;
         try {
             conn = LibvirtConnection.getConnection();
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
         }
 
-        StoragePool sp = null;
         Secret s = null;
-
-        try {
-            sp = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-            s_logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
-            return true;
-        }
-
         /*
          * Some storage pools, like RBD also have 'secret' information stored in libvirt
          * Destroy them if they exist
@@ -797,13 +824,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            if (sp.isPersistent() == 1) {
-                sp.destroy();
-                sp.undefine();
-            } else {
-                sp.destroy();
-            }
-            sp.free();
+            destroyStoragePool(conn, uuid);
             if (s != null) {
                 s.undefine();
                 s.free();
@@ -821,6 +842,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
                     s_logger.info("Succeeded in unmounting " + targetPath);
+                    destroyStoragePoolHandleException(conn, uuid);
                     return true;
                 }
                 s_logger.error("Failed to unmount " + targetPath);
