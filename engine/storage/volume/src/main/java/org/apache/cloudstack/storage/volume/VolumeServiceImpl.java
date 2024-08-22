@@ -494,6 +494,9 @@ public class VolumeServiceImpl implements VolumeService {
                     long storagePoolId = snapStoreVo.getDataStoreId();
                     StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
+                    if (StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())) {
+                        continue;
+                    }
                     if (storagePoolVO.isManaged()) {
                         DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
                         Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
@@ -506,7 +509,7 @@ public class VolumeServiceImpl implements VolumeService {
                         }
                     } else if (HypervisorType.KVM.equals(vo.getHypervisorType())) {
                         deleteKvmSnapshotOnPrimary(snapStoreVo);
-                    } else if (!StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())){
+                    } else {
                         _snapshotStoreDao.remove(snapStoreVo.getId());
                     }
                 }
