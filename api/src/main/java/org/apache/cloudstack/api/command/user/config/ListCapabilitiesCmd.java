@@ -55,6 +55,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));
         response.setAllowUserViewAllDomainAccounts((Boolean)capabilities.get("allowUserViewAllDomainAccounts"));
+        response.setAllowUserForceStopVM((Boolean)capabilities.get("allowUserForceStopVM"));
         response.setKubernetesServiceEnabled((Boolean)capabilities.get("kubernetesServiceEnabled"));
         response.setKubernetesClusterExperimentalFeaturesEnabled((Boolean)capabilities.get("kubernetesClusterExperimentalFeaturesEnabled"));
         response.setCustomHypervisorDisplayName((String) capabilities.get("customHypervisorDisplayName"));
