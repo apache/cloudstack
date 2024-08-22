@@ -20,7 +20,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.Executors;
@@ -59,8 +58,8 @@ public class ConfigKeyScheduledExecutionWrapperTest {
     @Test(expected = IllegalArgumentException.class)
     public void invalidConfigKeyTest() {
         TestRunnable runnable = new TestRunnable();
-        ConfigKey<String> configKey = Mockito.mock(ConfigKey.class);
-        when(configKey.value()).thenReturn("test");
+        ConfigKey<String> configKey = new ConfigKey<>(String.class, "test", "test", "test", "test", true,
+                ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
         ConfigKeyScheduledExecutionWrapper runner = new ConfigKeyScheduledExecutionWrapper(executorService, runnable, configKey, TimeUnit.SECONDS);
     }
 

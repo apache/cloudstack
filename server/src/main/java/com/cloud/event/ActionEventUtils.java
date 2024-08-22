@@ -32,12 +32,11 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.configuration.Config;
@@ -63,7 +62,7 @@ public class ActionEventUtils {
     private static AccountDao s_accountDao;
     private static ProjectDao s_projectDao;
     protected static UserDao s_userDao;
-    protected static EventBus s_eventBus = null;
+    private static EventDistributor eventDistributor;
     protected static EntityManager s_entityMgr;
     protected static ConfigurationDao s_configDao;
 
@@ -101,8 +100,10 @@ public class ActionEventUtils {
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
-        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, resourceDetails.first(), resourceDetails.third(), null);
+        Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed,
+                true, description, resourceDetails.first(), resourceDetails.third(), null);
+        publishOnEventBus(event, userId, accountId, domainId, EventCategory.ACTION_EVENT.getName(), type,
+                com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -111,8 +112,10 @@ public class ActionEventUtils {
      */
     public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled,
+                eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event, userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
+                com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -136,8 +139,10 @@ public class ActionEventUtils {
      */
     public static Long onStartedActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description, resourceDetails.second(), resourceDetails.third());
-        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started,
+                eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event, userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
+                com.cloud.event.Event.State.Started, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -148,16 +153,20 @@ public class ActionEventUtils {
 
     public static Long onCompletedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Completed,
+                eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
+        publishOnEventBus(event, userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
+                com.cloud.event.Event.State.Completed, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
 
     }
 
     public static Long onCreatedActionEvent(Long userId, Long accountId, String level, String type, boolean eventDisplayEnabled, String description, Long resourceId, String resourceType) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
-        publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Created, description, resourceDetails.second(), resourceDetails.third());
-        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), null);
+        Event event = persistActionEvent(userId, accountId, null, level, type, Event.State.Created,
+                eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), null);
+        publishOnEventBus(event, userId, accountId, EventCategory.ACTION_EVENT.getName(), type,
+                com.cloud.event.Event.State.Created, description, resourceDetails.second(), resourceDetails.third());
         return event.getId();
     }
 
@@ -193,20 +202,25 @@ public class ActionEventUtils {
         return event;
     }
 
-    private static void publishOnEventBus(long userId, long accountId, String eventCategory, String eventType, Event.State state, String description, String resourceUuid, String resourceType) {
+    private static void publishOnEventBus(Event eventRecord, long userId, long accountId, Long domainId,
+          String eventCategory, String eventType, Event.State state, String description, String resourceUuid,
+          String resourceType) {
         String configKey = Config.PublishActionEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
         if(!configValue)
             return;
+
         try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         org.apache.cloudstack.framework.events.Event event =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, resourceType, resourceUuid);
+                new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, resourceType, resourceUuid);
+        event.setEventId(eventRecord.getId());
+        event.setEventUuid(eventRecord.getUuid());
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Project project = s_projectDao.findByProjectAccountId(accountId);
@@ -219,6 +233,9 @@ public class ActionEventUtils {
             return;
         if (project != null)
             eventDescription.put("project", project.getUuid());
+        event.setResourceAccountId(accountId);
+        event.setResourceAccountUuid(account.getUuid());
+        event.setResourceDomainId(domainId == null ? account.getDomainId() : domainId);
         eventDescription.put("user", user.getUuid());
         eventDescription.put("account", account.getUuid());
         eventDescription.put("event", eventType);
@@ -234,11 +251,13 @@ public class ActionEventUtils {
 
         event.setDescription(eventDescription);
 
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException e) {
-            LOGGER.warn("Failed to publish action event on the event bus.");
-        }
+        eventDistributor.publish(event);
+    }
+
+    private static void publishOnEventBus(Event event, long userId, long accountId, String eventCategory,
+          String eventType, Event.State state, String description, String resourceUuid, String resourceType) {
+        publishOnEventBus(event, userId, accountId, null, eventCategory, eventType, state, description,
+                resourceUuid, resourceType);
     }
 
     private static Ternary<Long, String, String> getResourceDetailsUsingEntityClassAndContext(Class<?> entityClass, ApiCommandResourceType resourceType) {

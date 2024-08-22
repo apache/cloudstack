@@ -1358,7 +1358,7 @@ export default {
       hostData.clusterid = this.stepData.clusterReturned.id
       hostData.hypervisor = this.stepData.clusterReturned.hypervisortype
       hostData.clustertype = this.stepData.clusterReturned.clustertype
-      hostData.hosttags = this.prefillContent?.hostTags || null
+      hostData.hosttags = this.prefillContent?.hostTags || ''
       hostData.username = this.prefillContent?.hostUserName || null
       hostData.password = hostPassword
       const hostname = this.prefillContent?.hostName || null
@@ -1439,6 +1439,7 @@ export default {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
+        params['details[0].nfsmountopts'] = this.prefillContent.primaryStorageNFSMountOptions
       } else if (protocol === 'SMB') {
         let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
@@ -2145,7 +2146,11 @@ export default {
           resolve()
         }).catch(error => {
           message = error.response.headers['x-description']
-          reject(message)
+          if (message.includes('is already in the database')) {
+            resolve()
+          } else {
+            reject(message)
+          }
         })
       })
     },

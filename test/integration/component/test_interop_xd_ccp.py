@@ -571,7 +571,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             id=self.volume.id
         )
 
-        if  list_volume_response1[0].virtualmachineid is None:
+        if list_volume_response1[0].virtualmachineid is None:
             self.skipTest("Check if volume is attached to the VM before detach")
 
         self.virtual_machine.detach_volume(self.user_api_client, self.volume)
@@ -618,7 +618,7 @@ class TestXDCCPInterop(cloudstackTestCase):
             id=self.volume.id
         )
 
-        if  list_volume_response1[0].virtualmachineid is not None:
+        if list_volume_response1[0].virtualmachineid is not None:
             self.skipTest("Check if volume is detached before deleting")
 
         cmd = deleteVolume.deleteVolumeCmd()

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 # $Id: createvolume.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/createvolume.sh $
 # createvolume.sh -- install a volume
@@ -53,7 +53,7 @@ verify_cksum() {
   esac
   echo  "$1  $2" | $digestalgo  -c --status
   #printf "$1\t$2" | $digestalgo  -c --status
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Checksum failed, not proceeding with install\n"
     exit 3
@@ -63,7 +63,7 @@ verify_cksum() {
 untar() {
   local ft=$(file $1| awk -F" " '{print $2}')
   case $ft in
-  USTAR) 
+  USTAR)
      printf "tar archives not supported\n"  >&2
      return 1
           ;;
@@ -109,12 +109,12 @@ uncompress() {
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file (filetype=$ft), exiting "
-    return 1 
+    return 1
   fi
- 
+
   rm -f $1
   printf $tmpfile
 
@@ -205,7 +205,7 @@ fi
 
 mkdir -p $tmpltfs
 
-if [ ! -f $tmpltimg ] 
+if [ ! -f $tmpltimg ]
 then
   printf "root disk file $tmpltimg doesn't exist\n"
   exit 3
@@ -227,7 +227,7 @@ then
   if [ isCifs -ne 0 ] ;
   then
     if  which  vhd-util &>/dev/null
-    then 
+    then
       vhd-util check -n ${tmpltimg2} > /dev/null
       rollback_if_needed $tmpltfs $? "vhd check of $tmpltimg2 failed\n"
       vhd-util set -n ${tmpltimg2} -f "hidden" -v "0" > /dev/null

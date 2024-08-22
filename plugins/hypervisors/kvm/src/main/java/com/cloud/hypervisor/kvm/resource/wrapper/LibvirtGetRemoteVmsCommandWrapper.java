@@ -47,37 +47,38 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
     @Override
     public Answer execute(final GetRemoteVmsCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String result = null;
-        String hypervisorURI = "qemu+tcp://" + command.getRemoteIp() +
-                "/system";
+        String remoteIp = command.getRemoteIp();
+        String hypervisorURI = "qemu+tcp://" + remoteIp + "/system";
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
             Connect conn = LibvirtConnection.getConnection(hypervisorURI);
             final List<String> allVmNames = libvirtComputingResource.getAllVmNames(conn);
+            logger.info(String.format("Found %d VMs on the remote host %s", allVmNames.size(), remoteIp));
             for (String name : allVmNames) {
                 final Domain domain = libvirtComputingResource.getDomain(conn, name);
-
                 final DomainInfo.DomainState ps = domain.getInfo().state;
-
                 final VirtualMachine.PowerState state = libvirtComputingResource.convertToPowerState(ps);
 
-                logger.debug("VM " + domain.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+                logger.debug(String.format("Remote VM %s - powerstate: %s, state: %s", domain.getName(), ps.toString(), state.toString()));
 
                 if (state == VirtualMachine.PowerState.PowerOff) {
                     try {
                         UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
                         unmanagedInstances.put(instance.getName(), instance);
                     } catch (Exception e) {
-                        logger.error("Error while fetching instance details", e);
+                        logger.error("Couldn't fetch remote VM " + domain.getName() + " details, due to: " + e.getMessage(), e);
                     }
                 }
                 domain.free();
             }
-            logger.debug("Found Vms: "+ unmanagedInstances.size());
-            return  new GetRemoteVmsAnswer(command, "", unmanagedInstances);
+            logger.debug("Found " + unmanagedInstances.size() + " stopped VMs on remote host " + remoteIp);
+            return new GetRemoteVmsAnswer(command, "", unmanagedInstances);
         } catch (final LibvirtException e) {
-            logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());
-            return new Answer(command, false, result);
+            logger.error("Failed to list stopped VMs on remote host " + remoteIp + ", due to: " + e.getMessage(), e);
+            if (e.getMessage().toLowerCase().contains("connection refused")) {
+                return new Answer(command, false, "Unable to connect to remote host " + remoteIp + ", please check the libvirtd tcp connectivity and retry");
+            }
+            return new Answer(command, false, "Unable to list stopped VMs on remote host " + remoteIp + ", due to: " + e.getMessage());
         }
     }
 
@@ -103,8 +104,8 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             return instance;
         } catch (Exception e) {
-            logger.debug("Unable to retrieve unmanaged instance info. ", e);
-            throw new CloudRuntimeException("Unable to retrieve unmanaged instance info. " + e.getMessage());
+            logger.debug("Unable to retrieve remote unmanaged instance info,  due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Unable to retrieve remote unmanaged instance info, due to: " + e.getMessage());
         }
     }
 
@@ -116,7 +117,6 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
                 return UnmanagedInstanceTO.PowerState.PowerOff;
             default:
                 return UnmanagedInstanceTO.PowerState.PowerUnknown;
-
         }
     }
 
@@ -162,7 +162,6 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             disk.setDiskId(String.valueOf(counter++));
             disk.setLabel(diskDef.getDiskLabel());
             disk.setController(diskDef.getBusType().toString());
-
 
             Pair<String, String> sourceHostPath = getSourceHostPath(libvirtComputingResource, diskDef.getSourcePath());
             if (sourceHostPath != null) {

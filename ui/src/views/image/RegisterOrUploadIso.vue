@@ -227,35 +227,45 @@
           </a-col>
         </a-row>
 
-        <a-form-item ref="isextractable" name="isextractable">
-          <template #label>
-            <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
-          </template>
-          <a-switch v-model:checked="form.isextractable" />
-        </a-form-item>
-
-        <a-form-item
-          ref="ispublic"
-          name="ispublic"
-          v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
-          <template #label>
-            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
-          </template>
-          <a-switch v-model:checked="form.ispublic" />
-        </a-form-item>
-
-        <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
-          <template #label>
-            <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
-          </template>
-          <a-switch v-model:checked="form.isfeatured" />
-        </a-form-item>
-        <a-form-item ref="passwordenabled" name="passwordenabled" v-if="currentForm === 'Create'">
-          <template #label>
-            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
-          </template>
-          <a-switch v-model:checked="form.passwordenabled" />
-        </a-form-item>
+        <a-row :gutter="12">
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="isdynamicallyscalable" name="isdynamicallyscalable">
+              <template #label>
+                <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+              </template>
+              <a-switch v-model:checked="form.isdynamicallyscalable" />
+            </a-form-item>
+            <a-form-item
+              ref="ispublic"
+              name="ispublic"
+              v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+              <template #label>
+                <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+              </template>
+              <a-switch v-model:checked="form.ispublic" />
+            </a-form-item>
+            <a-form-item ref="passwordenabled" name="passwordenabled" v-if="currentForm === 'Create'">
+              <template #label>
+                <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+              </template>
+              <a-switch v-model:checked="form.passwordenabled" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="24" :lg="12">
+            <a-form-item ref="isextractable" name="isextractable">
+              <template #label>
+                <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
+              </template>
+              <a-switch v-model:checked="form.isextractable" />
+            </a-form-item>
+            <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
+              <template #label>
+                <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
+              </template>
+              <a-switch v-model:checked="form.isfeatured" />
+            </a-form-item>
+          </a-col>
+        </a-row>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -339,7 +349,8 @@ export default {
         bootable: true,
         isextractable: false,
         ispublic: false,
-        passwordenabled: false
+        passwordenabled: false,
+        isdynamicallyscalable: false
       })
       this.rules = reactive({
         url: [{ required: true, message: this.$t('label.upload.iso.from.local') }],

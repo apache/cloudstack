@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -86,7 +87,9 @@ jobs:
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
                   smoke/test_nested_virtualization
-                  smoke/test_set_sourcenat",
+                  smoke/test_set_sourcenat
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -132,6 +135,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import

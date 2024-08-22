@@ -254,7 +254,7 @@ export default {
       api('listZones', { id: this.zoneId }).then(json => {
         const zoneResponse = json.listzonesresponse.zone || []
         this.showCreateButton = false
-        if (zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
+        if ('createNetwork' in store.getters.apis && zoneResponse && zoneResponse.length > 0 && (!zoneResponse[0].securitygroupsenabled || (isAdmin() && zoneResponse[0].networktype === 'Advanced'))) {
           this.showCreateButton = true
         }
       })

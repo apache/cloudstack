@@ -36,6 +36,8 @@ repos:
       - id: check-vcs-permalinks
       #- id: check-yaml
       - id: destroyed-symlinks
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
       - id: detect-private-key
         exclude: >
           (?x)
@@ -53,9 +55,21 @@ repos:
       - id: end-of-file-fixer
         exclude: \.vhd$
       #- id: fix-byte-order-marker
+      - id: forbid-submodules
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
-      # - id: trailing-whitespace
+      - id: trailing-whitespace
+        files: \.(header|in|java|md|properties|py|rb|sh|sql|txt|vue|xml|yaml|yml)$
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        name: run codespell
+        description: Check spelling with codespell
+        args: [--ignore-words=.github/linters/codespell.txt]
+        exclude: ^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:
@@ -72,3 +86,12 @@ repos:
         ^scripts/vm/hypervisor/xenserver/vmopspremium$|
         ^setup/bindir/cloud-setup-encryption\.in$|
         ^venv/.*$
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.40.0
+    hooks:
+      - id: markdownlint
+        name: run markdownlint
+        description: check Markdown files with markdownlint
+        args: [--config=.github/linters/.markdown-lint.yml]
+        types: [markdown]
+        files: \.(md|mdown|markdown)$

@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
@@ -53,7 +52,7 @@ public class LinstorUtil {
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
 
     public static DevelopersApi getLinstorAPI(String linstorUrl) {
-        ApiClient client = Configuration.getDefaultApiClient();
+        ApiClient client = new ApiClient();
         client.setBasePath(linstorUrl);
         return new DevelopersApi(client);
     }
@@ -113,7 +112,8 @@ public class LinstorUtil {
                 Collections.singletonList(storagePoolName),
                 Collections.emptyList(),
                 null,
-                null
+                null,
+                true
         );
         return sps != null ? sps : Collections.emptyList();
     }
@@ -167,7 +167,8 @@ public class LinstorUtil {
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
-                null
+                null,
+                true
         );
     }
 
@@ -202,5 +203,38 @@ public class LinstorUtil {
         }
         LOGGER.error("isResourceInUse: null returned from resourceList");
         return false;
+    }
+
+    /**
+     * Try to get the device path for the given resource name.
+     * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
+     * @param api developer api object to use
+     * @param rscName resource name to get the device path
+     * @return The device path of the resource.
+     * @throws ApiException if Linstor API call failed.
+     * @throws CloudRuntimeException if no device path could be found.
+     */
+    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+        List<ResourceWithVolumes> resources = api.viewResources(
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                null,
+                null,
+                null);
+        for (ResourceWithVolumes rsc : resources) {
+            if (!rsc.getVolumes().isEmpty()) {
+                // CloudStack resource always only have 1 volume
+                String devicePath = rsc.getVolumes().get(0).getDevicePath();
+                if (devicePath != null && !devicePath.isEmpty()) {
+                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
+                    return devicePath;
+                }
+            }
+        }
+
+        final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
+        LOGGER.error(errMsg);
+        throw new CloudRuntimeException("Linstor: " + errMsg);
     }
 }

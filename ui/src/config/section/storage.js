@@ -91,7 +91,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'isencrypted']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }
@@ -256,10 +256,16 @@ export default {
                     (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
           args: (record, store) => {
-            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
+            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
             if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
               fields.push('domainid')
               fields.push('account')
+            }
+            if (['Admin'].includes(store.userInfo.roletype) || store.features.userpublictemplateenabled) {
+              fields.push('ispublic')
+            }
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              fields.push('isfeatured')
             }
             return fields
           },
@@ -387,6 +393,26 @@ export default {
           message: 'message.action.revert.snapshot',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' && record.revertable }
+        },
+        {
+          api: 'extractSnapshot',
+          icon: 'cloud-download-outlined',
+          label: 'label.action.download.snapshot',
+          message: 'message.action.download.snapshot',
+          dataView: true,
+          show: (record, store) => {
+            return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
+                ((record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
+                  (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id))) &&
+                    record.state === 'BackedUp'
+          },
+          args: ['zoneid'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            }
+          },
+          response: (result) => { return `Please click <a href="${result.snapshot.url}" target="_blank">${result.snapshot.url}</a> to download.` }
         },
         {
           api: 'deleteSnapshot',

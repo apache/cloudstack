@@ -55,6 +55,8 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
         if (storagePoolHost == null) {
             storagePoolHost = new StoragePoolHostVO(poolId, hostId, "");
             storagePoolHostDao.persist(storagePoolHost);
+        } else {
+            return false;
         }
         return true;
     }

@@ -82,7 +82,7 @@ export default {
       }, {
         name: 'vnf.appliances',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VnfAppliancesTab.vue'))),
-        show: () => { return 'deployVnfAppliance' in store.getters.apis }
+        show: () => { return 'listVnfAppliances' in store.getters.apis }
       }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
@@ -140,7 +140,9 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
-          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+          disabled: (record, user) => {
+            return !record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))
+          },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
@@ -150,7 +152,9 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+          disabled: (record, user) => {
+            return !record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))
+          },
           args: (record, store, isGroupAction) => {
             var fields = []
             if (isGroupAction || record.vpcid == null) {
@@ -189,7 +193,9 @@ export default {
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
-          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+          disabled: (record, user) => {
+            return !record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))
+          },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -337,7 +343,7 @@ export default {
       name: 'vnfapp',
       title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
-      permission: ['listVnfTemplates'],
+      permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
         return { details: 'servoff,tmpl,nics', isvnf: true }
@@ -748,6 +754,7 @@ export default {
       icon: 'environment-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
+      searchFilters: ['ipaddress', 'zoneid', 'account', 'domainid', 'vlanid', 'tags'],
       resourceType: 'PublicIpAddress',
       columns: () => {
         var fields = ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account']
@@ -921,7 +928,6 @@ export default {
       name: 's2svpn',
       title: 'label.site.to.site.vpn',
       icon: 'lock-outlined',
-      hidden: true,
       permission: ['listVpnGateways'],
       columns: ['publicip', 'account', 'domain'],
       details: ['publicip', 'account', 'domain'],
