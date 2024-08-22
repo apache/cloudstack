@@ -879,7 +879,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         // additional order by since createdDate does not have milliseconds
         // and two events, created within one second can be incorrectly ordered (for example VM.CREATE Completed before Scheduled)
-        searchFilter.addOrderBy(EventVO.class, "id", false);
+        searchFilter.addOrderBy(EventVO.class, "id", false, null);
 
         SearchBuilder<EventVO> eventSearchBuilder = eventDao.createSearchBuilder();
         eventSearchBuilder.select(null, Func.DISTINCT, eventSearchBuilder.entity().getId());
@@ -3421,7 +3421,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         DiskOffering.State state = cmd.getState();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
+        searchFilter.addOrderBy(DiskOfferingVO.class, "id", true, null);
         SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
         diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
 
@@ -3719,7 +3719,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Filter searchFilter = new Filter(ServiceOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        searchFilter.addOrderBy(ServiceOfferingVO.class, "id", true);
+        searchFilter.addOrderBy(ServiceOfferingVO.class, "id", true, null);
 
         SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
         serviceOfferingSearch.select(null, Func.DISTINCT, serviceOfferingSearch.entity().getId()); // select distinct
@@ -4183,7 +4183,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Filter searchFilter = new Filter(DataCenterJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        searchFilter.addOrderBy(DataCenterJoinVO.class, "id", true);
+        searchFilter.addOrderBy(DataCenterJoinVO.class, "id", true, null);
         SearchCriteria<DataCenterJoinVO> sc = sb.create();
 
         if (networkType != null) {
@@ -4468,7 +4468,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         VMTemplateVO template = null;
 
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", SortKeyAscending.value(), startIndex, pageSize);
-        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value());
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value(), null);
 
         SearchBuilder<TemplateJoinVO> sb = _templateJoinDao.createSearchBuilder();
         if (showUnique) {

@@ -6813,7 +6813,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(final ListNetworkOfferingsCmd cmd) {
         final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
-        searchFilter.addOrderBy(NetworkOfferingJoinVO.class, "id", true);
+        searchFilter.addOrderBy(NetworkOfferingJoinVO.class, "id", true, null);
         final Account caller = CallContext.current().getCallingAccount();
         final SearchCriteria<NetworkOfferingJoinVO> sc = networkOfferingJoinDao.createSearchCriteria();
 

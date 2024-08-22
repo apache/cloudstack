@@ -633,7 +633,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
         // query details by batches
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
-        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", QueryService.SortKeyAscending.value());
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", QueryService.SortKeyAscending.value(), null);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
@@ -706,7 +706,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
-        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", true);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", true, null);
 
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
         sc.setParameters("idsIN", ids);

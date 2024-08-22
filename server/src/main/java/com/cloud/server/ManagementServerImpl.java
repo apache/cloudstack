@@ -2725,9 +2725,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(final ListGuestOsMappingCmd cmd) {
         final String guestOsId = "guestOsId";
         final Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "hypervisorVersion", false);
-        searchFilter.addOrderBy(GuestOSHypervisorVO.class, guestOsId, true);
-        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "hypervisorVersion", false, null);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, guestOsId, true, null);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false, null);
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
         final String osDisplayName = cmd.getOsDisplayName();

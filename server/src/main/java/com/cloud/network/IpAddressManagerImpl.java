@@ -920,7 +920,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         boolean ascOrder = ! forSystemVms;
         Filter filter = new Filter(IPAddressVO.class, "forSystemVms", ascOrder, 0l, 1l);
 
-        filter.addOrderBy(IPAddressVO.class,"vlanId", true);
+        filter.addOrderBy(IPAddressVO.class,"vlanId", true, null);
 
         List<IPAddressVO> addrs = new ArrayList<>();
 
