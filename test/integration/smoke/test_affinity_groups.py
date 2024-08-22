@@ -253,11 +253,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVmWithAffinityGroup, self).tearDown()
 
     @classmethod
     def tearDownClass(cls):
