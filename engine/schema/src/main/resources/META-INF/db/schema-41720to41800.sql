@@ -66,16 +66,6 @@ UPDATE `cloud`.`nics` SET mtu = 1500 WHERE vm_type='DomainRouter' AND removed IS
 -- Add type column to data_center table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'type', 'varchar(32) DEFAULT ''Core'' COMMENT ''the type of the zone'' ');
 
--- Idempotent ADD COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
 -- Add passphrase table
 CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
     `id` bigint unsigned NOT NULL auto_increment,
@@ -125,45 +115,6 @@ WHERE roles.role_type != 'Admin' AND roles.is_default = 1 AND role_perm.rule = '
 
 -- VM autoscaling
 
--- Idempotent ADD COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent RENAME COLUMN
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CHANGE_COLUMN`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_CHANGE_COLUMN` (
-    IN in_table_name VARCHAR(200)
-, IN in_column_name VARCHAR(200)
-, IN in_column_new_name VARCHAR(200)
-, IN in_column_new_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1054 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'CHANGE COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_name); SET @ddl = CONCAT(@ddl, ' ', in_column_new_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent ADD UNIQUE KEY
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
-    IN in_table_name VARCHAR(200)
-, IN in_key_name VARCHAR(200)
-, IN in_key_definition VARCHAR(1000)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE KEY ', in_key_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Idempotent DROP FOREIGN KEY
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
-    IN in_table_name VARCHAR(200)
-, IN in_foreign_key_name VARCHAR(200)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1091, 1025 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Add column 'supports_vm_autoscaling' to 'network_offerings' table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings', 'supports_vm_autoscaling', 'boolean default false');
@@ -437,16 +388,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`tungsten_lb_health_monitor` (
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --- #6888 add index to speed up querying IPs in the network-tab
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_KEY`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_KEY` (
-		IN in_index_name VARCHAR(200)
-    , IN in_table_name VARCHAR(200)
-    , IN in_key_definition VARCHAR(1000)
-)
-BEGIN
-
-    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD KEY ') ; SET @ddl = CONCAT(@ddl, ' ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_user_ip_address_state','user_ip_address', '(state)');
 
