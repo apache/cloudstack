@@ -684,7 +684,12 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsInteger() {
-        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Integer.class));
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("-2147483647", Integer.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueExceedsIntegerLimitAndTypeIsInteger() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("2147483648", Integer.class));
     }
 
     @Test
@@ -704,7 +709,12 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsShort() {
-        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Short.class));
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("-32768", Short.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueExceedsShortLimitAndTypeIsShort() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("32768", Short.class));
     }
 
     @Test
@@ -724,7 +734,12 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateValueTypeTestReturnsTrueWhenValueIsIntegerAndTypeIsLong() {
-        Assert.assertTrue(configurationManagerImplSpy.validateValueType("1", Long.class));
+        Assert.assertTrue(configurationManagerImplSpy.validateValueType("-9223372036854775807", Long.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueExceedsLongLimitAndTypeIsLong() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("9223372036854775808", Long.class));
     }
 
     @Test
@@ -743,6 +758,11 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsInfiniteAndTypeIsFloat() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", Float.class));
+    }
+
+    @Test
     public void validateValueTypeTestReturnsTrueWhenValueIsNumericAndTypeIsFloat() {
         Assert.assertTrue(configurationManagerImplSpy.validateValueType("1.1", Float.class));
     }
@@ -755,6 +775,11 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateValueTypeTestReturnsFalseWhenValueIsNullAndTypeIsDouble() {
         Assert.assertFalse(configurationManagerImplSpy.validateValueType(null, Double.class));
+    }
+
+    @Test
+    public void validateValueTypeTestReturnsFalseWhenValueIsInfiniteAndTypeIsDouble() {
+        Assert.assertFalse(configurationManagerImplSpy.validateValueType("9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", Double.class));
     }
 
     @Test

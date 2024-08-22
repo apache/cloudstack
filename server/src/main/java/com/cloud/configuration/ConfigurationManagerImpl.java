@@ -1231,9 +1231,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * <ul>
      *     <li>String: any value, including null;</li>
      *     <li>Character: any value, including null;</li>
-     *     <li>Boolean: strings that contain "true" or "false" (case-sensitive);</li>
-     *     <li>Integer: strings that contain exactly an integer. Values that contain a decimal aren't valid;</li>
-     *     <li>Short, Long, Float and Double: strings that contain an integer or a decimal.</li>
+     *     <li>Boolean: strings that equal "true" or "false" (case-sensitive);</li>
+     *     <li>Integer, Short, Long: strings that contain a valid int/short/long;</li>
+     *     <li>Float, Double: strings that contain a valid float/double, except infinity.</li>
      * </ul>
      *
      * If a type isn't listed here, then the value will be considered invalid.
@@ -1249,10 +1249,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             if (type == Boolean.class) {
                 return value.equals("true") || value.equals("false");
-            } else if (type == Integer.class || type == Long.class || type == Short.class) {
+            } else if (type == Integer.class) {
                 Integer.parseInt(value);
-            } else if (type == Float.class || type == Double.class) {
-                Double.parseDouble(value);
+            } else if (type == Long.class) {
+                Long.parseLong(value);
+            } else if (type == Short.class) {
+                Short.parseShort(value);
+            } else if (type == Float.class) {
+                float floatValue = Float.parseFloat(value);
+                return !Float.isInfinite(floatValue);
+            } else if (type == Double.class) {
+                double doubleValue = Double.parseDouble(value);
+                return !Double.isInfinite(doubleValue);
             } else {
                 return false;
             }
@@ -1293,8 +1301,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||
                     UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {
-                if (val > 10) {
-                    return String.format("Please enter a value between 0 and 10 for the configuration parameter: [%s]. -1 will disable it.", name);
+                if (val < -1 || val > 10) {
+                    return String.format("Please enter a value between -1 and 10 for the configuration parameter: [%s]. -1 will disable it.", name);
                 }
             } else if (configValuesForValidation.contains(name)) {
                 if (val <= 0) {
