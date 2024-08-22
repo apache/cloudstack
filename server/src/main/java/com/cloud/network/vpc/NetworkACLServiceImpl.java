@@ -765,7 +765,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             // aclId is not specified
             // List permitted VPCs and filter aclItems
-            final List<Long> permittedAccounts = new ArrayList<Long>();
+            final List<Long> permittedAccounts = new ArrayList<>();
             Long domainId = cmd.getDomainId();
             boolean isRecursive = cmd.isRecursive();
             final String accountName = cmd.getAccountName();
@@ -781,7 +781,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final SearchCriteria<VpcVO> scVpc = sbVpc.create();
             _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
             final List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
-            final List<Long> vpcIds = new ArrayList<Long>();
+            final List<Long> vpcIds = new ArrayList<>();
             for (final VpcVO vpc : vpcs) {
                 vpcIds.add(vpc.getId());
             }
