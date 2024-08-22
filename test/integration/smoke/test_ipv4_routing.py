@@ -1240,8 +1240,10 @@ class TestIpv4Routing(cloudstackTestCase):
             # 5. Verify frr.conf in network VR
             # 6. Reboot VR
             # 7. Verify frr.conf in network VR
-            # 8. Update network BGP peers (to null)
+            # 8. Update network BGP peers (to bgppeer_2)
             # 9. Verify frr.conf in network VR
+            # 10. Update network BGP peers (to null)
+            # 11. Verify frr.conf in network VR
         """
         self.message("Running test_11_isolated_network_with_dynamic_routed_mode")
 
@@ -1254,15 +1256,6 @@ class TestIpv4Routing(cloudstackTestCase):
             password=PASSWORD_1
         )
         self.cleanup.append(bgppeer_1)
-
-        bgppeer_2 = BgpPeer.create(
-            self.apiclient,
-            zoneid=self.zone.id,
-            asnumber=ASN_2,
-            ipaddress=IP4_ADDR_2,
-            password=PASSWORD_2
-        )
-        self.cleanup.append(bgppeer_2)
 
         # 1. Create Isolated network with Dynamic routing
         test_network_dynamic = Network.create(
@@ -1302,6 +1295,15 @@ class TestIpv4Routing(cloudstackTestCase):
         self.verifyFrrConf(network_router, frr_configs)
 
         # 4. Update network BGP peers (to bgp_peer_1 and bgp_peer_2)
+        bgppeer_2 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_2,
+            ipaddress=IP4_ADDR_2,
+            password=PASSWORD_2
+        )
+        self.cleanup.append(bgppeer_2)
+
         test_network_dynamic.changeBgpPeers(
             self.apiclient,
             bgppeerids=[bgppeer_1.id, bgppeer_2.id]
@@ -1327,10 +1329,10 @@ class TestIpv4Routing(cloudstackTestCase):
         network_router = self.get_router(networkid=test_network_dynamic.id)
         self.verifyFrrConf(network_router, frr_configs)
 
-        # 8. Update network BGP peers (to null)
+        # 8. Update network BGP peers (to bgppeer_2)
         test_network_dynamic.changeBgpPeers(
             self.apiclient,
-            bgppeerids=[]
+            bgppeerids=[bgppeer_2.id]
         )
 
         # 9. Verify frr.conf in network VR
@@ -1339,13 +1341,31 @@ class TestIpv4Routing(cloudstackTestCase):
                        {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
                         "exists": False},
                        {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
-                        "exists": False},
+                        "exists": True},
                        {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
-                        "exists": False},
+                        "exists": True},
                        {"config": "network %s" % test_network_dynamic.cidr,
-                        "exists": False}]
+                        "exists": True}]
         self.verifyFrrConf(network_router, frr_configs)
 
+        # 10. Update network BGP peers (to null)
+        test_network_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[]
+        )
+
+        # 11. Verify frr.conf in network VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": True},
+                       {"config": "network %s" % test_network_dynamic.cidr,
+                        "exists": True}]
+        self.verifyFrrConf(network_router, frr_configs)
 
     @attr(tags=['advanced'], required_hardware=False)
     def test_12_vpc_and_tier_with_dynamic_routed_mode(self):
@@ -1364,8 +1384,10 @@ class TestIpv4Routing(cloudstackTestCase):
             # 11. Verify frr.conf in VPC VR
             # 12. Reboot VPC VR
             # 13. Verify frr.conf in VPC VR
-            # 14. Update network BGP peers (to null)
+            # 14. Update network BGP peers (to bgppeer_2)
             # 15. Verify frr.conf in VPC VR
+            # 16. Update network BGP peers (to null)
+            # 17. Verify frr.conf in VPC VR
         """
         self.message("Running test_12_vpc_and_tier_with_dynamic_routed_mode")
 
@@ -1378,15 +1400,6 @@ class TestIpv4Routing(cloudstackTestCase):
             password=PASSWORD_1
         )
         self.cleanup.append(bgppeer_1)
-
-        bgppeer_2 = BgpPeer.create(
-            self.apiclient,
-            zoneid=self.zone.id,
-            asnumber=ASN_2,
-            ipaddress=IP4_ADDR_2,
-            password=PASSWORD_2
-        )
-        self.cleanup.append(bgppeer_2)
 
         # 2.1 VPC offering for static routing
         vpc_offering_dynamic = VpcOffering.create(
@@ -1456,6 +1469,15 @@ class TestIpv4Routing(cloudstackTestCase):
         self.verifyFrrConf(vpc_router, frr_configs)
 
         # 7. Update VPC BGP peers (to bgp_peer_1 and bgp_peer_2)
+        bgppeer_2 = BgpPeer.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            asnumber=ASN_2,
+            ipaddress=IP4_ADDR_2,
+            password=PASSWORD_2
+        )
+        self.cleanup.append(bgppeer_2)
+
         test_vpc_dynamic.changeBgpPeers(
             self.apiclient,
             bgppeerids=[bgppeer_1.id, bgppeer_2.id]
@@ -1523,10 +1545,10 @@ class TestIpv4Routing(cloudstackTestCase):
         vpc_router = self.get_router(vpcid=test_vpc_dynamic.id)
         self.verifyFrrConf(vpc_router, frr_configs)
 
-        # 14. Update VPC BGP peers (to null)
+        # 14. Update VPC BGP peers (to bgppeer_2)
         test_vpc_dynamic.changeBgpPeers(
             self.apiclient,
-            bgppeerids=[]
+            bgppeerids=[bgppeer_2.id]
         )
 
         # 15. Verify frr.conf in VPC VR
@@ -1535,13 +1557,34 @@ class TestIpv4Routing(cloudstackTestCase):
                        {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
                         "exists": False},
                        {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
-                        "exists": False},
+                        "exists": True},
                        {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
-                        "exists": False},
+                        "exists": True},
                        {"config": "network %s" % test_vpc_tier_dynamic_1.cidr,
-                        "exists": False},
+                        "exists": True},
                        {"config": "network %s" % test_vpc_tier_dynamic_2.cidr,
-                        "exists": False}]
+                        "exists": True}]
+        self.verifyFrrConf(vpc_router, frr_configs)
+
+        # 16. Update VPC BGP peers (to null)
+        test_vpc_dynamic.changeBgpPeers(
+            self.apiclient,
+            bgppeerids=[]
+        )
+
+        # 17. Verify frr.conf in VPC VR
+        frr_configs = [{"config": "neighbor %s remote-as %s" % (bgppeer_1.ipaddress, bgppeer_1.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_1.ipaddress, PASSWORD_1),
+                        "exists": True},
+                       {"config": "neighbor %s remote-as %s" % (bgppeer_2.ipaddress, bgppeer_2.asnumber),
+                        "exists": True},
+                       {"config": "neighbor %s password %s" % (bgppeer_2.ipaddress, PASSWORD_2),
+                        "exists": True},
+                       {"config": "network %s" % test_vpc_tier_dynamic_1.cidr,
+                        "exists": True},
+                       {"config": "network %s" % test_vpc_tier_dynamic_2.cidr,
+                        "exists": True}]
         self.verifyFrrConf(vpc_router, frr_configs)
 
 

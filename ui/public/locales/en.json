@@ -3398,6 +3398,7 @@
 "message.success.assigned.vms": "Successfully assigned Instances",
 "message.success.certificate.upload": "Certificate successfully uploaded",
 "message.success.change.affinity.group": "Successfully changed affinity groups",
+"message.success.change.bgp.peers": "Successfully changed BGP peers",
 "message.success.change.offering": "Successfully changed offering",
 "message.success.change.password": "Successfully changed password for User",
 "message.success.clear.webhook.deliveries": "Successfully cleared webhook deliveries",

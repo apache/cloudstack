@@ -417,6 +417,13 @@ public class BGPServiceImpl implements BGPService {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
                 List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+                if (CollectionUtils.isEmpty(bgpPeers)) {
+                    Account owner = accountDao.findByIdIncludingRemoved(vpc.getAccountId());
+                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, vpc.getZoneId());
+                    bgpPeers = bgpPeerIds.stream()
+                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                            .collect(Collectors.toList());
+                }
                 LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
                 List<? extends Network> networks = networkModel.listNetworksByVpc(vpc.getId());
                 if (CollectionUtils.isNotEmpty(networks)) {
