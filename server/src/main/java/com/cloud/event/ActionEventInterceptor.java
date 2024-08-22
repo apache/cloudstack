@@ -94,7 +94,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             String eventResourceType = getEventResourceType(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
             boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
-            long accountId = ctx.getProject() != null && !EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(eventType) ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
+            long accountId = ActionEventUtils.getOwnerAccountId(ctx, eventType, ctx.getCallingAccountId());
 
             if (eventType.equals(""))
                 return;
@@ -124,7 +124,7 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
             String eventResourceType = getEventResourceType(actionEvent, ctx);
             String eventType = getEventType(actionEvent, ctx);
             boolean isEventDisplayEnabled = ctx.isEventDisplayEnabled();
-            long accountId = ctx.getProject() != null && !EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(eventType) ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
+            long accountId = ActionEventUtils.getOwnerAccountId(ctx, eventType, ctx.getCallingAccountId());
 
             if (eventType.equals(""))
                 return;
