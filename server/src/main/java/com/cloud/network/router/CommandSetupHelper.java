@@ -1426,22 +1426,22 @@ public class CommandSetupHelper {
     public void createBgpPeersCommands(final List<? extends BgpPeer> bgpPeers, final VirtualRouter router, final Commands cmds, final Network network) {
         List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
 
-        ASNumberVO asNumberVO = network.getVpcId() != null ?
-                asNumberDao.findByZoneAndVpcId(network.getDataCenterId(), network.getVpcId()) :
-                asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
+        ASNumberVO asNumberVO = router.getVpcId() != null ?
+                asNumberDao.findByZoneAndVpcId(router.getDataCenterId(), router.getVpcId()) :
+                asNumberDao.findByZoneAndNetworkId(router.getDataCenterId(), network.getId());
         if (asNumberVO == null) {
             logger.debug("No AS number found for the guest network or VPC.");
             return;
         }
 
         List<Network> guestNetworks = new ArrayList<>();
-        if (network.getVpcId() == null) {
-            guestNetworks.add(network);
-        } else {
-            List<NetworkVO> networks = _networkDao.listByVpc(network.getVpcId());
+        if (router.getVpcId() != null) {
+            List<NetworkVO> networks = _networkDao.listByVpc(router.getVpcId());
             for (NetworkVO networkVO : networks) {
                 guestNetworks.add(networkVO);
             }
+        } else {
+            guestNetworks.add(network);
         }
         for (BgpPeer bgpPeer: bgpPeers) {
             Map<BgpPeer.Detail, String> bgpPeerDetails = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());

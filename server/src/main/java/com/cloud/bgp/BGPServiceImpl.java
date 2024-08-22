@@ -401,7 +401,7 @@ public class BGPServiceImpl implements BGPService {
                             .collect(Collectors.toList());
                 }
                 LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
-                return ((BgpServiceProvider) provider).applyBgpPeers(network, bgpPeers);
+                return ((BgpServiceProvider) provider).applyBgpPeers(null, network, bgpPeers);
             }
         }
         return true;
@@ -425,10 +425,8 @@ public class BGPServiceImpl implements BGPService {
                             .collect(Collectors.toList());
                 }
                 LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
-                List<? extends Network> networks = networkModel.listNetworksByVpc(vpc.getId());
-                if (CollectionUtils.isNotEmpty(networks)) {
-                    return ((BgpServiceProvider) provider).applyBgpPeers(networks.get(0), bgpPeers);
-                }
+                return ((BgpServiceProvider) provider).applyBgpPeers(vpc, null, bgpPeers);
+
             }
         }
         return true;

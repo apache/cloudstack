@@ -18,6 +18,7 @@ package com.cloud.network.element;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.vpc.Vpc;
 
 import org.apache.cloudstack.network.BgpPeer;
 
@@ -25,6 +26,6 @@ import java.util.List;
 
 public interface BgpServiceProvider extends NetworkElement {
 
-    boolean applyBgpPeers(Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException;
+    boolean applyBgpPeers(Vpc vpc, Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException;
 
 }

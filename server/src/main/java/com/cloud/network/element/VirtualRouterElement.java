@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -96,6 +97,7 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -1396,21 +1398,25 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     }
 
     @Override
-    public boolean applyBgpPeers(Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
+    public boolean applyBgpPeers(Vpc vpc, Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
+        if (ObjectUtils.allNull(vpc, network)) {
+            throw new CloudRuntimeException("One of VPC and network must be passed, however both are null.");
+        }
         final List<DomainRouterVO> routers;
-        if (network.getVpcId() != null) {
-            routers = _routerDao.listByVpcId(network.getVpcId());
+        if (vpc != null) {
+            routers = _routerDao.listByVpcId(vpc.getId());
         } else {
             routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
         }
 
         if (CollectionUtils.isEmpty(routers)) {
-            logger.warn(String.format("Can't find at least one router for network %s !", network));
+            logger.warn(String.format("Can't find at least one router for vpc %s or network %s !", vpc, network));
             return true;
         }
 
         boolean result = true;
-        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        long dataCenterId = vpc != null ? vpc.getZoneId() : network.getDataCenterId();
+        final DataCenterVO dcVO = _dcDao.findById(dataCenterId);
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         for (final DomainRouterVO domainRouterVO : routers) {
