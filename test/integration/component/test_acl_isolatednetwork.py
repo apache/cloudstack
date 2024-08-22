@@ -524,7 +524,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
             self.fail("Domain admin is allowed to create network for users not in their domain ")
         except Exception as e:
             self.debug("When Domain admin tries to create network for users in their sub domain %s" % e)
-            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_SOURCE):
+            if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):
                 self.fail("Error message validation failed when Domain admin tries to create network for users not in their domain ")
 
     ## Test cases relating to createNetwork as regular user
