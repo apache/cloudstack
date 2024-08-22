@@ -297,7 +297,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "enabling project", async = true, create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_CREATE, eventDescription = "creating project", async = true)
     @DB
     public Project enableProject(long projectId) {
         Account caller = CallContext.current().getCallingAccount();
