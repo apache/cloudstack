@@ -4655,11 +4655,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
                         Config.VmwareRootDiskControllerType.getDefaultValue());
                 vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, vmwareRootDiskControllerTypeFromSetting);
-                if (vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER) == null) {
-                    if (vmwareRootDiskControllerTypeFromSetting.equalsIgnoreCase("scsi")) {
-                        vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, "scsi");
-                    }
-                }
             }
 
             if (vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER) == null) {
