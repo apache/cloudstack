@@ -5341,7 +5341,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void finalizeExpunge(VirtualMachine vm) {
     }
 
-    private void checkForceStopVmPermission (Account callingAccount) {
+    private void checkForceStopVmPermission(Account callingAccount) {
         if (!AllowUserForceStopVm.valueIn(callingAccount.getId())) {
             logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.force.stop.vm key is true.", ApiConstants.FORCED));
             throw new PermissionDeniedException("Account does not have the permission to force stop the vm.");
@@ -5366,7 +5366,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (forced) {
-            checkForceStopVmPermission (caller);
+            checkForceStopVmPermission(caller);
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
