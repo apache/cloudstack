@@ -30,5 +30,5 @@
     <bean id="OvmDiscoverer" class="com.cloud.ovm.hypervisor.OvmDiscoverer">
         <property name="name" value="Ovm Discover" />
     </bean>
-    
+
 </beans>

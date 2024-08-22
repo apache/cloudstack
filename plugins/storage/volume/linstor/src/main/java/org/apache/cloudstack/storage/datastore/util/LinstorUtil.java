@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
@@ -53,7 +52,7 @@ public class LinstorUtil {
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
 
     public static DevelopersApi getLinstorAPI(String linstorUrl) {
-        ApiClient client = Configuration.getDefaultApiClient();
+        ApiClient client = new ApiClient();
         client.setBasePath(linstorUrl);
         return new DevelopersApi(client);
     }

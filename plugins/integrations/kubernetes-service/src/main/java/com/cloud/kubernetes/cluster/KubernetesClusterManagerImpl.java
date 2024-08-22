@@ -1626,8 +1626,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
-        kubernetesCluster.setNodeCount(nodeList.size());
-        kubernetesCluster.setNodeCount(nodeList.size());
+        kubernetesCluster.setNodeCount(nodeList.size() - kubernetesCluster.getControlNodeCount());
         kubernetesClusterDao.persist(kubernetesCluster);
     }
 

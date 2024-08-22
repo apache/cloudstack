@@ -81,28 +81,33 @@ def deletefile(ip, folder, file):
         os.remove(datafile)
 
 
+def writefile(dest, data, mode):
+    fh = open(dest, mode)
+    exflock(fh)
+    fh.write(data)
+    unflock(fh)
+    fh.close()
+    os.chmod(dest, 0o644)
+
+
 def createfile(ip, folder, file, data):
     dest = "/var/www/html/" + folder + "/" + ip + "/" + file
     metamanifestdir = "/var/www/html/" + folder + "/" + ip
     metamanifest = metamanifestdir + "/meta-data"
 
-    # base64 decode userdata
-    if folder == "userdata" or folder == "user-data":
-        if data is not None:
-            data = base64.b64decode(data)
-
-    fh = open(dest, "w")
-    exflock(fh)
     if data is not None:
+        # base64 decode userdata
+        if folder == "userdata" or folder == "user-data":
+            # need to pad data if it is not valid base 64
+            if len(data) % 4 != 0:
+                data += (4 - (len(data) % 4)) * "="
+            data = base64.b64decode(data)
         if isinstance(data, str):
-            fh.write(data)
+            writefile(dest, data, "w")
         elif isinstance(data, bytes):
-            fh.write(data.decode())
+            writefile(dest, data, "wb")
     else:
-        fh.write("")
-    unflock(fh)
-    fh.close()
-    os.chmod(dest, 0o644)
+        writefile(dest, "", "w")
 
     if folder == "metadata" or folder == "meta-data":
         try:

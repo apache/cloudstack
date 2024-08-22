@@ -32,7 +32,7 @@ export default {
       getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp' }
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
         if (store.getters.metrics) {
           params = { details: 'all,stats' }
         }

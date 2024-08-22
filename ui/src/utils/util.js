@@ -68,3 +68,27 @@ export function sanitizeReverse (value) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
 }
+
+export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
+  if (data === null || !data.length) {
+    return null
+  }
+
+  let result = ''
+  result += keys.join(columnDelimiter)
+  result += lineDelimiter
+
+  data.forEach(item => {
+    keys.forEach(key => {
+      if (item[key] === undefined) {
+        item[key] = ''
+      }
+      result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+      result += columnDelimiter
+    })
+    result = result.slice(0, -1)
+    result += lineDelimiter
+  })
+
+  return result
+}

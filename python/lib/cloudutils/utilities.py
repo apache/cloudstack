@@ -47,11 +47,11 @@ class bash:
                     alarm(0)
             except Alarm:
                 os.kill(self.process.pid, SIGKILL)
-                raise  CloudRuntimeException("Timeout during command execution")
+                raise CloudRuntimeException("Timeout during command execution")
 
             self.success = self.process.returncode == 0
         except:
-            raise  CloudRuntimeException(formatExceptionInfo())
+            raise CloudRuntimeException(formatExceptionInfo())
 
         if not self.success:
             logging.debug("Failed to execute:" + self.getErrMsg())

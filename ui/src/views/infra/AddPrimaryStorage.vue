@@ -879,7 +879,7 @@ export default {
           url = values.flashArrayURL
         }
 
-        if (values.provider === 'Linstor') {
+        if (values.provider === 'Linstor' || values.protocol === 'Linstor') {
           url = this.linstorURL(server)
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup
