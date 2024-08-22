@@ -91,7 +91,7 @@ public class Filter {
         StringBuilder order = new StringBuilder();
         if (StringUtils.isNotBlank(tableAlias)) {
             order.append(tableAlias);
-        }else if (column == null || column.table() == null || column.table().length() == 0) {
+        } else if (column == null || column.table() == null || column.table().length() == 0) {
             order.append(DbUtil.getTableName(clazz));
         } else {
             order.append(column.table());
