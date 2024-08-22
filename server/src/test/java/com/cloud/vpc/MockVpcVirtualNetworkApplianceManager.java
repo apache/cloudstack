@@ -17,9 +17,20 @@
 
 package com.cloud.vpc;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.springframework.stereotype.Component;
+
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
@@ -34,14 +45,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
-import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
-import org.springframework.stereotype.Component;
-
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implements VpcVirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService {
@@ -139,6 +144,13 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     public VirtualRouter startRouter(final long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void startRouterForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+         DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+
     }
 
     /* (non-Javadoc)

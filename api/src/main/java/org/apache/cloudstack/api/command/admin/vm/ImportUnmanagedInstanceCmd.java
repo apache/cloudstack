@@ -201,7 +201,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                logger.trace("nic, '{}', goes on net, '{}'", nic, networkUuid);
+                logger.debug("nic, '{}', goes on net, '{}'", nic, networkUuid);
                 if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -217,7 +217,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                logger.trace("nic, '{}', gets ip, '{}'", nic, ipAddress);
+                logger.debug("nic, '{}', gets ip, '{}'", nic, ipAddress);
                 if (StringUtils.isEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }

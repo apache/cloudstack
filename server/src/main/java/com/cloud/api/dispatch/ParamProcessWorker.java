@@ -60,6 +60,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class ParamProcessWorker implements DispatchWorker {
 
@@ -117,8 +118,21 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
+    private void validateNameForRFCCompliance(final Object param, final String argName) {
+        String value = String.valueOf(param);
+        if (StringUtils.isBlank(value) || !NetUtils.verifyDomainNameLabel(value, true)) {
+            String msg = "it can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit";
+            throwInvalidParameterValueException(argName, msg);
+        }
+    }
+
     protected void throwInvalidParameterValueException(String argName) {
-        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s", argName));
+        throwInvalidParameterValueException(argName, null);
+    }
+
+    protected void throwInvalidParameterValueException(String argName, String customMsg) {
+        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s%s", argName, StringUtils.isBlank(customMsg)? "" : " - " + customMsg));
     }
 
     private void validateField(final Object paramObj, final Parameter annotation) throws ServerApiException {
@@ -155,6 +169,12 @@ public class ParamProcessWorker implements DispatchWorker {
                             break;
                     }
                     break;
+                case RFCComplianceDomainName:
+                    switch (annotation.type()) {
+                        case STRING:
+                            validateNameForRFCCompliance(paramObj, argName);
+                            break;
+                    }
             }
         }
     }
@@ -165,14 +185,18 @@ public class ParamProcessWorker implements DispatchWorker {
 
         final List<Field> cmdFields = cmd.getParamFields();
 
+        String commandName = cmd.getCommandName();
+        if (commandName.endsWith(BaseCmd.RESPONSE_SUFFIX)) {
+            commandName = cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8);
+        }
+
         for (final Field field : cmdFields) {
             final Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             final Object paramObj = params.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                            cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                            " due to missing parameter " + parameterAnnotation.name());
+                            commandName + " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -186,29 +210,28 @@ public class ParamProcessWorker implements DispatchWorker {
                 setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (final IllegalArgumentException argEx) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " +
+                    logger.debug("Unable to execute API command " + commandName + " due to invalid value " + paramObj + " for parameter " +
                             parameterAnnotation.name());
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
+                        commandName + " due to invalid value " + paramObj + " for parameter " +
                         parameterAnnotation.name());
             } catch (final ParseException parseEx) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                    logger.debug("Invalid date parameter " + paramObj + " passed to command " + commandName);
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
+                        commandName + ", please pass dates in the format mentioned in the api documentation");
             } catch (final InvalidParameterValueException invEx) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
+                        commandName + " due to invalid value. " + invEx.getMessage());
             } catch (final CloudRuntimeException cloudEx) {
                 logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
                 //means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " +
-                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " + commandName);
             }
 
             //check access on the resource this field points to

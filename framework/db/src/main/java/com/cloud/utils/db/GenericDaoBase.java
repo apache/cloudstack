@@ -437,9 +437,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return result;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to find on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 
@@ -522,9 +524,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             return results;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to find on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 
@@ -870,8 +874,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             ub.clear();
             return result;
         } catch (final SQLException e) {
+            logger.error("DB Exception on: " + pstmt, e);
             handleEntityExistsException(e);
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to update on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
@@ -1065,7 +1070,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             ResultSet rs = pstmt.executeQuery();
             return rs.next() ? toEntityBean(rs, true) : null;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to find by id on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
@@ -1180,9 +1186,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return result;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to execute on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 
@@ -1231,11 +1239,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return true;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
     // FIXME: Does not work for joins.
+    @Override
+    public int expunge(final SearchCriteria<T> sc, long limit) {
+        Filter filter = new Filter(limit);
+        return expunge(sc, filter);
+    }
+
     @Override
     public int expunge(final SearchCriteria<T> sc, final Filter filter) {
         if (sc == null) {
@@ -1263,9 +1278,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
     @Override
@@ -1544,7 +1561,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return entity;
             }
 
-            assert false : "Can't call persit if you don't have primary key";
+            assert false : "Can't call persist if you don't have primary key";
         }
 
         ID id = null;
@@ -1600,8 +1617,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             txn.commit();
         } catch (final SQLException e) {
+            logger.error("DB Exception on: " + pstmt, e);
             handleEntityExistsException(e);
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to persist on DB, due to: " + e.getLocalizedMessage());
         } catch (IllegalArgumentException e) {
             throw new CloudRuntimeException("Problem with getting the ec attribute ", e);
         } catch (IllegalAccessException e) {
@@ -1950,7 +1968,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             pstmt.executeUpdate();
             txn.commit();
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
@@ -1978,7 +1997,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return result > 0;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to unremove on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
@@ -2021,7 +2041,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return result > 0;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to remove on DB, due to: " + e.getLocalizedMessage());
         }
     }
 
@@ -2169,9 +2190,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return 0;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to get count on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 
@@ -2228,9 +2251,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return 0;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception in executing: " + sql, e);
+            logger.error("DB Exception in executing: " + sql, e);
+            throw new CloudRuntimeException("Unable to get count on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught exception in : " + sql, e);
+            logger.error("Caught exception in : " + sql, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 
@@ -2303,9 +2328,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
             return 0;
         } catch (final SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+            logger.error("DB Exception on: " + pstmt, e);
+            throw new CloudRuntimeException("Unable to get count on DB, due to: " + e.getLocalizedMessage());
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Caught: " + pstmt, e);
+            logger.error("Caught: " + pstmt, e);
+            throw new CloudRuntimeException("Caught error: " + e.getLocalizedMessage());
         }
     }
 

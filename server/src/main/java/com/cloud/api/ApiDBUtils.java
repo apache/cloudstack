@@ -2021,8 +2021,8 @@ public class ApiDBUtils {
         return s_volJoinDao.newVolumeView(vr);
     }
 
-    public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
-        return s_poolJoinDao.newStoragePoolResponse(vr);
+    public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr, boolean customStats) {
+        return s_poolJoinDao.newStoragePoolResponse(vr, customStats);
     }
 
     public static StorageTagResponse newStorageTagResponse(StoragePoolTagVO vr) {

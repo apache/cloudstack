@@ -65,9 +65,11 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -3267,6 +3269,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "restarting VM for HA", async = true)
+    public void startVirtualMachineForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException {
+        _itMgr.advanceStart(vm.getUuid(), params, planner);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_REBOOT, eventDescription = "rebooting Vm", async = true)
     public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
@@ -3320,6 +3330,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+    /**
+     *  Encapsulates AllowUserExpungeRecoverVm so we can unit test checkExpungeVmPermission.
+     */
+    protected boolean getConfigAllowUserExpungeRecoverVm(Long accountId) {
+        return AllowUserExpungeRecoverVm.valueIn(accountId);
+    }
+
+    protected void checkExpungeVmPermission (Account callingAccount) {
+        logger.debug(String.format("Checking if [%s] has permission for expunging VMs.", callingAccount));
+        if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(callingAccount.getId())) {
+            logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is true.", ApiConstants.EXPUNGE));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
+        }
+        try {
+            _accountMgr.checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+        } catch (PermissionDeniedException ex) {
+            logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
+        }
+    }
+
     protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
         try {
             KubernetesServiceHelper kubernetesServiceHelper =
@@ -3337,10 +3368,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getId();
         boolean expunge = cmd.getExpunge();
 
-        // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
-        if (expunge && !_accountMgr.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
-            throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
+        if (expunge) {
+            checkExpungeVmPermission(ctx.getCallingAccount());
         }
+
         // check if VM exists
         UserVmVO vm = _vmDao.findById(vmId);
 
@@ -6510,6 +6541,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
         }
 
+        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+        if (vols.size() > 1 &&
+            !(HypervisorType.VMware.equals(hypervisorType) || HypervisorType.KVM.equals(hypervisorType))) {
+               throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
+        }
+
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
             throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
@@ -7391,10 +7428,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (template == null) {
             throw new InvalidParameterValueException(String.format("Template for VM: %s cannot be found", vm.getUuid()));
         }
-        if (!template.isPublicTemplate()) {
-            Account templateOwner = _accountMgr.getAccount(template.getAccountId());
-            _accountMgr.checkAccess(newAccount, null, true, templateOwner);
-        }
+        _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
 
         // VV 5: check the new account can create vm in the domain
         DomainVO domain = _domainDao.findById(cmd.getDomainId());
@@ -8669,10 +8703,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(),
                     vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                     vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+
             resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), offering, template);
             resourceNotDecremented = false;
         }
-
         // VM destroy usage event
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
                 vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),

@@ -44,6 +44,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -420,7 +421,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public Pair<UnmanagedInstanceTO, Boolean> getHypervisorVMOutOfBandAndCloneIfRequired(String hostIp, String vmName, Map<String, String> params) {
         logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }
@@ -428,6 +429,18 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Override
     public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
         logger.error("Unsupported operation: cannot remove external VM");
+        return false;
+    }
+
+    @Override
+    public String createVMTemplateOutOfBand(String hostIp, String vmName, Map<String, String> params, DataStoreTO templateLocation, int threadsCountToExportOvf) {
+        logger.error("Unsupported operation: cannot create template file");
+        return null;
+    }
+
+    @Override
+    public boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir) {
+        logger.error("Unsupported operation: cannot remove template file");
         return false;
     }
 }

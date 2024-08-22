@@ -70,17 +70,18 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Integer> SAMLTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "saml2.timeout", "1800",
             "SAML2 IDP Metadata refresh interval in seconds, minimum value is set to 300", true);
 
-    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "false",
-            "Whether SAML2 signature must be checked, when enforced and when the SAML response does not have a signature would lead to login exception", true);
+    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "true",
+            "When enabled (default and recommended), SAML2 signature checks are enforced and lack of signature in the SAML SSO response will cause login exception. Disabling this is not advisable but provided for backward compatibility for users who are able to accept the risks.", false);
 
-    public SAMLProviderMetadata getSPMetadata();
-    public SAMLProviderMetadata getIdPMetadata(String entityId);
-    public Collection<SAMLProviderMetadata> getAllIdPMetadata();
+    SAMLProviderMetadata getSPMetadata();
+    SAMLProviderMetadata getIdPMetadata(String entityId);
+    Collection<SAMLProviderMetadata> getAllIdPMetadata();
 
-    public boolean isUserAuthorized(Long userId, String entityId);
-    public boolean authorizeUser(Long userId, String entityId, boolean enable);
+    boolean isUserAuthorized(Long userId, String entityId);
+    boolean authorizeUser(Long userId, String entityId, boolean enable);
 
-    public void saveToken(String authnId, String domain, String entity);
-    public SAMLTokenVO getToken(String authnId);
-    public void expireTokens();
+    void saveToken(String authnId, String domain, String entity);
+    SAMLTokenVO getToken(String authnId);
+    void purgeToken(SAMLTokenVO token);
+    void expireTokens();
 }

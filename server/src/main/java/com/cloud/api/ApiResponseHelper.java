@@ -372,7 +372,6 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Upload;
-import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -669,6 +668,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            snapshotResponse.setVolumeState(volume.getState().name());
             snapshotResponse.setVirtualSize(volume.getSize());
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
@@ -1452,7 +1452,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public StoragePoolResponse createStoragePoolResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(false, viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
     }
@@ -1524,7 +1524,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
-            clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+            clusterResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -1913,58 +1913,49 @@ public class ApiResponseHelper implements ResponseGenerator {
         return listSgs.get(0);
     }
 
-    //TODO: we need to deprecate uploadVO, since extract is done in a synchronous fashion
-    @Override
-    public ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
-
+    private ExtractResponse createExtractResponse (Long zoneId, Long accountId, String url) {
         ExtractResponse response = new ExtractResponse();
-        response.setObjectName("template");
-        VMTemplateVO template = ApiDBUtils.findTemplateById(id);
-        response.setId(template.getUuid());
-        response.setName(template.getName());
         if (zoneId != null) {
             DataCenter zone = ApiDBUtils.findZoneById(zoneId);
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
         }
-        response.setMode(mode);
         response.setUrl(url);
         response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
         Account account = ApiDBUtils.findAccountById(accountId);
         response.setAccountId(account.getUuid());
-
         return response;
     }
 
     @Override
-    public ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url) {
+    public ExtractResponse createVolumeExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setObjectName("volume");
+        response.setMode(mode);
+        Volume volume = ApiDBUtils.findVolumeById(id);
+        response.setId(volume.getUuid());
+        response.setName(volume.getName());
+        return response;
+    }
 
-        ExtractResponse response = new ExtractResponse();
-        response.setObjectName("template");
+    @Override
+    public ExtractResponse createSnapshotExtractResponse(Long id, Long zoneId, Long accountId, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setObjectName("snapshot");
+        Snapshot snapshot = ApiDBUtils.findSnapshotById(id);
+        response.setId(snapshot.getUuid());
+        response.setName(snapshot.getName());
+        return response;
+    }
+
+    @Override
+    public ExtractResponse createImageExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setMode(mode);
         VMTemplateVO template = ApiDBUtils.findTemplateById(id);
         response.setId(template.getUuid());
         response.setName(template.getName());
-        if (zoneId != null) {
-            DataCenter zone = ApiDBUtils.findZoneById(zoneId);
-            response.setZoneId(zone.getUuid());
-            response.setZoneName(zone.getName());
-        }
-        response.setMode(mode);
-        if (uploadId == null) {
-            // region-wide image store
-            response.setUrl(url);
-            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
-        } else {
-            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-            response.setUploadId(uploadInfo.getUuid());
-            response.setState(uploadInfo.getUploadState().toString());
-            response.setUrl(uploadInfo.getUploadUrl());
-        }
-        Account account = ApiDBUtils.findAccountById(accountId);
-        response.setAccountId(account.getUuid());
-
         return response;
-
     }
 
     @Override
@@ -5162,7 +5153,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (instance.getHostName() != null) {
             response.setHostName(instance.getHostName());
         }
-        response.setPowerState(instance.getPowerState().toString());
+        response.setPowerState((instance.getPowerState() != null)? instance.getPowerState().toString() : UnmanagedInstanceTO.PowerState.PowerUnknown.toString());
         response.setCpuCores(instance.getCpuCores());
         response.setCpuSpeed(instance.getCpuSpeed());
         response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());

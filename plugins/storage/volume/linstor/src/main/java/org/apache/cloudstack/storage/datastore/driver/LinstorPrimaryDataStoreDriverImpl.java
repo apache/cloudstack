@@ -272,7 +272,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             case VOLUME:
             {
                 final VolumeInfo volumeInfo = (VolumeInfo) dataObject;
-                final String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getPath();
+                // if volume creation wasn't completely done .setPath wasn't called, so we fallback to vol.getUuid()
+                final String volUuid = volumeInfo.getPath() != null ? volumeInfo.getPath() : volumeInfo.getUuid();
+                final String rscName = LinstorUtil.RSC_PREFIX + volUuid;
                 deleteResourceDefinition(storagePool, rscName);
 
                 long usedBytes = storagePool.getUsedBytes();

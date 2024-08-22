@@ -21,6 +21,7 @@ import {
   ApiOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
+  ArrowRightOutlined,
   ArrowUpOutlined,
   ArrowsAltOutlined,
   AuditOutlined,
@@ -55,6 +56,7 @@ import {
   ClusterOutlined,
   CodeOutlined,
   CompassOutlined,
+  ContainerOutlined,
   ControlOutlined,
   CopyOutlined,
   CreditCardOutlined,
@@ -185,6 +187,7 @@ export default {
     app.component('ApiOutlined', ApiOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
+    app.component('ArrowRightOutlined', ArrowRightOutlined)
     app.component('ArrowUpOutlined', ArrowUpOutlined)
     app.component('ArrowsAltOutlined', ArrowsAltOutlined)
     app.component('AuditOutlined', AuditOutlined)
@@ -218,6 +221,7 @@ export default {
     app.component('CloudUploadOutlined', CloudUploadOutlined)
     app.component('ClusterOutlined', ClusterOutlined)
     app.component('CodeOutlined', CodeOutlined)
+    app.component('ContainerOutlined', ContainerOutlined)
     app.component('ControlOutlined', ControlOutlined)
     app.component('CompassOutlined', CompassOutlined)
     app.component('CopyOutlined', CopyOutlined)

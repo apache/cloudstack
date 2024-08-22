@@ -229,7 +229,11 @@
                 v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
               >
                 <template #label>
-                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                  <tooltip-label
+                    v-if="['domain', 'guestcidraddress'].includes(field.name) && ['createZone', 'updateZone'].includes(currentAction.api)"
+                    :title="$t('label.default.network.' + field.name + '.isolated.network')"
+                    :tooltip="field.description"/>
+                  <tooltip-label v-else :title="$t('label.' + field.name)" :tooltip="field.description"/>
                 </template>
 
                 <a-switch
@@ -414,7 +418,7 @@
           @update-selected-columns="updateSelectedColumns"
           @selection-change="onRowSelectionChange"
           @refresh="fetchData"
-          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        />
         <a-pagination
           class="row-element"
           style="margin-top: 10px"
@@ -690,7 +694,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -734,7 +738,7 @@ export default {
       })
     },
     fetchData (params = {}) {
-      if (this.$route.name === 'deployVirtualMachine') {
+      if (['deployVirtualMachine', 'usage'].includes(this.$route.name)) {
         return
       }
       if (this.routeName !== this.$route.name) {
@@ -949,6 +953,11 @@ export default {
 
       if (this.$showIcon()) {
         params.showIcon = true
+      }
+
+      const customParamHandler = this.$route.meta.customParamHandler
+      if (customParamHandler && typeof customParamHandler === 'function') {
+        params = customParamHandler(params, this.$route.query)
       }
 
       if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',

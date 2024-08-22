@@ -1493,18 +1493,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         for (VolumeVO vol : vols) {
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
-            DataTO volTO = volumeInfo.getTO();
-            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
-
-            disk.setDetails(getDetails(volumeInfo, dataStore));
 
             PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
             // This might impact other managed storages, enable requires access for migration in relevant datastore driver (currently enabled for PowerFlex storage pool only)
             if (primaryDataStore.isManaged() && volService.requiresAccessForMigration(volumeInfo, dataStore)) {
                 volService.grantAccess(volFactory.getVolume(vol.getId()), dest.getHost(), dataStore);
             }
-
+            // make sure this is done AFTER grantAccess, as grantAccess may change the volume's state
+            DataTO volTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+            disk.setDetails(getDetails(volumeInfo, dataStore));
             vm.addDisk(disk);
         }
 
