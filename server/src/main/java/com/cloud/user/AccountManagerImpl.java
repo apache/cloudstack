@@ -1291,7 +1291,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      Role change should follow the below conditions:
      - Caller should not be of Unknown role type
      - New role's type should not be Unknown
-     - Caller should not be able to escalate or de-escalate an account's role which is of same or higher role type
+     - Caller should not be able to escalate or de-escalate an account's role which is of higher role type
      - New role should not be of type Admin with domain other than ROOT domain
      */
     protected void validateRoleChange(Account account, Role role, Account caller) {
@@ -1305,10 +1305,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException(String.format("%s as the new role privileges are unknown", errorMsg));
         }
         if (!callerRole.getRoleType().equals(RoleType.Admin) &&
-                (role.getRoleType().ordinal() <= callerRole.getRoleType().ordinal() ||
-                        currentRole.getRoleType().ordinal() <= callerRole.getRoleType().ordinal())) { // Same type caller
+                (role.getRoleType().ordinal() < callerRole.getRoleType().ordinal() ||
+                        currentRole.getRoleType().ordinal() < callerRole.getRoleType().ordinal())) {
             throw new PermissionDeniedException(String.format("%s as either current or new role has higher " +
-                    "or same privileges than the caller", errorMsg));
+                    "privileges than the caller", errorMsg));
         }
         if (role.getRoleType().equals(RoleType.Admin) && account.getDomainId() != Domain.ROOT_DOMAIN) {
             throw new PermissionDeniedException(String.format("%s as the user does not belong to the ROOT domain",

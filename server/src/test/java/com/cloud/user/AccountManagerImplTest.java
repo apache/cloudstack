@@ -1021,10 +1021,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
 
-    @Test(expected = PermissionDeniedException.class)
-    public void testValidateRoleNewRoleSame() {
+    @Test
+    public void testValidateRoleNewRoleSameCaller() {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role currentRole = Mockito.mock(Role.class);
+        Mockito.when(currentRole.getRoleType()).thenReturn(RoleType.User);
+        Mockito.when(roleService.findRole(1L)).thenReturn(currentRole);
         Role newRole = Mockito.mock(Role.class);
         Mockito.when(newRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
         Role callerRole = Mockito.mock(Role.class);
@@ -1035,8 +1038,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
 
-    @Test(expected = PermissionDeniedException.class)
-    public void testValidateRoleCurrentRoleSame() {
+    @Test
+    public void testValidateRoleCurrentRoleSameCaller() {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getRoleId()).thenReturn(1L);
         Role accountRole = Mockito.mock(Role.class);
@@ -1053,7 +1056,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void testValidateRoleNewRoleHigher() {
+    public void testValidateRoleNewRoleHigherCaller() {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getRoleId()).thenReturn(1L);
         Role newRole = Mockito.mock(Role.class);
@@ -1067,7 +1070,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test
-    public void testValidateRoleNewRoleLower() {
+    public void testValidateRoleNewRoleLowerCaller() {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getRoleId()).thenReturn(1L);
         Role newRole = Mockito.mock(Role.class);
