@@ -1439,6 +1439,9 @@ export default {
       if (possibleApi === 'listTemplates') {
         params.templatefilter = 'executable'
       } else if (possibleApi === 'listIsos') {
+        if (this.$route.path.startsWith('/kubernetesiso')) {
+          params.bootable = false
+        }
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
