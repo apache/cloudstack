@@ -1052,7 +1052,6 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 cls.apiclient,
                 cls.services["service_offerings"]["tiny"]
             )
-            cls._cleanup.append(cls.service_offering)
             #create virtual machine
             cls.virtual_machine = VirtualMachine.create(
                 cls.apiclient,
@@ -1063,9 +1062,10 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 mode=cls.services["mode"]
             )
+            cls._cleanup.append(cls.virtual_machine)
             #Stop virtual machine
             cls.virtual_machine.stop(cls.apiclient)
-
+            cls._cleanup.append(cls.service_offering)
             list_volume = Volume.list(
                 cls.apiclient,
                 virtualmachineid=cls.virtual_machine.id,

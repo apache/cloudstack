@@ -240,6 +240,7 @@ class TestDeployVM(cloudstackTestCase):
             domainid=account.domainid,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(virtual_machine1)
         virtual_machine2 = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
@@ -247,6 +248,7 @@ class TestDeployVM(cloudstackTestCase):
             domainid=account.domainid,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(virtual_machine2)
 
         list_vms = VirtualMachine.list(self.apiclient, ids=[virtual_machine1.id, virtual_machine2.id], listAll=True)
         self.debug(

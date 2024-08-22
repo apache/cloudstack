@@ -478,7 +478,6 @@ class TestStorageTags(cloudstackTestCase):
                 hypervisor=cls.hypervisor,
                 mode=cls.zone.networktype
             )
-            cls._cleanup.append(cls.virtual_machine_1)
             cls._cleanup.append(cls.service_offering_1)
             # VM-1 not appended to _cleanup, it is expunged on tearDownClass before cleaning up resources
 

@@ -124,7 +124,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
-        cls._cleanup.append(cls.service_offering)
 
         cls.sparse_disk_offering = DiskOffering.create(
             cls.apiclient,
@@ -143,6 +142,8 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             diskofferingid=cls.sparse_disk_offering.id,
             mode=cls.zone.networktype
         )
+        cls._cleanup.append()cls.virtual_machine)
+        cls._cleanup.append(cls.service_offering)
 
         hosts = Host.list(cls.apiclient, id=cls.virtual_machine.hostid)
         if len(hosts) != 1:

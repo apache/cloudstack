@@ -794,7 +794,6 @@ class TestServiceOfferings(cloudstackTestCase):
             self.apiclient,
             offering_data,
         )
-        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
 
         self.virtual_machine_with_diskoffering_strictness_false = VirtualMachine.create(
             self.apiclient,
@@ -804,7 +803,8 @@ class TestServiceOfferings(cloudstackTestCase):
             serviceofferingid=self.serviceOfferingWithDiskOfferingStrictnessFalse.id,
             mode=self.services["mode"]
         )
-
+        self._cleanup.append(self.virtual_machine_with_diskoffering_strictness_false)
+        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
         try:
             self.virtual_machine_with_diskoffering_strictness_false.stop(self.apiclient)
 
@@ -1015,6 +1015,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
 
         )
         cls._cleanup = [
+            cls.vm,
             cls.offering,
             cls.account
         ]

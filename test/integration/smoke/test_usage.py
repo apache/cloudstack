@@ -383,6 +383,7 @@ class TestPublicIPUsage(cloudstackTestCase):
             services=cls.services["server"]
         )
         cls._cleanup = [
+            cls.virtual_machine,
             cls.service_offering,
             cls.account,
         ]
@@ -1722,7 +1723,6 @@ class TestVpnUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
-        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1731,6 +1731,8 @@ class TestVpnUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
+        cls._cleanup.append(cls.service_offering)
         cls.public_ip = PublicIPAddress.create(
             cls.api_client,
             accountid=cls.virtual_machine.account,

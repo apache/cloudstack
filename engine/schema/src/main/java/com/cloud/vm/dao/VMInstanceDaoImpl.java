@@ -328,6 +328,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         VmsNotInClusterUsingPool.done();
 
         ServiceOfferingSearch = createSearchBuilder();
+        ServiceOfferingSearch.and("states", ServiceOfferingSearch.entity().getState(), Op.IN);
         ServiceOfferingSearch.and("serviceOfferingId", ServiceOfferingSearch.entity().getServiceOfferingId(), Op.EQ);
         ServiceOfferingSearch.done();
     }
@@ -1078,6 +1079,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public List<VMInstanceVO> listByOfferingId(long offeringId) {
         SearchCriteria<VMInstanceVO> sc = ServiceOfferingSearch.create();
+        sc.setParameters("states", State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating, State.Restoring);
         sc.setParameters("serviceOfferingId", offeringId);
         return search(sc, null);
     }

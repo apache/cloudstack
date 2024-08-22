@@ -227,6 +227,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d1)
             cls.vm_d1_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d1.id)
 
             cls.apiclient.connection.apiKey = cls.user_d1a_apikey
@@ -238,6 +239,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d1a)
             cls.vm_d1a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d1a.id)
 
             cls.apiclient.connection.apiKey = cls.user_d1b_apikey
@@ -249,6 +251,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d1b)
             cls.vm_d1b_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d1b.id)
 
             cls.apiclient.connection.apiKey = cls.user_d11_apikey
@@ -260,6 +263,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d11)
             cls.vm_d11_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d11.id)
 
             cls.apiclient.connection.apiKey = cls.user_d11a_apikey
@@ -271,6 +275,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d11a)
             cls.vm_d11a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d11a.id)
 
             cls.apiclient.connection.apiKey = cls.user_d11b_apikey
@@ -282,6 +287,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d11b)
             cls.vm_d11b_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d11b.id)
 
             cls.apiclient.connection.apiKey = cls.user_d111a_apikey
@@ -293,6 +299,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d111a)
             cls.vm_d111a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d111a.id)
 
             cls.apiclient.connection.apiKey = cls.user_d12a_apikey
@@ -304,6 +311,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d12a)
             cls.vm_d12a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d12a.id)
 
             cls.apiclient.connection.apiKey = cls.user_d12b_apikey
@@ -315,6 +323,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d12b)
             cls.vm_d12b_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d12b.id)
 
             cls.apiclient.connection.apiKey = cls.user_d2a_apikey
@@ -326,6 +335,7 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_d2)
             cls.vm_d2_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_d2.id)
 
             cls.apiclient.connection.apiKey = cls.user_a_apikey
@@ -337,22 +347,12 @@ class TestVolumeList(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 templateid=cls.template.id
             )
+            cls.cleanup.append(cls.vm_a)
             cls.vm_a_volume = Volume.list(cls.apiclient, virtualmachineid=cls.vm_a.id)
 
             cls.cleanup = [
-                cls.vm_d1,
-                cls.vm_d1a,
-                cls.vm_d1b,
-                cls.vm_d11,
-                cls.vm_d11a,
-                cls.vm_d11b,
-                cls.vm_d111a,
-                cls.vm_d12a,
-                cls.vm_d12b,
-                cls.vm_d2,
-                cls.vm_a
                 cls.account_a,
-                cls.service_offering
+                cls.service_offering,
             ]
         except Exception as e:
             cls.domain_2.delete(cls.apiclient, cleanup="true")

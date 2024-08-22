@@ -333,7 +333,11 @@ class TestVolumes(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        cls._cleanup.append(cls.service_offering)
+        cls.services["disk_offering"]["disksize"] = 20
+        cls.disk_offering_20_GB = DiskOffering.create(
+            cls.apiclient,
+            cls.services["disk_offering"]
+        )
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services,
@@ -343,6 +347,8 @@ class TestVolumes(cloudstackTestCase):
             mode=cls.services["mode"]
         )
         cls._cleanup.append(cls.virtual_machine)
+        cls.cleanup.append(cls.disk_offering_20_GB)
+        cls._cleanup.append(cls.service_offering)
         pools = StoragePool.list(cls.apiclient)
 
         if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
@@ -636,16 +642,9 @@ class TestVolumes(cloudstackTestCase):
         # resize the data disk
         self.debug("Resize Volume ID: %s" % self.volume.id)
 
-        self.services["disk_offering"]["disksize"] = 20
-        disk_offering_20_GB = DiskOffering.create(
-            self.apiclient,
-            self.services["disk_offering"]
-        )
-        self.cleanup.append(disk_offering_20_GB)
-
         cmd = resizeVolume.resizeVolumeCmd()
         cmd.id = self.volume.id
-        cmd.diskofferingid = disk_offering_20_GB.id
+        cmd.diskofferingid = self.disk_offering_20_GB.id
 
         self.apiClient.resizeVolume(cmd)
 
@@ -658,7 +657,7 @@ class TestVolumes(cloudstackTestCase):
                 type='DATADISK'
             )
             for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (int(disk_offering_20_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
+                if vol.id == self.volume.id and int(vol.size) == (int(self.disk_offering_20_GB.disksize) * (1024 ** 3)) and vol.state == 'Ready':
                     success = True
             if success:
                 break

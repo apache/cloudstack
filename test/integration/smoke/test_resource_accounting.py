@@ -230,10 +230,6 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
         self.assertEqual(cores, self.services['service_offering_it_1']['cpunumber'] + self.services['service_offering_it_2']['cpunumber'])
         self.assertEqual(ram, self.services['service_offering_it_1']['memory'] + self.services['service_offering_it_2']['memory'])
 
-        self.service_offering_it_2.delete(self.apiclient)
-
-        self.cleanup = self.cleanup[0:-1]
-
         cores = int(self.get_resource_amount(CPU_RESOURCE_ID))
         ram = int(self.get_resource_amount(RAM_RESOURCE_ID))
 

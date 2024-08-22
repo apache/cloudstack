@@ -106,6 +106,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                      projectid=project.id,
                      networkids=networks,
                      serviceofferingid=service_off.id)
+            self.cleanup.append(vm)
             vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
             self.assertIsInstance(vms,
                                   list,
@@ -243,7 +244,6 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.vm1 = self.createInstance(account=self.child_do_admin,
             service_off=self.service_offering, api_client=api_client_admin)
-        self.cleanup.append(self.vm1)
         self.cleanup.append(self.service_offering)
 
         self.debug("Deploying instance when CPU limit is reached in account")
@@ -318,8 +318,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                    self.child_do_admin.name)
         self.vm2 = self.createInstance(account=self.child_do_admin,
             service_off=self.service_offering, api_client=api_client_admin)
-# Adding to cleanup list after execution
-        self.cleanup.append(self.vm2)
+        # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
         self.debug("Deploying instance in project when CPU limit is reached in account")
 
