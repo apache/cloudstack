@@ -544,8 +544,11 @@ export default {
         state: 'Enabled'
       }
       params.supportedServices = 'SourceNat'
-      if (this.resource.service.map(svc => { return svc.name }).indexOf('Lb') > -1) {
+      const vpcServiceLbIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
+      var vpcLbProvider = null
+      if (vpcServiceLbIndex > -1) {
         params.supportedServices += ',Lb'
+        vpcLbProvider = this.resource.service[vpcServiceLbIndex].provider[0].name
       }
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
@@ -555,6 +558,15 @@ export default {
             const offering = this.networkOfferings[index]
             const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
             if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+              filteredOfferings.push(offering)
+            }
+          }
+          this.networkOfferings = filteredOfferings
+        } else if (vpcServiceLbIndex > -1) {
+          for (var i in this.networkOfferings) {
+            const offering = this.networkOfferings[i]
+            const lbIndex = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+            if (lbIndex > -1 && offering.service[lbIndex].provider[0].name === vpcLbProvider) {
               filteredOfferings.push(offering)
             }
           }
