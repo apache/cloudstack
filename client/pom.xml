@@ -379,11 +379,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-host-allocator-random</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-outofbandmanagement-driver-ipmitool</artifactId>
             <version>${project.version}</version>
         </dependency>
