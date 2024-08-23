@@ -17,7 +17,6 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
@@ -54,6 +53,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
@@ -217,9 +217,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(vm.getRemoved() == null);
         // TODO: get KVM agent to restore VM backup
 
-        Answer answer = null;
+        BackupAnswer answer = null;
         try {
-            answer = agentManager.send(host.getId(), restoreCommand);
+            answer = (BackupAnswer) agentManager.send(host.getId(), restoreCommand);
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {
@@ -255,7 +255,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // TODO: Find volume from backup volumes
         Optional<Backup.VolumeInfo> matchingVolume = getBackedUpVolumeInfo(backupSourceVm.getBackupVolumeList(), volumeUuid);
         Long backedUpVolumeSize = matchingVolume.isPresent() ? matchingVolume.get().getSize() : 0L;
-        volume.getDeviceId(); // restore by device ID
 
         LOG.debug("Restoring vm volume" + volumeUuid + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
         BackupRepository backupRepository = getBackupRepository(backupSourceVm, backup);
@@ -282,13 +281,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(backupSourceVm.getName());
         restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
-        restoreCommand.setDiskType(volume.getVolumeType().name());
+        restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
         restoreCommand.setDeviceId(volume.getDeviceId());
         restoreCommand.setVmExists(null);
+        restoreCommand.setRestoreVolumeUUID(volumeUuid);
 
-        Answer answer = null;
+        BackupAnswer answer = null;
         try {
-            answer = agentManager.send(hostVO.getId(), restoreCommand);
+            answer = (BackupAnswer) agentManager.send(hostVO.getId(), restoreCommand);
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
         } catch (OperationTimedoutException e) {

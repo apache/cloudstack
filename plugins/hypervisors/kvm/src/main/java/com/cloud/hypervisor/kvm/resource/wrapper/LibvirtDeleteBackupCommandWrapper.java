@@ -52,10 +52,10 @@ public class LibvirtDeleteBackupCommandWrapper extends CommandWrapper<DeleteBack
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
 
-        logger.debug("Backup delete result: " + result.second() + ", exit code: " + result.first());
+        logger.debug(String.format("Backup delete result: %s , exit code: %s",result.second(), result.first()));
 
         if (result.first() != 0) {
-            logger.debug("Failed to delete VM backup: " + result.second());
+            logger.debug(String.format("Failed to delete VM backup: %s", result.second()));
             return new BackupAnswer(command, false, result.second());
         }
         return new BackupAnswer(command, true, null);

@@ -33,6 +33,7 @@ public class RestoreBackupCommand extends Command  {
     private String diskType;
     private Long deviceId;
     private Boolean vmExists;
+    private String restoreVolumeUUID;
 
     protected RestoreBackupCommand() {
         super();
@@ -108,6 +109,14 @@ public class RestoreBackupCommand extends Command  {
 
     public void setMountOptions(String mountOptions) {
         this.mountOptions = mountOptions;
+    }
+
+    public String getRestoreVolumeUUID() {
+        return restoreVolumeUUID;
+    }
+
+    public void setRestoreVolumeUUID(String restoreVolumeUUID) {
+        this.restoreVolumeUUID = restoreVolumeUUID;
     }
 
     @LogLevel(LogLevel.Log4jLevel.Off)

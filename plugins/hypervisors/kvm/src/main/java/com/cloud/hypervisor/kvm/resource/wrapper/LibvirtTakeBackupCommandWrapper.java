@@ -63,14 +63,17 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return new BackupAnswer(command, false, result.second().trim());
         }
 
-        Long backupSize = 0L;
-        if (Objects.nonNull(diskPaths) && diskPaths.isEmpty()) {
+        long backupSize = 0L;
+        if (Objects.isNull(diskPaths) || diskPaths.isEmpty()) {
             List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
             }
         } else {
-            backupSize = Long.parseLong(result.second().trim());
+            String[] outputLines = result.second().trim().split("\n");
+            for(String line : outputLines) {
+                backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
+            }
         }
 
         BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());

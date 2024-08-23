@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -757,20 +758,26 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM reference for the provided VM backup not found");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
-
-        Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
-        HostVO host = restoreInfo.first();
-        StoragePoolVO datastore = restoreInfo.second();
-
-        logger.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
-                " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
-
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find VM backup offering");
         }
 
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        VolumeVO backedUpVolume = volumeDao.findByUuid(backedUpVolumeUuid);
+        Pair<HostVO, StoragePoolVO> restoreInfo;
+        if (!Objects.equals(offering.getProvider(), "nas")) {
+            restoreInfo = getRestoreVolumeHostAndDatastore(vm);
+        } else {
+            restoreInfo = getRestoreVolumeHostAndDatastoreForNas(vm, backedUpVolume);
+        }
+
+        HostVO host = restoreInfo.first();
+        StoragePoolVO datastore = restoreInfo.second();
+
+        logger.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
+                " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
+
         logger.debug(String.format("Trying to restore volume using host private IP address: [%s].", host.getPrivateIpAddress()));
 
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
@@ -848,6 +855,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         HostVO hostVO = vm.getHostId() == null ?
                             getFirstHostFromStoragePool(storagePoolVO) :
                             hostDao.findById(vm.getHostId());
+        return new Pair<>(hostVO, storagePoolVO);
+    }
+
+    private Pair<HostVO, StoragePoolVO> getRestoreVolumeHostAndDatastoreForNas(VMInstanceVO vm, VolumeVO backedVolume) {
+        Long poolId = backedVolume.getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        HostVO hostVO = vm.getHostId() == null ?
+                getFirstHostFromStoragePool(storagePoolVO) :
+                hostDao.findById(vm.getHostId());
         return new Pair<>(hostVO, storagePoolVO);
     }
 

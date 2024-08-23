@@ -82,7 +82,7 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    rsync -az $disk $dest/$deviceId.$name.$volUuid
+    rsync -az $disk $dest/$deviceId.$name.$volUuid.qcow2
     deviceId=$((devideId+1))
     name="datadisk"
   done
