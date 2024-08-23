@@ -156,7 +156,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final SearchCriteria<NetworkACLVO> ssc = _networkACLDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("reason", Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
@@ -698,6 +698,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         final String trafficType = cmd.getTrafficType();
         final String protocol = cmd.getProtocol();
         final String action = cmd.getAction();
+        final String keyword = cmd.getKeyword();
         final Map<String, String> tags = cmd.getTags();
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -709,6 +710,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), Op.EQ);
         sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("reason", sb.entity().getReason(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -731,24 +733,31 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         final SearchCriteria<NetworkACLItemVO> sc = sb.create();
 
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
+        if (StringUtils.isNotBlank(keyword)) {
+            final SearchCriteria<NetworkACLItemVO> ssc = _networkACLItemDao.createSearchCriteria();
+            ssc.addOr("protocol", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("acl_id", SearchCriteria.Op.SC, ssc);
+        } else {
 
-        if (networkId != null) {
-            final Network network = _networkDao.findById(networkId);
-            aclId = network.getNetworkACLId();
-            if (aclId == null) {
-                // No aclId associated with the network.
-                //Return empty list
-                return new Pair(new ArrayList<NetworkACLItem>(), 0);
+            if (id != null) {
+                sc.setParameters("id", id);
+            }
+
+            if (networkId != null) {
+                final Network network = _networkDao.findById(networkId);
+                aclId = network.getNetworkACLId();
+                if (aclId == null) {
+                    // No aclId associated with the network.
+                    //Return empty list
+                    return new Pair(new ArrayList<NetworkACLItem>(), 0);
+                }
+            }
+
+            if (trafficType != null) {
+                sc.setParameters("trafficType", trafficType);
             }
         }
-
-        if (trafficType != null) {
-            sc.setParameters("trafficType", trafficType);
-        }
-
         if (aclId != null) {
             // Get VPC and check access
             final NetworkACL acl = _networkACLDao.findById(aclId);
