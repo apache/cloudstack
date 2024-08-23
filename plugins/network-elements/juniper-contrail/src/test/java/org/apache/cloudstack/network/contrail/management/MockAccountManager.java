@@ -518,6 +518,10 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
                                                String currentPassword,
                                                boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
 
     }
 }
