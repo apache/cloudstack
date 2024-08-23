@@ -88,14 +88,20 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
                 .filter(x -> (x.startsWith("#") && !x.startsWith("##")) || (x.startsWith("Content-Type:")))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(lines)) {
-            throw new CloudRuntimeException("Failed to detect the user data format type as it " +
-                    "does not contain a header");
+            LOGGER.debug("Failed to detect the user data format type as it does not contain a header");
+            return null;
         }
         return lines.get(0);
     }
 
-    protected FormatType mapUserDataHeaderToFormatType(String header) {
-        if (header.equalsIgnoreCase("#cloud-config")) {
+    protected FormatType mapUserDataHeaderToFormatType(String header, FormatType defaultFormatType) {
+        if (StringUtils.isBlank(header)) {
+            if (defaultFormatType == null) {
+                throw new CloudRuntimeException("Failed to detect the user data format type as it does not contain a header");
+            }
+            LOGGER.debug(String.format("Empty header for userdata, using the default format type: %s", defaultFormatType.name()));
+            return defaultFormatType;
+        } else if (header.equalsIgnoreCase("#cloud-config")) {
             return FormatType.CLOUD_CONFIG;
         } else if (header.startsWith("#!")) {
             return FormatType.BASH_SCRIPT;
@@ -115,9 +121,11 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
 
     /**
      * Detect the user data type
+     * @param userdata the userdata string to detect the type
+     * @param defaultFormatType if not null, then use it in case the header does not exist in the userdata, otherwise fail
      * Reference: <a href="https://canonical-cloud-init.readthedocs-hosted.com/en/latest/explanation/format.html#user-data-formats" />
      */
-    protected FormatType getUserDataFormatType(String userdata) {
+    protected FormatType getUserDataFormatType(String userdata, FormatType defaultFormatType) {
         if (StringUtils.isBlank(userdata)) {
             String msg = "User data expected but provided empty user data";
             LOGGER.error(msg);
@@ -125,7 +133,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         }
 
         String header = extractUserDataHeader(userdata);
-        return mapUserDataHeaderToFormatType(header);
+        return mapUserDataHeaderToFormatType(header, defaultFormatType);
     }
 
     private String getContentType(String userData, FormatType formatType) throws MessagingException {
@@ -249,8 +257,8 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
             checkGzipAppend(encodedUserData1, encodedUserData2);
             String userData1 = new String(Base64.decodeBase64(encodedUserData1));
             String userData2 = new String(Base64.decodeBase64(encodedUserData2));
-            FormatType formatType1 = getUserDataFormatType(userData1);
-            FormatType formatType2 = getUserDataFormatType(userData2);
+            FormatType formatType1 = getUserDataFormatType(userData1, null);
+            FormatType formatType2 = getUserDataFormatType(userData2, formatType1);
             if (formatType1.equals(formatType2) && List.of(FormatType.CLOUD_CONFIG, FormatType.BASH_SCRIPT).contains(formatType1)) {
                 return simpleAppendSameFormatTypeUserData(userData1, userData2);
             }

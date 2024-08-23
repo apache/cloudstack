@@ -73,21 +73,28 @@ public class CloudInitUserDataProviderTest {
 
     @Test
     public void testGetUserDataFormatType() {
-        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(CLOUD_CONFIG_USERDATA);
+        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(CLOUD_CONFIG_USERDATA, null);
         Assert.assertEquals(CloudInitUserDataProvider.FormatType.CLOUD_CONFIG, type);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testGetUserDataFormatTypeNoHeader() {
         String userdata = "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
-        provider.getUserDataFormatType(userdata);
+        provider.getUserDataFormatType(userdata, null);
+    }
+
+    @Test
+    public void testGetUserDataFormatTypeNoHeaderDefaultFormat() {
+        String userdata = "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
+        CloudInitUserDataProvider.FormatType defaultFormatType = CloudInitUserDataProvider.FormatType.CLOUD_CONFIG;
+        Assert.assertEquals(defaultFormatType, provider.getUserDataFormatType(userdata, defaultFormatType));
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testGetUserDataFormatTypeInvalidType() {
         String userdata = "#invalid-type\n" +
                 "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
-        provider.getUserDataFormatType(userdata);
+        provider.getUserDataFormatType(userdata, null);
     }
 
     private MimeMultipart getCheckedMultipartFromMultipartData(String multipartUserData, int count) {
@@ -109,6 +116,16 @@ public class CloudInitUserDataProviderTest {
         String multipartUserData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA1.getBytes()),
                 Base64.encodeBase64String(SHELL_SCRIPT_USERDATA.getBytes()));
         getCheckedMultipartFromMultipartData(multipartUserData, 2);
+    }
+
+    @Test
+    public void testAppendUserDataSecondWithoutHeader() {
+        String userdataWithHeader = Base64.encodeBase64String(SHELL_SCRIPT_USERDATA1.getBytes());
+        String bashScriptWithoutHeader = "echo \"without header\"";
+        String userdataWithoutHeader = Base64.encodeBase64String(bashScriptWithoutHeader.getBytes());
+        String appended = provider.appendUserData(userdataWithHeader, userdataWithoutHeader);
+        String expected = String.format("%s\n\n%s", SHELL_SCRIPT_USERDATA1, bashScriptWithoutHeader);
+        Assert.assertEquals(expected, appended);
     }
 
     @Test
