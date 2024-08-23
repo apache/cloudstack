@@ -4663,8 +4663,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 // This is to ensure the disk controller is available for the data disks, as all the SCSI controllers are created with same controller type
                 String scsiControllerPattern = "(?i)\\b(scsi|lsilogic|lsilogicsas|lsisas1068|buslogic|pvscsi)\\b";
                 if (finalRootDiskController.matches(scsiControllerPattern)) {
+                    s_logger.info(String.format("Data disk controller was not defined, but root disk is using SCSI controller [%s]." +
+                            "To ensure disk controllers are available for the data disks, the data disk controller is updated to match the root disk controller.", finalRootDiskController));
                     vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, finalRootDiskController);
                 } else {
+                    s_logger.info("Data disk controller was not defined; defaulting to 'osdefault'.");
                     vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, "osdefault");
                 }
             }
