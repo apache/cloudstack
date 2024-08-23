@@ -147,6 +147,22 @@ public class CloudInitUserDataProviderTest {
     }
 
     @Test
+    public void testAppendCloudConfig() {
+        String userdata1 = "#cloud-config\n" +
+                "chpasswd:\n" +
+                "  list: |\n" +
+                "    root:password\n" +
+                "  expire: False";
+        String userdata2 = "write_files:\n" +
+                "- path: /root/CLOUD_INIT_WAS_HERE";
+        String userdataWithHeader = Base64.encodeBase64String(userdata1.getBytes());
+        String userdataWithoutHeader = Base64.encodeBase64String(userdata2.getBytes());
+        String appended = provider.appendUserData(userdataWithHeader, userdataWithoutHeader);
+        String expected = String.format("%s\n\n%s", userdata1, userdata2);
+        Assert.assertEquals(expected, appended);
+    }
+
+    @Test
     public void testAppendUserDataMIMETemplateData() {
         String multipartUserData = provider.appendUserData(
                 Base64.encodeBase64String(SINGLE_BODYPART_CLOUDCONFIG_MULTIPART_USERDATA.getBytes()),

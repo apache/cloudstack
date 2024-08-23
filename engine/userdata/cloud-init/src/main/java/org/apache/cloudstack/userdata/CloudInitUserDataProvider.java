@@ -242,7 +242,9 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     }
 
     private String simpleAppendSameFormatTypeUserData(String userData1, String userData2) {
-        return String.format("%s\n\n%s", userData1, userData2.substring(userData2.indexOf('\n')+1));
+        String userdata2Header = extractUserDataHeader(userData2);
+        int beginIndex = StringUtils.isNotBlank(userdata2Header) ? userData2.indexOf('\n')+1 : 0;
+        return String.format("%s\n\n%s", userData1, userData2.substring(beginIndex));
     }
 
     private void checkGzipAppend(String encodedUserData1, String encodedUserData2) {
