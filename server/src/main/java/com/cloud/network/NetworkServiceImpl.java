@@ -3147,8 +3147,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // network offering and domain suffix can be updated for Isolated networks only in 3.0
-        if ((networkOfferingId != null || domainSuffix != null) && network.getGuestType() != GuestType.Isolated) {
-            throw new InvalidParameterValueException("NetworkOffering and domain suffix upgrade can be performed for Isolated networks only");
+        if (networkOfferingId != null && network.getGuestType() != GuestType.Isolated) {
+            throw new InvalidParameterValueException("NetworkOffering update can be performed for Isolated networks only.");
+        }
+        // network offering and domain suffix can be updated for Isolated networks only in 3.0
+        if (domainSuffix != null && ! Arrays.asList(GuestType.Isolated, GuestType.Shared).contains(network.getGuestType())) {
+            throw new InvalidParameterValueException("Domain suffix update can only be performed for Isolated and shared networks.");
         }
 
         boolean networkOfferingChanged = false;
