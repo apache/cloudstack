@@ -76,7 +76,7 @@ public class ListBgpPeersCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.IS_DEDICATED,
             type = CommandType.BOOLEAN,
-            description = "Lists only dedicated Bgp Peers or not. If not set, lists all dedicated and non-dedicated BGP peers the domain/account can access.")
+            description = "Lists only dedicated or non-dedicated Bgp Peers. If not set, lists all dedicated and non-dedicated BGP peers the domain/account can access.")
     private Boolean isDedicated;
 
     /////////////////////////////////////////////////////

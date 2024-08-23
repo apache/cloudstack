@@ -117,6 +117,7 @@ export default {
         zoneid: this.resource.zoneid,
         domainid: this.resource.domainid,
         account: this.resource.account,
+        projectid: this.resource.projectid,
         page: this.options.page,
         pageSize: this.options.pageSize,
         response: 'json'

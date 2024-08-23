@@ -1333,29 +1333,25 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             }
             // search via bgpPeerDao
             return bgpPeerDao.search(sc1, null);
-        } else {
+        } else if (accountId != null) {
+            if (zoneId == null) {
+                throw new InvalidParameterValueException("zoneId is required when list BGP peers for an account.");
+            }
+            Account account = accountManager.getAccount(accountId);
+            List<Long> bgpPeerIds = getBgpPeerIdsForAccount(account, zoneId);
+            if (CollectionUtils.isEmpty(bgpPeerIds)) {
+                return new ArrayList<>();
+            }
             SearchCriteria sc2 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
-            if (domainId == null && accountId == null) {
-                return bgpPeerDao.search(sc2, null);
-            }
-            sc2.addAnd("domainId", SearchCriteria.Op.NULL);
-            List<? extends BgpPeer> results = bgpPeerDao.search(sc2, null); // non-dedicated BGP peers
+            sc2.addAnd("id", SearchCriteria.Op.IN, bgpPeerIds.toArray());
+            return bgpPeerDao.search(sc2, null);
+        } else {
+            SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
             if (domainId != null) {
-                SearchCriteria sc3 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
                 sc3.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                if (accountId != null) {
-                    sc3.addAnd("accountId", SearchCriteria.Op.NULL);
-                }
-                results.addAll(bgpPeerDao.search(sc3, null)); // dedicated BGP peers to domain
             }
-            if (accountId != null) {
-                SearchCriteria sc4 = createSearchCriteriaForListBgpPeersCmd(id, zoneId, asNumber, keyword);
-                sc4.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                results.addAll(bgpPeerDao.search(sc4, null)); // dedicated BGP peers to account
-            }
-            return results;
+            return bgpPeerDao.search(sc3, null);
         }
-
     }
 
     private SearchCriteria createSearchCriteriaForListBgpPeersCmd(Long id, Long zoneId, Long asNumber, String keyword) {
