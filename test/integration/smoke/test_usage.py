@@ -544,6 +544,7 @@ class TestVolumeUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
@@ -554,17 +555,12 @@ class TestVolumeUsage(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id
         )
         cls._cleanup.append(cls.virtual_machine)
-        cls._cleanup.append(cls.service_offering)
+
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVolumeUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -845,6 +841,7 @@ class TestTemplateUsage(cloudstackTestCase):
                 cls.api_client,
                 cls.services["service_offering"]
             )
+            cls._cleanup.append(cls.service_offering)
             # create virtual machine
             cls.virtual_machine = VirtualMachine.create(
                 cls.api_client,
@@ -856,7 +853,6 @@ class TestTemplateUsage(cloudstackTestCase):
                 mode=cls.services["mode"]
             )
             cls._cleanup.append(cls.virtual_machine)
-            cls._cleanup.append(cls.service_offering)
 
             # Stop virtual machine
             cls.virtual_machine.stop(cls.api_client)
@@ -877,12 +873,7 @@ class TestTemplateUsage(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestTemplateUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1171,13 +1162,14 @@ class TestLBRuleUsage(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
-
+        cls._cleanup.append(cls.account)
         cls.services["account"] = cls.account.name
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1186,6 +1178,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
         cls.public_ip_1 = PublicIPAddress.create(
             cls.api_client,
             accountid=cls.virtual_machine.account,
@@ -1193,21 +1186,11 @@ class TestLBRuleUsage(cloudstackTestCase):
             domainid=cls.virtual_machine.domainid,
             services=cls.services["server"]
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.service_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestLBRuleUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1351,6 +1334,7 @@ class TestSnapshotUsage(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -1358,6 +1342,7 @@ class TestSnapshotUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1366,21 +1351,12 @@ class TestSnapshotUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.service_offering,
-            cls.account,
-        ]
+        cls._cleanup.append(cls.virtual_machine)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshotUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1538,6 +1514,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.services["account"] = cls.account.name
 
@@ -1545,6 +1522,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1553,6 +1531,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.virtual_machine)
         cls.public_ip_1 = PublicIPAddress.create(
             cls.api_client,
             accountid=cls.virtual_machine.account,
@@ -1560,21 +1539,11 @@ class TestNatRuleUsage(cloudstackTestCase):
             domainid=cls.virtual_machine.domainid,
             services=cls.services["server"]
         )
-        cls._cleanup = [
-            cls.virtual_machine,
-            cls.service_offering,
-            cls.account,
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNatRuleUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1723,6 +1692,8 @@ class TestVpnUsage(cloudstackTestCase):
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
+
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
             cls.services["server"],
@@ -1732,7 +1703,7 @@ class TestVpnUsage(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id
         )
         cls._cleanup.append(cls.virtual_machine)
-        cls._cleanup.append(cls.service_offering)
+
         cls.public_ip = PublicIPAddress.create(
             cls.api_client,
             accountid=cls.virtual_machine.account,
@@ -1744,12 +1715,7 @@ class TestVpnUsage(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVpnUsage, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1758,12 +1724,7 @@ class TestVpnUsage(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, VPN users
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVpnUsage, self).tearDown()
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_01_vpn_usage(self):

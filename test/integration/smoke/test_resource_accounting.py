@@ -167,11 +167,7 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created accounts
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestRAMCPUResourceAccounting, self).tearDown()
 
     def get_resource_amount(self, resource_type):
         cmd = updateResourceCount.updateResourceCountCmd()
@@ -190,12 +186,14 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
             self.services["service_offering_it_1"],
             domainid=self.domain.id
         )
+        self.cleanup.append(self.service_offering_it_1)
 
         self.service_offering_it_2 = ServiceOffering.create(
             self.api_client,
             self.services["service_offering_it_2"],
             domainid=self.domain.id
         )
+        self.cleanup.append(self.service_offering_it_2)
 
         vm_1 = VirtualMachine.create(
             self.apiclient,
@@ -218,8 +216,6 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
 
         self.debug("Deployed VM in account: %s, ID: %s" % (self.account.name, vm_2.id))
         self.cleanup.append(vm_2)
-        self.cleanup.append(self.service_offering_it_1)
-        self.cleanup.append(self.service_offering_it_2)
 
         CPU_RESOURCE_ID = 8
         RAM_RESOURCE_ID = 9

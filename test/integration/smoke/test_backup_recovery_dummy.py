@@ -58,11 +58,13 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
             return
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
+        cls._cleanup.append(cls.account)
         cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
+        cls._cleanup.append(cls.offering)
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
                                        mode=cls.services["mode"])
-        cls._cleanup = [cls.vm, cls.offering, cls.account]
+        cls._cleanup.append(cls.vm)
 
         # Import a dummy backup offering to use on tests
 
@@ -74,10 +76,8 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        super(TestDummyBackupAndRecovery, cls).tearDownClass()
         try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-
             # Restore original backup framework values values
             if cls.backup_enabled == "false":
                 Configurations.update(cls.api_client, 'backup.framework.enabled', value=cls.backup_enabled, zoneid=cls.zone.id)

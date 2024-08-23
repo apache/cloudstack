@@ -83,12 +83,14 @@ class TestResourceNames(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.services["disk_offering"]["name"] = "test🎉diskoffering🙂"
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.services["disk_offering"]
         )
+        cls._cleanup.append(cls.disk_offering)
 
         cls.services["small"]["displayname"] = "test🎉vm🙂"
         cls.virtual_machine = VirtualMachine.create(
@@ -100,8 +102,6 @@ class TestResourceNames(cloudstackTestCase):
             mode=cls.services['mode']
         )
         cls._cleanup.append(cls.virtual_machine)
-        cls._cleanup.append(cls.service_offering)
-        cls._cleanup.append(cls.disk_offering)
 
     @classmethod
     def tearDownClass(cls):
