@@ -79,12 +79,15 @@ class CsBgpPeers(CsDataBag):
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
+        self.frr_conf.add("ip nht resolve-via-default")
         return
 
     def _process_peers(self):
         for as_number in self.peers.keys():
             self.frr_conf.add("router bgp {}".format(as_number))
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
+            if self.peers[as_number]['ip6_peers']:
+                self.frr_conf.add(" no bgp default ipv4-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip4_peer['ip4_address'], ip4_peer['peer_as_number']))
                 if 'peer_password' in ip4_peer:
