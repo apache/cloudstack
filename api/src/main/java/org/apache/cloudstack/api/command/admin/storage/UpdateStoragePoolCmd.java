@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -151,8 +150,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Override
     public void execute() {
         StoragePool result = null;
-        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule) ||
-                CollectionUtils.isNotEmpty(tags) ||
+        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
                 MapUtils.isNotEmpty(details)) {
             result = _storageService.updateStoragePool(this);
         }
