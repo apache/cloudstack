@@ -60,8 +60,9 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             String ksPassword = "passwordForValidation";
             byte[] ksBits = CertificateHelper.buildAndSaveKeystore(domainSuffix, certificate, getKeyContent(key), ksPassword);
             KeyStore ks = CertificateHelper.loadKeystore(ksBits, ksPassword);
-            if (ks != null)
+            if (ks != null) {
                 return new Pair<>(true, errMsg);
+            }
             errMsg = String.format("Unable to construct keystore for domain: %s", domainSuffix);
             s_logger.error(errMsg);
         } catch (Exception e) {

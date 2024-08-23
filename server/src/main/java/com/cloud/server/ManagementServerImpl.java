@@ -4485,25 +4485,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final String certificate = cmd.getCertificate();
         final String key = cmd.getPrivateKey();
+        String domainSuffix = cmd.getDomainSuffix();
 
-        if (key != null) {
-            Pair<Boolean, String> result = _ksMgr.validateCertificate(certificate, key, cmd.getDomainSuffix());
-            if (!result.first()) {
-                throw new InvalidParameterValueException(String.format("Failed to pass certificate validation check with error: %s", result.second()));
-            }
-        } else {
-            try {
-                s_logger.debug(String.format("Trying to validate the root certificate format"));
-                CertificateHelper.buildCertificate(certificate);
-            } catch (CertificateException e) {
-                String errorMsg = String.format("Failed to pass certificate validation check with error: Certificate validation failed due to exception: %s", e.getMessage());
-                s_logger.error(errorMsg);
-                throw new InvalidParameterValueException(errorMsg);
-            }
-        }
+        validateCertificate(certificate, key, domainSuffix);
 
         if (cmd.getPrivateKey() != null) {
-            _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, certificate, key, cmd.getDomainSuffix());
+            _ksMgr.saveCertificate(ConsoleProxyManager.CERTIFICATE_NAME, certificate, key, domainSuffix);
 
             // Reboot ssvm here since private key is present - meaning server cert being passed
             final List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, State.Running, State.Migrating, State.Starting);
@@ -4518,6 +4505,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return "Certificate has been successfully updated, if its the server certificate we would reboot all "
         + "running console proxy VMs and secondary storage VMs to propagate the new certificate, "
         + "please give a few minutes for console access and storage services service to be up and working again";
+    }
+
+    private void validateCertificate(String certificate, String key, String domainSuffix) {
+        if (key != null) {
+            Pair<Boolean, String> result = _ksMgr.validateCertificate(certificate, key, domainSuffix);
+            if (!result.first()) {
+                throw new InvalidParameterValueException(String.format("Failed to pass certificate validation check with error: %s", result.second()));
+            }
+        } else {
+            try {
+                s_logger.debug(String.format("Trying to validate the root certificate format"));
+                CertificateHelper.buildCertificate(certificate);
+            } catch (CertificateException e) {
+                String errorMsg = String.format("Failed to pass certificate validation check with error: Certificate validation failed due to exception: %s", e.getMessage());
+                s_logger.error(errorMsg);
+                throw new InvalidParameterValueException(errorMsg);
+            }
+        }
     }
 
     @Override
