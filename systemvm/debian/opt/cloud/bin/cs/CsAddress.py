@@ -693,11 +693,8 @@ class CsIP:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
                     ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
-                self.fw.append(
-                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
-            elif cmdline.get_source_nat_ip() and not self.is_private_gateway():
-                self.fw.append(
-                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, cmdline.get_source_nat_ip())])
+            self.fw.append(
+                ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
 
     def list(self):
         self.iplist = {}
