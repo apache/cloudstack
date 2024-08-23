@@ -219,8 +219,11 @@ public class BGPServiceImpl implements BGPService {
                 asNumberDao.findByAsNumber(asNumber) :
                 asNumberDao.findOneByAllocationStateAndZone(zoneId, false);
         if (asNumberVO == null || asNumberVO.getDataCenterId() != zoneId) {
-            LOGGER.error(String.format("Cannot find AS number %s on zone with ID %s", asNumber, zoneId));
-            return false;
+            if (asNumber != null) {
+                LOGGER.error(String.format("Cannot find AS number %s in zone with ID %s", asNumber, zoneId));
+                return false;
+            }
+            throw new CloudRuntimeException(String.format("Cannot allocate AS number in zone with ID %s", zoneId));
         }
         long accountId, domainId;
         String netName;
