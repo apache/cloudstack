@@ -1163,35 +1163,39 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         Long zoneId = bgpPeerVO.getDataCenterId();
 
-        boolean isAsNumberChanged = (newAsNumber != null) && (newAsNumber != bgpPeerVO.getAsNumber());
-        boolean isIp4AddressChanged = (newIp4Address != null) && (newIp4Address != bgpPeerVO.getIp4Address());
-        boolean isIp6AddressChanged = (newIp6Address != null) && (newIp6Address != bgpPeerVO.getIp6Address());
+        boolean isAsNumberChanged = (newAsNumber != null) && !newAsNumber.equals(bgpPeerVO.getAsNumber());
+        boolean isIp4AddressChanged = StringUtils.isNotBlank(newIp4Address) && !newIp4Address.equals(bgpPeerVO.getIp4Address());
+        boolean isIp6AddressChanged = StringUtils.isNotBlank(newIp6Address) && !newIp6Address.equals(bgpPeerVO.getIp6Address());
+
         if (newAsNumber == null) {
             newAsNumber = bgpPeerVO.getAsNumber();
         }
         if (newIp4Address == null) {
             newIp4Address = bgpPeerVO.getIp4Address();
-        }
-        if (newIp6Address == null) {
-            newIp6Address = bgpPeerVO.getIp6Address();
+        } else if (StringUtils.isBlank(newIp4Address)) {
+            newIp4Address = null;
+        } else if (!NetUtils.isValidIp4(newIp4Address)) {
+            throw new InvalidParameterValueException("new IPv4 address is not valid.");
         }
 
-        if (isIp4AddressChanged) {
-            if (!NetUtils.isValidIp4(newIp4Address)) {
-                throw new InvalidParameterValueException("new IPv4 address is not valid.");
-            }
+        if (newIp6Address == null) {
+            newIp6Address = bgpPeerVO.getIp6Address();
+        } else if (StringUtils.isBlank(newIp6Address)) {
+            newIp6Address = null;
+        } else if (!NetUtils.isValidIp6(newIp6Address)) {
+            throw new InvalidParameterValueException("new IPv6 address is not valid.");
         }
-        if (isIp6AddressChanged) {
-            if (!NetUtils.isValidIp6(newIp6Address)) {
-                throw new InvalidParameterValueException("new IPv6 address is not valid.");
-            }
+
+        if (ObjectUtils.allNull(newIp4Address, newIp6Address)) {
+            throw new InvalidParameterValueException("At least one of IPv4 and IPv6 address must be specified.");
         }
-        if (isAsNumberChanged || isIp4AddressChanged) {
+
+        if ((isAsNumberChanged || isIp4AddressChanged) && newIp4Address != null) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, newIp4Address, null) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv4 address and AS number in the zone.");
             }
         }
-        if (isAsNumberChanged || isIp6AddressChanged) {
+        if ((isAsNumberChanged || isIp6AddressChanged) && newIp6Address != null) {
             if (bgpPeerDao.findByZoneAndAsNumberAndAddress(zoneId, newAsNumber, null, newIp6Address) != null) {
                 throw new InvalidParameterValueException("There is already a BGP peer with same IPv6 address and AS number in the zone.");
             }
