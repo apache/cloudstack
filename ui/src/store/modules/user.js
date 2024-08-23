@@ -350,7 +350,7 @@ const user = {
         })
 
         api(
-          'listNetworklistNetworkServiceProviders',
+          'listNetworkServiceProviders',
           { name: 'SecurityGroupProvider', state: 'Enabled' }
         ).then(response => {
           const showSecurityGroups = response.listnetworkserviceprovidersresponse.count > 0
