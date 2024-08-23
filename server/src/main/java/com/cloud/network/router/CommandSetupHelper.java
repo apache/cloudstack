@@ -1430,7 +1430,7 @@ public class CommandSetupHelper {
                 asNumberDao.findByZoneAndVpcId(router.getDataCenterId(), router.getVpcId()) :
                 asNumberDao.findByZoneAndNetworkId(router.getDataCenterId(), network.getId());
         if (asNumberVO == null) {
-            logger.debug("No AS number found for the guest network or VPC.");
+            logger.debug("No AS number found for the guest network or VPC, skipping.");
             return;
         }
 

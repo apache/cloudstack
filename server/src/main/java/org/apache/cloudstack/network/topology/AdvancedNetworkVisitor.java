@@ -223,6 +223,9 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         final Commands cmds = new Commands(Command.OnError.Continue);
 
         _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
+        if (cmds.size() == 0) {
+            return true;
+        }
 
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
