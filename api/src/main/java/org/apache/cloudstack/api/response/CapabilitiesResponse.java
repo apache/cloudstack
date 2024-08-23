@@ -92,7 +92,7 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if users can see all accounts within the same domain, false otherwise")
     private boolean allowUserViewAllDomainAccounts;
 
-    @SerializedName("allowuserforcestopvm")
+    @SerializedName(ApiConstants.ALLOW_USER_FORCE_STOP_VM)
     @Param(description = "true if users are allowed to force stop a vm, false otherwise", since = "4.20.0")
     private boolean allowUserForceStopVM;
 
