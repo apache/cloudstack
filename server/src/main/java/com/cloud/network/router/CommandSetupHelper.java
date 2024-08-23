@@ -1438,7 +1438,10 @@ public class CommandSetupHelper {
         if (router.getVpcId() != null) {
             List<NetworkVO> networks = _networkDao.listByVpc(router.getVpcId());
             for (NetworkVO networkVO : networks) {
-                guestNetworks.add(networkVO);
+                final NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(networkVO.getNetworkOfferingId());
+                if (NetworkOffering.RoutingMode.Dynamic.equals(offering.getRoutingMode())) {
+                    guestNetworks.add(networkVO);
+                }
             }
         } else {
             guestNetworks.add(network);
