@@ -22,6 +22,7 @@ import { message, notification } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
+import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
@@ -294,31 +295,13 @@ export const notifierPlugin = {
 export const toLocaleDatePlugin = {
   install (app) {
     app.config.globalProperties.$toLocaleDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000)).toUTCString()
-      // e.g. "08 Jun 2010 19:13:49 GMT", "25 May 2010 12:07:01 UTC"
-      dateWithOffset = dateWithOffset.substring(dateWithOffset.indexOf(', ') + 2)
-      // e.g. "08 Jun 2010 19:13:49", "25 May 2010 12:10:16"
-      dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
-      return dateWithOffset
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocaleDate({ date, timezoneoffset, usebrowsertimezone })
     }
 
     app.config.globalProperties.$toLocalDate = function (date) {
-      var timezoneOffset = this.$store.getters.timezoneoffset
-      if (this.$store.getters.usebrowsertimezone) {
-        // Since GMT+530 is returned as -330 (mins to GMT)
-        timezoneOffset = new Date().getTimezoneOffset() / -60
-      }
-      var milliseconds = Date.parse(date)
-      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
-      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000))
-      return dateWithOffset.toISOString()
+      const { timezoneoffset, usebrowsertimezone } = this.$store.getters
+      return toLocalDate({ date, timezoneoffset, usebrowsertimezone }).toISOString()
     }
   }
 }

@@ -90,8 +90,15 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
 
+-- Remove on delete cascade from snapshot schedule
+ALTER TABLE `cloud`.`snapshot_schedule` DROP CONSTRAINT `fk__snapshot_schedule_async_job_id`;
+
 -- Add `is_implicit` column to `host_tags` table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
+
+-- Fields related to Snapshot Extraction
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url', 'varchar(2048) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url_created', 'datetime DEFAULT NULL');
 
 -- Webhooks feature
 DROP TABLE IF EXISTS `cloud`.`webhook`;
@@ -151,6 +158,76 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
-
 -- Quota inject tariff result into subsequent ones
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
+
+-- Idempotent IDEMPOTENT_MODIFY_COLUMN_CHAR_SET
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET` (
+  IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_type VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' MODIFY COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_type); SET @ddl = CONCAT(@ddl, ' ', ' CHARACTER SET utf8mb4'); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud_usage`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`;
+CREATE PROCEDURE `cloud_usage`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET` (
+  IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_type VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' MODIFY COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_type); SET @ddl = CONCAT(@ddl, ' ', ' CHARACTER SET utf8mb4'); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('async_job', 'job_result', 'TEXT', 'COMMENT \'job result info\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('async_job', 'job_cmd_info', 'TEXT', 'COMMENT \'command parameter info\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('event', 'description', 'VARCHAR(1024)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('usage_event', 'resource_name', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud_usage`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('usage_event', 'resource_name', 'VARCHAR(255)', 'DEFAULT NULL');
+
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('account', 'account_name', 'VARCHAR(100)', 'DEFAULT NULL COMMENT \'an account name set by the creator of the account, defaults to username for single accounts\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('affinity_group', 'description', 'VARCHAR(4096)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('annotations', 'annotation', 'TEXT', '');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('autoscale_vmgroups', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'name of the autoscale vm group\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('backup_offering', 'name', 'VARCHAR(255)', 'NOT NULL COMMENT \'backup offering name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('backup_offering', 'description', 'VARCHAR(255)', 'NOT NULL COMMENT \'backup offering description\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('disk_offering', 'name', 'VARCHAR(255)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('disk_offering', 'unique_name', 'VARCHAR(32)', 'DEFAULT NULL COMMENT \'unique name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('disk_offering', 'display_text', 'VARCHAR(4096)', 'DEFAULT NULL COMMENT \'Optional text set by the admin for display purpose only\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('instance_group', 'name', 'VARCHAR(255)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('kubernetes_cluster', 'name', 'VARCHAR(255)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('kubernetes_cluster', 'description', 'VARCHAR(4096)', 'DEFAULT NULL COMMENT \'display text for this Kubernetes cluster\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('kubernetes_supported_version', 'name', 'VARCHAR(255)', 'NOT NULL COMMENT \'the name of this Kubernetes version\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('network_offerings', 'name', 'VARCHAR(64)', 'DEFAULT NULL COMMENT \'name of the network offering\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('network_offerings', 'unique_name', 'VARCHAR(64)', 'DEFAULT NULL COMMENT \'unique name of the network offering\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('network_offerings', 'display_text', 'VARCHAR(255)', 'NOT NULL COMMENT \'text to display to users\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('networks', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'name for this network\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('networks', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text for this network\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('project_role', 'description', 'TEXT', 'COMMENT \'description of the project role\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('projects', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'project name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('projects', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'project display text\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('roles', 'description', 'TEXT', 'COMMENT \'description of the role\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('service_offering', 'name', 'VARCHAR(255)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('service_offering', 'unique_name', 'VARCHAR(32)', 'DEFAULT NULL COMMENT \'unique name for offerings\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('service_offering', 'display_text', 'VARCHAR(4096)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('snapshots', 'name', 'VARCHAR(255)', 'NOT NULL COMMENT \'snapshot name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('ssh_keypairs', 'keypair_name', 'VARCHAR(256)', 'NOT NULL COMMENT \'name of the key pair\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('user_vm', 'display_name', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('user_vm_details', 'value', 'VARCHAR(5120)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('user', 'firstname', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('user', 'lastname', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('user_data', 'name', 'VARCHAR(256)', 'NOT NULL COMMENT \'name of the user data\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vm_instance', 'display_name', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vm_snapshots', 'display_name', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vm_snapshots', 'description', 'VARCHAR(255)', 'DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vm_template', 'name', 'VARCHAR(255)', 'NOT NULL');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vm_template', 'display_text', 'VARCHAR(4096)', 'DEFAULT NULL COMMENT \'Description text set by the admin for display purpose only\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('volumes', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'A user specified name for the volume\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'vpc name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'vpc display text\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'vpc offering name\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'unique_name', 'VARCHAR(64)', 'DEFAULT NULL COMMENT \'unique name of the vpc offering\'');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text\'');

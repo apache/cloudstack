@@ -545,16 +545,11 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
                 PreparedStatement pstmt = null;
                 try {
-                    txn.start();
                     pstmt = txn.prepareAutoCloseStatement(DELETE_ALL_BY_INTERVAL);
                     pstmt.setLong(1, days);
                     pstmt.executeUpdate();
-                    txn.commit();
                 } catch (Exception ex) {
-                    txn.rollback();
                     logger.error("error removing old cloud_usage records for interval: " + days);
-                } finally {
-                    txn.close();
                 }
             }
         });

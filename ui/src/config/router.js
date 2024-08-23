@@ -84,7 +84,8 @@ function generateRouterMap (section) {
           searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
-          tabs: child.tabs
+          tabs: child.tabs,
+          customParamHandler: child.customParamHandler
         },
         component: component,
         hideChildrenInMenu: true,
@@ -224,7 +225,6 @@ export function asyncRouterMap () {
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
-
       {
         path: '/exception',
         name: 'exception',
