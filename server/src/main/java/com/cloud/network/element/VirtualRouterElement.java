@@ -24,6 +24,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -124,6 +127,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Inject
     NetworkDao _networksDao;
+    @Inject
+    VpcDao _vpcDao;
     @Inject
     NetworkModel _networkMdl;
     @Inject
@@ -1369,6 +1374,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_NEEDED);
             _routerDao.persist(router);
         }
+        setRestartRequiredForNetwork(network, true);
     }
 
     @Override
@@ -1390,5 +1396,17 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
             _routerDao.persist(router);
         }
+        setRestartRequiredForNetwork(network, true);
+    }
+
+    private void setRestartRequiredForNetwork(Network network, boolean restartRequired) {
+        NetworkVO networkVo = _networksDao.findById(network.getId());
+        networkVo.setRestartRequired(restartRequired);
+        if (networkVo.getVpcId() == null) {
+            VpcVO vpc = _vpcDao.findById(networkVo.getVpcId());
+            vpc.setRestartRequired(restartRequired);
+            _vpcDao.persist(vpc);
+        }
+        _networksDao.persist(networkVo);
     }
 }

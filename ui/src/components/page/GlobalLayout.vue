@@ -17,13 +17,15 @@
 
 <template>
   <div>
-    <a-affix v-if="getNumberOfAlerts() > 0" >
+    <a-affix v-if="alertCount > 0" >
       <a-alert
         v-if="this.$config.alertMessage && this.$config.alertMessage !== ''"
         :type="this.$config.alertMessageType ? this.$config.alertMessageType : 'info'"
         :showIcon="false"
         banner
-        class="alertHeader">
+        class="alertHeader"
+        closable
+        @close="closeCustomAlert()">
         <template #message>
           <span v-html="$config.alertMessage"></span>
         </template>
@@ -39,7 +41,7 @@
 
     </a-affix>
     <a-layout class="layout" :class="[device]">
-      <a-affix style="z-index: 200" :offsetTop="this.getNumberOfAlerts() * 25">
+      <a-affix style="z-index: 200" :offsetTop="alertCount * 25">
         <template v-if="isSideMenu()">
           <a-drawer
             v-if="isMobile()"
@@ -102,7 +104,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="'margin-top: ' + this.getNumberOfAlerts() * 25 + 'px;'"
+            :style="'margin-top: ' + alertCount * 25 + 'px;'"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"
@@ -162,7 +164,8 @@ export default {
       collapsed: false,
       menus: [],
       showSetting: false,
-      showClear: false
+      showClear: false,
+      alertCount: 0
     }
   },
   computed: {
@@ -221,6 +224,7 @@ export default {
       const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
       this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
     }
+    this.getNumberOfAlerts()
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'
@@ -280,14 +284,18 @@ export default {
       })
     },
     getNumberOfAlerts () {
-      let count = 0
+      this.alertCount = 0
       if (this.$store.getters.shutdownTriggered) {
-        count++
+        this.alertCount++
       }
       if (this.$config.alertMessage && this.$config.alertMessage !== '') {
-        count++
+        this.alertCount++
       }
-      return count
+      return this.alertCount
+    },
+    closeCustomAlert () {
+      this.$config.alertMessage = ''
+      this.alertCount--
     }
   }
 }

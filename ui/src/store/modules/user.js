@@ -348,14 +348,14 @@ const user = {
             reject(error)
           })
 
-          api('listNetworks', { restartrequired: true }).then(response => {
+          api('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
             if (response.listnetworksresponse.count > 0) {
               store.dispatch('AddHeaderNotice', {
                 key: 'NETWORK_RESTART_REQUIRED',
                 title: i18n.global.t('label.network.restart.required'),
                 description: i18n.global.t('message.network.restart.required'),
                 path: '/guestnetwork/',
-                query: { restartrequired: true },
+                query: { restartrequired: true, forvpc: false },
                 status: 'done',
                 timestamp: new Date()
               })
