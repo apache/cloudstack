@@ -1280,16 +1280,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForNsx(vpc);
-        if (sourceNatIP != null || forNsx) {
-            if (forNsx) {
-                logger.info("Provided source NAT IP will be ignored in an NSX-enabled zone");
-                sourceNatIP = null;
+        try {
+            if (sourceNatIP != null || forNsx) {
+                if (forNsx) {
+                    logger.info("Provided source NAT IP will be ignored in an NSX-enabled zone");
+                    sourceNatIP = null;
+                }
+                logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
+                allocateSourceNatIp(vpc, sourceNatIP);
             }
-            logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
-            allocateSourceNatIp(vpc, sourceNatIP);
-        }
-        if (isVpcOfferingDynamicRouting(vpc)) {
-            bgpService.allocateASNumber(vpc.getZoneId(), cmd.getAsNumber(), null, vpc.getId());
+            if (isVpcOfferingDynamicRouting(vpc)) {
+                bgpService.allocateASNumber(vpc.getZoneId(), cmd.getAsNumber(), null, vpc.getId());
+            }
+        } catch (CloudRuntimeException ex) {
+            try {
+                deleteVpc(vpc.getId());
+            } catch (Exception ex2) {
+                logger.error("Got exception when delete a VPC created just now: {}", ex2.getMessage());
+            }
+            throw ex;
         }
         return vpc;
     }

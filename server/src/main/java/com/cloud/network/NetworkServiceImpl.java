@@ -1809,7 +1809,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
         }
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff)) {
-            bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+            try {
+                bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+            } catch (CloudRuntimeException ex) {
+                deleteNetwork(network.getId(), true);
+                throw ex;
+            }
         }
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
             routedIpv4Manager.persistBgpPeersForGuestNetwork(network.getId(), bgpPeerIds);
