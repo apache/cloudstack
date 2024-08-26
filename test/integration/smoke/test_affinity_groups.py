@@ -145,6 +145,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             affinitygroupnames=[self.ag.name]
         )
         self.cleanup.append(vm2)
+
         list_vm2 = list_virtual_machines(
             self.apiclient,
             id=vm2.id
@@ -189,6 +190,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             affinitygroupnames=[self.affinity.name]
         )
         self.cleanup.append(vm1)
+
         list_vm1 = list_virtual_machines(
             self.apiclient,
             id=vm1.id
@@ -222,6 +224,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             affinitygroupnames=[self.affinity.name]
         )
         self.cleanup.append(vm2)
+
         list_vm2 = list_virtual_machines(
             self.apiclient,
             id=vm2.id
