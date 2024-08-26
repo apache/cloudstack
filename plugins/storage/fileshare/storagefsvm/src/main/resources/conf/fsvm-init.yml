@@ -35,7 +35,7 @@ write_files:
       PARTITION="$1"
       MOUNT_POINT="/mnt/fs"
       EXPORT_DIR="$MOUNT_POINT/share"
-      PERMISSIONS="rw,sync,no_subtree_check"
+      PERMISSIONS="rw,sync,no_subtree_check,no_root_squash"
 
       mkdir -p "$MOUNT_POINT"
 
@@ -81,8 +81,6 @@ write_files:
       if [ ! -d "$EXPORT_DIR" ]; then
         log "Creating export directory..."
         mkdir -p "$EXPORT_DIR"
-        chown nobody:nogroup "$EXPORT_DIR"
-        chmod 777 "$EXPORT_DIR"
       fi
 
       log "Configuring NFS export..."
@@ -165,6 +163,12 @@ write_files:
       PARTITION="/dev/$BLOCK_DEVICE"
       ADD_PARTITION_FILE="/usr/local/bin/add-partition"
       RESIZE_PARTITION_FILE="/usr/local/bin/resize-partition"
+
+      for interface in $(ls /sys/class/net/ | grep '^eth'); do
+        echo "Starting cloud-dhclient service for interface: $interface"
+        sudo systemctl start cloud-dhclient@$interface.service
+      done
+      log "Existing network interfaces configured"
 
       UDEV_ADD_RULE="KERNEL==$BLOCK_DEVICE, ACTION==\"add\", SUBSYSTEM==\"block\", RUN+=\"$ADD_PARTITION_FILE /dev/%k\""
       UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"change\", SUBSYSTEM==\"block\", RUN+=\"$RESIZE_PARTITION_FILE /dev/%k\""
