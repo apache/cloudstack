@@ -44,6 +44,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.Vlan;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -268,6 +270,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected NetworkHelper networkHelper;
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -3170,8 +3174,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public PublicIp assignSourceNatIpAddressToVpc(final Account owner, final Vpc vpc, final Long podId, final boolean forNsx) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToVpc(final Account owner, final Vpc vpc, final Long podId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         final long dcId = vpc.getZoneId();
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dcId);
+        boolean forNsx = nsxProvider != null;
 
         final IPAddressVO sourceNatIp = getExistingSourceNatInVpc(owner.getId(), vpc.getId(), forNsx);
 
@@ -3180,10 +3186,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (sourceNatIp != null) {
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
-            if (!forNsx) {
-                ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
-            } else {
+            if (forNsx) {
                 ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            } else {
+                ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
             }
         }
 

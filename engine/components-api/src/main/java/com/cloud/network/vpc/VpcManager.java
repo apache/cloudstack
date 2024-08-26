@@ -114,7 +114,8 @@ public interface VpcManager {
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
-     * Assigns source nat public IP address to VPC
+     * Assigns source nat public IP address to VPC.
+     * In case of NSX backed VPCs: CloudStack deploys VRs with Public NIC IP different to the VPC source NAT IP, the source NAT IP is on the NSX Public range
      *
      * @param owner
      * @param vpc
@@ -122,7 +123,7 @@ public interface VpcManager {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc, Long podId, boolean forNsx) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc, Long podId) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Validates network offering to find if it can be used for network creation in VPC

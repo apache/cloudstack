@@ -131,10 +131,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
 
         if (isPublicNetwork) {
             if (Objects.isNull(nsxProvider)) {
-                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null, false);
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null);
             } else {
-                // NSX deploys VRs with Public NIC != to the source NAT, the source NAT IP is on the NSX Public range
-                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, getPodId(), true);
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, getPodId());
                 if (vpc != null) {
                     IPAddressVO routerPublicIp = ipAddressDao.findByIp(sourceNatIp.getAddress().toString());
                     routerPublicIp.setVpcId(vpc.getId());
