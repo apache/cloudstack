@@ -231,7 +231,6 @@ class TestMaxCPULimits(cloudstackTestCase):
             self.testdata["service_offering_multiple_cores"]
         )
         self.cleanup.append(self.service_offering)
-        # Adding to cleanup list after execution
 
         self.debug("Setting up account and domain hierarchy")
         self.setupAccounts(account_limit=6, domain_limit=8)

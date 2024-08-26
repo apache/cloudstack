@@ -1388,7 +1388,7 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             cls.services["service_offering"]
         )
 
-        cls.cleanup = [
+        cls._cleanup = [
             cls.service_offering,
         ]
         return

@@ -486,6 +486,7 @@ class TestTemplates(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
+        cls._cleanup.append(cls.disk_offering)
         template = get_template(
                             cls.apiclient,
                             cls.zone.id,
@@ -509,15 +510,18 @@ class TestTemplates(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.account)
         cls.user = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.user)
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]["tiny"]
                                         )
+        cls._cleanup.append(cls.service_offering)
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
@@ -528,6 +532,7 @@ class TestTemplates(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+        cls._cleanup.append(cls.virtual_machine)
         #Stop virtual machine
         cls.virtual_machine.stop(cls.apiclient)
 
@@ -560,25 +565,10 @@ class TestTemplates(cloudstackTestCase):
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
-        cls._cleanup = [
-                        cls.virtual_machine,
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        cls.user
-                        ]
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(TestTemplates, cls).getClsTestClient().getApiClient()
-            #Cleanup created resources such as templates and VMs
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestTemplates, cls).tearDownClass()
 
     def setUp(self):
 

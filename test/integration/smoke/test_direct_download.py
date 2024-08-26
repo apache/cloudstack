@@ -305,7 +305,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         nfs_storage_offering = self.createServiceOffering("TestNFSStorageDirectDownload", "shared", test_tag)
 
         vm = self.deployVM(nfs_storage_offering)
-        self.cleanup.append(vm)
         self.assertEqual(
             vm.state,
             "Running",

@@ -958,6 +958,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             cls.services["account"],
             domainid=domain.id
         )
+        cls._cleanup.append(cls.account)
 
         offering_data = {
             'displaytext': 'TestOffering',
@@ -972,6 +973,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             offering_data,
             limitcpuuse=True
         )
+        cls._cleanup.append(cls.offering)
 
         def getHost(self, hostId=None):
             response = list_hosts(
@@ -998,24 +1000,11 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             hostid=cls.host.id
 
         )
-        cls._cleanup = [
-            cls.vm,
-            cls.offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.vm)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestCpuCapServiceOfferings,
-                cls).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCpuCapServiceOfferings, cls).tearDownClass()
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")

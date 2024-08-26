@@ -110,7 +110,6 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
-
         self.cleanup.append(vm1)
 
         list_vm1 = list_virtual_machines(
@@ -145,7 +144,6 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
-
         self.cleanup.append(vm2)
         list_vm2 = list_virtual_machines(
             self.apiclient,
@@ -190,7 +188,6 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.affinity.name]
         )
-
         self.cleanup.append(vm1)
         list_vm1 = list_virtual_machines(
             self.apiclient,
@@ -224,7 +221,6 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.affinity.name]
         )
-
         self.cleanup.append(vm2)
         list_vm2 = list_virtual_machines(
             self.apiclient,

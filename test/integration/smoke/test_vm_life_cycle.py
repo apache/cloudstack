@@ -119,12 +119,7 @@ class TestDeployVM(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             mode=cls.services['mode']
         )
-
-        cls.cleanup = [
-            cls.virtual_machine,
-            cls.service_offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     @classmethod
     def tearDownClass(cls):

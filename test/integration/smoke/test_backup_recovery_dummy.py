@@ -76,8 +76,8 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestDummyBackupAndRecovery, cls).tearDownClass()
         try:
+            super(TestDummyBackupAndRecovery, cls).tearDownClass()
             # Restore original backup framework values values
             if cls.backup_enabled == "false":
                 Configurations.update(cls.api_client, 'backup.framework.enabled', value=cls.backup_enabled, zoneid=cls.zone.id)
