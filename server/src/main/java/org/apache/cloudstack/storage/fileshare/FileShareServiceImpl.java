@@ -42,10 +42,12 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.storage.DiskOfferingVO;
@@ -320,7 +322,7 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         accountMgr.checkAccess(caller, null, false, fileShare);
         Set<State> validStates = new HashSet<>(List.of(State.Stopped));
         if (!validStates.contains(fileShare.getState())) {
-            throw new InvalidParameterValueException("File share can be started only if it is in the " + validStates.toString() + " states");
+            throw new InvalidParameterValueException("File share can be started only if it is in the " + validStates.toString() + " state");
         }
         return startFileShare(fileShare);
     }
@@ -352,24 +354,8 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
     private FileShareVO reDeployFileShare(FileShareVO fileShare) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
-        DataCenter zone = validateAndGetZone(fileShare.getDataCenterId());
-        lifeCycle.checkPrerequisites(zone, fileShare.getServiceOfferingId());
-
-        if (fileShare.getState().equals(State.Ready)) {
-            stopFileShare(fileShare.getId(), false);
-        }
-
-        Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
-        if (result.first() == true) {
-            fileShare.setVmId(result.second());
-            fileShareDao.update(fileShare.getId(), fileShare);
-            startFileShare(fileShare);
-            return fileShare;
-        } else {
-            stateTransitTo(fileShare, Event.Detach);
-            logger.error("Redeploy failed for fileshare " + fileShare.toString() + ". File share is left in detached state. Please do Restart with Cleanup after fixing the errors.");
-            return null;
-        }
+        boolean result = lifeCycle.reDeployFileShare(fileShare);
+        return (result ? fileShare : null);
     }
 
     @Override
@@ -379,15 +365,12 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, false, fileShare);
 
-        Set<State> validStates = new HashSet<>(List.of(State.Ready, State.Stopped, State.Detached));
+        Set<State> validStates = new HashSet<>(List.of(State.Ready, State.Stopped));
         if (!validStates.contains(fileShare.getState())) {
             throw new InvalidParameterValueException("Restart file share can be done only if the file share is in " + validStates.toString() + " states");
         }
 
         if (!cleanup) {
-            if (fileShare.getState().equals(State.Detached)) {
-                throw new InvalidParameterValueException("File Share is in " + State.Detached.toString() + " state. Please do Restart with Cleanup to recover it.");
-            }
             if (!fileShare.getState().equals(State.Stopped)) {
                 stopFileShare(fileShare.getId(), false);
             }
@@ -553,27 +536,29 @@ public class FileShareServiceImpl extends ManagerBase implements FileShareServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FILESHARE_CHANGE_SVC_OFFERING, eventDescription = "Change file share service offering")
-    public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+    public FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, VirtualMachineMigrationException {
         FileShareVO fileShare = fileShareDao.findById(cmd.getId());
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, false, fileShare);
-        Set<State> validStates = new HashSet<>(List.of(State.Ready, State.Stopped));
+        Set<State> validStates = new HashSet<>(List.of(State.Stopped));
         if (!validStates.contains(fileShare.getState())) {
-            throw new InvalidParameterValueException("Service offering of the file share can be changed only if the file share is in " + validStates.toString() + " states");
+            throw new InvalidParameterValueException("Service offering of the file share can be changed only if the file share is in " + validStates.toString() + " state");
         }
 
         FileShareProvider provider = getFileShareProvider(fileShare.getFsProviderName());
         FileShareLifeCycle lifeCycle = provider.getFileShareLifeCycle();
         DataCenter zone = validateAndGetZone(fileShare.getDataCenterId());
         lifeCycle.checkPrerequisites(zone, cmd.getServiceOfferingId());
-        fileShare.setServiceOfferingId(cmd.getServiceOfferingId());
-
-        if (!fileShare.getState().equals(State.Stopped)) {
-            stopFileShare(fileShare.getId(), false);
-        }
 
         fileShare = fileShareDao.findById(cmd.getId());
-        return reDeployFileShare(fileShare);
+
+        if (lifeCycle.changeFileShareServiceOffering(fileShare, cmd.getServiceOfferingId())) {
+            fileShare.setServiceOfferingId(cmd.getServiceOfferingId());
+            fileShareDao.update(fileShare.getId(), fileShare);
+            return fileShare;
+        } else {
+            return null;
+        }
     }
 
     @Override

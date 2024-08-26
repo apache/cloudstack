@@ -79,7 +79,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -323,70 +322,14 @@ public class StorageFsVmFileShareLifeCycleTest {
         Assert.assertEquals(lifeCycle.deleteFileShare(fileShare), true);
     }
 
-   private FileShare prepareReDeployFileShare(Long newVmId) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        FileShare fileShare = prepareDeployFileShare();
-        when(fileShare.getVmId()).thenReturn(s_vmId);
-       when(fileShare.getAccountId()).thenReturn(s_ownerId);
-        when(fileShare.getVolumeId()).thenReturn(s_volumeId);
-        when(fileShare.getState()).thenReturn(FileShare.State.Stopped);
-
-       Account owner = mock(Account.class);
-       when(owner.getId()).thenReturn(s_ownerId);
-       when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(owner);
-
-        NicVO nic = mock(NicVO.class);
-        when(nic.getNetworkId()).thenReturn(s_networkId);
-        when(nicDao.listByVmId(s_vmId)).thenReturn(List.of(nic));
-
-       UserVm vm = mock(UserVm.class);
-       when(vm.getId()).thenReturn(newVmId);
-       when(userVmService.createAdvancedVirtualMachine(
-               any(DataCenter.class), any(ServiceOffering.class), any(VirtualMachineTemplate.class), anyList(), any(Account.class), anyString(),
-               anyString(), isNull(), isNull(), isNull(), any(Hypervisor.HypervisorType.class), any(BaseCmd.HTTPMethod.class), anyString(),
-               isNull(), isNull(), anyList(), isNull(), any(Network.IpAddresses.class), isNull(), isNull(), isNull(),
-               anyMap(), isNull(), isNull(), isNull(), isNull(),
-               anyBoolean(), anyString(), isNull())).thenReturn(vm);
-
-       return fileShare;
-    }
-
     @Test
     public void testReDeployFileShare() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
-        Long newVmId = 100L;
-        FileShare fileShare = prepareReDeployFileShare(newVmId);
-
-        VolumeVO volume = mock(VolumeVO.class);
-        when(volume.getId()).thenReturn(s_volumeId);
-        when(volumeApiService.detachVolumeViaDestroyVM(s_vmId, s_volumeId)).thenReturn(volume);
-        when(volumeApiService.attachVolumeToVM(newVmId, s_volumeId, null, true)).thenReturn(volume);
-
-        Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
-        Assert.assertEquals(result.first(), true);
-        Assert.assertEquals(result.second(), newVmId);
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void testReDeployFileShareDetachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
-        Long newVmId = 100L;
-        FileShare fileShare = prepareReDeployFileShare(newVmId);
-
-        VolumeVO volume = mock(VolumeVO.class);
-        when(volumeDao.findById(s_volumeId)).thenReturn(volume);
-        lifeCycle.reDeployFileShare(fileShare);
-    }
-
-    @Test
-    public void testReDeployFileShareAttachFailed() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
-        Long newVmId = 100L;
-        FileShare fileShare = prepareReDeployFileShare(newVmId);
-
-        VolumeVO volume = mock(VolumeVO.class);
-        when(volume.getId()).thenReturn(s_volumeId);
-        when(volumeDao.findById(s_volumeId)).thenReturn(volume);
-        when(volumeApiService.detachVolumeViaDestroyVM(s_vmId, s_volumeId)).thenReturn(volume);
-
-        Pair<Boolean, Long> result = lifeCycle.reDeployFileShare(fileShare);
-        Assert.assertEquals(result.first(), false);
-        Assert.assertEquals(Optional.ofNullable(result.second()), Optional.ofNullable(0L));
+        FileShare fileShare = mock(FileShare.class);
+        Long vmId = 1L;
+        when(fileShare.getVmId()).thenReturn(vmId);
+        UserVm vm = mock(UserVm.class);
+        when(virtualMachineManager.restoreVirtualMachine(vmId, null, null, true, null)).thenReturn(vm);
+        boolean result = lifeCycle.reDeployFileShare(fileShare);
+        Assert.assertEquals(result, true);
     }
 }

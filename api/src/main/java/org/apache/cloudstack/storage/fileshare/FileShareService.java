@@ -26,9 +26,12 @@ import org.apache.cloudstack.api.command.user.storage.fileshare.DestroyFileShare
 import org.apache.cloudstack.api.command.user.storage.fileshare.UpdateFileShareCmd;
 
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
+
 import org.apache.cloudstack.api.command.user.storage.fileshare.ListFileSharesCmd;
 import org.apache.cloudstack.api.response.FileShareResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -59,7 +62,7 @@ public interface FileShareService {
 
     FileShare changeFileShareDiskOffering(ChangeFileShareDiskOfferingCmd cmd) throws ResourceAllocationException;
 
-    FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
+    FileShare changeFileShareServiceOffering(ChangeFileShareServiceOfferingCmd cmd) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, VirtualMachineMigrationException;
 
     Boolean destroyFileShare(DestroyFileShareCmd cmd);
 

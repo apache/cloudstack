@@ -62,10 +62,12 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiService;
@@ -378,47 +380,14 @@ public class FileShareServiceImplTest {
     public void testRestartFileShareWithCleanup() throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException {
         FileShareVO fileShare = getMockFileShare();
         ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
-        ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Detached);
-        when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
-
-        DataCenterVO zone = mock(DataCenterVO.class);
-        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
-        when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-
-        Long newVmId = 1000L;
-        Pair<Boolean, Long> result = new Pair<>(true, newVmId);
-        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(result);
-
-        fileShareServiceImpl.restartFileShare(s_fileShareId, true);
-        Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
-        verify(lifeCycle, never()).stopFileShare(any(), any());
-        verify(lifeCycle, times(1)).startFileShare(any());
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.OperationSucceeded, null, fileShareDao);
-    }
-
-    @Test
-    public void testRestartFileShareWithCleanupFailed() throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException {
-        FileShareVO fileShare = getMockFileShare();
-        ReflectionTestUtils.setField(fileShare, "id", s_fileShareId);
         ReflectionTestUtils.setField(fileShare, "state", FileShare.State.Ready);
         when(fileShareDao.findById(s_fileShareId)).thenReturn(fileShare);
 
         DataCenterVO zone = mock(DataCenterVO.class);
-        when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
-        when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
 
-        Long newVmId = 1000L;
-        Pair<Boolean, Long> result = new Pair<>(false, newVmId);
-        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(result);
-
+        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(true);
         fileShareServiceImpl.restartFileShare(s_fileShareId, true);
-        Assert.assertNotEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
-        verify(lifeCycle, times(1)).stopFileShare(any(), any());
-        verify(lifeCycle, never()).startFileShare(any());
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StopRequested, null, fileShareDao);
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.Detach, null, fileShareDao);
-        verify(_stateMachine, never()).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
+        verify(lifeCycle, never()).stopFileShare(any(), any());
     }
 
     @Test
@@ -479,7 +448,7 @@ public class FileShareServiceImplTest {
     }
 
     @Test
-    public void testChangeFileShareServiceOffering() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException, NoTransitionException {
+    public void testChangeFileShareServiceOffering() throws ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, OperationTimedoutException, NoTransitionException, VirtualMachineMigrationException {
         ChangeFileShareServiceOfferingCmd cmd = mock(ChangeFileShareServiceOfferingCmd.class);
         Long newServiceOfferingId = 100L;
         when(cmd.getServiceOfferingId()).thenReturn(newServiceOfferingId);
@@ -494,18 +463,14 @@ public class FileShareServiceImplTest {
         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
 
-        Long newVmId = 1000L;
-        Pair<Boolean, Long> result = new Pair<>(true, newVmId);
-        when(lifeCycle.reDeployFileShare(fileShare)).thenReturn(result);
+        when(lifeCycle.changeFileShareServiceOffering(fileShare, newServiceOfferingId)).thenReturn(true);
 
         fileShareServiceImpl.changeFileShareServiceOffering(cmd);
-        Assert.assertEquals(Optional.ofNullable(fileShare.getVmId()), Optional.ofNullable(newVmId));
         Assert.assertEquals(Optional.ofNullable(fileShare.getServiceOfferingId()), Optional.ofNullable(newServiceOfferingId));
-        verify(_stateMachine, times(1)).transitTo(fileShare, FileShare.Event.StartRequested, null, fileShareDao);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testChangeFileShareServiceOfferingInvalidState() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException {
+    public void testChangeFileShareServiceOfferingInvalidState() throws ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, OperationTimedoutException, VirtualMachineMigrationException {
         ChangeFileShareServiceOfferingCmd cmd = mock(ChangeFileShareServiceOfferingCmd.class);
         Long newServiceOfferingId = 100L;
         when(cmd.getId()).thenReturn(s_fileShareId);

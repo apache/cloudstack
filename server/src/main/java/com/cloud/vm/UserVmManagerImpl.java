@@ -1956,13 +1956,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
 
-        if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
-            UserVmVO userVm = _vmDao.findById(vmId);
-            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
-            }
-        }
-
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
         if (vmInstance == null) {

@@ -34,11 +34,11 @@ import org.apache.cloudstack.storage.fileshare.FileShare;
 import org.apache.cloudstack.storage.fileshare.FileShareService;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -116,18 +116,18 @@ public class ChangeFileShareServiceOfferingCmd extends BaseAsyncCmd implements U
         } catch (ResourceUnavailableException ex) {
             logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, getExceptionMsg(ex));
-        } catch (ConcurrentOperationException ex) {
-            logger.warn("File share change service offering exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, getExceptionMsg(ex));
         } catch (InsufficientCapacityException ex) {
             logger.warn("File share change service offering exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, getExceptionMsg(ex));
-        } catch (ResourceAllocationException ex) {
-            logger.warn("File share change service offering exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (OperationTimedoutException ex) {
             logger.warn("File share change service offering exception: ", ex);
             throw new CloudRuntimeException("File share change service offering timed out due to " + ex.getMessage());
+        } catch (ManagementServerException ex) {
+            logger.warn("File share change service offering exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        } catch (VirtualMachineMigrationException ex) {
+            logger.warn("File share change service offering exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
 
         if (fileShare != null) {

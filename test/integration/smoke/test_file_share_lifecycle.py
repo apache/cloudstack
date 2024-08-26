@@ -125,8 +125,7 @@ class TestFileShareLifecycle(cloudstackTestCase):
             cls.services,
             name='Test File Share 1',
             size=2,
-            format='XFS',
-            provider='STORAGEFSVM'
+            filesystem='XFS'
         )
         cls._cleanup.insert(0, cls.fileshare)
 

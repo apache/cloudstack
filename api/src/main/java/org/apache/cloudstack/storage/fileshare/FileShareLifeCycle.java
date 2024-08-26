@@ -19,9 +19,11 @@ package org.apache.cloudstack.storage.fileshare;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.utils.Pair;
 
 public interface FileShareLifeCycle {
@@ -35,5 +37,7 @@ public interface FileShareLifeCycle {
 
     boolean deleteFileShare(FileShare fileShare);
 
-    Pair<Boolean, Long> reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException;
+    boolean reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException;
+
+    boolean changeFileShareServiceOffering(FileShare fileShare, Long serviceOfferingId) throws ManagementServerException, ResourceUnavailableException, VirtualMachineMigrationException;
 }

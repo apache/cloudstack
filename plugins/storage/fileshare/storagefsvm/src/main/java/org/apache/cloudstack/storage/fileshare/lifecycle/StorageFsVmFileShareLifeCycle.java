@@ -24,8 +24,10 @@ import static org.apache.cloudstack.storage.fileshare.provider.StorageFsVmFileSh
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Volume;
@@ -49,7 +51,6 @@ import javax.inject.Inject;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -287,52 +288,13 @@ public class StorageFsVmFileShareLifeCycle implements FileShareLifeCycle {
     }
 
     @Override
-    public Pair<Boolean, Long> reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException {
-        Long oldVmId = fileShare.getVmId();
-        Long volumeId = fileShare.getVolumeId();
-        Account owner = accountMgr.getActiveAccountById(fileShare.getAccountId());
+    public boolean reDeployFileShare(FileShare fileShare) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, OperationTimedoutException {
+        UserVm vm =  virtualMachineManager.restoreVirtualMachine(fileShare.getVmId(), null, null, true, null);
+        return (vm != null);
+    }
 
-        final List<NicVO> nics = nicDao.listByVmId(oldVmId);
-        List<Long> networkIds = new ArrayList<>();
-        for (NicVO nic : nics) {
-           networkIds.add(nic.getNetworkId());
-        }
-
-        UserVm newVm;
-        try {
-            newVm = deployFileShareVM(fileShare.getDataCenterId(), owner, networkIds, fileShare.getName(), fileShare.getServiceOfferingId(), null, fileShare.getFsType(), null, null, null);
-        } catch (Exception ex) {
-            logger.error(String.format("Redeploy fileshare [%s]: VM deploy failed with error %s", fileShare.toString(), ex.getMessage()));
-            throw ex;
-        }
-
-        Volume volume = null;
-        if (!fileShare.getState().equals(FileShare.State.Detached)) {
-            volume = volumeApiService.detachVolumeViaDestroyVM(oldVmId, volumeId);
-            if (volume == null) {
-                volume = volumeDao.findById(volumeId);
-                expungeVm(newVm.getId());
-                String message = String.format("Redeploy fileshare [%s]: volume %s couldn't be detached from the old VM", fileShare.toString(), volume.toString());
-                logger.error(message);
-                throw new CloudRuntimeException(message);
-            }
-        } else {
-            volume = volumeDao.findById(volumeId);
-        }
-
-        volume = volumeApiService.attachVolumeToVM(newVm.getId(), volume.getId(), null, true);
-        if (volume == null) {
-            volume = volumeDao.findById(volumeId);
-            logger.error(String.format("Redeploy fileshare [%s]: volume %s couldn't be attached to the VM %s", fileShare.toString(), volume.toString(), newVm.toString()));
-            expungeVm(newVm.getId());
-            return new Pair<>(false, 0L);
-        }
-
-        try {
-            expungeVm(oldVmId);
-        } catch (Exception ex) {
-            logger.error("Redeploy fileshare " + fileShare.toString() + ": expunging of old VM " + newVm.toString() + "failed with error " + ex.getMessage());
-        }
-        return new Pair<>(true, newVm.getId());
+    @Override
+    public boolean changeFileShareServiceOffering(FileShare fileShare, Long serviceOfferingId) throws ManagementServerException, ResourceUnavailableException, VirtualMachineMigrationException {
+        return userVmManager.upgradeVirtualMachine(fileShare.getVmId(), serviceOfferingId, new HashMap<String, String>());
     }
 }

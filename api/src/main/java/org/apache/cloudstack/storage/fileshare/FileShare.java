@@ -72,7 +72,7 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
     }
 
     enum Protocol {
-        NFS, SMB
+        NFS
     }
 
     enum State {
@@ -81,7 +81,6 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
         Stopping(true, "The file share is being stopped"),
         Stopped(false, "The file share is in stopped state. It can not be used but the data is still there."),
         Starting(true, "The file share is being started."),
-        Detached(false, "The file share Data is not attached to any VM."),
         Destroyed(false, "The file share is destroyed."),
         Expunging(true, "The file share is being expunged."),
         Expunged(false, "The file share has been expunged."),
@@ -122,12 +121,9 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.StartRequested, Starting, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Starting, Event.OperationFailed, Stopped, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Detached, Event.OperationSucceeded, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Detached, Event.OperationFailed, Detached, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.StopRequested, Stopping, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationSucceeded, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopping, Event.OperationFailed, Ready, null));
-            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.Detach, Detached, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Stopped, Event.DestroyRequested, Destroyed, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.RecoveryRequested, Stopped, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroyed, Event.ExpungeOperation, Expunging, null));
@@ -140,7 +136,6 @@ public interface FileShare extends ControlledEntity, Identity, InternalIdentity,
     enum Event {
         StopRequested,
         StartRequested,
-        Detach,
         DestroyRequested,
         OperationSucceeded,
         OperationFailed,
