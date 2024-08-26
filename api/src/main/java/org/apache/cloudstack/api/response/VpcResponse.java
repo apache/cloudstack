@@ -97,6 +97,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "the domain name of the owner")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.NETWORK)
     @Param(description = "the list of networks belongign to the VPC", responseObject = NetworkResponse.class)
     private List<NetworkResponse> networks;
@@ -228,6 +232,11 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Override
     public void setDomainName(final String domainName) {
         domain = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String path) {
+        this.domainPath = path;
     }
 
     public void setZoneId(final String zoneId) {
