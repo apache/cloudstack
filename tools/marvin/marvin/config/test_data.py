@@ -450,6 +450,21 @@ test_data = {
             "UserData": "VirtualRouter"
         }
     },
+    "shared_network_offering_configdrive": {
+        "name": "MySharedOfferingWithConfigDrive-shared",
+        "displaytext": "MySharedOfferingWithConfigDrive",
+        "guestiptype": "Shared",
+        "supportedservices": "Dhcp,Dns,UserData",
+        "specifyVlan": "False",
+        "specifyIpRanges": "False",
+        "traffictype": "GUEST",
+        "tags": "native",
+        "serviceProviderList": {
+            "Dhcp": "ConfigDrive",
+            "Dns": "ConfigDrive",
+            "UserData": "ConfigDrive"
+        }
+    },
     "shared_network_offering_all_services": {
         "name": "shared network offering with services enabled",
         "displaytext": "Shared network offering",
@@ -1045,6 +1060,41 @@ test_data = {
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "True"
+        },
+    },
+    "test_templates_cloud_init": {
+        "kvm": {
+            "name": "ubuntu 22.04 kvm",
+            "displaytext": "ubuntu 22.04 kvm",
+            "format": "raw",
+            "hypervisor": "kvm",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "False"
+        },
+        "xenserver": {
+            "name": "ubuntu 22.04 xen",
+            "displaytext": "ubuntu 22.04 xen",
+            "format": "vhd",
+            "hypervisor": "xenserver",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64-azure.vhd.tar.gz",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "vmware": {
+            "name": "ubuntu 22.04 vmware",
+            "displaytext": "ubuntu 22.04 vmware",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "deployasis": "True"
         },
     },
     "test_ovf_templates": [
