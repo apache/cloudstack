@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -398,7 +399,8 @@ public class ActionEventUtils {
     }
 
     public static long getOwnerAccountId(CallContext ctx, String eventType, long callingAccountId) {
-        long accountId = ctx.getProject() != null && !EventTypes.EVENT_PROJECT_CREATE.equalsIgnoreCase(eventType) ? ctx.getProject().getProjectAccountId() : callingAccountId;    //This should be the entity owner id rather than the Calling User Account Id.
+        List<String> mainProjectEvents = List.of(EventTypes.EVENT_PROJECT_CREATE, EventTypes.EVENT_PROJECT_UPDATE, EventTypes.EVENT_PROJECT_DELETE);
+        long accountId = ctx.getProject() != null && !mainProjectEvents.stream().anyMatch(eventType::equalsIgnoreCase) ? ctx.getProject().getProjectAccountId() : callingAccountId;    //This should be the entity owner id rather than the Calling User Account Id.
         return accountId;
     }
 }
