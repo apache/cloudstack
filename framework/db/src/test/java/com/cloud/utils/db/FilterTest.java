@@ -31,12 +31,12 @@ public class FilterTest {
 
         Assert.assertTrue(filter.getOrderBy().trim().toLowerCase().equals("order by test.fld_string asc"));
 
-        filter.addOrderBy(DbTestVO.class, "fieldLong", true, null);
+        filter.addOrderBy(DbTestVO.class, "fieldLong", true);
 
         Assert.assertTrue(filter.getOrderBy().contains(","));
         Assert.assertTrue(filter.getOrderBy().split(",")[1].trim().toLowerCase().equals("test.fld_long asc"));
 
-        filter.addOrderBy(DbTestVO.class, "fieldInt", true, null);
+        filter.addOrderBy(DbTestVO.class, "fieldInt", true);
 
         Assert.assertTrue(filter.getOrderBy().split(",").length == 3);
         Assert.assertTrue(filter.getOrderBy().split(",")[2].trim().toLowerCase().equals("test.fld_int asc"));

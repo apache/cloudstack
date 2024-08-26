@@ -49,7 +49,7 @@ public class Filter {
         _offset = offset;
         _limit = limit;
 
-        addOrderBy(clazz, field, ascending, null);
+        addOrderBy(clazz, field, ascending);
     }
 
     public Filter(Class<?> clazz, String field, boolean ascending) {
@@ -73,6 +73,10 @@ public class Filter {
         this._orderBy = that._orderBy;
         this._limit = null;
         that._limit = null;
+    }
+
+    public void addOrderBy(Class<?> clazz, String field, boolean ascending) {
+        addOrderBy(clazz, field, ascending, null);
     }
 
     public void addOrderBy(Class<?> clazz, String field, boolean ascending, String tableAlias) {

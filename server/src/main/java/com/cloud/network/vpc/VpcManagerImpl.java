@@ -741,7 +741,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long domainId = cmd.getDomainId();
         final Long zoneId = cmd.getZoneId();
         final Filter searchFilter = new Filter(VpcOfferingJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
-        searchFilter.addOrderBy(VpcOfferingJoinVO.class, "id", true, null);
+        searchFilter.addOrderBy(VpcOfferingJoinVO.class, "id", true);
         final SearchCriteria<VpcOfferingJoinVO> sc = vpcOfferingJoinDao.createSearchCriteria();
 
         verifyDomainId(domainId, caller);
