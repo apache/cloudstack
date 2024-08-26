@@ -4478,14 +4478,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             for (VirtualDevice isoDevice : isoDevices) {
-                if(isoDevice.getBacking() instanceof VirtualCdromIsoBackingInfo) {
-                    String isoFilePath = ((VirtualCdromIsoBackingInfo)isoDevice.getBacking()).getFileName();
-                    if (isoFilePath.contains(ConfigDrive.CONFIGDRIVEDIR)) {
-                        s_logger.info(String.format("Disconnecting config drive at location: %s", isoFilePath));
-                        vmMo.detachIso(isoFilePath, true);
-                        return;
-                    }
+                if (!(isoDevice.getBacking() instanceof VirtualCdromIsoBackingInfo)) {
+                    continue;
                 }
+                String isoFilePath = ((VirtualCdromIsoBackingInfo)isoDevice.getBacking()).getFileName();
+                if (!isoFilePath.contains(ConfigDrive.CONFIGDRIVEDIR)) {
+                    continue;
+                }
+                s_logger.info(String.format("Disconnecting config drive at location: %s", isoFilePath));
+                vmMo.detachIso(isoFilePath, true);
+                return;
             }
         } catch (Exception e) {
             s_logger.warn(String.format("Couldn't check/disconnect config drive, error: %s", e.getMessage()), e);
