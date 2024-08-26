@@ -68,6 +68,14 @@ public class ReleaseASNumberCmd extends BaseCmd {
         }
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

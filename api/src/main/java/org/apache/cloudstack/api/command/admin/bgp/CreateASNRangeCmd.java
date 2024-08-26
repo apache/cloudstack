@@ -64,6 +64,18 @@ public class CreateASNRangeCmd extends BaseCmd {
         }
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public Long getStartASNumber() {
+        return startASNumber;
+    }
+
+    public Long getEndASNumber() {
+        return endASNumber;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;

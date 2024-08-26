@@ -68,6 +68,10 @@ public class ListASNRangesCmd extends BaseListCmd {
         }
     }
 
+    public Long getZoneId() {
+        return zoneId;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
