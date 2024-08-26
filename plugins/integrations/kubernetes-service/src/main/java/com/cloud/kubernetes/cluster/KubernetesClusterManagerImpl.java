@@ -581,6 +581,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Domain domain = ApiDBUtils.findDomainById(kubernetesCluster.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
         response.setKeypair(kubernetesCluster.getKeyPair());
         response.setState(kubernetesCluster.getState().toString());
         response.setCores(String.valueOf(kubernetesCluster.getCores()));

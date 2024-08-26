@@ -135,6 +135,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the template belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain to which the template belongs")
     private String domainId;
@@ -352,6 +356,11 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override
