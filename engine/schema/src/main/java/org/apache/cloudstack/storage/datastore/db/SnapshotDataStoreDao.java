@@ -59,6 +59,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listBySnapshotAndDataStoreRole(long snapshotId, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> listExtractedSnapshotsBeforeDate(Date beforeDate);
+
     List<SnapshotDataStoreVO> listReadyBySnapshot(long snapshotId, DataStoreRole role);
 
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);

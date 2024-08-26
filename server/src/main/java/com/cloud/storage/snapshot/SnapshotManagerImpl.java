@@ -561,6 +561,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         snapshotSrv.syncVolumeSnapshotsToRegionStore(snapshot.getVolumeId(), chosenStore);
 
         SnapshotInfo snapshotObject = snapshotFactory.getSnapshot(snapshotId, chosenStore);
+
+        if (snapshotDataStoreReference.getKvmCheckpointPath() != null) {
+            snapshotSrv.convertSnapshot(snapshotObject);
+        }
+
         String extractUrl = chosenStore.createEntityExtractUrl(snapshotObject.getPath(), snapshotObject.getBaseVolume().getFormat(), snapshotObject);
         logger.debug("Extract URL [{}] created for snapshot [{}].", extractUrl, snapshot);
         snapshotDataStoreReference.setExtractUrl(extractUrl);

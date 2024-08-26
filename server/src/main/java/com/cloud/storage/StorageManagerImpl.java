@@ -3932,6 +3932,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 logger.warn("caught exception while deleting download url " + imageStoreObjectDownloadVO.getDownloadUrl() + " for object id " + imageStoreObjectDownloadVO.getId(), th);
             }
         }
+
+        List <SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotStoreDao.listExtractedSnapshotsBeforeDate(DateUtils.addSeconds(DateUtil.now(), -_downloadUrlExpirationInterval));
+
+        for (SnapshotDataStoreVO snapshotDataStoreVo : snapshotDataStoreVos) {
+            ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(snapshotDataStoreVo.getDataStoreId(), DataStoreRole.Image);
+            secStore.deleteExtractUrl(snapshotDataStoreVo.getInstallPath(), snapshotDataStoreVo.getExtractUrl(), Upload.Type.SNAPSHOT);
+
+            snapshotDataStoreVo.setExtractUrl(null);
+            snapshotDataStoreVo.setExtractUrlCreated(null);
+            _snapshotStoreDao.update(snapshotDataStoreVo.getId(), snapshotDataStoreVo);
+        }
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate

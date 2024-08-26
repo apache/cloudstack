@@ -72,6 +72,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> storeAndSnapshotIdsSearch;
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore;
+
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
@@ -161,6 +163,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.and(STATE, searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.entity().getState(), SearchCriteria.Op.EQ);
         searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.and(KVM_CHECKPOINT_PATH, searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.entity().getKvmCheckpointPath(), SearchCriteria.Op.NNULL);
         searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.done();
+
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore = createSearchBuilder();
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(STATE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(DOWNLOAD_URL, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getExtractUrl(), SearchCriteria.Op.NNULL);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(URL_CREATED_BEFORE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getExtractUrlCreated(), SearchCriteria.Op.LT);
+        searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.done();
 
         return true;
     }
@@ -550,6 +558,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringVolumeIdEqAndStateEqAndKVMCheckpointPathNotNull.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listExtractedSnapshotsBeforeDate(Date beforeDate) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.create();
+        sc.setParameters(URL_CREATED_BEFORE, beforeDate);
+        sc.setParameters(STATE, State.Ready);
+
         return listBy(sc);
     }
 

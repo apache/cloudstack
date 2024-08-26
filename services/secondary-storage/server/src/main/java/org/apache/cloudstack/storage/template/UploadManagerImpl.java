@@ -17,8 +17,11 @@
 package org.apache.cloudstack.storage.template;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -31,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
@@ -337,6 +341,16 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             if (result != null) {
                 String errorString = "Error in deleting volume " + path + " : " + result;
                 logger.warn(errorString);
+                return new Answer(cmd, false, errorString);
+            }
+        }
+
+        if (Upload.Type.SNAPSHOT.equals(cmd.getType())) {
+            try {
+                Files.deleteIfExists(Path.of(String.format("/mnt/SecStorage/%s%s%s%s", cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME)));
+            } catch (IOException e) {
+                String errorString = String.format("Error deleting temporary snapshot %s%s.", path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                logger.warn(errorString, e);
                 return new Answer(cmd, false, errorString);
             }
         }
