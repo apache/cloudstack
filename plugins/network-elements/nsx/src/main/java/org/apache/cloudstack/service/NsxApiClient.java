@@ -220,7 +220,7 @@ public class NsxApiClient {
             }
             return CLUSTER_STATUS_STABLE.equalsIgnoreCase(status.getStatus());
         } catch (Error error) {
-            logger.error(String.format("Error checking NSX Controller Health: %s", error.getMessage()));
+            logger.error("Error checking NSX Controller Health: {}", error.getMessage());
             return false;
         }
     }
@@ -520,8 +520,8 @@ public class NsxApiClient {
         Long portCount;
         do {
             try {
-                logger.info(String.format("Waiting for all port groups to be unlinked from the segment %s - " +
-                        "Attempt: %s. Waiting for %s secs", segmentName, count++, waitingSecs));
+                logger.info("Waiting for all port groups to be unlinked from the segment {} - " +
+                        "Attempt: {}. Waiting for {} secs", segmentName, count++, waitingSecs);
                 Thread.sleep(waitingSecs * 1000L);
                 portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
                 retries--;
@@ -575,10 +575,10 @@ public class NsxApiClient {
     public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
-            logger.debug(String.format("Deleting NSX NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
+            logger.debug("Deleting NSX NAT rule {} for tier-1 gateway {} (network: {})", ruleName, tier1GatewayName, networkName);
             PolicyNatRule natRule = natService.get(tier1GatewayName, NatId.USER.name(), ruleName);
             if (natRule != null && !natRule.getMarkedForDelete()) {
-                logger.debug(String.format("Deleting rule %s from Tier 1 Gateway %s", ruleName, tier1GatewayName));
+                logger.debug("Deleting rule {} from Tier 1 Gateway {}", ruleName, tier1GatewayName);
                 natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
             }
         } catch (Error error) {
@@ -621,8 +621,8 @@ public class NsxApiClient {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
             PolicyNatRule rule = natService.get(tier1GatewayName, NAT_ID, ruleName);
-            logger.debug(String.format("Rule %s from Tier 1 GW %s: %s", ruleName, tier1GatewayName,
-                    rule == null ? "null" : rule.getId() + " " + rule.getPath()));
+            logger.debug("Rule {} from Tier 1 GW {}: {}", ruleName, tier1GatewayName,
+                    rule == null ? "null" : rule.getId() + " " + rule.getPath());
             return !Objects.isNull(rule);
         } catch (Error error) {
             String msg = String.format("Error checking if port forwarding rule %s exists on Tier 1 Gateway %s: %s",

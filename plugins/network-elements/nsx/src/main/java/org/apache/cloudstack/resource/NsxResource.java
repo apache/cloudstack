@@ -393,7 +393,7 @@ public class NsxResource implements ServerResource {
                 cmd.getNetworkResourceId(), cmd.isResourceVpc());
         try {
             String privatePort = cmd.getPrivatePort();
-            logger.debug(String.format("Checking if rule %s exists on Tier 1 Gateway: %s", ruleName, tier1GatewayName));
+            logger.debug("Checking if the rule {} exists on Tier 1 Gateway: {}", ruleName, tier1GatewayName);
             if (nsxApiClient.doesPfRuleExist(ruleName, tier1GatewayName)) {
                 String msg = String.format("Port forward rule for port: %s (%s) exits on NSX, not adding it again", ruleName, privatePort);
                 logger.debug(msg);
