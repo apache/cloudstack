@@ -1086,7 +1086,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public BgpPeerResponse createBgpPeerResponse(BgpPeer bgpPeer) {
         BgpPeerResponse response = new BgpPeerResponse();
         response.setCreated(bgpPeer.getCreated());
-        response.setAsNumber(String.valueOf(bgpPeer.getAsNumber()));
+        response.setAsNumber(bgpPeer.getAsNumber());
         response.setId(bgpPeer.getUuid());
         response.setIp4Address(bgpPeer.getIp4Address());
         response.setIp6Address(bgpPeer.getIp6Address());

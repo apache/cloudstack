@@ -140,4 +140,60 @@ public class Ipv4SubnetForGuestNetworkResponse extends BaseResponse {
     public void setAllocatedTime(Date allocatedTime) {
         this.allocatedTime = allocatedTime;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public String getParentSubnet() {
+        return parentSubnet;
+    }
+
+    public String getSubnet() {
+        return subnet;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getNetworkId() {
+        return networkId;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    public String getVpcId() {
+        return vpcId;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public Date getAllocatedTime() {
+        return allocatedTime;
+    }
 }

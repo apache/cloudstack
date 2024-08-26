@@ -211,8 +211,16 @@ public class ASNumberResponse extends BaseResponse {
         this.associatedNetworkName = associatedNetworkName;
     }
 
+    public String getVpcId() {
+        return vpcId;
+    }
+
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public String getVpcName() {
+        return vpcName;
     }
 
     public void setVpcName(String vpcName) {

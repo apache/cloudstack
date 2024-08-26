@@ -44,7 +44,7 @@ public class BgpPeerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.AS_NUMBER)
     @Param(description = "AS number of bgp peer")
-    private String asNumber;
+    private Long asNumber;
 
     @SerializedName(ApiConstants.PASSWORD)
     @Param(description = "password of bgp peer")
@@ -98,7 +98,7 @@ public class BgpPeerResponse extends BaseResponse {
         this.ip6Address = ip6Address;
     }
 
-    public void setAsNumber(String asNumber) {
+    public void setAsNumber(Long asNumber) {
         this.asNumber = asNumber;
     }
 
@@ -140,5 +140,61 @@ public class BgpPeerResponse extends BaseResponse {
 
     public void setDetails(Map details) {
         this.details = details;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getIp4Address() {
+        return ip4Address;
+    }
+
+    public String getIp6Address() {
+        return ip6Address;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public Map getDetails() {
+        return details;
     }
 }

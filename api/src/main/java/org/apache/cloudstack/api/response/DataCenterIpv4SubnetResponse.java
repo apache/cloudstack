@@ -108,4 +108,44 @@ public class DataCenterIpv4SubnetResponse extends BaseResponse {
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getSubnet() {
+        return subnet;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
 }
