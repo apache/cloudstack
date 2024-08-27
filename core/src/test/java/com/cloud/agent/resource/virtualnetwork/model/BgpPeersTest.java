@@ -38,4 +38,19 @@ public class BgpPeersTest {
         Assert.assertEquals(1, bgpPeers.getPeers().size());
         Assert.assertEquals(bgpPeerTO, bgpPeers.getPeers().get(0));
     }
+
+    @Test
+    public void testBgpPeers2() {
+        BgpPeers bgpPeers = new BgpPeers();
+        Assert.assertEquals(ConfigBase.BGP_PEERS, bgpPeers.getType());
+
+        BgpPeerTO bgpPeerTO = Mockito.mock(BgpPeerTO.class);
+        List<BgpPeerTO> bgpPeerTOs = new ArrayList<>();
+        bgpPeerTOs.add(bgpPeerTO);
+        bgpPeers.setPeers(bgpPeerTOs);
+
+        Assert.assertNotNull(bgpPeers.getPeers());
+        Assert.assertEquals(1, bgpPeers.getPeers().size());
+        Assert.assertEquals(bgpPeerTO, bgpPeers.getPeers().get(0));
+    }
 }

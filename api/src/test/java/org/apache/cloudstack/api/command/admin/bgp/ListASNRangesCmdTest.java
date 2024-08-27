@@ -49,6 +49,7 @@ public class ListASNRangesCmdTest {
         ReflectionTestUtils.setField(cmd,"_responseGenerator", _responseGenerator);
 
         Assert.assertEquals(zoneId, cmd.getZoneId());
+        Assert.assertEquals(1L, cmd.getEntityOwnerId());
 
         List<ASNumberRange> ranges = new ArrayList<>();
         ASNumberRange asnRange = Mockito.mock(ASNumberRange.class);

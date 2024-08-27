@@ -44,4 +44,11 @@ public class SetBgpPeersAnswerTest {
         Assert.assertEquals(1, answer.getResults().length);
         Assert.assertEquals(good, answer.getResults()[0]);
     }
+
+    @Test
+    public void testSetBgpPeersAnswer2() {
+        SetBgpPeersAnswer answer = new SetBgpPeersAnswer();
+
+        Assert.assertNull(answer.getResults());
+    }
 }

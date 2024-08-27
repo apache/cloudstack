@@ -33,6 +33,9 @@ public class Ipv4RouteResponse extends BaseResponse {
     @Param(description = "the outbound Ipv4 gateway")
     private String gateway;
 
+    public Ipv4RouteResponse() {
+    }
+
     public Ipv4RouteResponse(String subnet, String gateway) {
         this.subnet = subnet;
         this.gateway = gateway;

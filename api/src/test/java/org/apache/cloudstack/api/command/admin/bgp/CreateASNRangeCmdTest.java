@@ -51,6 +51,7 @@ public class CreateASNRangeCmdTest {
         Assert.assertEquals(zoneId, cmd.getZoneId());
         Assert.assertEquals(startASNumber, cmd.getStartASNumber());
         Assert.assertEquals(endASNumber, cmd.getEndASNumber());
+        Assert.assertEquals(1L, cmd.getEntityOwnerId());
 
         ASNumberRange asnRange = Mockito.mock(ASNumberRange.class);
         Mockito.when(bgpService.createASNumberRange(zoneId, startASNumber, endASNumber)).thenReturn(asnRange);

@@ -34,4 +34,15 @@ public final class Ipv4RouteResponseTest {
         Assert.assertEquals(subnet, response.getSubnet());
         Assert.assertEquals(gateway, response.getGateway());
     }
+
+    @Test
+    public void testIpv4RouteResponse2() {
+        final Ipv4RouteResponse response = new Ipv4RouteResponse();
+
+        response.setSubnet(subnet);
+        response.setGateway(gateway);
+
+        Assert.assertEquals(subnet, response.getSubnet());
+        Assert.assertEquals(gateway, response.getGateway());
+    }
 }

@@ -45,6 +45,7 @@ public class ReleaseASNumberCmdTest {
 
         Assert.assertEquals(zoneId, cmd.getZoneId());
         Assert.assertEquals(asNumber, cmd.getAsNumber());
+        Assert.assertEquals(1L, cmd.getEntityOwnerId());
 
         Pair<Boolean, String> resultPair = Mockito.mock(Pair.class);
         Mockito.when(resultPair.first()).thenReturn(true);
