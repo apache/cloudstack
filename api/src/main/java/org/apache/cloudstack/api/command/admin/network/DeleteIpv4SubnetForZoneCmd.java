@@ -59,7 +59,7 @@ public class DeleteIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting guest IPv4 subnet " + getId();
+        return "Deleting zone IPv4 subnet " + getId();
     }
 
     @Override

@@ -48,7 +48,7 @@ public class UpdateIpv4SubnetForZoneCmdTest {
         Assert.assertEquals(subnet, cmd.getSubnet());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_UPDATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Updating guest IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Updating zone IPv4 subnet %s", id), cmd.getEventDescription());
 
         DataCenterIpv4GuestSubnet zoneSubnet = Mockito.mock(DataCenterIpv4GuestSubnet.class);
         Mockito.when(routedIpv4Manager.updateDataCenterIpv4GuestSubnet(cmd)).thenReturn(zoneSubnet);

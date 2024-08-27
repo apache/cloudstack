@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import com.cloud.event.EventTypes;
-
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,30 +29,34 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DeleteIpv4SubnetForZoneCmdTest {
+public class ReleaseDedicatedBgpPeerCmdTest {
 
     RoutedIpv4Manager routedIpv4Manager = Mockito.spy(RoutedIpv4Manager.class);
 
     @Test
-    public void testDeleteIpv4SubnetForZoneCmd() {
+    public void testReleaseDedicatedBgpPeerCmd() {
         Long id = 1L;
 
-        DeleteIpv4SubnetForZoneCmd cmd = new DeleteIpv4SubnetForZoneCmd();
+        ReleaseDedicatedBgpPeerCmd cmd = new ReleaseDedicatedBgpPeerCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
-        Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_DELETE, cmd.getEventType());
-        Assert.assertEquals(String.format("Deleting zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(EventTypes.EVENT_BGP_PEER_RELEASE, cmd.getEventType());
+        Assert.assertEquals(String.format("Releasing a dedicated Bgp Peer %s", id), cmd.getEventDescription());
 
-        Mockito.when(routedIpv4Manager.deleteDataCenterIpv4GuestSubnet(cmd)).thenReturn(true);
+        BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
+        Mockito.when(routedIpv4Manager.releaseDedicatedBgpPeer(cmd)).thenReturn(bgpPeer);
+
+        BgpPeerResponse response = Mockito.mock(BgpPeerResponse.class);
+        Mockito.when(routedIpv4Manager.createBgpPeerResponse(bgpPeer)).thenReturn(response);
 
         try {
             cmd.execute();
         } catch (Exception ignored) {
         }
 
-        Assert.assertTrue(cmd.getResponseObject() instanceof SuccessResponse);
+        Assert.assertEquals(response, cmd.getResponseObject());
     }
 }

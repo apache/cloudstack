@@ -494,7 +494,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public List<? extends Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd cmd) {
+    public List<Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd cmd) {
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         Long parentId = cmd.getParentId();
@@ -1308,7 +1308,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd) {
+    public List<BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd) {
         Long id = listBgpPeersCmd.getId();
         Long zoneId = listBgpPeersCmd.getZoneId();
         Long asNumber = listBgpPeersCmd.getAsNumber();

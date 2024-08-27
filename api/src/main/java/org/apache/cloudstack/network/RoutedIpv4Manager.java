@@ -111,7 +111,7 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     void releaseIpv4SubnetForVpc(long vpcId);
 
-    List<? extends Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd listIpv4SubnetsForGuestNetworkCmd);
+    List<Ipv4GuestSubnetNetworkMap> listIpv4GuestSubnetsForGuestNetwork(ListIpv4SubnetsForGuestNetworkCmd listIpv4SubnetsForGuestNetworkCmd);
 
     Ipv4SubnetForGuestNetworkResponse createIpv4SubnetForGuestNetworkResponse(Ipv4GuestSubnetNetworkMap subnet);
 
@@ -165,7 +165,7 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     BgpPeer releaseDedicatedBgpPeer(ReleaseDedicatedBgpPeerCmd releaseDedicatedBgpPeerCmd);
 
-    List<? extends BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd);
+    List<BgpPeer> listBgpPeers(ListBgpPeersCmd listBgpPeersCmd);
 
     Network changeBgpPeersForNetwork(ChangeBgpPeersForNetworkCmd changeBgpPeersForNetworkCmd);
 

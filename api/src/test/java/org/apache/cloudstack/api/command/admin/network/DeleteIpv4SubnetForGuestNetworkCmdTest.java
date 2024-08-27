@@ -29,24 +29,24 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DeleteIpv4SubnetForZoneCmdTest {
+public class DeleteIpv4SubnetForGuestNetworkCmdTest {
 
     RoutedIpv4Manager routedIpv4Manager = Mockito.spy(RoutedIpv4Manager.class);
 
     @Test
-    public void testDeleteIpv4SubnetForZoneCmd() {
+    public void testDeleteIpv4SubnetForGuestNetworkCmd() {
         Long id = 1L;
 
-        DeleteIpv4SubnetForZoneCmd cmd = new DeleteIpv4SubnetForZoneCmd();
+        DeleteIpv4SubnetForGuestNetworkCmd cmd = new DeleteIpv4SubnetForGuestNetworkCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
-        Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_DELETE, cmd.getEventType());
-        Assert.assertEquals(String.format("Deleting zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(EventTypes.EVENT_IP4_GUEST_SUBNET_DELETE, cmd.getEventType());
+        Assert.assertEquals(String.format("Deleting guest IPv4 subnet %s", id), cmd.getEventDescription());
 
-        Mockito.when(routedIpv4Manager.deleteDataCenterIpv4GuestSubnet(cmd)).thenReturn(true);
+        Mockito.when(routedIpv4Manager.deleteIpv4SubnetForGuestNetwork(cmd)).thenReturn(true);
 
         try {
             cmd.execute();

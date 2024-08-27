@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
-import com.cloud.event.EventTypes;
-import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
-import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,45 +28,69 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
+import java.util.List;
+
 @RunWith(MockitoJUnitRunner.class)
-public class DedicateIpv4SubnetForZoneCmdTest {
+public class ListBgpPeersCmdTest {
 
     RoutedIpv4Manager routedIpv4Manager = Mockito.spy(RoutedIpv4Manager.class);
 
     @Test
-    public void testDedicateIpv4SubnetForZoneCmd() {
+    public void testIsDedicated() {
+        ListBgpPeersCmd cmd = new ListBgpPeersCmd();
+
+        Assert.assertNull(cmd.getDedicated());
+
+        ReflectionTestUtils.setField(cmd, "isDedicated", Boolean.TRUE);
+        Assert.assertTrue(cmd.getDedicated());
+
+        ReflectionTestUtils.setField(cmd, "isDedicated", Boolean.FALSE);
+        Assert.assertFalse(cmd.getDedicated());
+    }
+
+    @Test
+    public void testListBgpPeersCmd() {
         Long id = 1L;
+        Long zoneId = 2L;
+        Long peerAsNumber = 15000L;
         String accountName = "user";
         Long projectId = 10L;
         Long domainId = 11L;
 
-        DedicateIpv4SubnetForZoneCmd cmd = new DedicateIpv4SubnetForZoneCmd();
+        ListBgpPeersCmd cmd = new ListBgpPeersCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(cmd, "asNumber", peerAsNumber);
         ReflectionTestUtils.setField(cmd, "accountName", accountName);
         ReflectionTestUtils.setField(cmd,"projectId", projectId);
         ReflectionTestUtils.setField(cmd,"domainId", domainId);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
         Assert.assertEquals(id, cmd.getId());
+        Assert.assertEquals(zoneId, cmd.getZoneId());
+        Assert.assertEquals(peerAsNumber, cmd.getAsNumber());
         Assert.assertEquals(accountName, cmd.getAccountName());
         Assert.assertEquals(projectId, cmd.getProjectId());
         Assert.assertEquals(domainId, cmd.getDomainId());
 
-        Assert.assertEquals(1L, cmd.getEntityOwnerId());
-        Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_DEDICATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Dedicating zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(0L, cmd.getEntityOwnerId());
 
-        DataCenterIpv4GuestSubnet zoneSubnet = Mockito.mock(DataCenterIpv4GuestSubnet.class);
-        Mockito.when(routedIpv4Manager.dedicateDataCenterIpv4GuestSubnet(cmd)).thenReturn(zoneSubnet);
+        BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
+        List<BgpPeer> bgpPeers = Arrays.asList(bgpPeer);
+        Mockito.when(routedIpv4Manager.listBgpPeers(cmd)).thenReturn(bgpPeers);
 
-        DataCenterIpv4SubnetResponse response = Mockito.mock(DataCenterIpv4SubnetResponse.class);
-        Mockito.when(routedIpv4Manager.createDataCenterIpv4SubnetResponse(zoneSubnet)).thenReturn(response);
+        BgpPeerResponse response = Mockito.mock(BgpPeerResponse.class);
+        Mockito.when(routedIpv4Manager.createBgpPeerResponse(bgpPeer)).thenReturn(response);
 
         try {
             cmd.execute();
         } catch (Exception ignored) {
         }
 
-        Assert.assertEquals(response, cmd.getResponseObject());
+        Assert.assertTrue(cmd.getResponseObject() instanceof ListResponse);
+        ListResponse listResponse = (ListResponse) cmd.getResponseObject();
+        Assert.assertEquals(1, (int) listResponse.getCount());
+        Assert.assertEquals(response, listResponse.getResponses().get(0));
     }
 }

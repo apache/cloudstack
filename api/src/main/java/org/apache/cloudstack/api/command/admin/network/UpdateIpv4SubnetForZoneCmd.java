@@ -69,7 +69,7 @@ public class UpdateIpv4SubnetForZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating guest IPv4 subnet " + getId();
+        return "Updating zone IPv4 subnet " + getId();
     }
 
     @Override

@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import com.cloud.event.EventTypes;
-
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,30 +29,44 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DeleteIpv4SubnetForZoneCmdTest {
+public class DedicateBgpPeerCmdTest {
 
     RoutedIpv4Manager routedIpv4Manager = Mockito.spy(RoutedIpv4Manager.class);
 
     @Test
-    public void testDeleteIpv4SubnetForZoneCmd() {
+    public void testDedicateBgpPeerCmd() {
         Long id = 1L;
+        String accountName = "user";
+        Long projectId = 10L;
+        Long domainId = 11L;
 
-        DeleteIpv4SubnetForZoneCmd cmd = new DeleteIpv4SubnetForZoneCmd();
+        DedicateBgpPeerCmd cmd = new DedicateBgpPeerCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
+        ReflectionTestUtils.setField(cmd, "accountName", accountName);
+        ReflectionTestUtils.setField(cmd,"projectId", projectId);
+        ReflectionTestUtils.setField(cmd,"domainId", domainId);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
         Assert.assertEquals(id, cmd.getId());
-        Assert.assertEquals(1L, cmd.getEntityOwnerId());
-        Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_DELETE, cmd.getEventType());
-        Assert.assertEquals(String.format("Deleting zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(accountName, cmd.getAccountName());
+        Assert.assertEquals(projectId, cmd.getProjectId());
+        Assert.assertEquals(domainId, cmd.getDomainId());
 
-        Mockito.when(routedIpv4Manager.deleteDataCenterIpv4GuestSubnet(cmd)).thenReturn(true);
+        Assert.assertEquals(1L, cmd.getEntityOwnerId());
+        Assert.assertEquals(EventTypes.EVENT_BGP_PEER_DEDICATE, cmd.getEventType());
+        Assert.assertEquals(String.format("Dedicating Bgp Peer %s", id), cmd.getEventDescription());
+
+        BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
+        Mockito.when(routedIpv4Manager.dedicateBgpPeer(cmd)).thenReturn(bgpPeer);
+
+        BgpPeerResponse response = Mockito.mock(BgpPeerResponse.class);
+        Mockito.when(routedIpv4Manager.createBgpPeerResponse(bgpPeer)).thenReturn(response);
 
         try {
             cmd.execute();
         } catch (Exception ignored) {
         }
 
-        Assert.assertTrue(cmd.getResponseObject() instanceof SuccessResponse);
+        Assert.assertEquals(response, cmd.getResponseObject());
     }
 }

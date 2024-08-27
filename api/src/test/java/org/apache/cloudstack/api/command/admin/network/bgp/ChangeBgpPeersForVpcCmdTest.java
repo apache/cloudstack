@@ -15,11 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import com.cloud.event.EventTypes;
-import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
-import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
+
+import com.cloud.network.vpc.Vpc;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,29 +31,38 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
+import java.util.List;
+
 @RunWith(MockitoJUnitRunner.class)
-public class ReleaseDedicatedIpv4SubnetForZoneCmdTest {
+public class ChangeBgpPeersForVpcCmdTest {
 
     RoutedIpv4Manager routedIpv4Manager = Mockito.spy(RoutedIpv4Manager.class);
 
+    ResponseGenerator _responseGenerator = Mockito.spy(ResponseGenerator.class);
+
     @Test
-    public void testReleaseDedicatedIpv4SubnetForZoneCmd() {
-        Long id = 1L;
+    public void testChangeBgpPeersForVpcCmd() {
+        Long VpcId = 10L;
+        List<Long> bgpPeerIds = Arrays.asList(20L, 21L);
 
-        ReleaseDedicatedIpv4SubnetForZoneCmd cmd = new ReleaseDedicatedIpv4SubnetForZoneCmd();
-        ReflectionTestUtils.setField(cmd, "id", id);
+        ChangeBgpPeersForVpcCmd cmd = new ChangeBgpPeersForVpcCmd();
+        ReflectionTestUtils.setField(cmd, "vpcId", VpcId);
+        ReflectionTestUtils.setField(cmd, "bgpPeerIds", bgpPeerIds);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
+        ReflectionTestUtils.setField(cmd,"_responseGenerator", _responseGenerator);
 
-        Assert.assertEquals(id, cmd.getId());
+        Assert.assertEquals(VpcId, cmd.getVpcId());
+        Assert.assertEquals(bgpPeerIds, cmd.getBgpPeerIds());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
-        Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_RELEASE, cmd.getEventType());
-        Assert.assertEquals(String.format("Releasing a dedicated zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(EventTypes.EVENT_VPC_BGP_PEER_UPDATE, cmd.getEventType());
+        Assert.assertEquals(String.format("Changing Bgp Peers for VPC %s", VpcId), cmd.getEventDescription());
 
-        DataCenterIpv4GuestSubnet zoneSubnet = Mockito.mock(DataCenterIpv4GuestSubnet.class);
-        Mockito.when(routedIpv4Manager.releaseDedicatedDataCenterIpv4GuestSubnet(cmd)).thenReturn(zoneSubnet);
+        Vpc Vpc = Mockito.mock(Vpc.class);
+        Mockito.when(routedIpv4Manager.changeBgpPeersForVpc(cmd)).thenReturn(Vpc);
 
-        DataCenterIpv4SubnetResponse response = Mockito.mock(DataCenterIpv4SubnetResponse.class);
-        Mockito.when(routedIpv4Manager.createDataCenterIpv4SubnetResponse(zoneSubnet)).thenReturn(response);
+        VpcResponse response = Mockito.mock(VpcResponse.class);
+        Mockito.when(_responseGenerator.createVpcResponse(ResponseObject.ResponseView.Full, Vpc)).thenReturn(response);
 
         try {
             cmd.execute();
