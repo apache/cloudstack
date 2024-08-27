@@ -187,12 +187,7 @@ class TestStorPoolTiers(cloudstackTestCase):
 
     @classmethod
     def cleanUpCloudStack(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestStorPoolTiers, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -204,7 +199,7 @@ class TestStorPoolTiers(cloudstackTestCase):
         return
 
     def tearDown(self):
-        return
+        super(TestStorPoolTiers, self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_check_tags_on_deployed_vm_and_datadisk(self):
