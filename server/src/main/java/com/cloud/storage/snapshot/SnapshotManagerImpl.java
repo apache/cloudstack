@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Upload;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import com.cloud.api.ApiDBUtils;
@@ -1891,7 +1892,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @DB
     private boolean copySnapshotToZone(SnapshotDataStoreVO snapshotDataStoreVO, DataStore srcSecStore,
-           DataCenterVO dstZone, DataStore dstSecStore, Account account)
+                                       DataCenterVO dstZone, DataStore dstSecStore, Account account, boolean kvmIncrementalSnapshot)
             throws ResourceAllocationException {
         final long snapshotId = snapshotDataStoreVO.getSnapshotId();
         final long dstZoneId = dstZone.getId();
@@ -1901,6 +1902,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
         // snapshotId may refer to ID of a removed parent snapshot
         SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
+        if (kvmIncrementalSnapshot) {
+            snapshotOnSecondary = snapshotHelper.convertSnapshotIfNeeded(snapshotOnSecondary);
+        }
         String copyUrl = null;
         try {
             AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
@@ -1930,6 +1934,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
                         snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
             }
+            if (kvmIncrementalSnapshot) {
+                ((ImageStoreEntity) srcSecStore).deleteExtractUrl(snapshotOnSecondary.getPath(), copyUrl, Upload.Type.SNAPSHOT);
+            }
+
             return true;
         } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
             logger.debug(String.format("Failed to copy snapshot ID: %d to image store: %s", snapshotId, dstSecStore.getName()));
@@ -1946,6 +1954,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotDataStoreVO> snapshotChain = new ArrayList<>();
         long size = 0L;
         DataStore dstSecStore = null;
+        boolean kvmIncrementalSnapshot = currentSnap.getKvmCheckpointPath() != null;
         do {
             dstSecStore = getSnapshotZoneImageStore(currentSnap.getSnapshotId(), destZone.getId());
             if (dstSecStore != null) {
@@ -1959,7 +1968,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             snapshotChain.add(currentSnap);
             size += currentSnap.getSize();
-            currentSnap = currentSnap.getParentSnapshotId() == 0 ?
+            currentSnap = currentSnap.getParentSnapshotId() == 0 || kvmIncrementalSnapshot ?
                     null :
                     _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcSecStore.getId(), currentSnap.getParentSnapshotId());
         } while (currentSnap != null);
@@ -1986,7 +1995,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         logger.debug(String.format("Copying snapshot chain for snapshot ID: %d on secondary store: %s of zone ID: %d", snapshotId, dstSecStore.getName(), destZoneId));
         for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
-            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account)) {
+            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account, kvmIncrementalSnapshot)) {
                 logger.error(String.format("Failed to copy snapshot: %s to zone: %s due to failure to copy snapshot ID: %d from snapshot chain",
                         snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId()));
                 return false;
@@ -1994,7 +2003,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         return true;
     }
-
     @DB
     private List<String> copySnapshotToZones(SnapshotVO snapshotVO, DataStore srcSecStore, List<DataCenterVO> dstZones) throws StorageUnavailableException, ResourceAllocationException {
         AccountVO account = _accountDao.findById(snapshotVO.getAccountId());

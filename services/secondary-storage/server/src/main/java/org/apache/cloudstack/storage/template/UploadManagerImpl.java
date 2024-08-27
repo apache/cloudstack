@@ -347,7 +347,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
         if (Upload.Type.SNAPSHOT.equals(cmd.getType())) {
             try {
-                Files.deleteIfExists(Path.of(String.format("/mnt/SecStorage/%s%s%s%s", cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME)));
+                path = path.replaceAll("_temp", "");
+                String fullPath = String.format("/mnt/SecStorage/%s%s%s%s", cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                Files.deleteIfExists(Path.of(fullPath));
             } catch (IOException e) {
                 String errorString = String.format("Error deleting temporary snapshot %s%s.", path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
                 logger.warn(errorString, e);

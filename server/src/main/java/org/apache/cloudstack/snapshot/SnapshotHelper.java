@@ -266,7 +266,7 @@ public class SnapshotHelper {
     }
 
     public SnapshotInfo convertSnapshotIfNeeded(SnapshotInfo snapshotInfo) {
-        if (snapshotInfo.getParent() == null) {
+        if (snapshotInfo.getParent() == null || !HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
             return snapshotInfo;
         }
 

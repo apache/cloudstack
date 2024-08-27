@@ -193,7 +193,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         } else if (data.getType() == DataObjectType.SNAPSHOT) {
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null));
             if (logger.isDebugEnabled()) {
-                logger.debug("Downloading volume to data store " + dataStore.getId());
+                logger.debug("Downloading snapshot to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadSnapshotToStorage(data, caller);
         }
