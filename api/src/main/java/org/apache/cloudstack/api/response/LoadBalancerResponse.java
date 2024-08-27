@@ -87,6 +87,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @Param(description = "the domain of the load balancer rule")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the load balancer rule belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the rule")
     private String state;
@@ -156,6 +160,11 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setState(String state) {
