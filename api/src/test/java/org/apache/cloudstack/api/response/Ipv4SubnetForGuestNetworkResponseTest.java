@@ -45,7 +45,7 @@ public final class Ipv4SubnetForGuestNetworkResponseTest {
 
 
     @Test
-    public void testASNumberResponse() {
+    public void testIpv4SubnetForGuestNetworkResponse() {
         final Ipv4SubnetForGuestNetworkResponse response = new Ipv4SubnetForGuestNetworkResponse();
 
         response.setId(uuid);

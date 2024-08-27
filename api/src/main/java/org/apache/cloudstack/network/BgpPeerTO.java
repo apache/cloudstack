@@ -73,6 +73,10 @@ public class BgpPeerTO {
         return networkId;
     }
 
+    public Long getNetworkAsNumber() {
+        return networkAsNumber;
+    }
+
     public String getGuestIp4Cidr() {
         return guestIp4Cidr;
     }
