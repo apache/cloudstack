@@ -296,8 +296,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
 
-        List<DataCenterIpAddressVO> result = listBy(sc);
-        return result.size();
+        return getCount(sc);
     }
 
     public DataCenterIpAddressDaoImpl() {
