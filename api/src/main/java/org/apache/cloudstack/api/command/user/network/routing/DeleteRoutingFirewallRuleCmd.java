@@ -66,7 +66,7 @@ public class DeleteRoutingFirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Deleting Routing firewall rule ID=" + id);
+        return String.format("Deleting ipv4 routing firewall rule ID=%s", id);
     }
 
     @Override

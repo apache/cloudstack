@@ -89,7 +89,7 @@ public class UpdateRoutingFirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Routing firewall rule";
+        return "Updating ipv4 routing firewall rule";
     }
 
     @Override
