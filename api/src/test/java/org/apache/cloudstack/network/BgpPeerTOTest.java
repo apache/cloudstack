@@ -53,6 +53,7 @@ public class BgpPeerTOTest {
         Assert.assertEquals(peerAsNumber, bgpPeerTO.getPeerAsNumber());
         Assert.assertEquals(ip4Address, bgpPeerTO.getIp4Address());
         Assert.assertEquals(ip6Address, bgpPeerTO.getIp6Address());
+        Assert.assertEquals(peerPassword, bgpPeerTO.getPeerPassword());
         Assert.assertEquals(networkId, bgpPeerTO.getNetworkId());
         Assert.assertEquals(networkAsNumber, bgpPeerTO.getNetworkAsNumber());
         Assert.assertEquals(guestIp4Cidr, bgpPeerTO.getGuestIp4Cidr());

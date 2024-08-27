@@ -96,7 +96,7 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     DataCenterIpv4GuestSubnet updateDataCenterIpv4GuestSubnet(UpdateIpv4SubnetForZoneCmd updateIpv4SubnetForZoneCmd);
 
-    List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd listIpv4SubnetsForZoneCmd);
+    List<DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd listIpv4SubnetsForZoneCmd);
 
     DataCenterIpv4GuestSubnet dedicateDataCenterIpv4GuestSubnet(DedicateIpv4SubnetForZoneCmd dedicateIpv4SubnetForZoneCmd);
 

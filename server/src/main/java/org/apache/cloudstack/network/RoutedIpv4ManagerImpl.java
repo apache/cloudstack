@@ -328,7 +328,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public List<? extends DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd cmd) {
+    public List<DataCenterIpv4GuestSubnet> listDataCenterIpv4GuestSubnets(ListIpv4SubnetsForZoneCmd cmd) {
         Long id = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String subnet = cmd.getSubnet();
