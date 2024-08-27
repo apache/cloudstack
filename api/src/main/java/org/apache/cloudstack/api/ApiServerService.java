@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
+import com.cloud.domain.Domain;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.UserAccount;
 
@@ -44,7 +45,7 @@ public interface ApiServerService {
 
     public Class<?> getCmdClass(String cmdName);
 
-    boolean forgotPassword(UserAccount userAccount);
+    boolean forgotPassword(UserAccount userAccount, Domain domain);
 
     boolean resetPassword(UserAccount userAccount, String token, String password);
 }

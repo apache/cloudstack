@@ -52,7 +52,7 @@ import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementSer
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
-public class PasswordResetImpl extends ManagerBase implements PasswordReset, Configurable {
+public class PasswordResetManagerImpl extends ManagerBase implements PasswordResetManager, Configurable {
 
     @Inject
     private AccountManager accountManager;
@@ -81,7 +81,7 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
 
     @Override
     public String getConfigComponentName() {
-        return PasswordResetImpl.class.getSimpleName();
+        return PasswordResetManagerImpl.class.getSimpleName();
     }
 
     @Override
@@ -105,17 +105,19 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
         String username = PasswordResetSMTPUsername.value();
         String password = PasswordResetSMTPPassword.value();
 
-        String namespace = "password.reset.smtp";
+        if (!StringUtils.isEmpty(smtpHost) && smtpPort != null && smtpPort > 0) {
+            String namespace = "password.reset.smtp";
 
-        Map<String, String> configs = new HashMap<>();
+            Map<String, String> configs = new HashMap<>();
 
-        configs.put(getKey(namespace, SMTPMailSender.CONFIG_HOST), smtpHost);
-        configs.put(getKey(namespace, SMTPMailSender.CONFIG_PORT), smtpPort.toString());
-        configs.put(getKey(namespace, SMTPMailSender.CONFIG_USE_AUTH), useAuth.toString());
-        configs.put(getKey(namespace, SMTPMailSender.CONFIG_USERNAME), username);
-        configs.put(getKey(namespace, SMTPMailSender.CONFIG_PASSWORD), password);
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_HOST), smtpHost);
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_PORT), smtpPort.toString());
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_USE_AUTH), useAuth.toString());
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_USERNAME), username);
+            configs.put(getKey(namespace, SMTPMailSender.CONFIG_PASSWORD), password);
 
-        mailSender = new SMTPMailSender(configs, namespace);
+            mailSender = new SMTPMailSender(configs, namespace);
+        }
         return true;
     }
 
@@ -125,6 +127,12 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
 
 
     public void setResetTokenAndSend(UserAccount userAccount) {
+        if (mailSender == null) {
+            logger.debug("Failed to reset token and send email. SMTP mail sender is not configured.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to reset token and send email. SMTP mail sender is not configured");
+        }
+
         final String resetToken = UUID.randomUUID().toString();
         final Date resetTokenExpiryTime = new Date(System.currentTimeMillis() + PasswordResetTtl.value() * 60 * 1000);
 
@@ -135,7 +143,8 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
         final String username = userAccount.getUsername();
         final String subject = "Password Reset Request";
 
-        String resetLink = String.format("%s/user/resetPassword?username=%s&token=%s", ManagementServerAddresses.value(), username, resetToken);
+        String resetLink = String.format("%s/user/resetPassword?username=%s&token=%s",
+                ManagementServerAddresses.value().split(",")[0], username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
@@ -152,6 +161,11 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
         mailProperties.setRecipients(addresses);
 
         mailSender.sendMail(mailProperties);
+        logger.debug(String.format(
+                "User password reset email for user id: %d username: %s account id: %d" +
+                        " domain id:%d sent to %s with token expiry at %s",
+                userAccount.getId(), username, userAccount.getAccountId(),
+                userAccount.getDomainId(), email, resetTokenExpiryTime));
     }
 
     @Override
@@ -160,6 +174,10 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
         UserDetailVO resetTokenExpiryDate = userDetailsDao.findDetail(user.getId(), PasswordResetTokenExpiryDate);
 
         if (resetTokenDetail == null || resetTokenExpiryDate == null) {
+            logger.debug(String.format(
+                    "Failed to reset password. No reset token found for user id: %d username: %s account" +
+                            " id: %d domain id: %d",
+                    user.getId(), user.getUsername(), user.getAccountId(), user.getDomainId()));
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("No reset token found for user %s", user.getUsername()));
         }
 
@@ -168,16 +186,31 @@ public class PasswordResetImpl extends ManagerBase implements PasswordReset, Con
         Date now = new Date();
         String resetToken = resetTokenDetail.getValue();
         if (StringUtils.isEmpty(resetToken)) {
+            logger.debug(String.format(
+                    "Failed to reset password. No reset token found for user id: %d username: %s account" +
+                            " id: %d domain id: %d",
+                    user.getId(), user.getUsername(), user.getAccountId(), user.getDomainId()));
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("No reset token found for user %s", user.getUsername()));
         }
         if (!resetToken.equals(token)) {
+            logger.debug(String.format(
+                    "Failed to reset password. Invalid reset token for user id: %d username: %s " +
+                            "account id: %d domain id: %d",
+                    user.getId(), user.getUsername(), user.getAccountId(), user.getDomainId()));
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Invalid reset token for user %s", user.getUsername()));
         }
         if (now.after(resetTokenExpiryTime)) {
+            logger.debug(String.format(
+                    "Failed to reset password. Reset token has expired for user id: %d username: %s " +
+                            "account id: %d domain id: %d",
+                    user.getId(), user.getUsername(), user.getAccountId(), user.getDomainId()));
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Reset token has expired for user %s", user.getUsername()));
         }
 
         resetPassword(user, password);
+        logger.debug(String.format(
+                "Password reset successful for user id: %d username: %s account id: %d domain id: %d",
+                user.getId(), user.getUsername(), user.getAccountId(), user.getDomainId()));
         return true;
     }
 

@@ -46,6 +46,7 @@ import java.util.Map;
 
 @APICommand(name = "forgotPassword",
         description = "Sends an email to the user with a token to reset the password using resetPassword command.",
+        since = "4.20.0.0",
         requestHasSensitiveInfo = true,
         responseObject = SuccessResponse.class)
 public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
@@ -113,7 +114,7 @@ public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements
                 if (userAccount != null && List.of(User.Source.SAML2, User.Source.OAUTH2, User.Source.LDAP).contains(userAccount.getSource())) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Forgot Password is not allowed for this user");
                 }
-                boolean success = _apiServer.forgotPassword(userAccount);
+                boolean success = _apiServer.forgotPassword(userAccount, userDomain);
                 SuccessResponse successResponse = new SuccessResponse();
                 successResponse.setSuccess(success);
                 successResponse.setResponseName(getCommandName());

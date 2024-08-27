@@ -34,10 +34,10 @@ import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTok
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PasswordResetImplTest {
+public class PasswordResetManagerImplTest {
     @Spy
     @InjectMocks
-    PasswordResetImpl passwordReset;
+    PasswordResetManagerImpl passwordReset;
 
     @Mock
     private UserDetailsDao userDetailsDao;
@@ -45,7 +45,7 @@ public class PasswordResetImplTest {
     @Test
     public void testGetMessageBody() {
         ConfigKey<String> passwordResetMailTemplate = Mockito.mock(ConfigKey.class);
-        PasswordResetImpl.PasswordResetMailTemplate = passwordResetMailTemplate;
+        PasswordResetManagerImpl.PasswordResetMailTemplate = passwordResetMailTemplate;
         Mockito.when(passwordResetMailTemplate.value()).thenReturn("Hello {{username}}!\n" +
                 "You have requested to reset your password. Please click the following link to reset your password:\n" +
                 "{{{resetLink}}}\n" +

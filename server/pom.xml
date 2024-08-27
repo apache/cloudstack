@@ -104,7 +104,7 @@
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
             <artifactId>compiler</artifactId>
-            <version>0.9.14</version>
+            <version>${cs.mustache.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

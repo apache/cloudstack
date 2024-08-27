@@ -48,6 +48,7 @@ import java.util.Map;
 
 @APICommand(name = "resetPassword",
         description = "Resets the password for the user using the token generated via forgotPassword command.",
+        since = "4.20.0.0",
         requestHasSensitiveInfo = true,
         responseObject = SuccessResponse.class)
 public class DefaultResetPasswordAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {

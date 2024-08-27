@@ -110,8 +110,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.user.PasswordReset;
+import org.apache.cloudstack.user.PasswordResetManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -219,7 +220,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private UUIDManager uuidMgr;
     @Inject
-    private PasswordReset passwordReset;
+    private PasswordResetManager passwordResetManager;
 
     private List<PluggableService> pluggableServices;
 
@@ -1230,29 +1231,59 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Override
-    public boolean forgotPassword(UserAccount userAccount) {
+    public boolean forgotPassword(UserAccount userAccount, Domain domain) {
         String resetToken = userAccount.getDetails().get(PasswordResetToken);
         String resetTokenExpiryTimeString = userAccount.getDetails().getOrDefault(PasswordResetTokenExpiryDate, "0");
 
         if (StringUtils.isBlank(userAccount.getEmail())) {
-            throw new CloudRuntimeException("Email is not set for the user. Please contact your administrator.");
+            logger.error(String.format(
+                    "Email is not set. username: %s account id: %d domain id: %d",
+                    userAccount.getUsername(), userAccount.getAccountId(), userAccount.getDomainId()));
+            throw new CloudRuntimeException("Email is not set for the user.");
+        }
+
+        if (!EnumUtils.getEnumIgnoreCase(Account.State.class, userAccount.getState()).equals(Account.State.ENABLED)) {
+            logger.error(String.format(
+                    "User is not enabled. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("User is not enabled.");
+        }
+
+        if (!EnumUtils.getEnumIgnoreCase(Account.State.class, userAccount.getAccountState()).equals(Account.State.ENABLED)) {
+            logger.error(String.format(
+                    "Account is not enabled. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("Account is not enabled.");
+        }
+
+        if (!domain.getState().equals(Domain.State.Active)) {
+            logger.error(String.format(
+                    "Domain is not active. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("Domain is not active.");
         }
 
         if (StringUtils.isNotEmpty(resetToken) && StringUtils.isNotEmpty(resetTokenExpiryTimeString)) {
             final Date resetTokenExpiryTime = new Date(Long.parseLong(resetTokenExpiryTimeString));
             final Date currentTime = new Date();
             if (currentTime.after(resetTokenExpiryTime)) {
-                passwordReset.setResetTokenAndSend(userAccount);
+                passwordResetManager.setResetTokenAndSend(userAccount);
             }
         } else if (StringUtils.isEmpty(resetToken)) {
-            passwordReset.setResetTokenAndSend(userAccount);
+            passwordResetManager.setResetTokenAndSend(userAccount);
+        } else {
+            logger.debug(String.format(
+                    "Password reset token is already set for user %s in " +
+                            "domain id: %s with account %s and email %s",
+                    userAccount.getUsername(), domain.getUuid(),
+                    userAccount.getAccountName(), userAccount.getEmail()));
         }
         return true;
     }
 
     @Override
     public boolean resetPassword(UserAccount userAccount, String token, String password) {
-        return passwordReset.validateAndResetPassword(userAccount, token, password);
+        return passwordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
