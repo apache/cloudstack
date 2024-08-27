@@ -28,17 +28,9 @@ public interface QuotaTariffDao extends GenericDao<QuotaTariffVO, Long> {
 
     Pair<List<QuotaTariffVO>, Integer> listQuotaTariffs(Date startDate, Date endDate, Integer usageType, String name, String uuid, boolean listAll, Long startIndex, Long pageSize);
 
+    Pair<List<QuotaTariffVO>, Integer> listQuotaTariffs(Date startDate, Date endDate, Integer usageType, String name, String uuid, boolean listAll, boolean listOnlyRemoved, Long startIndex, Long pageSize, String keyword);
+
     QuotaTariffVO findByName(String name);
-
-    QuotaTariffVO findTariffPlanByUsageType(int quotaType, Date onOrBefore);
-
-    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans();
-
-    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(final Long startIndex, final Long pageSize);
-
-    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(Date onOrBefore);
-
-    Pair<List<QuotaTariffVO>, Integer> listAllTariffPlans(Date onOrBefore, Long startIndex, Long pageSize);
 
     Boolean updateQuotaTariff(QuotaTariffVO plan);
 

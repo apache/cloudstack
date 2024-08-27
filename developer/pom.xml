@@ -29,8 +29,10 @@
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>javax.persistence</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${cs.mysql.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -112,28 +114,25 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <dependencies>
-                            <!-- specify the dependent jdbc driver here -->
-                            <dependency>
-                                <groupId>com.mysql</groupId>
-                                <artifactId>mysql-connector-j</artifactId>
-                                <version>${cs.mysql.version}</version>
-                            </dependency>
-                        </dependencies>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <phase>process-resources</phase>
                                 <id>create-schema</id>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>exec</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
+                                <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.cloud.upgrade.DatabaseCreator</argument>
                                 <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
@@ -181,27 +180,25 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.mysql</groupId>
-                                <artifactId>mysql-connector-j</artifactId>
-                                <version>${cs.mysql.version}</version>
-                            </dependency>
-                        </dependencies>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <phase>process-resources</phase>
                                 <id>create-schema-simulator</id>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>exec</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
+                                <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.cloud.upgrade.DatabaseCreator</argument>
                                 <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
@@ -239,27 +236,25 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.mysql</groupId>
-                                <artifactId>mysql-connector-j</artifactId>
-                                <version>${cs.mysql.version}</version>
-                            </dependency>
-                        </dependencies>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <phase>process-resources</phase>
                                 <id>create-schema-simulator</id>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>exec</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <executable>java</executable>
+                            <workingDirectory>${basedir}/..</workingDirectory>
                             <includePluginDependencies>true</includePluginDependencies>
                             <arguments>
+                                <argument>--add-opens=java.base/java.lang=ALL-UNNAMED</argument>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.cloud.upgrade.DatabaseCreator</argument>
                                 <!-- db properties file -->
                                 <argument>${basedir}/../utils/conf/db.properties</argument>
                                 <argument>${basedir}/../utils/conf/db.properties.override</argument>
