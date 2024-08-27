@@ -149,7 +149,7 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+    Network getNetworkWithSGWithFreeIPs(Account account, Long zoneId);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
