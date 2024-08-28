@@ -171,5 +171,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 
+    List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
+
     Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
 }
