@@ -151,12 +151,20 @@ export default {
           ],
           mapping: {
             type: {
-              value: (record) => { return 'nfs' }
+              options: ['nfs', 'cephfs', 'samba']
             },
             provider: {
               value: (record) => { return 'nas' }
             }
           }
+        },
+        {
+          api: 'deleteBackupRepository',
+          icon: 'delete-outlined',
+          label: 'label.backup.repository.remove',
+          message: 'message.action.delete.backup.repository',
+          dataView: true,
+          popup: true
         }
       ]
     },
