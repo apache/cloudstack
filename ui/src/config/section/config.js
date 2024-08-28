@@ -138,8 +138,8 @@ export default {
       docHelp: 'adminguide/backup_and_recovery.html',
       permission: ['listBackupRepositories'],
       searchFilters: ['zoneid'],
-      columns: ['name', 'type', 'address', 'provider', 'zoneid'],
-      details: ['name', 'type', 'address', 'provider', 'zoneid'],
+      columns: ['name', 'type', 'address', 'provider', 'zonename'],
+      details: ['name', 'type', 'address', 'provider', 'zonename'],
       actions: [
         {
           api: 'addBackupRepository',
