@@ -24,6 +24,7 @@ import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+import { sourceToken } from '@/utils/request'
 
 import {
   ACCESS_TOKEN,
@@ -304,11 +305,6 @@ const user = {
           cloudianUrl = state.cloudian.url + 'logout.htm?redirect=' + encodeURIComponent(window.location.href)
         }
 
-        Object.keys(Cookies.get()).forEach(cookieName => {
-          Cookies.remove(cookieName)
-          Cookies.remove(cookieName, { path: '/client' })
-        })
-
         commit('SET_TOKEN', '')
         commit('SET_APIS', {})
         commit('SET_PROJECT', {})
@@ -336,6 +332,11 @@ const user = {
           }
         }).catch(() => {
           resolve()
+        }).finally(() => {
+          Object.keys(Cookies.get()).forEach(cookieName => {
+            Cookies.remove(cookieName)
+            Cookies.remove(cookieName, { path: '/client' })
+          })
         })
       })
     },
