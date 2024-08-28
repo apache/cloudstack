@@ -2744,8 +2744,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesSent(bytesSent);
 
         if (networkOfferingDao.isRoutedNetwork(network.getNetworkOfferingId())) {
-            ASNumberVO asn = asNumberDao.findByZoneAndNetworkId(network.getDataCenterId(), network.getId());
-            if (asn != null) {
+            if (routedIpv4Manager.isDynamicRoutedNetwork(network)) {
                 response.setIpv4Routing(Network.Routing.Dynamic.name());
             } else {
                 response.setIpv4Routing(Network.Routing.Static.name());
