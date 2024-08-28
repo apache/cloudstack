@@ -684,10 +684,9 @@ class TestIpv4Routing(cloudstackTestCase):
             subnet=network_cidr
         )
         self.assertEqual(
-            isinstance(subnets, list) and len(subnets) == 1
-            and not subnets[0].networkid and subnets[0].state == "Free",
+            not isinstance(subnets, list) or len(subnets) == 0,
             True,
-            "The subnet should be created for isolated_network %s" % isolated_network.name
+            "The subnet should be removed for isolated_network %s" % isolated_network.name
         )
 
     @attr(tags=['advanced'], required_hardware=False)
@@ -735,10 +734,9 @@ class TestIpv4Routing(cloudstackTestCase):
             subnet=vpc_cidr
         )
         self.assertEqual(
-            isinstance(subnets, list) and len(subnets) == 1
-            and not subnets[0].vpcid and subnets[0].state == "Free",
+            not isinstance(subnets, list) or len(subnets) == 0,
             True,
-            "The subnet should be created for vpc %s" % vpc.name
+            "The subnet should be removed for vpc %s" % vpc.name
         )
 
     @attr(tags=['advanced'], required_hardware=False)

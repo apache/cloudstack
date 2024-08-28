@@ -480,17 +480,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     private void releaseIpv4SubnetForGuestNetworkOrVpcInternal(Ipv4GuestSubnetNetworkMapVO mapVO) {
-        if (mapVO.getParentId() == null) {
-            // if parent_id is NULL, remove it
-            ipv4GuestSubnetNetworkMapDao.remove(mapVO.getId());
-        } else {
-            // otherwise, release it
-            mapVO.setAllocated(null);
-            mapVO.setVpcId(null);
-            mapVO.setNetworkId(null);
-            mapVO.setState(State.Free);
-            ipv4GuestSubnetNetworkMapDao.update(mapVO.getId(), mapVO);
-        }
+        ipv4GuestSubnetNetworkMapDao.remove(mapVO.getId());
     }
 
     @Override
