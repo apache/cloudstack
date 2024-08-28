@@ -68,6 +68,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiService;
@@ -104,6 +107,9 @@ public class SharedFSServiceImplTest {
 
     @Mock
     VolumeDao volumeDao;
+
+    @Mock
+    NetworkDao networkDao;
 
     @Mock
     private ConfigurationManager configMgr;
@@ -241,6 +247,11 @@ public class SharedFSServiceImplTest {
         SharedFSVO sharedFS = getMockSharedFS();
         ReflectionTestUtils.setField(sharedFS, "id", s_sharedFSId);
 
+        when(cmd.getNetworkId()).thenReturn(s_networkId);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(networkDao.findById(s_networkId)).thenReturn(networkVO);
+
         sharedFSServiceImpl.allocSharedFS(cmd);
         Assert.assertEquals(Optional.ofNullable(sharedFS.getAccountId()), Optional.ofNullable(s_ownerId));
         Assert.assertEquals(Optional.ofNullable(sharedFS.getDataCenterId()), Optional.ofNullable(s_zoneId));
@@ -294,6 +305,11 @@ public class SharedFSServiceImplTest {
         when(diskOfferingDao.findById(s_diskOfferingId)).thenReturn(diskOfferingVO);
         when(diskOfferingVO.isCustomized()).thenReturn(true);
         when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
+
+        when(cmd.getNetworkId()).thenReturn(s_networkId);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(networkDao.findById(s_networkId)).thenReturn(networkVO);
 
         when(cmd.getFsFormat()).thenReturn("ext2");
         Assert.assertThrows(InvalidParameterValueException.class, () -> sharedFSServiceImpl.allocSharedFS(cmd));
