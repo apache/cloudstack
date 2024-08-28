@@ -156,6 +156,10 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the domain associated with the shared filesystem")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the shared filesystem")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROVISIONINGTYPE)
     @Param(description = "provisioning type used in the shared filesystem")
     private String provisioningType;
@@ -211,6 +215,11 @@ public class SharedFSResponse extends BaseResponseWithTagInformation implements 
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setId(String id) {

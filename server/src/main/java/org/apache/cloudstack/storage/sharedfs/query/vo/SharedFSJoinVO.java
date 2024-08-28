@@ -137,6 +137,9 @@ public class SharedFSJoinVO extends BaseViewVO implements InternalIdentity, Iden
     @Column(name = "domain_name")
     private String domainName;
 
+    @Column(name = "domain_path")
+    private String domainPath;
+
     @Column(name = "service_offering_uuid")
     private String serviceOfferingUuid;
 
@@ -281,6 +284,10 @@ public class SharedFSJoinVO extends BaseViewVO implements InternalIdentity, Iden
 
     public String getDomainName() {
         return domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
     }
 
     public String getServiceOfferingUuid() {

@@ -117,6 +117,7 @@ public class SharedFSJoinDaoImpl extends GenericDaoBase<SharedFSJoinVO, Long> im
 
         response.setDomainId(sharedFS.getDomainUuid());
         response.setDomainName(sharedFS.getDomainName());
+        response.setDomainName(sharedFS.getDomainPath());
 
         response.setProjectId(sharedFS.getProjectUuid());
         response.setProjectName(sharedFS.getProjectName());

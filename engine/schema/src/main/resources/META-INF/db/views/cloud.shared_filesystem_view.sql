@@ -51,6 +51,7 @@ SELECT
     `project`.`name` AS `project_name`,
     `domain`.`uuid` AS `domain_uuid`,
     `domain`.`name` AS `domain_name`,
+    `domain`.`path` AS `domain_path`,
     `service_offering`.`uuid` AS `service_offering_uuid`,
     `service_offering`.`name` AS `service_offering_name`,
     `disk_offering`.`uuid` AS `disk_offering_uuid`,
