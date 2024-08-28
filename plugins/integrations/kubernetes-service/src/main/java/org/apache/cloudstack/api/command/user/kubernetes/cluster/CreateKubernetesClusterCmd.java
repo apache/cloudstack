@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import java.security.InvalidParameterException;
-
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -227,7 +225,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public Long getNodeRootDiskSize() {
         if (nodeRootDiskSize != null) {
             if (nodeRootDiskSize < DEFAULT_NODE_ROOT_DISK_SIZE) {
-                throw new InvalidParameterException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
+                throw new InvalidParameterValueException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
             }
             return nodeRootDiskSize;
         } else {
