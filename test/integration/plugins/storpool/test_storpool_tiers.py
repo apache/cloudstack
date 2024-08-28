@@ -49,7 +49,6 @@ class TestStorPoolTiers(cloudstackTestCase):
         try:
             cls.setUpCloudStack()
         except Exception:
-            cls.cleanUpCloudStack()
             raise
 
     @classmethod
@@ -183,10 +182,6 @@ class TestStorPoolTiers(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.cleanUpCloudStack()
-
-    @classmethod
-    def cleanUpCloudStack(cls):
         super(TestStorPoolTiers, cls).tearDownClass()
 
     def setUp(self):
