@@ -2751,7 +2751,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setIpv4Routing(Network.Routing.Static.name());
             }
             response.setIpv4Routes(new LinkedHashSet<>());
-            List<IPAddressVO> ips = userIpAddressDao.listByAssociatedNetwork(network.getId(), true);
+            List<IPAddressVO> ips = network.getVpcId() != null ? userIpAddressDao.listByAssociatedVpc(network.getVpcId(), true):
+                    userIpAddressDao.listByAssociatedNetwork(network.getId(), true);
             for (IpAddress ip : ips) {
                 Ipv4RouteResponse route = new Ipv4RouteResponse(network.getCidr(), ip.getAddress().addr());
                 response.addIpv4Route(route);
