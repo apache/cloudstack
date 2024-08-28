@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -2109,6 +2110,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
+        CPU.CPUArchitecture architecture = cmd.getCPUArchitecture();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2157,6 +2159,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
+                  architecture == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2229,6 +2232,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isDynamicallyScalable != null) {
             template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (architecture != null) {
+            template.setArch(architecture);
         }
 
         if (isRoutingTemplate != null) {

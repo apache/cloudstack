@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.Map;
@@ -76,6 +78,11 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
+
+    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
+            description = "the CPU architecture of the template/ISO. Valid options are: x86_64, arm64",
+            since = "4.20.0")
+    private String architecture;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -140,5 +147,12 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public boolean isCleanupDetails(){
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    }
+
+    public CPU.CPUArchitecture getCPUArchitecture() {
+        if (StringUtils.isBlank(architecture)) {
+            return null;
+        }
+        return CPU.CPUArchitecture.fromType(architecture);
     }
 }
