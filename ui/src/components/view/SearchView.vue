@@ -706,7 +706,7 @@ export default {
     },
     fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        api('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
