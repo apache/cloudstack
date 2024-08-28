@@ -65,9 +65,11 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -3328,6 +3330,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return  null;
     }
 
+    /**
+     *  Encapsulates AllowUserExpungeRecoverVm so we can unit test checkExpungeVmPermission.
+     */
+    protected boolean getConfigAllowUserExpungeRecoverVm(Long accountId) {
+        return AllowUserExpungeRecoverVm.valueIn(accountId);
+    }
+
+    protected void checkExpungeVmPermission (Account callingAccount) {
+        logger.debug(String.format("Checking if [%s] has permission for expunging VMs.", callingAccount));
+        if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(callingAccount.getId())) {
+            logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is true.", ApiConstants.EXPUNGE));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
+        }
+        try {
+            _accountMgr.checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+        } catch (PermissionDeniedException ex) {
+            logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
+            throw new PermissionDeniedException("Account does not have permission for expunging.");
+        }
+    }
+
     protected void checkPluginsIfVmCanBeDestroyed(UserVm vm) {
         try {
             KubernetesServiceHelper kubernetesServiceHelper =
@@ -3345,10 +3368,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getId();
         boolean expunge = cmd.getExpunge();
 
-        // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
-        if (expunge && !_accountMgr.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
-            throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
+        if (expunge) {
+            checkExpungeVmPermission(ctx.getCallingAccount());
         }
+
         // check if VM exists
         UserVmVO vm = _vmDao.findById(vmId);
 
@@ -4753,17 +4776,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, dataDiskControllerSetting);
             }
 
-            String controllerSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
-                    Config.VmwareRootDiskControllerType.getDefaultValue());
-
             // Don't override if VM already has root/data disk controller detail
             if (vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER) == null) {
-                vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, controllerSetting);
+                String vmwareRootDiskControllerTypeFromSetting = StringUtils.defaultIfEmpty(_configDao.getValue(Config.VmwareRootDiskControllerType.key()),
+                        Config.VmwareRootDiskControllerType.getDefaultValue());
+                vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, vmwareRootDiskControllerTypeFromSetting);
             }
+
             if (vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER) == null) {
-                if (controllerSetting.equalsIgnoreCase("scsi")) {
-                    vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, "scsi");
+                String finalRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
+                // Set the data disk controller detail same as the final scsi root disk controller if VM doesn't have data disk controller detail
+                // This is to ensure the disk controller is available for the data disks, as all the SCSI controllers are created with same controller type
+                String scsiControllerPattern = "(?i)\\b(scsi|lsilogic|lsilogicsas|lsisas1068|buslogic|pvscsi)\\b";
+                if (finalRootDiskController.matches(scsiControllerPattern)) {
+                    logger.info(String.format("Data disk controller was not defined, but root disk is using SCSI controller [%s]." +
+                            "To ensure disk controllers are available for the data disks, the data disk controller is updated to match the root disk controller.", finalRootDiskController));
+                    vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, finalRootDiskController);
                 } else {
+                    logger.info("Data disk controller was not defined; defaulting to 'osdefault'.");
                     vm.setDetail(VmDetailConstants.DATA_DISK_CONTROLLER, "osdefault");
                 }
             }

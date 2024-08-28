@@ -2838,6 +2838,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         GuestDef guest = new GuestDef();
 
         configureGuestAndVMHypervisorType(vmTO, vm, guest);
+        guest.setManufacturer(vmTO.getMetadataManufacturer());
+        guest.setProduct(vmTO.getMetadataProductName());
         guest.setGuestArch(guestCpuArch != null ? guestCpuArch : vmTO.getArch());
         guest.setMachineType(isGuestAarch64() ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);

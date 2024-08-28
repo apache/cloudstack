@@ -2717,7 +2717,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
                 if (existingPrivateIPs.size() == 1) {
                     final DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
-                    if (vo.getInstanceId() != null) {
+                    if (vo.getNicId() != null) {
                         throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() +
                                 " and zone: " + dc.getName());
                     }

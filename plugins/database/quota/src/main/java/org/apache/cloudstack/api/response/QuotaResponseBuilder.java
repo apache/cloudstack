@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.user.User;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -41,7 +42,9 @@ public interface QuotaResponseBuilder {
 
     Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(QuotaTariffListCmd cmd);
 
-    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration);
+    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO quotaTariff, boolean returnActivationRule);
+
+    boolean isUserAllowedToSeeActivationRules(User user);
 
     QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 

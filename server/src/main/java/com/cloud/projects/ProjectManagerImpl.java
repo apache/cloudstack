@@ -293,16 +293,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 assignAccountToProject(project, ownerFinal.getId(), ProjectAccount.Role.Admin,
                         Optional.ofNullable(finalUser).map(User::getId).orElse(null),  null);
 
-        if (project != null) {
-            CallContext.current().setEventDetails("Project id=" + project.getId());
-            CallContext.current().putContextParameter(Project.class, project.getUuid());
-        }
+                if (project != null) {
+                    CallContext.current().setEventDetails("Project id=" + project.getId());
+                    CallContext.current().putContextParameter(Project.class, project.getUuid());
+                }
 
-        //Increment resource count
+                //Increment resource count
                 _resourceLimitMgr.incrementResourceCount(ownerFinal.getId(), ResourceType.project);
 
-        return project;
-    }
+                return project;
+            }
         });
 
         messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
@@ -1290,7 +1290,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACTIVATE, eventDescription = "activating project")
+    @ActionEvent(eventType = EventTypes.EVENT_PROJECT_ACTIVATE, eventDescription = "activating project", async = true)
     @DB
     public Project activateProject(final long projectId) {
         Account caller = CallContext.current().getCallingAccount();

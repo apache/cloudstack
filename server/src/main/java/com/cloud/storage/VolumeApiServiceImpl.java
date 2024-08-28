@@ -1391,7 +1391,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
                                              boolean shrinkOk) {
-        final VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         Long currentDiskOfferingId = volume.getDiskOfferingId();
@@ -1499,12 +1499,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            final VolumeVO volumeNow = _volsDao.findById(volumeId);
-            if (currentSize == volumeNow.getSize() && currentSize != newSize) {
+            volume = _volsDao.findById(volumeId);
+            if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
-            } else if (volumeNow.getSize() != newSize) {
+            } else if (volume.getSize() != newSize) {
                 // consider the updated size as the new size
-                newSize = volumeNow.getSize();
+                newSize = volume.getSize();
             }
 
             _volsDao.update(volume.getId(), volume);
