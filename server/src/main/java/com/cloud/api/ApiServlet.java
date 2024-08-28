@@ -260,19 +260,22 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
-                        if (session != null) {
-                            final Long userId = (Long) session.getAttribute("userid");
-                            final Account account = (Account) session.getAttribute("accountobj");
-                            Long accountId = null;
-                            if (account != null) {
-                                accountId = account.getId();
-                            }
-                            auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
-                            if (userId != null) {
-                                apiServer.logoutUser(userId);
-                            }
-                            invalidateHttpSession(session, "invalidating session after logout call");
+                        if (session == null) {
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Session not found for the logout process.");
                         }
+
+                        final Long userId = (Long) session.getAttribute("userid");
+                        final Account account = (Account) session.getAttribute("accountobj");
+                        Long accountId = null;
+                        if (account != null) {
+                            accountId = account.getId();
+                        }
+                        auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
+                        if (userId != null) {
+                            apiServer.logoutUser(userId);
+                        }
+                        invalidateHttpSession(session, "invalidating session after logout call");
+
                         final Cookie[] cookies = req.getCookies();
                         if (cookies != null) {
                             for (final Cookie cookie : cookies) {
