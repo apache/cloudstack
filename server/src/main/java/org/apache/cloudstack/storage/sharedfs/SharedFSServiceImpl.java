@@ -49,6 +49,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.storage.DiskOfferingVO;
@@ -68,6 +71,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.storage.sharedfs.ChangeSharedFSDiskOfferingCmd;
 import org.apache.cloudstack.api.command.user.storage.sharedfs.ChangeSharedFSServiceOfferingCmd;
@@ -129,6 +133,9 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
 
     @Inject
     VolumeDao volumeDao;
+
+    @Inject
+    NetworkDao networkDao;
 
     protected List<SharedFSProvider> sharedFSProviders;
 
@@ -260,6 +267,18 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
         SharedFSProvider provider = getSharedFSProvider(cmd.getSharedFSProviderName());
         SharedFSLifeCycle lifeCycle = provider.getSharedFSLifeCycle();
         lifeCycle.checkPrerequisites(zone, cmd.getServiceOfferingId());
+
+        NetworkVO networkVO = networkDao.findById(cmd.getNetworkId());
+        if (networkVO == null) {
+            throw new InvalidParameterValueException("Unable to find a network with Network ID " + cmd.getNetworkId());
+        }
+        if (networkVO.getGuestType() == Network.GuestType.Shared) {
+            if ((networkVO.getAclType() != ControlledEntity.ACLType.Account) ||
+                    (networkVO.getDomainId() != cmd.getDomainId()) ||
+                    (networkVO.getAccountId() != owner.getAccountId())) {
+                throw new InvalidParameterValueException("Shared network which is not Account scoped and not belonging to the same account can not be used to create a Shared FileSystem");
+            }
+        }
 
         SharedFS.FileSystemType fsType;
         try {

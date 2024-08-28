@@ -197,9 +197,9 @@ class TestSharedFSLifecycle(cloudstackTestCase):
 
     def waitForNFSShare(self, ssh_client, sharedfs_ip):
         def showmount(ssh_client, sharedfs_ip):
-            cmd = "showmount -e " + sharedfs_ip  + " | grep /mnt/fs/share"
+            cmd = "showmount -e " + sharedfs_ip  + " | grep /export"
             res = ssh_client.execute(cmd)[0]
-            if res == "/mnt/fs/share *":
+            if res == "/export *":
                 time.sleep(15)
                 return True, res
             else:
@@ -220,7 +220,7 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         sharedfs_ip = sharedfs.nic[0].ipaddress
         self.waitForNFSShare(ssh_client, sharedfs_ip)
         ssh_client.execute("mkdir /mnt/fs1")
-        cmd = "mount -t nfs -o rw,sync " + sharedfs_ip  + ":/mnt/fs/share /mnt/fs1"
+        cmd = "mount -t nfs -o rw,sync " + sharedfs_ip  + ":/export /mnt/fs1"
         ssh_client.execute(cmd)
 
     @attr( tags=[ "advanced", "advancedns", "smokes"], required_hardware="true")

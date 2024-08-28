@@ -33,11 +33,10 @@ write_files:
 
       # Variables
       PARTITION="$1"
-      MOUNT_POINT="/mnt/fs"
-      EXPORT_DIR="$MOUNT_POINT/share"
+      EXPORT_DIR="/export"
       PERMISSIONS="rw,sync,no_subtree_check,no_root_squash"
 
-      mkdir -p "$MOUNT_POINT"
+      mkdir -p "$EXPORT_DIR"
 
       FS_TYPE=$(lsblk -no FSTYPE "$PARTITION")
 
@@ -66,21 +65,16 @@ write_files:
         exit 1
       fi
 
-      echo "UUID=$UUID $MOUNT_POINT $TYPE defaults 0 2" >> /etc/fstab
+      echo "UUID=$UUID $EXPORT_DIR $TYPE defaults 0 2" >> /etc/fstab
       log "Added fstab entry."
 
       mount -a
 
-      if mountpoint -q "$MOUNT_POINT"; then
-        log "$PARTITION is successfully mounted on $MOUNT_POINT"
+      if mountpoint -q "$EXPORT_DIR"; then
+        log "$PARTITION is successfully mounted on $EXPORT_DIR"
       else
-        log "Failed to mount $PARTITION on $MOUNT_POINT"
+        log "Failed to mount $PARTITION on $EXPORT_DIR"
         exit 1
-      fi
-
-      if [ ! -d "$EXPORT_DIR" ]; then
-        log "Creating export directory..."
-        mkdir -p "$EXPORT_DIR"
       fi
 
       log "Configuring NFS export..."

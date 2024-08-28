@@ -7339,7 +7339,7 @@ class SharedFS:
             cmd.networkid = services["networkid"]
 
         if filesystem:
-            cmd.filesystem = format
+            cmd.filesystem = filesystem
 
         if provider:
             cmd.provider = provider
