@@ -138,7 +138,7 @@ export default {
       docHelp: 'adminguide/backup_and_recovery.html',
       permission: ['listBackupRepositories'],
       searchFilters: ['zoneid'],
-      columns: ['name', 'type', 'address', 'provider', 'zonename'],
+      columns: ['name', 'provider', 'type', 'address', 'zonename'],
       details: ['name', 'type', 'address', 'provider', 'zonename'],
       actions: [
         {
@@ -151,7 +151,7 @@ export default {
           ],
           mapping: {
             type: {
-              options: ['nfs', 'cephfs', 'samba']
+              options: ['nfs', 'cephfs', 'cifs']
             },
             provider: {
               value: (record) => { return 'nas' }

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup;
 
+import com.cloud.utils.db.Encrypt;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -55,6 +57,7 @@ public class BackupRepositoryVO implements BackupRepository {
     @Column(name = "address", nullable = false)
     private String address;
 
+    @Encrypt
     @Column(name = "mount_opts")
     private String mountOptions;
 
