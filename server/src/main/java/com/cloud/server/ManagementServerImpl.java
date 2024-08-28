@@ -495,6 +495,7 @@ import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnaps
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.RevertSnapshotCmd;
@@ -3755,6 +3756,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
         cmdList.add(CopySnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
+        cmdList.add(ExtractSnapshotCmd.class);
         cmdList.add(ArchiveSnapshotCmd.class);
         cmdList.add(CreateSnapshotPolicyCmd.class);
         cmdList.add(UpdateSnapshotPolicyCmd.class);

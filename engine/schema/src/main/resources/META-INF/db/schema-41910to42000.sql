@@ -90,8 +90,15 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(
     CONSTRAINT `FK_quota_email_configuration_account_id` FOREIGN KEY (`account_id`) REFERENCES `cloud_usage`.`quota_account`(`account_id`),
     CONSTRAINT `FK_quota_email_configuration_email_template_id` FOREIGN KEY (`email_template_id`) REFERENCES `cloud_usage`.`quota_email_templates`(`id`));
 
+-- Remove on delete cascade from snapshot schedule
+ALTER TABLE `cloud`.`snapshot_schedule` DROP CONSTRAINT `fk__snapshot_schedule_async_job_id`;
+
 -- Add `is_implicit` column to `host_tags` table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_tags', 'is_implicit', 'int(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT "If host tag is implicit or explicit" ');
+
+-- Fields related to Snapshot Extraction
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url', 'varchar(2048) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'download_url_created', 'datetime DEFAULT NULL');
 
 -- Webhooks feature
 DROP TABLE IF EXISTS `cloud`.`webhook`;
@@ -516,3 +523,5 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc', 'display_text', 'VARCHAR
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'name', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'vpc offering name\'');
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'unique_name', 'VARCHAR(64)', 'DEFAULT NULL COMMENT \'unique name of the vpc offering\'');
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text\'');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');

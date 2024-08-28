@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -638,6 +639,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public List<NicProfile> getNicProfiles(VirtualMachine vm) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public List<NicProfile> getNicProfiles(Long vmId, Hypervisor.HypervisorType hypervisorType) {
+        return List.of();
     }
 
     @Override

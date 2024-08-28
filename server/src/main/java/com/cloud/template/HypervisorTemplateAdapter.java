@@ -204,7 +204,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
+        UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url, !TemplateManager.getValidateUrlIsResolvableBeforeRegisteringTemplateValue(), false);
         boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
@@ -238,7 +238,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        UriUtils.validateUrl(cmd.getFormat(), url, !TemplateManager.getValidateUrlIsResolvableBeforeRegisteringTemplateValue(), cmd.isDirectDownload());
         Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
         boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
         if (cmd.isDirectDownload()) {
