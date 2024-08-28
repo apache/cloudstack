@@ -42,6 +42,8 @@ public class SharedFSDaoImpl extends GenericDaoBase<SharedFSVO, Long> implements
 
     protected final SearchBuilder<SharedFSVO> DestroyedByTimeSearch;
 
+    protected final SearchBuilder<SharedFSVO> NameAccountDomainSearch;
+
     public SharedFSDaoImpl() {
         StateUpdateCountSearch = createSearchBuilder();
         StateUpdateCountSearch.and("id", StateUpdateCountSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -53,6 +55,12 @@ public class SharedFSDaoImpl extends GenericDaoBase<SharedFSVO, Long> implements
         DestroyedByTimeSearch.and("state", DestroyedByTimeSearch.entity().getState(), SearchCriteria.Op.IN);
         DestroyedByTimeSearch.and("accountId", DestroyedByTimeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         DestroyedByTimeSearch.done();
+
+        NameAccountDomainSearch = createSearchBuilder();
+        NameAccountDomainSearch.and("name", NameAccountDomainSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameAccountDomainSearch.and("accountId", NameAccountDomainSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        NameAccountDomainSearch.and("domainId", NameAccountDomainSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        NameAccountDomainSearch.done();
     }
 
     @Override
@@ -96,5 +104,14 @@ public class SharedFSDaoImpl extends GenericDaoBase<SharedFSVO, Long> implements
         sc.setParameters("state", SharedFS.State.Destroyed, SharedFS.State.Expunging, SharedFS.State.Error);
         sc.setParameters("updateTime", date);
         return listBy(sc);
+    }
+
+    @Override
+    public SharedFSVO findSharedFSByNameAccountDomain(String name, Long accountId, Long domainId) {
+        SearchCriteria<SharedFSVO> sc = DestroyedByTimeSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("domainId", domainId);
+        return findOneBy(sc);
     }
 }

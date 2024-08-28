@@ -27,4 +27,6 @@ import java.util.List;
 
 public interface SharedFSDao extends GenericDao<SharedFSVO, Long>, StateDao<SharedFS.State, SharedFS.Event, SharedFS> {
     List<SharedFSVO> listSharedFSToBeDestroyed(Date date);
+
+    SharedFSVO findSharedFSByNameAccountDomain(String name, Long accountId, Long domainId);
 }
