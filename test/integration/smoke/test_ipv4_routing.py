@@ -1143,7 +1143,7 @@ class TestIpv4Routing(cloudstackTestCase):
             "The number of bgp peers (%s) should be equal to 1" % (len(bgppeers))
         )
         self.assertEqual(
-            bgppeers[0].asnumber == str(ASN_1) and bgppeers[0].ipaddress == IP4_ADDR_1,
+            bgppeers[0].asnumber == ASN_1 and bgppeers[0].ipaddress == IP4_ADDR_1,
             True,
             "The asnumber of bgp peer (%s) should be equal to %s, the ip address (%s) should be %s"
             % (bgppeers[0].asnumber, ASN_1, bgppeers[0].ipaddress, IP4_ADDR_1)
@@ -1160,7 +1160,7 @@ class TestIpv4Routing(cloudstackTestCase):
         )
         self.assertEqual(
             isinstance(bgppeers, list) and len(bgppeers) == 1
-            and bgppeers[0].asnumber == str(ASN_2) and bgppeers[0].ipaddress == IP4_ADDR_2,
+            and bgppeers[0].asnumber == ASN_2 and bgppeers[0].ipaddress == IP4_ADDR_2,
             True,
             "The asnumber of bgp peer (%s) should be equal to %s, the ip address (%s) should be %s"
             % (bgppeers[0].asnumber, ASN_2, bgppeers[0].ipaddress, IP4_ADDR_2)
