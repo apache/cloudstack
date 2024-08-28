@@ -92,7 +92,7 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     private Map<String, String> resourceDetails;
 
     @SerializedName(ApiConstants.ARCHITECTURE)
-    @Param(description = "CPU Architecture of the hosts in the cluster")
+    @Param(description = "CPU Architecture of the hosts in the cluster", since = "4.20")
     private String architecture;
 
     public String getId() {

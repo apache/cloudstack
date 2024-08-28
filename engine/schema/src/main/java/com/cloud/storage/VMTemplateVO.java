@@ -32,7 +32,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.cpu.CPU;
 import com.cloud.user.UserData;
+import org.apache.cloudstack.util.CPUArchitectureConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
@@ -166,6 +168,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "user_data_link_policy")
     @Enumerated(value = EnumType.STRING)
     UserData.UserDataOverridePolicy userDataLinkPolicy;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchitectureConverter.class)
+    private CPU.CPUArchitecture arch;
 
     @Override
     public String getUniqueName() {
@@ -671,6 +677,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public void setUserDataLinkPolicy(UserData.UserDataOverridePolicy userDataLinkPolicy) {
         this.userDataLinkPolicy = userDataLinkPolicy;
+    }
+
+    @Override
+    public CPU.CPUArchitecture getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArchitecture arch) {
+        this.arch = arch;
     }
 
 }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -28,6 +29,7 @@ public class TemplateProfile {
     Long userId;
     String name;
     String displayText;
+    CPU.CPUArchitecture architecture;
     Integer bits;
     Boolean passwordEnabled;
     Boolean sshKeyEnbaled;
@@ -55,13 +57,14 @@ public class TemplateProfile {
     Boolean deployAsIs;
     Long size;
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArchitecture architecture, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
                            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneIdList, HypervisorType hypervisorType,
                            String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
         this.templateId = templateId;
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
+        this.architecture = architecture;
         this.bits = bits;
         this.passwordEnabled = passwordEnabled;
         this.requiresHvm = requiresHvm;
@@ -92,7 +95,7 @@ public class TemplateProfile {
         else this.zoneIdList = null;
     }
 
-    public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
+    public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArchitecture architecture, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
             Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
 
             HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
@@ -101,6 +104,7 @@ public class TemplateProfile {
             userId,
             name,
             displayText,
+            architecture,
             bits,
             passwordEnabled,
             requiresHvm,
@@ -336,5 +340,9 @@ public class TemplateProfile {
 
     public boolean isDeployAsIs() {
         return this.deployAsIs;
+    }
+
+    public CPU.CPUArchitecture getArchitecture() {
+        return architecture;
     }
 }

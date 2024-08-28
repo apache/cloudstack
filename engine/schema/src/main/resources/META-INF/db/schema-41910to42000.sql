@@ -161,10 +161,6 @@ WHERE
 -- Quota inject tariff result into subsequent ones
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.quota_tariff', 'position', 'bigint(20) NOT NULL DEFAULT 1 COMMENT "Position in the execution sequence for tariffs of the same type"');
 
--- Multi-Arch Zones
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the hosts in the cluster"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the host"');
-
 -- Idempotent IDEMPOTENT_MODIFY_COLUMN_CHAR_SET
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`;
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET` (
@@ -237,3 +233,8 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'unique_name',
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text\'');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
+
+-- Multi-Arch Zones
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the hosts in the cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the host"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'arch', 'varchar(8) DEFAULT NULL COMMENT "the CPU architecture of the template/ISO"');

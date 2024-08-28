@@ -188,6 +188,9 @@
             <appstore-outlined />
             <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
             <span v-else>{{ resource.cputotal }}</span>
+            <a-tag v-if="resource.architecture" style="margin-left: 10px">
+              {{ resource.architecture }}
+            </a-tag>
           </div>
           <div>
             <span v-if="resource.cpuused">

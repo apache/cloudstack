@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'architecture', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
   related: [{
     name: 'host',
     title: 'label.hosts',

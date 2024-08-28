@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -54,6 +55,11 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class, required = false,
             description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
+
+    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
+            description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
+            since = "4.20.0")
+    private String architecture;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")
     private Integer bits;
@@ -160,6 +166,10 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     public boolean isDeployAsIs() {
         return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor) &&
                 Boolean.TRUE.equals(deployAsIs);
+    }
+
+    public CPU.CPUArchitecture getArchitecture() {
+        return CPU.CPUArchitecture.fromType(architecture);
     }
 
     @Override

@@ -291,7 +291,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private Boolean instanceConversionSupported;
 
     @SerializedName(ApiConstants.ARCHITECTURE)
-    @Param(description = "CPU Architecture of the host")
+    @Param(description = "CPU Architecture of the host", since = "4.20")
     private String architecture;
 
     @Override

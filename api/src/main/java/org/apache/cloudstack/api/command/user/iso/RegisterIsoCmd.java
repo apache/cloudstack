@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.iso;
 
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -117,6 +118,11 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
             type = CommandType.BOOLEAN,
             description = "true if password reset feature is supported; default is false")
     private Boolean passwordEnabled;
+
+    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
+            description = "the CPU architecture of the ISO. Valid options are: x86_64, arm64",
+            since = "4.20.0")
+    private String architecture;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -227,6 +233,10 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     public boolean isPasswordEnabled() {
         return passwordEnabled == null ? false : passwordEnabled;
+    }
+
+    public CPU.CPUArchitecture getArchitecture() {
+        return CPU.CPUArchitecture.fromType(architecture);
     }
 
     /////////////////////////////////////////////////////
