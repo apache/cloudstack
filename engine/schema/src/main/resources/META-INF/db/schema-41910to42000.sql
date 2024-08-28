@@ -172,6 +172,7 @@ CREATE TABLE `cloud`.`shared_filesystem`(
     `removed` datetime COMMENT 'date removed if not null',
     PRIMARY KEY (`id`),
     CONSTRAINT `uc_shared_filesystem__uuid` UNIQUE (`uuid`),
+    CONSTRAINT `uc_shared_filesystem__domain_id_account_id_name` UNIQUE (`domain_id`, `account_id`, `name`),
     INDEX `i_shared_filesystem__account_id`(`account_id`),
     INDEX `i_shared_filesystem__domain_id`(`domain_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

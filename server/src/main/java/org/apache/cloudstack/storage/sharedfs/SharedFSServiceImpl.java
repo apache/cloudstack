@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
@@ -270,7 +271,12 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
         SharedFSVO sharedFS = new SharedFSVO(cmd.getName(), cmd.getDescription(), owner.getDomainId(),
                 ownerId, cmd.getZoneId(), cmd.getSharedFSProviderName(), SharedFS.Protocol.NFS,
                 fsType, cmd.getServiceOfferingId());
-        return sharedFSDao.persist(sharedFS);
+
+        try {
+            return sharedFSDao.persist(sharedFS);
+        } catch (EntityExistsException ex) {
+            throw new InvalidParameterValueException("There already exists a Shared FileSystem with this name for the given account.");
+        }
     }
 
     @Override
