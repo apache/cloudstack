@@ -263,7 +263,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 backup.getDomainId(), backup.getAccountId(), 0, null,
                 backup.getSize(), null, null, null);
         String volumeUUID = UUID.randomUUID().toString();
-        restoredVolume.setName("RV-"+volume.getName());
+        restoredVolume.setName("RestoredVol-"+volume.getName());
         restoredVolume.setProvisioningType(volume.getProvisioningType());
         restoredVolume.setUpdated(new Date());
         restoredVolume.setUuid(volumeUUID);

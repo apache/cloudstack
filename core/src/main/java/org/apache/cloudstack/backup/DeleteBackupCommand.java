@@ -62,7 +62,7 @@ public class DeleteBackupCommand extends Command {
     }
 
     public String getMountOptions() {
-        return mountOptions;
+        return mountOptions == null ? "" : mountOptions;
     }
 
     public void setMountOptions(String mountOptions) {
