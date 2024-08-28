@@ -131,7 +131,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             hostId = vm.getLastHostId();
         }
         if (hostId == null) {
-            throw new CloudRuntimeException(String.format("Unable to find the hypervisor host for stopped VM: %s."));
+            throw new CloudRuntimeException(String.format("Unable to find the hypervisor host for stopped VM: %s", vm));
         }
         final Host host = hostDao.findById(hostId);
         if (host == null || !Status.Up.equals(host.getStatus()) || !Hypervisor.HypervisorType.KVM.equals(host.getHypervisorType())) {
@@ -334,7 +334,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         // TODO: this can be any host in the cluster or last host
         final VirtualMachine vm  = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        final Host host = getVMHypervisorHost(vm);
+        final Host host = getLastVMHypervisorHost(vm);
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
                 backupRepository.getAddress(), backupRepository.getMountOptions());
