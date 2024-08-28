@@ -33,7 +33,7 @@ import javax.inject.Inject;
 @APICommand(name = "deleteBackupRepository",
         description = "delete a backup repository",
         responseObject = SuccessResponse.class, since = "4.20.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin})
 public class DeleteBackupRepositoryCmd extends BaseCmd {
 
     @Inject

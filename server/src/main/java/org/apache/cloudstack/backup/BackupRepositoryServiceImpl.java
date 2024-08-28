@@ -46,9 +46,7 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
     public BackupRepository addBackupRepository(AddBackupRepositoryCmd cmd) {
         BackupRepositoryVO repository = new BackupRepositoryVO(cmd.getZoneId(), cmd.getProvider(), cmd.getName(),
                 cmd.getType(), cmd.getAddress(), cmd.getMountOptions(), cmd.getCapacityBytes());
-        repositoryDao.persist(repository);
-
-        return repository;
+        return repositoryDao.persist(repository);
     }
 
     @Override
@@ -56,10 +54,9 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
         BackupRepositoryVO backupRepositoryVO = repositoryDao.findById(cmd.getId());
         if (Objects.isNull(backupRepositoryVO)) {
             logger.debug("Backup repository appears to already be deleted");
-            return true;
+            return false;
         }
-        repositoryDao.remove(backupRepositoryVO.getId());
-        return true;
+        return repositoryDao.remove(backupRepositoryVO.getId());
     }
 
     @Override

@@ -334,6 +334,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                             backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage());
                     logger.error(msg);
                     logger.debug(msg, e);
+                    return null;
                 }
                 return vm;
             }

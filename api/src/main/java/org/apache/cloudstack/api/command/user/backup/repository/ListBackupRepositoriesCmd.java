@@ -43,7 +43,7 @@ import java.util.List;
 @APICommand(name = "listBackupRepositories",
         description = "Lists all backup repositories",
         responseObject = BackupRepositoryResponse.class, since = "4.20.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin})
 public class ListBackupRepositoriesCmd extends BaseListCmd {
 
     @Inject

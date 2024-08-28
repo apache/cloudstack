@@ -35,11 +35,11 @@ import javax.inject.Inject;
 @APICommand(name = "addBackupRepository",
         description = "Adds a backup repository to store NAS backups",
         responseObject = BackupRepositoryResponse.class, since = "4.20.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin})
 public class AddBackupRepositoryCmd extends BaseCmd {
 
     @Inject
-    BackupRepositoryService backupRepositoryService;
+    private BackupRepositoryService backupRepositoryService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -50,13 +50,13 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "address of the backup repository")
     private String address;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of the backup repository. Supported values: NFS" )
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the backup repository. Supported values: nfs, cephfs")
     private String type;
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "backup repository provider")
     private String provider;
 
-    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "mount options")
+    @Parameter(name = ApiConstants.MOUNT_OPTIONS, type = CommandType.STRING, description = "shared storage mount options")
     private String mountOptions;
 
     @Parameter(name = ApiConstants.ZONE_ID,
