@@ -96,6 +96,8 @@ function install_packages() {
     add-apt-repository "deb [arch=arm64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   elif [ "${arch}" == "amd64" ]; then
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  elif [ "${arch}" == "s390x" ]; then
+    add-apt-repository "deb [arch=s390x] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   else
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   fi
