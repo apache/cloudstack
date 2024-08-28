@@ -82,12 +82,29 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    rsync -az $disk $dest/$deviceId.$name.$volUuid.qcow2
+    qemu-img convert -O qcow2 $disk $dest/$deviceId.$name.$volUuid.qcow2
     deviceId=$((devideId+1))
     name="datadisk"
   done
+  sync
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
+}
+
+restore_backup() {
+  mount_operation
+
+  IFS=","
+
+  deviceId=0
+  name="root"
+  for disk in $DISK_PATHS; do
+    volUuid="${disk##*/}"
+    rsync -az $dest/$deviceId.$name.$volUuid.qcow2 $disk
+    deviceId=$((devideId+1))
+    name="datadisk"
+  done
+  sync
 }
 
 delete_backup() {
@@ -95,7 +112,6 @@ delete_backup() {
 
   rm -frv $dest
   sync
-
   umount $mount_point
   rmdir $mount_point
 }
@@ -103,13 +119,12 @@ delete_backup() {
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
-
   mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
 }
 
 function usage {
   echo ""
-  echo "Usage: $0 -b <domain> -s <NAS storage mount path> -p <backup dest path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
   echo ""
   exit 1
 }
@@ -169,6 +184,8 @@ if [ "$OP" = "backup" ]; then
   else
     backup_stopped_vm
   fi
+elif [ "$OP" = "restore" ]; then
+  restore_backup
 elif [ "$OP" = "delete" ]; then
   delete_backup
 fi
