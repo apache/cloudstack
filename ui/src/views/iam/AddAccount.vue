@@ -307,7 +307,9 @@ export default {
     },
     fetchRoles () {
       this.roleLoading = true
-      api('listRoles').then(response => {
+      const params = {}
+      params.state = 'enabled'
+      api('listRoles', params).then(response => {
         this.roles = response.listrolesresponse.role || []
         this.form.roleid = this.roles[0].id
         if (this.isDomainAdmin()) {
