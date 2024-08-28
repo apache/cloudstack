@@ -279,8 +279,6 @@ public class CheckOnHostCommandTest {
         public CPU.CPUArchitecture getArch() {
             return CPU.CPUArchitecture.X86_64;
         }
-
-        ;
     };
 
     CheckOnHostCommand cohc = new CheckOnHostCommand(host);

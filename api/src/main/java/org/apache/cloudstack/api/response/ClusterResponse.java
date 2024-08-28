@@ -224,6 +224,34 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
         return resourceDetails;
     }
 
+    public String getCpuovercommitratio() {
+        return cpuovercommitratio;
+    }
+
+    public void setCpuovercommitratio(String cpuovercommitratio) {
+        this.cpuovercommitratio = cpuovercommitratio;
+    }
+
+    public String getMemoryovercommitratio() {
+        return memoryovercommitratio;
+    }
+
+    public void setMemoryovercommitratio(String memoryovercommitratio) {
+        this.memoryovercommitratio = memoryovercommitratio;
+    }
+
+    public String getOvm3vip() {
+        return ovm3vip;
+    }
+
+    public void setOvm3vip(String ovm3vip) {
+        this.ovm3vip = ovm3vip;
+    }
+
+    public void setCapacities(List<CapacityResponse> capacities) {
+        this.capacities = capacities;
+    }
+
     public String getArchitecture() {
         return architecture;
     }
