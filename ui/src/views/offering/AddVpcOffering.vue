@@ -154,7 +154,7 @@
         <a-form-item name="distributedrouter" ref="distributedrouter" :label="$t('label.service.connectivity.distributedroutercapabilitycheckbox')" v-if="connectivityServiceChecked">
           <a-switch v-model:checked="form.distributedrouter" />
         </a-form-item>
-        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked || networkmode === 'ROUTED'">
+        <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
           <a-switch v-model:checked="form.redundantrouter" />
         </a-form-item>
         <a-form-item name="serviceofferingid" ref="serviceofferingid">

@@ -340,7 +340,7 @@
           name="redundantroutercapability"
           ref="redundantroutercapability"
           :label="$t('label.redundantrouter')"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && (sourceNatServiceChecked || networkmode === 'ROUTED') && !isVpcVirtualRouterForAtLeastOneService">
+          v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && !isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-model:checked="form.redundantroutercapability" />
         </a-form-item>
         <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked">
