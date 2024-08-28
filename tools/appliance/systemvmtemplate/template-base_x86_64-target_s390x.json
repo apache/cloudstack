@@ -1,0 +1,86 @@
+{
+  "_license": "Apache License 2.0",
+  "builders": [
+    {
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_s390x.cfg <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "auto <wait>",
+        "language=en locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+        "country=IN keymap=us <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "60s",
+      "disk_interface": "virtio",
+      "cdrom_interface": "virtio-scsi",
+      "disk_size": "5000M",
+      "format": "qcow2",
+      "headless": true,
+      "http_directory": "http",
+      "iso_checksum": "sha512:52455df8fe44b90b55d90fafc7ca6fa5d57c4be1b6c6d5a06e8ef36634c764607f6ff8119a3b6daf3b33ab420a20f263561176c7d4de2efc3c2b285edf2e6ff6",
+      "iso_url": "https://cdimage.debian.org/mirror/cdimage/archive/12.5.0/s390x/iso-cd/debian-12.5.0-s390x-netinst.iso",
+      "net_device": "virtio-net",
+      "output_directory": "../dist",
+      "qemu_binary": "qemu-system-s390x",
+      "qemuargs": [
+        [
+          "-m",
+          "500M"
+        ],
+        [
+          "-machine",
+          "s390-ccw-virtio"
+        ],
+        [
+          "-cpu",
+          "max,zpci=on"
+        ],
+        [
+          "-smp",
+          "2"
+        ],
+        [ "-monitor", "none" ],
+        [ "-boot", "strict=off" ]
+      ],
+      "shutdown_command": "sudo halt -p",
+      "ssh_password": "cloud",
+      "ssh_timeout": "120m",
+      "ssh_username": "cloud",
+      "type": "qemu",
+      "vm_name": "systemvmtemplate"
+    }
+  ],
+  "description": "CloudStack SystemVM template",
+  "provisioners": [
+    {
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
+      "scripts": [
+        "scripts/apt_upgrade.sh",
+        "scripts/configure_grub.sh",
+        "scripts/configure_locale.sh",
+        "scripts/configure_networking.sh",
+        "scripts/configure_acpid.sh",
+        "scripts/install_systemvm_packages.sh",
+        "scripts/configure_conntrack.sh",
+        "scripts/authorized_keys.sh",
+        "scripts/configure_persistent_config.sh",
+        "scripts/configure_login.sh",
+        "../cloud_scripts_shar_archive.sh",
+        "scripts/configure_systemvm_services.sh",
+        "scripts/cleanup.sh",
+        "scripts/finalize.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}
