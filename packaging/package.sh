@@ -22,11 +22,11 @@ Usage: ./package.sh -d DISTRO [OPTIONS]...
 Package CloudStack for specific distribution and provided options.
 
 If there's a "branding" string in the POM version (e.g. x.y.z.a-NAME[-SNAPSHOT]), the branding name will
-be used in the final generated package like: cloudstack-management-x.y.z.a-NAME.NUMBER.el7.centos.x86_64
+be used in the final generated package like: cloudstack-management-x.y.z.a-NAME.NUMBER.el.x86_64
 note that you can override/provide "branding" string with "-b, --brand" flag as well.
 
 Mandatory arguments:
-   -d, --distribution string               Build package for specified distribution ("centos7")
+   -d, --distribution string               Build package for specified distribution ("el8")
 
 Optional arguments:
    -p, --pack string                       Define which type of libraries to package ("oss"|"OSS"|"noredist"|"NOREDIST") (default "oss")
@@ -42,12 +42,12 @@ Other arguments:
    -h, --help                              Display this help message and exit
 
 Examples:
-   package.sh --distribution centos7
-   package.sh --distribution centos7 --pack oss
-   package.sh --distribution centos7 --pack noredist
-   package.sh --distribution centos7 --pack noredist -t "kvm,xen"
-   package.sh --distribution centos7 --release 42
-   package.sh --distribution centos7 --pack noredist --release 42
+   package.sh --distribution el8
+   package.sh --distribution el8 --pack oss
+   package.sh --distribution el8 --pack noredist
+   package.sh --distribution el8 --pack noredist -t "kvm,xen"
+   package.sh --distribution el8 --release 42
+   package.sh --distribution el8 --pack noredist --release 42
 
 USAGE
     exit 0

@@ -120,6 +120,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Param(description = "the domain name of the owner")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "the domain path of the owner", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date and time the host was created")
     private Date created;
@@ -239,6 +243,11 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Override
     public void setDomainName(String domainName) {
         this.domain = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setForDisplay(Boolean forDisplay) {

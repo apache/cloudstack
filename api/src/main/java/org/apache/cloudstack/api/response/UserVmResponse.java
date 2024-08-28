@@ -82,6 +82,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
     private Date created;
@@ -703,6 +707,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setCreated(Date created) {
         this.created = created;
     }

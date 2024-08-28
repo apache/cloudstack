@@ -1072,6 +1072,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return null;
             }
 
+            if (isNicAllocatedForNsxPublicNetworkOnVR(network, profile, vm)) {
+                String guruName = "NsxPublicNetworkGuru";
+                NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
+                nsxGuru.allocate(network, profile, vm);
+            }
+
             if (isDefaultNic != null) {
                 profile.setDefaultNic(isDefaultNic);
             }
@@ -1828,6 +1834,19 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (!sp.addPasswordAndUserdata(network, profile, vmProfile, dest, context)) {
                     return false;
                 }
+            }
+            if (element instanceof ConfigDriveNetworkElement && ((
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider())
+            ) || (
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dns) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, element.getProvider())
+            ) || (
+                    _networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) &&
+                            _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.UserData, element.getProvider())
+            ))) {
+                final ConfigDriveNetworkElement sp = (ConfigDriveNetworkElement) element;
+                return sp.createConfigDriveIso(profile, vmProfile, dest, null);
             }
         }
         return true;
@@ -4437,23 +4456,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public List<NicProfile> getNicProfiles(final VirtualMachine vm) {
-        final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
+    public List<NicProfile> getNicProfiles(final Long vmId, HypervisorType hypervisorType) {
+        final List<NicVO> nics = _nicDao.listByVmId(vmId);
         final List<NicProfile> profiles = new ArrayList<NicProfile>();
 
         if (nics != null) {
             for (final Nic nic : nics) {
                 final NetworkVO network = _networksDao.findById(nic.getNetworkId());
-                final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vm.getId());
+                final Integer networkRate = _networkModel.getNetworkRate(network.getId(), vmId);
 
                 final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                 final NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
-                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vm.getHypervisorType(), network));
+                        _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(hypervisorType, network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
         }
         return profiles;
+    }
+
+    @Override
+    public List<NicProfile> getNicProfiles(final VirtualMachine vm) {
+        return getNicProfiles(vm.getId(), vm.getHypervisorType());
     }
 
     @Override
