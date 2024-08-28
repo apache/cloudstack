@@ -1145,9 +1145,8 @@ public class ApiConstants {
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
-    public static final String FILESHARE = "fileshare";
-    public static final String STORAGEFSVM_MIN_CPU_COUNT = "storagefsvmmincpucount";
-    public static final String STORAGEFSVM_MIN_RAM_SIZE = "storagefsvmminramsize";
+    public static final String SHAREDFSVM_MIN_CPU_COUNT = "sharedfsvmmincpucount";
+    public static final String SHAREDFSVM_MIN_RAM_SIZE = "sharedfsvmminramsize";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +

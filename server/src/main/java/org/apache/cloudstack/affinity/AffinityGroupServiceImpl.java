@@ -431,8 +431,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
-        if (UserVmManager.STORAGEFSVM.equals(vmInstance.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+        if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
 
         // Check that the VM is stopped

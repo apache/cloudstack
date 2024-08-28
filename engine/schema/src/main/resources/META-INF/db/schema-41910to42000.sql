@@ -151,44 +151,44 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
-CREATE TABLE `cloud`.`storage_fileshare`(
+CREATE TABLE `cloud`.`shared_filesystem`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'ID',
     `uuid` varchar(40) COMMENT 'UUID',
-    `name` varchar(255) NOT NULL COMMENT 'Name of the file share',
+    `name` varchar(255) NOT NULL COMMENT 'Name of the shared filesystem',
     `description` varchar(1024) COMMENT 'Description',
     `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
     `account_id` bigint unsigned NOT NULL COMMENT 'Account ID',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'Data center ID',
-    `state` varchar(12) NOT NULL COMMENT 'State of the file share in the FSM',
-    `fs_provider_name` varchar(255) COMMENT 'Name of the file share provider',
-    `protocol` varchar(10) COMMENT 'Protocol supported by the file share',
-    `volume_id` bigint unsigned COMMENT 'Volume which the file share is using as storage',
-    `vm_id` bigint unsigned COMMENT 'vm on which the file share is hosted',
-    `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the file share',
+    `state` varchar(12) NOT NULL COMMENT 'State of the shared filesystem in the FSM',
+    `fs_provider_name` varchar(255) COMMENT 'Name of the shared filesystem provider',
+    `protocol` varchar(10) COMMENT 'Protocol supported by the shared filesystem',
+    `volume_id` bigint unsigned COMMENT 'Volume which the shared filesystem is using as storage',
+    `vm_id` bigint unsigned COMMENT 'vm on which the shared filesystem is hosted',
+    `fs_type` varchar(10) NOT NULL COMMENT 'The filesystem format to be used for the shared filesystem',
     `service_offering_id` bigint unsigned COMMENT 'Service offering for the vm',
     `update_count` bigint unsigned COMMENT 'Update count for state change',
     `updated` datetime COMMENT 'date updated',
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime COMMENT 'date removed if not null',
     PRIMARY KEY (`id`),
-    CONSTRAINT `uc_storage_fileshare__uuid` UNIQUE (`uuid`),
-    INDEX `i_storage_fileshare__account_id`(`account_id`),
-    INDEX `i_storage_fileshare__domain_id`(`domain_id`)
+    CONSTRAINT `uc_shared_filesystem__uuid` UNIQUE (`uuid`),
+    INDEX `i_shared_filesystem__account_id`(`account_id`),
+    INDEX `i_shared_filesystem__domain_id`(`domain_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP VIEW IF EXISTS `cloud`.`storage_fileshare_view`;
-CREATE VIEW `cloud`.`storage_fileshare_view` AS
+DROP VIEW IF EXISTS `cloud`.`shared_filesystem_view`;
+CREATE VIEW `cloud`.`shared_filesystem_view` AS
 SELECT
-    `storage_fileshare`.`id` AS `id`,
-    `storage_fileshare`.`uuid` AS `uuid`,
-    `storage_fileshare`.`name` AS `name`,
-    `storage_fileshare`.`description` AS `description`,
-    `storage_fileshare`.`state` AS `state`,
-    `storage_fileshare`.`fs_provider_name` AS `provider`,
-    `storage_fileshare`.`fs_type` AS `fs_type`,
-    `storage_fileshare`.`volume_id` AS `volume_id`,
-    `storage_fileshare`.`account_id` AS `account_id`,
-    `storage_fileshare`.`data_center_id` AS `zone_id`,
+    `shared_filesystem`.`id` AS `id`,
+    `shared_filesystem`.`uuid` AS `uuid`,
+    `shared_filesystem`.`name` AS `name`,
+    `shared_filesystem`.`description` AS `description`,
+    `shared_filesystem`.`state` AS `state`,
+    `shared_filesystem`.`fs_provider_name` AS `provider`,
+    `shared_filesystem`.`fs_type` AS `fs_type`,
+    `shared_filesystem`.`volume_id` AS `volume_id`,
+    `shared_filesystem`.`account_id` AS `account_id`,
+    `shared_filesystem`.`data_center_id` AS `zone_id`,
     `zone`.`uuid` AS `zone_uuid`,
     `zone`.`name` AS `zone_name`,
     `instance`.`id` AS `instance_id`,
@@ -219,29 +219,29 @@ SELECT
     GROUP_CONCAT(DISTINCT(nics.uuid) ORDER BY nics.id) AS nic_uuid,
     GROUP_CONCAT(DISTINCT(nics.ip4_address) ORDER BY nics.id) AS ip_address
 FROM
-    `cloud`.`storage_fileshare`
+    `cloud`.`shared_filesystem`
         LEFT JOIN
-    `cloud`.`data_center` AS `zone` ON `storage_fileshare`.`data_center_id` = `zone`.`id`
+    `cloud`.`data_center` AS `zone` ON `shared_filesystem`.`data_center_id` = `zone`.`id`
         LEFT JOIN
-    `cloud`.`vm_instance` AS `instance` ON `storage_fileshare`.`vm_id` = `instance`.`id`
+    `cloud`.`vm_instance` AS `instance` ON `shared_filesystem`.`vm_id` = `instance`.`id`
         LEFT JOIN
-    `cloud`.`volumes` AS `volumes` ON `storage_fileshare`.`volume_id` = `volumes`.`id`
+    `cloud`.`volumes` AS `volumes` ON `shared_filesystem`.`volume_id` = `volumes`.`id`
         LEFT JOIN
     `cloud`.`storage_pool` AS `storage_pool` ON `volumes`.`pool_id` = `storage_pool`.`id`
         LEFT JOIN
-    `cloud`.`nics` AS `nics` ON `storage_fileshare`.`vm_id` = `nics`.`instance_id`
+    `cloud`.`nics` AS `nics` ON `shared_filesystem`.`vm_id` = `nics`.`instance_id`
         LEFT JOIN
-    `cloud`.`account` AS `account` ON `storage_fileshare`.`account_id` = `account`.`id`
+    `cloud`.`account` AS `account` ON `shared_filesystem`.`account_id` = `account`.`id`
         LEFT JOIN
     `cloud`.`projects` AS `project` ON `project`.`project_account_id` = `account`.`id`
         LEFT JOIN
-    `cloud`.`domain` AS `domain` ON `storage_fileshare`.`domain_id` = `domain`.`id`
+    `cloud`.`domain` AS `domain` ON `shared_filesystem`.`domain_id` = `domain`.`id`
         LEFT JOIN
-    `cloud`.`service_offering` AS `service_offering` ON `storage_fileshare`.`service_offering_id` = `service_offering`.`id`
+    `cloud`.`service_offering` AS `service_offering` ON `shared_filesystem`.`service_offering_id` = `service_offering`.`id`
         LEFT JOIN
     `cloud`.`disk_offering` AS `disk_offering` ON `volumes`.`disk_offering_id` = `disk_offering`.`id`
 GROUP BY
-    `storage_fileshare`.`id`;
+    `shared_filesystem`.`id`;
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 

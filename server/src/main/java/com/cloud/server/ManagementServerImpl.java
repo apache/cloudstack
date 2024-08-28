@@ -4471,8 +4471,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             regionSecondaryEnabled = true;
         }
 
-        final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("storagefsvm.min.cpu.count"));
-        final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("storagefsvm.min.ram.size"));
+        final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("sharedfsvm.min.cpu.count"));
+        final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("sharedfsvm.min.ram.size"));
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", userPublicTemplateEnabled);
@@ -4500,8 +4500,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
         }
-        capabilities.put(ApiConstants.STORAGEFSVM_MIN_CPU_COUNT, fsVmMinCpu);
-        capabilities.put(ApiConstants.STORAGEFSVM_MIN_RAM_SIZE, fsVmMinRam);
+        capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
+        capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
 
         return capabilities;
     }

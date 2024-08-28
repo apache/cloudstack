@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.quota.QuotaTariff;
-import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -741,17 +741,17 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
-    // FileShare
-    public static final String EVENT_FILESHARE_CREATE = "FILESHARE.CREATE";
-    public static final String EVENT_FILESHARE_START = "FILESHARE.START";
-    public static final String EVENT_FILESHARE_UPDATE = "FILESHARE.UPDATE";
-    public static final String EVENT_FILESHARE_CHANGE_SVC_OFFERING = "FILESHARE.CHANGE.SVC.OFFERING";
-    public static final String EVENT_FILESHARE_CHANGE_DISK_OFFERING = "FILESHARE.CHANGE.DISK.OFFERING";
-    public static final String EVENT_FILESHARE_STOP = "FILESHARE.STOP";
-    public static final String EVENT_FILESHARE_RESTART = "FILESHARE.RESTART";
-    public static final String EVENT_FILESHARE_DESTROY = "FILESHARE.DESTROY";
-    public static final String EVENT_FILESHARE_EXPUNGE = "FILESHARE.EXPUNGE";
-    public static final String EVENT_FILESHARE_RECOVER = "FILESHARE.RECOVER";
+    // SharedFS
+    public static final String EVENT_SHAREDFS_CREATE = "SHAREDFS.CREATE";
+    public static final String EVENT_SHAREDFS_START = "SHAREDFS.START";
+    public static final String EVENT_SHAREDFS_UPDATE = "SHAREDFS.UPDATE";
+    public static final String EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING = "SHAREDFS.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_SHAREDFS_CHANGE_DISK_OFFERING = "SHAREDFS.CHANGE.DISK.OFFERING";
+    public static final String EVENT_SHAREDFS_STOP = "SHAREDFS.STOP";
+    public static final String EVENT_SHAREDFS_RESTART = "SHAREDFS.RESTART";
+    public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
+    public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
+    public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
 
     static {
 
@@ -1209,17 +1209,17 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
 
-        // FileShare
-        entityEventDetails.put(EVENT_FILESHARE_CREATE, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_START, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_STOP, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_UPDATE, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_CHANGE_SVC_OFFERING, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_CHANGE_DISK_OFFERING, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_RESTART, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_DESTROY, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_EXPUNGE, FileShare.class);
-        entityEventDetails.put(EVENT_FILESHARE_RECOVER, FileShare.class);
+        // SharedFS
+        entityEventDetails.put(EVENT_SHAREDFS_CREATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_START, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_STOP, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_UPDATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_DISK_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RESTART, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

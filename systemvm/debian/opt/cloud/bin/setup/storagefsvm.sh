@@ -41,7 +41,7 @@ setup_storagefsvm() {
     echo "export PATH='$PATH:/opt/bin/'">> ~/.bashrc
 
     disable_rpfilter
-    enable_fwding 1
+    enable_fwding 0
     enable_irqbalance 0
     setup_ntp
     dhclient -1

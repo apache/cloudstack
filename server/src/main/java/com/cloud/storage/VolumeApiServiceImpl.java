@@ -2337,8 +2337,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
                     if (vm != null && vm.getType().equals(VirtualMachine.Type.User)) {
                         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
-                        if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                            throw new InvalidParameterValueException("Shrink volume cannot be done for the vm type " + UserVmManager.STORAGEFSVM.toString());
+                        if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem VM");
                         }
                     }
                 }
@@ -2471,15 +2471,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
-    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForFileShare) {
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
 
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
-        if (!allowAttachForFileShare && UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't attach a volume to a VM of type " + UserVmManager.STORAGEFSVM.toString());
+        if (!allowAttachForSharedFS && UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem VM");
         }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
@@ -2897,8 +2897,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Check that the VM is in the correct state
         UserVmVO vm = _userVmDao.findById(vmId);
 
-        if (UserVmManager.STORAGEFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't detach a volume from a VM of type " + UserVmManager.STORAGEFSVM.toString());
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem VM");
         }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
@@ -3767,7 +3767,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private boolean isOperationSupported(VMTemplateVO template, UserVmVO userVm) {
         if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM &&
-                (userVm == null || !UserVmManager.CKS_NODE.equals(userVm.getUserVmType()) || !UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType()))) {
+                (userVm == null || !UserVmManager.CKS_NODE.equals(userVm.getUserVmType()) || !UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType()))) {
             return false;
         }
         return true;

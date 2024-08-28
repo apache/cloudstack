@@ -78,9 +78,9 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="fileShareProvidersRegistry" />
+        <property name="registry" ref="sharedFSProvidersRegistry" />
         <property name="typeClass"
-             value="org.apache.cloudstack.storage.fileshare.FileShareProvider" />
+             value="org.apache.cloudstack.storage.sharedfs.SharedFSProvider" />
     </bean>
 
 </beans>

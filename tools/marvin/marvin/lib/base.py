@@ -7291,18 +7291,18 @@ class Webhook:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
 
-class FileShare:
+class SharedFS:
 
     def __init__(self, items):
         self.__dict__.update(items)
 
-    """Manage File Shares"""
+    """Manage Shared FileSystem"""
     @classmethod
     def create(cls, apiclient, services, name, description=None, account=None, domainid=None, projectid=None,
                size=None, zoneid=None, diskofferingid=None, serviceofferingid=None,
-               format=None, provider=None, networkid=None):
-        """Create File Share"""
-        cmd = createFileShare.createFileShareCmd()
+               filesystem=None, provider=None, networkid=None):
+        """Create Shared FileSystem"""
+        cmd = createSharedFileSystem.createSharedFileSystemCmd()
         cmd.name = name
 
         if description:
@@ -7338,8 +7338,8 @@ class FileShare:
         elif "networkid" in services:
             cmd.networkid = services["networkid"]
 
-        if format:
-            cmd.format = format
+        if filesystem:
+            cmd.filesystem = format
 
         if provider:
             cmd.provider = provider
@@ -7349,36 +7349,36 @@ class FileShare:
         elif "serviceofferingid" in services:
             cmd.serviceofferingid = services["serviceofferingid"]
 
-        return FileShare(apiclient.createFileShare(cmd).__dict__)
+        return SharedFS(apiclient.createSharedFileSystem(cmd).__dict__)
 
     def delete(self, apiclient, expunge=True, forced=True):
-        """Delete File Share"""
-        cmd = destroyFileShare.destroyFileShareCmd()
+        """Delete Shared FileSystem"""
+        cmd = destroySharedFileSystem.destroySharedFileSystemCmd()
         cmd.id = self.id
         cmd.expunge = expunge
         cmd.forced = forced
-        apiclient.destroyFileShare(cmd)
+        apiclient.destroySharedFileSystem(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
-        cmd = listFileShares.listFileSharesCmd()
+        cmd = listSharedFileSystems.listSharedFileSystemCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
-        return (apiclient.listFileShares(cmd))
+        return (apiclient.listSharedFileSystems(cmd))
 
     def update(self, apiclient, name=None, description=None):
-        """Update the File Share"""
-        cmd = updateFileShare.updateFileShareCmd()
+        """Update Shared FileSystem"""
+        cmd = updateSharedFileSystem.updateSharedFileSystemCmd()
         cmd.id = self.id
         if name:
             cmd.name = name
         if description:
             cmd.description = description
-        return (apiclient.updateFileShare(cmd))
+        return (apiclient.updateSharedFileSystem(cmd))
 
     def changediskoffering(self, apiclient, diskofferingid=None, size=None):
-        """Change Disk Offering/Size of the File Share"""
-        cmd = changeFileShareDiskOffering.changeFileShareDiskOfferingCmd()
+        """Change Disk Offering/Size of the Shared FileSystem"""
+        cmd = changeSharedFileSystemDiskOffering.changeSharedFileSystemDiskOfferingCmd()
         cmd.id = self.id
         cmd.diskofferingid = diskofferingid
         cmd.size = size
-        return (apiclient.changeFileShareDiskOffering(cmd))
+        return (apiclient.changeSharedFileSystemDiskOffering(cmd))

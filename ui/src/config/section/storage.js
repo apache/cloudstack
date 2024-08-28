@@ -525,11 +525,11 @@ export default {
       ]
     },
     {
-      name: 'fileshare',
-      title: 'label.fileshares',
+      name: 'sharedfs',
+      title: 'label.sharedfs',
       icon: 'file-text-outlined',
-      permission: ['listFileShares'],
-      resourceType: 'FileShare',
+      permission: ['listSharedFileSystems'],
+      resourceType: 'SharedFS',
       columns: () => {
         const fields = ['name', 'state', 'sizegb']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'utilization', 'physicalsize']
@@ -552,7 +552,7 @@ export default {
       },
       details: ['id', 'name', 'description', 'state', 'filesystem', 'diskofferingdisplaytext', 'ipaddress', 'sizegb', 'provider', 'protocol', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'account', 'domain', 'created'],
       tabs: [{
-        component: shallowRef(defineAsyncComponent(() => import('@/views/storage/FileShareTab.vue')))
+        component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SharedFSTab.vue')))
       }],
       searchFilters: () => {
         var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid']
@@ -560,37 +560,37 @@ export default {
       },
       actions: [
         {
-          api: 'createFileShare',
+          api: 'createSharedFileSystem',
           icon: 'plus-outlined',
           docHelp: 'adminguide/storage.html#creating-a-new-file-share',
-          label: 'label.create.fileshare',
+          label: 'label.create.sharedfs',
           listView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateFileShare.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateSharedFS.vue')))
         },
         {
-          api: 'updateFileShare',
+          api: 'updateSharedFileSystem',
           icon: 'edit-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.update.fileshare',
+          label: 'label.update.sharedfs',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateFileShare.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateSharedFS.vue')))
         },
         {
-          api: 'startFileShare',
+          api: 'startSharedFileSystem',
           icon: 'caret-right-outlined',
-          label: 'label.action.start.fileshare',
-          message: 'message.action.start.fileshare',
+          label: 'label.action.start.sharedfs',
+          message: 'message.action.start.sharedfs',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
-          api: 'stopFileShare',
+          api: 'stopSharedFileSystem',
           icon: 'poweroff-outlined',
-          label: 'label.action.stop.fileshare',
-          message: 'message.action.stop.fileshare',
+          label: 'label.action.stop.sharedfs',
+          message: 'message.action.stop.sharedfs',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
           popup: true,
@@ -598,41 +598,41 @@ export default {
           show: (record) => { return ['Ready'].includes(record.state) }
         },
         {
-          api: 'restartFileShare',
+          api: 'restartSharedFileSystem',
           icon: 'reload-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.action.restart.fileshare',
-          message: 'message.action.restart.fileshare',
+          label: 'label.action.restart.sharedfs',
+          message: 'message.action.restart.sharedfs',
           dataView: true,
           args: ['cleanup'],
           show: (record) => { return ['Stopped', 'Ready', 'Detached'].includes(record.state) }
         },
         {
-          api: 'changeFileShareDiskOffering',
+          api: 'changeSharedFileSystemDiskOffering',
           icon: 'swap-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.change.disk.offering',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareDiskOffering.vue'))),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeSharedFSDiskOffering.vue'))),
           show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
         },
         {
-          api: 'changeFileShareServiceOffering',
+          api: 'changeSharedFileSystemServiceOffering',
           icon: 'arrows-alt-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.change.service.offering',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeFileShareServiceOffering.vue'))),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeSharedFSServiceOffering.vue'))),
           show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
         },
         {
-          api: 'destroyFileShare',
+          api: 'destroySharedFileSystem',
           icon: 'delete-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.destroy.fileshare',
-          message: 'message.action.destroy.fileshare',
+          label: 'label.destroy.sharedfs',
+          message: 'message.action.destroy.sharedfs',
           dataView: true,
           popup: true,
           groupAction: true,
@@ -641,20 +641,20 @@ export default {
           show: (record) => { return !['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         },
         {
-          api: 'recoverFileShare',
+          api: 'recoverSharedFileSystem',
           icon: 'medicine-box-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.recover.fileshare',
-          message: 'message.action.recover.fileshare',
+          label: 'label.recover.sharedfs',
+          message: 'message.action.recover.sharedfs',
           dataView: true,
           show: (record) => { return record.state === 'Destroyed' }
         },
         {
-          api: 'expungeFileShare',
+          api: 'expungeSharedFileSystem',
           icon: 'delete-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.expunge.fileshare',
-          message: 'message.action.expunge.fileshare',
+          label: 'label.expunge.sharedfs',
+          message: 'message.action.expunge.sharedfs',
           dataView: true,
           show: (record) => { return ['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         }

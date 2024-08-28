@@ -655,7 +655,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-fileshare-provider-storagefsvm</artifactId>
+            <artifactId>cloud-plugin-sharedfs-provider-storagevm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

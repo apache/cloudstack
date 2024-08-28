@@ -50,7 +50,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
@@ -94,9 +94,9 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.fileshare.FileShare;
-import org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDao;
-import org.apache.cloudstack.storage.fileshare.query.vo.FileShareJoinVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDao;
+import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -495,7 +495,7 @@ public class ApiDBUtils {
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
     static ObjectStoreDao s_objectStoreDao;
 
-    static FileShareJoinDao s_fileShareJoinDao;
+    static SharedFSJoinDao s_sharedFSJoinDao;
 
     static BucketDao s_bucketDao;
     static VirtualMachineManager s_virtualMachineManager;
@@ -765,7 +765,7 @@ public class ApiDBUtils {
     @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
-    private FileShareJoinDao fileShareJoinDao;
+    private SharedFSJoinDao sharedFSJoinDao;
 
     @PostConstruct
     void init() {
@@ -901,7 +901,7 @@ public class ApiDBUtils {
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
-        s_fileShareJoinDao = fileShareJoinDao;
+        s_sharedFSJoinDao = sharedFSJoinDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2279,11 +2279,11 @@ public class ApiDBUtils {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
     }
 
-    public static FileShareResponse newFileShareResponse(ResponseView view, FileShareJoinVO fileShareView) {
-        return s_fileShareJoinDao.newFileShareResponse(view, fileShareView);
+    public static SharedFSResponse newSharedFSResponse(ResponseView view, SharedFSJoinVO sharedFSView) {
+        return s_sharedFSJoinDao.newSharedFSResponse(view, sharedFSView);
     }
 
-    public static FileShareJoinVO newFileShareView(FileShare fileShare) {
-        return s_fileShareJoinDao.newFileShareView(fileShare);
+    public static SharedFSJoinVO newSharedFSView(SharedFS sharedFS) {
+        return s_sharedFSJoinDao.newSharedFSView(sharedFS);
     }
 }

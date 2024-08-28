@@ -371,7 +371,7 @@
 
     <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
 
-    <bean id="fileShareServiceImpl" class="org.apache.cloudstack.storage.fileshare.FileShareServiceImpl">
-        <property name="fileShareProviders" value="#{fileShareProvidersRegistry.registered}" />
+    <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
+        <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
     </bean>
 </beans>

@@ -286,8 +286,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
-            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
             }
         }
 
@@ -420,8 +420,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
-            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
             }
         }
         validateForZone(vm.getDataCenterId());
@@ -493,8 +493,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
-            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
             }
         }
 
@@ -761,8 +761,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
-            if (userVm != null && UserVmManager.STORAGEFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported for the vm type " + UserVmManager.STORAGEFSVM.toString());
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
             }
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);

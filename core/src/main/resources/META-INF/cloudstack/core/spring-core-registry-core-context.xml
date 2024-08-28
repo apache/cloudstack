@@ -364,6 +364,6 @@
         <property name="excludeKey" value="event.buses.exclude" />
     </bean>
 
-    <bean id="fileShareProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+    <bean id="sharedFSProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 </beans>

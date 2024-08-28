@@ -983,7 +983,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (instanceId != null) {
                 userVmVO = _vmDao.findById(instanceId);
             }
-            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()) || !UserVmManager.STORAGEFSVM.equals(userVmVO.getUserVmType()))) {
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()) || !UserVmManager.SHAREDFSVM.equals(userVmVO.getUserVmType()))) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }

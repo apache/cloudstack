@@ -289,6 +289,6 @@
   <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
   <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
   <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
-  <bean id="FileShareDaoImpl" class="org.apache.cloudstack.storage.fileshare.dao.FileShareDaoImpl" />
-  <bean id="FileShareJoinDaoImpl" class="org.apache.cloudstack.storage.fileshare.query.dao.FileShareJoinDaoImpl" />
+  <bean id="SharedFSDaoImpl" class="org.apache.cloudstack.storage.sharedfs.dao.SharedFSDaoImpl" />
+  <bean id="SharedFSJoinDaoImpl" class="org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDaoImpl" />
 </beans>

@@ -54,7 +54,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.FileShareResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -152,7 +152,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
-import org.apache.cloudstack.storage.fileshare.FileShare;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 
@@ -552,5 +552,5 @@ public interface ResponseGenerator {
 
     BucketResponse createBucketResponse(Bucket bucket);
 
-    FileShareResponse createFileShareResponse(ResponseView view, FileShare fileShare);
+    SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
 }

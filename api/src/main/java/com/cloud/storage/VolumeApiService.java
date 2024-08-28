@@ -106,7 +106,7 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
-    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForFileShare);
+    Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS);
 
     Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
 
