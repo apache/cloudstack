@@ -1371,6 +1371,31 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return new ArrayList<>(result);
     }
 
+    @Override
+    public List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount() {
+        String query = "SELECT cel.host_id, COUNT(*) " +
+                "FROM cmd_exec_log cel " +
+                "JOIN host h ON cel.host_id = h.id " +
+                "WHERE h.removed IS NULL " +
+                "GROUP BY cel.host_id " +
+                "ORDER BY 2";
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        List<Long> result = new ArrayList<>();
+
+        PreparedStatement pstmt;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add((long) rs.getInt(1));
+            }
+        } catch (SQLException e) {
+            logger.warn("SQLException caught while listing SSVMs with least migrate jobs.", e);
+        }
+        return result;
+    }
+
     private String getHostIdsByComputeTags(List<String> offeringTags){
         List<String> questionMarks = new ArrayList();
         offeringTags.forEach((tag) -> { questionMarks.add("?"); });
