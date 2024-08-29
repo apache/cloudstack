@@ -527,7 +527,7 @@ class VirtualMachine:
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
-               userdataid=None, userdatadetails=None, extraconfig=None, size=None):
+               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -536,6 +536,9 @@ class VirtualMachine:
             cmd.serviceofferingid = serviceofferingid
         elif "serviceoffering" in services:
             cmd.serviceofferingid = services["serviceoffering"]
+
+        if overridediskofferingid:
+            cmd.overridediskofferingid = overridediskofferingid
 
         if zoneid:
             cmd.zoneid = zoneid
