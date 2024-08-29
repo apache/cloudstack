@@ -25,7 +25,8 @@ import java.util.List;
 public interface ASNumberDao extends GenericDao<ASNumberVO, Long> {
 
     Pair<List<ASNumberVO>, Integer> searchAndCountByZoneOrRangeOrAllocated(Long zoneId, Long asnRangeId, Integer asNumber, Long networkId, Long vpcId,
-                                                                           Boolean allocated, Long accountId, Long domainId, Long startIndex, Long pageSizeVal);
+                                                                           Boolean allocated, Long accountId, Long domainId, String keyword,
+                                                                           Long startIndex, Long pageSizeVal);
     ASNumberVO findByAsNumber(Long asNumber);
 
     ASNumberVO findOneByAllocationStateAndZone(long zoneId, boolean allocated);

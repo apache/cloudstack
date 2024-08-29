@@ -175,6 +175,7 @@ public class BGPServiceImpl implements BGPService {
         Long domainId = cmd.getDomainId();
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
+        String keyword = cmd.getKeyword();
 
         Account userAccount = null;
         Domain domain = null;
@@ -209,7 +210,7 @@ public class BGPServiceImpl implements BGPService {
         }
         Pair<List<ASNumberVO>, Integer> pair = asNumberDao.searchAndCountByZoneOrRangeOrAllocated(zoneId, asNumberRangeId,
                 asNumber, networkSearchId, vpcSerchId, allocated, Objects.nonNull(userAccount) ? userAccount.getId() : null,
-                Objects.nonNull(domain) ? domain.getId() : null, startIndex, pageSizeVal);
+                Objects.nonNull(domain) ? domain.getId() : null, keyword, startIndex, pageSizeVal);
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 

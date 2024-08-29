@@ -47,6 +47,7 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
                                                                                   Integer asNumber, Long networkId, Long vpcId,
                                                                                   Boolean allocated,
                                                                                   Long accountId, Long domainId,
+                                                                                  String keyword,
                                                                                   Long startIndex, Long pageSizeVal) {
         SearchCriteria<ASNumberVO> sc = asNumberSearch.create();
         if (zoneId != null) {
@@ -72,6 +73,9 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         }
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
+        }
+        if (keyword != null) {
+            sc.addAnd("asNumber", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
         Filter searchFilter = new Filter(ASNumberVO.class, "id", true, startIndex, pageSizeVal);
         return searchAndCount(sc, searchFilter);

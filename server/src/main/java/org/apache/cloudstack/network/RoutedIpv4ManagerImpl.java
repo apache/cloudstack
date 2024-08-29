@@ -518,8 +518,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
         }
         if (keyword != null) {
-            sc.addAnd("subnet", SearchCriteria.Op.LIKE, keyword);
+            sc.addAnd("subnet", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
+
         return ipv4GuestSubnetNetworkMapDao.search(sc, null);
     }
 
