@@ -133,7 +133,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 if (userSpecified.getNetworkCidrSize() == null) {
                     throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
                 }
-                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(owner.getDomainId(), owner.getAccountId(), config.getDataCenterId(), userSpecified.getNetworkCidrSize());
                 if (subnet != null) {
                     final String[] cidrTuple = subnet.getSubnet().split("\\/");
                     config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));

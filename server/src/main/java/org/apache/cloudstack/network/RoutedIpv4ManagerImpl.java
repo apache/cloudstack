@@ -576,12 +576,12 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Network network, Integer networkCidrSize) {
-        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
+    public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Long domainId, Long accountId, Long zoneId, Integer networkCidrSize) {
+        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(domainId, accountId, zoneId, networkCidrSize);
         if (subnet != null) {
             return subnet;
         }
-        return createIpv4SubnetForAccount(network.getDomainId(), network.getAccountId(), network.getDataCenterId(), networkCidrSize);
+        return createIpv4SubnetForAccount(domainId, accountId, zoneId, networkCidrSize);
     }
 
     @Override
