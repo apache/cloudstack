@@ -39,6 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -109,7 +110,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
 
-public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
+public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Configurable {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreDriver.class);
 
     static ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
@@ -1518,5 +1519,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ScaleIOPrimaryDataStoreDriver.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{ConnectOnDemand};
     }
 }
