@@ -60,6 +60,10 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
     @Param(description = "the domain associated with the provider")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the provider belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -79,6 +83,10 @@ public class VirtualRouterProviderResponse extends BaseResponse implements Contr
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;

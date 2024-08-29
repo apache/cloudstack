@@ -371,4 +371,16 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     public void setNfsMountOpts(String nfsMountOpts) {
         this.nfsMountOpts = nfsMountOpts;
     }
+
+    public Long getAllocatedIops() {
+        return allocatedIops;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
 }

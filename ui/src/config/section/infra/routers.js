@@ -26,7 +26,7 @@ export default {
   permission: ['listRouters'],
   params: { projectid: '-1' },
   columns: () => {
-    var columns = ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade']
+    var columns = ['name', 'state', 'publicip', { field: 'guestnetworkname', customTitle: 'network' }, 'redundantstate', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade']
     columns.splice(6, 0, { field: 'version', customTitle: 'templateversion' })
     return columns
   },

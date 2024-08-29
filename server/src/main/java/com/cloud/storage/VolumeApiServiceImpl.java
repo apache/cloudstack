@@ -1391,7 +1391,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
                                              boolean shrinkOk) {
-        final VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         Long currentDiskOfferingId = volume.getDiskOfferingId();
@@ -1499,12 +1499,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            final VolumeVO volumeNow = _volsDao.findById(volumeId);
-            if (currentSize == volumeNow.getSize() && currentSize != newSize) {
+            volume = _volsDao.findById(volumeId);
+            if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
-            } else if (volumeNow.getSize() != newSize) {
+            } else if (volume.getSize() != newSize) {
                 // consider the updated size as the new size
-                newSize = volumeNow.getSize();
+                newSize = volume.getSize();
             }
 
             _volsDao.update(volume.getId(), volume);
@@ -2062,6 +2062,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!volumeMigrateRequired && !volumeResizeRequired) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
+            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+
             return volume;
         }
 
@@ -2096,6 +2098,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
+        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.informStorageForDiskOfferingChange()) {
+                storageDriver.updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            }
+        }
     }
 
     /**
@@ -2331,7 +2345,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * the actual disk size.
              */
             if (currentSize > newSize) {
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);

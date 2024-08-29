@@ -93,9 +93,6 @@
           </span>
         </span>
       </template>
-      <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['cpunumber', 'memory', 'size'].includes(column.key)">
-        <span>{{ text <= 0 ? 'N/A' : text }}</span>
-      </template>
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
       </template>
@@ -174,7 +171,10 @@
         <router-link v-if="resourceIdToValidLinksMap[record.id]?.volume" :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
-      <template v-if="column.key === 'size'">
+      <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['kubernetesversionname', 'cpunumber', 'memory', 'size'].includes(column.key)">
+        <span>{{ text <= 0 || !text ? 'N/A' : text }}</span>
+      </template>
+      <template v-else-if="column.key === 'size'">
         <span v-if="text && $route.path === '/kubernetes'">
           {{ text }}
         </span>
@@ -242,7 +242,16 @@
         </a>
       </template>
       <template v-if="column.key === 'guestnetworkname'">
-        <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+        <span v-if="['/router'].includes($route.path) && record.vpcid">
+          <router-link :to="{ path: '/vpc/' + record.vpcid }">
+            <deployment-unit-outlined/>
+            {{ record.vpcname || record.vpcid }}
+          </router-link>
+        </span>
+        <router-link v-else :to="{ path: '/guestnetwork/' + record.guestnetworkid }">
+          <apartment-outlined/>
+          {{ text }}
+        </router-link>
       </template>
       <template v-if="column.key === 'associatednetworkname'">
         <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
@@ -372,7 +381,7 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1]))">
         {{ $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
@@ -675,7 +684,7 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -970,7 +979,7 @@ export default {
       col.width = w
     },
     updateSelectedColumns (name) {
-      this.$emit('update-selected-columns', name)
+      this.$emit('update-selected-columns', this.getColumnKey(name))
     },
     getVmRouteUsingType (record) {
       switch (record.virtualmachinetype) {
@@ -999,7 +1008,7 @@ export default {
           if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
             this.usageTypes = json.listusagetypesresponse.usagetype.map(x => {
               return {
-                id: x.usagetypeid,
+                id: x.id,
                 value: x.description
               }
             })

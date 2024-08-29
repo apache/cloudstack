@@ -21,7 +21,6 @@ package org.apache.cloudstack.storage.motion;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
@@ -55,8 +54,6 @@ public class AncientDataMotionStrategyTest {
     @Mock
     PrimaryDataStoreTO dataStoreTO;
     @Mock
-    ConfigKey<Boolean> vmwareKey;
-    @Mock
     StorageManager storageManager;
     @Mock
     StoragePool storagePool;
@@ -66,9 +63,7 @@ public class AncientDataMotionStrategyTest {
 
     @Before
     public void setup() throws Exception {
-        replaceVmwareCreateCloneFullField();
-
-        when(vmwareKey.valueIn(POOL_ID)).thenReturn(FULL_CLONE_FLAG);
+        overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, String.valueOf(FULL_CLONE_FLAG));
 
         when(dataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(dataTO.getDataStore()).thenReturn(dataStoreTO);
@@ -76,14 +71,10 @@ public class AncientDataMotionStrategyTest {
         when(storageManager.getStoragePool(POOL_ID)).thenReturn(storagePool);
     }
 
-    private void replaceVmwareCreateCloneFullField() throws Exception {
-        Field field = StorageManager.class.getDeclaredField("VmwareCreateCloneFull");
-        field.setAccessible(true);
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, vmwareKey);
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
     }
 
     @Test

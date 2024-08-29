@@ -56,6 +56,10 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the domain name of the affinity group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the affinity group belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project ID of the affinity group")
     private String projectId;
@@ -113,6 +117,11 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

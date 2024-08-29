@@ -52,6 +52,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
     @Param(description = "the domain the resource is associated with")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the usage reocrd belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the zone ID")
     private String zoneId;
@@ -277,6 +281,10 @@ public class UsageRecordResponse extends BaseResponseWithTagInformation implemen
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setNetworkId(String networkId) {
         this.networkId = networkId;
     }
