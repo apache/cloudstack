@@ -44,6 +44,9 @@
         <template v-if="column.key === 'account'">
           {{ record.account }}
         </template>
+        <template v-if="column.key === 'project'">
+          {{ record.project }}
+        </template>
         <template v-if="column.key === 'actions'">
           <div
             class="actions"
@@ -338,6 +341,10 @@ export default {
         {
           title: this.$t('label.account'),
           dataIndex: 'account'
+        },
+        {
+          title: this.$t('label.project'),
+          dataIndex: 'project'
         },
         {
           key: 'actions',
