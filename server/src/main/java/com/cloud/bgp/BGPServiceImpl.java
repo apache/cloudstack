@@ -210,7 +210,7 @@ public class BGPServiceImpl implements BGPService {
         }
         Pair<List<ASNumberVO>, Integer> pair = asNumberDao.searchAndCountByZoneOrRangeOrAllocated(zoneId, asNumberRangeId,
                 asNumber, networkSearchId, vpcSerchId, allocated, Objects.nonNull(userAccount) ? userAccount.getId() : null,
-                Objects.nonNull(domain) ? domain.getId() : null, keyword, startIndex, pageSizeVal);
+                Objects.nonNull(domain) ? domain.getId() : null, keyword, caller, startIndex, pageSizeVal);
         return new Pair<>(new ArrayList<>(pair.first()), pair.second());
     }
 

@@ -17,6 +17,7 @@
 package com.cloud.dc.dao;
 
 import com.cloud.dc.ASNumberVO;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
@@ -25,7 +26,7 @@ import java.util.List;
 public interface ASNumberDao extends GenericDao<ASNumberVO, Long> {
 
     Pair<List<ASNumberVO>, Integer> searchAndCountByZoneOrRangeOrAllocated(Long zoneId, Long asnRangeId, Integer asNumber, Long networkId, Long vpcId,
-                                                                           Boolean allocated, Long accountId, Long domainId, String keyword,
+                                                                           Boolean allocated, Long accountId, Long domainId, String keyword, Account caller,
                                                                            Long startIndex, Long pageSizeVal);
     ASNumberVO findByAsNumber(Long asNumber);
 

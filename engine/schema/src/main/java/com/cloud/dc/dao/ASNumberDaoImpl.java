@@ -17,12 +17,14 @@
 package com.cloud.dc.dao;
 
 import com.cloud.dc.ASNumberVO;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements ASNumberDao {
@@ -47,7 +49,7 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
                                                                                   Integer asNumber, Long networkId, Long vpcId,
                                                                                   Boolean allocated,
                                                                                   Long accountId, Long domainId,
-                                                                                  String keyword,
+                                                                                  String keyword, Account caller,
                                                                                   Long startIndex, Long pageSizeVal) {
         SearchCriteria<ASNumberVO> sc = asNumberSearch.create();
         if (zoneId != null) {
@@ -76,6 +78,17 @@ public class ASNumberDaoImpl extends GenericDaoBase<ASNumberVO, Long> implements
         }
         if (keyword != null) {
             sc.addAnd("asNumber", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+        if (Arrays.asList(Account.Type.DOMAIN_ADMIN, Account.Type.RESOURCE_DOMAIN_ADMIN).contains(caller.getType())) {
+            SearchCriteria<ASNumberVO> scc = asNumberSearch.create();
+            scc.addOr("domainId", SearchCriteria.Op.NULL);
+            scc.addOr("domainId", SearchCriteria.Op.EQ, caller.getDomainId());
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+        } else if (Arrays.asList(Account.Type.NORMAL, Account.Type.PROJECT).contains(caller.getType())) {
+            SearchCriteria<ASNumberVO> scc = asNumberSearch.create();
+            scc.addOr("domainId", SearchCriteria.Op.NULL);
+            scc.addOr("accountId", SearchCriteria.Op.EQ, caller.getAccountId());
+            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
         Filter searchFilter = new Filter(ASNumberVO.class, "id", true, startIndex, pageSizeVal);
         return searchAndCount(sc, searchFilter);
