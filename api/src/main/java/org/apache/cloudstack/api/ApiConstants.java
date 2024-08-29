@@ -31,7 +31,7 @@ public class ApiConstants {
     public static final String ALIAS = "alias";
     public static final String ALLOCATED_DATE = "allocateddate";
     public static final String ALLOCATED_ONLY = "allocatedonly";
-    public static final String ALLOCATED_TIME = "allocatedtime";
+    public static final String ALLOCATED_TIME = "allocated";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ARCHIVED = "archived";

@@ -1458,8 +1458,8 @@ export default {
       title: 'label.ipv4.subnets',
       icon: 'pic-center-outlined',
       permission: ['listIpv4SubnetsForGuestNetwork'],
-      columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'vpcname', 'created', 'allocatedtime'],
-      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'vpcname', 'vpcid', 'created', 'allocatedtime', 'state'],
+      columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'vpcname', 'created', 'allocated'],
+      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'vpcname', 'vpcid', 'created', 'allocated', 'state'],
       searchFilters: ['zoneid'],
       show: () => {
         if (!store.getters.zones || store.getters.zones.length === 0) {

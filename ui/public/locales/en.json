@@ -354,7 +354,6 @@
 "label.all.zone": "All zones",
 "label.allocated": "Allocated",
 "label.allocatedonly": "Allocated",
-"label.allocatedtime": "Allocated",
 "label.allocationstate": "Allocation state",
 "label.allow": "Allow",
 "label.allow.duplicate.macaddresses": "Allow duplicate MAC addresses",
