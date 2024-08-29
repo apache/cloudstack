@@ -174,7 +174,7 @@
       <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['kubernetesversionname', 'cpunumber', 'memory', 'size'].includes(column.key)">
         <span>{{ text <= 0 || !text ? 'N/A' : text }}</span>
       </template>
-      <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
+      <template v-else-if="['size', 'virtualsize'].includes(column.key)">
         <span v-if="text && $route.path === '/kubernetes'">
           {{ text }}
         </span>
