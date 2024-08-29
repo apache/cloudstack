@@ -86,6 +86,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SharedFSServiceImplTest {
@@ -107,6 +109,9 @@ public class SharedFSServiceImplTest {
 
     @Mock
     VolumeDao volumeDao;
+
+    @Mock
+    NicDao nicDao;
 
     @Mock
     NetworkDao networkDao;
@@ -581,6 +586,7 @@ public class SharedFSServiceImplTest {
         when(cmd.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
         when(cmd.getAccountName()).thenReturn("account");
         when(cmd.getDomainId()).thenReturn(s_domainId);
+        when(cmd.getNetworkId()).thenReturn(s_networkId);
         return cmd;
     }
 
@@ -597,6 +603,11 @@ public class SharedFSServiceImplTest {
         SearchBuilder<VolumeVO> volumeSb = mock(SearchBuilder.class);
         when(volumeSb.entity()).thenReturn(volume);
         when(volumeDao.createSearchBuilder()).thenReturn(volumeSb);
+
+        NicVO nic = mock(NicVO.class);
+        SearchBuilder<NicVO> nicSb = mock(SearchBuilder.class);
+        when(nicSb.entity()).thenReturn(nic);
+        when(nicDao.createSearchBuilder()).thenReturn(nicSb);
 
         SearchCriteria<SharedFSVO> sc = mock(SearchCriteria.class);
         Mockito.when(sb.create()).thenReturn(sc);
@@ -618,6 +629,7 @@ public class SharedFSServiceImplTest {
         verify(sc, times(1)).setParameters("dataCenterId", s_zoneId);
         verify(sc, times(1)).setParameters("serviceOfferingId", s_serviceOfferingId);
         verify(sc, times(1)).setJoinParameters("volSearch", "diskOfferingId", s_diskOfferingId);
+        verify(sc, times(1)).setJoinParameters("nicSearch", "networkId", s_networkId);
         verify(sharedFSDao, times(1)).searchAndCount(any(), any());
     }
 

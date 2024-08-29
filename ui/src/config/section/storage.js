@@ -575,7 +575,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SharedFSTab.vue')))
       }],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'serviceofferingid', 'diskofferingid']
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'networkid', 'serviceofferingid', 'diskofferingid']
         return filters
       },
       actions: [

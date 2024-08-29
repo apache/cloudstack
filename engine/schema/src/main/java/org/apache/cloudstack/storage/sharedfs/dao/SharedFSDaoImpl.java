@@ -108,7 +108,7 @@ public class SharedFSDaoImpl extends GenericDaoBase<SharedFSVO, Long> implements
 
     @Override
     public SharedFSVO findSharedFSByNameAccountDomain(String name, Long accountId, Long domainId) {
-        SearchCriteria<SharedFSVO> sc = DestroyedByTimeSearch.create();
+        SearchCriteria<SharedFSVO> sc = NameAccountDomainSearch.create();
         sc.setParameters("name", name);
         sc.setParameters("accountId", accountId);
         sc.setParameters("domainId", domainId);

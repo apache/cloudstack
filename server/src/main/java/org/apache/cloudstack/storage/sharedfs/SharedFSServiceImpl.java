@@ -103,6 +103,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 
 public class SharedFSServiceImpl extends ManagerBase implements SharedFSService, Configurable, PluggableService {
 
@@ -135,6 +137,9 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
 
     @Inject
     NetworkDao networkDao;
+
+    @Inject
+    NicDao nicDao;
 
     protected List<SharedFSProvider> sharedFSProviders;
 
@@ -448,6 +453,12 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
             sharedFSSearchBuilder.join("volSearch", volSearch, volSearch.entity().getId(), sharedFSSearchBuilder.entity().getVolumeId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (networkId != null) {
+            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            sharedFSSearchBuilder.join("nicSearch", nicSearch, nicSearch.entity().getInstanceId(), sharedFSSearchBuilder.entity().getVmId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<SharedFSVO> sc = sharedFSSearchBuilder.create();
         accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -459,14 +470,6 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
             sc.setParameters("name", name);
         }
 
-        if (diskOfferingId != null) {
-            sc.setJoinParameters("volSearch", "diskOfferingId", diskOfferingId);
-        }
-
-        if (serviceOfferingId != null) {
-            sc.setParameters("serviceOfferingId", serviceOfferingId);
-        }
-
         if (id != null) {
             sc.setParameters("id", id);
         }
@@ -475,7 +478,19 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
             sc.setParameters("dataCenterId", zoneId);
         }
 
-        Pair<List<SharedFSVO>, Integer> result = sharedFSDao.searchAndCount(sc, searchFilter);
+        if (serviceOfferingId != null) {
+            sc.setParameters("serviceOfferingId", serviceOfferingId);
+        }
+
+        if (diskOfferingId != null) {
+            sc.setJoinParameters("volSearch", "diskOfferingId", diskOfferingId);
+        }
+
+        if (networkId != null) {
+            sc.setJoinParameters("nicSearch", "networkId", networkId);
+        }
+
+       Pair<List<SharedFSVO>, Integer> result = sharedFSDao.searchAndCount(sc, searchFilter);
         List<Long> idsArray = result.first().stream().map(SharedFSVO::getId).collect(Collectors.toList());
         return new Pair<List<Long>, Integer>(idsArray, result.second());
     }
