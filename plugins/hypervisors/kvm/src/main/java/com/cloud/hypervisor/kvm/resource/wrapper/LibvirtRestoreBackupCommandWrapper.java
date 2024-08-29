@@ -43,8 +43,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String BACKUP_TEMP_FILE_PREFIx = "csbackup";
     private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
-    private static final String VIRSH_DEFINE = "sudo virsh define %s";
-    private static final String VM_DOMAIN_XML = "domain-config.xml";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
 
     @Override
@@ -80,9 +78,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String diskType = "root";
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
         try {
-            for (int i = 0; i < volumePaths.size(); i++) {
-                String volumePath = volumePaths.get(i);
-                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, i, null);
+            for (int idx = 0; idx < volumePaths.size(); idx++) {
+                String volumePath = volumePaths.get(idx);
+                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, idx, null);
                 diskType = "datadisk";
                 try {
                     replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
@@ -112,7 +110,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                     throw new CloudRuntimeException(String.format("Unable to revert backup for volume [%s] due to [%s].", bkpPathAndVolUuid.second(), e.getMessage()), e);
                 }
             }
-            defineVmDomain(vmName, backupPath);
         } finally {
             unmountBackupDirectory(mountDirectory);
             deleteTemporaryDirectory(mountDirectory);
@@ -166,14 +163,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             Files.deleteIfExists(Paths.get(backupDirectory));
         } catch (IOException e) {
             throw new CloudRuntimeException(String.format("Failed to delete backup directory: %s", backupDirectory), e);
-        }
-    }
-
-    private void defineVmDomain(String vmName, String backupPath) {
-        try {
-            Script.runSimpleBashScript(String.format(VIRSH_DEFINE, backupPath + VM_DOMAIN_XML));
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to define domain for VM: %s", vmName), e);
         }
     }
 

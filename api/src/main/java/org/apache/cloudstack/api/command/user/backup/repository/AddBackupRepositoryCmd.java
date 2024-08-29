@@ -50,7 +50,7 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADDRESS, type = CommandType.STRING, required = true, description = "address of the backup repository")
     private String address;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the backup repository. Supported values: nfs, cephfs")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the backup repository storage. Supported values: nfs, cephfs, cifs")
     private String type;
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "backup repository provider")
@@ -83,7 +83,10 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     }
 
     public String getType() {
-        return type;
+        if ("cephfs".equalsIgnoreCase(type)) {
+            return "ceph";
+        }
+        return type.toLowerCase();
     }
 
     public String getAddress() {

@@ -206,7 +206,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         LOG.debug(String.format("Restoring vm %s from backup %s on the NAS Backup Provider", vm.getUuid(), backup.getUuid()));
         BackupRepository backupRepository = getBackupRepository(vm, backup);
 
-        // Find where the VM was last running
         final Host host = getLastVMHypervisorHost(vm);
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
         restoreCommand.setBackupPath(backup.getExternalId());
@@ -215,7 +214,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setVolumePaths(getVolumePaths(volumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
-        // TODO: get KVM agent to restore VM backup
 
         BackupAnswer answer = null;
         try {
@@ -269,7 +267,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setUuid(volumeUUID);
         restoredVolume.setRemoved(null);
         restoredVolume.setDisplayVolume(true);
-        restoredVolume.setPoolId(volume.getPoolId());
+        restoredVolume.setPoolId(dataStore.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
         restoredVolume.setSize(backedUpVolumeSize);
@@ -299,7 +297,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             try {
                 volumeDao.persist(restoredVolume);
             } catch (Exception e) {
-                throw new CloudRuntimeException("Unable to craft restored volume due to: "+e);
+                throw new CloudRuntimeException("Unable to create restored volume due to: " + e);
             }
         }
 
