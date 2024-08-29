@@ -81,7 +81,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
             description = "the CPU architecture of the template/ISO. Valid options are: x86_64, arm64",
-            since = "4.20.0")
+            since = "4.20")
     private String architecture;
 
     /////////////////////////////////////////////////////

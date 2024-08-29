@@ -83,7 +83,12 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername']
+      args: ['clustername', 'architecture'],
+      mapping: {
+        architecture: {
+          options: ['x86_64', 'arm64']
+        }
+      }
     },
     {
       api: 'updateCluster',

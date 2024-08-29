@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "updateCluster", description = "Updates an existing cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -52,6 +54,11 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
     private String managedState;
+
+    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
+            description = "the CPU architecture of the template/ISO. Valid options are: x86_64, arm64",
+            since = "4.20")
+    private String architecture;
 
     public String getClusterName() {
         return clusterName;
@@ -106,6 +113,13 @@ public class UpdateClusterCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    public CPU.CPUArchitecture getArchitecture() {
+        if (StringUtils.isBlank(architecture)) {
+            return null;
+        }
+        return CPU.CPUArchitecture.fromType(architecture);
     }
 
     @Override

@@ -58,7 +58,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
 
     @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
             description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
-            since = "4.20.0")
+            since = "4.20")
     private String architecture;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")

@@ -1142,6 +1142,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String allocationState = cmd.getAllocationState();
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
+        CPU.CPUArchitecture architecture = cmd.getArchitecture();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -1212,6 +1213,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } else {
                 doUpdate = true;
             }
+        }
+
+        if (architecture != null) {
+            cluster.setArch(architecture);
+            doUpdate = true;
         }
 
         if (doUpdate) {
