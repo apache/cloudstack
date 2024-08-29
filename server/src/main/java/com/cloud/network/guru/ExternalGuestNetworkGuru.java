@@ -37,6 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -130,7 +131,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
             } else {
                 if (userSpecified.getNetworkCidrSize() == null) {
-                    throw new CloudRuntimeException("The network CIDR or CIDR size must be specified.");
+                    throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
                 }
                 Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getNetworkCidrSize());
                 if (subnet != null) {
@@ -138,7 +139,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                     config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
                     config.setCidr(subnet.getSubnet());
                 } else {
-                    throw new CloudRuntimeException("Failed to allocate a CIDR with requested size.");
+                    throw new InvalidParameterValueException("Failed to allocate a CIDR with requested size.");
                 }
             }
         }

@@ -27,6 +27,7 @@ public interface DataCenterIpv4GuestSubnetDao extends GenericDao<DataCenterIpv4G
     List<DataCenterIpv4GuestSubnetVO> listByDataCenterId(long dcId);
     List<DataCenterIpv4GuestSubnetVO> listByDataCenterIdAndAccountId(long dcId, long accountId);
     List<DataCenterIpv4GuestSubnetVO> listByDataCenterIdAndDomainId(long dcId, long domainId);
+    List<DataCenterIpv4GuestSubnetVO> listNonDedicatedByDataCenterId(long dcId);
     List<DataCenterIpv4GuestSubnetVO> listByAccountId(long accountId);
     List<DataCenterIpv4GuestSubnetVO> listByDomainId(long domainId);
 }

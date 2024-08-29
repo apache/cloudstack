@@ -674,8 +674,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         // Get dedicated guest subnets for the account
         List<DataCenterIpv4GuestSubnetVO> subnets = dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndAccountId(zoneId, accountId);
         subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterIdAndDomainId(zoneId, domainId));
-        // Get zone guest subnets for the account
-        subnets.addAll(dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId));
+        // Get non-dedicated zone guest subnets for the account
+        subnets.addAll(dataCenterIpv4GuestSubnetDao.listNonDedicatedByDataCenterId(zoneId));
         return subnets;
     }
 
