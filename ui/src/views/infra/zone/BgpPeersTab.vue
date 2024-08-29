@@ -408,6 +408,7 @@ export default {
       this.componentLoading = true
       api('listBgpPeers', {
         zoneid: this.resource.id,
+        projectid: -1,
         showicon: true,
         page: this.bgpPeersPage,
         pagesize: this.bgpPeersPageSize

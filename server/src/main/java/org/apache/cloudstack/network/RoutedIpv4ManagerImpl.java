@@ -207,7 +207,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final String accountName = cmd.getAccountName();
 
         Long accountId = null;
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
@@ -349,7 +349,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             Long accountId= accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
@@ -372,7 +372,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             throw new InvalidParameterValueException(String.format("Cannot find subnet with id: ", id));
         }
         Long accountId = null;
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
@@ -1054,7 +1054,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         final String accountName = createBgpPeerCmd.getAccountName();
 
         Long accountId = null;
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
@@ -1243,7 +1243,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             throw new InvalidParameterValueException(String.format("Cannot find BGP peer with id: ", id));
         }
         Long accountId = null;
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (accountId != null) {
@@ -1310,7 +1310,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         String keyword = listBgpPeersCmd.getKeyword();
 
         Long accountId = null;
-        if (accountName != null || projectId != null) {
+        if (accountName != null || (projectId != null && projectId != -1L)) {
             accountId = accountManager.finalyzeAccountId(accountName, domainId, projectId, false);
         }
         if (isDedicated != null) {

@@ -382,6 +382,7 @@ export default {
       this.componentLoading = true
       api('listIpv4SubnetsForZone', {
         zoneid: this.resource.id,
+        projectid: -1,
         showicon: true,
         page: this.ipv4SubnetPage,
         pagesize: this.ipv4SubnetPageSize
