@@ -34,12 +34,18 @@ db.cloud.uri=
 
 
 # CloudStack database tuning parameters
+db.cloud.connectionPoolLib=hikaricp
 db.cloud.maxActive=250
 db.cloud.maxIdle=30
 db.cloud.maxWait=600000
 db.cloud.minIdleConnections=5
 db.cloud.connectionTimeout=30000
 db.cloud.keepAliveTime=600000
+db.cloud.validationQuery=/* ping */ SELECT 1
+db.cloud.testOnBorrow=true
+db.cloud.testWhileIdle=true
+db.cloud.timeBetweenEvictionRunsMillis=40000
+db.cloud.minEvictableIdleTimeMillis=240000
 db.cloud.poolPreparedStatements=false
 db.cloud.url.params=prepStmtCacheSize=517&cachePrepStmts=true&sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'&serverTimezone=UTC
 
@@ -68,6 +74,7 @@ db.usage.uri=
 
 
 # usage database tuning parameters
+db.usage.connectionPoolLib=hikaricp
 db.usage.maxActive=100
 db.usage.maxIdle=30
 db.usage.maxWait=600000
@@ -83,6 +90,7 @@ db.simulator.host=@DBHOST@
 db.simulator.driver=@DBDRIVER@
 db.simulator.port=3306
 db.simulator.name=simulator
+db.simulator.connectionPoolLib=hikaricp
 db.simulator.maxActive=250
 db.simulator.maxIdle=30
 db.simulator.maxWait=600000

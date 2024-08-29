@@ -33,8 +33,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -89,6 +97,8 @@ public class TransactionLegacy implements Closeable {
             LOGGER.error("Unable to register mbean for transaction", e);
         }
     }
+
+    private static final String CONNECTION_POOL_LIB_DBCP = "dbcp";
 
     private final LinkedList<StackElement> _stack;
     private long _id;
@@ -1048,6 +1058,7 @@ public class TransactionLegacy implements Closeable {
             final Long cloudKeepAliveTimeout = parseNumber(dbProps.getProperty("db.cloud.keepAliveTime"), Long.class);
             final String cloudUsername = dbProps.getProperty("db.cloud.username");
             final String cloudPassword = dbProps.getProperty("db.cloud.password");
+            final String cloudValidationQuery = dbProps.getProperty("db.cloud.validationQuery");
             final String cloudIsolationLevel = dbProps.getProperty("db.cloud.isolation.level");
 
             int isolationLevel = Connection.TRANSACTION_READ_COMMITTED;
@@ -1065,6 +1076,11 @@ public class TransactionLegacy implements Closeable {
                 LOGGER.warn("Unknown isolation level " + cloudIsolationLevel + ".  Using read uncommitted");
             }
 
+            final boolean cloudTestOnBorrow = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testOnBorrow"));
+            final boolean cloudTestWhileIdle = Boolean.parseBoolean(dbProps.getProperty("db.cloud.testWhileIdle"));
+            final long cloudTimeBtwEvictionRunsMillis = Long.parseLong(dbProps.getProperty("db.cloud.timeBetweenEvictionRunsMillis"));
+            final long cloudMinEvcitableIdleTimeMillis = Long.parseLong(dbProps.getProperty("db.cloud.minEvictableIdleTimeMillis"));
+
             final boolean useSSL = Boolean.parseBoolean(dbProps.getProperty("db.cloud.useSSL"));
             if (useSSL) {
                 System.setProperty("javax.net.ssl.keyStore", dbProps.getProperty("db.cloud.keyStore"));
@@ -1078,9 +1094,11 @@ public class TransactionLegacy implements Closeable {
             DriverLoader.loadDriver(cloudUriAndDriver.second());
 
             // Default Data Source for CloudStack
-            s_ds = createDataSource(cloudUriAndDriver.first(), cloudUsername, cloudPassword, cloudMaxActive,
-                    cloudMaxIdle, cloudMaxWait, cloudMinIdleConnections, cloudConnectionTimeout, cloudKeepAliveTimeout,
-                    isolationLevel, "cloud");
+            s_ds = createDataSource(dbProps.getProperty("db.cloud.connectionPoolLib"), cloudUriAndDriver.first(),
+                    cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
+                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle,
+                    cloudTestOnBorrow, cloudValidationQuery, cloudMinIdleConnections, cloudConnectionTimeout,
+                    cloudKeepAliveTimeout, isolationLevel, "cloud");
 
             // Configure the usage db
             final Integer usageMaxActive = parseNumber(dbProps.getProperty("db.usage.maxActive"), Integer.class);
@@ -1097,9 +1115,10 @@ public class TransactionLegacy implements Closeable {
             DriverLoader.loadDriver(usageUriAndDriver.second());
 
             // Data Source for usage server
-            s_usageDS = createDataSource(usageUriAndDriver.first(), usageUsername, usagePassword,
-                    usageMaxActive, usageMaxIdle, usageMaxWait, usageMinIdleConnections, usageConnectionTimeout,
-                    usageKeepAliveTimeout, isolationLevel, "usage");
+            s_usageDS = createDataSource(dbProps.getProperty("db.usage.connectionPoolLib"), usageUriAndDriver.first(),
+                    usageUsername, usagePassword, usageMaxActive, usageMaxIdle, usageMaxWait, null,
+                    null, null, null, null,
+                    usageMinIdleConnections, usageConnectionTimeout, usageKeepAliveTimeout, isolationLevel, "usage");
 
             try {
                 // Configure the simulator db
@@ -1135,16 +1154,18 @@ public class TransactionLegacy implements Closeable {
 
                 DriverLoader.loadDriver(simulatorDriver);
 
-                s_simulatorDS = createDataSource(simulatorConnectionUri, simulatorUsername, simulatorPassword,
-                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, simulatorMinIdleConnections,
-                        simulatorConnectionTimeout, simulatorKeepAliveTimeout, isolationLevel, "simulator");
+                s_simulatorDS = createDataSource(dbProps.getProperty("db.simulator.connectionPoolLib"),
+                        simulatorConnectionUri, simulatorUsername, simulatorPassword, simulatorMaxActive,
+                        simulatorMaxIdle, simulatorMaxWait, null, null, null, null,
+                        cloudValidationQuery, simulatorMinIdleConnections, simulatorConnectionTimeout,
+                        simulatorKeepAliveTimeout, isolationLevel, "simulator");
             } catch (Exception e) {
                 LOGGER.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
         } catch (final Exception e) {
-            s_ds = getDefaultDataSource("cloud");
-            s_usageDS = getDefaultDataSource("cloud_usage");
-            s_simulatorDS = getDefaultDataSource("simulator");
+            s_ds = getDefaultDataSource(dbProps.getProperty("db.cloud.connectionPoolLib"), "cloud");
+            s_usageDS = getDefaultDataSource(dbProps.getProperty("db.usage.connectionPoolLib"), "cloud_usage");
+            s_simulatorDS = getDefaultDataSource(dbProps.getProperty("db.simulator.connectionPoolLib"), "simulator");
             LOGGER.warn(
                     "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
                     e);
@@ -1236,7 +1257,21 @@ public class TransactionLegacy implements Closeable {
     /**
      * Creates a data source
      */
-    private static DataSource createDataSource(String uri, String username, String password,
+    private static DataSource createDataSource(String connectionPoolLib, String uri, String username, String password,
+               Integer maxActive, Integer maxIdle, Long maxWait, Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+               Boolean testWhileIdle, Boolean testOnBorrow, String validationQuery, Integer minIdleConnections,
+               Long connectionTimeout, Long keepAliveTime, Integer isolationLevel, String dsName) {
+        LOGGER.debug("Creating datasource for database: {} with connection pool lib: {}", dsName,
+                connectionPoolLib);
+        if (CONNECTION_POOL_LIB_DBCP.equals(connectionPoolLib)) {
+            return createDbcpDataSource(uri, username, password, maxActive, maxIdle, maxWait, timeBtwnEvictionRuns,
+                    minEvictableIdleTime, testWhileIdle, testOnBorrow, validationQuery, isolationLevel);
+        }
+        return createHikaricpDataSource(uri, username, password, maxActive, maxIdle, maxWait, minIdleConnections,
+                connectionTimeout, keepAliveTime, isolationLevel, dsName);
+    }
+
+    private static DataSource createHikaricpDataSource(String uri, String username, String password,
                                                Integer maxActive, Integer maxIdle, Long maxWait,
                                                Integer minIdleConnections, Long connectionTimeout, Long keepAliveTime,
                                                Integer isolationLevel, String dsName) {
@@ -1280,10 +1315,64 @@ public class TransactionLegacy implements Closeable {
 
         HikariDataSource dataSource = new HikariDataSource(config);
         return dataSource;
-     }
+    }
+
+    private static DataSource createDbcpDataSource(String uri, String username, String password,
+                                                Integer maxActive, Integer maxIdle, Long maxWait,
+                                                Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+                                                Boolean testWhileIdle, Boolean testOnBorrow,
+                                                String validationQuery, Integer isolationLevel) {
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(uri, username, password);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+        GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
+        ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory, config);
+        poolableConnectionFactory.setPool(connectionPool);
+        if (validationQuery != null) {
+            poolableConnectionFactory.setValidationQuery(validationQuery);
+        }
+        if (isolationLevel != null) {
+            poolableConnectionFactory.setDefaultTransactionIsolation(isolationLevel);
+        }
+        return new PoolingDataSource<>(connectionPool);
+    }
+
+    /**
+     * Return a GenericObjectPoolConfig configuration usable on connection pool creation
+     */
+    private static GenericObjectPoolConfig createPoolConfig(Integer maxActive, Integer maxIdle, Long maxWait,
+                                                            Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+                                                            Boolean testWhileIdle, Boolean testOnBorrow) {
+        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        config.setMaxTotal(maxActive);
+        config.setMaxIdle(maxIdle);
+        config.setMaxWaitMillis(maxWait);
+
+        if (timeBtwnEvictionRuns != null) {
+            config.setTimeBetweenEvictionRunsMillis(timeBtwnEvictionRuns);
+        }
+        if (minEvictableIdleTime != null) {
+            config.setMinEvictableIdleTimeMillis(minEvictableIdleTime);
+        }
+        if (testWhileIdle != null) {
+            config.setTestWhileIdle(testWhileIdle);
+        }
+        if (testOnBorrow != null) {
+            config.setTestOnBorrow(testOnBorrow);
+        }
+        return config;
+    }
+
+    private static DataSource getDefaultDataSource(final String connectionPoolLib, final String database) {
+        LOGGER.debug("Creating default datasource for database: {} with connection pool lib: {}",
+                database, connectionPoolLib);
+        if (CONNECTION_POOL_LIB_DBCP.equals(connectionPoolLib)) {
+            return getDefaultDbcpDataSource(database);
+        }
+        return getDefaultHikaricpDataSource(database);
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static DataSource getDefaultDataSource(final String database) {
+    private static DataSource getDefaultHikaricpDataSource(final String database) {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:mysql://localhost:3306/" + database + "?" + CONNECTION_PARAMS);
         config.setUsername("cloud");
@@ -1301,6 +1390,14 @@ public class TransactionLegacy implements Closeable {
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         return new HikariDataSource(config);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static DataSource getDefaultDbcpDataSource(final String database) {
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database  + "?" + CONNECTION_PARAMS, "cloud", "cloud");
+        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+        final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
+        return new PoolingDataSource(connectionPool);
     }
 
     private static String getDBHAParams(String dbName, Properties dbProps) {
