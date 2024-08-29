@@ -98,7 +98,7 @@ public class AddBackupRepositoryCmd extends BaseCmd {
     }
 
     public String getMountOptions() {
-        return mountOptions;
+        return mountOptions == null ? "" : mountOptions;
     }
 
     public Long getZoneId() {

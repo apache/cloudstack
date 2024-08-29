@@ -151,7 +151,7 @@ CREATE TABLE `cloud`.`backup_repository` (
   `provider` varchar(255) NOT NULL COMMENT 'backup provider name',
   `type` varchar(255) NOT NULL COMMENT 'backup repo type',
   `address` varchar(1024) NOT NULL COMMENT 'url of the backup repository',
-  `mount_opts` varchar(1024) COMMENT 'mount options for the backup repository',
+  `mount_opts` varchar(1024) NOT NULL COMMENT 'mount options for the backup repository',
   `used_bytes` bigint unsigned,
   `capacity_bytes` bigint unsigned,
   `created` datetime,
