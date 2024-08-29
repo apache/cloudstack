@@ -34,4 +34,7 @@ public interface BgpPeerDao extends GenericDao<BgpPeerVO, Long> {
     BgpPeerVO persist(BgpPeerVO bgpPeerVO, Map<BgpPeer.Detail, String> details);
 
     List<Long> listAvailableBgpPeerIdsForAccount(long zoneId, long domainId, long accountId, boolean useSystemBgpPeers);
+
+    int removeByAccountId(long accountId);
+    int removeByDomainId(long domainId);
 }

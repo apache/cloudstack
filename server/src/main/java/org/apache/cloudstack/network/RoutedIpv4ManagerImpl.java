@@ -1592,4 +1592,32 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
         return vpcDao.findById(vpc.getId());
     }
+
+    @Override
+    public void removeIpv4SubnetsForZoneByAccountId(long accountId) {
+        List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByAccountId(accountId);
+        for (DataCenterIpv4GuestSubnetVO subnet : existingSubnets) {
+            ipv4GuestSubnetNetworkMapDao.deleteByParentId(subnet.getId());
+            dataCenterIpv4GuestSubnetDao.remove(subnet.getId());
+        }
+    }
+
+    @Override
+    public void removeIpv4SubnetsForZoneByDomainId(long domainId) {
+        List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDomainId(domainId);
+        for (DataCenterIpv4GuestSubnetVO subnet : existingSubnets) {
+            ipv4GuestSubnetNetworkMapDao.deleteByParentId(subnet.getId());
+            dataCenterIpv4GuestSubnetDao.remove(subnet.getId());
+        }
+    }
+
+    @Override
+    public void removeBgpPeersByAccountId(long accountId) {
+        bgpPeerDao.removeByAccountId(accountId);
+    }
+
+    @Override
+    public void removeBgpPeersByDomainId(long domainId) {
+        bgpPeerDao.removeByDomainId(domainId);
+    }
 }

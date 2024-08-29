@@ -57,4 +57,18 @@ public class DataCenterIpv4GuestSubnetDaoImpl extends GenericDaoBase<DataCenterI
         sc.and(sc.entity().getAccountId(), SearchCriteria.Op.NULL);
         return sc.list();
     }
+
+    @Override
+    public List<DataCenterIpv4GuestSubnetVO> listByAccountId(long accountId) {
+        QueryBuilder<DataCenterIpv4GuestSubnetVO> sc = QueryBuilder.create(DataCenterIpv4GuestSubnetVO.class);
+        sc.and(sc.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
+        return sc.list();
+    }
+
+    @Override
+    public List<DataCenterIpv4GuestSubnetVO> listByDomainId(long domainId) {
+        QueryBuilder<DataCenterIpv4GuestSubnetVO> sc = QueryBuilder.create(DataCenterIpv4GuestSubnetVO.class);
+        sc.and(sc.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+        return sc.list();
+    }
 }

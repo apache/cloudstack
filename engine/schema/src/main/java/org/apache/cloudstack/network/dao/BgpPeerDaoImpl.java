@@ -176,4 +176,18 @@ public class BgpPeerDaoImpl extends GenericDaoBase<BgpPeerVO, Long> implements B
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
     }
+
+    @Override
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<BgpPeerVO> sc = createSearchCriteria();
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        return remove(sc);
+    }
+
+    @Override
+    public int removeByDomainId(long domainId) {
+        SearchCriteria<BgpPeerVO> sc = createSearchCriteria();
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        return remove(sc);
+    }
 }
