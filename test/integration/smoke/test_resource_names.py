@@ -179,7 +179,7 @@ class TestResourceNames(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=self.disk_offering.id
         )
-        # self.cleanup.append(self.volume)
+        self.cleanup.append(self.volume)
         self.virtual_machine.attach_volume(self.apiclient, self.volume)
         list_volume_response = Volume.list(
             self.apiclient,
@@ -207,6 +207,7 @@ class TestResourceNames(cloudstackTestCase):
             self.volume.name,
             "Check virtual machine display name in listVirtualMachines"
         )
+        self.virtual_machine.detach_volume(self.apiclient, self.volume)
 
     @attr(tags=["advanced", "smoke", "basic"], required_hardware="true")
     def test_03_register_template(self):
