@@ -3899,7 +3899,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 DataStore dataStore = dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
                 StoragePoolVO sPool = _storagePoolDao.findById(poolId);
                 if (dataStore != null
-                        && !dataStore.getDriver().getCapabilities().containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES.toString())
+                        && !dataStore.getDriver().getCapabilities().containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
                         && sPool.getPoolType() != volume.getStoragePoolType()
                 && volume.getPoolId() == poolId) {
                     throw new InvalidParameterValueException("The specified pool doesn't support copying snapshots between zones" + poolId);
