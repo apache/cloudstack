@@ -2137,7 +2137,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 continue;
             }
             if (!dataStore.getDriver().getCapabilities()
-                    .containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES.toString())
+                    .containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
                     && dataStore.getPoolType() != volume.getPoolType()) {
                 poolsToBeRemoved.add(poolId);
                 logger.debug(String.format("The %s  does not support copy to %s between zones", dataStore.getPoolType(), volume.getPoolType()));
