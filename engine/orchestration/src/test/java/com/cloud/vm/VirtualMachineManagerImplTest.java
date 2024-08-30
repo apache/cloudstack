@@ -1272,6 +1272,7 @@ public class VirtualMachineManagerImplTest {
                 false, false, "Pass");
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
         return new Pair<>(virtualMachineTO, vm);
     }
 
@@ -1282,6 +1283,17 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineTO to = pair.first();
         virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
         Assert.assertEquals(VirtualMachineManager.VmMetadataManufacturer.defaultValue(), to.getMetadataManufacturer());
+    }
+
+    @Test
+    public void testUpdateVmMetadataManufacturerAndProductCustomManufacturerDefaultProduct() {
+        String manufacturer = "Custom";
+        overrideVmMetadataConfigValue(manufacturer, "");
+        Pair<VirtualMachineTO, VMInstanceVO> pair = getDummyVmTOAndVm();
+        VirtualMachineTO to = pair.first();
+        virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
+        Assert.assertEquals(manufacturer, to.getMetadataManufacturer());
+        Assert.assertEquals("CloudStack KVM Hypervisor", to.getMetadataProductName());
     }
 
     @Test
