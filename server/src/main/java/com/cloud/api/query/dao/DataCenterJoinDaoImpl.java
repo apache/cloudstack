@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -127,6 +129,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setNsxEnabled(true);
         }
 
+        List<CPU.CPUArchitecture> clusterArchs = ApiDBUtils.listZoneClustersArchitecture(dataCenter.getId());
+        zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

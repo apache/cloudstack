@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -103,6 +105,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "flag to list VNF templates or not; true if need to list VNF templates, false otherwise.",
             since = "4.19.0")
     private Boolean isVnf;
+
+    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
+            description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
+            since = "4.20")
+    private String architecture;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -189,6 +196,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public Boolean getVnf() {
         return isVnf;
+    }
+
+    public CPU.CPUArchitecture getArchitecture() {
+        if (StringUtils.isBlank(architecture)) {
+            return null;
+        }
+        return CPU.CPUArchitecture.fromType(architecture);
     }
 
     @Override

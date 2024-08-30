@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -2268,5 +2269,9 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
+    }
+
+    public static List<CPU.CPUArchitecture> listZoneClustersArchitecture(long zoneId) {
+        return s_clusterDao.getClustersArchitectureByZone(zoneId);
     }
 }
