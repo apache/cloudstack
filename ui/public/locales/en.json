@@ -1152,7 +1152,7 @@
 "label.iothreadsenabled.tooltip" : "Enable iothreads allocation for KVM hypervisor",
 "label.ip": "IP address",
 "label.ip4routes": "IPv6 routes",
-"label.ip4routing": "IPv6 routing",
+"label.ip4routing": "IPv4 routing",
 "label.ip6firewall": "IPv6 firewall",
 "label.ip6routes": "IPv6 routes",
 "label.ip6routing": "IPv6 routing",
