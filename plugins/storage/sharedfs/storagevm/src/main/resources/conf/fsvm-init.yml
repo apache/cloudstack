@@ -55,7 +55,7 @@ write_files:
 
       DISK_SIZE_DIR="/usr/local/var/sharedfs"
       DISK_SIZE_FILE="$DISK_SIZE_DIR/previous_disk_size"
-      
+
       PARTITION="$1"
       EXPORT_DIR="/export"
       PERMISSIONS="rw,sync,no_subtree_check,no_root_squash"
@@ -250,7 +250,7 @@ write_files:
       udevadm trigger
 
       sudo systemctl enable check-disk-resize.service
-      
+
       log "Script execution finished successfully."
 
       sudo touch /home/cloud/success
