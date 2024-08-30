@@ -19,7 +19,7 @@ package com.cloud.api;
 import com.cloud.domain.Domain;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.user.PasswordResetManager;
+import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,12 +30,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
-import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
-import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServerTest {
@@ -44,7 +39,7 @@ public class ApiServerTest {
     ApiServer apiServer = new ApiServer();
 
     @Mock
-    PasswordResetManager passwordResetManager;
+    UserPasswordResetManager userPasswordResetManager;
 
     private void runTestSetupIntegrationPortListenerInvalidPorts(Integer port) {
         try (MockedConstruction<ApiServer.ListenerThread> mocked =
@@ -76,53 +71,17 @@ public class ApiServerTest {
     }
 
     @Test
-    public void testForgotPasswordSuccessFirstRequest() {
+    public void testForgotPasswordSuccess() {
         UserAccount userAccount = Mockito.mock(UserAccount.class);
         Domain domain = Mockito.mock(Domain.class);
 
-        Mockito.when(userAccount.getDetails()).thenReturn(Collections.emptyMap());
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
         Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
         Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
-        Mockito.doNothing().when(passwordResetManager).setResetTokenAndSend(userAccount);
+        Mockito.doNothing().when(userPasswordResetManager).setResetTokenAndSend(userAccount);
         Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
-        Mockito.verify(passwordResetManager).setResetTokenAndSend(userAccount);
-    }
-
-    @Test
-    public void testForgotPasswordSuccessSecondRequestExpired() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
-
-        Mockito.when(userAccount.getDetails()).thenReturn(Map.of(
-                PasswordResetToken, "token",
-                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() - 5 * 60 * 1000)
-        ));
-        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
-        Mockito.doNothing().when(passwordResetManager).setResetTokenAndSend(userAccount);
-        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
-        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
-        Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
-        Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
-        Mockito.verify(passwordResetManager).setResetTokenAndSend(userAccount);
-    }
-
-    @Test
-    public void testForgotPasswordSuccessSecondRequestUnexpired() {
-        UserAccount userAccount = Mockito.mock(UserAccount.class);
-        Domain domain = Mockito.mock(Domain.class);
-
-        Mockito.when(userAccount.getDetails()).thenReturn(Map.of(
-                PasswordResetToken, "token",
-                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)
-        ));
-        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
-        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
-        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
-        Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
-        Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
-        Mockito.verify(passwordResetManager, Mockito.never()).setResetTokenAndSend(userAccount);
+        Mockito.verify(userPasswordResetManager).setResetTokenAndSend(userAccount);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -130,7 +89,6 @@ public class ApiServerTest {
         UserAccount userAccount = Mockito.mock(UserAccount.class);
         Domain domain = Mockito.mock(Domain.class);
 
-        Mockito.when(userAccount.getDetails()).thenReturn(Collections.emptyMap());
         Mockito.when(userAccount.getEmail()).thenReturn("");
         apiServer.forgotPassword(userAccount, domain);
     }
@@ -140,10 +98,6 @@ public class ApiServerTest {
         UserAccount userAccount = Mockito.mock(UserAccount.class);
         Domain domain = Mockito.mock(Domain.class);
 
-        Mockito.when(userAccount.getDetails()).thenReturn(Map.of(
-                PasswordResetToken, "token",
-                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)
-        ));
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("DISABLED");
         apiServer.forgotPassword(userAccount, domain);
@@ -154,10 +108,6 @@ public class ApiServerTest {
         UserAccount userAccount = Mockito.mock(UserAccount.class);
         Domain domain = Mockito.mock(Domain.class);
 
-        Mockito.when(userAccount.getDetails()).thenReturn(Map.of(
-                PasswordResetToken, "token",
-                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)
-        ));
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
         Mockito.when(userAccount.getAccountState()).thenReturn("DISABLED");
@@ -169,10 +119,6 @@ public class ApiServerTest {
         UserAccount userAccount = Mockito.mock(UserAccount.class);
         Domain domain = Mockito.mock(Domain.class);
 
-        Mockito.when(userAccount.getDetails()).thenReturn(Map.of(
-                PasswordResetToken, "token",
-                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)
-        ));
         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
         Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");

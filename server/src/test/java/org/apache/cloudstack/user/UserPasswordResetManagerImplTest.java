@@ -30,14 +30,17 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Collections;
+import java.util.Map;
+
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PasswordResetManagerImplTest {
+public class UserPasswordResetManagerImplTest {
     @Spy
     @InjectMocks
-    PasswordResetManagerImpl passwordReset;
+    UserPasswordResetManagerImpl passwordReset;
 
     @Mock
     private UserDetailsDao userDetailsDao;
@@ -45,7 +48,7 @@ public class PasswordResetManagerImplTest {
     @Test
     public void testGetMessageBody() {
         ConfigKey<String> passwordResetMailTemplate = Mockito.mock(ConfigKey.class);
-        PasswordResetManagerImpl.PasswordResetMailTemplate = passwordResetMailTemplate;
+        UserPasswordResetManagerImpl.PasswordResetMailTemplate = passwordResetMailTemplate;
         Mockito.when(passwordResetMailTemplate.value()).thenReturn("Hello {{username}}!\n" +
                 "You have requested to reset your password. Please click the following link to reset your password:\n" +
                 "{{{resetLink}}}\n" +
@@ -111,5 +114,37 @@ public class PasswordResetManagerImplTest {
 
         Assert.assertTrue(passwordReset.validateAndResetPassword(userAccount, "reset_token", "new_password"));
         Mockito.verify(passwordReset, Mockito.times(1)).resetPassword(userAccount, "new_password");
+    }
+
+    @Test
+    public void testValidateExistingTokenFirstRequest() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Mockito.when(userAccount.getId()).thenReturn(1L);
+        Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Collections.emptyMap());
+
+        Assert.assertTrue(passwordReset.validateExistingToken(userAccount));
+    }
+
+    @Test
+    public void testValidateExistingTokenSecondRequestExpired() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Mockito.when(userAccount.getId()).thenReturn(1L);
+        Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
+                PasswordResetToken, "reset_token",
+                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() - 5 * 60 * 1000)));
+
+        Assert.assertTrue(passwordReset.validateExistingToken(userAccount));
+    }
+
+
+    @Test
+    public void testValidateExistingTokenSecondRequestUnexpired() {
+        UserAccount userAccount = Mockito.mock(UserAccount.class);
+        Mockito.when(userAccount.getId()).thenReturn(1L);
+        Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
+                PasswordResetToken, "reset_token",
+                PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)));
+
+        Assert.assertFalse(passwordReset.validateExistingToken(userAccount));
     }
 }

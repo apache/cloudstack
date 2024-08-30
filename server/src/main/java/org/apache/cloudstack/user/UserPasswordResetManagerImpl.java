@@ -52,7 +52,7 @@ import static org.apache.cloudstack.config.ApiServiceConfiguration.ManagementSer
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
 import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
 
-public class PasswordResetManagerImpl extends ManagerBase implements PasswordResetManager, Configurable {
+public class UserPasswordResetManagerImpl extends ManagerBase implements UserPasswordResetManager, Configurable {
 
     @Inject
     private AccountManager accountManager;
@@ -67,9 +67,9 @@ public class PasswordResetManagerImpl extends ManagerBase implements PasswordRes
 
     public static ConfigKey<String> PasswordResetMailTemplate =
             new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
-            "password.reset.mail.template", "Hello {{username}}!\n" +
+            "user.password.reset.mail.template", "Hello {{username}}!\n" +
             "You have requested to reset your password. Please click the following link to reset your password:\n" +
-            "{{{reset_link}}}\n" +
+            "{{{resetLink}}}\n" +
             "If you did not request a password reset, please ignore this email.\n" +
             "\n" +
             "Regards,\n" +
@@ -81,29 +81,29 @@ public class PasswordResetManagerImpl extends ManagerBase implements PasswordRes
 
     @Override
     public String getConfigComponentName() {
-        return PasswordResetManagerImpl.class.getSimpleName();
+        return UserPasswordResetManagerImpl.class.getSimpleName();
     }
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{PasswordResetTtl,
-                PasswordResetEmailSender,
-                PasswordResetSMTPHost,
-                PasswordResetSMTPPort,
-                PasswordResetSMTPUseAuth,
-                PasswordResetSMTPUsername,
-                PasswordResetSMTPPassword,
+        return new ConfigKey<?>[]{UserPasswordResetTtl,
+                UserPasswordResetEmailSender,
+                UserPasswordResetSMTPHost,
+                UserPasswordResetSMTPPort,
+                UserPasswordResetSMTPUseAuth,
+                UserPasswordResetSMTPUsername,
+                UserPasswordResetSMTPPassword,
                 PasswordResetMailTemplate
         };
     }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        String smtpHost = PasswordResetSMTPHost.value();
-        Integer smtpPort = PasswordResetSMTPPort.value();
-        Boolean useAuth = PasswordResetSMTPUseAuth.value();
-        String username = PasswordResetSMTPUsername.value();
-        String password = PasswordResetSMTPPassword.value();
+        String smtpHost = UserPasswordResetSMTPHost.value();
+        Integer smtpPort = UserPasswordResetSMTPPort.value();
+        Boolean useAuth = UserPasswordResetSMTPUseAuth.value();
+        String username = UserPasswordResetSMTPUsername.value();
+        String password = UserPasswordResetSMTPPassword.value();
 
         if (!StringUtils.isEmpty(smtpHost) && smtpPort != null && smtpPort > 0) {
             String namespace = "password.reset.smtp";
@@ -126,6 +126,26 @@ public class PasswordResetManagerImpl extends ManagerBase implements PasswordRes
     }
 
 
+    protected boolean validateExistingToken(UserAccount userAccount) {
+
+        Map<String, String> details = userDetailsDao.listDetailsKeyPairs(userAccount.getId());
+
+        String resetToken = details.get(PasswordResetToken);
+        String resetTokenExpiryTimeString = details.getOrDefault(PasswordResetTokenExpiryDate, "0");
+
+
+        if (StringUtils.isNotEmpty(resetToken) && StringUtils.isNotEmpty(resetTokenExpiryTimeString)) {
+            final Date resetTokenExpiryTime = new Date(Long.parseLong(resetTokenExpiryTimeString));
+            final Date currentTime = new Date();
+            if (currentTime.after(resetTokenExpiryTime)) {
+                return true;
+            }
+        } else if (StringUtils.isEmpty(resetToken)) {
+            return true;
+        }
+        return false;
+    }
+
     public void setResetTokenAndSend(UserAccount userAccount) {
         if (mailSender == null) {
             logger.debug("Failed to reset token and send email. SMTP mail sender is not configured.");
@@ -133,8 +153,17 @@ public class PasswordResetManagerImpl extends ManagerBase implements PasswordRes
                     "Failed to reset token and send email. SMTP mail sender is not configured");
         }
 
+        if (!validateExistingToken(userAccount)) {
+            logger.debug(String.format(
+                    "Failed to reset token and send email. Password reset token is already set for user %s in " +
+                            "domain id: %s with account %s and email %s",
+                    userAccount.getUsername(), userAccount.getDomainId(),
+                    userAccount.getAccountName(), userAccount.getEmail()));
+            return;
+        }
+
         final String resetToken = UUID.randomUUID().toString();
-        final Date resetTokenExpiryTime = new Date(System.currentTimeMillis() + PasswordResetTtl.value() * 60 * 1000);
+        final Date resetTokenExpiryTime = new Date(System.currentTimeMillis() + UserPasswordResetTtl.value() * 60 * 1000);
 
         userDetailsDao.addDetail(userAccount.getId(), PasswordResetToken, resetToken, false);
         userDetailsDao.addDetail(userAccount.getId(), PasswordResetTokenExpiryDate, String.valueOf(resetTokenExpiryTime.getTime()), false);
@@ -149,7 +178,7 @@ public class PasswordResetManagerImpl extends ManagerBase implements PasswordRes
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
 
-        mailProperties.setSender(new MailAddress(PasswordResetEmailSender.value()));
+        mailProperties.setSender(new MailAddress(UserPasswordResetEmailSender.value()));
         mailProperties.setSubject(subject);
         mailProperties.setContent(content);
         mailProperties.setContentType("text/plain");

@@ -110,7 +110,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.user.PasswordResetManager;
+import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
@@ -184,9 +184,6 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
-import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetToken;
-import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordResetTokenExpiryDate;
-
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
 
@@ -220,7 +217,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private UUIDManager uuidMgr;
     @Inject
-    private PasswordResetManager passwordResetManager;
+    private UserPasswordResetManager userPasswordResetManager;
 
     private List<PluggableService> pluggableServices;
 
@@ -1232,9 +1229,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean forgotPassword(UserAccount userAccount, Domain domain) {
-        String resetToken = userAccount.getDetails().get(PasswordResetToken);
-        String resetTokenExpiryTimeString = userAccount.getDetails().getOrDefault(PasswordResetTokenExpiryDate, "0");
-
         if (StringUtils.isBlank(userAccount.getEmail())) {
             logger.error(String.format(
                     "Email is not set. username: %s account id: %d domain id: %d",
@@ -1263,27 +1257,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new CloudRuntimeException("Domain is not active.");
         }
 
-        if (StringUtils.isNotEmpty(resetToken) && StringUtils.isNotEmpty(resetTokenExpiryTimeString)) {
-            final Date resetTokenExpiryTime = new Date(Long.parseLong(resetTokenExpiryTimeString));
-            final Date currentTime = new Date();
-            if (currentTime.after(resetTokenExpiryTime)) {
-                passwordResetManager.setResetTokenAndSend(userAccount);
-            }
-        } else if (StringUtils.isEmpty(resetToken)) {
-            passwordResetManager.setResetTokenAndSend(userAccount);
-        } else {
-            logger.debug(String.format(
-                    "Password reset token is already set for user %s in " +
-                            "domain id: %s with account %s and email %s",
-                    userAccount.getUsername(), domain.getUuid(),
-                    userAccount.getAccountName(), userAccount.getEmail()));
-        }
+        userPasswordResetManager.setResetTokenAndSend(userAccount);
         return true;
     }
 
     @Override
     public boolean resetPassword(UserAccount userAccount, String token, String password) {
-        return passwordResetManager.validateAndResetPassword(userAccount, token, password);
+        return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
