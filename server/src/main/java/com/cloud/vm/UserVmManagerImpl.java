@@ -1445,7 +1445,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
 
-        if (vmInstance.getUserVmType().equals(SHAREDFSVM) &&  network.getGuestType() == Network.GuestType.Shared) {
+        if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType()) &&  network.getGuestType() == Network.GuestType.Shared) {
             if ((network.getAclType() != ControlledEntity.ACLType.Account) ||
                     (network.getDomainId() != vmInstance.getDomainId()) ||
                     (network.getAccountId() != vmInstance.getAccountId())) {
