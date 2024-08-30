@@ -285,7 +285,7 @@ class TestVmSnapshot(cloudstackTestCase):
         self.assertEqual(
             list_snapshot_response,
             None,
-            "Check list vm snapshot has be deleted"
+            "Check list vm snapshot has to be deleted"
         )
 
 class Utils:
@@ -438,6 +438,7 @@ class TestChangeServiceOfferingForVmWithSnapshots(cloudstackTestCase):
             mode=self.zone.networktype,
             serviceofferingid=self.service_offering_1.id
         )
+        self.cleanup.append(virtual_machine)
 
         # Verify Service OFfering 1 CPU cores and memory
         try:

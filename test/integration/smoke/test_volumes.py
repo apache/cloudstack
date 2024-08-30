@@ -642,7 +642,6 @@ class TestVolumes(cloudstackTestCase):
             self.apiclient,
             self.services["disk_offering"]
         )
-        self.cleanup.append(disk_offering_20_GB)
 
         cmd = resizeVolume.resizeVolumeCmd()
         cmd.id = self.volume.id
@@ -692,7 +691,6 @@ class TestVolumes(cloudstackTestCase):
                 self.apiclient,
                 self.services["disk_offering"]
             )
-            self.cleanup.append(disk_offering_10_GB)
 
             cmd = resizeVolume.resizeVolumeCmd()
             cmd.id = self.volume.id

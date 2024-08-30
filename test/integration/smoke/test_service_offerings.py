@@ -952,6 +952,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         cls.services["small"]["template"] = template.id
         cls.services["small"]["hypervisor"] = cls.hypervisor
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        cls._cleanup = []
 
         cls.account = Account.create(
             cls.apiclient,

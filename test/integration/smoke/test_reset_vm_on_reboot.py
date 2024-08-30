@@ -52,7 +52,7 @@ class TestResetVmOnReboot(cloudstackTestCase):
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
         cls.services["small"]["template"] = template.id
-
+        cls._cleanup = []
         # Create account, service offerings, vm.
         cls.account = Account.create(
             cls.apiclient,

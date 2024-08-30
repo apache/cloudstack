@@ -35,6 +35,7 @@ class TestConsoleEndpoint(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         cls.template = get_template(
             cls.apiclient,

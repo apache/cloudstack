@@ -1143,6 +1143,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         template = get_suitable_test_template(
             cls.api_client,
@@ -1495,6 +1496,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         template = get_suitable_test_template(
             cls.api_client,
