@@ -85,7 +85,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
                 .filter(x -> (x.startsWith("#") && !x.startsWith("##")) || (x.startsWith("Content-Type:")))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(lines)) {
-            LOGGER.debug("Failed to detect the user data format type as it does not contain a header");
+            logger.debug("Failed to detect the user data format type as it does not contain a header");
             return null;
         }
         return lines.get(0);
@@ -96,7 +96,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
             if (defaultFormatType == null) {
                 throw new CloudRuntimeException("Failed to detect the user data format type as it does not contain a header");
             }
-            LOGGER.debug(String.format("Empty header for userdata, using the default format type: %s", defaultFormatType.name()));
+            logger.debug(String.format("Empty header for userdata, using the default format type: %s", defaultFormatType.name()));
             return defaultFormatType;
         } else if (header.equalsIgnoreCase("#cloud-config")) {
             return FormatType.CLOUD_CONFIG;
