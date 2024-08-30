@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="78 + (getNumberOfAlerts() * 25)">
+    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -396,7 +396,8 @@
         <br />
       </a-modal>
     </div>
-    <div :style="getNumberOfAlerts() > 0 ? 'margin-top: ' + getNumberOfAlerts() * 25 + 'px; margin-bottom: 12px' : null">
+
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
       <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
@@ -700,16 +701,6 @@ export default {
     }
   },
   methods: {
-    getNumberOfAlerts () {
-      let count = 0
-      if (this.$store.getters.shutdownTriggered) {
-        count++
-      }
-      if (this.$config.alertMessage && this.$config.alertMessage !== '') {
-        count++
-      }
-      return count
-    },
     getStyle () {
       if (['snapshot', 'vmsnapshot', 'publicip'].includes(this.$route.name)) {
         return 'table-cell'

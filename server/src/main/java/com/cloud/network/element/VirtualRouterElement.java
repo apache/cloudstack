@@ -24,9 +24,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -121,14 +118,12 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
-StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
+        StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
+        NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
     NetworkDao _networksDao;
-    @Inject
-    VpcDao _vpcDao;
     @Inject
     NetworkModel _networkMdl;
     @Inject
@@ -231,11 +226,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         final RouterDeploymentDefinition routerDeploymentDefinition =
                 routerDeploymentDefinitionBuilder.create()
-                .setGuestNetwork(network)
-                .setDeployDestination(dest)
-                .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
-                .setParams(params)
-                .build();
+                        .setGuestNetwork(network)
+                        .setDeployDestination(dest)
+                        .setAccountOwner(_accountMgr.getAccount(network.getAccountId()))
+                        .setParams(params)
+                        .build();
 
         final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
@@ -495,7 +490,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 false,
                 "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). "
                         + "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
-                        true);
+                true);
         method.addParam("mode", false, "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters "
                 + ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), "
                 + "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :"
@@ -901,7 +896,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean shutdownProviderInstances(final PhysicalNetworkServiceProvider provider, final ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         final VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), getVirtualRouterProvider());
         if (element == null) {
             return true;
@@ -939,7 +934,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean release(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         return true;
     }
 
@@ -947,7 +942,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Override
     public boolean configDhcpSupportForSubnet(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
                                               final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-            return configureDhcpSupport(network, nic, vm, dest, Service.Dhcp);
+        return configureDhcpSupport(network, nic, vm, dest, Service.Dhcp);
     }
 
     @Override
@@ -1088,7 +1083,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean addPasswordAndUserdata(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final DeployDestination dest,
-            final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                                          final ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         boolean result = true;
         if (canHandle(network, Service.UserData)) {
             if (vm.getType() != VirtualMachine.Type.User) {
@@ -1374,7 +1369,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_NEEDED);
             _routerDao.persist(router);
         }
-        setRestartRequiredForNetwork(network, true);
     }
 
     @Override
@@ -1396,17 +1390,5 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
             _routerDao.persist(router);
         }
-        setRestartRequiredForNetwork(network, true);
-    }
-
-    private void setRestartRequiredForNetwork(Network network, boolean restartRequired) {
-        NetworkVO networkVo = _networksDao.findById(network.getId());
-        networkVo.setRestartRequired(restartRequired);
-        if (networkVo.getVpcId() == null) {
-            VpcVO vpc = _vpcDao.findById(networkVo.getVpcId());
-            vpc.setRestartRequired(restartRequired);
-            _vpcDao.persist(vpc);
-        }
-        _networksDao.persist(networkVo);
     }
 }

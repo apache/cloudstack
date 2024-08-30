@@ -271,6 +271,8 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+          commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
 
           resolve()
@@ -411,6 +413,8 @@ const user = {
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
         })
+      }).catch(error => {
+        console.error(error)
       })
     },
 
