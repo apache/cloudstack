@@ -87,7 +87,7 @@ class CsBgpPeers(CsDataBag):
             self.frr_conf.add("router bgp {}".format(as_number))
             self.frr_conf.add(" bgp router-id {}".format(self.public_ip))
             if self.peers[as_number]['ip6_peers']:
-                self.frr_conf.add(" no bgp default ipv4-unicast")
+                self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip4_peer['ip4_address'], ip4_peer['peer_as_number']))
                 if 'peer_password' in ip4_peer:
