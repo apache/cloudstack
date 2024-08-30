@@ -135,6 +135,9 @@ public class LibvirtVMDef {
         }
 
         public String getProduct() {
+            if (StringUtils.isEmpty(product)) {
+                return "CloudStack KVM Hypervisor";
+            }
             return product;
         }
 
