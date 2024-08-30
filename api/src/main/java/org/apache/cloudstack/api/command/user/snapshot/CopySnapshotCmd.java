@@ -91,7 +91,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             entityType = StoragePoolResponse.class,
             required = false,
             description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
-                    "The snapshot will always be made available in the zone in which the volume is present.")
+                    "The snapshot will always be made available in the zone in which the volume is present. Currently supported for StorPool only")
     protected List<Long> storagePoolIds;
 
     /////////////////////////////////////////////////////
