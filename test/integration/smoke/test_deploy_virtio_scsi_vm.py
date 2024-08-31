@@ -160,7 +160,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         # Start VM after password reset
         cls.virtual_machine.start(cls.apiclient)
-        cls._cleanup.append(cls.virtual_machine)
 
 
     @classmethod

@@ -255,13 +255,7 @@ class TestCreateTemplate(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCreateTemplate, self).tearDown()
 
     @classmethod
     def setUpClass(cls):
@@ -342,14 +336,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestCreateTemplate, cls).tearDownClass()
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_CreateTemplateWithDuplicateName(self):

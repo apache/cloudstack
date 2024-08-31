@@ -339,9 +339,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
 
         self.debug("Snapshot created: ID - %s" % snapshot.id)
 
-        # Delete volume, VM and created Primary Storage
-        cleanup_resources(self.apiclient, self.cleanup)
-
         # List snapshot and verify it gets properly listed although Primary Storage was removed
         snapshot_response = Snapshot.list(
             self.apiclient,
@@ -359,10 +356,8 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         )
 
         # Delete snapshot and verify it gets properly deleted (should not be listed)
-        self.cleanup = [snapshot]
-        cleanup_resources(self.apiclient, self.cleanup)
+        self.cleanup.append(snapshot)
 
-        self.cleanup = []
         snapshot_response_2 = Snapshot.list(
             self.apiclient,
             id=snapshot.id

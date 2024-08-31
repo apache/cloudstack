@@ -303,6 +303,7 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
         test_tag = "marvin_test_nfs_storage_direct_download"
         self.updateStoragePoolTags(self.nfsPoolId, test_tag)
         nfs_storage_offering = self.createServiceOffering("TestNFSStorageDirectDownload", "shared", test_tag)
+        self.cleanup.append(nfs_storage_offering)
 
         vm = self.deployVM(nfs_storage_offering)
         self.assertEqual(
@@ -313,7 +314,6 @@ class TestDirectDownloadTemplates(cloudstackTestCase):
 
         # Revert storage tags for the storage pool used in this test
         self.updateStoragePoolTags(self.nfsPoolId, tags)
-        self.cleanup.append(nfs_storage_offering)
         return
 
     @skipTestIf("localStorageKvmNotAvailable")
