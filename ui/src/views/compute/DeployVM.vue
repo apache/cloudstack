@@ -152,6 +152,18 @@
                       @tabChange="key => onTabChange(key, 'tabKey')">
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.template.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, true)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="templateid"
                           :items="options.templates"
@@ -181,6 +193,18 @@
                       </div>
                       <div v-else>
                         {{ $t('message.iso.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.iso.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, false)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="isoid"
                           :items="options.isos"
@@ -914,6 +938,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -1064,7 +1089,19 @@ export default {
       zones: [],
       selectedZone: '',
       formModel: {},
-      nicToNetworkSelection: []
+      nicToNetworkSelection: [],
+      selectedArchitecture: null,
+      architectureTypes: {
+        opts: [
+          {
+            id: 'x86_64',
+            description: 'AMD 64 bits (x86_64)'
+          }, {
+            id: 'arm64',
+            description: 'ARM 64 bits (arm64)'
+          }
+        ]
+      }
     }
   },
   computed: {
@@ -1945,6 +1982,14 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
+    changeArchitecture (arch, isTemplate) {
+      this.selectedArchitecture = arch
+      if (isTemplate) {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
+    },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
       this.handleSubmit(e.domEvent)
@@ -2371,6 +2416,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.architecture = this.selectedArchitecture
+      }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
@@ -2396,6 +2444,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.architecture = this.selectedArchitecture
+      }
       args.isoFilter = isoFilter
       args.bootable = true
       args.showicon = 'true'
@@ -2459,6 +2510,10 @@ export default {
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
+      this.isZoneSelectedMultiArch = this.zone.ismultiarch
+      if (this.isZoneSelectedMultiArch) {
+        this.selectedArchitecture = this.architectureTypes.opts[0].id
+      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId
