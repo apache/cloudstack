@@ -57,7 +57,7 @@ write_files:
       DISK_SIZE_FILE="$DISK_SIZE_DIR/previous_disk_size"
 
       PARTITION="$1"
-      EXPORT_DIR="/export"
+      EXPORT_DIR={{ fsvm.exportpath }}
       PERMISSIONS="rw,sync,no_subtree_check,no_root_squash"
 
       mkdir -p "$EXPORT_DIR"
@@ -136,11 +136,12 @@ write_files:
 
       DISK_SIZE_FILE="/usr/local/var/sharedfs/previous_disk_size"
 
-      PARTITION="$1"
       FILESYSTEM={{ fsvm.filesystem }}
       if [ "$FILESYSTEM" == "xfs" ]; then
-        xfs_growfs "$PARTITION"
+        EXPORT_DIR={{ fsvm.exportpath }}
+        xfs_growfs "$EXPORT_DIR"
       elif [ "$FILESYSTEM" == "ext4" ]; then
+        PARTITION="$1"
         resize2fs "$PARTITION"
       else
         log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."

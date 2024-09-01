@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.storage.sharedfs.lifecycle;
 
+import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSPath;
 import static org.apache.cloudstack.storage.sharedfs.SharedFS.SharedFSVmNamePrefix;
 import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_CPU_COUNT;
 import static org.apache.cloudstack.storage.sharedfs.provider.StorageVmSharedFSProvider.SHAREDFSVM_MIN_RAM_SIZE;
@@ -128,12 +129,14 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
         }
     }
 
-    private String getStorageVmConfig(final String fileSystem, final String hypervisorType) {
+    private String getStorageVmConfig(final String fileSystem, final String hypervisorType, final String exportPath) {
         String fsVmConfig = readResourceFile("/conf/fsvm-init.yml");
         final String filesystem = "{{ fsvm.filesystem }}";
         final String hypervisor = "{{ fsvm.hypervisor }}";
+        final String exportpath = "{{ fsvm.exportpath }}";
         fsVmConfig = fsVmConfig.replace(filesystem, fileSystem);
         fsVmConfig = fsVmConfig.replace(hypervisor, hypervisorType);
+        fsVmConfig = fsVmConfig.replace(exportpath, exportPath);
         return fsVmConfig;
     }
 
@@ -186,7 +189,7 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             }
 
             UserVm vm = null;
-            String fsVmConfig = getStorageVmConfig(fileSystem.toString().toLowerCase(), hypervisor.toString().toLowerCase());
+            String fsVmConfig = getStorageVmConfig(fileSystem.toString().toLowerCase(), hypervisor.toString().toLowerCase(), SharedFSPath);
             String base64UserData = Base64.encodeBase64String(fsVmConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             CallContext vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
             try {
