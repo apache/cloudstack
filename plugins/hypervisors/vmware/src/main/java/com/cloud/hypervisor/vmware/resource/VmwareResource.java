@@ -1037,7 +1037,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         StorageIOAllocationInfo storageIOAllocation = new StorageIOAllocationInfo();
         Long iops = -1L;
 
-        if (ObjectUtils.allNotNull(newMinIops, newMaxIops)) {
+        if (ObjectUtils.allNotNull(newMinIops, newMaxIops) && newMinIops > 0 && newMaxIops > 0) {
             iops = newMinIops + newMaxIops;
         }
 
