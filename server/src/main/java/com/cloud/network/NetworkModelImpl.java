@@ -2764,7 +2764,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
                                                        List<Long> securityGroupsIds) {
-        if (zone.isSecurityGroupEnabled() || isSecurityGroupSupportedForZone(zone.getId())) {
+        if (zone.isSecurityGroupEnabled()) {
             return true;
         }
         if (CollectionUtils.isNotEmpty(networkIds)) {

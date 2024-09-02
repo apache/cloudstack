@@ -566,7 +566,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException(String.format("%s is not advanced.", dc.toString()));
         }
 
-        if (dc.isSecurityGroupEnabled() || _networkModel.isSecurityGroupSupportedForZone(dc.getId())) {
+        if (dc.isSecurityGroupEnabled()) {
             List<NetworkVO> networks = _networkDao.listByZoneSecurityGroup(dc.getId());
             if (CollectionUtils.isEmpty(networks)) {
                 throw new CloudRuntimeException(String.format("Can not found security enabled network in SG %s.", dc.toString()));

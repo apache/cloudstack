@@ -336,7 +336,6 @@ public class VnfTemplateManagerImplTest {
         SecurityGroupRuleVO securityGroupRuleVO = Mockito.mock(SecurityGroupRuleVO.class);
         Mockito.doReturn(Arrays.asList(securityGroupRuleVO)).when(securityGroupService).authorizeSecurityGroupRule(anyLong(), anyString(), anyInt(), anyInt(),
                 any(), any(), any(), any(), any());
-        Mockito.doReturn(true).when(networkModel).isSecurityGroupSupportedForZone(anyLong());
 
         SecurityGroup result = vnfTemplateManagerImpl.createSecurityGroupForVnfAppliance(zone, template, owner, cmd);
 
