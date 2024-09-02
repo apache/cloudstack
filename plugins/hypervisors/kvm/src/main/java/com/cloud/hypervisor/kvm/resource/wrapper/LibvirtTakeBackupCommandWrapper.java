@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -64,7 +65,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         }
 
         long backupSize = 0L;
-        if (Objects.isNull(diskPaths) || diskPaths.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(diskPaths)) {
             List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());

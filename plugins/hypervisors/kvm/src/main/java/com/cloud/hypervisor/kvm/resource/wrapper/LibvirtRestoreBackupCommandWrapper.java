@@ -41,7 +41,7 @@ import java.util.Objects;
 
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
-    private static final String BACKUP_TEMP_FILE_PREFIx = "csbackup";
+    private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
     private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
@@ -148,7 +148,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private String mountBackupDirectory(String backupRepoAddress, String backupRepoType) {
         String randomChars = RandomStringUtils.random(5, true, false);
-        String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIx , randomChars);
+        String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIX , randomChars);
         try {
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
             String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);

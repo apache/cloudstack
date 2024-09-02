@@ -51,7 +51,7 @@
           </template>
 
           <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
-            {{ parseFloat(text / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+            {{ bytesToHumanReadableSize(text) }}
           </template>
 
           <template v-else>
