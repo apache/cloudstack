@@ -577,11 +577,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetwork(Long domainId, Long accountId, Long zoneId, Integer networkCidrSize) {
-        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(domainId, accountId, zoneId, networkCidrSize);
-        if (subnet != null) {
-            return subnet;
-        }
-        return createIpv4SubnetForAccount(domainId, accountId, zoneId, networkCidrSize);
+        return getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(networkCidrSize, domainId, accountId, zoneId);
     }
 
     @Override
@@ -591,11 +587,35 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     @Override
     public Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForVpc(Vpc vpc, Integer vpcCidrSize) {
-        Ipv4GuestSubnetNetworkMap subnet = getIpv4SubnetForAccount(vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId(), vpcCidrSize);
-        if (subnet != null) {
-            return subnet;
+        return getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(vpcCidrSize, vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId());
+    }
+
+    private Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
+        validateNetworkCidrSize(ownerAccountId, cidrSize);
+        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(ownerDomainId, ownerAccountId, zoneId);
+        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
+            Ipv4GuestSubnetNetworkMap result = getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, ownerDomainId, ownerAccountId, zoneId, subnet.getId());
+            if (result != null) {
+                return result;
+            }
         }
-        return createIpv4SubnetForAccount(vpc.getDomainId(), vpc.getAccountId(), vpc.getZoneId(), vpcCidrSize);
+        return null;
+    }
+
+    private Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, Long ownerDomainId, Long ownerAccountId, Long zoneId, Long subnetId) {
+        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(ownerDomainId, ownerAccountId, zoneId);
+        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
+            Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), cidrSize);
+            if (map != null) {
+                return map;
+            }
+            try {
+                return createIpv4SubnetFromParentSubnet(subnet, cidrSize);
+            } catch (Exception ex) {
+                logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
+            }
+        }
+        return null;
     }
 
     private void getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(String networkCidr, Long ownerDomainId, Long ownerAccountId, Long zoneId) {
@@ -677,31 +697,6 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         // Get non-dedicated zone guest subnets for the account
         subnets.addAll(dataCenterIpv4GuestSubnetDao.listNonDedicatedByDataCenterId(zoneId));
         return subnets;
-    }
-
-    private Ipv4GuestSubnetNetworkMap getIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
-        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
-        // find an allocated subnet
-        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
-            Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), networkCidrSize);
-            if (map != null) {
-                return map;
-            }
-        }
-        return null;
-    }
-
-    private Ipv4GuestSubnetNetworkMap createIpv4SubnetForAccount(long domainId, long accountId, long zoneId, Integer networkCidrSize) {
-        validateNetworkCidrSize(accountId, networkCidrSize);
-        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(domainId, accountId, zoneId);
-        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
-            try {
-                return createIpv4SubnetFromParentSubnet(subnet, networkCidrSize);
-            } catch (Exception ex) {
-                logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
-            }
-        }
-        return null;
     }
 
     private Ipv4GuestSubnetNetworkMap createIpv4SubnetFromParentSubnet(DataCenterIpv4GuestSubnet parent, Integer networkCidrSize) {
