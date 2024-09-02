@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
+import com.cloud.vm.VirtualMachine;
 
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class RestoreBackupCommand extends Command  {
     private Long deviceId;
     private Boolean vmExists;
     private String restoreVolumeUUID;
+    private VirtualMachine.State vmState;
 
     protected RestoreBackupCommand() {
         super();
@@ -117,6 +119,14 @@ public class RestoreBackupCommand extends Command  {
 
     public void setRestoreVolumeUUID(String restoreVolumeUUID) {
         this.restoreVolumeUUID = restoreVolumeUUID;
+    }
+
+    public VirtualMachine.State getVmState() {
+        return vmState;
+    }
+
+    public void setVmState(VirtualMachine.State vmState) {
+        this.vmState = vmState;
     }
 
     @LogLevel(LogLevel.Log4jLevel.Off)

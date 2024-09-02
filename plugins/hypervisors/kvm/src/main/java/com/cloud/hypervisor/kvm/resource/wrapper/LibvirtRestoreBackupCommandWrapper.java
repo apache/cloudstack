@@ -26,6 +26,7 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.RestoreBackupCommand;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -34,7 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -45,6 +45,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
+    private static final String ATTACH_DISK_COMMAND = " virsh attach-disk %s %s %s --cache none";
+    private static final String CURRRENT_DEVICE = "virsh domblklist --domain %s | tail -n 3 | head -n 1 | awk '{print $1}'";
+    private static final String RSYNC_COMMAND = "rsync -az %s %s";
 
     @Override
     public Answer execute(RestoreBackupCommand command, LibvirtComputingResource serverResource) {
@@ -64,8 +67,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             String volumePath = volumePaths.get(0);
             int lastIndex = volumePath.lastIndexOf("/");
             newVolumeId = volumePath.substring(lastIndex + 1);
-            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, deviceId, restoreVolumeUuid);
-        } else if (vmExists) {
+            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, deviceId, restoreVolumeUuid,
+                    new Pair<>(vmName, command.getVmState()));
+        } else if (Boolean.TRUE.equals(vmExists)) {
             restoreVolumesOfExistingVM(volumePaths, backupPath, backupRepoType, backupRepoAddress, mountOptions);
         } else {
             restoreVolumesOfDestroyedVMs(volumePaths, vmName, backupPath, backupRepoType, backupRepoAddress, mountOptions);
@@ -118,13 +122,18 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolume(String backupPath, String backupRepoType, String backupRepoAddress, String volumePath,
-                               String diskType, Long deviceId, String volumeUUID) {
+                               String diskType, Long deviceId, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState) {
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
         Pair<String, String> bkpPathAndVolUuid;
         try {
             bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, deviceId.intValue(), volumeUUID);
             try {
                 replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
+                if (VirtualMachine.State.Running.equals(vmNameAndState.second())) {
+                    if (!attachVolumeToVm(vmNameAndState.first(), volumePath)) {
+                        throw new CloudRuntimeException(String.format("Failed to attach volume to VM: %s", vmNameAndState.first()));
+                    }
+                }
             } catch (IOException e) {
                 throw new CloudRuntimeException(String.format("Unable to revert backup for volume [%s] due to [%s].", bkpPathAndVolUuid.second(), e.getMessage()), e);
             }
@@ -177,6 +186,19 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void replaceVolumeWithBackup(String volumePath, String backupPath) throws IOException {
-        Files.copy(Paths.get(backupPath), Paths.get(volumePath), StandardCopyOption.REPLACE_EXISTING);
+        Script.runSimpleBashScript(String.format(RSYNC_COMMAND, backupPath, volumePath));
+    }
+
+    private boolean attachVolumeToVm(String vmName, String volumePath) {
+        String deviceToAttachDiskTo = getDeviceToAttachDisk(vmName);
+        int exitValue = Script.runSimpleBashScriptForExitValue(String.format(ATTACH_DISK_COMMAND, vmName, volumePath, deviceToAttachDiskTo));
+        return exitValue == 0;
+    }
+
+    private String getDeviceToAttachDisk(String vmName) {
+        String currentDevice = Script.runSimpleBashScript(String.format(CURRRENT_DEVICE, vmName));
+        char lastChar = currentDevice.charAt(currentDevice.length() - 1);
+        char incrementedChar = (char) (lastChar + 1);
+        return currentDevice.substring(0, currentDevice.length() - 1) + incrementedChar;
     }
 }
