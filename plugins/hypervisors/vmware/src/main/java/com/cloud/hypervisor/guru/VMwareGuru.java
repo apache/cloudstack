@@ -1116,19 +1116,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
 
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
-            VolumeVO volumeExtra = _volumeDao.findByUuid(backedUpVol.getUuid());
-            if (volumeExtra != null) {
-                logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
-                _volumeDao.remove(volumeExtra.getId());
-
-                if (vm.getType() == Type.User) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DETACH, volumeExtra.getAccountId(), volumeExtra.getDataCenterId(), volumeExtra.getId(),
-                            volumeExtra.getName(), volumeExtra.getDiskOfferingId(), null, volumeExtra.getSize(), Volume.class.getName(),
-                            volumeExtra.getUuid(), volumeExtra.isDisplayVolume());
-                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.volume, volumeExtra.isDisplayVolume());
-                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.primary_storage, volumeExtra.isDisplayVolume(), volumeExtra.getSize());
-                }
-            }
             for (VirtualDisk disk : virtualDisks) {
                 if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes()) && !usedVols.containsKey(backedUpVol.getUuid())) {
                     String volId = backedUpVol.getUuid();
