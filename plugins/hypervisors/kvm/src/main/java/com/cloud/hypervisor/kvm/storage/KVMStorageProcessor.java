@@ -2500,7 +2500,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
-                if (srcVol.getPassphrase() != null && srcVol.getVolumeType().equals(Volume.Type.ROOT)) {
+                Volume.Type volumeType = srcVol.getVolumeType();
+                if (srcVol.getPassphrase() != null && (Volume.Type.ROOT.equals(volumeType) || Volume.Type.DATADISK.equals(volumeType))) {
                     volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
                     storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
                 } else {
