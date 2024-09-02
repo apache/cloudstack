@@ -153,6 +153,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
+        BackupVO backupVO = createBackupObject(vm, backupPath);
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
@@ -174,28 +175,36 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
 
         if (answer != null && answer.getResult()) {
-            BackupVO backup = new BackupVO();
-            backup.setVmId(vm.getId());
-            backup.setExternalId(backupPath);
-            backup.setType("FULL");
-            backup.setDate(creationDate);
-            backup.setSize(answer.getSize());
-            long virtualSize = 0L;
-            for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
-                if (Volume.State.Ready.equals(volume.getState())) {
-                    virtualSize += volume.getSize();
-                }
-            }
-            backup.setProtectedSize(Long.valueOf(virtualSize));
-            backup.setStatus(Backup.Status.BackedUp);
-            backup.setBackupOfferingId(vm.getBackupOfferingId());
-            backup.setAccountId(vm.getAccountId());
-            backup.setDomainId(vm.getDomainId());
-            backup.setZoneId(vm.getDataCenterId());
-            return backupDao.persist(backup) != null;
+            backupVO.setDate(new Date());
+            backupVO.setSize(answer.getSize());
+            backupVO.setStatus(Backup.Status.BackedUp);
+            return backupDao.update(backupVO.getId(), backupVO);
+        } else {
+            backupVO.setStatus(Backup.Status.Failed);
+            backupDao.update(backupVO.getId(), backupVO);
         }
+        return Objects.nonNull(answer) && answer.getResult();
+    }
 
-        return answer.getResult();
+    private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vm.getId());
+        backup.setExternalId(backupPath);
+        backup.setType("FULL");
+        backup.setDate(new Date());
+        long virtualSize = 0L;
+        for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
+            if (Volume.State.Ready.equals(volume.getState())) {
+                virtualSize += volume.getSize();
+            }
+        }
+        backup.setProtectedSize(Long.valueOf(virtualSize));
+        backup.setStatus(Backup.Status.BackingUp);
+        backup.setBackupOfferingId(vm.getBackupOfferingId());
+        backup.setAccountId(vm.getAccountId());
+        backup.setDomainId(vm.getDomainId());
+        backup.setZoneId(vm.getDataCenterId());
+        return backupDao.persist(backup);
     }
 
     @Override
