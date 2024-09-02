@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupSchedule;
@@ -38,6 +39,10 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @APICommand(name = "listBackupSchedule",
         description = "List backup schedule of a VM",
@@ -74,9 +79,14 @@ public class ListBackupScheduleCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            BackupSchedule schedule = backupManager.listBackupSchedule(getVmId());
-            if (schedule != null) {
-                BackupScheduleResponse response = _responseGenerator.createBackupScheduleResponse(schedule);
+            List<BackupSchedule> schedules = backupManager.listBackupSchedule(getVmId());
+            ListResponse<BackupScheduleResponse> response = new ListResponse<>();
+            List<BackupScheduleResponse> scheduleResponses = new ArrayList<>();
+            if (Objects.nonNull(schedules) && !schedules.isEmpty()) {
+                for (BackupSchedule schedule : schedules) {
+                    scheduleResponses.add(_responseGenerator.createBackupScheduleResponse(schedule));
+                }
+                response.setResponses(scheduleResponses, schedules.size());
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

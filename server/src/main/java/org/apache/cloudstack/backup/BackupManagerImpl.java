@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -434,7 +435,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
         }
 
-        final BackupScheduleVO schedule = backupScheduleDao.findByVM(vmId);
+        final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
         if (schedule == null) {
             return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime));
         }
@@ -448,12 +449,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public BackupSchedule listBackupSchedule(final Long vmId) {
+    public List<BackupSchedule> listBackupSchedule(final Long vmId) {
         final VMInstanceVO vm = findVmById(vmId);
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
-        return backupScheduleDao.findByVM(vmId);
+        return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
     }
 
     @Override

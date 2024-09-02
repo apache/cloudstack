@@ -253,3 +253,9 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'unique_name',
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text\'');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
+
+-- Drop foreign key on backup_schedule, drop unique key on vm_id and re-add foreign key to allow multiple backup schedules to be created
+ALTER TABLE `cloud`.`backup_schedule` DROP FOREIGN KEY fk_backup_schedule__vm_id;
+ALTER TABLE `cloud`.`backup_schedule` DROP INDEX vm_id;
+ALTER TABLE `cloud`.`backup_schedule` ADD CONSTRAINT fk_backup_schedule__vm_id
+    FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
