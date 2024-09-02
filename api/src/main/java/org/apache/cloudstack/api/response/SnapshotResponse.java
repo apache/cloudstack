@@ -47,6 +47,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the domain name of the snapshot's account")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the snapshot's account belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project id of the snapshot")
     private String projectId;
@@ -185,6 +189,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setSnapshotType(String snapshotType) {

@@ -145,6 +145,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the disk volume belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName("storagetype")
     @Param(description = "shared or local storage")
     private String storageType;
@@ -407,6 +411,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setStorageType(String storageType) {

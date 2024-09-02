@@ -250,3 +250,4 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'backup_name', 'varcha
 UPDATE `cloud`.`vm_instance` vm INNER JOIN `cloud`.`backup_offering` bo ON vm.backup_offering_id = bo.id SET vm.backup_name = CONCAT(vm.instance_name, "-CSBKP-", vm.uuid);
 
 --
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
