@@ -91,22 +91,6 @@ backup_stopped_vm() {
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
 
-restore_backup() {
-  mount_operation
-
-  IFS=","
-
-  deviceId=0
-  name="root"
-  for disk in $DISK_PATHS; do
-    volUuid="${disk##*/}"
-    rsync -az $dest/$deviceId.$name.$volUuid.qcow2 $disk
-    deviceId=$((devideId+1))
-    name="datadisk"
-  done
-  sync
-}
-
 delete_backup() {
   mount_operation
 
@@ -184,8 +168,6 @@ if [ "$OP" = "backup" ]; then
   else
     backup_stopped_vm
   fi
-elif [ "$OP" = "restore" ]; then
-  restore_backup
 elif [ "$OP" = "delete" ]; then
   delete_backup
 fi
