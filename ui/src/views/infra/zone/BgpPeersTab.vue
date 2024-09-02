@@ -17,7 +17,16 @@
 
 <template>
   <a-spin :spinning="componentLoading">
+    <a-alert
+      v-if="this.resource.ip4routing"
+      type="info">
+      <template #message>
+        <div v-html="$t('message.bgp.peers.null')" />
+      </template>
+    </a-alert>
+    <br>
     <a-button
+      v-if="!this.resource.ip4routing"
       :disabled="!('createBgpPeer' in $store.getters.apis)"
       type="primary"
       style="margin-bottom: 20px; width: 100%"
@@ -47,7 +56,7 @@
         <template v-if="column.key === 'project'">
           {{ record.project }}
         </template>
-        <template v-if="column.key === 'actions'">
+        <template v-if="column.key === 'actions' && !this.resource.ip4routing">
           <div
             class="actions"
             style="text-align: right" >
@@ -94,6 +103,7 @@
       </template>
     </a-table>
     <a-pagination
+      v-if="!this.resource.ip4routing"
       class="row-element pagination"
       size="small"
       :current="bgpPeersPage"
@@ -273,7 +283,58 @@
         </div>
       </a-form>
     </a-modal>
+
+    <a-modal
+      v-if="changeBgpPeersForNetworkModal"
+      :visible="changeBgpPeersForNetworkModal"
+      :title="$t('label.change.bgp.peers')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="() => { changeBgpPeersForNetworkModal = false }"
+      centered
+      width="auto">
+      <ChangeBgpPeersForNetwork
+        :resource="resource"
+        @refresh-data="fetchData"
+        @close-action="changeBgpPeersForNetworkModal = false" />
+    </a-modal>
+
+    <a-modal
+      v-if="changeBgpPeersForVpcModal"
+      :visible="changeBgpPeersForVpcModal"
+      :title="$t('label.change.bgp.peers')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="() => { changeBgpPeersForVpcModal = false }"
+      centered
+      width="auto">
+      <ChangeBgpPeersForVpc
+        :resource="resource"
+        @refresh-data="fetchData"
+        @close-action="changeBgpPeersForVpcModal = false" />
+    </a-modal>
+
     <br>
+    <a-button
+      v-if="this.resource.ip4routing && this.$route.meta.name === 'guestnetwork'"
+      type="primary"
+      style="margin-bottom: 20px; width: 100%"
+      @click="() => { changeBgpPeersForNetworkModal = true }"
+      :disabled="!('changeBgpPeersForNetwork' in $store.getters.apis)">
+      <template #icon><split-cells-outlined /></template>
+      {{ $t('label.change.bgp.peers') }}
+    </a-button>
+    <a-button
+      v-if="this.resource.ip4routing && this.$route.meta.name === 'vpc'"
+      type="primary"
+      style="margin-bottom: 20px; width: 100%"
+      @click="() => { changeBgpPeersForVpcModal = true }"
+      :disabled="!('changeBgpPeersForVpc' in $store.getters.apis)">
+      <template #icon><split-cells-outlined /></template>
+      {{ $t('label.change.bgp.peers') }}
+    </a-button>
     <br>
   </a-spin>
 </template>
@@ -281,14 +342,16 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import ChangeBgpPeersForNetwork from '@/views/network/ChangeBgpPeerForNetwork.vue'
+import ChangeBgpPeersForVpc from '@/views/network/ChangeBgpPeerForVpc.vue'
 
 export default {
-  name: 'IpRangesTabGuest',
+  name: 'BgpPeersTab',
   components: {
-    CreateNetwork,
+    ChangeBgpPeersForNetwork,
+    ChangeBgpPeersForVpc,
     ResourceIcon,
     TooltipButton
   },
@@ -318,6 +381,8 @@ export default {
       domainsLoading: false,
       addBgpPeerModal: false,
       updateBgpPeerModal: false,
+      changeBgpPeersForNetworkModal: false,
+      changeBgpPeersForVpcModal: false,
       bgpPeersPage: 1,
       bgpPeersPageSize: 10,
       bgpPeersTotal: 0,
@@ -409,7 +474,11 @@ export default {
       })
     },
     fetchData () {
-      this.fetchZoneBgpPeer()
+      if (this.resource.ip4routing) {
+        this.bgpPeers = this.resource.bgppeers
+      } else {
+        this.fetchZoneBgpPeer()
+      }
     },
     fetchZoneBgpPeer () {
       this.componentLoading = true

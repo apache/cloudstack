@@ -263,14 +263,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'IpRangesTabGuest',
+  name: 'Ipv4GuestSubnetsTab',
   components: {
-    CreateNetwork,
     ResourceIcon,
     TooltipButton
   },

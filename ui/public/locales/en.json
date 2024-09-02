@@ -3616,6 +3616,7 @@
 "message.zone.detail.hint": "A zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.",
 "message.validate.min": "Please enter a value greater than or equal to {0}.",
 "message.action.delete.object.storage": "Please confirm that you want to delete this Object Store",
+"message.bgp.peers.null": "Please note, if no BGP peers are selected, the VR will connect to <br> (1) dedicated BGP peers the owner can access, if the owner has dedicated BGP peers and account setting use.system.bgp.peers is set to false; <br> (2) all BGP peers the owner can access, otherwise.<br>",
 "message.bucket.delete": "Please confirm that you want to delete this Bucket",
 "migrate.from": "Migrate from",
 "migrate.to": "Migrate to",

@@ -68,6 +68,10 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && !record.ip4routing && !('vpcname' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
+        name: 'bgp.peers',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
+        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && record.ip4routing === 'Dynamic' }
+      }, {
         name: 'routing.firewall',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutingFirewallRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && record.ip4routing && !('vpcname' in record) && 'listRoutingFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
@@ -192,16 +196,6 @@ export default {
           }
         },
         {
-          api: 'changeBgpPeersForNetwork',
-          icon: 'split-cells-outlined',
-          label: 'label.change.bgp.peers',
-          dataView: true,
-          show: (record) => { return !record.vpcid && ['Dynamic'].includes(record.ip4routing) },
-          args: ['bgppeerids'],
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeerForNetwork'))),
-          popup: true
-        },
-        {
           api: 'deleteNetwork',
           icon: 'delete-outlined',
           label: 'label.action.delete.network',
@@ -284,16 +278,6 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
-        },
-        {
-          api: 'changeBgpPeersForVpc',
-          icon: 'split-cells-outlined',
-          label: 'label.change.bgp.peers',
-          dataView: true,
-          show: (record) => { return ['Dynamic'].includes(record.ip4routing) },
-          args: ['bgppeerids'],
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ChangeBgpPeerForVpc'))),
-          popup: true
         },
         {
           api: 'deleteVPC',
