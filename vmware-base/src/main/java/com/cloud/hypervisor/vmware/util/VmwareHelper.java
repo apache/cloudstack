@@ -40,11 +40,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Volume;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DistributedVirtualPort;
@@ -1062,5 +1065,104 @@ public class VmwareHelper {
             vmdkAbsFile = diskBackingInfo.getFileName();
         }
         return vmdkAbsFile;
+    }
+
+    /**
+     * Based on an instance's <code>rootDiskController</code> and <code>dataDiskController</code> details, returns a pair
+     * containing the disk controller that should be used for root disk and the data disks, respectively.
+     */
+    public static Pair<String, String> getDiskControllersFromVmSettings(String rootDiskControllerDetail,
+                                                                        String dataDiskControllerDetail) {
+        // Validate the controller types
+        rootDiskControllerDetail = DiskControllerType.getType(rootDiskControllerDetail).toString();
+        if (DiskControllerType.getType(rootDiskControllerDetail) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskControllerDetail);
+        }
+        dataDiskControllerDetail = DiskControllerType.getType(dataDiskControllerDetail).toString();
+        if (DiskControllerType.getType(dataDiskControllerDetail) == DiskControllerType.none) {
+            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskControllerDetail);
+        }
+        return chooseRequiredDiskControllers(rootDiskControllerDetail, dataDiskControllerDetail);
+    }
+
+    /**
+     * Based on the disk controllers specified for the root and data disks, returns a pair containing the controllers
+     * both disk types should use, respectively. This method is used by <code>VmwareHelper#getDiskControllersFromVmSettings</code>
+     * to choose which disk controllers the instance should use effectively.
+     */
+    protected static Pair<String, String> chooseRequiredDiskControllers(String rootDiskController, String dataDiskController) {
+        if (isControllerOsRecommended(rootDiskController) && isControllerOsRecommended(dataDiskController)) {
+            s_logger.debug("Choosing 'osdefault' for both disk controllers.");
+            return new Pair<>(rootDiskController, dataDiskController);
+        }
+        if (isControllerOsRecommended(rootDiskController)) {
+            s_logger.debug(String.format("Root disk controller is 'osdefault', but data disk controller is [%s]; therefore, we will only use the controllers specified for the data disk.",
+                    dataDiskController));
+            return new Pair<>(dataDiskController, dataDiskController);
+        }
+        if (isControllerOsRecommended(dataDiskController)) {
+            s_logger.debug(String.format("Data disk controller is 'osdefault', but root disk controller is [%s]; therefore, we will only use the controllers specified for the root disk.",
+                    rootDiskController));
+            return new Pair<>(rootDiskController, rootDiskController);
+        }
+
+        if (diskControllersShareTheSameBusType(rootDiskController, dataDiskController)) {
+            s_logger.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
+            return new Pair<>(rootDiskController, rootDiskController);
+        }
+        s_logger.debug("Root and data disk controllers do not share the same bus type; therefore, we will use both of them on the virtual machine.");
+        return new Pair<>(rootDiskController, dataDiskController);
+    }
+
+    protected static boolean diskControllersShareTheSameBusType(String rootDiskController, String dataDiskController) {
+        DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
+        DiskControllerType dataDiskControllerType = DiskControllerType.getType(dataDiskController);
+        if (rootDiskControllerType.equals(dataDiskControllerType)) {
+            return true;
+        }
+        List<DiskControllerType> scsiDiskControllers = List.of(DiskControllerType.scsi, DiskControllerType.lsilogic, DiskControllerType.lsisas1068,
+                DiskControllerType.buslogic ,DiskControllerType.pvscsi);
+        return scsiDiskControllers.contains(rootDiskControllerType) && scsiDiskControllers.contains(dataDiskControllerType);
+    }
+
+    /**
+     * If the root disk or data disk controllers are <code>osdefault</code>, converts them to the actual recommended disk controllers
+     * for the virtual machine. If they are not, no conversion is done.
+     *
+     * @param controllerInfo    pair containing the root disk and data disk controllers, respectively.
+     * @param vmMo              virtual machine to derive the recommended disk controllers from. If not null, <code>host</code> and <code>guestOsIdentifier</code> will be ignored.
+     * @param host              host to derive the recommended disk controllers from. Must be provided with <code>guestOsIdentifier</code>.
+     * @param guestOsIdentifier used to derive the recommended disk controllers from the host.
+     */
+    public static Pair<String, String> convertRecommendedDiskControllers(Pair<String, String> controllerInfo, VirtualMachineMO vmMo,
+                                                                         VmwareHypervisorHost host, String guestOsIdentifier) throws Exception {
+        String recommendedDiskControllerClassName = vmMo != null ? vmMo.getRecommendedDiskController(null) : host.getRecommendedDiskController(guestOsIdentifier);
+        String recommendedDiskController = DiskControllerType.getType(recommendedDiskControllerClassName).toString();
+
+        String convertedRootDiskController = controllerInfo.first();
+        if (isControllerOsRecommended(convertedRootDiskController)) {
+            convertedRootDiskController = recommendedDiskController;
+        }
+
+        String convertedDataDiskController = controllerInfo.second();
+        if (isControllerOsRecommended(convertedDataDiskController)) {
+            convertedDataDiskController = recommendedDiskController;
+        }
+
+        return new Pair<>(convertedRootDiskController, convertedDataDiskController);
+    }
+
+    /**
+     * Identifies whether the disk is a root or data disk, and returns the controller from the provided pair that should
+     * be used for the disk.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
+     */
+    public static String getControllerBasedOnDiskType(Pair<String, String> controllerInfo, DiskTO disk) {
+        if (disk.getType() == Volume.Type.ROOT || disk.getDiskSeq() == 0) {
+            s_logger.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
+            return controllerInfo.first();
+        }
+        s_logger.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
+        return controllerInfo.second();
     }
 }

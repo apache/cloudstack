@@ -2100,15 +2100,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             AttachAnswer answer = new AttachAnswer(disk);
 
             if (isAttach) {
-                String diskController = getLegacyVmDataDiskController();
-
+                String rootDiskControllerDetail = DiskControllerType.ide.toString();
+                if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER))) {
+                    rootDiskControllerDetail = controllerInfo.get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+                }
+                String dataDiskControllerDetail = getLegacyVmDataDiskController();
                 if (controllerInfo != null && StringUtils.isNotEmpty(controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER))) {
-                    diskController = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
+                    dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 }
 
-                if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
-                    diskController = vmMo.getRecommendedDiskController(null);
-                }
+                Pair<String, String> updatedDiskControllers = VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail);
+                Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(updatedDiskControllers, vmMo, null, null);
+                String diskController = VmwareHelper.getControllerBasedOnDiskType(convertedDiskControllers, disk);
 
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
