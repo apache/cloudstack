@@ -255,8 +255,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * Machine type.
      */
-    private static final String PC = "pc";
-    private static final String VIRT = "virt";
+    public static final String PC = "pc";
+    public static final String VIRT = "virt";
 
     /**
      * Possible devices to add to VM.
@@ -2851,7 +2851,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uefiProperties.getProperty(propertie) != null;
     }
 
-    private boolean isGuestAarch64() {
+    public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
     }
 
@@ -5583,4 +5583,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new RuntimeException(e);
         }
     }
+
+    public String getHypervisorPath() {
+        return hypervisorPath;
+    }
+    public String getGuestCpuArch() {
+        return guestCpuArch;
+    }
+
 }

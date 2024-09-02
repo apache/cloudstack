@@ -206,11 +206,11 @@ public class KVMStorageProcessor implements StorageProcessor {
             "  <currentMemory unit='MiB'>256</currentMemory>\n" +
             "  <vcpu>1</vcpu>\n" +
             "  <os>\n" +
-            "    <type arch='x86_64' machine='pc-i440fx-2.9'>hvm</type>\n" +
+            "    <type arch='%s' machine='%s'>hvm</type>\n" +
             "    <boot dev='hd'/>\n" +
             "  </os>\n" +
             "  <devices>\n" +
-            "    <emulator>/usr/bin/qemu-system-x86_64</emulator>\n" +
+            "    <emulator>%s</emulator>\n" +
             "    <disk type='file' device='disk'>\n" +
             "      <driver name='qemu' type='qcow2' cache='none'/>\n"+
             "      <source file='%s'/>\n" +
@@ -1882,7 +1882,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
         try {
             String vmName = String.format("DUMMY-VM-%s", snapshotName);
-            String vmXml = String.format(DUMMY_VM_XML, vmName, primaryPool.getLocalPathFor(volumeObjectTo.getPath()));
+
+            String vmXml = getVmXml(primaryPool, volumeObjectTo, vmName);
 
             logger.debug("Creating dummy VM with volume [{}] to take an incremental snapshot of it.", volumeObjectTo);
             resource.startVM(conn, vmName, vmXml, Domain.CreateFlags.PAUSED);
@@ -1900,6 +1901,13 @@ public class KVMStorageProcessor implements StorageProcessor {
                 vm.destroy();
             }
         }
+    }
+
+    private String getVmXml(KVMStoragePool primaryPool, VolumeObjectTO volumeObjectTo, String vmName) {
+        String machine = resource.isGuestAarch64() ? LibvirtComputingResource.VIRT : LibvirtComputingResource.PC;
+        String cpuArch = resource.getGuestCpuArch() != null ? resource.getGuestCpuArch() : "x86_64";
+
+        return String.format(DUMMY_VM_XML, vmName, cpuArch, machine, resource.getHypervisorPath(), primaryPool.getLocalPathFor(volumeObjectTo.getPath()));
     }
 
     private SnapshotObjectTO takeIncrementalVolumeSnapshotOfRunningVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
@@ -2894,7 +2902,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
         String checkpointName = snapshotTO.getPath().substring(snapshotTO.getPath().lastIndexOf(File.separator) + 1);
 
-        Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
+        Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, resource.getHypervisorPath(), checkpointName));
     }
 
     /**

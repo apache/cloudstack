@@ -418,17 +418,23 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return;
         }
 
+        List<SnapshotDataStoreVO> snapshots;
         SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findLatestSnapshotForVolume(volumeId, DataStoreRole.Primary);
-        SnapshotDataStoreVO snapshotOnSecondary = _snapshotStoreDao.findLatestSnapshotForVolume(volumeId, DataStoreRole.Image);
 
         if (snapshotOnPrimary != null) {
-            snapshotOnPrimary.setEndOfChain(true);
-            _snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+            snapshots = _snapshotStoreDao.listBySnapshotId(snapshotOnPrimary.getSnapshotId());
+        } else {
+            SnapshotDataStoreVO snapshotOnSecondary = _snapshotStoreDao.findLatestSnapshotForVolume(volumeId, DataStoreRole.Image);
+            snapshots = snapshotOnSecondary != null ? _snapshotStoreDao.listBySnapshotId(snapshotOnSecondary.getSnapshotId()) : null;
         }
 
-        if (snapshotOnSecondary != null) {
-            snapshotOnSecondary.setEndOfChain(true);
-            _snapshotStoreDao.update(snapshotOnSecondary.getId(), snapshotOnSecondary);
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+
+        for (SnapshotDataStoreVO snapshotDataStoreVO : snapshots) {
+            snapshotDataStoreVO.setEndOfChain(true);
+            _snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
         }
     }
 
