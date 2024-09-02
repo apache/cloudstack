@@ -83,7 +83,7 @@ public interface UserVmManager extends UserVmService {
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
-    public  static  final String SHAREDFSVM = "storagefsvm";
+    public  static  final String SHAREDFSVM = "sharedfsvm";
 
     /**
      * @param hostId get all of the virtual machines that belong to one host.

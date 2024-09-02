@@ -1003,9 +1003,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
-        if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
-        }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
 

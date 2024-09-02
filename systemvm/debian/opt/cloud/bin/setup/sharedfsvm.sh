@@ -18,21 +18,25 @@
 
 . /opt/cloud/bin/setup/common.sh
 
-setup_storagefsvm() {
-    log_it "Starting cloud-init services"
-    log_it "Setting up storagefsvm"
+setup_sharedfsvm() {
+    log_it "Setting up sharedfsvm"
 
     update-alternatives --set iptables /usr/sbin/iptables-legacy
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
     update-alternatives --set arptables /usr/sbin/arptables-legacy
     update-alternatives --set ebtables /usr/sbin/ebtables-legacy
 
+    # set default ssh port and restart sshd service
+    sed -i 's/3922/22/g' /etc/ssh/sshd_config
+    systemctl restart ssh
+
+    sed -i '/- ssh$/s/- ssh/- [ssh, always]/' /etc/cloud/cloud.cfg
+
+    # Prevent root login
+    > /root/.ssh/authorized_keys
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab
     log_it "Swap disabled"
-
-    log_it "Setting up interfaces"
-    setup_system_rfc1918_internal
 
     log_it "Setting up entry in hosts"
     sed -i  /$NAME/d /etc/hosts
@@ -48,7 +52,9 @@ setup_storagefsvm() {
 
     rm -f /etc/logrotate.d/cloud
 
+    log_it "Starting cloud-init services"
     if [ -f /home/cloud/success ]; then
+      cloud-init init
       systemctl stop cloud-init cloud-config cloud-final
       systemctl disable cloud-init cloud-config cloud-final
     else
@@ -58,4 +64,5 @@ setup_storagefsvm() {
     fi
 }
 
-setup_storagefsvm
+setup_sharedfsvm
+. /opt/cloud/bin/setup/patch.sh && patch_sshd_config
