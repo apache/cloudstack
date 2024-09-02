@@ -127,6 +127,9 @@ public class LibvirtVMDef {
         }
 
         public String getManufacturer() {
+            if (StringUtils.isEmpty(manufacturer)) {
+                return "Apache Software Foundation";
+            }
             return manufacturer;
         }
 
