@@ -38,7 +38,11 @@ from marvin.lib.base import (Account,
                              )
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_suitable_test_template)
+                               get_template)
+from marvin.codes import FAILED
+
+from marvin.lib.decoratorGenerators import skipTestIf
+
 
 class TestSharedFSLifecycle(cloudstackTestCase):
 
@@ -52,6 +56,12 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls._cleanup = []
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.hypervisorNotSupported = False
+        if cls.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
+            cls.hypervisorNotSupported = True
+            return
 
         cls.services["service_offering"]["name"] = 'FSVM offering';
         cls.services["service_offering"]["offerha"] = True;
@@ -106,12 +116,12 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         cls.public_ipaddress = None
         cls.sshpublicport = 1000
 
-        cls.hypervisor = cls.testClient.getHypervisorInfo()
-        cls.template = get_suitable_test_template(
+        cls.template = get_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor)
+            cls.services["ostype"])
+        if cls.template == FAILED:
+            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
@@ -209,6 +219,7 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         ssh_client.execute(cmd)
 
     @attr( tags=[ "advanced", "advancedns", "smokes"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
     def test_mount_shared_fs(self):
         """Mount Shared FileSystem on two VMs and match contents
         """
@@ -243,6 +254,7 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         self.assertEqual(result[0], "/mnt/fs1/test")
 
     @attr( tags=[ "advanced", "advancedns", "smokes"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
     def test_resize_shared_fs(self):
         """Resize the shared filesystem by changing the disk offering and validate
         """
