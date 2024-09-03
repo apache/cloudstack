@@ -203,6 +203,7 @@
 "label.action.unmanage.volume": "Unmanage Volume",
 "label.action.unmanage.volumes": "Unmanage Volumes",
 "label.action.update.host": "Update host",
+"label.action.update.security.groups": "Update security groups",
 "label.action.update.offering.access": "Update offering access",
 "label.action.update.resource.count": "Update resource count",
 "label.action.value": "Action/Value",
