@@ -140,6 +140,13 @@ public class DownloadListener implements Listener {
 
     private Cache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
 
+    protected void initZoneHypervisorsCache() {
+        zoneHypervisorsCache = Caffeine.newBuilder()
+                .maximumSize(32)
+                .expireAfterWrite(30, TimeUnit.SECONDS)
+                .build();
+    }
+
     // TODO: this constructor should be the one used for template only, remove other template constructor later
     public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
             AsyncCompletionCallback<DownloadAnswer> callback) {
@@ -155,12 +162,12 @@ public class DownloadListener implements Listener {
         _callback = callback;
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
+        initZoneHypervisorsCache();
+    }
 
-        zoneHypervisorsCache = Caffeine.newBuilder()
-                .maximumSize(512)
-                .expireAfterWrite(30, TimeUnit.SECONDS)
-                .build();
-
+    public DownloadListener(DownloadMonitorImpl monitor) {
+        _downloadMonitor = monitor;
+        initZoneHypervisorsCache();
     }
 
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
@@ -216,10 +223,6 @@ public class DownloadListener implements Listener {
 
     public void log(String message, Level level) {
         s_logger.log(level, message + ", " + object.getType() + ": " + object.getId() + " at host " + _ssAgent.getId());
-    }
-
-    public DownloadListener(DownloadMonitorImpl monitor) {
-        _downloadMonitor = monitor;
     }
 
     @Override
