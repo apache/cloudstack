@@ -24,10 +24,13 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.driver.ScaleIOPrimaryDataStoreDriver;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -50,8 +53,16 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
+public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOSDCManagerImpl.class);
+
+    static ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.connect.on.demand",
+            Boolean.FALSE.toString(),
+            "Connect PowerFlex client on Host when first Volume created and disconnect when last Volume deleted (or always stay connected otherwise).",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
 
     @Inject
     AgentManager agentManager;
@@ -93,6 +104,10 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
     @Override
     public String prepareSDC(Host host, DataStore dataStore) {
+        if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+            return getConnectedSdc(host, dataStore);
+        }
+
         String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to prepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
@@ -226,6 +241,9 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
     @Override
     public boolean stopSDC(Host host, DataStore dataStore) {
+        if(Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+            return true;
+        }
         String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to unprepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
@@ -344,5 +362,16 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager {
 
     private ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
         return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePoolId, storagePoolDetailsDao);
+    }
+
+
+    @Override
+    public String getConfigComponentName() {
+        return ScaleIOPrimaryDataStoreDriver.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{ConnectOnDemand};
     }
 }

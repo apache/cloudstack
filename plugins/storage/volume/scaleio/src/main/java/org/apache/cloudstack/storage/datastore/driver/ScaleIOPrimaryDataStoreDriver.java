@@ -38,8 +38,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -110,15 +108,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
 
-public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Configurable {
+public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreDriver.class);
-
-    static ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
-            Boolean.class,
-            "powerflex.connect.on.demand",
-            Boolean.FALSE.toString(),
-            "Connect PowerFlex client on Host when first Volume created and disconnect when last Volume deleted (or always stay connected otherwise).",
-            Boolean.TRUE);
 
     @Inject
     EndPointSelector selector;
@@ -164,9 +155,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
 
     private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
         sdcManager = ComponentContext.inject(sdcManager);
-        // don't connect SDC if connect on demand disabled
-        final String sdcId = Boolean.TRUE.equals(ConnectOnDemand.value()) ? sdcManager.prepareSDC(host, dataStore) :
-                sdcManager.getConnectedSdc(host, dataStore);
+        final String sdcId = sdcManager.prepareSDC(host, dataStore);
         if (StringUtils.isBlank(sdcId)) {
             alertHostSdcDisconnection(host);
             throw new CloudRuntimeException("Unable to grant access to volume: " + volume.getId() + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
@@ -203,9 +192,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
         try {
             sdcManager = ComponentContext.inject(sdcManager);
-            // don't connect SDC if connect on demand disabled
-            final String sdcId = Boolean.TRUE.equals(ConnectOnDemand.value()) ? sdcManager.prepareSDC(host, dataStore) :
-                    sdcManager.getConnectedSdc(host, dataStore);
+            final String sdcId = sdcManager.prepareSDC(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 alertHostSdcDisconnection(host);
                 throw new CloudRuntimeException(String.format("Unable to grant access to %s: %s, no Sdc connected with host ip: %s", dataObject.getType(), dataObject.getId(), host.getPrivateIpAddress()));
@@ -246,8 +233,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
         }
 
         try {
-            sdcManager = ComponentContext.inject(sdcManager);
-            final String sdcId = sdcManager.getConnectedSdc(host, dataStore);
+            final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
             if (StringUtils.isBlank(sdcId)) {
                 LOGGER.warn(String.format("Unable to revoke access for %s: %s, no Sdc connected with host ip: %s", dataObject.getType(), dataObject.getId(), host.getPrivateIpAddress()));
                 return;
@@ -266,9 +252,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
                 LOGGER.debug("Revoking access for PowerFlex volume snapshot: " + snapshot.getPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(snapshot.getPath()), sdcId);
             }
-
-            // don't stop SDC if connect on demand disabled
-            if (Boolean.TRUE.equals(ConnectOnDemand.value()) && client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+            if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+                sdcManager = ComponentContext.inject(sdcManager);
                 sdcManager.stopSDC(host, dataStore);
             }
         } catch (Exception e) {
@@ -284,8 +269,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
 
         try {
             LOGGER.debug("Revoking access for PowerFlex volume: " + volumePath);
-            sdcManager = ComponentContext.inject(sdcManager);
-            final String sdcId = sdcManager.getConnectedSdc(host, dataStore);
+
+            final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
             if (StringUtils.isBlank(sdcId)) {
                 LOGGER.warn(String.format("Unable to revoke access for volume: %s, no Sdc connected with host ip: %s", volumePath, host.getPrivateIpAddress()));
                 return;
@@ -293,8 +278,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
 
             final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
-            // don't stop SDC if connect on demand disabled
-            if (Boolean.TRUE.equals(ConnectOnDemand.value()) && client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+            if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
+                sdcManager = ComponentContext.inject(sdcManager);
                 sdcManager.stopSDC(host, dataStore);
             }
         } catch (Exception e) {
@@ -305,6 +290,24 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
     private void revokeAccess(DataObject dataObject, EndPoint ep, DataStore dataStore) {
         Host host = hostDao.findById(ep.getId());
         revokeAccess(dataObject, host, dataStore);
+    }
+
+    public String getConnectedSdc(long poolId, long hostId) {
+        try {
+            StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(poolId, hostId);
+            if (poolHostVO == null) {
+                return null;
+            }
+
+            final ScaleIOGatewayClient client = getScaleIOClient(poolId);
+            if (client.isSdcConnected(poolHostVO.getLocalPath())) {
+                return poolHostVO.getLocalPath();
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Couldn't check SDC connection for the host: " + hostId + " and storage pool: " + poolId + " due to " + e.getMessage(), e);
+        }
+
+        return null;
     }
 
     @Override
@@ -553,7 +556,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
                     }
                 }
             } else {
-                 LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
+                LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
             }
 
             return answer;
@@ -776,7 +779,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
                 long newSize = destData.getSize() + (1<<30);
                 LOGGER.debug(String.format("Destination volume %s(%s) is configured for encryption. Resizing to fit headers, new size %s will be rounded up to nearest 8Gi", destInfo.getId(), destData.getSize(), newSize));
                 ResizeVolumePayload p = new ResizeVolumePayload(newSize, destInfo.getMinIops(), destInfo.getMaxIops(),
-                    destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
+                        destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
                 destInfo.addPayload(p);
                 resizeVolume(destInfo);
             } else {
@@ -1519,15 +1522,5 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver, Co
     @Override
     public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return true;
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return ScaleIOPrimaryDataStoreDriver.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{ConnectOnDemand};
     }
 }
