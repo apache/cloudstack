@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -53,11 +54,14 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.storage.upload.UploadListener;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Monitor progress of template download to a single storage server
@@ -134,6 +138,8 @@ public class DownloadListener implements Listener {
     @Inject
     private VolumeService _volumeSrv;
 
+    private Cache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
+
     // TODO: this constructor should be the one used for template only, remove other template constructor later
     public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
             AsyncCompletionCallback<DownloadAnswer> callback) {
@@ -149,6 +155,12 @@ public class DownloadListener implements Listener {
         _callback = callback;
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
+
+        zoneHypervisorsCache = Caffeine.newBuilder()
+                .maximumSize(512)
+                .expireAfterWrite(30, TimeUnit.SECONDS)
+                .build();
+
     }
 
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
@@ -271,19 +283,24 @@ public class DownloadListener implements Listener {
     public void processHostAdded(long hostId) {
     }
 
+    protected List<Hypervisor.HypervisorType> getAvailHypervisorInZone(long zoneId) {
+        return _resourceMgr.listAvailHypervisorInZone(zoneId);
+    }
+
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
-            /* FIXME: CPU and DB hotspot
-            List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getDataCenterId());
-            HypervisorType hostHyper = agent.getHypervisorType();
+            // FIXME: CPU and DB hotspot
+            List<Hypervisor.HypervisorType> hypers = zoneHypervisorsCache.get(agent.getDataCenterId(),
+                    this::getAvailHypervisorInZone);
+            Hypervisor.HypervisorType hostHyper = agent.getHypervisorType();
             if (hypers.contains(hostHyper)) {
                 return;
             }
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
             _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
-             */
+
         }
         /* This can be removed
         else if ( cmd instanceof StartupStorageCommand) {
