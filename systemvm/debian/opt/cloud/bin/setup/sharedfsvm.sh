@@ -32,7 +32,6 @@ setup_sharedfsvm() {
 
     sed -i '/- ssh$/s/- ssh/- [ssh, always]/' /etc/cloud/cloud.cfg
 
-    # Prevent root login
     > /root/.ssh/authorized_keys
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab
@@ -54,7 +53,6 @@ setup_sharedfsvm() {
 
     log_it "Starting cloud-init services"
     if [ -f /home/cloud/success ]; then
-      cloud-init init
       systemctl stop cloud-init cloud-config cloud-final
       systemctl disable cloud-init cloud-config cloud-final
     else
