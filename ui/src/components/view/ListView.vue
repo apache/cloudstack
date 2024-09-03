@@ -617,7 +617,11 @@ export default {
       }).then(json => {
         this.editableValueKey = null
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('message.setting.updated')} ${record.name}`)
+        var message = `${this.$t('message.setting.updated')} ${record.name}`
+        if (record.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
+        this.$message.success(message)
         if (json.updateconfigurationresponse &&
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
@@ -638,7 +642,10 @@ export default {
       api('resetConfiguration', {
         name: item.name
       }).then(() => {
-        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        if (item.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
         this.$message.success(message)
       }).catch(error => {
         console.error(error)

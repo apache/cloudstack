@@ -45,8 +45,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
-import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -195,6 +193,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -677,7 +676,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
-            switch (ConfigKey.Scope.valueOf(scope)) {
+            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+            switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
                 if (zone == null) {
@@ -767,6 +767,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
+            _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
             return value;
         }
 
@@ -779,6 +780,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
+        _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt = null;
         if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
@@ -1054,7 +1056,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         String newValue = null;
-        switch (ConfigKey.Scope.valueOf(scope)) {
+        ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+        switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(id);
                 if (zone == null) {
@@ -1138,6 +1141,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : _configDao.findByName(name).getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
+
+        _configDepot.invalidateConfigCache(name, scopeVal, id);
 
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);

@@ -2887,6 +2887,7 @@
 "message.set.default.nic": "Please confirm that you would like to make this NIC the default for this VM.",
 "message.set.default.nic.manual": "Please manually update the default NIC on the VM now.",
 "message.setting.updated": "Setting Updated:",
+"message.setting.update.delay": "The new value will take effect within 30 seconds.",
 "message.setup.physical.network.during.zone.creation": "When adding a zone, you need to set up one or more physical networks. Each network corresponds to a NIC on the hypervisor. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined. Add or remove one or more traffic types onto each physical network.",
 "message.setup.physical.network.during.zone.creation.basic": "When adding a basic zone, you can set up one physical network, which corresponds to a NIC on the hypervisor. The network carries several types of traffic.<br/><br/>You may also <strong>add</strong> other traffic types onto the physical network.",
 "message.shared.network.offering.warning": "Domain admins and regular users can only create shared networks from network offering with the setting specifyvlan=false. Please contact an administrator to create a network offering if this list is empty.",

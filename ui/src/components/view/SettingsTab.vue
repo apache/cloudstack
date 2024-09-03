@@ -174,7 +174,10 @@ export default {
         name: item.name,
         value: this.editableValue
       }).then(() => {
-        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
+        var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
+        if (item.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
         this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
@@ -204,7 +207,10 @@ export default {
         [this.scopeKey]: this.resource.id,
         name: item.name
       }).then(() => {
-        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        if (item.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
         this.handleSuccessMessage(item.name, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
