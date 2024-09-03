@@ -208,7 +208,7 @@ setup_interface_sshd() {
   elif [ "$TYPE" == "cksnode" ]; then
     setup_common eth0
 
-  elif [ "$TYPE" == "storagefsvm" ]; then
+  elif [ "$TYPE" == "sharedfsvm" ]; then
     setup_common eth0
   fi
 
