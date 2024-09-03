@@ -3825,7 +3825,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 // CPU and DB hotspot
                 // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
                 // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
-                // scanStalledVMInTransitionStateOnUpHost(agentId);
+                 scanStalledVMInTransitionStateOnUpHost(agentId);
                 processed = true;
             }
         }
