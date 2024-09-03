@@ -32,7 +32,6 @@ public class RestoreBackupCommand extends Command  {
     private String backupRepoAddress;
     private List<String> volumePaths;
     private String diskType;
-    private Long deviceId;
     private Boolean vmExists;
     private String restoreVolumeUUID;
     private VirtualMachine.State vmState;
@@ -95,14 +94,6 @@ public class RestoreBackupCommand extends Command  {
 
     public void setDiskType(String diskType) {
         this.diskType = diskType;
-    }
-
-    public Long getDeviceId() {
-        return deviceId;
-    }
-
-    public void setDeviceId(Long deviceId) {
-        this.deviceId = deviceId;
     }
 
     public String getMountOptions() {

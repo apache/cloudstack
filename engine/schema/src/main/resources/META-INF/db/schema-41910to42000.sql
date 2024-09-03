@@ -259,3 +259,6 @@ ALTER TABLE `cloud`.`backup_schedule` DROP FOREIGN KEY fk_backup_schedule__vm_id
 ALTER TABLE `cloud`.`backup_schedule` DROP INDEX vm_id;
 ALTER TABLE `cloud`.`backup_schedule` ADD CONSTRAINT fk_backup_schedule__vm_id
     FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
+
+-- Add volume details to the backups table to keep track of the volumes being backed up
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backed_volumes', 'text DEFAULT NULL COMMENT "details of backed-up volumes" ');

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.backup.BackupManagerImpl;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackup;

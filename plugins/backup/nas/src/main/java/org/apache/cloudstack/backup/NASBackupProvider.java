@@ -50,7 +50,6 @@ import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +58,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class NASBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = LogManager.getLogger(NASBackupProvider.class);
@@ -178,10 +178,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
+            backupVO.setBackedVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             return backupDao.update(backupVO.getId(), backupVO);
         } else {
             backupVO.setStatus(Backup.Status.Failed);
-            backupDao.update(backupVO.getId(), backupVO);
+            backupDao.remove(backupVO.getId());
         }
         return Objects.nonNull(answer) && answer.getResult();
     }
@@ -209,8 +210,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
-        volumes.sort(Comparator.comparing(VolumeVO::getDeviceId));
+        List<Backup.VolumeInfo> backedVolumes = backup.getBackedVolumes();
+        List<VolumeVO> volumes = backedVolumes.stream().map(volume -> volumeDao.findByUuid(volume.getUuid())).collect(Collectors.toList());
 
         LOG.debug(String.format("Restoring vm %s from backup %s on the NAS Backup Provider", vm.getUuid(), backup.getUuid()));
         BackupRepository backupRepository = getBackupRepository(vm, backup);
@@ -288,7 +289,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vmNameAndState.first());
         restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
-        restoreCommand.setDeviceId(volume.getDeviceId());
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(volumeUuid);

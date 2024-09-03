@@ -266,7 +266,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDao.remove(offering.getId());
     }
 
-    private String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+    public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
         for (VolumeVO vol : vmVolumes) {
             list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
@@ -611,6 +611,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getRemoved() == null && !vm.getState().equals(VirtualMachine.State.Stopped) &&
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
+        }
+        List<Backup.VolumeInfo> backupVolumes = backup.getBackedVolumes();
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        if (vmVolumes.size() != backupVolumes.size()) {
+            throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
         }
 
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());

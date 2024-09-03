@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup.dao;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -40,6 +41,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import org.opensaml.xml.signature.P;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
 
@@ -161,7 +163,14 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
-        response.setVolumes(new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class));
+        // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
+        String backedUpVolumes;
+        if (Objects.isNull(backup.getBackedVolumes())) {
+            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+        } else {
+            backedUpVolumes = new Gson().toJson(backup.getBackedVolumes().toArray(), Backup.VolumeInfo[].class);
+        }
+        response.setVolumes(backedUpVolumes);
         response.setBackupOfferingId(offering.getUuid());
         response.setBackupOffering(offering.getName());
         response.setAccountId(account.getUuid());

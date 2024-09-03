@@ -38,13 +38,11 @@ backup_running_vm() {
   mount_operation
   mkdir -p $dest
 
-  deviceId=0
   name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
   for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
     volpath=$(virsh -c qemu:///system domblklist $VM --details | awk "/$disk/{print $4}" | sed 's/.*\///')
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$deviceId.$name.$volpath.qcow2' /></disk>" >> $dest/backup.xml
-    deviceId=$((devideId+1))
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volpath.qcow2' /></disk>" >> $dest/backup.xml
     name="datadisk"
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
@@ -78,12 +76,10 @@ backup_stopped_vm() {
 
   IFS=","
 
-  deviceId=0
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$deviceId.$name.$volUuid.qcow2
-    deviceId=$((devideId+1))
+    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2
     name="datadisk"
   done
   sync

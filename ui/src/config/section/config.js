@@ -151,7 +151,7 @@ export default {
           ],
           mapping: {
             type: {
-              options: ['nfs', 'cephfs', 'cifs']
+              options: ['nfs']
             },
             provider: {
               value: (record) => { return 'nas' }

@@ -58,7 +58,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         String mountOptions = command.getMountOptions();
         Boolean vmExists = command.isVmExists();
         String diskType = command.getDiskType();
-        Long deviceId = command.getDeviceId();
         List<String> volumePaths = command.getVolumePaths();
         String restoreVolumeUuid = command.getRestoreVolumeUUID();
 
@@ -67,7 +66,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             String volumePath = volumePaths.get(0);
             int lastIndex = volumePath.lastIndexOf("/");
             newVolumeId = volumePath.substring(lastIndex + 1);
-            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, deviceId, restoreVolumeUuid,
+            restoreVolume(backupPath, backupRepoType, backupRepoAddress, volumePath, diskType, restoreVolumeUuid,
                     new Pair<>(vmName, command.getVmState()));
         } else if (Boolean.TRUE.equals(vmExists)) {
             restoreVolumesOfExistingVM(volumePaths, backupPath, backupRepoType, backupRepoAddress, mountOptions);
@@ -85,7 +84,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         try {
             for (int idx = 0; idx < volumePaths.size(); idx++) {
                 String volumePath = volumePaths.get(idx);
-                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, idx, null);
+                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, null);
                 diskType = "datadisk";
                 try {
                     replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
@@ -107,7 +106,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         try {
             for (int i = 0; i < volumePaths.size(); i++) {
                 String volumePath = volumePaths.get(i);
-                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, i, null);
+                Pair<String, String> bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, null);
                 diskType = "datadisk";
                 try {
                     replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
@@ -122,11 +121,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
     }
 
     private void restoreVolume(String backupPath, String backupRepoType, String backupRepoAddress, String volumePath,
-                               String diskType, Long deviceId, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState) {
+                               String diskType, String volumeUUID, Pair<String, VirtualMachine.State> vmNameAndState) {
         String mountDirectory = mountBackupDirectory(backupRepoAddress, backupRepoType);
         Pair<String, String> bkpPathAndVolUuid;
         try {
-            bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, deviceId.intValue(), volumeUUID);
+            bkpPathAndVolUuid = getBackupPath(mountDirectory, volumePath, backupPath, diskType, volumeUUID);
             try {
                 replaceVolumeWithBackup(volumePath, bkpPathAndVolUuid.first());
                 if (VirtualMachine.State.Running.equals(vmNameAndState.second())) {
@@ -176,11 +175,11 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
         }
     }
 
-    private Pair<String, String> getBackupPath(String mountDirectory, String volumePath, String backupPath, String diskType, int deviceId, String volumeUuid) {
+    private Pair<String, String> getBackupPath(String mountDirectory, String volumePath, String backupPath, String diskType, String volumeUuid) {
         String bkpPath = String.format(FILE_PATH_PLACEHOLDER, mountDirectory, backupPath);
         int lastIndex = volumePath.lastIndexOf(File.separator);
         String volUuid = Objects.isNull(volumeUuid) ? volumePath.substring(lastIndex + 1) : volumeUuid;
-        String backupFileName = String.format("%s.%s.%s.qcow2", deviceId, diskType.toLowerCase(Locale.ROOT), volUuid);
+        String backupFileName = String.format("%s.%s.qcow2", diskType.toLowerCase(Locale.ROOT), volUuid);
         bkpPath = String.format(FILE_PATH_PLACEHOLDER, bkpPath, backupFileName);
         return new Pair<>(bkpPath, volUuid);
     }
