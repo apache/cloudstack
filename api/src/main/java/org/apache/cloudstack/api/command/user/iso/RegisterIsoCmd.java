@@ -119,10 +119,10 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
             description = "true if password reset feature is supported; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the ISO. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -235,8 +235,8 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return passwordEnabled == null ? false : passwordEnabled;
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        return CPU.CPUArchitecture.fromType(architecture);
+    public CPU.CPUArchitecture getArch() {
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

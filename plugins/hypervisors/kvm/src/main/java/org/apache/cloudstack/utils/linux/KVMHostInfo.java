@@ -60,6 +60,7 @@ public class KVMHostInfo {
     private List<String> capabilities = new ArrayList<>();
 
     private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
+    private static String cpuArchCommand = "/usr/bin/arch";
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
         this.cpuSpeed = manualSpeed;
@@ -235,7 +236,7 @@ public class KVMHostInfo {
     }
 
     private String getCPUArchitectureFromCommand() {
-        LOGGER.info("Fetching host CPU architecture");
-        return Script.runSimpleBashScript("arch");
+        LOGGER.info("Fetching host CPU arch");
+        return Script.runSimpleBashScript(cpuArchCommand);
     }
 }

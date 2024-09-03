@@ -173,10 +173,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             since = "4.19.0")
     private String templateType;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -299,8 +299,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return templateType;
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        return CPU.CPUArchitecture.fromType(architecture);
+    public CPU.CPUArchitecture getArch() {
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

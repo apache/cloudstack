@@ -48,5 +48,5 @@ public interface UploadParams {
     boolean isRoutingType();
     boolean isDirectDownload();
     boolean isDeployAsIs();
-    CPU.CPUArchitecture getArchitecture();
+    CPU.CPUArchitecture getArch();
 }

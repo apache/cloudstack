@@ -56,10 +56,10 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
             description = "the ID of the OS Type that best represents the OS of this template. Not required for VMware as the guest OS is obtained from the OVF file.")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bits support. 64 by default")
     private Integer bits;
@@ -168,8 +168,8 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
                 Boolean.TRUE.equals(deployAsIs);
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        return CPU.CPUArchitecture.fromType(architecture);
+    public CPU.CPUArchitecture getArch() {
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     @Override

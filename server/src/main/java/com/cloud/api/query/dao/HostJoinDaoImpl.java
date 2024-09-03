@@ -210,7 +210,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
                 if (host.getArch() != null) {
-                    hostResponse.setArchitecture(host.getArch().getType());
+                    hostResponse.setArch(host.getArch().getType());
                 }
 
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;

@@ -23,7 +23,7 @@ public class CPU {
 
     public static final String archX86Identifier = "i686";
     public static final String archX86_64Identifier = "x86_64";
-    public static final String archARM64Identifier = "arm64";
+    public static final String archARM64Identifier = "aarch64";
 
     public enum CPUArchitecture {
         X86(archX86Identifier, 32),
@@ -54,7 +54,7 @@ public class CPU {
                 case archX86Identifier: return X86;
                 case archX86_64Identifier: return X86_64;
                 case archARM64Identifier: return ARM64;
-                default: throw new CloudRuntimeException(String.format("Unsupported architecture type: %s", type));
+                default: throw new CloudRuntimeException(String.format("Unsupported arch type: %s", type));
             }
         }
     }

@@ -55,10 +55,10 @@ public class UpdateClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
     private String managedState;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the template/ISO. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     public String getClusterName() {
         return clusterName;
@@ -115,11 +115,11 @@ public class UpdateClusterCmd extends BaseCmd {
         return ApiCommandResourceType.Cluster;
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        if (StringUtils.isBlank(architecture)) {
+    public CPU.CPUArchitecture getArch() {
+        if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(architecture);
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     @Override

@@ -1499,7 +1499,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
         clusterResponse.setResourceDetails(_clusterDetailsDao.findDetails(cluster.getId()));
         if (cluster.getArch() != null) {
-            clusterResponse.setArchitecture(cluster.getArch().getType());
+            clusterResponse.setArch(cluster.getArch().getType());
         }
 
         if (showCapacities != null && showCapacities) {

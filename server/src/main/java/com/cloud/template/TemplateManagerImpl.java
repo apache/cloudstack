@@ -2110,7 +2110,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
-        CPU.CPUArchitecture architecture = cmd.getCPUArchitecture();
+        CPU.CPUArchitecture arch = cmd.getCPUArch();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2159,7 +2159,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
-                  architecture == null &&
+                  arch == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2234,8 +2234,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template.setDynamicallyScalable(isDynamicallyScalable);
         }
 
-        if (architecture != null) {
-            template.setArch(architecture);
+        if (arch != null) {
+            template.setArch(arch);
         }
 
         if (isRoutingTemplate != null) {

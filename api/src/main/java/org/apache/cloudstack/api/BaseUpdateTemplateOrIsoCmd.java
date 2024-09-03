@@ -79,10 +79,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
             description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the template/ISO. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template/ISO. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -149,10 +149,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
     }
 
-    public CPU.CPUArchitecture getCPUArchitecture() {
-        if (StringUtils.isBlank(architecture)) {
+    public CPU.CPUArchitecture getCPUArch() {
+        if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(architecture);
+        return CPU.CPUArchitecture.fromType(arch);
     }
 }

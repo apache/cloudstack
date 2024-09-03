@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class TemplateUploadParams extends UploadParamsBase {
 
-    public TemplateUploadParams(long userId, String name, String displayText, CPU.CPUArchitecture architecture,
+    public TemplateUploadParams(long userId, String name, String displayText, CPU.CPUArchitecture arch,
                                 Integer bits, Boolean passwordEnabled, Boolean requiresHVM,
                                 Boolean isPublic, Boolean featured,
                                 Boolean isExtractable, String format, Long guestOSId,
@@ -31,7 +31,7 @@ public class TemplateUploadParams extends UploadParamsBase {
                                 String templateTag, long templateOwnerId,
                                 Map details, Boolean sshkeyEnabled,
                                 Boolean isDynamicallyScalable, Boolean isRoutingType, boolean deployAsIs) {
-        super(userId, name, displayText, architecture, bits, passwordEnabled, requiresHVM, isPublic, featured, isExtractable,
+        super(userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, isPublic, featured, isExtractable,
                 format, guestOSId, zoneId, hypervisorType, chksum, templateTag, templateOwnerId, details,
                 sshkeyEnabled, isDynamicallyScalable, isRoutingType, deployAsIs);
         setBootable(true);

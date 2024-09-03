@@ -1142,7 +1142,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String allocationState = cmd.getAllocationState();
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
-        CPU.CPUArchitecture architecture = cmd.getArchitecture();
+        CPU.CPUArchitecture arch = cmd.getArch();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -1215,8 +1215,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        if (architecture != null) {
-            cluster.setArch(architecture);
+        if (arch != null) {
+            cluster.setArch(arch);
             doUpdate = true;
         }
 
@@ -2755,7 +2755,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         CPU.CPUArchitecture hostCpuArchitecture = CPU.CPUArchitecture.fromType(ssCmd.getCpuArchitecture());
         if (hostCpuArchitecture != null && clusterVO.getArch() != null && hostCpuArchitecture != clusterVO.getArch()) {
-            String msg = String.format("Can't add a host whose architecture is: %s into cluster of architecture type: %s",
+            String msg = String.format("Can't add a host whose arch is: %s into cluster of arch type: %s",
                     hostCpuArchitecture.getType(), clusterVO.getArch().getType());
             logger.error(msg);
             throw new IllegalArgumentException(msg);

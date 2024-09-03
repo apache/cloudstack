@@ -333,7 +333,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
         if (template.getArch() != null) {
-            templateResponse.setArchitecture(template.getArch().getType());
+            templateResponse.setArch(template.getArch().getType());
         }
 
         //set template children disks
@@ -604,7 +604,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
         if (iso.getArch() != null) {
-            isoResponse.setArchitecture(iso.getArch().getType());
+            isoResponse.setArch(iso.getArch().getType());
         }
 
         isoResponse.setObjectName("iso");

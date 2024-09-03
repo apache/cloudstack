@@ -90,10 +90,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
     private Boolean showIcon;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the ISO. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -166,11 +166,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return onlyReady;
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        if (StringUtils.isBlank(architecture)) {
+    public CPU.CPUArchitecture getArch() {
+        if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(architecture);
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

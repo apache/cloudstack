@@ -106,10 +106,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.19.0")
     private Boolean isVnf;
 
-    @Parameter(name = ApiConstants.ARCHITECTURE, type = CommandType.STRING,
-            description = "the CPU architecture of the template. Valid options are: x86_64, arm64",
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
             since = "4.20")
-    private String architecture;
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -198,11 +198,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return isVnf;
     }
 
-    public CPU.CPUArchitecture getArchitecture() {
-        if (StringUtils.isBlank(architecture)) {
+    public CPU.CPUArchitecture getArch() {
+        if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(architecture);
+        return CPU.CPUArchitecture.fromType(arch);
     }
 
     @Override
