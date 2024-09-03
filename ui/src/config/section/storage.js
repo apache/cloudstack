@@ -604,6 +604,9 @@ export default {
           message: 'message.action.start.sharedfs',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
@@ -614,6 +617,8 @@ export default {
           docHelp: 'adminguide/storage.html#lifecycle-operations',
           dataView: true,
           popup: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced'],
           show: (record) => { return ['Ready'].includes(record.state) }
         },
@@ -624,6 +629,7 @@ export default {
           label: 'label.action.restart.sharedfs',
           message: 'message.action.restart.sharedfs',
           dataView: true,
+          popup: true,
           args: ['cleanup'],
           show: (record) => { return ['Stopped', 'Ready', 'Detached'].includes(record.state) }
         },
@@ -676,6 +682,7 @@ export default {
           label: 'label.expunge.sharedfs',
           message: 'message.action.expunge.sharedfs',
           dataView: true,
+          popup: true,
           show: (record) => { return ['Destroyed', 'Expunging', 'Error'].includes(record.state) }
         }
       ]

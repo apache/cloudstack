@@ -37,11 +37,11 @@
             <timeline>
               <a-timeline-item color="blue">
                 <h3>mount -t nfs {{ nic.ipaddress }}:{{ resource.path }} [local_mount_path]</h3>
-                <p class="info"><i>(This mount command can be used to mount the NFS share using the default options given.)</i></p>
+                <p class="info"><i>(Mount the NFS share. Additional mount options can be given as required.)</i></p>
               </a-timeline-item>
               <a-timeline-item color="blue">
                 <h3>showmount -e {{ nic.ipaddress }}</h3>
-                <p class="info"><i>(It might take a few minutes for the NFS server to start after the Shared FileSystem is created for the first time.<br>The showmount command can be used to check the status of the NFS server.)</i></p>
+                <p class="info"><i>(Check the status of the NFS server using the showmount command.)</i></p>
               </a-timeline-item>
             </timeline>
           </a-card>

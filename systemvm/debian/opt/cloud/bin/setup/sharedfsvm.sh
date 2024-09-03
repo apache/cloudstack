@@ -19,7 +19,6 @@
 . /opt/cloud/bin/setup/common.sh
 
 setup_sharedfsvm() {
-    log_it "Starting cloud-init services"
     log_it "Setting up sharedfsvm"
 
     update-alternatives --set iptables /usr/sbin/iptables-legacy
