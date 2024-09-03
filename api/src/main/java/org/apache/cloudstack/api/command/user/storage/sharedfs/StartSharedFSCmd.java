@@ -22,7 +22,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,6 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSService;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
@@ -48,7 +49,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false,
         since = "4.20.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class StartSharedFSCmd extends BaseCmd implements UserCmd {
+public class StartSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject
     SharedFSService sharedFSService;
@@ -79,6 +80,16 @@ public class StartSharedFSCmd extends BaseCmd implements UserCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Starting Shared FileSystem " + id;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SHAREDFS_START;
     }
 
     private String getStartExceptionMsg(Exception ex) {

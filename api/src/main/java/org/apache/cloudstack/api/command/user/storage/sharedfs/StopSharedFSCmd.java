@@ -22,7 +22,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -32,6 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSService;
 
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
 @APICommand(name = "stopSharedFileSystem",
@@ -42,7 +43,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false,
         since = "4.20.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class StopSharedFSCmd extends BaseCmd implements UserCmd {
+public class StopSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Inject
     SharedFSService sharedFSService;
@@ -82,6 +83,16 @@ public class StopSharedFSCmd extends BaseCmd implements UserCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SHAREDFS_STOP;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Stopping Shared FileSystem " + id;
     }
 
     @Override

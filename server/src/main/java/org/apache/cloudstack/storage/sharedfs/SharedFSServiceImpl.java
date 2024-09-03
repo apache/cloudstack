@@ -343,7 +343,7 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SHAREDFS_START, eventDescription = "Starting Shared FileSystem", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_SHAREDFS_START, eventDescription = "Starting Shared FileSystem")
     public SharedFS startSharedFS(Long sharedFSId) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         SharedFSVO sharedFS = sharedFSDao.findById(sharedFSId);
 
@@ -357,7 +357,7 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_SHAREDFS_STOP, eventDescription = "Stopping Shared FileSystem", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_SHAREDFS_STOP, eventDescription = "Stopping Shared FileSystem")
     public SharedFS stopSharedFS(Long sharedFSId, Boolean forced) {
         SharedFSVO sharedFS = sharedFSDao.findById(sharedFSId);
         Account caller = CallContext.current().getCallingAccount();

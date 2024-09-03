@@ -195,20 +195,6 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         self.debug("Successfully programmed PF rule for :%s"%self.public_ipaddress.ipaddress)
         return createPfRule.publicport
 
-    def waitForNFSShare(self, ssh_client, sharedfs_ip):
-        def showmount(ssh_client, sharedfs_ip):
-            cmd = "showmount -e " + sharedfs_ip  + " | grep /export"
-            res = ssh_client.execute(cmd)[0]
-            if res == "/export *":
-                time.sleep(15)
-                return True, res
-            else:
-                return False, None
-        retry_interval = 15
-        num_tries = 20
-        wait_result, return_val = wait_until(retry_interval, num_tries, showmount, ssh_client, sharedfs_ip)
-        self.assertTrue(return_val)
-
     def getSSHClient(self, virtual_machine, port):
         try:
             ssh_client = virtual_machine.get_ssh_client(ipaddress=self.public_ipaddress.ipaddress, port=port)
@@ -218,9 +204,8 @@ class TestSharedFSLifecycle(cloudstackTestCase):
 
     def mountSharedFSOnVM(self, ssh_client, sharedfs):
         sharedfs_ip = sharedfs.nic[0].ipaddress
-        self.waitForNFSShare(ssh_client, sharedfs_ip)
         ssh_client.execute("mkdir /mnt/fs1")
-        cmd = "mount -t nfs -o rw,sync " + sharedfs_ip  + ":/export /mnt/fs1"
+        cmd = "mount -t nfs -o nolock " + sharedfs_ip  + ":/export /mnt/fs1"
         ssh_client.execute(cmd)
 
     @attr( tags=[ "advanced", "advancedns", "smokes"], required_hardware="true")
@@ -268,8 +253,11 @@ class TestSharedFSLifecycle(cloudstackTestCase):
         self.debug("Size of the filesystem is " + size)
         self.assertEqual(size, "2.0G", "SharedFS size should be 2.0G")
 
+        response = SharedFS.stop(self.sharedfs, self.apiclient)
         response = SharedFS.changediskoffering(self.sharedfs, self.apiclient, self.disk_offering.id, 3)
         self.debug(response)
+        response = SharedFS.start(self.sharedfs, self.apiclient)
+        time.sleep(10)
 
         result = self.vm1_ssh_client.execute("df -Th /mnt/fs1 | grep nfs")[0]
         size = result.split()[-5]

@@ -7362,6 +7362,19 @@ class SharedFS:
         cmd.forced = forced
         apiclient.destroySharedFileSystem(cmd)
 
+    def stop(self, apiclient, forced=True):
+        """Stop Shared FileSystem"""
+        cmd = stopSharedFileSystem.stopSharedFileSystemCmd()
+        cmd.id = self.id
+        cmd.forced = forced
+        apiclient.stopSharedFileSystem(cmd)
+
+    def start(self, apiclient):
+        """Start Shared FileSystem"""
+        cmd = startSharedFileSystem.startSharedFileSystemCmd()
+        cmd.id = self.id
+        apiclient.startSharedFileSystem(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         cmd = listSharedFileSystems.listSharedFileSystemCmd()
