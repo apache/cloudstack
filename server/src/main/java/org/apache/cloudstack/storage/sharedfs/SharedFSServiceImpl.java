@@ -278,7 +278,7 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
         }
         if (networkVO.getGuestType() == Network.GuestType.Shared) {
             if ((networkVO.getAclType() != ControlledEntity.ACLType.Account) ||
-                    (networkVO.getDomainId() != cmd.getDomainId()) ||
+                    (cmd.getDomainId() != null && (networkVO.getDomainId() != cmd.getDomainId())) ||
                     (networkVO.getAccountId() != owner.getAccountId())) {
                 throw new InvalidParameterValueException("Shared network which is not Account scoped and not belonging to the same account can not be used to create a Shared FileSystem");
             }
