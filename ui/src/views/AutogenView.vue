@@ -412,6 +412,8 @@
           :columns="columns"
           :items="items"
           :actions="actions"
+          :currentPage="page"
+          :pageSize="pageSize"
           :columnKeys="columnKeys"
           :selectedColumns="selectedColumns"
           ref="listview"

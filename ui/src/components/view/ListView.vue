@@ -534,6 +534,12 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    currentPage: {
+      type: Number
+    },
+    pageSize: {
+      type: Number
     }
   },
   inject: ['parentFetchData', 'parentToggleLoading'],
@@ -754,8 +760,9 @@ export default {
     },
     updateOrder (data) {
       const promises = []
+      const previousSortKeys = this.pageSize && this.currentPage ? this.pageSize * (this.currentPage - 1) : 0
       data.forEach((item, index) => {
-        promises.push(this.handleUpdateOrder(item.id, index + 1))
+        promises.push(this.handleUpdateOrder(item.id, previousSortKeys + index + 1))
       })
       Promise.all(promises).catch((reason) => {
         console.log(reason)
