@@ -112,8 +112,6 @@ config_guest() {
           fi
           ;;
      vmware)
-          # explicitly update the module dependencies
-          depmod -a
           # system time sync'd with host via vmware tools
           systemctl stop ntpd
           systemctl disable ntpd
