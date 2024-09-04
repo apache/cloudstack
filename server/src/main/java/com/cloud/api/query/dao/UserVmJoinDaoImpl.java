@@ -425,10 +425,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
-        if (userVm.getDeletionProtection() == null) {
-            userVmResponse.setDeletionProtection(false);
+        if (userVm.getDeleteProtection() == null) {
+            userVmResponse.setDeleteProtection(false);
         } else {
-            userVmResponse.setDeletionProtection(userVm.getDeletionProtection());
+            userVmResponse.setDeleteProtection(userVm.getDeleteProtection());
         }
 
         if (userVm.getAutoScaleVmGroupName() != null) {

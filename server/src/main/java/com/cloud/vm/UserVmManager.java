@@ -138,7 +138,7 @@ public interface UserVmManager extends UserVmService {
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,
-                                Boolean isDisplayVmEnabled, Boolean deletionProtection,
+                                Boolean isDisplayVmEnabled, Boolean deleteProtection,
                                 Long osTypeId, String userData, Long userDataId,
                                 String userDataDetails, Boolean isDynamicallyScalable,
                                 HTTPMethod httpMethod, String customId, String hostName,

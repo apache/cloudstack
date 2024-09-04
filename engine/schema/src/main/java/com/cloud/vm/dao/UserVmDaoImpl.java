@@ -277,7 +277,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public void updateVM(long id, String displayName, boolean enable, Long osTypeId,
                          String userData, Long userDataId, String userDataDetails,
                          boolean displayVm, boolean isDynamicallyScalable,
-                         boolean deletionProtection, String customId, String hostName,
+                         boolean deleteProtection, String customId, String hostName,
                          String instanceName) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
@@ -288,7 +288,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         vo.setUserDataDetails(userDataDetails);
         vo.setDisplayVm(displayVm);
         vo.setDynamicallyScalable(isDynamicallyScalable);
-        vo.setDeletionProtection(deletionProtection);
+        vo.setDeleteProtection(deleteProtection);
         if (hostName != null) {
             vo.setHostName(hostName);
         }

@@ -62,7 +62,7 @@ export default {
 
         return fields
       },
-      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path', 'deletionprotection'],
+      details: ['name', 'id', 'type', 'storagetype', 'diskofferingdisplaytext', 'deviceid', 'sizegb', 'physicalsize', 'provisioningtype', 'utilization', 'diskkbsread', 'diskkbswrite', 'diskioread', 'diskiowrite', 'diskiopstotal', 'miniops', 'maxiops', 'path', 'deleteprotection'],
       related: [{
         name: 'snapshot',
         title: 'label.snapshots',
@@ -148,7 +148,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'deletionprotection'],
+          args: ['name', 'deleteprotection'],
           mapping: {
             account: {
               value: (record) => { return record.account }

@@ -936,8 +936,8 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
-    public boolean isDeletionProtection() {
-        return volumeVO.isDeletionProtection();
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
     }
 
     @Override

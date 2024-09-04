@@ -77,12 +77,13 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new name of the volume", since = "4.16")
     private String name;
 
-    @Parameter(name = ApiConstants.DELETION_PROTECTION,
+    @Parameter(name = ApiConstants.DELETE_PROTECTION,
             type = CommandType.BOOLEAN,
-            description = "Set deletion protection for the volume. If true, The volume " +
+            description = "Set delete protection for the volume. If true, The volume " +
                     "will be protected from deletion. Note: If the volume is managed by " +
-                    "another service like autoscaling groups or CKS, deletion protection will be ignored.")
-    private Boolean deletionProtection;
+                    "another service like autoscaling groups or CKS, delete protection will be " +
+                    "ignored.")
+    private Boolean deleteProtection;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,8 +117,8 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         return name;
     }
 
-    public Boolean getDeletionProtection() {
-        return deletionProtection;
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
     }
 
     /////////////////////////////////////////////////////
@@ -179,7 +180,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
         Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(),
-                getDeletionProtection(), getCustomId(), getEntityOwnerId(), getChainInfo(), getName());
+                getDeleteProtection(), getCustomId(), getEntityOwnerId(), getChainInfo(), getName());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), result);
             response.setResponseName(getCommandName());

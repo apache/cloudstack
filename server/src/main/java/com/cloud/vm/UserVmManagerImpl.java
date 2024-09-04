@@ -2898,7 +2898,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm,
-                cmd.getDeletionProtection(), osTypeId, userData,
+                cmd.getDeleteProtection(), osTypeId, userData,
                 userDataId, userDataDetails, isDynamicallyScalable, cmd.getHttpMethod(),
                 cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList,
                 cmd.getDhcpOptionsMap());
@@ -3003,7 +3003,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,
-                                       Boolean isDisplayVmEnabled, Boolean deletionProtection,
+                                       Boolean isDisplayVmEnabled, Boolean deleteProtection,
                                        Long osTypeId, String userData, Long userDataId,
                                        String userDataDetails, Boolean isDynamicallyScalable,
                                        HTTPMethod httpMethod, String customId, String hostName,
@@ -3044,8 +3044,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             isDisplayVmEnabled = vm.isDisplayVm();
         }
 
-        if (deletionProtection == null) {
-            deletionProtection = vm.isDeletionProtection();
+        if (deleteProtection == null) {
+            deleteProtection = vm.isDeleteProtection();
         }
 
         boolean updateUserdata = false;
@@ -3164,7 +3164,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
                 userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
-                deletionProtection, customId, hostName, instanceName);
+                deleteProtection, customId, hostName, instanceName);
 
         if (updateUserdata) {
             updateUserData(vm);
@@ -3398,8 +3398,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
-        if (vm.isDeletionProtection()) {
-            throw new InvalidParameterValueException("Failed to delete the VM. It has deletion protection enabled.");
+        if (vm.isDeleteProtection()) {
+            throw new InvalidParameterValueException(
+                    "Failed to delete the instance. It has delete protection enabled.");
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
@@ -8554,9 +8555,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (!(volume.getVolumeType() == Volume.Type.ROOT || volume.getVolumeType() == Volume.Type.DATADISK)) {
                 throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString() + " or " + Volume.Type.ROOT.toString());
             }
-            if (volume.isDeletionProtection()) {
+            if (volume.isDeleteProtection()) {
                 throw new InvalidParameterValueException(
-                        String.format("Volume with id %s  has deletion protection and cannot be deleted",
+                        String.format("Volume with id %s has delete protection enabled and cannot be deleted",
                                 volume.getUuid()));
 
             }

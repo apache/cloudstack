@@ -114,7 +114,7 @@ public interface VolumeApiService {
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds) throws ResourceAllocationException;
 
     Volume updateVolume(long volumeId, String path, String state, Long storageId,
-                        Boolean displayVolume, Boolean deletionProtection,
+                        Boolean displayVolume, Boolean deleteProtection,
                         String customId, long owner, String chainInfo, String name);
 
     /**
