@@ -594,7 +594,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         validateNetworkCidrSize(ownerAccountId, cidrSize);
         List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(ownerDomainId, ownerAccountId, zoneId);
         for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
-            Ipv4GuestSubnetNetworkMap result = getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, ownerDomainId, ownerAccountId, zoneId, subnet.getId());
+            Ipv4GuestSubnetNetworkMap result = getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnet);
             if (result != null) {
                 return result;
             }
@@ -602,18 +602,15 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         return null;
     }
 
-    private Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, Long ownerDomainId, Long ownerAccountId, Long zoneId, Long subnetId) {
-        List<DataCenterIpv4GuestSubnetVO> subnets = getZoneSubnetsForAccount(ownerDomainId, ownerAccountId, zoneId);
-        for (DataCenterIpv4GuestSubnetVO subnet : subnets) {
-            Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), cidrSize);
-            if (map != null) {
-                return map;
-            }
-            try {
-                return createIpv4SubnetFromParentSubnet(subnet, cidrSize);
-            } catch (Exception ex) {
-                logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
-            }
+    private Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(Integer cidrSize, DataCenterIpv4GuestSubnetVO subnet) {
+        Ipv4GuestSubnetNetworkMap map = ipv4GuestSubnetNetworkMapDao.findFirstAvailable(subnet.getId(), cidrSize);
+        if (map != null) {
+            return map;
+        }
+        try {
+            return createIpv4SubnetFromParentSubnet(subnet, cidrSize);
+        } catch (Exception ex) {
+            logger.debug("Failed to create Ipv4 subnet from parent subnet {}: {}", subnet.getSubnet(), ex.getMessage());
         }
         return null;
     }
@@ -682,7 +679,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
 
     private void validateNetworkCidrSize(long accountId, Integer networkCidrSize) {
         if (networkCidrSize == null) {
-            throw new CloudRuntimeException("networkCidrSize is null");
+            throw new CloudRuntimeException("network/vpc CidrSize is null");
         }
         Boolean isAutoAllocationEnabled = RoutedIPv4NetworkCidrAutoAllocationEnabled.valueIn(accountId);
         if (!Boolean.TRUE.equals(isAutoAllocationEnabled)) {
