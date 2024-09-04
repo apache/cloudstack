@@ -1108,7 +1108,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         vmTO.setMetadataManufacturer(metadataManufacturer);
         String metadataProduct = VmMetadataProductName.valueIn(vm.getDataCenterId());
-        if (StringUtils.isBlank(metadataManufacturer)) {
+        if (StringUtils.isBlank(metadataProduct)) {
             metadataProduct = String.format("CloudStack %s Hypervisor", vm.getHypervisorType().toString());
         }
         vmTO.setMetadataProductName(metadataProduct);
