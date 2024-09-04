@@ -127,14 +127,7 @@ write_files:
       #!/bin/bash -e
 
       source /usr/local/bin/sharedfs/common
-
-      LOCKFILE="/dev/shm/resize-filesystem.lock"
-      exec 200>$LOCKFILE
-      flock -n 200 || { echo "Script is already running."; exit 1; }
-
       log "Running resize script."
-
-      DISK_SIZE_FILE="/usr/local/var/sharedfs/previous_disk_size"
 
       FILESYSTEM={{ fsvm.filesystem }}
       if [ "$FILESYSTEM" == "xfs" ]; then
@@ -148,48 +141,21 @@ write_files:
         exit 1
       fi
 
-      CURRENT_DISK_SIZE=$(blockdev --getsz "$PARTITION")
-      echo "$CURRENT_DISK_SIZE" > "$DISK_SIZE_FILE"
-
       log "Finished running resize script."
 
-  - path: /usr/local/bin/sharedfs/check-disk-resize
-    permissions: '0700'
-    owner: root:root
-    content: |
-      #!/bin/bash -e
-
-      source /usr/local/bin/sharedfs/common
-
-      DISK_SIZE_FILE="/usr/local/var/sharedfs/previous_disk_size"
-
-      HYPERVISOR={{ fsvm.hypervisor }}
-      BLOCK_DEVICE=$(get_block_device "$HYPERVISOR")
-
-      CURRENT_DISK_SIZE=$(blockdev --getsz /dev/"$BLOCK_DEVICE")
-
-      if [ -f "$DISK_SIZE_FILE" ]; then
-        PREVIOUS_DISK_SIZE=$(cat "$DISK_SIZE_FILE")
-        if [ "$CURRENT_DISK_SIZE" -ne "$PREVIOUS_DISK_SIZE" ]; then
-          log "Disk size has changed. Triggering udev..."
-          sudo udevadm trigger --subsystem-match=block
-        fi
-      fi
-
-  - path: /etc/systemd/system/check-disk-resize.service
+  - path: /etc/systemd/system/resize-sharedfs@.service
     permissions: '0700'
     owner: root:root
     content: |
       [Unit]
-      Description=Check Disk Resize and Trigger Udev
-      After=local-fs.target
-
-      [Service]
-      Type=oneshot
-      ExecStart=/usr/local/bin/sharedfs/check-disk-resize
+      Description=Resize Shared FileSystem
 
       [Install]
       WantedBy=multi-user.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/sharedfs/resize-filesystem %I
 
   - path: /etc/systemd/system/cloud-dhclient@.service
     permissions: '0700'
@@ -202,7 +168,7 @@ write_files:
       WantedBy=multi-user.target
 
       [Service]
-      Type=simple
+      Type=oneshot
       ExecStart=/usr/sbin/dhclient %I
       Restart=on-failure
 
@@ -227,20 +193,15 @@ write_files:
       done
       log "Existing network interfaces configured"
 
-      UDEV_ADD_RULE="KERNEL==$BLOCK_DEVICE, ACTION==\"add\", SUBSYSTEM==\"block\", RUN+=\"$ADD_PARTITION_FILE /dev/%k\""
-      UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"change\", SUBSYSTEM==\"block\", RUN+=\"$RESIZE_PARTITION_FILE /dev/%k\""
+      UDEV_RESIZE_RULE="KERNEL==\"$BLOCK_DEVICE\", ACTION==\"add|change\", SUBSYSTEM==\"block\", ENV{SYSTEMD_WANTS}=\"resize-sharedfs@%k.service\""
       UDEV_ADD_NIC_RULE="ACTION==\"add\", SUBSYSTEM==\"net\", DRIVERS==\"?*\", ENV{SYSTEMD_WANTS}=\"cloud-dhclient@%k.service\""
 
       # Add udev rules
       echo "$UDEV_RESIZE_RULE" > /etc/udev/rules.d/99-resize-filesystem.rules
-
       echo "$UDEV_ADD_NIC_RULE" > /etc/udev/rules.d/99-add-nic.rules
 
-      if [ ! -b "$PARTITION" ]; then
-        log "Partition $PARTITION does not exist. Adding udev rule for adding the partition"
-        echo "$UDEV_ADD_RULE" > /etc/udev/rules.d/99-create-shared-filesystem.rules
-      else
-        log "Partition $PARTITION already exists. Running the $ADD_PARTITION_FILE script"
+      if [ -b "$PARTITION" ]; then
+        log "Partition $PARTITION exists. Running the $ADD_PARTITION_FILE script"
         $ADD_PARTITION_FILE "$PARTITION"
       fi
 
@@ -249,8 +210,6 @@ write_files:
       # Reload udev rules
       udevadm control --reload-rules
       udevadm trigger
-
-      sudo systemctl enable check-disk-resize.service
 
       log "Script execution finished successfully."
 
