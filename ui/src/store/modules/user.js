@@ -18,12 +18,15 @@
 import Cookies from 'js-cookie'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
+import semver from 'semver'
 
 import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
 import { oauthlogin, login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+import { axios } from '../../utils/request'
+import { getParsedVersion } from '@/utils/util'
 
 import {
   ACCESS_TOKEN,
@@ -38,7 +41,8 @@ import {
   DARK_MODE,
   CUSTOM_COLUMNS,
   OAUTH_DOMAIN,
-  OAUTH_PROVIDER
+  OAUTH_PROVIDER,
+  LATEST_CS_VERSION
 } from '@/store/mutation-types'
 
 const user = {
@@ -167,6 +171,12 @@ const user = {
     },
     SET_OAUTH_PROVIDER_USED_TO_LOGIN: (state, provider) => {
       vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
+    },
+    SET_LATEST_VERSION: (state, version) => {
+      if (version?.fetchedTs > 0) {
+        vueProps.$localStorage.set(LATEST_CS_VERSION, version)
+        state.latestVersion = version
+      }
     }
   },
 
@@ -212,6 +222,8 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+          commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
 
           resolve()
@@ -259,6 +271,8 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+          commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
 
           resolve()
@@ -277,10 +291,12 @@ const user = {
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
+        commit('SET_LATEST_VERSION', latestVersion)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -294,6 +310,7 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -332,12 +349,41 @@ const user = {
           }).catch(error => {
             reject(error)
           })
+
+          api('listNetworks', { restartrequired: true, forvpc: false }).then(response => {
+            if (response.listnetworksresponse.count > 0) {
+              store.dispatch('AddHeaderNotice', {
+                key: 'NETWORK_RESTART_REQUIRED',
+                title: i18n.global.t('label.network.restart.required'),
+                description: i18n.global.t('message.network.restart.required'),
+                path: '/guestnetwork/',
+                query: { restartrequired: true, forvpc: false },
+                status: 'done',
+                timestamp: new Date()
+              })
+            }
+          }).catch(ignored => {})
+
+          api('listVPCs', { restartrequired: true }).then(response => {
+            if (response.listvpcsresponse.count > 0) {
+              store.dispatch('AddHeaderNotice', {
+                key: 'VPC_RESTART_REQUIRED',
+                title: i18n.global.t('label.vpc.restart.required'),
+                description: i18n.global.t('message.vpc.restart.required'),
+                path: '/vpc/',
+                query: { restartrequired: true },
+                status: 'done',
+                timestamp: new Date()
+              })
+            }
+          }).catch(ignored => {})
         }
 
         api('listUsers', { username: Cookies.get('username') }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
@@ -367,6 +413,8 @@ const user = {
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
         })
+      }).catch(error => {
+        console.error(error)
       })
     },
 
@@ -487,6 +535,29 @@ const user = {
     },
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
+    },
+    SetCsLatestVersion ({ commit }, rolename) {
+      const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
+      if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
+        axios.get(
+          'https://api.github.com/repos/apache/cloudstack/releases'
+        ).then(response => {
+          let latestReleaseVersion = getParsedVersion(response[0].tag_name)
+          let latestTag = response[0].tag_name
+
+          for (const release of response) {
+            if (release.tag_name.toLowerCase().includes('rc')) {
+              continue
+            }
+            const parsedVersion = getParsedVersion(release.tag_name)
+            if (semver.gte(parsedVersion, latestReleaseVersion)) {
+              latestReleaseVersion = parsedVersion
+              latestTag = release.tag_name
+              commit('SET_LATEST_VERSION', { version: latestTag, fetchedTs: (+new Date()) })
+            }
+          }
+        }).catch(ignored => {})
+      }
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)

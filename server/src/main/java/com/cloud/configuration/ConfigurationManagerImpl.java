@@ -307,6 +307,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Network;
 
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
     public static final String PERZONE = "perzone";
@@ -1316,6 +1318,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {
                     return String.format("Please enter a value less than 1048577 for the configuration parameter: [%s].", name);
+                }
+            }
+        }
+
+        if (type.equals(String.class)) {
+            if (SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
+                final String[] cidrs = value.split(",");
+                for (final String cidr : cidrs) {
+                    if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                        return String.format("Invalid CIDR %s value specified for the config %s.", cidr, name);
+                    }
                 }
             }
         }

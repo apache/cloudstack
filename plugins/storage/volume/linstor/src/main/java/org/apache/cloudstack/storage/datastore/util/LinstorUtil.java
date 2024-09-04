@@ -192,17 +192,20 @@ public class LinstorUtil {
      *
      * @param api developer api object to use
      * @param rscName resource name to check in use state.
-     * @return True if a resource found that is in use(primary) state, else false.
+     * @return NodeName where the resource is inUse, if not in use `null`
      * @throws ApiException forwards api errors
      */
-    public static boolean isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
+    public static String isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
         List<Resource> rscs = api.resourceList(rscName, null, null);
         if (rscs != null) {
             return rscs.stream()
-                    .anyMatch(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()));
+                    .filter(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()))
+                    .map(Resource::getNodeName)
+                    .findFirst()
+                    .orElse(null);
         }
         LOGGER.error("isResourceInUse: null returned from resourceList");
-        return false;
+        return null;
     }
 
     /**

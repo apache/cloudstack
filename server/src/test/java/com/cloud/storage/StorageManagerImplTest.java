@@ -110,6 +110,18 @@ public class StorageManagerImplTest {
     @InjectMocks
     private StorageManagerImpl storageManagerImpl;
 
+    @Mock
+    private StoragePoolVO storagePoolVOMock;
+
+    @Mock
+    private VolumeVO volume1VOMock;
+
+    @Mock
+    private VolumeVO volume2VOMock;
+
+    @Mock
+    private VMInstanceVO vmInstanceVOMock;
+
     @Test
     public void createLocalStoragePoolName() {
         String hostMockName = "host1";
@@ -513,6 +525,24 @@ public class StorageManagerImplTest {
         storageManagerImpl.enableDefaultDatastoreDownloadRedirectionForExistingInstallations();
         Mockito.verify(configurationDao, Mockito.never())
                 .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
+    }
+
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumesReturnLog() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+        Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
+
+        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (attached to VM [%s]), Volume [%s] (attached to VM [%s])]", volume1VOMock.getUuid(), vmInstanceVOMock.getUuid(), volume2VOMock.getUuid(), vmInstanceVOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
     }
 
     private ChangeStoragePoolScopeCmd mockChangeStoragePooolScopeCmd(String newScope) {
