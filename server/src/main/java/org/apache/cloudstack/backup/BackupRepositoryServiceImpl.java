@@ -24,9 +24,12 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.context.CallContext;
 
@@ -39,6 +42,10 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
 
     @Inject
     private BackupRepositoryDao repositoryDao;
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
+    @Inject
+    private BackupDao backupDao;
     @Inject
     private AccountManager accountManager;
 
@@ -55,6 +62,13 @@ public class BackupRepositoryServiceImpl extends ManagerBase implements BackupRe
         if (Objects.isNull(backupRepositoryVO)) {
             logger.debug("Backup repository appears to already be deleted");
             return false;
+        }
+        BackupOffering offeringVO = backupOfferingDao.findByExternalId(backupRepositoryVO.getUuid(), backupRepositoryVO.getZoneId());
+        if (Objects.nonNull(offeringVO)) {
+            List<Backup> backups = backupDao.listByOfferingId(offeringVO.getId());
+            if (!backups.isEmpty()) {
+                throw new CloudRuntimeException("Failed to delete backup repository as there are backups present on it");
+            }
         }
         return repositoryDao.remove(backupRepositoryVO.getId());
     }
