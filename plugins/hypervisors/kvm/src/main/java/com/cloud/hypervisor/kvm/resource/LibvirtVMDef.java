@@ -209,6 +209,7 @@ public class LibvirtVMDef {
                 guestDef.append("<entry name='manufacturer'>" + getManufacturer() +"</entry>\n");
                 guestDef.append("<entry name='product'>" + getProduct() + "</entry>\n");
                 guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
+                guestDef.append("<entry name='serial'>" + _uuid + "</entry>\n");
                 guestDef.append("</system>\n");
                 guestDef.append("</sysinfo>\n");
 
