@@ -87,6 +87,20 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<String> VmMetadataManufacturer = new ConfigKey<>("Advanced", String.class,
+            "vm.metadata.manufacturer", "Apache Software Foundation",
+            "If provided, a custom manufacturer will be used in the instance metadata. When an empty" +
+                    "value is set then default manufacturer will be 'Apache Software Foundation'. " +
+                    "A custom manufacturer may break cloud-init functionality with CloudStack datasource. Please " +
+                    "refer documentation", true, ConfigKey.Scope.Zone);
+    ConfigKey<String> VmMetadataProductName = new ConfigKey<>("Advanced", String.class,
+            "vm.metadata.product", "",
+            "If provided, a custom product name will be used in the instance metadata. When an empty" +
+                    "value is set then default product name will be 'CloudStack <HYPERVISOR_NAME> Hypervisor'. " +
+                    "A custom product name may break cloud-init functionality with CloudStack datasource. Please " +
+                    "refer documentation",
+            true, ConfigKey.Scope.Zone);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }

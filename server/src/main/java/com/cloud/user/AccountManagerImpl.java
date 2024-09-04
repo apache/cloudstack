@@ -1369,6 +1369,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command);
+    }
+
     @NotNull
     private List<APIChecker> getEnabledApiCheckers() {
         // we are really only interested in the dynamic access checker
@@ -1836,7 +1842,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1856,7 +1869,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
             logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
@@ -2769,13 +2782,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Unable to find user by id");
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
-        checkAccess(CallContext.current().getCallingUser(), account);
+        User caller = CallContext.current().getCallingUser();
+        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
+        checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
+        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
+            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
+            logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+    }
+
+    protected boolean isDomainAdminForRootDomain(User callingUser) {
+        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
+        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override
@@ -2812,6 +2840,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
         // don't allow updating system user

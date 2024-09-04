@@ -274,7 +274,7 @@ export default {
         this.$message.error(this.$t('message.error.save.setting'))
         this.$notification.error({
           message: this.$t('label.error'),
-          description: this.$t('message.error.save.setting')
+          description: error?.response?.data?.updateconfigurationresponse?.errortext || this.$t('message.error.save.setting')
         })
       }).finally(() => {
         this.valueLoading = false

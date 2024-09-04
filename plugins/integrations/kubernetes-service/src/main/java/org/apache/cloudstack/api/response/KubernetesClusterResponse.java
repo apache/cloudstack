@@ -98,6 +98,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "the name of the domain in which the Kubernetes cluster exists")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the Kubernetes cluster belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.SSH_KEYPAIR)
     @Param(description = "keypair details")
     private String keypair;
@@ -279,6 +283,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public String getKeypair() {
         return keypair;
     }

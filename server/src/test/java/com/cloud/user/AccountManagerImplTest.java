@@ -28,6 +28,8 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
@@ -205,6 +207,39 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test (expected = InvalidParameterValueException.class)
+    public void deleteUserAccountTestIfAccountIdIsEqualToCallerIdShouldThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            long accountId = 1L;
+
+            Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+            Mockito.doReturn(1L).when(accountVoMock).getId();
+
+            accountManagerImpl.deleteUserAccount(accountId);
+        }
+    }
+
+    @Test
+    public void deleteUserAccountTestIfAccountIdIsNotEqualToCallerAccountIdShouldNotThrowException() {
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            long accountId = 1L;
+
+            Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
+            Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+            Mockito.doReturn(2L).when(accountVoMock).getId();
+            Mockito.doReturn(true).when(accountManagerImpl).isDeleteNeeded(Mockito.any(), Mockito.anyLong(), Mockito.any());
+            Mockito.doReturn(new ArrayList<Long>()).when(_projectAccountDao).listAdministratedProjectIds(Mockito.anyLong());
+
+            accountManagerImpl.deleteUserAccount(accountId);
+        }
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
     public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
             DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
@@ -289,6 +324,63 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(accountMock.getAccountId()).thenReturn(2L);
 
         accountManagerImpl.getKeys(_listkeyscmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testGetUserKeysCmdDomainAdminRootAdminUser() {
+        CallContext.register(callingUser, callingAccount);
+        Mockito.when(_listkeyscmd.getID()).thenReturn(2L);
+        Mockito.when(accountManagerImpl.getActiveUser(2L)).thenReturn(userVoMock);
+        Mockito.when(userAccountDaoMock.findById(2L)).thenReturn(userAccountVO);
+        Mockito.when(userAccountVO.getAccountId()).thenReturn(2L);
+        Mockito.when(userDetailsDaoMock.listDetailsKeyPairs(Mockito.anyLong())).thenReturn(null);
+
+        // Queried account - admin account
+        AccountVO adminAccountMock = Mockito.mock(AccountVO.class);
+        Mockito.when(adminAccountMock.getAccountId()).thenReturn(2L);
+        Mockito.when(_accountDao.findByIdIncludingRemoved(2L)).thenReturn(adminAccountMock);
+        Mockito.lenient().when(accountService.isRootAdmin(2L)).thenReturn(true);
+        Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
+                Mockito.nullable(ControlledEntity.class), Mockito.nullable(AccessType.class), Mockito.anyString())).thenReturn(true);
+
+        // Calling account is domain admin of the ROOT domain
+        Mockito.lenient().when(callingAccount.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        Mockito.lenient().when(callingAccount.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
+
+        Mockito.lenient().when(callingUser.getAccountId()).thenReturn(2L);
+        Mockito.lenient().when(_accountDao.findById(2L)).thenReturn(callingAccount);
+
+        Mockito.lenient().when(accountService.isDomainAdmin(Mockito.anyLong())).thenReturn(Boolean.TRUE);
+        Mockito.lenient().when(accountMock.getAccountId()).thenReturn(2L);
+
+        accountManagerImpl.getKeys(_listkeyscmd);
+    }
+
+    @Test
+    public void testPreventRootDomainAdminAccessToRootAdminKeysNormalUser() {
+        User user = Mockito.mock(User.class);
+        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(account);
+        accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
+        Mockito.verify(accountManagerImpl, Mockito.never()).isRootAdmin(Mockito.anyLong());
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testPreventRootDomainAdminAccessToRootAdminKeysRootDomainAdminUser() {
+        User user = Mockito.mock(User.class);
+        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
+        Mockito.when(user.getAccountId()).thenReturn(1L);
+        AccountVO account = Mockito.mock(AccountVO.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+        Mockito.when(account.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
+        Mockito.when(_accountDao.findById(1L)).thenReturn(account);
+        Mockito.when(entity.getAccountId()).thenReturn(1L);
+        Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
+                Mockito.nullable(ControlledEntity.class), Mockito.nullable(AccessType.class), Mockito.anyString())).thenReturn(true);
+        accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
     }
 
     @Test
