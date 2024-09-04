@@ -2062,6 +2062,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!volumeMigrateRequired && !volumeResizeRequired) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
+            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+
             return volume;
         }
 
@@ -2096,6 +2098,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
+        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.informStorageForDiskOfferingChange()) {
+                storageDriver.updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            }
+        }
     }
 
     /**
@@ -2331,7 +2345,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * the actual disk size.
              */
             if (currentSize > newSize) {
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
@@ -4282,7 +4296,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             } else if (storeForNewStoreScope.getScopeType() == ScopeType.HOST
                     && (storeForExistingStoreScope.getScopeType() == ScopeType.CLUSTER || storeForExistingStoreScope.getScopeType() == ScopeType.ZONE)) {
-                Long hostId = _vmInstanceDao.findById(existingVolume.getInstanceId()).getHostId();
+                VMInstanceVO vm = _vmInstanceDao.findById(existingVolume.getInstanceId());
+                Long hostId = vm.getHostId();
+                if (hostId == null) {
+                    hostId = vm.getLastHostId();
+                }
                 if (storeForNewStoreScope.getScopeId().equals(hostId)) {
                     return false;
                 }

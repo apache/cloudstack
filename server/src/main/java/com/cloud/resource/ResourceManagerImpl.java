@@ -3418,7 +3418,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostGpuGroupsVO> listAvailableGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final Filter searchFilter = new Filter(VGPUTypesVO.class, "remainingCapacity", false, null, null);
+        Filter searchFilter = new Filter(null, null);
+        searchFilter.addOrderBy(VGPUTypesVO.class, "remainingCapacity", false, "groupId");
         final SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("groupName", groupName);

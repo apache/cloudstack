@@ -96,7 +96,7 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<String> VmMetadataProductName = new ConfigKey<>("Advanced", String.class,
             "vm.metadata.product", "",
             "If provided, a custom product name will be used in the instance metadata. When an empty" +
-                    "value is set then default product name will be 'CloudStack <HYPERVISIOR_NAME> Hypervisor'. " +
+                    "value is set then default product name will be 'CloudStack <HYPERVISOR_NAME> Hypervisor'. " +
                     "A custom product name may break cloud-init functionality with CloudStack datasource. Please " +
                     "refer documentation",
             true, ConfigKey.Scope.Zone);
