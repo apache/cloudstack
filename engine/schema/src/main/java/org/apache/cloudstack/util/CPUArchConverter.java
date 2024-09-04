@@ -20,15 +20,15 @@ import com.cloud.cpu.CPU;
 
 import javax.persistence.AttributeConverter;
 
-public class CPUArchitectureConverter implements AttributeConverter<CPU.CPUArchitecture, String> {
+public class CPUArchConverter implements AttributeConverter<CPU.CPUArch, String> {
 
     @Override
-    public String convertToDatabaseColumn(CPU.CPUArchitecture cpuArchitecture) {
-        return cpuArchitecture == null ? CPU.CPUArchitecture.X86_64.getType() : cpuArchitecture.getType();
+    public String convertToDatabaseColumn(CPU.CPUArch cpuArch) {
+        return cpuArch == null ? CPU.CPUArch.X86_64.getType() : cpuArch.getType();
     }
 
     @Override
-    public CPU.CPUArchitecture convertToEntityAttribute(String attribute) {
-        return CPU.CPUArchitecture.fromType(attribute);
+    public CPU.CPUArch convertToEntityAttribute(String attribute) {
+        return CPU.CPUArch.fromType(attribute);
     }
 }

@@ -276,8 +276,8 @@ public class CheckOnHostCommandTest {
         }
 
         @Override
-        public CPU.CPUArchitecture getArch() {
-            return CPU.CPUArchitecture.X86_64;
+        public CPU.CPUArch getArch() {
+            return CPU.CPUArch.X86_64;
         }
     };
 

@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class TemplateUploadParams extends UploadParamsBase {
 
-    public TemplateUploadParams(long userId, String name, String displayText, CPU.CPUArchitecture arch,
+    public TemplateUploadParams(long userId, String name, String displayText, CPU.CPUArch arch,
                                 Integer bits, Boolean passwordEnabled, Boolean requiresHVM,
                                 Boolean isPublic, Boolean featured,
                                 Boolean isExtractable, String format, Long guestOSId,

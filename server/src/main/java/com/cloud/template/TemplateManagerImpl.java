@@ -2110,7 +2110,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
-        CPU.CPUArchitecture arch = cmd.getCPUArch();
+        CPU.CPUArch arch = cmd.getCPUArch();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);

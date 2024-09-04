@@ -210,5 +210,5 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
 
     ResourceState getResourceState();
 
-    CPU.CPUArchitecture getArch();
+    CPU.CPUArch getArch();
 }

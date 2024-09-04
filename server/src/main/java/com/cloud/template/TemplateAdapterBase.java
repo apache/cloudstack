@@ -131,18 +131,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArchitecture arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
-        Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+                                   Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
+                                   Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
         return prepare(isIso, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
             hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload, deployAsIs);
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArchitecture arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
-        Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-        TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+                                   Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
+                                   Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
+                                   TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
         //Long accountId = null;
         // parameters verification
 

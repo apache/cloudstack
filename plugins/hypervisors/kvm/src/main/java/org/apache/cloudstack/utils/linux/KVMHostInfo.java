@@ -53,7 +53,7 @@ public class KVMHostInfo {
     private int allocatableCpus;
     private int cpusockets;
     private long cpuSpeed;
-    private String cpuArchitecture;
+    private String cpuArch;
     private long totalMemory;
     private long reservedMemory;
     private long overCommitMemory;
@@ -107,8 +107,8 @@ public class KVMHostInfo {
         return this.capabilities;
     }
 
-    public String getCpuArchitecture() {
-        return cpuArchitecture;
+    public String getCpuArch() {
+        return cpuArch;
     }
 
     protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
@@ -207,7 +207,7 @@ public class KVMHostInfo {
                 this.cpusockets = hosts.sockets * hosts.nodes;
             }
             this.totalCpus = hosts.cpus;
-            this.cpuArchitecture = getCPUArchitectureFromCommand();
+            this.cpuArch = getCPUArchFromCommand();
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(capabilities);
@@ -235,7 +235,7 @@ public class KVMHostInfo {
         }
     }
 
-    private String getCPUArchitectureFromCommand() {
+    private String getCPUArchFromCommand() {
         LOGGER.info("Fetching host CPU arch");
         return Script.runSimpleBashScript(cpuArchCommand);
     }

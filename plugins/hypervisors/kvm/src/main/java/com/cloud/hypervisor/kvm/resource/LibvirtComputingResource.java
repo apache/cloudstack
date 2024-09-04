@@ -3664,8 +3664,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (healthCheckResult != HealthCheckResult.IGNORE) {
             cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
         }
-        if (StringUtils.isNotBlank(info.getCpuArchitecture())) {
-            cmd.setCpuArchitecture(info.getCpuArchitecture());
+        if (StringUtils.isNotBlank(info.getCpuArch())) {
+            cmd.setCpuArch(info.getCpuArch());
         }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {

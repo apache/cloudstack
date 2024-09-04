@@ -1142,7 +1142,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String allocationState = cmd.getAllocationState();
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
-        CPU.CPUArchitecture arch = cmd.getArch();
+        CPU.CPUArch arch = cmd.getArch();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -2753,10 +2753,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() +
                     " whose hypervisor type is: " + clusterVO.getHypervisorType());
         }
-        CPU.CPUArchitecture hostCpuArchitecture = CPU.CPUArchitecture.fromType(ssCmd.getCpuArchitecture());
-        if (hostCpuArchitecture != null && clusterVO.getArch() != null && hostCpuArchitecture != clusterVO.getArch()) {
+        CPU.CPUArch hostCpuArch = CPU.CPUArch.fromType(ssCmd.getCpuArch());
+        if (hostCpuArch != null && clusterVO.getArch() != null && hostCpuArch != clusterVO.getArch()) {
             String msg = String.format("Can't add a host whose arch is: %s into cluster of arch type: %s",
-                    hostCpuArchitecture.getType(), clusterVO.getArch().getType());
+                    hostCpuArch.getType(), clusterVO.getArch().getType());
             logger.error(msg);
             throw new IllegalArgumentException(msg);
         }
@@ -2778,7 +2778,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setCaps(ssCmd.getCapabilities());
         host.setCpuSockets(ssCmd.getCpuSockets());
         host.setCpus(ssCmd.getCpus());
-        host.setArch(hostCpuArchitecture);
+        host.setArch(hostCpuArch);
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);

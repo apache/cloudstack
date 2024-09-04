@@ -27,7 +27,7 @@ import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
-import org.apache.cloudstack.util.CPUArchitectureConverter;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
@@ -78,8 +78,8 @@ public class EngineClusterVO implements EngineCluster, Identity {
     AllocationState allocationState;
 
     @Column(name = "arch")
-    @Convert(converter = CPUArchitectureConverter.class)
-    private CPU.CPUArchitecture arch;
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -252,11 +252,11 @@ public class EngineClusterVO implements EngineCluster, Identity {
     }
 
     @Override
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 
-    public void setArch(CPU.CPUArchitecture arch) {
+    public void setArch(CPU.CPUArch arch) {
         this.arch = arch;
     }
 

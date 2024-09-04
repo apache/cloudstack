@@ -299,8 +299,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return templateType;
     }
 
-    public CPU.CPUArchitecture getArch() {
-        return CPU.CPUArchitecture.fromType(arch);
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

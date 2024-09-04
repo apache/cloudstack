@@ -2271,7 +2271,7 @@ public class ApiDBUtils {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
     }
 
-    public static List<CPU.CPUArchitecture> listZoneClustersArchitecture(long zoneId) {
-        return s_clusterDao.getClustersArchitectureByZone(zoneId);
+    public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
+        return s_clusterDao.getClustersArchsByZone(zoneId);
     }
 }

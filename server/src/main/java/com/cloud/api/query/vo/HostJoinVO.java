@@ -40,7 +40,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.util.CPUArchitectureConverter;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -216,8 +216,8 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
     private String username;
 
     @Column(name = "arch")
-    @Convert(converter = CPUArchitectureConverter.class)
-    private CPU.CPUArchitecture arch;
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Override
     public long getId() {
@@ -439,7 +439,7 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
                 .contains(getResourceState());
     }
 
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 }

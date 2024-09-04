@@ -352,7 +352,7 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return imageVO.getArch();
     }
 

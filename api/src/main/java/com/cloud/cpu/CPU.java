@@ -25,7 +25,7 @@ public class CPU {
     public static final String archX86_64Identifier = "x86_64";
     public static final String archARM64Identifier = "aarch64";
 
-    public enum CPUArchitecture {
+    public enum CPUArch {
         X86(archX86Identifier, 32),
         X86_64(archX86_64Identifier, 64),
         ARM64(archARM64Identifier, 64);
@@ -33,7 +33,7 @@ public class CPU {
         private String type;
         private int bits;
 
-        CPUArchitecture(String type, int bits) {
+        CPUArch(String type, int bits) {
             this.type = type;
             this.bits = bits;
         }
@@ -46,7 +46,7 @@ public class CPU {
             return this.bits;
         }
 
-        public static CPUArchitecture fromType(String type) {
+        public static CPUArch fromType(String type) {
             if (StringUtils.isBlank(type)) {
                 return X86_64;
             }

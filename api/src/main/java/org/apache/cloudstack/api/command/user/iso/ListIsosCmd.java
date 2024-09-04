@@ -166,11 +166,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return onlyReady;
     }
 
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(arch);
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

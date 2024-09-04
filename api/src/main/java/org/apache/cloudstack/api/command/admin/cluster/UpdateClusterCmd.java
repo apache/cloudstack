@@ -115,11 +115,11 @@ public class UpdateClusterCmd extends BaseCmd {
         return ApiCommandResourceType.Cluster;
     }
 
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(arch);
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

@@ -46,9 +46,9 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
     private boolean deployAsIs;
-    private CPU.CPUArchitecture arch;
+    private CPU.CPUArch arch;
 
-    UploadParamsBase(long userId, String name, String displayText, CPU.CPUArchitecture arch,
+    UploadParamsBase(long userId, String name, String displayText, CPU.CPUArch arch,
                                Integer bits, boolean passwordEnabled, boolean requiresHVM,
                                boolean isPublic, boolean featured,
                                boolean isExtractable, String format, Long guestOSId,
@@ -249,11 +249,11 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 
-    public void setArch(CPU.CPUArchitecture arch) {
+    public void setArch(CPU.CPUArch arch) {
         this.arch = arch;
     }
 }

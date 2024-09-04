@@ -149,6 +149,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     UserData.UserDataOverridePolicy getUserDataOverridePolicy();
 
-    CPU.CPUArchitecture getArch();
+    CPU.CPUArch getArch();
 
 }

@@ -168,8 +168,8 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
                 Boolean.TRUE.equals(deployAsIs);
     }
 
-    public CPU.CPUArchitecture getArch() {
-        return CPU.CPUArchitecture.fromType(arch);
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

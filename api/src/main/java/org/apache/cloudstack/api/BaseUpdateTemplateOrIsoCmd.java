@@ -149,10 +149,10 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
     }
 
-    public CPU.CPUArchitecture getCPUArch() {
+    public CPU.CPUArch getCPUArch() {
         if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(arch);
+        return CPU.CPUArch.fromType(arch);
     }
 }

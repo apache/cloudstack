@@ -129,7 +129,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setNsxEnabled(true);
         }
 
-        List<CPU.CPUArchitecture> clusterArchs = ApiDBUtils.listZoneClustersArchitecture(dataCenter.getId());
+        List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
         zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),

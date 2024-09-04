@@ -198,11 +198,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return isVnf;
     }
 
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         if (StringUtils.isBlank(arch)) {
             return null;
         }
-        return CPU.CPUArchitecture.fromType(arch);
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

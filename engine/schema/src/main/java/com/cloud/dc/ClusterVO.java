@@ -23,7 +23,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.util.CPUArchitectureConverter;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
@@ -72,8 +72,8 @@ public class ClusterVO implements Cluster {
     AllocationState allocationState;
 
     @Column(name = "arch")
-    @Convert(converter = CPUArchitectureConverter.class)
-    private CPU.CPUArchitecture arch;
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -207,11 +207,11 @@ public class ClusterVO implements Cluster {
     }
 
     @Override
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 
-    public void setArch(CPU.CPUArchitecture arch) {
+    public void setArch(CPU.CPUArch arch) {
         this.arch = arch;
     }
 

@@ -40,5 +40,5 @@ public interface Cluster extends Grouping, Partition {
 
     ManagedState getManagedState();
 
-    CPU.CPUArchitecture getArch();
+    CPU.CPUArch getArch();
 }

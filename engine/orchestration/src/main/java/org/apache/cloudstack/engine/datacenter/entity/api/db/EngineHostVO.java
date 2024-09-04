@@ -51,7 +51,7 @@ import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
-import org.apache.cloudstack.util.CPUArchitectureConverter;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
@@ -125,8 +125,8 @@ public class EngineHostVO implements EngineHost, Identity {
     private HypervisorType hypervisorType;
 
     @Column(name = "arch")
-    @Convert(converter = CPUArchitectureConverter.class)
-    private CPU.CPUArchitecture arch;
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "proxy_port")
     private Integer proxyPort;
@@ -732,11 +732,11 @@ public class EngineHostVO implements EngineHost, Identity {
     }
 
     @Override
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 
-    public void setArch(CPU.CPUArchitecture arch) {
+    public void setArch(CPU.CPUArch arch) {
         this.arch = arch;
     }
 

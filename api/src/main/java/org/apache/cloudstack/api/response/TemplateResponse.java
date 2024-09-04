@@ -184,7 +184,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private List<Map<String, String>> downloadDetails;
 
     @SerializedName(ApiConstants.ARCH)
-    @Param(description = "CPU Architecture of the template", since = "4.20")
+    @Param(description = "CPU Arch of the template", since = "4.20")
     private String arch;
 
     @SerializedName(ApiConstants.BITS)

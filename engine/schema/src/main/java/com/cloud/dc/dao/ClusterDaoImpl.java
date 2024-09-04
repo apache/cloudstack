@@ -311,7 +311,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<CPU.CPUArchitecture> getClustersArchitectureByZone(long zoneId) {
+    public List<CPU.CPUArch> getClustersArchsByZone(long zoneId) {
         SearchCriteria<ClusterVO> sc = ClusterArchSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         List<ClusterVO> clusters = listBy(sc);

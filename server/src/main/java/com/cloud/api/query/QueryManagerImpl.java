@@ -4486,7 +4486,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf, CPU.CPUArchitecture arch) {
+            Boolean isVnf, CPU.CPUArch arch) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;

@@ -38,7 +38,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.util.CPUArchitectureConverter;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
@@ -73,8 +73,8 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     private boolean requiresHvm;
 
     @Column(name = "arch")
-    @Convert(converter = CPUArchitectureConverter.class)
-    private CPU.CPUArchitecture arch;
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "bits")
     private int bits;
@@ -550,7 +550,7 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         return userDataParams;
     }
 
-    public CPU.CPUArchitecture getArch() {
+    public CPU.CPUArch getArch() {
         return arch;
     }
 }

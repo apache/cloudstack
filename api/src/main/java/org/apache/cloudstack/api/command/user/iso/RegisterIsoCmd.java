@@ -235,8 +235,8 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return passwordEnabled == null ? false : passwordEnabled;
     }
 
-    public CPU.CPUArchitecture getArch() {
-        return CPU.CPUArchitecture.fromType(arch);
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////
