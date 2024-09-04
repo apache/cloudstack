@@ -791,12 +791,12 @@ public class HostResponse extends BaseResponseWithAnnotations {
         isTagARule = tagARule;
     }
 
-    public String getArch() {
-        return arch;
-    }
-
     public void setArch(String arch) {
         this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     public Long getCpuAllocatedValue() {

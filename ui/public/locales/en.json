@@ -366,7 +366,7 @@
 "label.apply.tungsten.firewall.policy": "Apply Firewall Policy",
 "label.apply.tungsten.network.policy": "Apply Network Policy",
 "label.apply.tungsten.tag": "Apply tag",
-"label.architecture": "Architecture",
+"label.arch": "Arch",
 "label.archive": "Archive",
 "label.archived": "Archived",
 "label.archive.alerts": "Archive alerts",

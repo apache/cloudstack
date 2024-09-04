@@ -19,7 +19,9 @@ package org.apache.cloudstack.util;
 import com.cloud.cpu.CPU;
 
 import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
+@Converter
 public class CPUArchConverter implements AttributeConverter<CPU.CPUArch, String> {
 
     @Override

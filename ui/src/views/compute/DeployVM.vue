@@ -1097,8 +1097,8 @@ export default {
             id: 'x86_64',
             description: 'AMD 64 bits (x86_64)'
           }, {
-            id: 'arm64',
-            description: 'ARM 64 bits (arm64)'
+            id: 'aarch64',
+            description: 'ARM 64 bits (aarch64)'
           }
         ]
       }
@@ -2417,7 +2417,7 @@ export default {
       }
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
-        args.architecture = this.selectedArchitecture
+        args.arch = this.selectedArchitecture
       }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
@@ -2445,7 +2445,7 @@ export default {
       }
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
-        args.architecture = this.selectedArchitecture
+        args.arch = this.selectedArchitecture
       }
       args.isoFilter = isoFilter
       args.bootable = true

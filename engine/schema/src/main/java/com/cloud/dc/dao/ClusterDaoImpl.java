@@ -56,6 +56,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
     protected final SearchBuilder<ClusterVO> ClusterSearch;
+    protected final SearchBuilder<ClusterVO> ClusterDistinctArchSearch;
     protected final SearchBuilder<ClusterVO> ClusterArchSearch;
 
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
@@ -108,9 +109,14 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterSearch.select(null, Func.DISTINCT, ClusterSearch.entity().getHypervisorType());
         ClusterIdSearch.done();
 
+        ClusterDistinctArchSearch = createSearchBuilder();
+        ClusterDistinctArchSearch.and("dataCenterId", ClusterDistinctArchSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ClusterDistinctArchSearch.select(null, Func.DISTINCT, ClusterDistinctArchSearch.entity().getArch());
+        ClusterDistinctArchSearch.done();
+
         ClusterArchSearch = createSearchBuilder();
         ClusterArchSearch.and("dataCenterId", ClusterArchSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ClusterArchSearch.select(null, Func.DISTINCT, ClusterArchSearch.entity().getArch());
+        ClusterArchSearch.and("arch", ClusterArchSearch.entity().getArch(), SearchCriteria.Op.EQ);
         ClusterArchSearch.done();
     }
 
@@ -312,9 +318,17 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     @Override
     public List<CPU.CPUArch> getClustersArchsByZone(long zoneId) {
-        SearchCriteria<ClusterVO> sc = ClusterArchSearch.create();
+        SearchCriteria<ClusterVO> sc = ClusterDistinctArchSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         List<ClusterVO> clusters = listBy(sc);
         return clusters.stream().map(ClusterVO::getArch).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ClusterVO> listClustersByArchAndZoneId(long zoneId, CPU.CPUArch arch) {
+        SearchCriteria<ClusterVO> sc = ClusterArchSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("arch", arch);
+        return listBy(sc);
     }
 }

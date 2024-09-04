@@ -344,10 +344,10 @@
           </a-select>
         </a-form-item>
         <a-form-item
-          name="architecture"
-          ref="architecture">
+          name="arch"
+          ref="arch">
           <template #label>
-            <tooltip-label :title="$t('label.architecture')" :tooltip="apiParams.architecture.description"/>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
           </template>
           <a-select
             showSearch
@@ -355,8 +355,8 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            v-model:value="form.architecture"
-            :placeholder="apiParams.architecture.description">
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
             <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -755,16 +755,16 @@ export default {
     },
     fetchArchitectureTypes () {
       this.architectureTypes.opts = []
-      const archTypes = []
-      archTypes.push({
+      const typesList = []
+      typesList.push({
         id: 'x86_64',
         description: 'AMD 64 bits (x86_64)'
       })
-      archTypes.push({
-        id: 'arm64',
-        description: 'ARM 64 bits (arm64)'
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
       })
-      this.architectureTypes.opts = archTypes
+      this.architectureTypes.opts = typesList
     },
     fetchUserData () {
       const params = {}

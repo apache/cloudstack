@@ -252,11 +252,11 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
         this.capacities = capacities;
     }
 
-    public String getArch() {
-        return arch;
-    }
-
     public void setArch(String arch) {
         this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
     }
 }

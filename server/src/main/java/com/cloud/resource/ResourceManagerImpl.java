@@ -427,6 +427,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String url = cmd.getUrl();
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
+        CPU.CPUArch arch = cmd.getArch();
 
         if (url != null) {
             url = URLDecoder.decode(url);
@@ -526,6 +527,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         cluster.setClusterType(clusterType);
         cluster.setAllocationState(allocationState);
+        cluster.setArch(arch.getType());
         try {
             cluster = _clusterDao.persist(cluster);
         } catch (final Exception e) {
@@ -1216,7 +1218,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (arch != null) {
-            cluster.setArch(arch);
+            cluster.setArch(arch.getType());
             doUpdate = true;
         }
 
@@ -2360,6 +2362,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setLastPinged(System.currentTimeMillis() >> 10);
         host.setHostTags(hostTags, false);
         host.setDetails(details);
+        host.setArch(CPU.CPUArch.fromType(startup.getArch()));
         if (startup.getStorageIpAddressDeux() != null) {
             host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
             host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());

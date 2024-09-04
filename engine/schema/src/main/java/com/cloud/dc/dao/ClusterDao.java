@@ -53,4 +53,6 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     boolean getSupportsResigning(long clusterId);
 
     List<CPU.CPUArch> getClustersArchsByZone(long zoneId);
+
+    List<ClusterVO> listClustersByArchAndZoneId(long zoneId, CPU.CPUArch arch);
 }

@@ -34,6 +34,7 @@ public class ReadyCommand extends Command {
     private String lbAlgorithm;
     private Long lbCheckInterval;
     private Boolean enableHumanReadableSizes;
+    private String arch;
 
     public ReadyCommand(Long dcId) {
         super();
@@ -93,5 +94,13 @@ public class ReadyCommand extends Command {
 
     public Boolean getEnableHumanReadableSizes() {
         return enableHumanReadableSizes;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

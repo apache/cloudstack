@@ -73,7 +73,7 @@ public class ClusterVO implements Cluster {
 
     @Column(name = "arch")
     @Convert(converter = CPUArchConverter.class)
-    private CPU.CPUArch arch;
+    private String arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -208,10 +208,10 @@ public class ClusterVO implements Cluster {
 
     @Override
     public CPU.CPUArch getArch() {
-        return arch;
+        return CPU.CPUArch.fromType(arch);
     }
 
-    public void setArch(CPU.CPUArch arch) {
+    public void setArch(String arch) {
         this.arch = arch;
     }
 
