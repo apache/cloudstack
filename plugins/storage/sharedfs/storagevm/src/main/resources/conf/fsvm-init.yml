@@ -134,7 +134,7 @@ write_files:
         EXPORT_DIR={{ fsvm.exportpath }}
         xfs_growfs "$EXPORT_DIR"
       elif [ "$FILESYSTEM" == "ext4" ]; then
-        PARTITION="$1"
+        PARTITION="/dev/$1"
         resize2fs "$PARTITION"
       else
         log "Invalid filesystem type specified. Use 'xfs' or 'ext4'."
