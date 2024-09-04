@@ -19,8 +19,11 @@ package com.cloud.api;
 import com.cloud.domain.Domain;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -29,8 +32,11 @@ import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServerTest {
@@ -40,6 +46,22 @@ public class ApiServerTest {
 
     @Mock
     UserPasswordResetManager userPasswordResetManager;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", true);
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        overrideDefaultConfigValue(UserPasswordResetEnabled, "_value", false);
+    }
+
+    private static void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
 
     private void runTestSetupIntegrationPortListenerInvalidPorts(Integer port) {
         try (MockedConstruction<ApiServer.ListenerThread> mocked =

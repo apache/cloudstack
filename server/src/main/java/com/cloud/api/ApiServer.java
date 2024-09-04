@@ -184,6 +184,8 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
 
@@ -1229,6 +1231,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean forgotPassword(UserAccount userAccount, Domain domain) {
+        if (!UserPasswordResetEnabled.value()) {
+            String errorMessage = String.format("%s is false. Password reset for the user is not allowed.",
+                    UserPasswordResetEnabled.key());
+            logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
+        }
         if (StringUtils.isBlank(userAccount.getEmail())) {
             logger.error(String.format(
                     "Email is not set. username: %s account id: %d domain id: %d",
@@ -1263,6 +1271,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean resetPassword(UserAccount userAccount, String token, String password) {
+        if (!UserPasswordResetEnabled.value()) {
+            String errorMessage = String.format("%s is false. Password reset for the user is not allowed.",
+                    UserPasswordResetEnabled.key());
+            logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
+        }
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 

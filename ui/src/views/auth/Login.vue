@@ -156,11 +156,10 @@
       <a-col>
       <translation-menu/>
       </a-col>
-      <a-col>
+      <a-col v-if="$config.forgotPasswordEnabled">
         <router-link :to="{ name: 'forgotPassword' }">
           {{ $t('label.forgot.password') }}
         </router-link>
-
       </a-col>
     </a-row>
     <div class="content" v-if="socialLogin">

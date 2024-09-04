@@ -21,6 +21,13 @@ import com.cloud.user.UserAccount;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface UserPasswordResetManager {
+    ConfigKey<Boolean> UserPasswordResetEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class,
+            "user.password.reset.enabled", "false",
+            "Setting this to true allows the ACS user to request an email to reset their password",
+            false,
+            ConfigKey.Scope.Global);
+
     ConfigKey<Long> UserPasswordResetTtl = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "user.password.reset.ttl", "30",
             "TTL in minutes for the token generated to reset the ACS user's password", true,
