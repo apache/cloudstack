@@ -629,6 +629,18 @@ public class NetUtils {
         return long2Ip(firstPart) + "/" + size;
     }
 
+    public static String getCleanIp4Cidr(final String cidr) {
+        if (!isValidIp4Cidr(cidr)) {
+            throw new CloudRuntimeException("Invalid CIDR: " + cidr);
+        }
+        String gateway = cidr.split("/")[0];
+        Long netmaskSize = Long.parseLong(cidr.split("/")[1]);
+        final long ip = ip2Long(gateway);
+        final long startNetMask = ip2Long(getCidrNetmask(netmaskSize));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), netmaskSize);
+    }
+
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {
         assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         final String[] result = new String[2];

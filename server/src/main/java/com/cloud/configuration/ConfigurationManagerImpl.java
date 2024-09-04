@@ -307,6 +307,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Network;
 
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 
@@ -1321,6 +1322,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final NumberFormatException e) {
                 logger.error("There was an error trying to parse the float value for configuration parameter: " + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the float value for configuration parameter: " + name);
+            }
+        }
+
+        if (type.equals(String.class)) {
+            if (name.equalsIgnoreCase(SecStorageAllowedInternalDownloadSites.key()) && StringUtils.isNotEmpty(value)) {
+                final String[] cidrs = value.split(",");
+                for (final String cidr : cidrs) {
+                    if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                        logger.error(String.format("Invalid CIDR %s value specified for the config %s", cidr, name));
+                        throw new InvalidParameterValueException(String.format("Invalid CIDR %s value specified for the config %s", cidr, name));
+                    }
+                }
             }
         }
 
