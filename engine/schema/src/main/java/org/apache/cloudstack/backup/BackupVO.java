@@ -88,7 +88,7 @@ public class BackupVO implements Backup {
     private long zoneId;
 
     @Column(name = "backed_volumes", length = 65535)
-    protected String backedVolumes;
+    protected String backedUpVolumes;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -211,15 +211,15 @@ public class BackupVO implements Backup {
         return null;
     }
 
-    public List<VolumeInfo> getBackedVolumes() {
-        if (StringUtils.isEmpty(this.backedVolumes)) {
+    public List<VolumeInfo> getBackedUpVolumes() {
+        if (StringUtils.isEmpty(this.backedUpVolumes)) {
             return Collections.emptyList();
         }
-        return Arrays.asList(new Gson().fromJson(this.backedVolumes, Backup.VolumeInfo[].class));
+        return Arrays.asList(new Gson().fromJson(this.backedUpVolumes, Backup.VolumeInfo[].class));
     }
 
-    public void setBackedVolumes(String backedVolumes) {
-        this.backedVolumes = backedVolumes;
+    public void setBackedUpVolumes(String backedUpVolumes) {
+        this.backedUpVolumes = backedUpVolumes;
     }
 
     public Date getRemoved() {

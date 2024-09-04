@@ -142,6 +142,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Backup.Status getStatus();
     Long getSize();
     Long getProtectedSize();
-    List<VolumeInfo> getBackedVolumes();
+    List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
 }

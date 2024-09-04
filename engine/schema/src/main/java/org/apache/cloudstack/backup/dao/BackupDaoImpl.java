@@ -166,10 +166,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setStatus(backup.getStatus());
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedVolumes())) {
+        if (Objects.isNull(backup.getBackedUpVolumes())) {
             backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
         } else {
-            backedUpVolumes = new Gson().toJson(backup.getBackedVolumes().toArray(), Backup.VolumeInfo[].class);
+            backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
         }
         response.setVolumes(backedUpVolumes);
         response.setBackupOfferingId(offering.getUuid());

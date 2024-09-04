@@ -178,7 +178,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
-            backupVO.setBackedVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             return backupDao.update(backupVO.getId(), backupVO);
         } else {
             backupVO.setStatus(Backup.Status.Failed);
@@ -210,10 +210,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        List<Backup.VolumeInfo> backedVolumes = backup.getBackedVolumes();
+        List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
         List<VolumeVO> volumes = backedVolumes.stream().map(volume -> volumeDao.findByUuid(volume.getUuid())).collect(Collectors.toList());
 
-        LOG.debug(String.format("Restoring vm %s from backup %s on the NAS Backup Provider", vm.getUuid(), backup.getUuid()));
+        LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm.getUuid(), backup.getUuid());
         BackupRepository backupRepository = getBackupRepository(vm, backup);
 
         final Host host = getLastVMHypervisorHost(vm);

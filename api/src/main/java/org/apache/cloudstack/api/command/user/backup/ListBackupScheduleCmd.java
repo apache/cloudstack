@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.amazonaws.util.CollectionUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @APICommand(name = "listBackupSchedule",
         description = "List backup schedule of a VM",
@@ -82,7 +82,7 @@ public class ListBackupScheduleCmd extends BaseCmd {
             List<BackupSchedule> schedules = backupManager.listBackupSchedule(getVmId());
             ListResponse<BackupScheduleResponse> response = new ListResponse<>();
             List<BackupScheduleResponse> scheduleResponses = new ArrayList<>();
-            if (Objects.nonNull(schedules) && !schedules.isEmpty()) {
+            if (CollectionUtils.isNullOrEmpty(schedules)) {
                 for (BackupSchedule schedule : schedules) {
                     scheduleResponses.add(_responseGenerator.createBackupScheduleResponse(schedule));
                 }

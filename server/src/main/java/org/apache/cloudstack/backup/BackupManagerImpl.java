@@ -28,6 +28,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachineManager;
@@ -619,7 +620,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
-        List<Backup.VolumeInfo> backupVolumes = backup.getBackedVolumes();
+        // This is done to handle historic backups if any with Veeam / Networker plugins
+        List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
+                vm.getBackupVolumeList() : backup.getBackedUpVolumes();
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
         if (vmVolumes.size() != backupVolumes.size()) {
             throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
