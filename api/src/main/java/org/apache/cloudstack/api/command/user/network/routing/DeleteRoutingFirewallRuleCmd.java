@@ -35,6 +35,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "deleteRoutingFirewallRule",
         description = "Deletes a routing firewall rule",
+        since = "4.20.0",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,

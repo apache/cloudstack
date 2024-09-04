@@ -193,7 +193,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
             description = "the CIDR size of IPv4 network. For regular users, this is required for isolated networks with ROUTED mode.",
-            since = "4.20")
+            since = "4.20.0")
     private Integer cidrSize;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the network")

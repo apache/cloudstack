@@ -33,6 +33,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "updateRoutingFirewallRule",
         description = "Updates Routing firewall rule with specified ID",
+        since = "4.20.0",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
@@ -47,8 +48,8 @@ public class UpdateRoutingFirewallRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the Routing firewall rule")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the Routing firewall rule to the end user or not", since = "4.4", authorized = {
-            RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the Routing firewall rule to the end user or not",
+            authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////

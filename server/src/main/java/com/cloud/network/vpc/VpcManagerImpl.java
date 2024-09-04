@@ -54,6 +54,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
@@ -1274,9 +1275,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
+        List<Long> bgpPeerIds = (cmd instanceof CreateVPCCmdByAdmin) ? ((CreateVPCCmdByAdmin)cmd).getBgpPeerIds() : null;
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
-            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), cmd.getBgpPeerIds());
+            cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu(), cmd.getCidrSize(), cmd.getAsNumber(), bgpPeerIds);
 
         String sourceNatIP = cmd.getSourceNatIP();
         boolean forNsx = isVpcForNsx(vpc);

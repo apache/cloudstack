@@ -112,7 +112,8 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ROUTING_MODE,
             type = CommandType.STRING,
-            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
+            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.",
+            since = "4.20.0")
     private String routingMode;
 
     /////////////////////////////////////////////////////

@@ -137,11 +137,11 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String vlan;
 
     @SerializedName(ApiConstants.AS_NUMBER_ID)
-    @Param(description = "UUID of AS NUMBER")
+    @Param(description = "UUID of AS NUMBER", since = "4.20.0")
     private String asNumberId;
 
     @SerializedName(ApiConstants.AS_NUMBER)
-    @Param(description = "AS NUMBER")
+    @Param(description = "AS NUMBER", since = "4.20.0")
     private Long asNumber;
 
     @SerializedName(ApiConstants.ACL_TYPE)

@@ -38,8 +38,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.List;
-
 @RunWith(MockitoJUnitRunner.class)
 public class CreateVPCCmdTest extends TestCase {
 
@@ -100,13 +98,6 @@ public class CreateVPCCmdTest extends TestCase {
         long asNumber = 10000;
         ReflectionTestUtils.setField(cmd, "asNumber", asNumber);
         Assert.assertEquals(asNumber, (long) cmd.getAsNumber());
-    }
-
-    @Test
-    public void testBgpPeerIds() {
-        List<Long> bgpPeerIds = Mockito.mock(List.class);
-        ReflectionTestUtils.setField(cmd, "bgpPeerIds", bgpPeerIds);
-        Assert.assertEquals(bgpPeerIds, cmd.getBgpPeerIds());
     }
 
     @Test

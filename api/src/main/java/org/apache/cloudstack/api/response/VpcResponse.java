@@ -170,11 +170,11 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private Set<Ipv4RouteResponse> ipv4Routes;
 
     @SerializedName(ApiConstants.AS_NUMBER_ID)
-    @Param(description = "UUID of AS NUMBER")
+    @Param(description = "UUID of AS NUMBER", since = "4.20.0")
     private String asNumberId;
 
     @SerializedName(ApiConstants.AS_NUMBER)
-    @Param(description = "AS NUMBER")
+    @Param(description = "AS NUMBER", since = "4.20.0")
     private Long asNumber;
 
     @SerializedName(ApiConstants.BGP_PEERS)

@@ -44,6 +44,7 @@ import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createRoutingFirewallRule",
         description = "Creates a routing firewall rule in the given network in ROUTED mode",
+        since = "4.20.0",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,

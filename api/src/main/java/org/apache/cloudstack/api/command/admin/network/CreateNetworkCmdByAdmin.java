@@ -57,7 +57,7 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
             collectionType = CommandType.UUID,
             entityType = BgpPeerResponse.class,
             description = "Ids of the Bgp Peer for the network",
-            since = "4.20")
+            since = "4.20.0")
     private List<Long> bgpPeerIds;
 
     /////////////////////////////////////////////////////

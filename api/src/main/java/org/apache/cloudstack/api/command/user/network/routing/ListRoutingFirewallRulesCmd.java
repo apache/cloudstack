@@ -35,6 +35,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listRoutingFirewallRules",
         description = "Lists all Routing firewall rules",
+        since = "4.20.0",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
