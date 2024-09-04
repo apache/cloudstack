@@ -90,6 +90,13 @@
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
+            <span v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired && !record.vpcid">
+              &nbsp;
+              <a-tooltip>
+                <template #title>{{ $t('label.restartrequired') }}</template>
+                <warning-outlined style="color: #f5222d"/>
+              </a-tooltip>
+            </span>
           </span>
         </span>
       </template>
