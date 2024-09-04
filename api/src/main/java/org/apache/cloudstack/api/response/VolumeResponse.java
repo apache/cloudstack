@@ -261,6 +261,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "true if storage snapshot is supported for the volume, false otherwise", since = "4.16")
     private boolean supportsStorageSnapshot;
 
+    @SerializedName(ApiConstants.DELETION_PROTECTION)
+    @Param(description = "true if volume has deletion protection.")
+    private boolean deletionProtection;
+
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
     @Param(description = "the bytes allocated")
     private Long physicalsize;
@@ -582,6 +586,14 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public boolean getSupportsStorageSnapshot() {
         return this.supportsStorageSnapshot;
+    }
+
+    public boolean isDeletionProtection() {
+        return deletionProtection;
+    }
+
+    public void setDeletionProtection(boolean deletionProtection) {
+        this.deletionProtection = deletionProtection;
     }
 
     public String getIsoId() {

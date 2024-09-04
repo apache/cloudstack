@@ -111,6 +111,13 @@
         </a-select>
       </a-form-item>
 
+      <a-form-item name="deletionprotection" ref="deletionprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deletionprotection')" :tooltip="apiParams.deletionprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deletionprotection" />
+      </a-form-item>
+
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -175,6 +182,7 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deletionprotection: this.resource.deletionprotection,
         group: this.resource.group,
         securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
@@ -313,6 +321,9 @@ export default {
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deletionprotection !== undefined) {
+          params.deletionprotection = values.deletionprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable

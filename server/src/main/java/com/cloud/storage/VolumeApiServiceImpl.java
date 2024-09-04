@@ -1696,6 +1696,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public void validateDestroyVolume(Volume volume, Account caller, boolean expunge, boolean forceExpunge) {
+        if (volume.isDeletionProtection()) {
+            throw new InvalidParameterValueException("Volume has deletion protection enabled and cannot be deleted.");
+        }
+
         if (expunge) {
             // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVolume is false for the caller.
             final Long userId = caller.getAccountId();
@@ -2737,13 +2741,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume,
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId,
+                               Boolean displayVolume, Boolean deletionProtection,
                                String customId, long entityOwnerId, String chainInfo, String name) {
 
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (path != null || state != null || storageId != null || displayVolume != null || customId != null || chainInfo != null) {
-                throw new InvalidParameterValueException("The domain admin and normal user are not allowed to update volume except volume name");
+                throw new InvalidParameterValueException("The domain admin and normal user are not allowed to update volume except volume name & deletion protection");
             }
         }
 
@@ -2793,6 +2798,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (name != null) {
             volume.setName(name);
+        }
+
+        if (deletionProtection != null) {
+            volume.setDeletionProtection(deletionProtection);
         }
 
         updateDisplay(volume, displayVolume);

@@ -233,3 +233,6 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'unique_name',
 CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text', 'VARCHAR(255)', 'DEFAULT NULL COMMENT \'display text\'');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'deletion_protection', 'boolean DEFAULT FALSE COMMENT "deletion protection for vm" ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'deletion_protection', 'boolean DEFAULT FALSE COMMENT "deletion protection for volumes" ');

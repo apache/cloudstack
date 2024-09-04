@@ -280,6 +280,9 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "encrypt_format")
     private String encryptionFormat = null;
 
+    @Column(name = "deletion_protection")
+    protected Boolean deletionProtection;
+
     public VolumeJoinVO() {
     }
 
@@ -617,6 +620,10 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getEncryptionFormat() {
         return encryptionFormat;
+    }
+
+    public Boolean getDeletionProtection() {
+        return deletionProtection;
     }
 
     @Override

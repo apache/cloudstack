@@ -138,6 +138,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         volResponse.setMinIops(volume.getMinIops());
         volResponse.setMaxIops(volume.getMaxIops());
 
+        if (volume.getDeletionProtection() == null) {
+            volResponse.setDeletionProtection(false);
+        } else {
+            volResponse.setDeletionProtection(volume.getDeletionProtection() != null && volume.getDeletionProtection());
+        }
+
         volResponse.setCreated(volume.getCreated());
         if (volume.getState() != null) {
             volResponse.setState(volume.getState().toString());

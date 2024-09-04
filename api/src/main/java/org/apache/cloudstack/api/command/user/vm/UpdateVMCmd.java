@@ -146,6 +146,13 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
     private String extraConfig;
 
+    @Parameter(name = ApiConstants.DELETION_PROTECTION,
+            type = CommandType.BOOLEAN,
+            description = "Set deletion protection for the virtual machine. If true, The virtual " +
+                    "machine will be protected from deletion. Note: If the VM is managed by " +
+                    "another service like autoscaling groups or CKS, deletion protection will be ignored.")
+    private Boolean deletionProtection;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -213,6 +220,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     public boolean isCleanupDetails(){
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    }
+
+    public Boolean getDeletionProtection() {
+        return deletionProtection;
     }
 
     public Map<String, Map<Integer, String>> getDhcpOptionsMap() {
