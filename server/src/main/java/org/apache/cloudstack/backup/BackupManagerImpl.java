@@ -237,7 +237,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
         sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-
+        CallContext ctx = CallContext.current();
+        final Account caller = ctx.getCallingAccount();
+        if (Account.Type.NORMAL == caller.getType()) {
+            sb.and("user_backups_allowed", sb.entity().isUserDrivenBackupAllowed(), SearchCriteria.Op.EQ);
+        }
         final SearchCriteria<BackupOfferingVO> sc = sb.create();
 
         if (zoneId != null) {
@@ -246,6 +250,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (keyword != null) {
             sc.setParameters("name", "%" + keyword + "%");
+        }
+        if (Account.Type.NORMAL == caller.getType()) {
+            sc.setParameters("user_backups_allowed", true);
         }
         Pair<List<BackupOfferingVO>, Integer> result = backupOfferingDao.searchAndCount(sc, searchFilter);
         return new Pair<>(new ArrayList<>(result.first()), result.second());
