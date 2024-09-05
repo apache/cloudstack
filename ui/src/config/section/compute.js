@@ -133,7 +133,10 @@ export default {
           dataView: true,
           groupAction: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
-          args: ['forced'],
+          args: (record, store, group) => {
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserforcestopvm)
+              ? ['forced'] : []
+          },
           show: (record) => { return ['Running'].includes(record.state) }
         },
         {
