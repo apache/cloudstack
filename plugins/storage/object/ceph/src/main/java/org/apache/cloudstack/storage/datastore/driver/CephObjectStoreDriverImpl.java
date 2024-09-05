@@ -46,7 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.BucketObject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
 import org.twonote.rgwadmin4j.RgwAdminBuilder;
 import org.twonote.rgwadmin4j.model.BucketInfo;
