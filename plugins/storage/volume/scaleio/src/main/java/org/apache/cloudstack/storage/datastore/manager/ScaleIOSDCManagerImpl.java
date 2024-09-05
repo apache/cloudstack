@@ -105,6 +105,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     @Override
     public String prepareSDC(Host host, DataStore dataStore) {
         if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+            LOGGER.debug(String.format("On-demand connect/disconnect config %s disabled in the zone %d, no need to prepare SDC (check for connected SDC)", ConnectOnDemand.key(), host.getDataCenterId()));
             return getConnectedSdc(host, dataStore);
         }
 
@@ -241,9 +242,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     @Override
     public boolean stopSDC(Host host, DataStore dataStore) {
-        if(Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+        if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+            LOGGER.debug(String.format("On-demand connect/disconnect config %s disabled in the zone %d, no need to unprepare SDC", ConnectOnDemand.key(), host.getDataCenterId()));
             return true;
         }
+
         String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to unprepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
