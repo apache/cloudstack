@@ -33,6 +33,7 @@ import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -771,6 +772,18 @@ public class EventTypes {
     public static final String EVENT_NETWORK_BGP_PEER_UPDATE = "NETWORK.BGP.PEER.UPDATE";
     public static final String EVENT_VPC_BGP_PEER_UPDATE = "VPC.BGP.PEER.UPDATE";
 
+    // SharedFS
+    public static final String EVENT_SHAREDFS_CREATE = "SHAREDFS.CREATE";
+    public static final String EVENT_SHAREDFS_START = "SHAREDFS.START";
+    public static final String EVENT_SHAREDFS_UPDATE = "SHAREDFS.UPDATE";
+    public static final String EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING = "SHAREDFS.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_SHAREDFS_CHANGE_DISK_OFFERING = "SHAREDFS.CHANGE.DISK.OFFERING";
+    public static final String EVENT_SHAREDFS_STOP = "SHAREDFS.STOP";
+    public static final String EVENT_SHAREDFS_RESTART = "SHAREDFS.RESTART";
+    public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
+    public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
+    public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1247,6 +1260,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_BGP_PEER_DELETE, BgpPeer.class);
         entityEventDetails.put(EVENT_BGP_PEER_DEDICATE, BgpPeer.class);
         entityEventDetails.put(EVENT_BGP_PEER_RELEASE, BgpPeer.class);
+
+        // SharedFS
+        entityEventDetails.put(EVENT_SHAREDFS_CREATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_START, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_STOP, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_UPDATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_DISK_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RESTART, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

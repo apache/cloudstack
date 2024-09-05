@@ -313,7 +313,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype', 'restartrequired'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -637,7 +637,7 @@ export default {
         }
 
         if (networkIndex > -1) {
-          const networks = response.filter(item => item.type === 'associatednetworkid')
+          const networks = response.filter(item => item.type === 'networkid')
           if (networks && networks.length > 0) {
             this.fields[networkIndex].opts = this.sortArray(networks[0].data)
           }
@@ -685,6 +685,9 @@ export default {
         }
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
+        }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
         }
         if (usageTypeIndex > -1) {
           this.fields[usageTypeIndex].loading = false
@@ -880,6 +883,19 @@ export default {
         })
       })
     },
+    fetchNetworks (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+          const networks = json.listnetworksresponse.network
+          resolve({
+            type: 'networkid',
+            data: networks
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchAlertTypes () {
       if (this.alertTypes.length > 0) {
         return new Promise((resolve, reject) => {
@@ -958,19 +974,6 @@ export default {
           resolve({
             type: 'managementserverid',
             data: managementservers
-          })
-        }).catch(error => {
-          reject(error.response.headers['x-description'])
-        })
-      })
-    },
-    fetchNetworks (searchKeyword) {
-      return new Promise((resolve, reject) => {
-        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
-          const networks = json.listnetworksresponse.network
-          resolve({
-            type: 'associatednetworkid',
-            data: networks
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])

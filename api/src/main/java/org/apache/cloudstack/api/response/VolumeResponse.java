@@ -93,7 +93,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("vmstate")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
     @Param(description = "state of the virtual machine")
     private String virtualMachineState;
 
@@ -262,11 +262,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private boolean supportsStorageSnapshot;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes allocated")
+    @Param(description = "the bytes actually consumed on disk")
     private Long physicalsize;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "the bytes actually consumed on disk")
+    @Param(description = "the bytes allocated")
     private Long virtualsize;
 
     @SerializedName(ApiConstants.UTILIZATION)

@@ -118,6 +118,7 @@ function configure_services() {
   systemctl disable vgauth
   systemctl disable sshd
   systemctl disable nfs-common
+  systemctl disable nfs-server
   systemctl disable portmap
 
   # Disable guest services which will selectively be started based on hypervisor

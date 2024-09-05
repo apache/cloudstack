@@ -63,7 +63,7 @@ patch() {
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
   retry=60
   local patched=false
-  if [ "$TYPE" != "cksnode" ]; then
+  if [ "$TYPE" != "cksnode" ] && [ "$TYPE" != "sharedfsvm" ]; then
     while [ $retry -gt 0 ]
     do
       if tar tf $patchfile &> /dev/null; then

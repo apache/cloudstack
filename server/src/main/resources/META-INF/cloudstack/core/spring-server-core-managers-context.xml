@@ -373,4 +373,8 @@
     <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
 
     <bean id="BGPServiceImpl" class="com.cloud.bgp.BGPServiceImpl" />
+
+    <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
+        <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
+    </bean>
 </beans>

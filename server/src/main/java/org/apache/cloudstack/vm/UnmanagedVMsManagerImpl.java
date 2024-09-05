@@ -2107,6 +2107,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new UnsupportedServiceException("Unmanage VM is currently allowed for guest VMs only");
         }
 
+        if (vmVO.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            }
+        }
+
         performUnmanageVMInstancePrechecks(vmVO);
 
         Long hostId = findSuitableHostId(vmVO);

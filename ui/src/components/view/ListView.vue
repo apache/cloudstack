@@ -705,7 +705,7 @@ export default {
         '/project', '/account', 'buckets', 'objectstore',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff',
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
         '/ipv4subnets'].join('|'))
         .test(this.$route.path)
     },
@@ -714,7 +714,7 @@ export default {
         'vmsnapshot', 'backup', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment', 'buckets',
-        'webhook', 'webhookdeliveries', 'ipv4subnets', 'asnumbers'
+        'webhook', 'webhookdeliveries', 'sharedfs', 'ipv4subnets', 'asnumbers'
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
