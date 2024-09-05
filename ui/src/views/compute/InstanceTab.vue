@@ -64,7 +64,14 @@
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0">
+      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0 || $store.getters.showSecurityGroups">
+        <a-button
+          type="primary"
+          style="width: 100%; margin-bottom: 10px"
+          @click="showUpdateSGModal"
+          :loading="loading">
+          <template #icon><edit-outlined /></template> {{ $t('label.action.update.security.groups') }}
+        </a-button>
         <ListResourceTable
           :items="dataResource.securitygroup"
           :columns="['name', 'description']"
@@ -90,6 +97,31 @@
       </a-tab-pane>
     </a-tabs>
 
+    <a-modal
+      :visible="showUpdateSecurityGroupsModal"
+      :title="$t('label.action.update.security.groups')"
+      :maskClosable="false"
+      :closable="true"
+      @ok="updateSecurityGroups"
+      @cancel="closeModals">
+      <security-group-selection
+        :zoneId="this.vm.zoneid"
+        :value="securitygroupids"
+        :loading="false"
+        :preFillContent="dataPreFill"
+        @select-security-group-item="($event) => updateSecurityGroupsSelection($event)"></security-group-selection>
+    </a-modal>
+
+    <a-modal
+      :visible="showAddVolumeModal"
+      :title="$t('label.action.create.volume.add')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="closeModals">
+      <CreateVolume :resource="resource" @close-action="closeModals" />
+    </a-modal>
+
   </a-spin>
 </template>
 
@@ -110,6 +142,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
+import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 
 export default {
   name: 'InstanceTab',
@@ -123,6 +156,7 @@ export default {
     NicsTab,
     InstanceSchedules,
     ListResourceTable,
+    SecurityGroupSelection,
     TooltipButton,
     ResourceIcon,
     AnnotationsTab,
@@ -148,7 +182,9 @@ export default {
       showAddVolumeModal: false,
       diskOfferings: [],
       annotations: [],
-      dataResource: {}
+      dataResource: {},
+      dataPreFill: {},
+      securitygroupids: []
     }
   },
   created () {
@@ -219,8 +255,32 @@ export default {
       this.showAddVolumeModal = true
       this.listDiskOfferings()
     },
+    showUpdateSGModal () {
+      this.loadingSG = true
+      if (this.vm.securitygroup && this.vm.securitygroup?.length > 0) {
+        this.securitygroupids = []
+        for (const sg of this.vm.securitygroup) {
+          this.securitygroupids.push(sg.id)
+        }
+        this.dataPreFill = { securitygroupids: this.securitygroupids }
+      }
+      this.showUpdateSecurityGroupsModal = true
+      this.loadingSG = false
+    },
     closeModals () {
       this.showAddVolumeModal = false
+      this.showUpdateSecurityGroupsModal = false
+    },
+    updateSecurityGroupsSelection (securitygroupids) {
+      this.securitygroupids = securitygroupids || []
+    },
+    updateSecurityGroups () {
+      api('updateVirtualMachine', { id: this.vm.id, securitygroupids: this.securitygroupids.join(',') }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.closeModals()
+        this.parentFetchData()
+      })
     }
   }
 }
