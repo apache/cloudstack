@@ -207,6 +207,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -298,7 +299,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
 
-    private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
 
     ExecutorService _preloadExecutor;
@@ -539,7 +539,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
 
@@ -1112,10 +1112,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        String disableExtraction = _configDao.getValue(Config.DisableExtraction.toString());
-        _disableExtraction = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
-
         _preloadExecutor = Executors.newFixedThreadPool(TemplatePreloaderPoolSize.value(), new NamedThreadFactory("Template-Preloader"));
 
         return true;
@@ -1189,6 +1185,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);
@@ -2354,7 +2353,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize, ValidateUrlIsResolvableBeforeRegisteringTemplate};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

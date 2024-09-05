@@ -60,7 +60,7 @@ function install_packages() {
     sysstat \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
-    nfs-common \
+    nfs-common nfs-server xfsprogs \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
     xenstore-utils libxenstore4 \
@@ -83,7 +83,7 @@ function install_packages() {
   apt_clean
 
   # 32 bit architecture support for vhd-util
-  if [[ "${arch}" != "i386" && "${arch}" != "arm64" ]]; then
+  if [[ "${arch}" != "i386" && "${arch}" == "amd64" ]]; then
     dpkg --add-architecture i386
     apt-get update
     ${apt_get} install libuuid1:i386 libc6:i386
@@ -96,6 +96,8 @@ function install_packages() {
     add-apt-repository "deb [arch=arm64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   elif [ "${arch}" == "amd64" ]; then
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  elif [ "${arch}" == "s390x" ]; then
+    add-apt-repository "deb [arch=s390x] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   else
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
   fi
@@ -104,7 +106,7 @@ function install_packages() {
 
   apt_clean
 
-  if [ "${arch}" != "arm64" ]; then
+  if [ "${arch}" == "amd64" ]; then
     install_vhd_util
     # Install xenserver guest utilities as debian repos don't have it
     wget --no-check-certificate https://download.cloudstack.org/systemvm/debian/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb

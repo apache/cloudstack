@@ -51,12 +51,15 @@ public interface UserVmManager extends UserVmService {
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     String AllowDiskOfferingChangeDuringScaleVmCK = "allow.diskoffering.change.during.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
+    String AllowUserForceStopVmCK = "allow.user.force.stop.vm";
     ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
     ConfigKey<Boolean> AllowDiskOfferingChangeDuringScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowDiskOfferingChangeDuringScaleVmCK, "false",
             "Determines whether to allow or disallow disk offering change for root volume during scaling of a stopped or running vm", true, ConfigKey.Scope.Zone);
     ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
         "Determines whether users can expunge or recover their vm", true, ConfigKey.Scope.Account);
+    ConfigKey<Boolean> AllowUserForceStopVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserForceStopVmCK, "true",
+            "Determines whether users are allowed to force stop a vm", true, ConfigKey.Scope.Account);
     ConfigKey<Boolean> DisplayVMOVFProperties = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.display.ovf.properties", "false",
             "Set display of VMs OVF properties as part of VM details", true);
 
@@ -83,6 +86,7 @@ public interface UserVmManager extends UserVmService {
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
+    public  static  final String SHAREDFSVM = "sharedfsvm";
 
     /**
      * @param hostId get all of the virtual machines that belong to one host.

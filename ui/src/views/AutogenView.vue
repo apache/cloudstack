@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -67,7 +67,7 @@
                   </a-select>
                 </a-tooltip>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver', 'sharedfs'].includes($route.name)"
                   style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -418,7 +418,7 @@
           @update-selected-columns="updateSelectedColumns"
           @selection-change="onRowSelectionChange"
           @refresh="fetchData"
-          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        />
         <a-pagination
           class="row-element"
           style="margin-top: 10px"
@@ -694,7 +694,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -799,8 +799,8 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
-        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
         'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
@@ -953,6 +953,11 @@ export default {
 
       if (this.$showIcon()) {
         params.showIcon = true
+      }
+
+      const customParamHandler = this.$route.meta.customParamHandler
+      if (customParamHandler && typeof customParamHandler === 'function') {
+        params = customParamHandler(params, this.$route.query)
       }
 
       if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',

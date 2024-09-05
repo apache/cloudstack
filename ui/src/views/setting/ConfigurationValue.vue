@@ -258,7 +258,11 @@ export default {
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
+        var message = `${this.$t('message.setting.updated')} ${configrecord.name}`
+        if (configrecord.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
+        this.$message.success(message)
         if (json.updateconfigurationresponse &&
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
@@ -274,7 +278,7 @@ export default {
         this.$message.error(this.$t('message.error.save.setting'))
         this.$notification.error({
           message: this.$t('label.error'),
-          description: this.$t('message.error.save.setting')
+          description: error?.response?.data?.updateconfigurationresponse?.errortext || this.$t('message.error.save.setting')
         })
       }).finally(() => {
         this.valueLoading = false
@@ -295,7 +299,11 @@ export default {
         }
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`)
+        var message = `${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`
+        if (configrecord.isdynamic) {
+          message += `. ${this.$t('message.setting.update.delay')}`
+        }
+        this.$message.success(message)
         if (json.resetconfigurationresponse &&
           json.resetconfigurationresponse.configuration &&
           !json.resetconfigurationresponse.configuration.isdynamic &&

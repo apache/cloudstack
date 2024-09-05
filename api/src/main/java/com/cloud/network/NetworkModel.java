@@ -356,4 +356,8 @@ public interface NetworkModel {
 
     void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
+    boolean isSecurityGroupSupportedForZone(Long zoneId);
+
+    boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+                                                List<Long> securityGroupsIds);
 }

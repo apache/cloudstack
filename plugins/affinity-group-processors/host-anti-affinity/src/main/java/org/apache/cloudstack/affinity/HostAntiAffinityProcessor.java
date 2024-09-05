@@ -141,6 +141,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         VirtualMachine vm = vmProfile.getVirtualMachine();
 
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
+        if (CollectionUtils.isEmpty(vmGroupMappings)) {
+            return true;
+        }
 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             // if more than 1 VM's are present in the group then check for

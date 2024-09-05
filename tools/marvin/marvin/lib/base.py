@@ -527,7 +527,7 @@ class VirtualMachine:
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
-               userdataid=None, userdatadetails=None, extraconfig=None, size=None):
+               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -536,6 +536,9 @@ class VirtualMachine:
             cmd.serviceofferingid = serviceofferingid
         elif "serviceoffering" in services:
             cmd.serviceofferingid = services["serviceoffering"]
+
+        if overridediskofferingid:
+            cmd.overridediskofferingid = overridediskofferingid
 
         if zoneid:
             cmd.zoneid = zoneid
@@ -7290,3 +7293,108 @@ class Webhook:
         cmd.webhookid = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
+
+class SharedFS:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage Shared FileSystem"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, account=None, domainid=None, projectid=None,
+               size=None, zoneid=None, diskofferingid=None, serviceofferingid=None,
+               filesystem=None, provider=None, networkid=None):
+        """Create Shared FileSystem"""
+        cmd = createSharedFileSystem.createSharedFileSystemCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
+
+        if account:
+            cmd.account = account
+        elif "account" in services:
+            cmd.account = services["account"]
+
+        if domainid:
+            cmd.domainid = domainid
+        elif "domainid" in services:
+            cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if size:
+            cmd.size = size
+
+        if networkid:
+            cmd.networkid = networkid
+        elif "networkid" in services:
+            cmd.networkid = services["networkid"]
+
+        if filesystem:
+            cmd.filesystem = filesystem
+
+        if provider:
+            cmd.provider = provider
+
+        if serviceofferingid:
+            cmd.serviceofferingid = serviceofferingid
+        elif "serviceofferingid" in services:
+            cmd.serviceofferingid = services["serviceofferingid"]
+
+        return SharedFS(apiclient.createSharedFileSystem(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete Shared FileSystem"""
+        cmd = destroySharedFileSystem.destroySharedFileSystemCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.destroySharedFileSystem(cmd)
+
+    def stop(self, apiclient, forced=True):
+        """Stop Shared FileSystem"""
+        cmd = stopSharedFileSystem.stopSharedFileSystemCmd()
+        cmd.id = self.id
+        cmd.forced = forced
+        apiclient.stopSharedFileSystem(cmd)
+
+    def start(self, apiclient):
+        """Start Shared FileSystem"""
+        cmd = startSharedFileSystem.startSharedFileSystemCmd()
+        cmd.id = self.id
+        apiclient.startSharedFileSystem(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listSharedFileSystems.listSharedFileSystemCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listSharedFileSystems(cmd))
+
+    def update(self, apiclient, name=None, description=None):
+        """Update Shared FileSystem"""
+        cmd = updateSharedFileSystem.updateSharedFileSystemCmd()
+        cmd.id = self.id
+        if name:
+            cmd.name = name
+        if description:
+            cmd.description = description
+        return (apiclient.updateSharedFileSystem(cmd))
+
+    def changediskoffering(self, apiclient, diskofferingid=None, size=None):
+        """Change Disk Offering/Size of the Shared FileSystem"""
+        cmd = changeSharedFileSystemDiskOffering.changeSharedFileSystemDiskOfferingCmd()
+        cmd.id = self.id
+        cmd.diskofferingid = diskofferingid
+        cmd.size = size
+        return (apiclient.changeSharedFileSystemDiskOffering(cmd))

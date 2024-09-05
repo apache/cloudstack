@@ -66,6 +66,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
@@ -89,6 +90,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -184,8 +186,10 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.config.ConfigurationSubGroup;
@@ -213,6 +217,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -372,7 +378,6 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Upload;
-import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -487,6 +492,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserDataDao userDataDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
+    @Inject
+    BackupRepositoryDao backupRepositoryDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;
@@ -796,6 +803,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             vmSnapshotResponse.setDomainId(domain.getUuid());
             vmSnapshotResponse.setDomainName(domain.getName());
+            vmSnapshotResponse.setDomainPath(domain.getPath());
         }
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
@@ -1914,58 +1922,49 @@ public class ApiResponseHelper implements ResponseGenerator {
         return listSgs.get(0);
     }
 
-    //TODO: we need to deprecate uploadVO, since extract is done in a synchronous fashion
-    @Override
-    public ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
-
+    private ExtractResponse createExtractResponse (Long zoneId, Long accountId, String url) {
         ExtractResponse response = new ExtractResponse();
-        response.setObjectName("template");
-        VMTemplateVO template = ApiDBUtils.findTemplateById(id);
-        response.setId(template.getUuid());
-        response.setName(template.getName());
         if (zoneId != null) {
             DataCenter zone = ApiDBUtils.findZoneById(zoneId);
             response.setZoneId(zone.getUuid());
             response.setZoneName(zone.getName());
         }
-        response.setMode(mode);
         response.setUrl(url);
         response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
         Account account = ApiDBUtils.findAccountById(accountId);
         response.setAccountId(account.getUuid());
-
         return response;
     }
 
     @Override
-    public ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url) {
+    public ExtractResponse createVolumeExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setObjectName("volume");
+        response.setMode(mode);
+        Volume volume = ApiDBUtils.findVolumeById(id);
+        response.setId(volume.getUuid());
+        response.setName(volume.getName());
+        return response;
+    }
 
-        ExtractResponse response = new ExtractResponse();
-        response.setObjectName("template");
+    @Override
+    public ExtractResponse createSnapshotExtractResponse(Long id, Long zoneId, Long accountId, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setObjectName("snapshot");
+        Snapshot snapshot = ApiDBUtils.findSnapshotById(id);
+        response.setId(snapshot.getUuid());
+        response.setName(snapshot.getName());
+        return response;
+    }
+
+    @Override
+    public ExtractResponse createImageExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url) {
+        ExtractResponse response = createExtractResponse(zoneId, accountId, url);
+        response.setMode(mode);
         VMTemplateVO template = ApiDBUtils.findTemplateById(id);
         response.setId(template.getUuid());
         response.setName(template.getName());
-        if (zoneId != null) {
-            DataCenter zone = ApiDBUtils.findZoneById(zoneId);
-            response.setZoneId(zone.getUuid());
-            response.setZoneName(zone.getName());
-        }
-        response.setMode(mode);
-        if (uploadId == null) {
-            // region-wide image store
-            response.setUrl(url);
-            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
-        } else {
-            UploadVO uploadInfo = ApiDBUtils.findUploadById(uploadId);
-            response.setUploadId(uploadInfo.getUuid());
-            response.setState(uploadInfo.getUploadState().toString());
-            response.setUrl(uploadInfo.getUploadUrl());
-        }
-        Account account = ApiDBUtils.findAccountById(accountId);
-        response.setAccountId(account.getUuid());
-
         return response;
-
     }
 
     @Override
@@ -2253,6 +2252,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             response.setDomainId(securityGroup.getDomainUuid());
             response.setDomainName(securityGroup.getDomainName());
+            response.setDomainPath(securityGroup.getDomainPath());
 
             for (SecurityRule securityRule : securityRules) {
                 SecurityGroupRuleResponse securityGroupData = new SecurityGroupRuleResponse();
@@ -2657,6 +2657,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
+                response.setDomainPath(domain.getPath());
             }
 
         }
@@ -2905,6 +2906,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
@@ -2922,6 +2924,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
@@ -2935,6 +2938,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
+        response.setDomainPath(object.getDomainPath());
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
@@ -2961,6 +2965,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     @Override
@@ -3899,6 +3904,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             usageRecResponse.setDomainId(domain.getUuid());
             usageRecResponse.setDomainName(domain.getName());
+            usageRecResponse.setDomainPath(domain.getPath());
         }
 
         if (usageRecord.getZoneId() != null) {
@@ -4696,6 +4702,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             response.setDomainId(domain.getUuid());
             response.setDomainName(domain.getName());
+            response.setDomainPath(domain.getPath());
         }
 
         response.setObjectName("affinitygroup");
@@ -5280,5 +5287,31 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository backupRepository) {
+        BackupRepositoryResponse response = new BackupRepositoryResponse();
+        response.setName(backupRepository.getName());
+        response.setId(backupRepository.getUuid());
+        response.setCreated(backupRepository.getCreated());
+        response.setAddress(backupRepository.getAddress());
+        response.setProviderName(backupRepository.getProvider());
+        response.setType(backupRepository.getType());
+        response.setMountOptions(backupRepository.getMountOptions());
+        response.setCapacityBytes(backupRepository.getCapacityBytes());
+        response.setObjectName("backuprepository");
+        DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+        return response;
+    }
+
+    @Override
+    public SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS) {
+        SharedFSJoinVO sharedFSView = ApiDBUtils.newSharedFSView(sharedFS);
+        return ApiDBUtils.newSharedFSResponse(view, sharedFSView);
     }
 }
