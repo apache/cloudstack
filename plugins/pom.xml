@@ -138,6 +138,7 @@
         <module>storage/volume/flasharray</module>
         <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
+        <module>storage/object/ceph</module>
         <module>storage/object/simulator</module>
 
 
