@@ -191,6 +191,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
 
+    @SerializedName(ApiConstants.VPC_ACCESS)
+    @Param(description = "Whether the calling account has access to this network's VPC", since = "4.20")
+    private boolean vpcAccess;
+
     @SerializedName(ApiConstants.VPC_ID)
     @Param(description = "VPC the network belongs to")
     private String vpcId;
@@ -489,6 +493,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setSpecifyIpRanges(Boolean specifyIpRanges) {
         this.specifyIpRanges = specifyIpRanges;
+    }
+
+    public void setVpcAccess(boolean vpcAccess) {
+        this.vpcAccess = vpcAccess;
+    }
+
+    public boolean getVpcAccess() {
+        return vpcAccess;
     }
 
     public void setVpcId(String vpcId) {

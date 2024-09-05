@@ -202,7 +202,7 @@ public class ApiResponseHelperTest {
     public void setResponseIpAddressTestIpv4() {
         NicSecondaryIp result = Mockito.mock(NicSecondaryIp.class);
         NicSecondaryIpResponse response = new NicSecondaryIpResponse();
-        setResult(result, "ipv4", "ipv6");
+        setResult(result, "ipv4", "");
 
         ApiResponseHelper.setResponseIpAddress(result, response);
 

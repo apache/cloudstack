@@ -145,7 +145,9 @@
       centered
       width="450px">
       <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
-        <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
+        <div v-if="$route.path.startsWith('/vpc') && !isNormalUserOrProject()">
+          <ownership-selection :override="possibleOwnership" @fetch-owner="fetchOwnerOptions"/>
+        </div>
         <a-form layout="vertical" style="margin-top: 10px">
           <a-form-item :label="$t('label.ipaddress')">
             <a-select
@@ -162,6 +164,7 @@
                 :key="ip.ipaddress"
                 :label="ip.ipaddress + '(' + ip.state + ')'">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
             </a-select>
+          <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
@@ -212,10 +215,12 @@ import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'IpAddressesTab',
   components: {
+    OwnershipSelection,
     Status,
     TooltipButton,
     BulkActionView
@@ -282,6 +287,11 @@ export default {
       acquireLoading: false,
       acquireIp: null,
       listPublicIpAddress: [],
+      possibleOwnership: {
+        domains: null,
+        projects: null,
+        accounts: null
+      },
       changeSourceNat: false
     }
   },
@@ -301,6 +311,9 @@ export default {
   },
   inject: ['parentFetchData'],
   methods: {
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || this.$store.getters.project?.id
+    },
     fetchData () {
       const params = {
         listall: true,
@@ -343,6 +356,21 @@ export default {
           resolve(listPublicIps)
         }).catch(reject)
       })
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {}
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
     },
     handleTierSelect (tier) {
       this.vpcTier = tier
@@ -427,8 +455,10 @@ export default {
       const params = {}
       if (this.$route.path.startsWith('/vpc')) {
         params.vpcid = this.resource.id
-        if (this.vpcTier) {
-          params.networkid = this.vpcTier
+        if (this.owner) {
+          params.domainid = this.owner.domainid
+          params.account = this.owner.projectid ? null : this.owner.account
+          params.projectid = this.owner.projectid ? this.owner.projectid : null
         }
       } else {
         params.networkid = this.resource.id
@@ -534,12 +564,31 @@ export default {
         default: return '/vm/'
       }
     },
+    getAvailableOwnersForIP () {
+      if (!this.$route.path.startsWith('/vpc')) {
+        return
+      }
+
+      this.possibleOwnership.domains = new Set([this.resource.domainid])
+      this.possibleOwnership.projects = this.resource.projectid ? new Set([this.resource.projectid]) : new Set([])
+      this.possibleOwnership.accounts = this.resource.projectid ? new Set([]) : new Set([this.resource.account])
+
+      this.resource.network.forEach(network => {
+        this.possibleOwnership.domains.add(network.domainid)
+        if (network.projectid) {
+          this.possibleOwnership.projects.add(network.projectid)
+        } else {
+          this.possibleOwnership.accounts.add(network.account)
+        }
+      })
+    },
     async onShowAcquireIp () {
       this.showAcquireIp = true
       this.acquireLoading = true
       this.listPublicIpAddress = []
 
       try {
+        this.getAvailableOwnersForIP()
         const listPublicIpAddress = await this.fetchListPublicIpAddress()
         listPublicIpAddress.forEach(item => {
           if (item.state === 'Free' || item.state === 'Reserved') {

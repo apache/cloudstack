@@ -489,7 +489,8 @@
               <resource-icon :image="getImage(images.vpc)" size="1x" style="margin-right: 5px"/>
             </span>
             <deployment-unit-outlined v-else />
-            <router-link :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
+            <router-link v-if="resource.vpcaccess" :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
+            <span v-else>{{ resource.vpcname || resource.vpcid }}</span>
           </div>
         </div>
 

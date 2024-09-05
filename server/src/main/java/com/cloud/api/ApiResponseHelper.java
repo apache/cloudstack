@@ -1072,7 +1072,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
 
-        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName);
+        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName, ipResponse::setVpcAccess);
 
 
         // Network id the ip is associated with (if associated networkId is
@@ -1144,20 +1144,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ipResponse;
     }
 
-
-    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter) {
-        if (vpcId != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
-            if (vpc != null) {
-                try {
-                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
-                    vpcUuidSetter.accept(vpc.getUuid());
-                } catch (PermissionDeniedException e) {
-                    logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
-                }
-                vpcNameSetter.accept(vpc.getName());
-            }
+    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter, Consumer<Boolean> vpcAccessSetter) {
+        if (vpcId == null) {
+            return;
         }
+        Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+        if (vpc == null) {
+            return;
+        }
+
+        try {
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
+            vpcAccessSetter.accept(true);
+        } catch (PermissionDeniedException e) {
+            vpcAccessSetter.accept(false);
+            logger.debug("Setting [%s] as false because the caller does not have access to the VPC [%s].", ApiConstants.VPC_ACCESS, vpc);
+        }
+        vpcNameSetter.accept(vpc.getName());
+        vpcUuidSetter.accept(vpc.getUuid());
     }
 
     private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
@@ -2657,7 +2661,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
 
 
-        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName);
+        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName, response::setVpcAccess);
 
         setResponseAssociatedNetworkInformation(response, network.getId());
 
