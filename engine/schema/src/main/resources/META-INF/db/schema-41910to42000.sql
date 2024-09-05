@@ -146,7 +146,7 @@ DROP TABLE IF EXISTS `cloud`.`backup_repository`;
 CREATE TABLE `cloud`.`backup_repository` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the backup repository',
   `uuid` varchar(255) NOT NULL COMMENT 'uuid of the backup repository',
-  `name` varchar(255) NOT NULL COMMENT 'name of the backup repository',
+  `name` varchar(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the backup repository',
   `zone_id` bigint unsigned NOT NULL COMMENT 'id of zone',
   `provider` varchar(255) NOT NULL COMMENT 'backup provider name',
   `type` varchar(255) NOT NULL COMMENT 'backup repo type',
