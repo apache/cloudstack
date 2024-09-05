@@ -1073,7 +1073,6 @@ public class VmwareHelper {
      */
     public static Pair<String, String> getDiskControllersFromVmSettings(String rootDiskControllerDetail,
                                                                         String dataDiskControllerDetail) {
-        // Validate the controller types
         rootDiskControllerDetail = DiskControllerType.getType(rootDiskControllerDetail).toString();
         if (DiskControllerType.getType(rootDiskControllerDetail) == DiskControllerType.none) {
             throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskControllerDetail);
