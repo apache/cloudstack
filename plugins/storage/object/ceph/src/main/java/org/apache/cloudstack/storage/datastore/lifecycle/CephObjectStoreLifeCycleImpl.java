@@ -27,7 +27,8 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
 import org.twonote.rgwadmin4j.RgwAdminBuilder;
 
@@ -38,7 +39,7 @@ import java.util.Map;
 
 public class CephObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
-    private static final Logger s_logger = Logger.getLogger(CephObjectStoreLifeCycleImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CephObjectStoreLifeCycleImpl.class);
 
     @Inject
     ObjectStoreHelper objectStoreHelper;
