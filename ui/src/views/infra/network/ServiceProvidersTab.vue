@@ -937,10 +937,38 @@ export default {
             }
           ]
         },
-        // {
-        //   title: 'SecurityGroupProvider',
-        //   details: ['name', 'state', 'id', 'servicelist'],
-        // },
+        {
+          title: 'SecurityGroupProvider',
+          details: ['name', 'state', 'id', 'servicelist'],
+          actions: [
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'stop-outlined',
+              listView: true,
+              label: 'label.disable.provider',
+              confirm: 'message.confirm.disable.provider',
+              show: (record) => { return record && record.id && record.state === 'Enabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Disabled' }
+                }
+              }
+            },
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'play-circle-outlined',
+              listView: true,
+              label: 'label.enable.provider',
+              confirm: 'message.confirm.enable.provider',
+              show: (record) => { return record && record.id && record.state === 'Disabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Enabled' }
+                }
+              }
+            }
+          ]
+        },
         {
           title: 'VirtualRouter',
           actions: [

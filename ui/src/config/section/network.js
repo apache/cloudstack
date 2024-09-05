@@ -307,10 +307,7 @@ export default {
           return false
         }
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
-        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
-          return false
-        }
-        return true
+        return (listZoneHaveSGEnabled && listZoneHaveSGEnabled.length > 0) || store.getters.showSecurityGroups
       },
       actions: [
         {
