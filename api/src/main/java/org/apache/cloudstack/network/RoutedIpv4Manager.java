@@ -124,9 +124,9 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
     Ipv4GuestSubnetNetworkMap getOrCreateIpv4SubnetForVpc(Vpc vpc, Integer vpcCidrSize);
 
-    void assignIpv4SubnetToNetwork(String cidr, long networkId);
+    void assignIpv4SubnetToNetwork(Network network);
 
-    void assignIpv4SubnetToVpc(String cidr, long vpcId);
+    void assignIpv4SubnetToVpc(Vpc vpc);
 
     // Methods for Routing firewall rules
     FirewallRule createRoutingFirewallRule(CreateRoutingFirewallRuleCmd createRoutingFirewallRuleCmd) throws NetworkRuleConflictException;

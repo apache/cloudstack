@@ -1805,7 +1805,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // assign to network
         if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
-            routedIpv4Manager.assignIpv4SubnetToNetwork(network.getCidr(), network.getId());
+            routedIpv4Manager.assignIpv4SubnetToNetwork(network);
         }
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff)) {
             try {
@@ -2229,7 +2229,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanIdFinal,
+    protected Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanIdFinal,
                                   final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,

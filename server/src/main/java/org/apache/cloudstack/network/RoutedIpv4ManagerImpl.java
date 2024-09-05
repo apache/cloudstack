@@ -767,11 +767,14 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public void assignIpv4SubnetToNetwork(String cidr, long networkId) {
-        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(cidr);
+    public void assignIpv4SubnetToNetwork(Network network) {
+        if (network == null || network.getCidr() == null) {
+            return;
+        }
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(network.getCidr());
         if (subnetMap != null) {
-            if (networkId > 0L) {
-                subnetMap.setNetworkId(networkId);
+            if (network.getId() > 0L) {
+                subnetMap.setNetworkId(network.getId());
             }
             subnetMap.setState(State.Allocated);
             subnetMap.setAllocated(new Date());
@@ -780,11 +783,14 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     }
 
     @Override
-    public void assignIpv4SubnetToVpc(String cidr, long vpcId) {
-        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(cidr);
+    public void assignIpv4SubnetToVpc(Vpc vpc) {
+        if (vpc == null || vpc.getCidr() == null) {
+            return;
+        }
+        Ipv4GuestSubnetNetworkMapVO subnetMap = ipv4GuestSubnetNetworkMapDao.findBySubnet(vpc.getCidr());
         if (subnetMap != null) {
-            if (vpcId > 0L) {
-                subnetMap.setVpcId(vpcId);
+            if (vpc != null && vpc.getId() > 0L) {
+                subnetMap.setVpcId(vpc.getId());
             }
             subnetMap.setState(State.Allocated);
             subnetMap.setAllocated(new Date());
