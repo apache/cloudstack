@@ -93,7 +93,7 @@ public class CephObjectStoreDriverImplTest {
         doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(anyLong(), anyLong());
         when(accountDetailsDao.findDetail(anyLong(),anyString())).
                 thenReturn(new AccountDetailVO(1L, "abc","def"));
-        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO());
+        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO(bucket.getName()));
         Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
         assertEquals(bucketRet.getName(), bucket.getName());
         verify(rgwClient, times(1)).getBucketAcl(anyString());
