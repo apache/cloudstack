@@ -147,6 +147,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             objectStore.createBucket(bucket, objectLock);
             bucketCreated = true;
 
+            bucketTO = new BucketTO(_bucketDao.findById(bucket.getId()));
             if (cmd.isVersioning()) {
                 objectStore.setBucketVersioning(bucketTO);
             }
