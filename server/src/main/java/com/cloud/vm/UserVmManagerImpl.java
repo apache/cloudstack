@@ -5343,7 +5343,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void checkForceStopVmPermission(Account callingAccount) {
         if (!AllowUserForceStopVm.valueIn(callingAccount.getId())) {
-            logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.force.stop.vm config is true for the account.", ApiConstants.FORCED));
+            logger.error("Parameter [{}] can only be passed by Admin accounts or when the allow.user.force.stop.vm config is true for the account.", ApiConstants.FORCED);
             throw new PermissionDeniedException("Account does not have the permission to force stop the vm.");
         }
     }
