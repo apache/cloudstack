@@ -78,7 +78,7 @@ public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     private String name;
 
     @Parameter(name = ApiConstants.DELETE_PROTECTION,
-            type = CommandType.BOOLEAN,
+            type = CommandType.BOOLEAN,  since = "4.20.0",
             description = "Set delete protection for the volume. If true, The volume " +
                     "will be protected from deletion. Note: If the volume is managed by " +
                     "another service like autoscaling groups or CKS, delete protection will be " +

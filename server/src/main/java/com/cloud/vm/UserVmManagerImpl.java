@@ -3399,8 +3399,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.isDeleteProtection()) {
-            throw new InvalidParameterValueException(
-                    "Failed to delete the instance. It has delete protection enabled.");
+            throw new InvalidParameterValueException(String.format(
+                    "Instance [id=%s, name=%s] has delete protection enabled and cannot be deleted.",
+                    vm.getUuid(), vm.getName()));
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
@@ -8567,10 +8568,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString() + " or " + Volume.Type.ROOT.toString());
             }
             if (volume.isDeleteProtection()) {
-                throw new InvalidParameterValueException(
-                        String.format("Volume with id %s has delete protection enabled and cannot be deleted",
-                                volume.getUuid()));
-
+                throw new InvalidParameterValueException(String.format(
+                        "Volume [id=%s, name=%s] has delete protection enabled and cannot be deleted",
+                        volume.getUuid(), volume.getName()));
             }
         }
     }

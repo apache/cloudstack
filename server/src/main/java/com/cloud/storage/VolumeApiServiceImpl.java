@@ -1697,7 +1697,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     public void validateDestroyVolume(Volume volume, Account caller, boolean expunge, boolean forceExpunge) {
         if (volume.isDeleteProtection()) {
-            throw new InvalidParameterValueException("Volume has delete protection enabled and cannot be deleted.");
+            throw new InvalidParameterValueException(String.format(
+                    "Volume [id = %s , name = %s has delete protection enabled and cannot be deleted.",
+                    volume.getUuid(), volume.getName()));
         }
 
         if (expunge) {

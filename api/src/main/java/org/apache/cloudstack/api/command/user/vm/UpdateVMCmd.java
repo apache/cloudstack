@@ -147,7 +147,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     private String extraConfig;
 
     @Parameter(name = ApiConstants.DELETE_PROTECTION,
-            type = CommandType.BOOLEAN,
+            type = CommandType.BOOLEAN, since = "4.20.0",
             description = "Set delete protection for the virtual machine. If " +
                     "true, the instance will be protected from deletion. " +
                     "Note: If the instance is managed by another service like" +
