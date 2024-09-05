@@ -66,6 +66,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
@@ -185,8 +186,10 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.config.ConfigurationSubGroup;
@@ -489,6 +492,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserDataDao userDataDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
+    @Inject
+    BackupRepositoryDao backupRepositoryDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;
@@ -5282,6 +5287,26 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository backupRepository) {
+        BackupRepositoryResponse response = new BackupRepositoryResponse();
+        response.setName(backupRepository.getName());
+        response.setId(backupRepository.getUuid());
+        response.setCreated(backupRepository.getCreated());
+        response.setAddress(backupRepository.getAddress());
+        response.setProviderName(backupRepository.getProvider());
+        response.setType(backupRepository.getType());
+        response.setMountOptions(backupRepository.getMountOptions());
+        response.setCapacityBytes(backupRepository.getCapacityBytes());
+        response.setObjectName("backuprepository");
+        DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());
+        if (zone != null) {
+            response.setZoneId(zone.getUuid());
+            response.setZoneName(zone.getName());
+        }
+        return response;
     }
 
     @Override

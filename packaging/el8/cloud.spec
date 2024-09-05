@@ -109,6 +109,7 @@ Requires: (net-tools or net-tools-deprecated)
 Requires: iproute
 Requires: ipset
 Requires: perl
+Requires: rsync
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm

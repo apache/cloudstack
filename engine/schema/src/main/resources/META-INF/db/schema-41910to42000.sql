@@ -457,6 +457,35 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text'
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
 
+-- NAS B&R Plugin Backup Repository
+DROP TABLE IF EXISTS `cloud`.`backup_repository`;
+CREATE TABLE `cloud`.`backup_repository` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the backup repository',
+  `uuid` varchar(255) NOT NULL COMMENT 'uuid of the backup repository',
+  `name` varchar(255) CHARACTER SET utf8mb4 NOT NULL COMMENT 'name of the backup repository',
+  `zone_id` bigint unsigned NOT NULL COMMENT 'id of zone',
+  `provider` varchar(255) NOT NULL COMMENT 'backup provider name',
+  `type` varchar(255) NOT NULL COMMENT 'backup repo type',
+  `address` varchar(1024) NOT NULL COMMENT 'url of the backup repository',
+  `mount_opts` varchar(1024) NOT NULL COMMENT 'mount options for the backup repository',
+  `used_bytes` bigint unsigned,
+  `capacity_bytes` bigint unsigned,
+  `created` datetime,
+  `removed` datetime,
+  PRIMARY KEY(`id`),
+  INDEX `i_backup_repository__uuid`(`uuid`),
+  INDEX `i_backup_repository__zone_id_provider`(`zone_id`, `provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Drop foreign key on backup_schedule, drop unique key on vm_id and re-add foreign key to allow multiple backup schedules to be created
+ALTER TABLE `cloud`.`backup_schedule` DROP FOREIGN KEY fk_backup_schedule__vm_id;
+ALTER TABLE `cloud`.`backup_schedule` DROP INDEX vm_id;
+ALTER TABLE `cloud`.`backup_schedule` ADD CONSTRAINT fk_backup_schedule__vm_id FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
+
+-- Add volume details to the backups table to keep track of the volumes being backed up
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backed_volumes', 'text DEFAULT NULL COMMENT "details of backed-up volumes" ');
+CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('backups', 'backed_volumes', 'TEXT', 'DEFAULT NULL COMMENT \'details of backed-up volumes\'');
+
 -- Add support for VMware 8.0u2 (8.0.2.x) and 8.0u3 (8.0.3.x)
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '8.0.2', 1024, 0, 59, 64, 1, 1);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '8.0.2', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='8.0';
