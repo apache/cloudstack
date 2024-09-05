@@ -102,6 +102,7 @@
         <cs.configuration.version>1.10</cs.configuration.version>
         <cs.daemon.version>1.3.3</cs.daemon.version>
         <cs.dbcp.version>2.9.0</cs.dbcp.version>
+        <cs.hikaricp.version>5.1.0</cs.hikaricp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.9.0</cs.pool.version>
@@ -364,6 +365,7 @@
                 <artifactId>commons-daemon</artifactId>
                 <version>${cs.daemon.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-dbcp2</artifactId>
@@ -374,6 +376,11 @@
                         <groupId>commons-pool2</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${cs.hikaricp.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-discovery</groupId>
@@ -454,6 +461,12 @@
                 <groupId>ch.qos.reload4j</groupId>
                 <artifactId>reload4j</artifactId>
                 <version>${cs.reload4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>
