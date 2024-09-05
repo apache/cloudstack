@@ -338,6 +338,8 @@
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
+
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
