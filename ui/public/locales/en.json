@@ -3353,6 +3353,7 @@
 "message.set.default.nic": "Please confirm that you would like to make this NIC the default for this Instance.",
 "message.set.default.nic.manual": "Please manually update the default NIC on the Instance now.",
 "message.setting.updated": "Setting Updated:",
+"message.setting.update.delay": "The new value will take effect within 30 seconds.",
 "message.setup.physical.network.during.zone.creation": "When adding a zone, you need to set up one or more physical networks. Each physical network can carry one or more types of traffic, with certain restrictions on how they may be combined. Add or remove one or more traffic types onto each physical network.",
 "message.setup.physical.network.during.zone.creation.basic": "When adding a basic zone, you can set up one physical Network, which corresponds to a NIC on the hypervisor. The Network carries several types of traffic.<br/><br/>You may also <strong>add</strong> other traffic types onto the physical Network.",
 "message.shared.network.offering.warning": "Domain admins and regular Users can only create shared Networks from Network offering with the setting specifyvlan=false. Please contact an administrator to create a Network offering if this list is empty.",
