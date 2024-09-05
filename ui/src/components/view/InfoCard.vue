@@ -504,6 +504,127 @@
                 <gold-outlined />
                 <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
               </div>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
+          <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-label :resourceType="resource.resourcetype" :resourceId="resource.resourceid" :resourceName="resource.resourcename" />
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.virtualmachineid">
+          <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
+          <div class="resource-detail-item__details">
+            <desktop-outlined />
+            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+            <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.volumeid">
+          <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
+          <div class="resource-detail-item__details">
+            <hdd-outlined />
+            <router-link v-if="validLinks.volume" :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+            <span v-else>{{ resource.volumename || resource.volume || resource.volumeid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.associatednetworkid">
+          <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
+          <div class="resource-detail-item__details">
+            <wifi-outlined />
+            <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetwork || resource.associatednetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
+          <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
+          <div class="resource-detail-item__details">
+            <wifi-outlined />
+            <router-link :to="{ path: '/guestnetwork/' + resource.sourceipaddressnetworkid }">{{ resource.sourceipaddressnetworkname || resource.sourceipaddressnetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.guestnetworkid">
+          <div class="resource-detail-item__label">{{ $t('label.guestnetwork') }}</div>
+          <div class="resource-detail-item__details">
+            <gateway-outlined />
+            <router-link :to="{ path: '/guestnetwork/' + resource.guestnetworkid }">{{ resource.guestnetworkname || resource.guestnetworkid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.publicip">
+          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
+          <div class="resource-detail-item__details">
+            <gateway-outlined />
+            <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+            <copy-label v-else :label="resource.publicip" />
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.vpcid">
+          <div class="resource-detail-item__label">{{ $t('label.vpcname') }}</div>
+          <div class="resource-detail-item__details">
+            <span v-if="images.vpc">
+              <resource-icon :image="getImage(images.vpc)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <deployment-unit-outlined v-else />
+            <router-link v-if="resource.vpcaccess" :to="{ path: '/vpc/' + resource.vpcid }">{{ resource.vpcname || resource.vpcid }}</router-link>
+            <span v-else>{{ resource.vpcname || resource.vpcid }}</span>
+          </div>
+        </div>
+
+        <div class="resource-detail-item" v-if="resource.aclid">
+          <div class="resource-detail-item__label">{{ $t('label.aclid') }}</div>
+          <div class="resource-detail-item__details">
+            <span v-if="images.acl">
+              <resource-icon :image="getImage(images.acl)" size="1x" style="margin-right: 5px"/>
+            </span>
+            <deployment-unit-outlined v-else />
+            <router-link :to="{ path: '/acllist/' + resource.aclid }">{{ resource.aclname || resource.aclid }}</router-link>
+          </div>
+        </div>
+
+        <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
+          <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
+          <SwapOutlined />
+          <span
+            v-for="(group, index) in resource.affinitygroup"
+            :key="group.id"
+          >
+            <router-link :to="{ path: '/affinitygroup/' + group.id }">{{ group.name }}</router-link>
+            <span v-if="index + 1 < resource.affinitygroup.length">, </span>
+          </span>
+        </div>
+        <div class="resource-detail-item" v-if="resource.templateid">
+          <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <SaveOutlined v-else />
+            <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.isoid">
+          <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <UsbOutlined v-else />
+              <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
+          <div class="resource-detail-item__label" v-if="$route.meta.name === 'router' || $route.meta.name === 'systemvm'">{{ $t('label.system.offering') }}</div>
+          <div class="resource-detail-item__label" v-else >{{ $t('label.serviceofferingname') }}</div>
+          <div class="resource-detail-item__details">
+            <cloud-outlined />
+            <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
+          <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
+          <div class="resource-detail-item__details">
+            <hdd-outlined />
+            <div v-if="resource.rootdiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
             </div>
             <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
               <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
