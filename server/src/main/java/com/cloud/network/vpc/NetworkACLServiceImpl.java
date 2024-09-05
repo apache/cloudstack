@@ -156,7 +156,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final SearchCriteria<NetworkACLVO> ssc = _networkACLDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 

@@ -32,14 +32,14 @@
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
-    <div class="search-bar">
-      <input
-        v-model="searchQuery"
-        @input="fetchData"
-        type="text"
-        placeholder="Search ACL rules..."
-      />
-    </div>
+      <div class="search-bar">
+        <a-input-search
+          style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          @search="fetchData"
+        />
+      </div>
     </div>
 
     <div class="list">
