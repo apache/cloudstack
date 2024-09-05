@@ -4317,7 +4317,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             } else if (storeForNewStoreScope.getScopeType() == ScopeType.HOST
                     && (storeForExistingStoreScope.getScopeType() == ScopeType.CLUSTER || storeForExistingStoreScope.getScopeType() == ScopeType.ZONE)) {
-                Long hostId = _vmInstanceDao.findById(existingVolume.getInstanceId()).getHostId();
+                VMInstanceVO vm = _vmInstanceDao.findById(existingVolume.getInstanceId());
+                Long hostId = vm.getHostId();
+                if (hostId == null) {
+                    hostId = vm.getLastHostId();
+                }
                 if (storeForNewStoreScope.getScopeId().equals(hostId)) {
                     return false;
                 }
