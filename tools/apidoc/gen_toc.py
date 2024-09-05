@@ -276,6 +276,8 @@ known_categories = {
     'listBuckets': 'Object Store',
     'listVmsForImport': 'Virtual Machine',
     'importVm': 'Virtual Machine',
+    'SharedFS': 'Shared FileSystem',
+    'SharedFileSystem': 'Shared FileSystem',
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
     'purgeExpungedResources': 'Resource',

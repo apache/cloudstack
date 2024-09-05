@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -213,6 +214,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -795,6 +798,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             vmSnapshotResponse.setDomainId(domain.getUuid());
             vmSnapshotResponse.setDomainName(domain.getName());
+            vmSnapshotResponse.setDomainPath(domain.getPath());
         }
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
@@ -2243,6 +2247,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             response.setDomainId(securityGroup.getDomainUuid());
             response.setDomainName(securityGroup.getDomainName());
+            response.setDomainPath(securityGroup.getDomainPath());
 
             for (SecurityRule securityRule : securityRules) {
                 SecurityGroupRuleResponse securityGroupData = new SecurityGroupRuleResponse();
@@ -2647,6 +2652,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
+                response.setDomainPath(domain.getPath());
             }
 
         }
@@ -2895,6 +2901,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
@@ -2912,6 +2919,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
@@ -2925,6 +2933,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
+        response.setDomainPath(object.getDomainPath());
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
@@ -2951,6 +2960,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     @Override
@@ -3889,6 +3899,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             usageRecResponse.setDomainId(domain.getUuid());
             usageRecResponse.setDomainName(domain.getName());
+            usageRecResponse.setDomainPath(domain.getPath());
         }
 
         if (usageRecord.getZoneId() != null) {
@@ -4686,6 +4697,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             response.setDomainId(domain.getUuid());
             response.setDomainName(domain.getName());
+            response.setDomainPath(domain.getPath());
         }
 
         response.setObjectName("affinitygroup");
@@ -5270,5 +5282,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setProvider(objectStoreVO.getProviderName());
         populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
+    }
+
+    @Override
+    public SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS) {
+        SharedFSJoinVO sharedFSView = ApiDBUtils.newSharedFSView(sharedFS);
+        return ApiDBUtils.newSharedFSResponse(view, sharedFSView);
     }
 }

@@ -55,6 +55,7 @@ import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
@@ -2737,8 +2738,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private DiskTO[] getDisks(DiskTO[] sortedDisks) {
        return Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
-                vol.getPath().contains("configdrive"))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
+                vol.getPath().contains(ConfigDrive.CONFIGDRIVEDIR))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
     }
+
     private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
                               VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
         TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
@@ -4447,6 +4449,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                             logger.warn(msg);
                         }
+
+                        disconnectConfigDriveIsoIfExists(vmMo);
                         return new StopAnswer(cmd, msg, true);
                     }
 
@@ -4462,6 +4466,30 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
         } catch (Exception e) {
             return new StopAnswer(cmd, createLogMessageException(e, cmd), false);
+        }
+    }
+
+    private void disconnectConfigDriveIsoIfExists(VirtualMachineMO vmMo) {
+        try {
+            List<VirtualDevice> isoDevices = vmMo.getIsoDevices();
+            if (CollectionUtils.isEmpty(isoDevices)) {
+                return;
+            }
+
+            for (VirtualDevice isoDevice : isoDevices) {
+                if (!(isoDevice.getBacking() instanceof VirtualCdromIsoBackingInfo)) {
+                    continue;
+                }
+                String isoFilePath = ((VirtualCdromIsoBackingInfo)isoDevice.getBacking()).getFileName();
+                if (!isoFilePath.contains(ConfigDrive.CONFIGDRIVEDIR)) {
+                    continue;
+                }
+                logger.info(String.format("Disconnecting config drive at location: %s", isoFilePath));
+                vmMo.detachIso(isoFilePath, true);
+                return;
+            }
+        } catch (Exception e) {
+            logger.warn(String.format("Couldn't check/disconnect config drive, error: %s", e.getMessage()), e);
         }
     }
 

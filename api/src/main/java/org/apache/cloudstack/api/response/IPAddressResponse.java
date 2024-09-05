@@ -75,6 +75,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description = "the domain the public IP address is associated with")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the public IP address belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
     @Param(description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
@@ -211,6 +215,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }

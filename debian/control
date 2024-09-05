@@ -2,7 +2,7 @@ Source: cloudstack
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 9), openjdk-11-jdk | java11-sdk | java11-jdk | zulu-11, genisoimage,
+Build-Depends: debhelper (>= 9), openjdk-17-jdk | java17-sdk | java17-jdk | zulu-17 | openjdk-11-jdk | java11-sdk | java11-jdk | zulu-11, genisoimage,
  python-mysql.connector | python3-mysql.connector, maven (>= 3) | maven3,
  python (>= 2.7) | python2 (>= 2.7), python3 (>= 3), python-setuptools, python3-setuptools,
  nodejs (>= 12), lsb-release, dh-systemd | debhelper (>= 13)

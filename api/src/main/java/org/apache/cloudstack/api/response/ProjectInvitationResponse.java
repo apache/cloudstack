@@ -51,6 +51,10 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     @Param(description = "the domain name where the project belongs to")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the project belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account name of the project's owner")
     private String accountName;
@@ -85,6 +89,11 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
     @Override
     public void setDomainName(String domain) {
         this.domainName = domain;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override
