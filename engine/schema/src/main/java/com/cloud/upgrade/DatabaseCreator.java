@@ -116,10 +116,6 @@ public class DatabaseCreator {
     }
 
     public static void main(String[] args) {
-
-        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
-        appContext.getBean(ComponentContext.class);
-
         String dbPropsFile = "";
         List<String> sqlFiles = new ArrayList<String>();
         List<String> upgradeClasses = new ArrayList<String>();
@@ -166,13 +162,17 @@ public class DatabaseCreator {
             System.exit(1);
         }
 
+        initDB(dbPropsFile, rootPassword, databases, dryRun);
+
+        ClassPathXmlApplicationContext appContext = new ClassPathXmlApplicationContext(new String[] {"/com/cloud/upgrade/databaseCreatorContext.xml"});
+        appContext.getBean(ComponentContext.class);
+
         try {
             TransactionLegacy.initDataSource(dbPropsFile);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        initDB(dbPropsFile, rootPassword, databases, dryRun);
 
         // Process sql files
         for (String sqlFile : sqlFiles) {
