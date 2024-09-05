@@ -158,21 +158,13 @@ export default {
           loginParams.domain = '/'
         }
         api('forgotPassword', {}, 'POST', loginParams)
-          .then((res) => this.forgotPasswordSuccess(res))
-          .catch(err => {
-            this.requestFailed(err)
-          }).finally(() => {
-            this.submitBtn = false
+          .finally(() => {
+            this.$message.success(this.$t('message.forgot.password.success'))
+            this.$router.push({ path: '/login' }).catch(() => {})
           })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
-    },
-    forgotPasswordSuccess (res) {
-      if (res.forgotpasswordresponse.success) {
-        this.$message.success(this.$t('message.forgot.password.success'))
-        this.$router.push({ path: '/login' }).catch(() => {})
-      }
     },
     requestFailed (err) {
       if (err && err.response && err.response.data && err.response.data.forgotpasswordresponse) {

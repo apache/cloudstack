@@ -96,6 +96,5 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
-  "forgotPasswordEnabled": false,
   "docHelpMappings": {}
 }

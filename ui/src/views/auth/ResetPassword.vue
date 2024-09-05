@@ -69,19 +69,6 @@
             </template>
           </a-input>
         </a-form-item>
-        <a-form-item ref="token" name="token">
-          <a-input
-            size="large"
-            type="text"
-            v-focus="true"
-            :placeholder="$t('label.token')"
-            v-model:value="form.token"
-          >
-            <template #prefix>
-              <user-outlined />
-            </template>
-          </a-input>
-        </a-form-item>
         <a-form-item ref="password" name="password">
           <a-input-password
             size="large"
@@ -178,11 +165,6 @@ export default {
           message: this.$t('message.error.username'),
           trigger: 'change'
         }],
-        token: [{
-          required: true,
-          message: this.$t('message.error.username'),
-          trigger: 'change'
-        }],
         password: [{
           required: true,
           message: this.$t('message.error.password'),
@@ -211,7 +193,6 @@ export default {
           store.dispatch('SetServer', this.server)
         }
         const loginParams = { ...values }
-        delete loginParams.username
         loginParams.username = values.username
         loginParams.domain = values.domain
         if (!loginParams.domain) {

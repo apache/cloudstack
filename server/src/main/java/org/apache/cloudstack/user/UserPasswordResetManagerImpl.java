@@ -183,7 +183,7 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         mailProperties.setSender(new MailAddress(UserPasswordResetEmailSender.value()));
         mailProperties.setSubject(subject);
         mailProperties.setContent(content);
-        mailProperties.setContentType("text/plain");
+        mailProperties.setContentType("text/html; charset=utf-8");
 
         Set<MailAddress> addresses = new HashSet<>();
 

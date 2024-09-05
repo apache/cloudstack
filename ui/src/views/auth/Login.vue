@@ -156,7 +156,7 @@
       <a-col>
       <translation-menu/>
       </a-col>
-      <a-col v-if="$config.forgotPasswordEnabled">
+      <a-col v-if="forgotPasswordEnabled">
         <router-link :to="{ name: 'forgotPassword' }">
           {{ $t('label.forgot.password') }}
         </router-link>
@@ -229,7 +229,8 @@ export default {
         loginBtn: false,
         loginType: 0
       },
-      server: ''
+      server: '',
+      forgotPasswordEnabled: false
     }
   },
   created () {
@@ -310,6 +311,15 @@ export default {
               this.githubredirecturi = item.redirecturi
             }
           })
+        }
+      })
+      api('forgotPassword', {}).then(response => {
+        this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
+      }).catch((err) => {
+        if (err?.response?.data === null) {
+          this.forgotPasswordEnabled = true
+        } else {
+          this.forgotPasswordEnabled = false
         }
       })
     },

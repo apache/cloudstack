@@ -115,10 +115,7 @@ public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Forgot Password is not allowed for this user");
                 }
                 boolean success = _apiServer.forgotPassword(userAccount, userDomain);
-                SuccessResponse successResponse = new SuccessResponse();
-                successResponse.setSuccess(success);
-                successResponse.setResponseName(getCommandName());
-                return ApiResponseSerializer.toSerializedString(successResponse, responseType);
+                logger.debug("Forgot password request for user " + username[0] + " in domain " + domain + " is successful: " + success);
             } catch (final CloudRuntimeException ex) {
                 ApiServlet.invalidateHttpSession(session, "fall through to API key,");
                 String msg = String.format("%s", ex.getMessage() != null ?
@@ -130,6 +127,10 @@ public class DefaultForgotPasswordAPIAuthenticatorCmd extends BaseCmd implements
                     logger.trace(msg);
                 }
             }
+            SuccessResponse successResponse = new SuccessResponse();
+            successResponse.setSuccess(true);
+            successResponse.setResponseName(getCommandName());
+            return ApiResponseSerializer.toSerializedString(successResponse, responseType);
         }
         // We should not reach here and if we do we throw an exception
         throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
