@@ -42,6 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
@@ -139,6 +140,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -354,6 +356,8 @@ public class AutoScaleManagerImplTest {
     VMTemplateVO templateMock;
     @Mock
     NetworkVO networkMock;
+    @Mock
+    NetworkModel networkModel;
     @Mock
     NetworkOfferingVO networkOfferingMock;
     @Mock
@@ -1311,10 +1315,10 @@ public class AutoScaleManagerImplTest {
 
         when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        when(zoneMock.isSecurityGroupEnabled()).thenReturn(true);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
+        when(networkModel.checkSecurityGroupSupportForNetwork(zoneMock, List.of(networkId), Collections.emptyList())).thenReturn(true);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
@@ -1360,10 +1364,10 @@ public class AutoScaleManagerImplTest {
 
         when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        when(zoneMock.isSecurityGroupEnabled()).thenReturn(false);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
+        when(networkModel.checkSecurityGroupSupportForNetwork(zoneMock, List.of(networkId), Collections.emptyList())).thenReturn(false);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
