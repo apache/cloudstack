@@ -104,10 +104,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     @Override
     public String prepareSDC(Host host, DataStore dataStore) {
-        if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
-            return getConnectedSdc(host, dataStore);
-        }
-
         String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to prepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
@@ -134,6 +130,10 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             if (StringUtils.isNotBlank(sdcId)) {
                 LOGGER.debug(String.format("SDC %s already connected for the pool: %d on host: %d, no need to prepare/start it", sdcId, poolId, hostId));
                 return sdcId;
+            }
+            if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+                LOGGER.debug("On-demand connect/disconnect disabled, no need to prepare it");
+                return getConnectedSdc(host, dataStore);
             }
 
             String storageSystemIdLockString = String.format(POWERFLEX_SDC_SYSTEMID_LOCK_FORMAT, systemId);
@@ -241,9 +241,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     @Override
     public boolean stopSDC(Host host, DataStore dataStore) {
-        if(Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
-            return true;
-        }
         String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to unprepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
@@ -266,6 +263,10 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             String sdcId = getConnectedSdc(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 LOGGER.debug("SDC not connected, no need to unprepare it");
+                return true;
+            }
+            if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
+                LOGGER.debug("On-demand connect/disconnect disabled, no need to unprepare it");
                 return true;
             }
 
