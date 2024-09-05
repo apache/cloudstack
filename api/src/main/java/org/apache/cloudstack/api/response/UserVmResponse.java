@@ -321,7 +321,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Boolean isDynamicallyScalable;
 
     @SerializedName(ApiConstants.DELETE_PROTECTION)
-    @Param(description = "true if vm has delete protection.")
+    @Param(description = "true if vm has delete protection.", since = "4.20.0")
     private boolean deleteProtection;
 
     @SerializedName(ApiConstants.SERVICE_STATE)

@@ -262,7 +262,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private boolean supportsStorageSnapshot;
 
     @SerializedName(ApiConstants.DELETE_PROTECTION)
-    @Param(description = "true if volume has delete protection.")
+    @Param(description = "true if volume has delete protection.", since = "4.20.0")
     private boolean deleteProtection;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
