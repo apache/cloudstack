@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.BucketObject;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.twonote.rgwadmin4j.RgwAdmin;
 import org.twonote.rgwadmin4j.RgwAdminBuilder;
@@ -61,7 +62,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(CephObjectStoreDriverImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CephObjectStoreDriverImpl.class);
 
     @Inject
     AccountDao _accountDao;
