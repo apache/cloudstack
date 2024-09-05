@@ -3171,7 +3171,10 @@ public class VirtualMachineMO extends BaseMO {
         int ideDeviceUnitNumber = -1;
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
-                if (device instanceof VirtualDisk && (controllerKey == device.getControllerKey())) {
+                if (device.getControllerKey() == null || device.getControllerKey() != controllerKey) {
+                    continue;
+                }
+                if (device instanceof VirtualDisk || device instanceof VirtualCdrom) {
                     deviceCount++;
                     ideDeviceUnitNumber = device.getUnitNumber();
                 }
