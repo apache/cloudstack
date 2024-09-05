@@ -3400,7 +3400,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.isDeleteProtection()) {
             throw new InvalidParameterValueException(String.format(
-                    "Instance [id=%s, name=%s] has delete protection enabled and cannot be deleted.",
+                    "Instance [id = %s, name = %s] has delete protection enabled and cannot be deleted.",
                     vm.getUuid(), vm.getName()));
         }
 
@@ -8569,7 +8569,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             if (volume.isDeleteProtection()) {
                 throw new InvalidParameterValueException(String.format(
-                        "Volume [id=%s, name=%s] has delete protection enabled and cannot be deleted",
+                        "Volume [id = %s, name = %s] has delete protection enabled and cannot be deleted",
                         volume.getUuid(), volume.getName()));
             }
         }
