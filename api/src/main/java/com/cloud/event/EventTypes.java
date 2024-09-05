@@ -459,6 +459,7 @@ public class EventTypes {
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
 
     // Primary storage pool
+    public static final String EVENT_UPDATE_PRIMARY_STORAGE = "UPDATE.PS";
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
@@ -1034,6 +1035,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class);
 
         // Primary storage pool
+        entityEventDetails.put(EVENT_UPDATE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_CHANGE_STORAGE_POOL_SCOPE, StoragePool.class);

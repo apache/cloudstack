@@ -316,10 +316,6 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return networkType;
     }
 
-    public boolean isSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
-    }
-
     public String getAllocationState() {
         return allocationState;
     }
@@ -336,16 +332,20 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return capacities;
     }
 
-    public boolean isLocalStorageEnabled() {
-        return localStorageEnabled;
-    }
-
     public Set<ResourceTagResponse> getTags() {
         return tags;
     }
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
     }
 
     public Boolean getAllowUserSpecifyVRMtu() {
@@ -358,6 +358,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public Integer getRouterPublicInterfaceMaxMtu() {
         return routerPublicInterfaceMaxMtu;
+    }
+
+    public boolean isNsxEnabled() {
+        return nsxEnabled;
     }
 
     @Override

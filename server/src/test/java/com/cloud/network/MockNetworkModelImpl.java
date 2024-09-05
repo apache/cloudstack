@@ -943,4 +943,14 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public void verifyIp6DnsPair(String ip4Dns1, String ip4Dns2) {}
+
+    @Override
+    public boolean isSecurityGroupSupportedForZone(Long zoneId) {
+        return false;
+    }
+
+    @Override
+    public boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds, List<Long> securityGroupsIds) {
+        return false;
+    }
 }
