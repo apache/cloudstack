@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.object.store;
 
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.DataStoreRole;
@@ -107,38 +108,38 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     }
 
     @Override
-    public boolean deleteBucket(String bucketName) {
-        return driver.deleteBucket(bucketName, objectStoreVO.getId());
+    public boolean deleteBucket(BucketTO bucket) {
+        return driver.deleteBucket(bucket, objectStoreVO.getId());
     }
 
     @Override
-    public boolean setBucketEncryption(String bucketName) {
-        return driver.setBucketEncryption(bucketName, objectStoreVO.getId());
+    public boolean setBucketEncryption(BucketTO bucket) {
+        return driver.setBucketEncryption(bucket, objectStoreVO.getId());
     }
 
     @Override
-    public boolean deleteBucketEncryption(String bucketName) {
-        return driver.deleteBucketEncryption(bucketName, objectStoreVO.getId());
+    public boolean deleteBucketEncryption(BucketTO bucket) {
+        return driver.deleteBucketEncryption(bucket, objectStoreVO.getId());
     }
 
     @Override
-    public boolean setBucketVersioning(String bucketName) {
-        return driver.setBucketVersioning(bucketName, objectStoreVO.getId());
+    public boolean setBucketVersioning(BucketTO bucket) {
+        return driver.setBucketVersioning(bucket, objectStoreVO.getId());
     }
 
     @Override
-    public boolean deleteBucketVersioning(String bucketName) {
-        return driver.deleteBucketVersioning(bucketName, objectStoreVO.getId());
+    public boolean deleteBucketVersioning(BucketTO bucket) {
+        return driver.deleteBucketVersioning(bucket, objectStoreVO.getId());
     }
 
     @Override
-    public void setBucketPolicy(String bucketName, String policy) {
-        driver.setBucketPolicy(bucketName, policy, objectStoreVO.getId());
+    public void setBucketPolicy(BucketTO bucket, String policy) {
+        driver.setBucketPolicy(bucket, policy, objectStoreVO.getId());
     }
 
     @Override
-    public void setQuota(String bucketName, int quota) {
-        driver.setBucketQuota(bucketName, objectStoreVO.getId(), quota);
+    public void setQuota(BucketTO bucket, int quota) {
+        driver.setBucketQuota(bucket, objectStoreVO.getId(), quota);
     }
 
     @Override

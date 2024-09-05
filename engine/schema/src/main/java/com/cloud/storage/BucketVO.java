@@ -97,17 +97,23 @@ public class BucketVO implements Bucket {
     String uuid;
 
     public BucketVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public BucketVO(String name) {
+        this.uuid = UUID.randomUUID().toString();
+        this.name = name;
+        this.state = State.Allocated;
     }
 
     public BucketVO(long accountId, long domainId, long objectStoreId, String name, Integer quota, boolean versioning,
-                    boolean encryption, boolean objectLock, String policy)
-    {
+                    boolean encryption, boolean objectLock, String policy) {
         this.accountId = accountId;
         this.domainId = domainId;
         this.objectStoreId = objectStoreId;
         this.name = name;
-        state = State.Allocated;
-        uuid = UUID.randomUUID().toString();
+        this.state = State.Allocated;
+        this.uuid = UUID.randomUUID().toString();
         this.quota = quota;
         this.versioning = versioning;
         this.encryption = encryption;

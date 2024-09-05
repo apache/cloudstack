@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.quota.QuotaTariff;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
@@ -451,6 +452,7 @@ public class EventTypes {
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
 
     // Primary storage pool
+    public static final String EVENT_UPDATE_PRIMARY_STORAGE = "UPDATE.PS";
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
     public static final String EVENT_SYNC_STORAGE_POOL = "SYNC.STORAGE.POOL";
@@ -743,6 +745,18 @@ public class EventTypes {
     public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
     public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
 
+    // SharedFS
+    public static final String EVENT_SHAREDFS_CREATE = "SHAREDFS.CREATE";
+    public static final String EVENT_SHAREDFS_START = "SHAREDFS.START";
+    public static final String EVENT_SHAREDFS_UPDATE = "SHAREDFS.UPDATE";
+    public static final String EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING = "SHAREDFS.CHANGE.SERVICE.OFFERING";
+    public static final String EVENT_SHAREDFS_CHANGE_DISK_OFFERING = "SHAREDFS.CHANGE.DISK.OFFERING";
+    public static final String EVENT_SHAREDFS_STOP = "SHAREDFS.STOP";
+    public static final String EVENT_SHAREDFS_RESTART = "SHAREDFS.RESTART";
+    public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
+    public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
+    public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1007,6 +1021,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class);
 
         // Primary storage pool
+        entityEventDetails.put(EVENT_UPDATE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_ENABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_DISABLE_PRIMARY_STORAGE, StoragePool.class);
         entityEventDetails.put(EVENT_CHANGE_STORAGE_POOL_SCOPE, StoragePool.class);
@@ -1201,6 +1216,18 @@ public class EventTypes {
         entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, QuotaTariff.class);
         entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, QuotaTariff.class);
+
+        // SharedFS
+        entityEventDetails.put(EVENT_SHAREDFS_CREATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_START, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_STOP, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_UPDATE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_SERVICE_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_CHANGE_DISK_OFFERING, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RESTART, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
+        entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

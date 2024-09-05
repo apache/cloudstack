@@ -388,6 +388,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
 
+    @SerializedName((ApiConstants.VM_TYPE))
+    @Param(description = "User VM type", since = "4.20.0")
+    private String vmType;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -1140,6 +1144,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
             this.vnfDetails = new LinkedHashMap<>();
         }
         this.vnfDetails.put(key,value);
+    }
+
+    public void setVmType(String vmType) {
+        this.vmType = vmType;
+    }
+
+    public String getVmType() {
+        return vmType;
     }
 
     public void setIpAddress(String ipAddress) {

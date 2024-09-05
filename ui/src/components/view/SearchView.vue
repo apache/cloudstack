@@ -303,7 +303,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype', 'restartrequired'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -437,6 +437,7 @@ export default {
       let managementServerIdIndex = -1
       let serviceOfferingIndex = -1
       let diskOfferingIndex = -1
+      let networkIndex = -1
       let usageTypeIndex = -1
       let volumeIndex = -1
 
@@ -522,6 +523,12 @@ export default {
         diskOfferingIndex = this.fields.findIndex(item => item.name === 'diskofferingid')
         this.fields[diskOfferingIndex].loading = true
         promises.push(await this.fetchDiskOfferings(searchKeyword))
+      }
+
+      if (arrayField.includes('networkid')) {
+        networkIndex = this.fields.findIndex(item => item.name === 'networkid')
+        this.fields[networkIndex].loading = true
+        promises.push(await this.fetchNetworks(searchKeyword))
       }
 
       if (arrayField.includes('usagetype')) {
@@ -618,6 +625,14 @@ export default {
             this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
           }
         }
+
+        if (networkIndex > -1) {
+          const networks = response.filter(item => item.type === 'networkid')
+          if (networks && networks.length > 0) {
+            this.fields[networkIndex].opts = this.sortArray(networks[0].data)
+          }
+        }
+
         if (usageTypeIndex > -1) {
           const usageTypes = response.filter(item => item.type === 'usagetype')
           if (usageTypes?.length > 0) {
@@ -660,6 +675,9 @@ export default {
         }
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
+        }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
         }
         if (usageTypeIndex > -1) {
           this.fields[usageTypeIndex].loading = false
@@ -845,6 +863,19 @@ export default {
           resolve({
             type: 'diskofferingid',
             data: diskOfferings
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchNetworks (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+          const networks = json.listnetworksresponse.network
+          resolve({
+            type: 'networkid',
+            data: networks
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])
