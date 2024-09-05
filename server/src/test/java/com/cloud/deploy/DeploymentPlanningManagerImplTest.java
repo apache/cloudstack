@@ -297,9 +297,9 @@ public class DeploymentPlanningManagerImplTest {
 
         Mockito.when(avoids.shouldAvoid((DataCenterVO) ArgumentMatchers.any())).thenReturn(true);
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.X86_64);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
-        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.ARM64)).thenReturn(null);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("DataCenter is in avoid set, destination should be null! ", dest);
     }
@@ -316,9 +316,9 @@ public class DeploymentPlanningManagerImplTest {
 
         Mockito.when(_planner.canHandle(vmProfile, plan, avoids)).thenReturn(false);
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.X86_64);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
-        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.ARM64)).thenReturn(null);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }
@@ -336,9 +336,9 @@ public class DeploymentPlanningManagerImplTest {
 
         Mockito.when(((DeploymentClusterPlanner) _planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.X86_64);
+        Mockito.when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
         Mockito.when(vmProfile.getTemplate()).thenReturn(template);
-        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.ARM64)).thenReturn(null);
+        Mockito.when(_clusterDao.listClustersByArchAndZoneId(dataCenterId, CPU.CPUArch.arm64)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
     }

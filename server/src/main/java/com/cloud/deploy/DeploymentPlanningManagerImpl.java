@@ -273,7 +273,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         _affinityProcessors = affinityProcessors;
     }
 
-    private static final List<CPU.CPUArch> clusterArchTypes = Arrays.asList(CPU.CPUArch.X86_64, CPU.CPUArch.ARM64);
+    private static final List<CPU.CPUArch> clusterArchTypes = Arrays.asList(CPU.CPUArch.amd64, CPU.CPUArch.arm64);
 
     protected void avoidOtherClustersForDeploymentIfMigrationDisabled(VirtualMachine vm, Host lastHost, ExcludeList avoids) {
         if (lastHost == null || lastHost.getClusterId() == null ||

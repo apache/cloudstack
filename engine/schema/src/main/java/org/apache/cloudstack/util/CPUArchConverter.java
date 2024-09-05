@@ -26,7 +26,7 @@ public class CPUArchConverter implements AttributeConverter<CPU.CPUArch, String>
 
     @Override
     public String convertToDatabaseColumn(CPU.CPUArch cpuArch) {
-        return cpuArch == null ? CPU.CPUArch.X86_64.getType() : cpuArch.getType();
+        return cpuArch == null ? CPU.CPUArch.amd64.getType() : cpuArch.getType();
     }
 
     @Override
