@@ -118,7 +118,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             bucketVO.setSecretKey(secretKey);
             bucketVO.setBucketURL(store.getUrl() + "/" + bucketName);
             _bucketDao.update(bucket.getId(), bucketVO);
-            return bucket;
+            return bucketVO;
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
