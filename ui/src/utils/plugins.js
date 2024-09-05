@@ -289,6 +289,13 @@ export const notifierPlugin = {
       close: (key) => notification.close(key),
       destroy: () => notification.destroy()
     }
+
+    app.config.globalProperties.$messageConfigSuccess = function (msg, configrecord) {
+      if (configrecord.isdynamic) {
+        msg += `. ${this.$t('message.setting.update.delay')}`
+      }
+      message.success(msg)
+    }
   }
 }
 
