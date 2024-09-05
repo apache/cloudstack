@@ -188,6 +188,7 @@ public class ApiConstants {
     public static final String EXTERNAL_UUID = "externaluuid";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
+    public static final String FILESYSTEM = "filesystem";
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
@@ -432,6 +433,7 @@ public class ApiConstants {
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
     public static final String SIZE = "size";
+    public static final String SIZEGB = "sizegb";
     public static final String SNAPSHOT = "snapshot";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
@@ -504,6 +506,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_ID_IP = "vmidipmap";
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String VIRTUAL_MACHINE_TYPE = "virtualmachinetype";
+    public static final String VIRTUAL_MACHINE_STATE = "vmstate";
     public static final String VIRTUAL_MACHINES = "virtualmachines";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
@@ -1143,6 +1146,9 @@ public class ApiConstants {
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
     public static final String MOUNT_OPTIONS = "mountopts";
+
+    public static final String SHAREDFSVM_MIN_CPU_COUNT = "sharedfsvmmincpucount";
+    public static final String SHAREDFSVM_MIN_RAM_SIZE = "sharedfsvmminramsize";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +

@@ -659,6 +659,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-sharedfs-provider-storagevm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
            <groupId>org.apache.cloudstack</groupId>
            <artifactId>cloud-usage</artifactId>
            <version>${project.version}</version>
