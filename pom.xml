@@ -187,6 +187,7 @@
         <cs.xstream.version>1.4.20</cs.xstream.version>
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
+        <cs.caffeine.version>3.1.7</cs.caffeine.version>
     </properties>
 
     <distributionManagement>
@@ -768,6 +769,11 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${cs.caffeine.version}</version>
         </dependency>
     </dependencies>
 
