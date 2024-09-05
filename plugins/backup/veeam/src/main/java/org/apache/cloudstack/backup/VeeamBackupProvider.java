@@ -298,7 +298,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
         return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
@@ -375,7 +375,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setExternalId(restorePoint.getId());
                         backup.setType(restorePoint.getType());
                         backup.setDate(restorePoint.getCreated());
-                        backup.setBackupVolumes(createVolumeInfoFromVolumePaths(restorePoint.getPaths()));
+                        backup.setBackedUpVolumes(createVolumeInfoFromVolumePaths(restorePoint.getPaths()));
                         backup.setStatus(Backup.Status.BackedUp);
                         if (metric != null) {
                             backup.setSize(metric.getBackupSize());

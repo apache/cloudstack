@@ -49,7 +49,7 @@ then
   fi
 fi
 
-if [ "$TYPE" == "cksnode" ]; then
+if [ "$TYPE" == "cksnode" ] || [ "$TYPE" == "sharedfsvm" ]; then
   pkill -9 dhclient
 fi
 

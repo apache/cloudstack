@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
 
 import com.cloud.utils.Pair;
@@ -37,6 +38,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Inject
     private BackupDao backupDao;
+    @Inject
+    private VolumeDao volumeDao;
 
     @Override
     public String getName() {
@@ -76,7 +79,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         logger.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Dummy Backup Provider");
         throw new CloudRuntimeException("Dummy plugin does not support this feature");
     }
@@ -123,6 +126,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
         return backupDao.persist(backup) != null;
     }
 

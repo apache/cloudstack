@@ -18,6 +18,8 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
+import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +27,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import com.google.gson.Gson;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -34,7 +35,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import org.apache.commons.lang3.StringUtils;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -89,8 +89,8 @@ public class BackupVO implements Backup {
     @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name = "backup_volumes", length = 65535)
-    protected String backupVolumes;
+    @Column(name = "backed_volumes", length = 65535)
+    protected String backedUpVolumes;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -213,16 +213,15 @@ public class BackupVO implements Backup {
         return null;
     }
 
-    @Override
-    public List<VolumeInfo> getBackupVolumeList() {
-        if (StringUtils.isEmpty(this.backupVolumes)) {
+    public List<VolumeInfo> getBackedUpVolumes() {
+        if (StringUtils.isEmpty(this.backedUpVolumes)) {
             return Collections.emptyList();
         }
-        return Arrays.asList(GSON.fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+        return Arrays.asList(new Gson().fromJson(this.backedUpVolumes, Backup.VolumeInfo[].class));
     }
 
-    public void setBackupVolumes(String backupVolumes) {
-        this.backupVolumes = backupVolumes;
+    public void setBackedUpVolumes(String backedUpVolumes) {
+        this.backedUpVolumes = backedUpVolumes;
     }
 
     public Date getRemoved() {

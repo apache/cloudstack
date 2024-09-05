@@ -1127,8 +1127,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return details;
     }
 
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISABLE_PRIMARY_STORAGE, eventDescription = "disable storage pool")
-    private void disablePrimaryStoragePool(StoragePoolVO primaryStorage) {
+    public StoragePool disablePrimaryStoragePool(Long id) {
+        StoragePoolVO primaryStorage = _storagePoolDao.findById(id);
+        if (primaryStorage == null) {
+            throw new IllegalArgumentException(String.format("Unable to find storage pool with ID: %d", id));
+        }
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up)) {
             throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be disabled. Storage pool state : " + primaryStorage.getStatus().toString());
         }
@@ -1137,10 +1142,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle dataStoreLifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
         ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).disableStoragePool(store);
+
+        return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(id, DataStoreRole.Primary);
     }
 
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ENABLE_PRIMARY_STORAGE, eventDescription = "enable storage pool")
-    private void enablePrimaryStoragePool(StoragePoolVO primaryStorage) {
+    public StoragePool enablePrimaryStoragePool(Long id) {
+        StoragePoolVO primaryStorage = _storagePoolDao.findById(id);
+        if (primaryStorage == null) {
+            throw new IllegalArgumentException(String.format("Unable to find storage pool with ID: %d", id));
+        }
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
             throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be enabled. Storage pool state : " + primaryStorage.getStatus().toString());
         }
@@ -1149,9 +1161,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle dataStoreLifeCycle = provider.getDataStoreLifeCycle();
         DataStore store = _dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
         ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).enableStoragePool(store);
+
+        return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(id, DataStoreRole.Primary);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_UPDATE_PRIMARY_STORAGE, eventDescription = "update storage pool")
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
@@ -1233,15 +1248,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
                 _storagePoolDao.update(id, storagePool);
                 _storagePoolDao.updateDetails(id, details);
-            }
-        }
-
-        Boolean enabled = cmd.getEnabled();
-        if (enabled != null) {
-            if (enabled) {
-                enablePrimaryStoragePool(pool);
-            } else {
-                disablePrimaryStoragePool(pool);
             }
         }
 
@@ -4104,10 +4110,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         try {
-            // Check URL
             UriUtils.validateUrl(url);
-        } catch (final Exception e) {
-            throw new InvalidParameterValueException(url + " is not a valid URL");
+        } catch (InvalidParameterValueException e) {
+            throw new InvalidParameterValueException(url + " is not a valid URL:" + e.getMessage());
         }
 
         // Check Unique object store url

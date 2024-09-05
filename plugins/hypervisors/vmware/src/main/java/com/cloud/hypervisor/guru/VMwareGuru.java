@@ -524,7 +524,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (vm == null) {
                 throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
             }
-            List<Backup.VolumeInfo> backedUpVolumes = backup.getBackupVolumeList();
+            List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
             for (Backup.VolumeInfo backedUpVolume : backedUpVolumes) {
                 if (backedUpVolume.getSize().equals(disk.getCapacityInBytes())) {
                     return backedUpVolume.getType().equals(Volume.Type.ROOT);
@@ -890,7 +890,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the backup volume information from the VM backup");
         }
-        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackupVolumeList();
+        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         Volume.Type type = Volume.Type.DATADISK;
         Long size = disk.getCapacityInBytes();
         if (isImport) {
@@ -1111,7 +1111,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
         }
 
-        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackupVolumeList();
+        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         Map<String, Boolean> usedVols = new HashMap<>();
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
 

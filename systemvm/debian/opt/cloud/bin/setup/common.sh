@@ -326,7 +326,10 @@ setup_common() {
   then
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   fi
-  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  if [ -n "$ETH1_IP" ]
+  then
+    setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  fi
   if [ -n "$ETH2_IP" ]
   then
     setup_interface "2" $ETH2_IP $ETH2_MASK $GW
