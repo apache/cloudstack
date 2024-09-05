@@ -23,6 +23,7 @@ import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VlanVO;
@@ -62,6 +63,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -81,6 +83,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -122,6 +125,7 @@ public class VpcManagerImplTest {
     DataCenterDao dataCenterDao;
     @Mock
     VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @Spy
     VpcManagerImpl manager;
     @Mock
     EntityManager entityMgr;
@@ -155,6 +159,14 @@ public class VpcManagerImplTest {
     FirewallRulesDao firewallDao;
     @Mock
     NetworkACLVO networkACLVOMock;
+    @Mock
+    NetworkOrchestrationService networkOrchestrationServiceMock;
+    @Mock
+    DomainRouterVO domainRouterVOMock;
+    @Mock
+    Vpc vpcMock;
+    @Mock
+    DomainRouterJoinDao domainRouterJoinDaoMock;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -190,7 +202,6 @@ public class VpcManagerImplTest {
     @Before
     public void setup() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
-        manager = new VpcManagerImpl();
         manager._vpcOffSvcMapDao = vpcOfferingServiceMapDao;
         manager.vpcDao = vpcDao;
         manager._ntwkMgr = networkMgr;
@@ -212,6 +223,8 @@ public class VpcManagerImplTest {
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
         manager._networkAclDao = networkACLDaoMock;
+        manager.networkOrchestrationService = networkOrchestrationServiceMock;
+        manager.domainRouterJoinDao = domainRouterJoinDaoMock;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
         overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "false");
@@ -336,7 +349,6 @@ public class VpcManagerImplTest {
     @Test
     public void testCreateVpcNetwork() throws InsufficientCapacityException, ResourceAllocationException {
         final long VPC_ID = 201L;
-        manager._maxNetworks = 3;
         VpcVO vpcMockVO = Mockito.mock(VpcVO.class);
         Vpc vpcMock = Mockito.mock(Vpc.class);
         Account accountMock = Mockito.mock(Account.class);
@@ -352,12 +364,13 @@ public class VpcManagerImplTest {
         Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
         Mockito.when(vpcMock.getId()).thenReturn(VPC_ID);
         Mockito.when(vpcDao.acquireInLockTable(VPC_ID)).thenReturn(vpcMockVO);
-        Mockito.when(networkDao.countVpcNetworks(anyLong())).thenReturn(1L);
         Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
         Mockito.when(networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
         Mockito.when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
         Mockito.when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
         Mockito.when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
+        Mockito.when(manager.existsVpcDomainRouterWithSufficientNicCapacity(VPC_ID)).thenReturn(true);
+        Mockito.doNothing().when(manager).checkIfVpcNumberOfTiersIsNotExceeded(Mockito.anyLong(), Mockito.any());
 
         manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", accountMock, vpcMock, "cs1cloud.internal");
         manager.validateNtwkOffForNtwkInVpc(2L, 1, "10.10.10.0/24", "111-", vpcMock, "10.1.1.1", new AccountVO(), null);
@@ -508,6 +521,104 @@ public class VpcManagerImplTest {
         Mockito.doReturn(2L).when(networkACLVOMock).getVpcId();
         Mockito.doReturn(networkACLVOMock).when(networkACLDaoMock).findById(differentVpcAclId);
         Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
+    }
+
+    @Test
+    public void existsVpcDomainRouterWithSufficientNicCapacityTestUnavailableRoutersReturnsFalse() {
+        Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(7L);
+        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
+        Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
+        Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
+        Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(9);
+
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void existsVpcDomainRouterWithSufficientNicCapacityTestRouterIncompatibleHypervisorTypeReturnsTrue() {
+        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
+        Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
+        Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
+        Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(null);
+
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void existsVpcDomainRouterWithSufficientNicCapacityTestAvailableRouterReturnsTrue() {
+        Mockito.when(networkDao.countVpcNetworks(vpcId)).thenReturn(6L);
+        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(domainRouterVOMock);
+        Mockito.when(domainRouterVOMock.getId()).thenReturn(1L);
+        Mockito.when(domainRouterJoinDaoMock.countDefaultNetworksById(1L)).thenReturn(2);
+        Mockito.when(networkOrchestrationServiceMock.getVirtualMachineMaxNicsValue(domainRouterVOMock)).thenReturn(9);
+
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void existsVpcDomainRouterWithSufficientNicCapacityTestNullRouterReturnsFalse() {
+        Mockito.when(routerDao.findOneByVpcId(vpcId)).thenReturn(null);
+
+        boolean result = manager.existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void checkIfVpcNumberOfTiersIsNotExceededTestExceededTiersThrowCloudRuntimeException() {
+        AccountVO accountMock = Mockito.mock(AccountVO.class);
+        Mockito.doReturn(5L).when(networkDao).countVpcNetworks(1L);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.checkIfVpcNumberOfTiersIsNotExceeded(vpcId, accountMock));
+    }
+
+    @Test
+    public void checkIfVpcHasDomainRouterWithSufficientNicCapacityTestDomainRoutersWithoutCapacityThrowsCloudRuntimeException() {
+        Mockito.doReturn(vpcId).when(vpcMock).getId();
+        Mockito.doReturn(false).when(manager).existsVpcDomainRouterWithSufficientNicCapacity(vpcId);
+
+        Assert.assertThrows(CloudRuntimeException.class, () -> manager.checkIfVpcHasDomainRouterWithSufficientNicCapacity(vpcMock));
+    }
+
+    @Test
+    public void checkIfNetworkCidrIsWithinVpcCidrTestNetworkCidrOutsideOfVpcCidrThrowInvalidParameterValueException() {
+        String cidr = "10.0.0.1/24";
+        Mockito.doReturn("192.168.0.0/24").when(vpcMock).getCidr();
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.checkIfNetworkCidrIsWithinVpcCidr(cidr, vpcMock));
+    }
+
+    @Test
+    public void checkIfNetworkCidrNotCrossesOtherVpcNetworksCidrNetworkCidrCrossesOtherVpcNetworkCidr() {
+        String cidr = "192.168.0.0/24";
+        Network networkMock = Mockito.mock(Network.class);
+        Mockito.doReturn("192.168.0.0/24").when(networkMock).getCidr();
+        Mockito.doReturn(vpcId).when(vpcMock).getId();
+        Mockito.doReturn(List.of(networkMock)).when(networkDao).listByVpc(vpcId);
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.checkIfNetworkCidrNotCrossesOtherVpcNetworksCidr(cidr, vpcMock));
+    }
+
+    @Test
+    public void checkIfNetworkAndVpcDomainsAreTheSameTestDifferentDomainsThrowInvalidParameterValueException() {
+        String domain = "domain";
+        Mockito.doReturn("anotherDomain").when(vpcMock).getNetworkDomain();
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.checkIfNetworkAndVpcDomainsAreTheSame(domain, vpcMock));
+    }
+
+    @Test
+    public void checkIfGatewayIsDifferentFromCidrSubnetTestGatewayEqualsCidrSubnetThrowInvalidParameterValueException() {
+        String gateway = "192.168.0.0";
+        String cidr = "192.168.0.1/24";
+
+        Assert.assertThrows(InvalidParameterValueException.class, () -> manager.checkIfGatewayIsDifferentFromCidrSubnet(cidr, gateway));
     }
 
 }

@@ -42,6 +42,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.configuration.ConfigurationManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -61,6 +62,8 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
@@ -180,7 +183,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService, Configurable {
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -262,11 +265,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
+    @Inject
+    NetworkOrchestrationService networkOrchestrationService;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
+    @Inject
+    protected DomainRouterJoinDao domainRouterJoinDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -275,7 +282,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx);
 
     int _cleanupInterval;
-    int _maxNetworks;
     SearchBuilder<IPAddressVO> IpAddressSearch;
 
     protected final List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
@@ -412,9 +418,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<String, String> configs = _configDao.getConfiguration(params);
         final String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
-
-        final String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
-        _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -1943,71 +1946,122 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @DB
     protected void validateNewVpcGuestNetwork(final String cidr, final String gateway, final Account networkOwner, final Vpc vpc, final String networkDomain) {
-
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                final Vpc locked = vpcDao.acquireInLockTable(vpc.getId());
+                long vpcId = vpc.getId();
+                final Vpc locked = vpcDao.acquireInLockTable(vpcId);
                 if (locked == null) {
                     throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
                 }
 
                 try {
-                    // check number of active networks in vpc
-                    if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
-                        logger.warn(String.format("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of [%s]. Increase it by modifying global config [%s].", _maxNetworks, Config.VpcMaxNetworks));
-                        throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s].", _maxNetworks));
-                    }
+                    Account account = _accountMgr.getAccount(vpc.getAccountId());
 
-                    // 1) CIDR is required
+                    checkIfVpcNumberOfTiersIsNotExceeded(vpcId, account);
+
+                    checkIfVpcHasDomainRouterWithSufficientNicCapacity(vpc);
+
                     if (cidr == null) {
                         throw new InvalidParameterValueException("Gateway/netmask are required when create network for VPC");
                     }
 
-                    // 2) Network cidr should be within vpcCidr
-                    if (!NetUtils.isNetworkAWithinNetworkB(cidr, vpc.getCidr())) {
-                        throw new InvalidParameterValueException("Network cidr " + cidr + " is not within vpc " + vpc + " cidr");
-                    }
+                    checkIfNetworkCidrIsWithinVpcCidr(cidr, vpc);
 
-                    // 3) Network cidr shouldn't cross the cidr of other vpc
-                    // network cidrs
-                    final List<? extends Network> ntwks = _ntwkDao.listByVpc(vpc.getId());
-                    for (final Network ntwk : ntwks) {
-                        assert cidr != null : "Why the network cidr is null when it belongs to vpc?";
+                    checkIfNetworkCidrNotCrossesOtherVpcNetworksCidr(cidr, vpc);
 
-                        if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), cidr) || NetUtils.isNetworkAWithinNetworkB(cidr, ntwk.getCidr())) {
-                            throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk + " belonging to the same vpc " + vpc);
-                        }
-                    }
+                    checkAccountsAccess(vpc, networkOwner);
 
-                    // 4) Vpc's account should be able to access network owner's account
-                    CheckAccountsAccess(vpc, networkOwner);
+                    checkIfNetworkAndVpcDomainsAreTheSame(networkDomain, vpc);
 
-                    // 5) network domain should be the same as VPC's
-                    if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
-                        throw new InvalidParameterValueException("Network domain of the new network should match network" + " domain of vpc " + vpc);
-                    }
-
-                    // 6) gateway should never be equal to the cidr subnet
-                    if (NetUtils.getCidrSubNet(cidr).equalsIgnoreCase(gateway)) {
-                        throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value");
-                    }
+                    checkIfGatewayIsDifferentFromCidrSubnet(cidr, gateway);
                 } finally {
-                    logger.debug("Releasing lock for " + locked);
+                    logger.debug("Releasing lock for {}.", locked);
                     vpcDao.releaseFromLockTable(locked.getId());
                 }
             }
         });
     }
 
-    private void CheckAccountsAccess(Vpc vpc, Account networkAccount) {
-        Account vpcaccount = _accountMgr.getAccount(vpc.getAccountId());
+    protected boolean existsVpcDomainRouterWithSufficientNicCapacity(long vpcId) {
+        DomainRouterVO vpcDomainRouter = routerDao.findOneByVpcId(vpcId);
+
+        if (vpcDomainRouter == null) {
+            return false;
+        }
+
+        int countRouterDefaultNetworks = domainRouterJoinDao.countDefaultNetworksById(vpcDomainRouter.getId());
+        long countVpcNetworks = _ntwkDao.countVpcNetworks(vpcId);
+
+        Integer routerMaxNicsValue = networkOrchestrationService.getVirtualMachineMaxNicsValue(vpcDomainRouter);
+
+        if (routerMaxNicsValue == null) {
+            return true;
+        }
+
+        int totalNicsAvailable = routerMaxNicsValue - countRouterDefaultNetworks;
+
+        return totalNicsAvailable > countVpcNetworks;
+    }
+
+    protected void checkIfVpcNumberOfTiersIsNotExceeded(long vpcId, Account account) {
+        int maxNetworks = VpcMaxNetworks.valueIn(account.getId());
+
+        if (_ntwkDao.countVpcNetworks(vpcId) >= maxNetworks) {
+            logger.warn("Failed to create a new VPC Guest Network because the number of networks per VPC has reached its maximum capacity of {}. Increase it by modifying global or account config {}.", maxNetworks, VpcMaxNetworks);
+            throw new CloudRuntimeException(String.format("Number of networks per VPC cannot surpass [%s] for account [%s].", maxNetworks, account.getAccountName()));
+        }
+    }
+
+    protected void checkIfVpcHasDomainRouterWithSufficientNicCapacity(Vpc vpc) {
+        if (!existsVpcDomainRouterWithSufficientNicCapacity(vpc.getId())) {
+            logger.warn("Failed to create a new VPC Guest Network because no virtual routers were found with sufficient NIC capacity. The number of VPC Guest networks cannot exceed the number of NICs a virtual router can have.");
+            throw new CloudRuntimeException(String.format("No available virtual router found to deploy new Guest Network on VPC [%s].", vpc.getName()));
+        }
+    }
+
+    protected void checkIfNetworkCidrIsWithinVpcCidr(String cidr, Vpc vpc) {
+        if (!NetUtils.isNetworkAWithinNetworkB(cidr, vpc.getCidr())) {
+            throw new InvalidParameterValueException(String.format("Network CIDR %s is not within VPC %s CIDR", cidr, vpc));
+        }
+    }
+
+    protected void checkIfNetworkCidrNotCrossesOtherVpcNetworksCidr(String cidr, Vpc vpc) {
+        final List<? extends Network> networks = _ntwkDao.listByVpc(vpc.getId());
+
+        for (final Network network : networks) {
+            if (NetUtils.isNetworkAWithinNetworkB(network.getCidr(), cidr) || NetUtils.isNetworkAWithinNetworkB(cidr, network.getCidr())) {
+                throw new InvalidParameterValueException(String.format("Network CIDR %s crosses other network CIDR %s belonging to the same VPC %s.", cidr, network, vpc));
+            }
+        }
+    }
+
+    /**
+     * Checks if the VPC account has access to the account for which the tier is being created.
+     *
+     * @param vpc Vpc to get the account.
+     * @param networkAccount Tier owner account.
+     */
+    private void checkAccountsAccess(Vpc vpc, Account networkAccount) {
+        Account vpcAccount = _accountMgr.getAccount(vpc.getAccountId());
         try {
-            _accountMgr.checkAccess(vpcaccount, null, false, networkAccount);
+            _accountMgr.checkAccess(vpcAccount, null, false, networkAccount);
         }
         catch (PermissionDeniedException e) {
             logger.error(e.getMessage());
             throw new InvalidParameterValueException(String.format("VPC owner does not have access to account [%s].", networkAccount.getAccountName()));
+        }
+    }
+
+    protected void checkIfNetworkAndVpcDomainsAreTheSame(String networkDomain, Vpc vpc) {
+        if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
+            throw new InvalidParameterValueException(String.format("Network domain of the new network should match VPC domain [%s].", vpc));
+        }
+    }
+
+    protected void checkIfGatewayIsDifferentFromCidrSubnet(String cidr, String gateway) {
+        if (NetUtils.getCidrSubNet(cidr).equalsIgnoreCase(gateway)) {
+            throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the CIDR subnet value.");
         }
     }
 
@@ -3301,5 +3355,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     protected boolean isDefaultAcl(long aclId) {
         return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VpcManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {VpcMaxNetworks};
     }
 }
