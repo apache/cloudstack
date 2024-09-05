@@ -111,11 +111,10 @@ public class CephObjectStoreDriverImplTest {
     public void testDeleteBucket() throws Exception {
         String bucketName = "test-bucket";
         BucketTO bucket = new BucketTO(bucketName);
-        doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(anyLong(), anyLong());
+        doReturn(rgwAdmin).when(cephObjectStoreDriverImpl).getRgwAdminClient(anyLong());
         doNothing().when(rgwClient).deleteBucket(anyString());
         boolean success = cephObjectStoreDriverImpl.deleteBucket(bucket, 1L);
         assertTrue(success);
-        verify(rgwClient, times(1)).getBucketAcl(anyString());
-        verify(rgwClient, times(1)).deleteBucket(anyString());
+        verify(rgwAdmin, times(1)).removeBucket(anyString());
     }
 }
