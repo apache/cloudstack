@@ -128,6 +128,14 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
     private Integer instancesDisksStatsRetentionTime;
 
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT)
+    @Param(description = "the min CPU count for the service offering used by the shared filesystem VM", since = "4.20.0")
+    private Integer sharedFsVmMinCpuCount;
+
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE)
+    @Param(description = "the min Ram size for the service offering used by the shared filesystem VM", since = "4.20.0")
+    private Integer sharedFsVmMinRamSize;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -230,5 +238,13 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
         this.customHypervisorDisplayName = customHypervisorDisplayName;
+    }
+
+    public void setSharedFsVmMinCpuCount(Integer sharedFsVmMinCpuCount) {
+        this.sharedFsVmMinCpuCount = sharedFsVmMinCpuCount;
+    }
+
+    public void setSharedFsVmMinRamSize(Integer sharedFsVmMinRamSize) {
+        this.sharedFsVmMinRamSize = sharedFsVmMinRamSize;
     }
 }

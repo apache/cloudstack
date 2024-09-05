@@ -151,7 +151,7 @@ config_guest() {
 
 setup_interface_sshd() {
 
-  if [ "$TYPE" != "cksnode" ]; then
+  if [ "$TYPE" != "cksnode" ] && [ "$TYPE" != "sharedfsvm" ]; then
     log_it "Applying iptables rules"
     if [ "$TYPE" != "dhcpsrvr" ]; then
       cp /etc/iptables/iptables-$TYPE /etc/iptables/rules.v4
@@ -206,7 +206,11 @@ setup_interface_sshd() {
     else
       setup_sshd $ETH1_IP "eth1"
     fi
+
   elif [ "$TYPE" == "cksnode" ]; then
+    setup_common eth0
+
+  elif [ "$TYPE" == "sharedfsvm" ]; then
     setup_common eth0
   fi
 
