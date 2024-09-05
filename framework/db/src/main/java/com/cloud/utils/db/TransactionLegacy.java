@@ -1365,7 +1365,7 @@ public class TransactionLegacy implements Closeable {
     private static DataSource getDefaultDataSource(final String connectionPoolLib, final String database) {
         LOGGER.debug("Creating default datasource for database: {} with connection pool lib: {}",
                 database, connectionPoolLib);
-        if (CONNECTION_POOL_LIB_DBCP.equals(connectionPoolLib)) {
+        if (CONNECTION_POOL_LIB_DBCP.equalsIgnoreCase(connectionPoolLib)) {
             return getDefaultDbcpDataSource(database);
         }
         return getDefaultHikaricpDataSource(database);
