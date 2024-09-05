@@ -37,14 +37,11 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.twonote.rgwadmin4j.RgwAdmin;
 
-import java.util.ArrayList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -94,10 +91,6 @@ public class CephObjectStoreDriverImplTest {
     @Test
     public void testCreateBucket() throws Exception {
         doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(anyLong(), anyLong());
-        doReturn(rgwAdmin).when(cephObjectStoreDriverImpl).getRgwAdminClient(anyLong());
-        when(bucketDao.listByObjectStoreIdAndAccountId(anyLong(), anyLong())).thenReturn(new ArrayList<BucketVO>());
-        when(account.getAccountName()).thenReturn("admin");
-        when(accountDao.findById(anyLong())).thenReturn(account);
         when(accountDetailsDao.findDetail(anyLong(),anyString())).
                 thenReturn(new AccountDetailVO(1L, "abc","def"));
         when(bucketDao.findById(anyLong())).thenReturn(new BucketVO());
@@ -112,7 +105,6 @@ public class CephObjectStoreDriverImplTest {
         String bucketName = "test-bucket";
         BucketTO bucket = new BucketTO(bucketName);
         doReturn(rgwAdmin).when(cephObjectStoreDriverImpl).getRgwAdminClient(anyLong());
-        doNothing().when(rgwClient).deleteBucket(anyString());
         boolean success = cephObjectStoreDriverImpl.deleteBucket(bucket, 1L);
         assertTrue(success);
         verify(rgwAdmin, times(1)).removeBucket(anyString());
