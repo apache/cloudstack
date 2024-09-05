@@ -59,7 +59,7 @@ class TestSharedFSLifecycle(cloudstackTestCase):
 
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.hypervisorNotSupported = False
-        if cls.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
+        if cls.hypervisor.lower() not in ["kvm", "vmware"]:
             cls.hypervisorNotSupported = True
             return
 

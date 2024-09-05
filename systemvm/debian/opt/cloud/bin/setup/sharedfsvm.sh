@@ -26,20 +26,18 @@ setup_sharedfsvm() {
     update-alternatives --set arptables /usr/sbin/arptables-legacy
     update-alternatives --set ebtables /usr/sbin/ebtables-legacy
 
+    log_it "Setting up entry in hosts"
+    sed -i  /$NAME/d /etc/hosts
+    echo "$ETH0_IP $NAME" >> /etc/hosts
+
     # set default ssh port and restart sshd service
     sed -i 's/3922/22/g' /etc/ssh/sshd_config
     systemctl restart ssh
-
-    sed -i '/- ssh$/s/- ssh/- [ssh, always]/' /etc/cloud/cloud.cfg
 
     > /root/.ssh/authorized_keys
     swapoff -a
     sudo sed -i '/ swap / s/^/#/' /etc/fstab
     log_it "Swap disabled"
-
-    log_it "Setting up entry in hosts"
-    sed -i  /$NAME/d /etc/hosts
-    echo "$ETH0_IP $NAME" >> /etc/hosts
 
     echo "export PATH='$PATH:/opt/bin/'">> ~/.bashrc
 

@@ -651,7 +651,7 @@ export default {
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeSharedFSServiceOffering.vue'))),
-          show: (record) => { return ['Stopped', 'Ready'].includes(record.state) }
+          show: (record) => { return ['Stopped'].includes(record.state) }
         },
         {
           api: 'destroySharedFileSystem',

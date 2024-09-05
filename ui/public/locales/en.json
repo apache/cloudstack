@@ -2634,7 +2634,7 @@
 "message.action.remove.routing.policy": "Please confirm that you want to remove Routing Policy from this Network",
 "message.action.release.reserved.ip": "Please confirm that you want to release this reserved IP.",
 "message.action.reserve.ip": "Please confirm that you want to reserve this IP.",
-"message.action.restart.sharedfs": "Please confirm that you want to restart this Shared FileSystem. This will cause a downtime to the user. Restart with cleanup re-initialize the Shared FileSystem VM",
+"message.action.restart.sharedfs": "Please confirm that you want to restart this Shared FileSystem. This will cause a downtime to the user.<br>Restart with cleanup will re-initialize the Shared FileSystem VM without affecting the installed file system.",
 "message.action.revert.snapshot": "Please confirm that you want to revert the owning volume to this Snapshot.",
 "message.action.router.health.checks": "Health checks result will be fetched from router.",
 "message.action.router.health.checks.disabled.warning": "Please enable router health checks.",
