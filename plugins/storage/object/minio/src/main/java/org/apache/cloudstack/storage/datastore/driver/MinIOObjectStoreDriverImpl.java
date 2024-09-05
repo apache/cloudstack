@@ -41,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
@@ -180,7 +181,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucket(String bucketName, long storeId) {
+    public boolean deleteBucket(BucketTO bucket, long storeId) {
+        String bucketName = bucket.getName();
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             if(!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
@@ -199,17 +201,18 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public AccessControlList getBucketAcl(String bucketName, long storeId) {
+    public AccessControlList getBucketAcl(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void setBucketAcl(String bucketName, AccessControlList acl, long storeId) {
+    public void setBucketAcl(BucketTO bucket, AccessControlList acl, long storeId) {
 
     }
 
     @Override
-    public void setBucketPolicy(String bucketName, String policy, long storeId) {
+    public void setBucketPolicy(BucketTO bucket, String policy, long storeId) {
+        String bucketName = bucket.getName();
         String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
 
         StringBuilder builder = new StringBuilder();
@@ -249,12 +252,12 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public BucketPolicy getBucketPolicy(String bucketName, long storeId) {
+    public BucketPolicy getBucketPolicy(BucketTO bucket, long storeId) {
         return null;
     }
 
     @Override
-    public void deleteBucketPolicy(String bucketName, long storeId) {
+    public void deleteBucketPolicy(BucketTO bucket, long storeId) {
 
     }
 
@@ -324,11 +327,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean setBucketEncryption(String bucketName, long storeId) {
+    public boolean setBucketEncryption(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketEncryption(SetBucketEncryptionArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(SseConfiguration.newConfigWithSseS3Rule())
                     .build()
             );
@@ -339,11 +342,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucketEncryption(String bucketName, long storeId) {
+    public boolean deleteBucketEncryption(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.deleteBucketEncryption(DeleteBucketEncryptionArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .build()
             );
         } catch (Exception e) {
@@ -353,11 +356,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean setBucketVersioning(String bucketName, long storeId) {
+    public boolean setBucketVersioning(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketVersioning(SetBucketVersioningArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(new VersioningConfiguration(VersioningConfiguration.Status.ENABLED, null))
                     .build()
             );
@@ -368,11 +371,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public boolean deleteBucketVersioning(String bucketName, long storeId) {
+    public boolean deleteBucketVersioning(BucketTO bucket, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketVersioning(SetBucketVersioningArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(bucket.getName())
                     .config(new VersioningConfiguration(VersioningConfiguration.Status.SUSPENDED, null))
                     .build()
             );
@@ -383,11 +386,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public void setBucketQuota(String bucketName, long storeId, long size) {
+    public void setBucketQuota(BucketTO bucket, long storeId, long size) {
 
         MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
         try {
-            minioAdminClient.setBucketQuota(bucketName, size, QuotaUnit.GB);
+            minioAdminClient.setBucketQuota(bucket.getName(), size, QuotaUnit.GB);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
