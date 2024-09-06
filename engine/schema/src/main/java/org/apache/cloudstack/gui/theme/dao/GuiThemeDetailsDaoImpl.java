@@ -18,7 +18,6 @@ package org.apache.cloudstack.gui.theme.dao;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -33,13 +32,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Long> implements GenericDao<GuiThemeDetailsVO, Long> {
+public class GuiThemeDetailsDaoImpl extends GenericDaoBase<GuiThemeDetailsVO, Long> implements GuiThemeDetailsDao {
 
     @Inject
     DomainDao domainDao;
 
     @Inject
-    GuiThemeDaoImpl guiThemeDao;
+    GuiThemeDao guiThemeDao;
 
     public List<Long> listGuiThemeIdsByCommonName(String commonName) {
         GenericSearchBuilder<GuiThemeDetailsVO, Long> detailsDaoSearchBuilder = createSearchBuilder(Long.class);

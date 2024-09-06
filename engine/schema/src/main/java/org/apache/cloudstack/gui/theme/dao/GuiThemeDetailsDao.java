@@ -16,10 +16,15 @@
 // under the License.
 package org.apache.cloudstack.gui.theme.dao;
 
-import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.gui.theme.GuiThemeVO;
-import org.springframework.stereotype.Component;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.gui.theme.GuiThemeDetailsVO;
 
-@Component
-public class GuiThemeDaoImpl extends GenericDaoBase<GuiThemeVO, Long> implements GuiThemeDao {
+import java.util.List;
+
+public interface GuiThemeDetailsDao extends GenericDao<GuiThemeDetailsVO, Long> {
+    List<Long> listGuiThemeIdsByCommonName(String commonName);
+
+    List<Long> listGuiThemeIdsByDomainUuids(String domainUuid);
+
+    void expungeByGuiThemeId(long guiThemeId);
 }
