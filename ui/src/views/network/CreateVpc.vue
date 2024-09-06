@@ -62,13 +62,24 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="cidr" ref="cidr">
+        <a-form-item name="cidr" ref="cidr" v-if="selectedVpcOffering && (selectedVpcOffering.networkmode !== 'ROUTED' || isAdmin())">
           <template #label>
             <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           </template>
           <a-input
             v-model:value="form.cidr"
             :placeholder="apiParams.cidr.description"/>
+        </a-form-item>
+        <a-form-item
+          v-if="selectedVpcOffering && selectedVpcOffering.networkmode === 'ROUTED'"
+          ref="cidrsize"
+          name="cidrsize">
+          <template #label>
+            <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+          </template>
+          <a-input
+            v-model:value="form.cidrsize"
+            :placeholder="apiParams.cidrsize.description"/>
         </a-form-item>
         <a-form-item name="networkdomain" ref="networkdomain">
           <template #label>
@@ -93,6 +104,25 @@
             @change="handleVpcOfferingChange" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id" :label="offering.name">
               {{ offering.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+          <template #label>
+            <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+          </template>
+          <a-select
+            v-model:value="form.asnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="asNumberLoading"
+            :placeholder="apiParams.asnumber.description"
+            @change="val => { handleASNumberChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+              {{ opt.asnumber }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -180,6 +210,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -193,6 +224,7 @@ export default {
     return {
       loading: false,
       loadingZone: false,
+      selectedZone: {},
       loadingOffering: false,
       setMTU: false,
       zoneid: '',
@@ -202,7 +234,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       selectedVpcOffering: {},
-      isNsxNetwork: false
+      isNsxNetwork: false,
+      asNumberLoading: false,
+      asNumbersZone: [],
+      selectedAsNumber: 0
     }
   },
   beforeCreate () {
@@ -240,12 +275,20 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
-        cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedVpcOffering) && this.selectedVpcOffering.specifyasnumber && this.selectedVpcOffering?.routingmode.toLowerCase() === 'dynamic'
+    },
+    isObjectEmpty (obj) {
+      return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
     async fetchData () {
       this.fetchZones()
+    },
+    isAdmin () {
+      return isAdmin()
     },
     fetchPublicMtuForZone () {
       api('listConfigurations', {
@@ -280,9 +323,23 @@ export default {
           this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
           this.isNsxNetwork = zone?.isnsxenabled || false
+          this.selectedZone = zone
         }
       }
       this.fetchOfferings()
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
     },
     fetchOfferings () {
       this.loadingOffering = true
@@ -307,9 +364,16 @@ export default {
         if (offering.id === value) {
           this.selectedVpcOffering = offering
           this.form.vpcofferingid = offering.id
+          if (this.isASNumberRequired()) {
+            this.fetchZoneASNumbers()
+          }
           return
         }
       }
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     closeAction () {
       this.$emit('close-action')
@@ -337,6 +401,26 @@ export default {
             continue
           }
           params[key] = input
+        }
+        if (this.selectedVpcOffering.networkmode === 'ROUTED') {
+          if ((values.cidr === undefined || values.cidr === '') && (values.cidrsize === undefined || values.cidrsize === '')) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr.or.cidrsize')
+            })
+            return
+          }
+        } else {
+          if (values.cidr === undefined || values.cidr === '') {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr')
+            })
+            return
+          }
+        }
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
         }
         this.loading = true
         const title = this.$t('label.add.vpc')

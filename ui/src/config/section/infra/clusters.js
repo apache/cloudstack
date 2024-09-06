@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -83,7 +83,12 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername']
+      args: ['clustername', 'arch'],
+      mapping: {
+        arch: {
+          options: ['x86_64', 'aarch64']
+        }
+      }
     },
     {
       api: 'updateCluster',

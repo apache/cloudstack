@@ -4110,10 +4110,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         try {
-            // Check URL
             UriUtils.validateUrl(url);
-        } catch (final Exception e) {
-            throw new InvalidParameterValueException(url + " is not a valid URL");
+        } catch (InvalidParameterValueException e) {
+            throw new InvalidParameterValueException(url + " is not a valid URL:" + e.getMessage());
         }
 
         // Check Unique object store url

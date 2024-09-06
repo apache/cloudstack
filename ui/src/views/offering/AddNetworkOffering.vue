@@ -147,23 +147,49 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
+        <a-form-item name="networkmode" ref="networkmode" v-if="guestType === 'isolated'">
           <template #label>
-            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
           </template>
           <a-select
-            v-if="showMode"
             optionFilterProp="label"
-            v-model:value="form.nsxmode"
+            v-model:value="form.networkmode"
+            @change="val => { handleForNetworkModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.nsxmode.description">
-            <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
+            :placeholder="apiParams.networkmode.description">
+            <a-select-option v-for="(opt) in networkmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="routingmode" ref="routingmode" v-if="networkmode === 'ROUTED' || internetProtocolValue === 'ipv6' || internetProtocolValue === 'dualstack'">
+          <template #label>
+            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
+          </template>
+          <a-radio-group
+            v-model:value="form.routingmode"
+            buttonStyle="solid"
+            @change="selected => { routingMode = selected.target.value }">
+            <a-radio-button value="static">
+              {{ $t('label.static') }}
+            </a-radio-button>
+            <a-radio-button value="dynamic">
+              {{ $t('label.dynamic') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && !forVpc && forNsx">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="specifyasnumber" ref="specifyasnumber">
+              <template #label>
+                <tooltip-label :title="$t('label.specifyasnumber')"/>
+              </template>
+              <a-switch v-model:checked="form.specifyasnumber" />
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="userdatal2" ref="userdatal2" :label="$t('label.userdatal2')" v-if="guestType === 'l2'">
           <a-switch v-model:checked="form.userdatal2" />
         </a-form-item>
@@ -426,7 +452,7 @@
         <a-form-item
           name="conservemode"
           ref="conservemode"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && !isVpcVirtualRouterForAtLeastOneService && !forNsx">
+          v-if="(guestType === 'shared' || guestType === 'isolated') && !isVpcVirtualRouterForAtLeastOneService && !forNsx && networkmode !== 'ROUTED'">
           <template #label>
             <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>
           </template>
@@ -562,7 +588,6 @@ export default {
       selectedZones: [],
       forVpc: false,
       forNsx: false,
-      showMode: false,
       lbType: 'publicLb',
       macLearningValue: '',
       supportedServices: [],
@@ -591,7 +616,8 @@ export default {
       zoneLoading: false,
       ipv6NetworkOfferingEnabled: false,
       loading: false,
-      modes: [
+      networkmode: '',
+      networkmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -601,6 +627,7 @@ export default {
           name: 'ROUTED'
         }
       ],
+      routingMode: 'static',
       VPCVR: {
         name: 'VPCVirtualRouter',
         description: 'VPCVirtualRouter',
@@ -652,7 +679,8 @@ export default {
         availability: 'optional',
         egressdefaultpolicy: 'deny',
         ispublic: this.isPublic,
-        nsxsupportlb: true
+        nsxsupportlb: true,
+        routingmode: 'static'
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
@@ -717,6 +745,8 @@ export default {
     },
     handleGuestTypeChange (val) {
       this.guestType = val
+      this.networkmode = ''
+      this.form.networkmode = ''
       if (val === 'l2') {
         this.form.forvpc = false
         this.form.lbtype = 'publicLb'
@@ -736,8 +766,8 @@ export default {
         this.firewallServiceChecked = false
         this.firewallServiceProvider = ''
         this.selectedServiceProviderMap = {}
-        this.updateSupportedServices()
       }
+      this.fetchSupportedServiceData()
     },
     fetchSupportedServiceData () {
       this.supportedServiceLoading = true
@@ -841,6 +871,11 @@ export default {
       var supportedServices = this.supportedServices
       var self = this
       if (!this.forNsx) {
+        if (this.networkmode === 'ROUTED' && this.guestType === 'isolated') {
+          supportedServices = supportedServices.filter(service => {
+            return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
+          })
+        }
         supportedServices.forEach(function (svc, index) {
           if (svc.name !== 'Connectivity') {
             var providers = svc.provider
@@ -900,7 +935,6 @@ export default {
     },
     handleForNsxChange (forNsx) {
       this.forNsx = forNsx
-      this.showMode = forNsx
       this.nsxSupportedServicesMap = {
         Dhcp: this.forVpc ? this.VPCVR : this.VR,
         Dns: this.forVpc ? this.VPCVR : this.VR,
@@ -912,6 +946,10 @@ export default {
         ...(this.forVpc && { NetworkACL: this.NSX }),
         ...(!this.forVpc && { Firewall: this.NSX })
       }
+      this.fetchSupportedServiceData()
+    },
+    handleForNetworkModeChange (networkMode) {
+      this.networkmode = networkMode
       this.fetchSupportedServiceData()
     },
     handleNsxLbService (supportLb) {
@@ -1029,11 +1067,17 @@ export default {
         if (values.forvpc === true) {
           params.forvpc = true
         }
+        if (!values.forVpc) {
+          params.specifyasnumber = values.specifyasnumber
+        }
+        params.routingmode = values.routingmode
         if (values.fornsx === true) {
           params.fornsx = true
-          params.nsxmode = values.nsxmode
           params.nsxsupportlb = values.nsxsupportlb
           params.nsxsupportsinternallb = values.nsxsupportsinternallb
+        }
+        if (values.guestiptype === 'isolated') {
+          params.networkmode = values.networkmode
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {
@@ -1077,6 +1121,10 @@ export default {
             serviceCapabilityIndex++
             delete params.redundantroutercapability
             delete params.sourcenattype
+          } else if (values.redundantroutercapability === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
           }
           if (supportedServices.includes('SourceNat')) {
             if (values.elasticip === true) {

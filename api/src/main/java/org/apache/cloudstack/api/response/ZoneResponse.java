@@ -149,6 +149,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
     private boolean nsxEnabled = false;
 
+    @SerializedName(ApiConstants.MULTI_ARCH)
+    @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
+    private boolean multiArch;
+
+    @SerializedName(ApiConstants.ASN_RANGE)
+    @Param(description = "AS Number Range")
+    private String asnRange;
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -391,5 +399,17 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setNsxEnabled(boolean nsxEnabled) {
         this.nsxEnabled = nsxEnabled;
+    }
+
+    public void setMultiArch(boolean multiArch) {
+        this.multiArch = multiArch;
+    }
+
+    public void setAsnRange(String asnRange) {
+        this.asnRange = asnRange;
+    }
+
+    public String getAsnRange() {
+        return asnRange;
     }
 }

@@ -29,11 +29,18 @@ public class ApiConstants {
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
+    public static final String ALLOCATED_DATE = "allocateddate";
     public static final String ALLOCATED_ONLY = "allocatedonly";
+    public static final String ALLOCATED_TIME = "allocated";
     public static final String ALLOW_USER_FORCE_STOP_VM = "allowuserforcestopvm";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ARCHIVED = "archived";
+    public static final String ARCH = "arch";
+    public static final String AS_NUMBER = "asnumber";
+    public static final String AS_NUMBER_ID = "asnumberid";
+    public static final String ASN_RANGE = "asnrange";
+    public static final String ASN_RANGE_ID = "asnrangeid";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
@@ -47,6 +54,8 @@ public class ApiConstants {
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BASE64_IMAGE = "base64image";
+    public static final String BGP_PEERS = "bgppeers";
+    public static final String BGP_PEER_IDS = "bgppeerids";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -88,6 +97,8 @@ public class ApiConstants {
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CHAIN_INFO = "chaininfo";
     public static final String CIDR = "cidr";
+    public static final String CIDR_SIZE = "cidrsize";
+
     public static final String IP6_CIDR = "ip6cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String DEST_CIDR_LIST = "destcidrlist";
@@ -171,6 +182,7 @@ public class ApiConstants {
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
+    public static final String END_ASN = "endasn";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
     public static final String END_IPV6 = "endipv6";
@@ -315,7 +327,9 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MULTI_ARCH = "ismultiarch";
     public static final String NSX_MODE = "nsxmode";
+    public static final String NETWORK_MODE = "networkmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
@@ -356,6 +370,7 @@ public class ApiConstants {
     public static final String PARENT = "parent";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
+    public static final String PARENT_SUBNET = "parentsubnet";
     public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
     public static final String CURRENT_PASSWORD = "currentpassword";
@@ -441,6 +456,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
+    public static final String START_ASN = "startasn";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
     public static final String START_IP = "startip";
@@ -519,6 +535,7 @@ public class ApiConstants {
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String ISOLATED_PVLAN_TYPE = "isolatedpvlantype";
     public static final String ISOLATION_URI = "isolationuri";
+    public static final String IS_ALLOCATED = "isallocated";
     public static final String IS_DEDICATED = "isdedicated";
     public static final String TAKEN = "taken";
     public static final String VM_AVAILABLE = "vmavailable";
@@ -547,6 +564,7 @@ public class ApiConstants {
     public static final String NETWORK_ID = "networkid";
     public static final String NETWORK_FILTER = "networkfilter";
     public static final String NIC_ID = "nicid";
+    public static final String SPECIFY_AS_NUMBER = "specifyasnumber";
     public static final String SPECIFY_VLAN = "specifyvlan";
     public static final String IS_DEFAULT = "isdefault";
     public static final String IS_SYSTEM = "issystem";
@@ -688,6 +706,8 @@ public class ApiConstants {
     public static final String ASSOCIATED_NETWORK = "associatednetwork";
     public static final String ASSOCIATED_NETWORK_ID = "associatednetworkid";
     public static final String ASSOCIATED_NETWORK_NAME = "associatednetworkname";
+    public static final String ASSOCIATED_VPC_ID = "associatedvpcid";
+    public static final String ASSOCIATED_VPC_NAME = "associatedvpcname";
     public static final String SOURCE_NAT_SUPPORTED = "sourcenatsupported";
     public static final String RESOURCE_STATE = "resourcestate";
     public static final String PROJECT_INVITE_REQUIRED = "projectinviterequired";
@@ -703,6 +723,8 @@ public class ApiConstants {
     public static final String LIST_ONLY_REMOVED = "listonlyremoved";
     public static final String LIST_SYSTEM_VMS = "listsystemvms";
     public static final String IP_RANGES = "ipranges";
+    public static final String IPV4_ROUTING = "ip4routing";
+    public static final String IPV4_ROUTES = "ip4routes";
     public static final String IPV6_ROUTING = "ip6routing";
     public static final String IPV6_ROUTES = "ip6routes";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
@@ -964,6 +986,7 @@ public class ApiConstants {
     public static final String NUMBER = "number";
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
     public static final String ROUTING = "isrouting";
+    public static final String ROUTING_MODE = "routingmode";
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
 
@@ -1145,6 +1168,7 @@ public class ApiConstants {
     public static final String WEBHOOK_NAME = "webhookname";
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
+    public static final String MOUNT_OPTIONS = "mountopts";
 
     public static final String SHAREDFSVM_MIN_CPU_COUNT = "sharedfsvmmincpucount";
     public static final String SHAREDFSVM_MIN_RAM_SIZE = "sharedfsvmminramsize";

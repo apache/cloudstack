@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -2285,5 +2286,9 @@ public class ApiDBUtils {
 
     public static SharedFSJoinVO newSharedFSView(SharedFS sharedFS) {
         return s_sharedFSJoinDao.newSharedFSView(sharedFS);
+    }
+
+    public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
+        return s_clusterDao.getClustersArchsByZone(zoneId);
     }
 }
