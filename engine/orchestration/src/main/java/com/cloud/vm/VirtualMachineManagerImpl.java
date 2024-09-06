@@ -5012,20 +5012,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // and a VM stalls for status update, we will consider them to be powered off
         // (which is relatively safe to do so)
         final long stallThresholdInMs = VmJobStateReportInterval.value() * 2;
-        final Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs);
-        HostVO hostVO = _hostDao.findById(hostId);
-        if (!Status.Up.equals(hostVO.getStatus())) {
+        final long cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs).getTime();
+        if (!_hostDao.isHostUp(hostId)) {
             return;
         }
         // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
         final List<VMInstanceVO> hostTransitionVms = _vmDao.listByHostAndState(hostId, State.Starting, State.Stopping, State.Migrating);
-        final List<VMInstanceVO> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostTransitionVms, cutTime.getTime());
+        final List<VMInstanceVO> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostTransitionVms, cutTime);
         for (final VMInstanceVO vm : mostLikelyStoppedVMs) {
             handlePowerOffReportWithNoPendingJobsOnVM(vm);
         }
 
         // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
-        final List<VMInstanceVO> vmsWithRecentReport = listVMInTransitionStateWithRecentReportOnUpHost(hostTransitionVms, cutTime.getTime());
+        final List<VMInstanceVO> vmsWithRecentReport = listVMInTransitionStateWithRecentReportOnUpHost(hostTransitionVms, cutTime);
         for (final VMInstanceVO vm : vmsWithRecentReport) {
             if (vm.getPowerState() == PowerState.PowerOn) {
                 handlePowerOnReportWithNoPendingJobsOnVM(vm);
@@ -5033,7 +5032,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 handlePowerOffReportWithNoPendingJobsOnVM(vm);
             }
         }
-        long elapsed = System.currentTimeMillis() - startTime;
     }
 
     private void scanStalledVMInTransitionStateOnDisconnectedHosts() {

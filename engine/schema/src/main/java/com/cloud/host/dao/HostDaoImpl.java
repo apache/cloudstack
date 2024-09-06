@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -42,8 +44,8 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VGPUTypesDao;
-import com.cloud.host.Host;
 import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
@@ -70,7 +72,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
-import java.util.Arrays;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -1509,5 +1510,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             hostResourceStatus = "Disabled";
         }
         return String.format(sqlFindHostInZoneToExecuteCommand, hostResourceStatus);
+    }
+
+    @Override
+    public boolean isHostUp(long hostId) {
+        GenericSearchBuilder<HostVO, Status> sb = createSearchBuilder(Status.class);
+        sb.and("id", sb.entity().getId(), Op.EQ);
+        sb.selectFields(sb.entity().getStatus());
+        SearchCriteria<Status> sc = sb.create();
+        List<Status> statuses = customSearch(sc, null);
+        return CollectionUtils.isNotEmpty(statuses) && Status.Up.equals(statuses.get(0));
     }
 }

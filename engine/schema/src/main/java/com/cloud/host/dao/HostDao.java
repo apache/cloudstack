@@ -165,4 +165,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return ordered list of hypervisor versions
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
+
+    boolean isHostUp(long hostId);
 }
