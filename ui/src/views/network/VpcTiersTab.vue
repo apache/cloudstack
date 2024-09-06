@@ -58,6 +58,16 @@
                 </router-link>
               </div>
             </div>
+            <div class="list__col" v-if="!(resource.domainid === network.domainid && resource.account === network.account)">
+              <div class="list__label">
+                {{ $t('label.account') }}
+              </div>
+              <div>
+                <router-link :to="{ path: '/account', query: { name: network.account, domainid: network.domainid, dataView: true } }">
+                  {{ network.account }}
+                </router-link>
+              </div>
+            </div>
           </div>
           <a-collapse :bordered="false" style="margin-left: -18px">
             <template #expandIcon="props">
