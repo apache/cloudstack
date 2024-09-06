@@ -1645,7 +1645,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (ips.isEmpty()) {
                     final Vpc vpc = _vpcMgr.getActiveVpc(network.getVpcId());
                     logger.debug("Creating a source nat ip for vpc {}", vpc);
-                    _vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+                    _vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc, null);
                 }
             } else {
                 ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);

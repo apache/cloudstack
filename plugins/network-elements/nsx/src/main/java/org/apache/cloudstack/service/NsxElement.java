@@ -91,6 +91,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -98,7 +100,9 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
+import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalancerElementsCmd;
@@ -108,6 +112,8 @@ import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.resource.NsxOpObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -121,6 +127,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
@@ -160,6 +167,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     VirtualRouterProviderDao vrProviderDao;
     @Inject
     PhysicalNetworkServiceProviderDao pNtwkSvcProviderDao;
+    @Inject
+    FirewallRuleDetailsDao firewallRuleDetailsDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -395,10 +404,18 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         Account account = null;
         boolean forNsx = false;
         List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zone.getId(), Networks.TrafficType.Guest);
-        if (CollectionUtils.isNullOrEmpty(physicalNetworks) || physicalNetworks.size() > 1 ) {
-            throw new InvalidConfigurationException(String.format("Desired number of physical networks is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name()));
+        if (CollectionUtils.isNullOrEmpty(physicalNetworks)) {
+            String err = String.format("Desired physical network is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name());
+            logger.error(err);
+            throw new InvalidConfigurationException(err);
         }
-        if (physicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
+        List<PhysicalNetworkVO> filteredPhysicalNetworks = physicalNetworks.stream().filter(x -> x.getIsolationMethods().contains("NSX")).collect(Collectors.toList());
+        if (CollectionUtils.isNullOrEmpty(filteredPhysicalNetworks)) {
+            String err = String.format("No physical network with NSX isolation type for traffic type %s is present in the zone %s.", Networks.TrafficType.Guest.name(), zone.getName());
+            logger.error(err);
+            throw new InvalidConfigurationException(err);
+        }
+        if (filteredPhysicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
             account = accountMgr.getAccount(vpc.getAccountId());
             forNsx = true;
         }
@@ -527,45 +544,77 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         return false;
     }
 
+    protected synchronized boolean applyPFRulesInternal(Network network, List<PortForwardingRule> rules) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = true;
+            for (PortForwardingRule rule : rules) {
+                IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
+                UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
+                if (vm == null && rule.getState() != FirewallRule.State.Revoke) {
+                    continue;
+                }
+                NsxOpObject nsxObject = getNsxOpObject(network);
+                String publicPort = getPublicPortRange(rule);
+
+                String privatePort = getPrivatePFPortRange(rule);
+
+                NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                        .setDomainId(nsxObject.getDomainId())
+                        .setAccountId(nsxObject.getAccountId())
+                        .setZoneId(nsxObject.getZoneId())
+                        .setNetworkResourceId(nsxObject.getNetworkResourceId())
+                        .setNetworkResourceName(nsxObject.getNetworkResourceName())
+                        .setVpcResource(nsxObject.isVpcResource())
+                        .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
+                        .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
+                        .setPublicIp(publicIp.getAddress().addr())
+                        .setPrivatePort(privatePort)
+                        .setPublicPort(publicPort)
+                        .setRuleId(rule.getId())
+                        .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
+                        .build();
+                FirewallRuleDetailVO ruleDetail = firewallRuleDetailsDao.findDetail(rule.getId(), ApiConstants.FOR_NSX);
+                if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
+                    if ((ruleDetail == null && FirewallRule.State.Add == rule.getState()) || (ruleDetail != null && !ruleDetail.getValue().equalsIgnoreCase("true"))) {
+                        logger.debug("Creating port forwarding rule on NSX for VM {} to ports {} - {}",
+                                vm.getUuid(), rule.getDestinationPortStart(), rule.getDestinationPortEnd());
+                        NsxAnswer answer = nsxService.createPortForwardRule(networkRule);
+                        boolean pfRuleResult = answer.getResult();
+                        if (pfRuleResult && !answer.isObjectExistent()) {
+                            logger.debug("Port forwarding rule {} created on NSX, adding detail on firewall rules details", rule.getId());
+                            if (ruleDetail == null && FirewallRule.State.Add == rule.getState()) {
+                                logger.debug("Adding new firewall detail for rule {}", rule.getId());
+                                firewallRuleDetailsDao.addDetail(rule.getId(), ApiConstants.FOR_NSX, "true", false);
+                            } else {
+                                logger.debug("Updating firewall detail for rule {}", rule.getId());
+                                ruleDetail.setValue("true");
+                                firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
+                            }
+                        }
+                        result &= pfRuleResult;
+                    }
+                } else if (rule.getState() == FirewallRule.State.Revoke) {
+                    if (ruleDetail == null || (ruleDetail != null && ruleDetail.getValue().equalsIgnoreCase("true"))) {
+                        boolean pfRuleResult = nsxService.deletePortForwardRule(networkRule);
+                        if (pfRuleResult && ruleDetail != null) {
+                            logger.debug("Updating firewall rule detail {} for rule {}, set to false", ruleDetail.getId(), rule.getId());
+                            ruleDetail.setValue("false");
+                            firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
+                        }
+                        result &= pfRuleResult;
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
     @Override
     public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(network, Network.Service.PortForwarding)) {
             return false;
         }
-        boolean result = true;
-        for (PortForwardingRule rule : rules) {
-            IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
-            UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
-            if (vm == null && rule.getState() != FirewallRule.State.Revoke) {
-                continue;
-            }
-            NsxOpObject nsxObject = getNsxOpObject(network);
-            String publicPort = getPublicPortRange(rule);
-
-            String privatePort = getPrivatePFPortRange(rule);
-
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setDomainId(nsxObject.getDomainId())
-                    .setAccountId(nsxObject.getAccountId())
-                    .setZoneId(nsxObject.getZoneId())
-                    .setNetworkResourceId(nsxObject.getNetworkResourceId())
-                    .setNetworkResourceName(nsxObject.getNetworkResourceName())
-                    .setVpcResource(nsxObject.isVpcResource())
-                    .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
-                    .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
-                    .setPublicIp(publicIp.getAddress().addr())
-                    .setPrivatePort(privatePort)
-                    .setPublicPort(publicPort)
-                    .setRuleId(rule.getId())
-                    .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
-                    .build();
-            if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
-                result &= nsxService.createPortForwardRule(networkRule);
-            } else if (rule.getState() == FirewallRule.State.Revoke) {
-                result &= nsxService.deletePortForwardRule(networkRule);
-            }
-        }
-        return result;
+        return applyPFRulesInternal(network, rules);
     }
 
     public Pair<VpcVO, NetworkVO> getVpcOrNetwork(Long vpcId, long networkId) {
