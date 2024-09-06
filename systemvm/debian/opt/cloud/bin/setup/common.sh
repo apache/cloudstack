@@ -701,7 +701,7 @@ setup_ntp() {
 }
 
 routing_svcs() {
-   echo "haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "haproxy apache2 frr" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ "$RROUTER" -eq "1" ]
    then
@@ -800,6 +800,9 @@ parse_cmd_line() {
             ;;
         ip6firewall)
             export IP6_FIREWALL=$VALUE
+            ;;
+        is_routed)
+            export IS_ROUTED=$VALUE
             ;;
         domain)
             export DOMAIN=$VALUE

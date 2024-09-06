@@ -18,10 +18,13 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -58,6 +61,8 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     private AnnotationDao annotationDao;
     @Inject
     private NsxProviderDao nsxProviderDao;
+    @Inject
+    private ASNumberRangeDao asNumberRangeDao;
 
     protected DataCenterJoinDaoImpl() {
 
@@ -131,6 +136,11 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
 
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
         zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
+
+        List<ASNumberRangeVO> asNumberRange = asNumberRangeDao.listByZoneId(dataCenter.getId());
+        String asRange = asNumberRange.stream().map(range -> range.getStartASNumber() + "-" + range.getEndASNumber()).collect(Collectors.joining(", "));
+        zoneResponse.setAsnRange(asRange);
+
         zoneResponse.setResourceDetails(ApiDBUtils.getResourceDetails(dataCenter.getId(), ResourceObjectType.Zone));
         zoneResponse.setHasAnnotation(annotationDao.hasAnnotations(dataCenter.getUuid(), AnnotationService.EntityType.ZONE.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

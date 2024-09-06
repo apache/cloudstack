@@ -352,6 +352,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;
     }
 
+    @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#isProviderEnabledInPhysicalNetwork(long, java.lang.String)
      */

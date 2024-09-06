@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -462,5 +463,10 @@ public class BasicNetworkTopology implements NetworkTopology {
         dhcpRules.setRemove(true);
 
         return applyRules(network, virtualRouter, typeString, isPodLevelException, podId, failWhenDisconnect, new RuleApplierWrapper<RuleApplier>(dhcpRules));
+    }
+
+    @Override
+    public boolean applyBgpPeers(Network network, List<? extends BgpPeer> bpgPeers, VirtualRouter virtualRouter) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("applyBgpPeers not implemented in Basic Network Topology.");
     }
 }
