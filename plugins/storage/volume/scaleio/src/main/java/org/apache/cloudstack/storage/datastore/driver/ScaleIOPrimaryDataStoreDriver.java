@@ -556,7 +556,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
                 }
             } else {
-                 LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
+                LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
             }
 
             return answer;
@@ -779,7 +779,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 long newSize = destData.getSize() + (1<<30);
                 LOGGER.debug(String.format("Destination volume %s(%s) is configured for encryption. Resizing to fit headers, new size %s will be rounded up to nearest 8Gi", destInfo.getId(), destData.getSize(), newSize));
                 ResizeVolumePayload p = new ResizeVolumePayload(newSize, destInfo.getMinIops(), destInfo.getMaxIops(),
-                    destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
+                        destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
                 destInfo.addPayload(p);
                 resizeVolume(destInfo);
             } else {
