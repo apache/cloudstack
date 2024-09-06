@@ -149,7 +149,7 @@ public class NsxGuestNetworkGuruTest {
 
         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
-        when(offering.getNsxMode()).thenReturn(NetworkOffering.NsxMode.NATTED.name());
+        when(offering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
         when(offering.getId()).thenReturn(1L);
 
         when(plan.getDataCenterId()).thenReturn(1L);
@@ -319,7 +319,7 @@ public class NsxGuestNetworkGuruTest {
                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
         when(networkVO.getNetworkOfferingId()).thenReturn(1L);
         when(networkOfferingDao.findById(1L)).thenReturn(offeringVO);
-        when(offeringVO.getNsxMode()).thenReturn(NetworkOffering.NsxMode.NATTED.name());
+        when(offeringVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
         guru.createNsxSegment(networkVO, dataCenter);
         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxTier1GatewayCommand.class),
                 anyLong());

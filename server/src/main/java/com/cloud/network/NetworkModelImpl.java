@@ -145,6 +145,8 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.network.Network.Service.SecurityGroup;
+
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
@@ -1149,6 +1151,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        return _ntwkSrvcDao.isAnyServiceSupportedInNetwork(networkId, provider, services);
+    }
+
+    @Override
     public List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName) {
         Network.Service service = null;
         if (serviceName != null) {
@@ -1262,7 +1269,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null, null);
         }
 
-        return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), Service.SecurityGroup);
+        return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), SecurityGroup);
     }
 
     @Override
@@ -2754,5 +2761,39 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
         }
+    }
+
+    @Override
+    public boolean isSecurityGroupSupportedForZone(Long zoneId) {
+        List<? extends PhysicalNetwork> networks = getPhysicalNtwksSupportingTrafficType(zoneId, TrafficType.Guest);
+        for (PhysicalNetwork network : networks ) {
+            if (_pNSPDao.isServiceProviderEnabled(network.getId(), Provider.SecurityGroupProvider.getName(), Service.SecurityGroup.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+                                                       List<Long> securityGroupsIds) {
+        if (zone.isSecurityGroupEnabled()) {
+            return true;
+        }
+        if (CollectionUtils.isNotEmpty(networkIds)) {
+            for (Long networkId : networkIds) {
+                Network network = _networksDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+                }
+                if (network.getGuestType() == Network.GuestType.Shared && isSecurityGroupSupportedInNetwork(network)) {
+                    return true;
+                }
+            }
+        } else if (CollectionUtils.isNotEmpty(securityGroupsIds)) {
+            Network networkWithSecurityGroup = getNetworkWithSGWithFreeIPs(zone.getId());
+            return networkWithSecurityGroup != null;
+        }
+        return false;
     }
 }

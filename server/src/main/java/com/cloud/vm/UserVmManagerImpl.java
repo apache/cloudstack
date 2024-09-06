@@ -27,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -956,6 +957,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
         }
+        if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -999,6 +1003,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (userVm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+        if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -1437,6 +1444,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         NetworkVO network = _networkDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
+        }
+
+        if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType()) &&  network.getGuestType() == Network.GuestType.Shared) {
+            if ((network.getAclType() != ControlledEntity.ACLType.Account) ||
+                    (network.getDomainId() != vmInstance.getDomainId()) ||
+                    (network.getAccountId() != vmInstance.getAccountId())) {
+                throw new InvalidParameterValueException("Shared network which is not Account scoped and not belonging to the same account can not be added to a Shared FileSystem VM");
+            }
         }
 
         Account vmOwner = _accountMgr.getAccount(vmInstance.getAccountId());
@@ -1949,6 +1964,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
+
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
         if (vmInstance == null) {
@@ -2274,6 +2290,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
 
         // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVm is false for the caller.
@@ -2810,6 +2829,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
             }
         }
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+        if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
+
         String userData = cmd.getUserData();
         Long userDataId = cmd.getUserdataId();
         String userDataDetails = null;
@@ -3094,7 +3118,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (zone.getNetworkType() == NetworkType.Basic) {
                     // Get default guest network in Basic zone
                     defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (zone.isSecurityGroupEnabled()) {
+                } else if (_networkModel.checkSecurityGroupSupportForNetwork(zone, Collections.emptyList(), securityGroupIdList)) {
                     NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNic != null) {
                         defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
@@ -3377,6 +3401,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
 
         if (Arrays.asList(State.Destroyed, State.Expunging).contains(vm.getState()) && !expunge) {
@@ -3819,7 +3846,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Verify that owner can use the service offering
         _accountMgr.checkAccess(owner, serviceOffering, zone);
-        _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
+
+        DiskOffering diskOffering =_diskOfferingDao.findById(diskOfferingId);
+        _accountMgr.checkAccess(owner, diskOffering, zone);
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {
@@ -3953,7 +3982,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = _networkDao.findById(newNetwork.getId());
         }
@@ -4236,7 +4265,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType)) {
+            if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType) && !SHAREDFSVM.equals(vmType)) {
                 throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
             }
             List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
@@ -5083,10 +5112,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void addUserVMCmdlineArgs(Long vmId, VirtualMachineProfile profile, DeployDestination dest, StringBuilder buf) {
-        UserVmVO k8sVM = _vmDao.findById(vmId);
+        UserVmVO vm = _vmDao.findById(vmId);
         buf.append(" template=domP");
         buf.append(" name=").append(profile.getHostName());
-        buf.append(" type=").append(k8sVM.getUserVmType());
+        buf.append(" type=").append(vm.getUserVmType());
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
@@ -5127,7 +5156,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
         StringBuilder buf = profile.getBootArgsBuilder();
-        if (CKS_NODE.equals(vm.getUserVmType())) {
+        if (CKS_NODE.equals(vm.getUserVmType()) || SHAREDFSVM.equals(vm.getUserVmType())) {
             addUserVMCmdlineArgs(vm.getId(), profile, dest, buf);
         }
         // add userdata info into vm profile
@@ -5348,6 +5377,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public void finalizeExpunge(VirtualMachine vm) {
     }
 
+    private void checkForceStopVmPermission(Account callingAccount) {
+        if (!AllowUserForceStopVm.valueIn(callingAccount.getId())) {
+            logger.error("Parameter [{}] can only be passed by Admin accounts or when the allow.user.force.stop.vm config is true for the account.", ApiConstants.FORCED);
+            throw new PermissionDeniedException("Account does not have the permission to force stop the vm.");
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_STOP, eventDescription = "stopping Vm", async = true)
     public UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException {
@@ -5363,6 +5399,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+
+        if (forced) {
+            checkForceStopVmPermission(caller);
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
@@ -5897,6 +5937,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
         }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
 
         if (vm.getRemoved() != null) {
             logger.trace("Vm id=" + vmId + " is already expunged");
@@ -6142,7 +6185,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
-            if (zone.isSecurityGroupEnabled())  {
+            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+                    cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
@@ -7355,6 +7399,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
 
         final Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
         if (oldAccount == null) {
@@ -7562,7 +7609,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
             Map<Long, String> requestedIPv4ForNics = new HashMap<>();
             Map<Long, String> requestedIPv6ForNics = new HashMap<>();
-            if (zone.isSecurityGroupEnabled())  { // advanced zone with security groups
+            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
                 // cleanup the old security groups
                 _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
@@ -7763,7 +7810,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
                                     newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount,
                                     null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
-                                    null, null, true, null, null, null, null, null, null, null, null, null, null);
+                                    null, null, true, null, null, null, null, null, null, null, null, null, null, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).isPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);
@@ -7874,6 +7921,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             InvalidParameterValueException ex = new InvalidParameterValueException("Cannot find VM with ID " + vmId);
             ex.addProxyObject(String.valueOf(vmId), "vmId");
             throw ex;
+        }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
@@ -8467,7 +8517,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
-                EnforceStrictResourceLimitHostTagCheck, StrictHostTags};
+                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm};
     }
 
     @Override
@@ -8783,7 +8833,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private Network getNetworkForOvfNetworkMapping(DataCenter zone, Account owner) throws InsufficientCapacityException, ResourceAllocationException {
         Network network = null;
-        if (zone.isSecurityGroupEnabled()) {
+        if (zone.isSecurityGroupEnabled() || _networkModel.isSecurityGroupSupportedForZone(zone.getId())) {
             network = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
             if (network == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone ID: " + zone.getUuid());

@@ -26,6 +26,7 @@ import urllib.parse
 import urllib.error
 import time
 import copy
+import ipaddress
 
 from collections import OrderedDict
 from fcntl import flock, LOCK_EX, LOCK_UN
@@ -41,7 +42,11 @@ from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
+from cs.CsBgpPeers import CsBgpPeers
 
+ICMP_TYPE_ANY = "{ echo-reply, destination-unreachable, source-quench, redirect, echo-request, time-exceeded, \
+    parameter-problem, timestamp-request, timestamp-reply, info-request, info-reply, address-mask-request, \
+    address-mask-reply, router-advertisement, router-solicitation }"
 ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, \
     echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, \
     nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
@@ -272,6 +277,120 @@ class CsAcl(CsDataBag):
                 self.fw.append(["filter", "", "%s -j %s" % (fwr, rule['action'])])
                 logging.debug("EGRESS rule configured for protocol ==> %s, action ==> %s", rule['protocol'], rule['action'])
 
+    def add_routing_rules(self):
+        fw = self.config.get_nft_ipv4_fw()
+        logging.info("Processing routing firewall rules %s: %s" % (self.dbag, fw))
+        chains_added = False
+        egress_policy = None
+        for item in self.dbag:
+            if item == "id":
+                continue
+            rule = self.dbag[item]
+
+            network = ipaddress.ip_network(self.config.cmdline().get_eth0_ip() + "/" + self.config.cmdline().get_cidr_size(), False)
+            guest_cidr = network.with_prefixlen
+            if chains_added is False:
+                parent_chain = "FORWARD"
+                chain = "fw_chain_egress"
+                parent_chain_rule = "ip saddr %s jump %s" % (guest_cidr, chain)
+                fw.append({'type': "chain", 'chain': chain})
+                fw.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+                chain = "fw_chain_ingress"
+                parent_chain_rule = "ip daddr %s jump %s" % (guest_cidr, chain)
+                fw.append({'type': "chain", 'chain': chain})
+                fw.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+                if rule['default_egress_policy']:
+                    egress_policy = "accept"
+                else:
+                    egress_policy = "drop"
+                chains_added = True
+
+            rstr = ""
+
+            chain = "fw_chain_ingress"
+            if 'traffic_type' in rule and rule['traffic_type'].lower() == "egress":
+                chain = "fw_chain_egress"
+
+            saddr = ""
+            if 'source_cidr_list' in rule and len(rule['source_cidr_list']) > 0:
+                source_cidrs = rule['source_cidr_list']
+                if len(source_cidrs) == 1:
+                    source_cidrs = source_cidrs[0]
+                else:
+                    source_cidrs = "{" + (",".join(source_cidrs)) + "}"
+                saddr = "ip saddr " + source_cidrs
+            daddr = ""
+            if 'dest_cidr_list' in rule and len(rule['dest_cidr_list']) > 0:
+                dest_cidrs = rule['dest_cidr_list']
+                if len(dest_cidrs) == 1:
+                    dest_cidrs = dest_cidrs[0]
+                else:
+                    dest_cidrs = "{" + (",".join(dest_cidrs)) + "}"
+                daddr = "ip daddr " + dest_cidrs
+
+            proto = ""
+            protocol = rule['protocol']
+            if protocol != "all":
+                icmp_type = ""
+                proto = protocol
+                if proto == "icmp":
+                    proto = proto_str = "icmp"
+                    icmp_type = ICMP_TYPE_ANY
+                    if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                        icmp_type = str(rule['icmp_type'])
+                    proto = "%s type %s" % (proto_str, icmp_type)
+                    if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                        proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
+                first_port = ""
+                last_port = ""
+                if 'src_port_range' in rule:
+                    first_port = rule['src_port_range'][0]
+                    last_port = rule['src_port_range'][1]
+                port = ""
+                if first_port:
+                    port = first_port
+                if last_port and port and \
+                        last_port != first_port:
+                    port = "{%s-%s}" % (port, last_port)
+                if (protocol == "tcp" or protocol == "udp") and not port:
+                    port = TCP_UDP_PORT_ANY
+                if port:
+                    proto = "%s dport %s" % (proto, port)
+
+            action = "accept"
+            if chain == "fw_chain_egress":
+                # In case we have a default rule (accept all or drop all), we have to evaluate the action again.
+                if protocol == 'all' and not rule['source_cidr_list']:
+                    # For default egress ALLOW or DENY, the logic is inverted.
+                    # Having default_egress_policy == True, means that the default rule should have ACCEPT,
+                    # otherwise DROP. The rule should be appended, not inserted.
+                    if rule['default_egress_policy']:
+                        action = "accept"
+                    else:
+                        action = "drop"
+                else:
+                    # For other rules added, if default_egress_policy == True, following rules should be DROP,
+                    # otherwise ACCEPT
+                    if rule['default_egress_policy']:
+                        action = "drop"
+                    else:
+                        action = "accept"
+
+            rstr = saddr
+            type = ""
+            rstr = appendStringIfNotEmpty(rstr, daddr)
+            rstr = appendStringIfNotEmpty(rstr, proto)
+            if rstr and action:
+                rstr = rstr + " " + action
+                logging.debug("Process routing firewall rule %s" % rstr)
+                fw.append({'type': type, 'chain': chain, 'rule': rstr})
+        if chains_added:
+            base_rstr = "counter packets 0 bytes 0"
+            rstr = "%s drop" % base_rstr
+            fw.append({'type': "", 'chain': "fw_chain_ingress", 'rule': rstr})
+            rstr = "%s %s" % (base_rstr, egress_policy)
+            fw.append({'type': "", 'chain': "fw_chain_egress", 'rule': rstr})
+
     class AclDevice():
         """ A little class for each list of acls per device """
 
@@ -295,10 +414,89 @@ class CsAcl(CsDataBag):
                 self.egress = obj['egress_rules']
             self.fw = config.get_fw()
             self.ipv6_acl = config.get_ipv6_acl()
+            self.nft_ipv4_acl = config.get_nft_ipv4_acl()
 
         def create(self):
-            self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS)
-            self.process("egress", self.egress, self.FIXED_RULES_EGRESS)
+            self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS, self.config.is_routed())
+            self.process("egress", self.egress, self.FIXED_RULES_EGRESS, self.config.is_routed())
+
+        def __process_routing_ip4(self, direction, rule_list):
+            if not self.cidr:
+                return
+            tier_cidr = self.cidr
+            chain = "%s_%s_policy" % (self.device, direction)
+            parent_chain = "FORWARD"
+            cidr_key = "saddr"
+            if direction == "ingress":
+                cidr_key = "daddr"
+            parent_chain_rule = "ip %s %s jump %s" % (cidr_key, tier_cidr, chain)
+            self.nft_ipv4_acl.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+            self.nft_ipv4_acl.insert(0, {'type': "chain", 'chain': chain})
+            for rule in rule_list:
+                cidr = rule['cidr']
+                if cidr is not None and cidr != "":
+                    cidr = removeUndesiredCidrs(cidr, 6)
+                    if cidr is None or cidr == "":
+                        continue
+                addr = ""
+                if cidr:
+                    addr = "ip daddr " + cidr
+                    if direction == "ingress":
+                        addr = "ip saddr " + cidr
+
+                proto = ""
+                protocol = rule['type']
+                if protocol != "all":
+                    icmp_type = ""
+                    if protocol == "protocol":
+                        protocol = "ip nexthdr %d" % rule['protocol']
+                    proto = protocol
+                    if proto == "icmp":
+                        proto = proto_str = "icmp"
+                        icmp_type = ICMP_TYPE_ANY
+                        if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                            icmp_type = str(rule['icmp_type'])
+                        proto = "%s type %s" % (proto_str, icmp_type)
+                        if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                            proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
+
+                    first_port = ""
+                    last_port = ""
+                    if 'first_port' in rule:
+                        first_port = rule['first_port']
+                    if 'last_port' in rule:
+                        last_port = rule['last_port']
+                    port = ""
+                    if first_port:
+                        port = first_port
+                    if last_port and port and \
+                            last_port != first_port:
+                        port = "{%s-%s}" % (port, last_port)
+                    if (protocol == "tcp" or protocol == "udp") and not port:
+                        port = TCP_UDP_PORT_ANY
+                    if port:
+                        proto = "%s dport %s" % (proto, port)
+
+                action = "drop"
+                if 'allowed' in list(rule.keys()) and rule['allowed']:
+                    action = "accept"
+
+                rstr = addr
+                type = ""
+                rstr = appendStringIfNotEmpty(rstr, proto)
+                if rstr and action:
+                    rstr = rstr + " " + action
+                else:
+                    type = "chain"
+                    rstr = action
+                logging.debug("Process routing ACL rule %s" % rstr)
+                if type == "chain":
+                    self.nft_ipv4_acl.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
+                else:
+                    self.nft_ipv4_acl.append({'type': type, 'chain': chain, 'rule': rstr})
+
+            rstr = "counter packets 0 bytes 0 drop"
+            self.nft_ipv4_acl.append({'type': "", 'chain': chain, 'rule': rstr})
 
         def __process_ip6(self, direction, rule_list):
             if not self.ip6_cidr:
@@ -377,7 +575,12 @@ class CsAcl(CsDataBag):
             rstr = "counter packets 0 bytes 0 drop"
             self.ipv6_acl.append({'type': "", 'chain': chain, 'rule': rstr})
 
-        def process(self, direction, rule_list, base):
+        def process(self, direction, rule_list, base, is_routed):
+            if is_routed:
+                self.__process_routing_ip4(direction, rule_list)
+                self.__process_ip6(direction, rule_list)
+                return
+
             count = base
             for i in rule_list:
                 ruleData = copy.copy(i)
@@ -398,7 +601,7 @@ class CsAcl(CsDataBag):
 
             def __init__(self, direction, acl, rule, config, count):
                 self.count = count
-                if config.is_vpc():
+                if config.is_vpc() and not config.is_routed():
                     self.init_vpc(direction, acl, rule, config)
 
             def init_vpc(self, direction, acl, rule, config):
@@ -444,7 +647,21 @@ class CsAcl(CsDataBag):
                 rstr = rstr.replace("  ", " ").lstrip()
                 self.fw.append([self.table, self.count, rstr])
 
+    def flushAllIptablesRules(self):
+        if not self.config.is_routed():
+            return
+        # Flush all iptables rules for routing networks, which are replaced by nftables rules
+        logging.info("Flush all iptables rules")
+        CsHelper.execute("iptables -F filter")
+        CsHelper.execute("iptables -F nat")
+        CsHelper.execute("iptables -F mangle")
+        CsHelper.execute("nft delete table ip filter")
+        CsHelper.execute("nft delete table ip nat")
+        CsHelper.execute("nft delete table ip mangle")
+
     def flushAllowAllEgressRules(self):
+        if self.config.is_routed():
+            return
         logging.debug("Flush allow 'all' egress firewall rule")
         # Ensure that FW_EGRESS_RULES chain exists
         CsHelper.execute("iptables-save | grep '^:FW_EGRESS_RULES' || iptables -t filter -N FW_EGRESS_RULES")
@@ -452,6 +669,26 @@ class CsAcl(CsDataBag):
         CsHelper.execute("iptables -F FW_EGRESS_RULES")
         CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset flush")
         CsHelper.execute("ipset -L | grep Name:  | awk {'print $2'} | ipset destroy")
+
+    def flushAllIpv4RoutingRules(self):
+        if not self.config.is_routed():
+            return
+        logging.info("Flush all Routing firewall rules")
+        address_family = 'ip'
+        table = 'ip4_firewall'
+        tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
+        if any(table in t for t in tables):
+            CsHelper.execute("nft delete table %s %s" % (address_family, table))
+
+    def flushAllIpv4RoutingACLRules(self):
+        if not self.config.is_routed():
+            return
+        logging.info("Flush all ACL rules for routing network")
+        address_family = 'ip'
+        table = 'ip4_acl'
+        tables = CsHelper.execute("nft list tables %s | grep %s" % (address_family, table))
+        if any(table in t for t in tables):
+            CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def flushAllIpv6Rules(self):
         logging.info("Flush all IPv6 ACL rules")
@@ -462,6 +699,10 @@ class CsAcl(CsDataBag):
             CsHelper.execute("nft delete table %s %s" % (address_family, table))
 
     def process(self):
+        if self.config.is_routed() and not self.config.is_vpc():
+            self.add_routing_rules()
+            return
+
         for item in self.dbag:
             if item == "id":
                 continue
@@ -469,7 +710,6 @@ class CsAcl(CsDataBag):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
                 self.AclIP(self.dbag[item], self.config).create()
-
 
 class CsIpv6Firewall(CsDataBag):
     """
@@ -1335,11 +1575,22 @@ class IpTablesExecutor:
         nf = CsNetfilters()
         nf.compare(self.config.get_fw())
 
-        logging.info("Configuring nftables ACL rules %s" % self.config.get_ipv6_acl())
+        logging.info("Configuring nftables IPv4 firewall rules %s" % self.config.get_nft_ipv4_fw())
+        acls.flushAllIpv4RoutingRules()
+        nf = CsNetfilters()
+        nf.apply_nft_ipv4_rules(self.config.get_nft_ipv4_fw(), "firewall")
+        acls.flushAllIptablesRules()
+
+        logging.info("Configuring nftables IPv4 ACL rules %s" % self.config.get_nft_ipv4_acl())
+        acls.flushAllIpv4RoutingACLRules()
+        nf = CsNetfilters()
+        nf.apply_nft_ipv4_rules(self.config.get_nft_ipv4_acl(), "acl")
+
+        logging.info("Configuring nftables IPv6 ACL rules %s" % self.config.get_ipv6_acl())
         nf = CsNetfilters()
         nf.apply_ip6_rules(self.config.get_ipv6_acl(), "acl")
 
-        logging.info("Configuring nftables IPv6 rules %s" % self.config.get_ipv6_fw())
+        logging.info("Configuring nftables IPv6 firewall rules %s" % self.config.get_ipv6_fw())
         nf = CsNetfilters()
         nf.apply_ip6_rules(self.config.get_ipv6_fw(), "firewall")
 
@@ -1349,6 +1600,8 @@ class IpTablesExecutor:
         CsHelper.save_iptables("iptables-save", "/etc/iptables/rules.v4")
         CsHelper.save_iptables("ip6tables-save", "/etc/iptables/rules.v6")
 
+        # Save nftables configuration
+        CsHelper.save_iptables("nft list ruleset", "/etc/iptables/rules.nftables")
 
 def main(argv):
     # The file we are currently processing, if it is "cmd_line.json" everything will be processed.
@@ -1371,6 +1624,7 @@ def main(argv):
     config.address().process()
 
     databag_map = OrderedDict([("guest_network",       {"process_iptables": True,  "executor": [CsVpcGuestNetwork("guestnetwork", config)]}),
+                               ("bgp_peers",           {"process_iptables": False,  "executor": [CsBgpPeers("bgppeers", config)]}),
                                ("ip_aliases",          {"process_iptables": True,  "executor": []}),
                                ("vm_password",         {"process_iptables": False, "executor": [CsPassword("vmpassword", config)]}),
                                ("vm_metadata",         {"process_iptables": False, "executor": [CsVmMetadata('vmdata', config)]}),

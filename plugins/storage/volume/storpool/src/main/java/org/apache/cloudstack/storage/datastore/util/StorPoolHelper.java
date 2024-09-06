@@ -163,11 +163,12 @@ public class StorPoolHelper {
         return null;
     }
 
-    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy) {
+    public static Map<String, String> addStorPoolTags(String name, String vmUuid, String csTag, String vcPolicy, String qcTier) {
         Map<String, String> tags = new HashMap<>();
         tags.put("uuid", name);
         tags.put("cvm", vmUuid);
         tags.put(StorPoolUtil.SP_VC_POLICY, vcPolicy);
+        tags.put("qc", qcTier);
         if (csTag != null) {
             tags.put("cs", csTag);
         }

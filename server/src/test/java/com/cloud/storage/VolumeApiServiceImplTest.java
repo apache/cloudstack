@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -144,6 +145,8 @@ public class VolumeApiServiceImplTest {
     private VolumeDataStoreDao volumeDataStoreDaoMock;
     @Mock
     private VolumeDao volumeDaoMock;
+    @Mock
+    private BackupDao backupDaoMock;
     @Mock
     private AccountManager accountManagerMock;
     @Mock
@@ -474,44 +477,44 @@ public class VolumeApiServiceImplTest {
     // Negative test - try to attach non-root non-datadisk volume
     @Test(expected = InvalidParameterValueException.class)
     public void attachIncorrectDiskType() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 5L, 0L, false);
     }
 
     // Negative test - attach root volume to running vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToRunningVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(1L, 6L, 0L, false);
     }
 
     // Negative test - attach root volume to non-xen vm
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToHyperVm() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(3L, 6L, 0L, false);
     }
 
     // Negative test - attach root volume from the managed data store
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskOfManagedDataStore() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 7L, 0L, false);
     }
 
     // Negative test - root volume can't be attached to the vm already having a root volume attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootDiskToVmHavingRootDisk() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 6L, 0L, false);
     }
 
     // Negative test - root volume in uploaded state can't be attached
     @Test(expected = InvalidParameterValueException.class)
     public void attachRootInUploadedState() throws NoSuchFieldException, IllegalAccessException {
-        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 8L, 0L, false);
     }
 
     // Positive test - attach ROOT volume in correct state, to the vm not having root volume attached
     @Test
     public void attachRootVolumePositive() throws NoSuchFieldException, IllegalAccessException {
         thrown.expect(NullPointerException.class);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 6L, 0L, false);
     }
 
     // Negative test - attach data volume, to the vm on non-kvm hypervisor
@@ -520,7 +523,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L);
+        volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false);
     }
 
     // Positive test - attach data volume, to the vm on kvm hypervisor
@@ -530,7 +533,7 @@ public class VolumeApiServiceImplTest {
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
         when(diskOffering.getEncrypt()).thenReturn(true);
         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
-        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L);
+        volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false);
     }
 
     // volume not Ready
@@ -632,7 +635,7 @@ public class VolumeApiServiceImplTest {
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(34L);
         when(vm.getBackupOfferingId()).thenReturn(null);
-        when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
+        when(backupDaoMock.listByVmId(anyLong(), anyLong())).thenReturn(Collections.emptyList());
         when(volumeDaoMock.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList<>(10));
         when(volumeDataFactoryMock.getVolume(9L)).thenReturn(volumeToAttach);
         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
@@ -640,7 +643,7 @@ public class VolumeApiServiceImplTest {
         when(_dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
         try {
-            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null);
+            volumeApiServiceImpl.attachVolumeToVM(2L, 9L, null, false);
         } catch (InvalidParameterValueException e) {
             Assert.assertEquals(e.getMessage(), ("primary storage resource limit check failed"));
         }

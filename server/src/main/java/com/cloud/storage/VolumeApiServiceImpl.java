@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -349,6 +350,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected ProjectManager projectManager;
     @Inject
     protected StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private BackupDao backupDao;
 
 
     protected Gson _gson;
@@ -1036,7 +1039,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // if VM Id is provided, attach the volume to the VM
                 if (cmd.getVirtualMachineId() != null) {
                     try {
-                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId());
+                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId(), false);
                     } catch (Exception ex) {
                         StringBuilder message = new StringBuilder("Volume: ");
                         message.append(volume.getUuid());
@@ -1975,7 +1978,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean shrinkOk = cmd.isShrinkOk();
         boolean autoMigrateVolume = cmd.getAutoMigrate();
 
-        VolumeVO volume = _volsDao.findById(cmd.getId());
+        return changeDiskOfferingForVolumeInternal(cmd.getId(), newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume, shrinkOk);
+    }
+
+    @Override
+    public Volume changeDiskOfferingForVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
+
+        VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             throw new InvalidParameterValueException("No such volume");
         }
@@ -1983,10 +1992,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        return changeDiskOfferingForVolumeInternal(volume, newDiskOfferingId, newSize, newMinIops, newMaxIops, autoMigrateVolume, shrinkOk);
-    }
-
-    private Volume changeDiskOfferingForVolumeInternal(VolumeVO volume, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException {
         long existingDiskOfferingId = volume.getDiskOfferingId();
         DiskOfferingVO existingDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
         DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newDiskOfferingId);
@@ -2063,6 +2068,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (!volumeMigrateRequired && !volumeResizeRequired) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
+            updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+
             return volume;
         }
 
@@ -2097,6 +2104,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
+        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.informStorageForDiskOfferingChange()) {
+                storageDriver.updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
+            }
+        }
     }
 
     /**
@@ -2332,7 +2351,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              * the actual disk size.
              */
             if (currentSize > newSize) {
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState())) {
+                if (shrinkOk) {
+                    VMInstanceVO vm = _vmInstanceDao.findById(volume.getInstanceId());
+                    if (vm != null && vm.getType().equals(VirtualMachine.Type.User)) {
+                        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
+                        if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem VM");
+                        }
+                    }
+                }
+
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
@@ -2352,7 +2381,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
-        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+        return attachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId(), false);
     }
 
     private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
@@ -2460,12 +2489,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return newVol;
     }
 
-    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
 
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
+
+        if (!allowAttachForSharedFS && UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem VM");
+        }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
 
@@ -2587,7 +2620,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if target VM has backups
-        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (vm.getBackupOfferingId() != null && !backups.isEmpty()) {
             throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have any backups", vm.getName(), vm.getUuid()));
         }
     }
@@ -2881,6 +2915,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Check that the VM is in the correct state
         UserVmVO vm = _userVmDao.findById(vmId);
+
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem VM");
+        }
+
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
@@ -3748,7 +3787,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private boolean isOperationSupported(VMTemplateVO template, UserVmVO userVm) {
         if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM &&
-                (userVm == null || !UserVmManager.CKS_NODE.equals(userVm.getUserVmType()))) {
+                (userVm == null || !UserVmManager.CKS_NODE.equals(userVm.getUserVmType()) || !UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType()))) {
             return false;
         }
         return true;
@@ -4284,7 +4323,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             } else if (storeForNewStoreScope.getScopeType() == ScopeType.HOST
                     && (storeForExistingStoreScope.getScopeType() == ScopeType.CLUSTER || storeForExistingStoreScope.getScopeType() == ScopeType.ZONE)) {
-                Long hostId = _vmInstanceDao.findById(existingVolume.getInstanceId()).getHostId();
+                VMInstanceVO vm = _vmInstanceDao.findById(existingVolume.getInstanceId());
+                Long hostId = vm.getHostId();
+                if (hostId == null) {
+                    hostId = vm.getLastHostId();
+                }
                 if (storeForNewStoreScope.getScopeId().equals(hostId)) {
                     return false;
                 }

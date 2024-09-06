@@ -19,6 +19,7 @@ package com.cloud.network.as;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -250,6 +252,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
     NetworkOrchestrationService networkMgr;
+    @Inject
+    NetworkModel networkModel;
     @Inject
     private UserVmManager userVmMgr;
     @Inject
@@ -1808,7 +1812,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId);
             } else {
-                if (zone.isSecurityGroupEnabled()) {
+                if (networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+                        Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,

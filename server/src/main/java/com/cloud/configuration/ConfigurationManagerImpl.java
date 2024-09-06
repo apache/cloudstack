@@ -45,17 +45,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
-import com.cloud.dc.VlanDetailsVO;
-import com.cloud.dc.dao.VlanDetailsDao;
-import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.network.dao.NsxProviderDao;
-import com.cloud.network.element.NsxProviderVO;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.host.HostTagVO;
-import com.cloud.storage.StoragePoolTagVO;
-import com.cloud.storage.VolumeApiServiceImpl;
-import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -172,6 +161,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -185,6 +175,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
@@ -203,10 +194,12 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -229,11 +222,13 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -261,7 +256,9 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -281,6 +278,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -305,7 +303,12 @@ import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
+
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -528,6 +531,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
+    private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Override
@@ -703,7 +707,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 value = DBEncryptionUtil.encrypt(value);
             }
 
-            switch (ConfigKey.Scope.valueOf(scope)) {
+            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+            switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
                 if (zone == null) {
@@ -794,6 +799,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
 
+            _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
@@ -806,6 +812,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
+        _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt = null;
         if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
@@ -1093,7 +1100,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         String newValue = null;
-        switch (ConfigKey.Scope.valueOf(scope)) {
+        ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+        switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(id);
                 if (zone == null) {
@@ -1177,6 +1185,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : _configDao.findByName(name).getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
+
+        _configDepot.invalidateConfigCache(name, scopeVal, id);
 
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
@@ -1317,6 +1327,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final NumberFormatException e) {
                 logger.error("There was an error trying to parse the float value for configuration parameter: " + name);
                 throw new InvalidParameterValueException("There was an error trying to parse the float value for configuration parameter: " + name);
+            }
+        }
+
+        if (type.equals(String.class)) {
+            if (name.equalsIgnoreCase(SecStorageAllowedInternalDownloadSites.key()) && StringUtils.isNotEmpty(value)) {
+                final String[] cidrs = value.split(",");
+                for (final String cidr : cidrs) {
+                    if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                        logger.error(String.format("Invalid CIDR %s value specified for the config %s", cidr, name));
+                        throw new InvalidParameterValueException(String.format("Invalid CIDR %s value specified for the config %s", cidr, name));
+                    }
+                }
             }
         }
 
@@ -6082,7 +6104,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean forVpc = cmd.getForVpc();
         Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
-        String nsxMode = cmd.getNsxMode();
+        String networkModeStr = cmd.getNetworkMode();
         boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
@@ -6090,6 +6112,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final boolean enable = cmd.getEnable();
+        boolean specifyAsNumber = cmd.getSpecifyAsNumber();
+        String routingModeString = cmd.getRoutingMode();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -6121,20 +6145,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
         }
 
-        if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(nsxMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+        NetworkOffering.NetworkMode networkMode = null;
+        if (networkModeStr != null) {
+            if (!EnumUtils.isValidEnum(NetworkOffering.NetworkMode.class, networkModeStr)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
-            }
-        } else {
-            if (Objects.nonNull(nsxMode)) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
-                }
-                nsxMode = null;
-            }
+            networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
         }
 
         // Verify traffic type
@@ -6195,6 +6211,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
+
+        NetworkOffering.RoutingMode routingMode = verifyRoutingMode(routingModeString);
 
         // configure service provider map
         final Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
@@ -6365,6 +6383,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.Connectivity, connectivityServiceCapabilityMap);
 
+        final Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+            serviceCapabilityMap.put(Service.Gateway, gatewayServiceCapabilityMap);
+        }
+
         // if Firewall service is missing, add Firewall service/provider
         // combination
         if (firewallProvider != null) {
@@ -6401,7 +6424,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -6410,6 +6433,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
+        NetworkOffering.RoutingMode routingMode = null;
+        if (routingModeString != null) {
+            try {
+                if (!SUPPORTED_ROUTING_MODE_STRS.contains(routingModeString.toLowerCase())) {
+                    throw new IllegalArgumentException(String.format("Unsupported value: %s", routingModeString));
+                }
+                routingMode = routingModeString.equalsIgnoreCase(Static.toString()) ? Static : Dynamic;
+            } catch (IllegalArgumentException e) {
+                String msg = String.format("Invalid value %s for Routing Mode, Supported values: %s, %s.",
+                        routingModeString, Static, Dynamic);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        return routingMode;
     }
 
     void validateLoadBalancerServiceCapabilities(final Map<Capability, String> lbServiceCapabilityMap) {
@@ -6551,7 +6591,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, String mode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                                   final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6582,9 +6623,61 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (specifyAsNumber && !forNsx) {
+            String msg = "SpecifyAsNumber can only be true for network offerings for NSX";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && !Dynamic.equals(routingMode)) {
+            String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && Boolean.TRUE.equals(forVpc)) {
+            String msg = "SpecifyAsNumber cannot be set for VPC network tiers. It needs to be defined at VPC level";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
         // isPersistent should always be false for Shared network Offerings
         if (isPersistent && type == GuestType.Shared) {
             throw new InvalidParameterValueException("isPersistent should be false if network offering's type is " + type);
+        }
+
+        // Validate network mode
+        if (networkMode != null) {
+            if (type != GuestType.Isolated) {
+                throw new InvalidParameterValueException("networkMode should be set only for Isolated network offerings");
+            }
+            if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+                boolean useVirtualRouterOnly = true;
+                for (Service service : serviceProviderMap.keySet()) {
+                    Set<Provider> providers = serviceProviderMap.get(service);
+                    if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
+                        if (providers != null) {
+                            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
+                        }
+                    }
+                    if (useVirtualRouterOnly && Arrays.asList(Service.Firewall, Service.NetworkACL).contains(service)) {
+                        for (Provider provider : providers) {
+                            if (!Provider.VirtualRouter.equals(provider) && !Provider.VPCVirtualRouter.equals(provider)) {
+                                useVirtualRouterOnly = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (useVirtualRouterOnly) {
+                    // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
+                    if (forVpc) {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+                    } else {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
+                    }
+                }
+            }
         }
 
         // validate availability value
@@ -6663,9 +6756,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             final Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
-            if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+            if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap)) {
                 sharedSourceNat = isSharedSourceNat(serviceProviderMap, sourceNatServiceCapabilityMap);
-                redundantRouter = isRedundantRouter(serviceProviderMap, sourceNatServiceCapabilityMap);
+                redundantRouter = isRedundantRouter(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, sourceNatServiceCapabilityMap);
+            }
+
+            final Map<Capability, String> gatewayServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
+            if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+                redundantRouter = redundantRouter || isRedundantRouter(serviceProviderMap.get(Service.Gateway), Service.Gateway, gatewayServiceCapabilityMap);
             }
 
             final Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
@@ -6713,12 +6811,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
         offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
-        if (Boolean.TRUE.equals(forNsx)) {
-            offeringFinal.setNsxMode(mode);
-        }
+        offeringFinal.setNetworkMode(networkMode);
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
+        }
+
+        offeringFinal.setSpecifyAsNumber(specifyAsNumber);
+        if (routingMode != null) {
+            offeringFinal.setRoutingMode(routingMode);
         }
 
         // Set VM AutoScaling capability
@@ -6819,11 +6920,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
     }
 
-    boolean isRedundantRouter(Map<Service, Set<Provider>> serviceProviderMap, Map<Capability, String> sourceNatServiceCapabilityMap) {
+    boolean isRedundantRouter(Set<Provider> providers, Service service, Map<Capability, String> sourceNatServiceCapabilityMap) {
         boolean redundantRouter = false;
         String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
         if (param != null) {
-            _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
+            _networkModel.checkCapabilityForProvider(providers, service, Capability.RedundantRouter, param);
             redundantRouter = param.contains("true");
         }
         return redundantRouter;
@@ -6901,6 +7002,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final Boolean isTagged = cmd.isTagged();
         final Boolean forVpc = cmd.getForVpc();
+        final String routingMode = cmd.getRoutingMode();
 
         if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
@@ -6972,6 +7074,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // basic zone, and shouldn't display networkOfferings
                 return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
+        }
+
+        if (routingMode != null && EnumUtils.isValidEnumIgnoreCase(NetworkOffering.RoutingMode.class, routingMode)) {
+            sc.addAnd("routingMode", SearchCriteria.Op.EQ, routingMode);
         }
 
         // Don't return system network offerings to the user

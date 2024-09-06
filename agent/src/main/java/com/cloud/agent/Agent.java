@@ -504,6 +504,13 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         startup.setGuid(getResourceGuid());
         startup.setResourceName(getResourceName());
         startup.setVersion(getVersion());
+        startup.setArch(getAgentArch());
+    }
+
+    protected String getAgentArch() {
+        final Script command = new Script("/usr/bin/arch", 500, logger);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        return command.execute(parser);
     }
 
     @Override
@@ -858,9 +865,19 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             setId(ready.getHostId());
         }
 
+        verifyAgentArch(ready.getArch());
         processManagementServerList(ready.getMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
 
         logger.info("Ready command is processed for agent id = {}", getId());
+    }
+
+    private void verifyAgentArch(String arch) {
+        if (StringUtils.isNotBlank(arch)) {
+            String agentArch = getAgentArch();
+            if (!arch.equals(agentArch)) {
+                logger.error("Unexpected arch {}, expected {}", agentArch, arch);
+            }
+        }
     }
 
     public void processOtherTask(final Task task) {

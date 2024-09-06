@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.rules.BgpPeersRules;
+import org.apache.cloudstack.network.BgpPeer;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -209,6 +211,22 @@ public class AdvancedNetworkVisitor extends BasicNetworkVisitor {
         // Currently we receive just one answer from the agent. In the future we
         // have to parse individual answers and set
         // results accordingly
+        return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
+    }
+
+    @Override
+    public boolean visit(final BgpPeersRules bgpPeersRules) throws ResourceUnavailableException {
+        final VirtualRouter router = bgpPeersRules.getRouter();
+        final List<? extends BgpPeer> bgpPeers = bgpPeersRules.getBgpPeers();
+        final Network network = bgpPeersRules.getNetwork();
+
+        final Commands cmds = new Commands(Command.OnError.Continue);
+
+        _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, network);
+        if (cmds.size() == 0) {
+            return true;
+        }
+
         return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
     }
 }

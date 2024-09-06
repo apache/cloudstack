@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -28,12 +33,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 @Component
 public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreDetailVO> implements ImageStoreDetailsDao, ScopedConfigStorage {
@@ -106,8 +105,8 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        ImageStoreDetailVO vo = findDetail(id, key.key());
+    public String getConfigValue(long id, String key) {
+        ImageStoreDetailVO vo = findDetail(id, key);
         return vo == null ? null : vo.getValue();
     }
 
