@@ -65,7 +65,6 @@ import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.IPAddressDao;
@@ -429,13 +428,14 @@ public class KubernetesClusterActionWorker {
             logger.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
+        if (manager.isDirectAccess(network)) {
+            return getKubernetesClusterServerIpSshPortForSharedNetwork(controlVm);
+        }
         if (network.getVpcId() != null) {
             return getKubernetesClusterServerIpSshPortForVpcTier(network, acquireNewPublicIpForVpcTierIfNeeded);
         }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
             return getKubernetesClusterServerIpSshPortForIsolatedNetwork(network);
-        } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
-            return getKubernetesClusterServerIpSshPortForSharedNetwork(controlVm);
         }
         logger.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
@@ -654,7 +654,7 @@ public class KubernetesClusterActionWorker {
     protected boolean deployProvider() {
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
-        if (network.getGuestType() != GuestType.Isolated) {
+        if (manager.isDirectAccess(network)) {
             logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
                 kubernetesCluster.getName()), null);
             return true;

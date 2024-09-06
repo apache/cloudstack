@@ -158,6 +158,130 @@ WHERE
     name IN ("quota.usage.smtp.useStartTLS", "quota.usage.smtp.useAuth", "alert.smtp.useAuth", "project.smtp.useAuth")
     AND value NOT IN ("true", "y", "t", "1", "on", "yes");
 
+-- Create tables for static and dynamic routing
+CREATE TABLE `cloud`.`dc_ip4_guest_subnets` (
+   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+   `uuid` varchar(40) DEFAULT NULL,
+   `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
+   `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
+   `domain_id` bigint unsigned DEFAULT NULL COMMENT 'domain the subnet belongs to',
+   `account_id` bigint unsigned DEFAULT NULL COMMENT 'owner of this subnet',
+   `created` datetime DEFAULT NULL,
+   `removed` datetime DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`),
+   CONSTRAINT `fk_dc_ip4_guest_subnets__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`),
+   CONSTRAINT `uc_dc_ip4_guest_subnets__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
+   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+   `uuid` varchar(40) DEFAULT NULL,
+   `parent_id` bigint(20) unsigned COMMENT 'ip4 guest subnet which subnet belongs to',
+   `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ip4 network',
+   `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which subnet is associated to',
+   `vpc_id` bigint(20) unsigned DEFAULT NULL COMMENT 'VPC which subnet is associated to',
+   `state` varchar(255) NOT NULL COMMENT 'state of the subnet',
+   `allocated` datetime DEFAULT NULL,
+   `created` datetime DEFAULT NULL,
+   `removed` datetime DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   CONSTRAINT `fk_ip4_guest_subnet_network_map__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `dc_ip4_guest_subnets`(`id`),
+   CONSTRAINT `fk_ip4_guest_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+   CONSTRAINT `fk_ip4_guest_subnet_network_map__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`),
+   CONSTRAINT `uc_ip4_guest_subnet_network_map__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`network_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
+ALTER TABLE `cloud`.`vpc_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
+ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;
+
+-- Add tables for AS Numbers and range
+CREATE TABLE IF NOT EXISTS `cloud`.`as_number_range` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+    `start_as_number` bigint unsigned NOT NULL COMMENT 'start AS number of the range',
+    `end_as_number` bigint unsigned NOT NULL COMMENT 'end AS number of the range',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_as_number_range__uuid` (`uuid`),
+    UNIQUE KEY `uk_as_number_range__range` (`data_center_id`,`start_as_number`,`end_as_number`, `removed`),
+    CONSTRAINT `fk_as_number_range__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`as_number` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `account_id` bigint unsigned DEFAULT NULL,
+    `domain_id` bigint unsigned DEFAULT NULL,
+    `as_number` bigint unsigned NOT NULL COMMENT 'the AS Number',
+    `as_number_range_id` bigint unsigned NOT NULL,
+    `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
+    `allocated` datetime DEFAULT NULL COMMENT 'Date this AS Number was allocated to some network',
+    `is_allocated` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates if the AS Number is allocated to some network',
+    `network_id` bigint unsigned DEFAULT NULL COMMENT 'Network this AS Number is associated with',
+    `vpc_id` bigint unsigned DEFAULT NULL COMMENT 'VPC this AS Number is associated with',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_as_number__uuid` (`uuid`),
+    UNIQUE KEY `uk_as_number__number` (`data_center_id`,`as_number`,`as_number_range_id`),
+    CONSTRAINT `fk_as_number__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`),
+    CONSTRAINT `fk_as_number__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_as_number__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`),
+    CONSTRAINT `fk_as_number__as_number_range_id` FOREIGN KEY (`as_number_range_id`) REFERENCES `as_number_range` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','routing_mode', 'varchar(10) COMMENT "routing mode for the offering"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','specify_as_number', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "specify AS number when using dynamic routing"');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','routing_mode', 'varchar(10) COMMENT "routing mode for the offering"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','specify_as_number', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "specify AS number when using dynamic routing"');
+
+-- Tables for Dynamic Routing
+CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peers` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `uuid` varchar(40) DEFAULT NULL,
+    `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
+    `ip4_address` varchar(40) DEFAULT NULL COMMENT 'IPv4 address of the BGP peer',
+    `ip6_address` varchar(40) DEFAULT NULL COMMENT 'IPv6 address of the BGP peer',
+    `as_number` bigint unsigned NOT NULL COMMENT 'AS number of the BGP peer',
+    `password` varchar(255) DEFAULT NULL COMMENT 'Password of the BGP peer',
+    `domain_id` bigint unsigned DEFAULT NULL COMMENT 'domain the subnet belongs to',
+    `account_id` bigint unsigned DEFAULT NULL COMMENT 'owner of this subnet',
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_bgp_peers__uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`bgp_peer_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `bgp_peer_id` bigint unsigned NOT NULL COMMENT 'bgp peer id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_bgp_peer_details__bgp_peer_id` FOREIGN KEY `fk_bgp_peer_details__bgp_peer_id`(`bgp_peer_id`) REFERENCES `bgp_peers`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`bgp_peer_network_map` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `bgp_peer_id` bigint(20) unsigned COMMENT 'id of the BGP peer',
+    `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network which BGP peer is associated to',
+    `vpc_id` bigint(20) unsigned DEFAULT NULL COMMENT 'vpc which BGP peer is associated to',
+    `state` varchar(40) DEFAULT NULL,
+    `created` datetime DEFAULT NULL COMMENT 'date created',
+    `removed` datetime DEFAULT NULL COMMENT 'date removed',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_bgp_peer_network_map__bgp_peer_id` FOREIGN KEY (`bgp_peer_id`) REFERENCES `bgp_peers`(`id`),
+    CONSTRAINT `fk_bgp_peer_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+    CONSTRAINT `fk_bgp_peer_network_map__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`shared_filesystem`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'ID',
     `uuid` varchar(40) COMMENT 'UUID',

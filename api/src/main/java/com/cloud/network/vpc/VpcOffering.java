@@ -18,6 +18,7 @@ package com.cloud.network.vpc;
 
 import java.util.Date;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -57,7 +58,7 @@ public interface VpcOffering extends InternalIdentity, Identity {
 
     boolean isForNsx();
 
-    String getNsxMode();
+    NetworkOffering.NetworkMode getNetworkMode();
 
     /**
      * @return service offering id used by VPC virtual router
@@ -79,4 +80,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Date getRemoved();
 
     Date getCreated();
+
+    NetworkOffering.RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }
