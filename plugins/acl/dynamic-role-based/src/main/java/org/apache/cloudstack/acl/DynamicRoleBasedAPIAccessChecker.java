@@ -27,6 +27,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
@@ -35,6 +36,7 @@ import com.cloud.exception.UnavailableCommandException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private List<PluggableService> services;
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
 
+    final private LazyCache<Long, Pair<Role, List<RolePermission>>> accountRolePermissionsCache;
+    final private LazyCache<Long, Pair<Role, List<RolePermission>>> rolePermissionsCache;
+
     private static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
 
     protected DynamicRoleBasedAPIAccessChecker() {
@@ -56,6 +61,10 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         for (RoleType roleType : RoleType.values()) {
             annotationRoleBasedApisMap.put(roleType, new HashSet<String>());
         }
+        accountRolePermissionsCache = new LazyCache<>(32, 60,
+                this::getAccountRolePermissions);
+        rolePermissionsCache = new LazyCache<>(32, 60,
+                this::getRolePermissions);
     }
 
     @Override
@@ -101,24 +110,66 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
                 annotationRoleBasedApisMap.get(role.getRoleType()).contains(apiName);
     }
 
+    protected Pair<Role, List<RolePermission>> getAccountRolePermissions(long accountId) {
+        LOGGER.debug("RolePermissions not available in cache for-----------------------------" + accountId);
+        Account account = accountService.getAccount(accountId);
+        if (account == null) {
+            return null;
+        }
+        final Role accountRole = roleService.findRole(account.getRoleId());
+        if (accountRole == null || accountRole.getId() < 1L) {
+            return new Pair<>(null, null);
+        }
+
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            return new Pair<>(accountRole, null);
+        }
+
+        return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
+    }
+
+    protected Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
+        LOGGER.debug("RolePermissions not available in cache for role-----------------------------" + roleId);
+        final Role accountRole = roleService.findRole(roleId);
+        if (accountRole == null || accountRole.getId() < 1L) {
+            return new Pair<>(null, null);
+        }
+
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            return new Pair<>(accountRole, null);
+        }
+
+        return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
+    }
+
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
-
-        // FIXME: potential hotspot, could be cached?
-        Account account = accountService.getAccount(user.getAccountId());
-        if (account == null) {
-            throw new PermissionDeniedException(String.format("The account id [%s] for user id [%s] is null.", user.getAccountId(), user.getUuid()));
+        Pair<Role, List<RolePermission>> accountRoleAndPermissions = accountRolePermissionsCache.get(user.getAccountId());
+        if (accountRoleAndPermissions == null) {
+            throw new PermissionDeniedException(String.format("Account for user id [%s] cannot be found", user.getUuid()));
         }
-
-        return checkAccess(account, commandName);
+        final Role accountRole = accountRoleAndPermissions.first();
+        if (accountRoleAndPermissions.first() == null) {
+            throw new PermissionDeniedException(String.format("Account role for user id [%s] cannot be found.", user.getUuid()));
+        }
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            LOGGER.info(String.format("Account for user id [%s] is Root Admin or Domain Admin, all APIs are allowed.", user.getUuid()));
+            return true;
+        }
+        List<RolePermission> allPermissions = accountRoleAndPermissions.second();
+        if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
+            return true;
+        }
+        throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account for user id [%s].", commandName, user.getUuid()));
     }
 
     public boolean checkAccess(Account account, String commandName) {
-        final Role accountRole = roleService.findRole(account.getRoleId());
-        if (accountRole == null || accountRole.getId() < 1L) {
+        Pair<Role, List<RolePermission>> roleAndPermissions = rolePermissionsCache.get(account.getRoleId());
+        final Role accountRole = roleAndPermissions.first();
+        if (accountRole == null) {
             throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.", account));
         }
 
