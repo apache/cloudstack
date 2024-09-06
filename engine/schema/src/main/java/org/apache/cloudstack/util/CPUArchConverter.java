@@ -14,31 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.org;
+package org.apache.cloudstack.util;
 
 import com.cloud.cpu.CPU;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Managed.ManagedState;
-import org.apache.cloudstack.kernel.Partition;
 
-public interface Cluster extends Grouping, Partition {
-    public static enum ClusterType {
-        CloudManaged, ExternalManaged;
-    };
+import javax.persistence.AttributeConverter;
+import javax.persistence.Converter;
 
-    String getName();
+@Converter
+public class CPUArchConverter implements AttributeConverter<CPU.CPUArch, String> {
 
-    long getDataCenterId();
+    @Override
+    public String convertToDatabaseColumn(CPU.CPUArch cpuArch) {
+        return cpuArch == null ? CPU.CPUArch.amd64.getType() : cpuArch.getType();
+    }
 
-    long getPodId();
-
-    HypervisorType getHypervisorType();
-
-    ClusterType getClusterType();
-
-    AllocationState getAllocationState();
-
-    ManagedState getManagedState();
-
-    CPU.CPUArch getArch();
+    @Override
+    public CPU.CPUArch convertToEntityAttribute(String attribute) {
+        return CPU.CPUArch.fromType(attribute);
+    }
 }

@@ -36,6 +36,7 @@ public class ApiConstants {
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
     public static final String ARCHIVED = "archived";
+    public static final String ARCH = "arch";
     public static final String AS_NUMBER = "asnumber";
     public static final String AS_NUMBER_ID = "asnumberid";
     public static final String ASN_RANGE = "asnrange";
@@ -326,6 +327,8 @@ public class ApiConstants {
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
+    public static final String MULTI_ARCH = "ismultiarch";
+    public static final String NSX_MODE = "nsxmode";
     public static final String NETWORK_MODE = "networkmode";
     public static final String NSX_ENABLED = "isnsxenabled";
     public static final String NAME = "name";

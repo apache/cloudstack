@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.network.dao.NsxProviderDao;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -131,6 +133,9 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         if (Objects.nonNull(nsxProviderVO)) {
             zoneResponse.setNsxEnabled(true);
         }
+
+        List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(dataCenter.getId());
+        zoneResponse.setMultiArch(CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1);
 
         List<ASNumberRangeVO> asNumberRange = asNumberRangeDao.listByZoneId(dataCenter.getId());
         String asRange = asNumberRange.stream().map(range -> range.getStartASNumber() + "-" + range.getEndASNumber()).collect(Collectors.joining(", "));

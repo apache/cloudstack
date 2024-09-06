@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import com.cloud.cpu.CPU;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
@@ -34,6 +35,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -87,6 +89,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -157,6 +164,13 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
 
         return onlyReady;
+    }
+
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

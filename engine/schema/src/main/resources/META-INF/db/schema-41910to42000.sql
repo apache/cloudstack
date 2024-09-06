@@ -581,6 +581,11 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text'
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
 
+-- Multi-Arch Zones
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the hosts in the cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'arch', 'varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the host"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'arch', 'varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the template/ISO"');
+
 -- NAS B&R Plugin Backup Repository
 DROP TABLE IF EXISTS `cloud`.`backup_repository`;
 CREATE TABLE `cloud`.`backup_repository` (
