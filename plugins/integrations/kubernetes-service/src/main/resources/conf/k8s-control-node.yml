@@ -256,7 +256,7 @@ write_files:
       kind: InitConfiguration
       bootstrapTokens:
         - token: "{{ k8s_control_node.cluster.token }}"
-          ttl: 0
+          ttl: "0"
       nodeRegistration:
         criSocket: /run/containerd/containerd.sock
       localAPIEndpoint:
