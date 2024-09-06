@@ -40,12 +40,13 @@ import org.apache.cloudstack.api.command.user.gui.theme.UpdateGuiThemeCmd;
 import org.apache.cloudstack.api.response.GuiThemeResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeDaoImpl;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDaoImpl;
-import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDao;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDao;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Component
 public class GuiThemeServiceImpl implements GuiThemeService {
 
     protected Logger logger = LogManager.getLogger(getClass());
@@ -69,13 +71,13 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     private static final String PLUGINS = "plugins";
 
     @Inject
-    GuiThemeDaoImpl guiThemeDao;
+    GuiThemeDao guiThemeDao;
 
     @Inject
-    GuiThemeDetailsDaoImpl guiThemeDetailsDao;
+    GuiThemeDetailsDao guiThemeDetailsDao;
 
     @Inject
-    GuiThemeJoinDaoImpl guiThemeJoinDao;
+    GuiThemeJoinDao guiThemeJoinDao;
 
     @Inject
     ResponseGenerator responseGenerator;
