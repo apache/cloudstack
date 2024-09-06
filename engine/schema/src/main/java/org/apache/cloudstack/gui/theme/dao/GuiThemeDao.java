@@ -4,9 +4,9 @@
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// the License.  You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -16,10 +16,9 @@
 // under the License.
 package org.apache.cloudstack.gui.theme.dao;
 
-import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.gui.theme.GuiThemeVO;
-import org.springframework.stereotype.Component;
 
-@Component
-public class GuiThemeDaoImpl extends GenericDaoBase<GuiThemeVO, Long> implements GuiThemeDao {
+public interface GuiThemeDao extends GenericDao<GuiThemeVO, Long> {
+
 }

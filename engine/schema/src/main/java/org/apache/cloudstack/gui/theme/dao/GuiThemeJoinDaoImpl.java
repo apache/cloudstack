@@ -18,7 +18,6 @@ package org.apache.cloudstack.gui.theme.dao;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -33,9 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class GuiThemeJoinDaoImpl extends GenericDaoBase<GuiThemeJoinVO, Long> implements GenericDao<GuiThemeJoinVO, Long> {
+public class GuiThemeJoinDaoImpl extends GenericDaoBase<GuiThemeJoinVO, Long> implements GuiThemeJoinDao {
     @Inject
-    GuiThemeDetailsDaoImpl guiThemeDetailsDao;
+    GuiThemeDetailsDao guiThemeDetailsDao;
 
     public static final Long INVALID_ID = -1L;
 
