@@ -3651,7 +3651,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
         Pair<List<ServiceOfferingJoinVO>, Integer> result = searchForServiceOfferingsInternal(cmd);
         result.first();
-        ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
+        ListResponse<ServiceOfferingResponse> response = new ListResponse<>();
         List<ServiceOfferingResponse> offeringResponses = ViewResponseHelper.createServiceOfferingResponse(result.first().toArray(new ServiceOfferingJoinVO[result.first().size()]));
         response.setResponses(offeringResponses, result.second());
         return response;
