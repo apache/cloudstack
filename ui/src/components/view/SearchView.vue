@@ -90,6 +90,13 @@
                           <status :text="opt.state" />
                         </span>
                         {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
+                        <span v-if="(field.name.startsWith('associatednetwork'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <block-outlined v-else style="margin-right: 5px" />
+                        </span>
+                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -294,6 +301,9 @@ export default {
         }
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
+        }
+        if (item === 'associatednetworkid' && this.$route.meta.name === 'asnumbers') {
+          item = 'networkid'
         }
         if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
           return true
@@ -685,6 +695,10 @@ export default {
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
+        }
+        this.fillFormFieldValues()
       })
     },
     initFormFieldData () {

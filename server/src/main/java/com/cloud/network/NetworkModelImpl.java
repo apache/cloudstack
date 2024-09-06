@@ -1151,6 +1151,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        return _ntwkSrvcDao.isAnyServiceSupportedInNetwork(networkId, provider, services);
+    }
+
+    @Override
     public List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName) {
         Network.Service service = null;
         if (serviceName != null) {
