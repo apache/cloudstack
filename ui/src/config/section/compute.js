@@ -120,7 +120,13 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
-          args: ['considerlasthost'],
+          args: (record, store) => {
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              return ['considerlasthost']
+            }
+
+            return []
+          },
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
