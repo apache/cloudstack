@@ -133,6 +133,7 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         if (domain != null) {
             vpnResponse.setDomainId(domain.getUuid());
             vpnResponse.setDomainName(domain.getName());
+            vpnResponse.setDomainPath(domain.getPath());
         }
 
         vpnResponse.setResponseName(getCommandName());

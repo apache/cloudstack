@@ -55,6 +55,10 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Param(description = "the domain name of the VLAN IP range")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the VLAN IP range belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.POD_ID)
     @Param(description = "the Pod ID for the VLAN IP range")
     private String podId;
@@ -160,6 +164,11 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setPodId(String podId) {

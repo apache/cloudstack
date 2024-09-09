@@ -506,7 +506,7 @@ export const genericUtilPlugin = {
       if (isBase64(text)) {
         return text
       }
-      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
+      return encodeURI(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }

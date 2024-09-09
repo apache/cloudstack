@@ -25,13 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -41,13 +36,21 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
 import javax.inject.Inject;
+
+import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
 
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
@@ -230,6 +233,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     @Override
     public List<ServiceOfferingJoinVO> searchByIds(Long... offeringIds) {
+        Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", SortKeyAscending.value());
+        searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
+
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = configDao.getValue("detail.batch.query.size");
@@ -248,9 +254,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 }
                 SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
                 sc.setParameters("idIN", ids);
-                List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
-                if (accounts != null) {
-                    uvList.addAll(accounts);
+                List<ServiceOfferingJoinVO> offerings = searchIncludingRemoved(sc, searchFilter, null, false);
+                if (offerings != null) {
+                    uvList.addAll(offerings);
                 }
                 curr_index += DETAILS_BATCH_SIZE;
             }
@@ -264,9 +270,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
             SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
             sc.setParameters("idIN", ids);
-            List<ServiceOfferingJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
-            if (accounts != null) {
-                uvList.addAll(accounts);
+            List<ServiceOfferingJoinVO> offerings = searchIncludingRemoved(sc, searchFilter, null, false);
+            if (offerings != null) {
+                uvList.addAll(offerings);
             }
         }
         return uvList;

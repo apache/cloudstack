@@ -126,8 +126,6 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -274,8 +272,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-    @Inject
-    private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -1399,8 +1395,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean isNotIso = format != null && format != ImageFormat.ISO;
         boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
 
-        ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
-        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView != null && serviceOfferingView.getRootDiskSize() > 0;
+        boolean isOfferingEnforcingRootDiskSize = diskOffering.isComputeOnly() && diskOffering.getDiskSize() > 0;
 
         return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
     }
@@ -1431,7 +1426,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
                                              boolean shrinkOk) {
-        final VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         boolean isManaged = storagePool.isManaged();
@@ -1538,12 +1533,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Update size if volume has same size as before, else it is already updated
-            final VolumeVO volumeNow = _volsDao.findById(volumeId);
-            if (currentSize == volumeNow.getSize() && currentSize != newSize) {
+            volume = _volsDao.findById(volumeId);
+            if (currentSize == volume.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
-            } else if (volumeNow.getSize() != newSize) {
+            } else if (volume.getSize() != newSize) {
                 // consider the updated size as the new size
-                newSize = volumeNow.getSize();
+                newSize = volume.getSize();
             }
 
             _volsDao.update(volume.getId(), volume);
@@ -4312,7 +4307,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             } else if (storeForNewStoreScope.getScopeType() == ScopeType.HOST
                     && (storeForExistingStoreScope.getScopeType() == ScopeType.CLUSTER || storeForExistingStoreScope.getScopeType() == ScopeType.ZONE)) {
-                Long hostId = _vmInstanceDao.findById(existingVolume.getInstanceId()).getHostId();
+                VMInstanceVO vm = _vmInstanceDao.findById(existingVolume.getInstanceId());
+                Long hostId = vm.getHostId();
+                if (hostId == null) {
+                    hostId = vm.getLastHostId();
+                }
                 if (storeForNewStoreScope.getScopeId().equals(hostId)) {
                     return false;
                 }

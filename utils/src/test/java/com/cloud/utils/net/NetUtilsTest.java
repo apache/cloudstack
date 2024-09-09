@@ -297,6 +297,17 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testGetCleanIp4Cidr() throws Exception {
+        final String cidrFirst = "10.0.144.0/20";
+        final String cidrSecond = "10.0.151.5/20";
+        final String cidrThird = "10.0.144.10/21";
+
+        assertEquals(cidrFirst, NetUtils.getCleanIp4Cidr(cidrFirst));
+        assertEquals("10.0.144.0/20", NetUtils.getCleanIp4Cidr(cidrSecond));
+        assertEquals("10.0.144.0/21", NetUtils.getCleanIp4Cidr(cidrThird));;
+    }
+
+    @Test
     public void testIsValidCidrList() throws Exception {
         final String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
         final String cidrSecond = "10.0.151.0/20,129.0.0.0/4";

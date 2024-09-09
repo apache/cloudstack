@@ -158,6 +158,8 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+
 /**
 * Class to manage secondary storages. <br><br>
 * Possible secondary storage VM state transition cases:<br>
@@ -401,6 +403,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String[] cidrs = _allowedInternalSites.split(",");
         for (String cidr : cidrs) {
             if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
+                if (NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                    s_logger.warn(String.format("Invalid CIDR %s in %s", cidr, SecStorageAllowedInternalDownloadSites.key()));
+                }
                 allowedCidrs.add(cidr);
             }
         }
