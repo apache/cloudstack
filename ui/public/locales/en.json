@@ -740,6 +740,7 @@
 "label.deleting.iso": "Deleting ISO",
 "label.deleting.snapshot": "Deleting Snapshot",
 "label.deleting.template": "Deleting Template",
+"label.deleteprotection": "Delete protection",
 "label.demote.project.owner": "Demote Account to regular role",
 "label.demote.project.owner.user": "Demote User to regular role",
 "label.deny": "Deny",
