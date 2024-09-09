@@ -360,6 +360,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         final Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(cmd);
+        logger.debug(String.format("Wait time set on the command %s is %d seconds", cmd, cmd.getWait()));
         send(hostId, cmds, cmd.getWait());
         final Answer[] answers = cmds.getAnswers();
         if (answers != null && !(answers[0] instanceof UnsupportedAnswer)) {
@@ -424,6 +425,65 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    protected int getTimeout(final Commands commands, int timeout) {
+        int result;
+        if (timeout > 0) {
+            result = timeout;
+        } else {
+            logger.debug(String.format("Considering the Wait global setting %d, since wait time set on command is 0", Wait.value()));
+            result = Wait.value();
+        }
+
+        int granularTimeout = getTimeoutFromGranularWaitTime(commands);
+        return (granularTimeout > 0) ? granularTimeout : result;
+    }
+
+    protected int getTimeoutFromGranularWaitTime(final Commands commands) {
+        logger.debug("Looking for the commands.timeout global setting for any command-specific timeout value");
+        String commandWaits = GranularWaitTimeForCommands.value().trim();
+
+        int maxWait = 0;
+        if (StringUtils.isNotEmpty(commandWaits)) {
+            try {
+                Map<String, Integer> commandTimeouts = getCommandTimeoutsMap(commandWaits);
+
+                for (final Command cmd : commands) {
+                    String simpleCommandName = cmd.getClass().getSimpleName();
+                    Integer commandTimeout = commandTimeouts.get(simpleCommandName);
+
+                    if (commandTimeout != null) {
+                        logger.debug(String.format("Timeout %d found for command %s in commands.timeout global setting", commandTimeout, cmd.toString()));
+                        if (commandTimeout > maxWait) {
+                            maxWait = commandTimeout;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Error while processing the commands.timeout global setting for the granular timeouts for the command, " +
+                        "falling back to the command timeout: %s", e.getMessage()));
+            }
+        }
+
+        return maxWait;
+    }
+
+    private Map<String, Integer> getCommandTimeoutsMap(String commandWaits) {
+        String[] commandPairs = commandWaits.split(",");
+        Map<String, Integer> commandTimeouts = new HashMap<>();
+
+        for (String commandPair : commandPairs) {
+            String[] parts = commandPair.trim().split("=");
+            if (parts.length == 2) {
+                String commandName = parts[0].trim();
+                int commandTimeout = Integer.parseInt(parts[1].trim());
+                commandTimeouts.put(commandName, commandTimeout);
+            } else {
+                logger.warn(String.format("Invalid format in commands.timeout global setting: %s", commandPair));
+            }
+        }
+        return commandTimeouts;
+    }
+
     @Override
     public Answer[] send(final Long hostId, final Commands commands, int timeout) throws AgentUnavailableException, OperationTimedoutException {
         assert hostId != null : "Who's not checking the agent id before sending?  ... (finger wagging)";
@@ -431,8 +491,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             throw new AgentUnavailableException(-1);
         }
 
-        if (timeout <= 0) {
-            timeout = Wait.value();
+        int wait = getTimeout(commands, timeout);
+        for (Command cmd : commands) {
+            cmd.setWait(wait);
         }
 
         if (CheckTxnBeforeSending.value()) {
@@ -454,7 +515,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
         req.setSequence(agent.getNextSequence());
-        final Answer[] answers = agent.send(req, timeout);
+        final Answer[] answers = agent.send(req, wait);
         notifyAnswersToMonitors(hostId, req.getSequence(), answers);
         commands.setAnswers(answers);
         return answers;
@@ -988,7 +1049,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public Answer[] send(final Long hostId, final Commands cmds) throws AgentUnavailableException, OperationTimedoutException {
         int wait = 0;
+        if (cmds.size() > 1) {
+            logger.debug(String.format("Checking the wait time in seconds to be used for the following commands : %s. If there are multiple commands sent at once," +
+                    "then max wait time of those will be used", cmds));
+        }
+
         for (final Command cmd : cmds) {
+            logger.debug(String.format("Wait time set on the command %s is %d", cmd, cmd.getWait()));
             if (cmd.getWait() > wait) {
                 wait = cmd.getWait();
             }
@@ -1802,7 +1869,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
-                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait };
+                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait, GranularWaitTimeForCommands };
     }
 
     protected class SetHostParamsListener implements Listener {

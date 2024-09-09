@@ -1226,6 +1226,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             type = configuration.getType();
         }
 
+        validateSpecificConfigurationValues(name, value, type);
+
         boolean isTypeValid = validateValueType(value, type);
         if (!isTypeValid) {
             return String.format("Value [%s] is not a valid [%s].", value, type);
@@ -1352,6 +1354,76 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return validateIfIntValueIsInRange(name, value, range[0]);
         }
         return validateIfStringValueIsInRange(name, value, range);
+    }
+
+    /**
+     * Validates configuration values for the given name, value, and type.
+     * <ul>
+     *   <li>The value must be a comma-separated list of key-value pairs, where each value must be a positive integer.</li>
+     *   <li>Each key-value pair must be in the format "command=value", with the value being a positive integer greater than 0,
+     *          otherwise fails with an error message</li>
+     *   <li>Throws an {@link InvalidParameterValueException} if validation fails.</li>
+     * </ul>
+     *
+     * @param name  the configuration name
+     * @param value the configuration value as a comma-separated string of key-value pairs
+     * @param type  the configuration type, expected to be String
+     * @throws InvalidParameterValueException if validation fails with a specific error message
+     */
+    protected void validateSpecificConfigurationValues(String name, String value, Class<?> type) {
+        if (type.equals(String.class)) {
+            if (name.equals(AgentManager.GranularWaitTimeForCommands.toString())) {
+                Pair<Boolean, String> validationResult = validateCommaSeparatedKeyValueConfigWithPositiveIntegerValues(value);
+                if (!validationResult.first()) {
+                    String errMsg = validationResult.second();
+                    logger.error(validationResult.second());
+                    throw new InvalidParameterValueException(errMsg);
+                }
+            }
+        }
+    }
+
+    protected Pair<Boolean, String> validateCommaSeparatedKeyValueConfigWithPositiveIntegerValues(String value) {
+        try {
+            String[] commands = value.split(",");
+            for (String command : commands) {
+                command = command.trim();
+                if (!command.contains("=")) {
+                    String errorMessage = "Validation failed: Command '" + command + "' does not contain '='.";
+                    return new Pair<>(false, errorMessage);
+                }
+
+                String[] parts = command.split("=");
+                if (parts.length != 2) {
+                    String errorMessage = "Validation failed: Command '" + command + "' is not properly formatted.";
+                    return new Pair<>(false, errorMessage);
+                }
+
+                String commandName = parts[0].trim();
+                String valueString = parts[1].trim();
+
+                if (commandName.isEmpty()) {
+                    String errorMessage = "Validation failed: Command name is missing in '" + command + "'.";
+                    return new Pair<>(false, errorMessage);
+                }
+
+                try {
+                    int num = Integer.parseInt(valueString);
+                    if (num <= 0) {
+                        String errorMessage = "Validation failed: The value for command '" + commandName + "' is not greater than 0. Invalid value: " + num;
+                        return new Pair<>(false, errorMessage);
+                    }
+                } catch (NumberFormatException e) {
+                    String errorMessage = "Validation failed: The value for command '" + commandName + "' is not a valid integer. Invalid value: " + valueString;
+                    return new Pair<>(false, errorMessage);
+                }
+            }
+
+            return new Pair<>(true, "");
+        } catch (Exception e) {
+            String errorMessage = "Validation failed: An error occurred while parsing the command string. Error: " + e.getMessage();
+            return new Pair<>(false, errorMessage);
+        }
     }
 
     /**
