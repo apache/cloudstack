@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.cloudstack.utils.cache.SingleCache;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -138,13 +140,11 @@ public class DownloadListener implements Listener {
     @Inject
     private VolumeService _volumeSrv;
 
-    private Cache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
+    private LazyCache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
 
     protected void initZoneHypervisorsCache() {
-        zoneHypervisorsCache = Caffeine.newBuilder()
-                .maximumSize(32)
-                .expireAfterWrite(30, TimeUnit.SECONDS)
-                .build();
+        zoneHypervisorsCache =
+                new LazyCache<>(32, 30, _resourceMgr::listAvailHypervisorInZone);
     }
 
     // TODO: this constructor should be the one used for template only, remove other template constructor later
@@ -286,18 +286,13 @@ public class DownloadListener implements Listener {
     public void processHostAdded(long hostId) {
     }
 
-    protected List<Hypervisor.HypervisorType> getAvailHypervisorInZone(long zoneId) {
-        return _resourceMgr.listAvailHypervisorInZone(zoneId);
-    }
-
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
             // FIXME: CPU and DB hotspot
-            List<Hypervisor.HypervisorType> hypers = zoneHypervisorsCache.get(agent.getDataCenterId(),
-                    this::getAvailHypervisorInZone);
+            List<Hypervisor.HypervisorType> hypervisors = zoneHypervisorsCache.get(agent.getDataCenterId());
             Hypervisor.HypervisorType hostHyper = agent.getHypervisorType();
-            if (hypers.contains(hostHyper)) {
+            if (hypervisors.contains(hostHyper)) {
                 return;
             }
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());

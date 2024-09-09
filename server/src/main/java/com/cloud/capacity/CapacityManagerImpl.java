@@ -36,6 +36,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.cloudstack.utils.executor.QueueExecutor;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -50,7 +52,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.event.UsageEventVO;
@@ -142,6 +143,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     MessageBus _messageBus;
 
+    private LazyCache<Long, Pair<ClusterDetailsVO, ClusterDetailsVO>> clusterValuesCache;
+    private QueueExecutor<Host> hostCapacityUpdateExecutor;
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
@@ -150,6 +154,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
 
+        hostCapacityUpdateExecutor = new QueueExecutor<>("HostCapacityUpdateExecutor", 10, 10,
+                s_logger, this::updateCapacityForHostInternal);
+
         return true;
     }
 
@@ -157,11 +164,14 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public boolean start() {
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, this);
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, this);
+        clusterValuesCache = new LazyCache<>(16, 60, this::getClusterValues);
+        hostCapacityUpdateExecutor.startProcessing();
         return true;
     }
 
     @Override
     public boolean stop() {
+        hostCapacityUpdateExecutor.shutdown();
         return true;
     }
 
@@ -631,9 +641,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return totalAllocatedSize;
     }
 
-    @DB
-    @Override
-    public void updateCapacityForHost(final Host host) {
+    protected void updateCapacityForHostInternal(final Host host) {
         // prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
@@ -641,6 +649,17 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             offeringsMap.put(offering.getId(), offering);
         }
         updateCapacityForHost(host, offeringsMap);
+    }
+
+    @DB
+    @Override
+    public void updateCapacityForHost(final Host host) {
+        hostCapacityUpdateExecutor.queueRequest(host);
+    }
+
+    protected Pair<ClusterDetailsVO, ClusterDetailsVO> getClusterValues(long clusterId) {
+        return new Pair<>(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio"),
+                _clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio"));
     }
 
     @DB
@@ -665,9 +684,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
         vms.addAll(vosMigrating);
 
-        ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
-        ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
+        Pair<ClusterDetailsVO, ClusterDetailsVO> clusterValues =
+                clusterValuesCache.get(host.getClusterId());
+        ClusterDetailsVO clusterDetailCpu = clusterValues.first();
+        ClusterDetailsVO clusterDetailRam = clusterValues.second();
         Float clusterCpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
         Float clusterRamOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
         for (VMInstanceVO vm : vms) {
