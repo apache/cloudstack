@@ -100,12 +100,11 @@ public class SnapshotHelper {
         long storeId = snapInfo.getDataStore().getId();
         long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
 
-        Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
-        boolean keepOnPrimary = MapUtils.isNotEmpty(capabilities) && capabilities.containsKey(DataStoreCapabilities.KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP.toString());
-        if (keepOnPrimary) {
+        if (isStorPoolStorage(snapInfo)) {
             logger.debug("The primary storage does not delete the snapshots even if there is a backup on secondary");
             return;
         }
+
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapInfo.getSnapshotId());
         if (kvmSnapshotOnlyInPrimaryStorage || snapshots.size() <= 1) {
             if (snapInfo != null) {
@@ -141,6 +140,13 @@ public class SnapshotHelper {
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
     }
 
+    public boolean isStorPoolStorage(SnapshotInfo snapInfo) {
+        if (DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
+            StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapInfo.getDataStore().getId());
+            return storagePoolVO != null && StoragePoolType.StorPool.equals(storagePoolVO.getPoolType());
+        }
+        return false;
+    }
     /**
      * Backup the snapshot to secondary storage if it should be backed up and was not yet or it is a temporary backup to create a volume.
      * @return The parameter snapInfo if the snapshot is not backupable, else backs up the snapshot to secondary storage and returns its info.
