@@ -746,7 +746,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
          * and next millisecond new event added and finally we ended up with count = 1 and no ids.
          */
         if (count == 0 || idArray.length < 1) {
-            return new Pair<>(new ArrayList<>(), count);
+            count = 0;
         }
 
         List<EventJoinVO> events = _eventJoinDao.searchByIds(idArray);
