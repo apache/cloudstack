@@ -119,7 +119,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the backroll Backup Provider");
         throw new CloudRuntimeException("Backroll plugin does not support this feature");
     }
