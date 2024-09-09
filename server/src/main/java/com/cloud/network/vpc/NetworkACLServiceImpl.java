@@ -737,25 +737,23 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             ssc.addOr("protocol", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("acl_id", SearchCriteria.Op.SC, ssc);
-        } else {
+        }
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
 
-            if (id != null) {
-                sc.setParameters("id", id);
+        if (networkId != null) {
+            final Network network = _networkDao.findById(networkId);
+            aclId = network.getNetworkACLId();
+            if (aclId == null) {
+                // No aclId associated with the network.
+                //Return empty list
+                return new Pair(new ArrayList<NetworkACLItem>(), 0);
             }
+        }
 
-            if (networkId != null) {
-                final Network network = _networkDao.findById(networkId);
-                aclId = network.getNetworkACLId();
-                if (aclId == null) {
-                    // No aclId associated with the network.
-                    //Return empty list
-                    return new Pair(new ArrayList<NetworkACLItem>(), 0);
-                }
-            }
-
-            if (trafficType != null) {
-                sc.setParameters("trafficType", trafficType);
-            }
+        if (trafficType != null) {
+            sc.setParameters("trafficType", trafficType);
         }
         if (aclId != null) {
             // Get VPC and check access

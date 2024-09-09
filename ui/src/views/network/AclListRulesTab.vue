@@ -34,7 +34,7 @@
       </a-button>
       <div class="search-bar">
         <a-input-search
-          style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
+          style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
           :placeholder="$t('label.search')"
           v-model:value="searchQuery"
           @search="fetchData"
