@@ -235,7 +235,7 @@ export default {
         const listStoragePools = json.liststoragepoolsresponse.storagepool
         if (listStoragePools) {
           this.storagePools = listStoragePools
-          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES && pool.zoneid !== this.resource.zoneid)
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE && pool.zoneid !== this.resource.zoneid)
         }
       }).finally(() => {
         this.storagePoolsLoading = false
