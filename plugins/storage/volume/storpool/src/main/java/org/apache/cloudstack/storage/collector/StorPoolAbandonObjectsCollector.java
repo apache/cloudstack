@@ -365,11 +365,15 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
                     SpConnectionDesc conn = StorPoolUtil.getSpConnection(storagePool.getUuid(),
                             storagePool.getId(), storagePoolDetailsDao, storagePoolDao);
                     JsonArray arr = StorPoolUtil.snapshotsList(conn);
-                    List<String> snapshots = snapshotsForRcovery(arr);
+                    List<String> snapshots = snapshotsForRecovery(arr);
                     if (snapshots.isEmpty()) {
                         continue;
                     }
                     for (SnapshotDetailsVO snapshot : snapshotDetails) {
+                        String[] snapshotOnRemote = snapshot.getValue().split(";");
+                        if (snapshotOnRemote.length != 2) {
+                            continue;
+                        }
                         String name = snapshot.getValue().split(";")[0];
                         String location = snapshot.getValue().split(";")[1];
                         if (name == null || location == null) {
@@ -398,7 +402,7 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         }
     }
 
-    private static List<String> snapshotsForRcovery(JsonArray arr) {
+    private static List<String> snapshotsForRecovery(JsonArray arr) {
         List<String> snapshots = new ArrayList<>();
         for (int i = 0; i < arr.size(); i++) {
             boolean recoveringFromRemote = arr.get(i).getAsJsonObject().get("recoveringFromRemote").getAsBoolean();
