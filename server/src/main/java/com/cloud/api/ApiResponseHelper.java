@@ -1164,6 +1164,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         vpcUuidSetter.accept(vpc.getUuid());
     }
 
+    private void setAclIdInResponse(Network network, NetworkResponse response) {
+        if (network.getNetworkACLId() == null) {
+            return;
+        }
+
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
+        if (acl == null) {
+            return;
+        }
+
+        if (!response.getVpcAccess() && acl.getVpcId() != 0) {
+            logger.debug("[{}] not set in response, since caller does not have access to it.", acl);
+            return;
+        }
+
+        response.setAclId(acl.getUuid());
+        response.setAclName(acl.getName());
+    }
+
     private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
         if (!forVirtualNetworks) {
             NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddr.getAddress().toString(), ipAddr.getNetworkId());
@@ -2662,6 +2681,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
 
         setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName, response::setVpcAccess);
+        setAclIdInResponse(network, response);
 
         setResponseAssociatedNetworkInformation(response, network.getId());
 
@@ -2677,14 +2697,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(network.getUuid(), AnnotationService.EntityType.NETWORK.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-
-        if (network.getNetworkACLId() != null) {
-            NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
-            if (acl != null) {
-                response.setAclId(acl.getUuid());
-                response.setAclName(acl.getName());
-            }
-        }
 
         response.setStrechedL2Subnet(network.isStrechedL2Network());
         if (network.isStrechedL2Network()) {
