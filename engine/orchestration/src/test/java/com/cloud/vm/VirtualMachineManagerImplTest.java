@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -1256,12 +1255,10 @@ public class VirtualMachineManagerImplTest {
         ConfigKey configKey = VirtualMachineManager.VmMetadataManufacturer;
         this.configDepotImpl = (ConfigDepotImpl)ReflectionTestUtils.getField(configKey, "s_depot");
         ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
-        ScopedConfigStorage storage = Mockito.mock(ScopedConfigStorage.class);
-        Mockito.when(storage.getConfigValue(Mockito.anyLong(), Mockito.eq(configKey))).thenReturn(manufacturer);
-        Mockito.when(storage.getConfigValue(Mockito.anyLong(), Mockito.eq(VirtualMachineManager.VmMetadataProductName)))
-                .thenReturn(product);
-        Mockito.when(configDepot.findScopedConfigStorage(configKey)).thenReturn(storage);
-        Mockito.when(configDepot.findScopedConfigStorage(VirtualMachineManager.VmMetadataProductName)).thenReturn(storage);
+        Mockito.when(configDepot.getConfigStringValue(Mockito.eq(configKey.key()),
+                Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn(manufacturer);
+        Mockito.when(configDepot.getConfigStringValue(Mockito.eq(VirtualMachineManager.VmMetadataProductName.key()),
+                Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn(product);
         ReflectionTestUtils.setField(configKey, "s_depot", configDepot);
         updatedConfigKeyDepot = true;
     }
@@ -1272,6 +1269,7 @@ public class VirtualMachineManagerImplTest {
                 false, false, "Pass");
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
         return new Pair<>(virtualMachineTO, vm);
     }
 
@@ -1282,6 +1280,17 @@ public class VirtualMachineManagerImplTest {
         VirtualMachineTO to = pair.first();
         virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
         Assert.assertEquals(VirtualMachineManager.VmMetadataManufacturer.defaultValue(), to.getMetadataManufacturer());
+    }
+
+    @Test
+    public void testUpdateVmMetadataManufacturerAndProductCustomManufacturerDefaultProduct() {
+        String manufacturer = "Custom";
+        overrideVmMetadataConfigValue(manufacturer, "");
+        Pair<VirtualMachineTO, VMInstanceVO> pair = getDummyVmTOAndVm();
+        VirtualMachineTO to = pair.first();
+        virtualMachineManagerImpl.updateVmMetadataManufacturerAndProduct(to, pair.second());
+        Assert.assertEquals(manufacturer, to.getMetadataManufacturer());
+        Assert.assertEquals("CloudStack KVM Hypervisor", to.getMetadataProductName());
     }
 
     @Test

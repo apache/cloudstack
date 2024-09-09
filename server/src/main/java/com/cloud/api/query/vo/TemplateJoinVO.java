@@ -27,6 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.cpu.CPU;
 import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
@@ -37,6 +38,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
@@ -69,6 +71,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     @Column(name = "hvm")
     private boolean requiresHvm;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "bits")
     private int bits;
@@ -542,5 +548,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public String getUserDataParams() {
         return userDataParams;
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch;
     }
 }

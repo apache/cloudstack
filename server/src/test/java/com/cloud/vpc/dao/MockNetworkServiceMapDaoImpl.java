@@ -39,6 +39,11 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
         return false;
     }
 
+    @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkServiceMapDao#canProviderSupportServiceInNetwork(long, com.cloud.network.Network.Service, com.cloud.network.Network.Provider)
      */

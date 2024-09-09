@@ -24,7 +24,7 @@ Description: CloudStack server library
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${python:Depends}, ${python3:Depends}, openjdk-17-jre-headless | java17-runtime-headless | java17-runtime | zulu-17, cloudstack-common (= ${source:Version}), lsb-base (>= 9), openssh-client, qemu-kvm (>= 2.5) | qemu-system-x86 (>= 5.2), libvirt-bin (>= 1.3) | libvirt-daemon-system (>= 3.0), iproute2, ebtables, vlan, ipset, python3-libvirt, ethtool, iptables, cryptsetup, rng-tools, lsb-release, ufw, apparmor, cpu-checker
+Depends: ${python:Depends}, ${python3:Depends}, openjdk-17-jre-headless | java17-runtime-headless | java17-runtime | zulu-17, cloudstack-common (= ${source:Version}), lsb-base (>= 9), openssh-client, qemu-kvm (>= 2.5) | qemu-system-x86 (>= 5.2), libvirt-bin (>= 1.3) | libvirt-daemon-system (>= 3.0), iproute2, ebtables, vlan, ipset, python3-libvirt, ethtool, iptables, cryptsetup, rng-tools, rsync, lsb-release, ufw, apparmor, cpu-checker
 Recommends: init-system-helpers
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent

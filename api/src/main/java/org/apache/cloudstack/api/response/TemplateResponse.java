@@ -183,6 +183,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "Lists the download progress of a template across all secondary storages")
     private List<Map<String, String>> downloadDetails;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the template", since = "4.20")
+    private String arch;
+
     @SerializedName(ApiConstants.BITS)
     @Param(description = "the processor bit size", since = "4.10")
     private int bits;
@@ -519,5 +523,9 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setUserDataParams(String userDataParams) {
         this.userDataParams = userDataParams;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

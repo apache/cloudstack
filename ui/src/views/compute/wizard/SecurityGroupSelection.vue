@@ -94,7 +94,7 @@ export default {
         }
       ],
       items: [],
-      selectedRowKeys: [],
+      selectedRowKeys: this?.preFillContent?.securitygroupids || [],
       page: 1,
       pageSize: 10,
       keyword: null,

@@ -65,7 +65,8 @@ import com.googlecode.ipv6.IPv6Network;
 public class NetUtils {
     protected static Logger LOGGER = LogManager.getLogger(NetUtils.class);
 
-    private static final int MAX_CIDR = 32;
+    public static final int MAX_CIDR = 32;
+    private static final long MAX_IPv4_ADDR = ip2Long("255.255.255.255");
     private static final int RFC_3021_31_BIT_CIDR = 31;
 
     public final static int HTTP_PORT = 80;
@@ -626,6 +627,18 @@ public class NetUtils {
         final long firstPart = gateway & netmask;
         final long size = getCidrSize(netmaskStr);
         return long2Ip(firstPart) + "/" + size;
+    }
+
+    public static String getCleanIp4Cidr(final String cidr) {
+        if (!isValidIp4Cidr(cidr)) {
+            throw new CloudRuntimeException("Invalid CIDR: " + cidr);
+        }
+        String gateway = cidr.split("/")[0];
+        Long netmaskSize = Long.parseLong(cidr.split("/")[1]);
+        final long ip = ip2Long(gateway);
+        final long startNetMask = ip2Long(getCidrNetmask(netmaskSize));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), netmaskSize);
     }
 
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {
@@ -1794,5 +1807,67 @@ public class NetUtils {
         if (icmpCode > 255 || icmpType > 255 || icmpCode < -1 || icmpType < -1) {
             throw new CloudRuntimeException("Invalid icmp type/code ");
         }
+    }
+
+    /**
+     Return the size of CIDR which starts with the startIp, and not bigger than the endIp.
+     */
+    public static int getCidrSizeOfIpRange(long startIp, long endIp) {
+        assert startIp <= MAX_IPv4_ADDR : "Keep startIp smaller than or equals to " + MAX_IPv4_ADDR;
+        assert endIp <= MAX_IPv4_ADDR : "Keep endIp smaller than or equals to " + MAX_IPv4_ADDR;
+        for (int cidrSize = 1; cidrSize <= MAX_CIDR; cidrSize++) {
+            long minStartIp = startIp & (((long) 0xffffffff) >> (MAX_CIDR - cidrSize) << (MAX_CIDR - cidrSize));
+            long maxEndIp = (minStartIp | (((long) 0x1) << (MAX_CIDR - cidrSize)) - 1);
+            if (minStartIp == startIp && maxEndIp <= endIp) {
+                return cidrSize;
+            }
+        }
+        return MAX_CIDR;
+    }
+
+    /**
+     Return the list of pairs (Network Address, Network cidrsize)
+     */
+    public static List<Pair<Long, Integer>> splitIpRangeIntoSubnets(long startIp, long endIp) {
+        List<Pair<Long, Integer>> subnets = new ArrayList<>();
+        if (startIp > endIp) {
+            return subnets;
+        }
+        int cidrSize = getCidrSizeOfIpRange(startIp, endIp);
+        subnets.add(new Pair<>(startIp, cidrSize));
+        subnets.addAll(splitIpRangeIntoSubnets((startIp | (((long) 0x1) << (MAX_CIDR - cidrSize)) - 1) + 1, endIp));
+        return subnets;
+    }
+
+    /**
+     Return the startIp and endIp (in long value) of a CIDR, including the network address and broadcast address
+     */
+    public static long[] getIpRangeStartIpAndEndIpFromCidr(final String cidr) {
+        String[] subnetCidrPair = cidr.split("\\/");
+        Long size = Long.valueOf(subnetCidrPair[1]);
+        final long ip = ip2Long(subnetCidrPair[0]);
+        final long startNetMask = ip2Long(getCidrNetmask(size));
+        final long start = (ip & startNetMask);
+        long end = start;
+        end = end >> MAX_CIDR - size;
+        end++;
+        end = (end << MAX_CIDR - size) - 1;
+
+        long[] result = new long[2];
+        result[0] = start;
+        result[1] = end;
+        return result;
+    }
+
+    /**
+     Return the new format (startIp/cidrsize) of a CIDR
+     */
+    public static String transformCidr(final String cidr) {
+        String[] subnetCidrPair = cidr.split("\\/");
+        Long size = Long.valueOf(subnetCidrPair[1]);
+        final long ip = ip2Long(subnetCidrPair[0]);
+        final long startNetMask = ip2Long(getCidrNetmask(size));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), size);
     }
 }

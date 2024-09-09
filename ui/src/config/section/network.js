@@ -47,14 +47,14 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6routing', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
         return fields
       },
       filters: ['all', 'account', 'domainpath', 'shared'],
-      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'tags'],
+      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'restartrequired', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -66,7 +66,15 @@ export default {
       }, {
         name: 'egress.rules',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
-        show: (record, route, user) => { return record.type === 'Isolated' && !('vpcname' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
+        show: (record, route, user) => { return record.type === 'Isolated' && !record.ip4routing && !('vpcname' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
+      }, {
+        name: 'bgp.peers',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
+        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && record.ip4routing === 'Dynamic' }
+      }, {
+        name: 'routing.firewall',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutingFirewallRulesTab.vue'))),
+        show: (record, route, user) => { return record.type === 'Isolated' && record.ip4routing && !('vpcname' in record) && 'listRoutingFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
         name: 'ip.v6.firewall',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
@@ -74,7 +82,7 @@ export default {
       }, {
         name: (record) => { return record.type === 'Shared' ? 'ip.addresses' : 'public.ip.addresses' },
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
-        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
+        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !record.ip4routing && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
       }, {
         name: 'virtual.routers',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
@@ -217,8 +225,8 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'restartrequired', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -307,10 +315,7 @@ export default {
           return false
         }
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
-        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
-          return false
-        }
-        return true
+        return (listZoneHaveSGEnabled && listZoneHaveSGEnabled.length > 0) || store.getters.showSecurityGroups
       },
       actions: [
         {
@@ -862,6 +867,47 @@ export default {
       ]
     },
     {
+      name: 'asnumbers',
+      title: 'label.asnumbers',
+      icon: 'partition-outlined',
+      permission: ['listASNumbers'],
+      show: () => {
+        return ['Admin'].includes(store.getters.userInfo.roletype)
+      },
+      filters: ['all', 'allocatedonly', 'free'],
+      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
+      searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
+      resourceType: 'ASNumber',
+      actions: [
+        {
+          api: 'releaseASNumber',
+          icon: 'delete-outlined',
+          label: 'label.action.release.asnumber',
+          message: 'message.action.release.asnumber',
+          show: (record) => { return record.allocationstate === 'Allocated' },
+          args: ['zoneid', 'asnumber'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
+            asnumber: {
+              value: (record) => { return record.asnumber }
+            }
+          },
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            return selectedItems.length === 1 && selectedItems[0].allocationstate === 'Allocated'
+          },
+          groupMap: (selectedId, values, records) => {
+            const record = records.filter(x => { return x.id === selectedId[0] })
+            return record
+          }
+        }
+      ]
+    },
+    {
       name: 'privategw',
       title: 'label.private.gateway',
       icon: 'gateway-outlined',
@@ -1370,7 +1416,7 @@ export default {
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],
-      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename'],
+      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename', 'guest.networks'],
       details: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'isdedicated', 'zonename'],
       searchFilters: ['zoneid'],
       tabs: [{
@@ -1387,6 +1433,42 @@ export default {
         }
         return true
       }
+    },
+    {
+      name: 'ipv4subnets',
+      title: 'label.ipv4.subnets',
+      icon: 'pic-center-outlined',
+      permission: ['listIpv4SubnetsForGuestNetwork'],
+      columns: ['subnet', 'zonename', 'parentsubnet', 'networkname', 'vpcname', 'created', 'allocated'],
+      details: ['subnet', 'zonename', 'zoneid', 'parentsubnet', 'networkname', 'networkid', 'vpcname', 'vpcid', 'created', 'allocated', 'state'],
+      searchFilters: ['zoneid'],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        return isAdmin()
+      },
+      actions: [
+        {
+          api: 'createIpv4SubnetForGuestNetwork',
+          icon: 'plus-outlined',
+          label: 'label.add.ipv4.subnet',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateIpv4SubnetForNetwork.vue')))
+        },
+        {
+          api: 'deleteIpv4SubnetForGuestNetwork',
+          icon: 'delete-outlined',
+          label: 'label.delete.ipv4.subnet',
+          message: 'message.action.delete.ipv4.subnet',
+          dataView: true,
+          show: (record) => { return !record.networkid },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }

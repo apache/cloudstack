@@ -188,6 +188,9 @@
             <appstore-outlined />
             <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
             <span v-else>{{ resource.cputotal }}</span>
+            <a-tag v-if="resource.arch" style="margin-left: 10px">
+              {{ resource.arch }}
+            </a-tag>
           </div>
           <div>
             <span v-if="resource.cpuused">
@@ -532,7 +535,8 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
-          <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
+          <div class="resource-detail-item__label" v-if="$route.meta.name === 'router' || $route.meta.name === 'systemvm'">{{ $t('label.system.offering') }}</div>
+          <div class="resource-detail-item__label" v-else >{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <cloud-outlined />
             <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>

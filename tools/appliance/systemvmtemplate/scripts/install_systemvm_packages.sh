@@ -60,7 +60,7 @@ function install_packages() {
     sysstat \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
-    nfs-common \
+    nfs-common nfs-server xfsprogs \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
     xenstore-utils libxenstore4 \
@@ -73,6 +73,7 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
+    frr \
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \

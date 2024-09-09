@@ -91,6 +91,10 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     @Param(description = "Meta data associated with the zone (key/value pairs)")
     private Map<String, String> resourceDetails;
 
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the hosts in the cluster", since = "4.20")
+    private String arch;
+
     public String getId() {
         return id;
     }
@@ -246,5 +250,13 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
 
     public void setCapacities(List<CapacityResponse> capacities) {
         this.capacities = capacities;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
     }
 }

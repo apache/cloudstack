@@ -39,6 +39,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
+import com.cloud.org.Cluster;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
@@ -1097,6 +1098,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 agentMSHostList.addAll(Arrays.asList(msHosts[0].split(",")));
             }
         }
+        ready.setArch(host.getArch().getType());
         AgentAttache attache = null;
         GlobalLock joinLock = getHostJoinLock(host.getId());
         if (joinLock.lock(60)) {
@@ -1128,6 +1130,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         try {
             final HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
             if (host != null) {
+                checkHostArchOnCluster(host);
                 ready = new ReadyCommand(host.getDataCenterId(), host.getId(), NumbersUtil.enableHumanReadableSizes);
                 attache = sendReadyAndGetAttache(host, ready, link, startup);
             }
@@ -1152,6 +1155,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.debug("Failed to send ready command:" + e.toString());
         }
         return attache;
+    }
+
+    private void checkHostArchOnCluster(HostVO host) {
+        Cluster cluster = _resourceMgr.getCluster(host.getClusterId());
+        if (cluster != null && !cluster.getArch().equals(host.getArch())) {
+            String msg = String.format("The host %s has arch %s and cannot be added to the %s cluster %s",
+                    host.getName(), host.getArch().getType(), cluster.getArch().getType(), cluster.getName());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     protected class SimulateStartTask extends ManagedContextRunnable {

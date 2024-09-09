@@ -508,6 +508,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (userVm == null) {
             throw new InvalidParameterValueException("Create vm to snapshot failed due to vm: " + vmId + " is not found");
         }
+        if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshot == null) {
             throw new CloudRuntimeException("VM snapshot id: " + vmSnapshotId + " can not be found");

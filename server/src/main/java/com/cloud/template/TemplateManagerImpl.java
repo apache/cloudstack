@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -207,6 +208,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -1185,6 +1187,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
+        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+        }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);
         if (iso == null || iso.getRemoved() != null) {
@@ -1914,9 +1919,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
         Long sourceTemplateId = null;
+        CPU.CPUArch arch = CPU.CPUArch.amd64;
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (template != null) {
+                arch = template.getArch();
+            }
             if (volume.getIsoId() != null && volume.getIsoId() != 0) {
                 sourceTemplateId = volume.getIsoId();
             } else if (volume.getTemplateId() != null) {
@@ -1931,7 +1940,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
 
         if (sourceTemplateId != null) {
             if (logger.isDebugEnabled()) {
@@ -2109,6 +2118,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
+        CPU.CPUArch arch = cmd.getCPUArch();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2157,6 +2167,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
+                  arch == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2229,6 +2240,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isDynamicallyScalable != null) {
             template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (arch != null) {
+            template.setArch(arch);
         }
 
         if (isRoutingTemplate != null) {

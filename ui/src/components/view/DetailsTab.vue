@@ -23,6 +23,11 @@
       </div>
     </template>
   </a-alert>
+  <a-alert v-if="ip4routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv4.routes')">
+    <template #description>
+      <p v-html="ip4routes" />
+    </template>
+  </a-alert>
   <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
     <template #description>
       <p v-html="ip6routes" />
@@ -189,7 +194,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
@@ -293,6 +298,16 @@ export default {
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
         return this.dataResource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
+      }
+      return null
+    },
+    ip4routes () {
+      if (this.resource.ip4routes && this.resource.ip4routes.length > 0) {
+        var routes = []
+        for (var route of this.resource.ip4routes) {
+          routes.push(route.subnet + ' via ' + route.gateway)
+        }
+        return routes.join('<br>')
       }
       return null
     },

@@ -2835,6 +2835,10 @@ class NetworkOffering:
             cmd.tags = services["tags"]
         if "internetprotocol" in services:
             cmd.internetprotocol = services["internetprotocol"]
+        if "networkmode" in services:
+            cmd.networkmode = services["networkmode"]
+        if "routingmode" in services:
+            cmd.routingmode = services["routingmode"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -3553,7 +3557,7 @@ class Network:
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
                externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
-               sourcenatipaddress=None):
+               sourcenatipaddress=None, cidrsize=None, **kwargs):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3580,6 +3584,10 @@ class Network:
             cmd.netmask = netmask
         elif "netmask" in services:
             cmd.netmask = services["netmask"]
+        if cidrsize:
+            cmd.cidrsize = cidrsize
+        elif "cidrsize" in services:
+            cmd.cidrsize = services["cidrsize"]
         if "startip" in services:
             cmd.startip = services["startip"]
         if "endip" in services:
@@ -3637,6 +3645,7 @@ class Network:
             cmd.privatemtu = privatemtu
         if sourcenatipaddress:
             cmd.sourcenatipaddress = sourcenatipaddress
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -3689,6 +3698,13 @@ class Network:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listNetworks(cmd))
+
+    def changeBgpPeers(self, apiclient, bgppeerids):
+        cmd = changeBgpPeersForNetwork.changeBgpPeersForNetworkCmd()
+        cmd.networkid = self.id
+        if bgppeerids is not None:
+            cmd.bgppeerids = bgppeerids
+        return (apiclient.changeBgpPeersForNetwork(cmd))
 
 
 class NetworkACL:
@@ -5092,6 +5108,10 @@ class VpcOffering:
                     })
         if "internetprotocol" in services:
             cmd.internetprotocol = services["internetprotocol"]
+        if "networkmode" in services:
+            cmd.networkmode = services["networkmode"]
+        if "routingmode" in services:
+            cmd.routingmode = services["routingmode"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
@@ -5201,6 +5221,13 @@ class VPC:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listVPCs(cmd))
+
+    def changeBgpPeers(self, apiclient, bgppeerids):
+        cmd = changeBgpPeersForVpc.changeBgpPeersForVpcCmd()
+        cmd.vpcid = self.id
+        if bgppeerids is not None:
+            cmd.bgppeerids = bgppeerids
+        return (apiclient.changeBgpPeersForVpc(cmd))
 
 
 class PrivateGateway:
@@ -7293,3 +7320,348 @@ class Webhook:
         cmd.webhookid = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.deleteWebhookDelivery(cmd)
+
+
+class ZoneIpv4Subnet:
+    """Manage IPv4 Subnet for Zone"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, subnet, **kwargs):
+        """Create IPv4 Subnet for Zone"""
+        cmd = createIpv4SubnetForZone.createIpv4SubnetForZoneCmd()
+        cmd.zoneid = zoneid
+        cmd.subnet = subnet
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return ZoneIpv4Subnet(apiclient.createIpv4SubnetForZone(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIpv4SubnetsForZone.listIpv4SubnetsForZoneCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4SubnetsForZone(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Subnet for Zone"""
+        cmd = deleteIpv4SubnetForZone.deleteIpv4SubnetForZoneCmd()
+        cmd.id = self.id
+        apiclient.deleteIpv4SubnetForZone(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update IPv4 Subnet for Zone"""
+
+        cmd = updateIpv4SubnetForZone.updateIpv4SubnetForZoneCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateIpv4SubnetForZone(cmd)
+
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate IPv4 Subnet for Zone"""
+
+        cmd = dedicateIpv4SubnetForZone.dedicateIpv4SubnetForZoneCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return ZoneIpv4Subnet(apiclient.dedicateIpv4SubnetForZone(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release IPv4 Subnet for Zone"""
+
+        cmd = releaseIpv4SubnetForZone.releaseIpv4SubnetForZoneCmd()
+        cmd.id = self.id
+        return apiclient.releaseIpv4SubnetForZone(cmd)
+
+class Ipv4SubnetForGuestNetwork:
+    """Manage IPv4 Subnet for Guest Network"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, parentid, subnet=None, cidrsize=None, **kwargs):
+        """Create IPv4 Subnet for Guest Network"""
+        cmd = createIpv4SubnetForGuestNetwork.createIpv4SubnetForGuestNetworkCmd()
+        cmd.parentid = parentid
+        if subnet:
+            cmd.subnet = subnet
+        if cidrsize:
+            cmd.cidrsize = cidrsize
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return Ipv4SubnetForGuestNetwork(apiclient.createIpv4SubnetForGuestNetwork(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listIpv4SubnetsForGuestNetwork.listIpv4SubnetsForGuestNetworkCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4SubnetsForGuestNetwork(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Subnet for Guest Network"""
+        cmd = deleteIpv4SubnetForGuestNetwork.deleteIpv4SubnetForGuestNetworkCmd()
+        cmd.id = self.id
+        apiclient.deleteIpv4SubnetForGuestNetwork(cmd)
+
+
+
+class RoutingFirewallRule:
+    """Manage IPv4 Routing Firewall rules"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, services, networkid=None, protocol=None):
+        """Create IPv4 Routing Firewall rule"""
+        cmd = createRoutingFirewallRule.createRoutingFirewallRuleCmd()
+
+        if "networkid" in services:
+            cmd.networkid = services["networkid"]
+        elif networkid:
+            cmd.networkid = networkid
+
+        if "protocol" in services:
+            cmd.protocol = services["protocol"]
+            if services["protocol"] == 'ICMP':
+                cmd.icmptype = -1
+                cmd.icmpcode = -1
+        elif protocol:
+            cmd.protocol = protocol
+
+        if "icmptype" in services:
+            cmd.icmptype = services["icmptype"]
+        if "icmpcode" in services:
+            cmd.icmpcode = services["icmpcode"]
+
+        if "startport" in services:
+            cmd.startport = services["startport"]
+        if "endport" in services:
+            cmd.endport = services["endport"]
+
+        if "cidrlist" in services:
+            cmd.cidrlist = services["cidrlist"]
+        if "destcidrlist" in services:
+            cmd.destcidrlist = services["destcidrlist"]
+
+        if "traffictype" in services:
+            cmd.traffictype = services["traffictype"]
+
+        return RoutingFirewallRule(apiclient.createRoutingFirewallRule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listRoutingFirewallRules.listRoutingFirewallRulesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listIpv4SubnetsForGuestNetwork(cmd)
+
+    def delete(self, apiclient):
+        """Delete IPv4 Routing Firewall rule"""
+        cmd = deleteRoutingFirewallRule.deleteRoutingFirewallRuleCmd()
+        cmd.id = self.id
+        apiclient.deleteRoutingFirewallRule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update IPv4 Routing Firewall rule"""
+        cmd = updateRoutingFirewallRule.updateRoutingFirewallRuleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        apiclient.updateRoutingFirewallRule(cmd)
+
+
+class ASNRange:
+    """Manage ASN range for Guest Network"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, startasn, endasn, **kwargs):
+        """Create ASN range for Guest Network"""
+        cmd = createASNRange.createASNRangeCmd()
+        cmd.zoneid = zoneid
+        cmd.startasn = startasn
+        cmd.endasn = endasn
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return ASNRange(apiclient.createASNRange(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listASNRanges.listASNRangesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listASNRanges(cmd)
+
+    def delete(self, apiclient):
+        """Delete ASN range for Guest Network"""
+        cmd = deleteASNRange.deleteASNRangeCmd()
+        cmd.id = self.id
+        apiclient.deleteASNRange(cmd)
+
+    @classmethod
+    def listAsNumbers(cls, apiclient, **kwargs):
+        """List AS numbers of an ASN range"""
+        cmd = listASNumbers.listASNumbersCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listASNumbers(cmd)
+
+
+class BgpPeer:
+    """Manage BGP Peers for Zone"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, asnumber, **kwargs):
+        """Create BGP Peer"""
+        cmd = createBgpPeer.createBgpPeerCmd()
+        cmd.zoneid = zoneid
+        cmd.asnumber = asnumber
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return BgpPeer(apiclient.createBgpPeer(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listBgpPeers.listBgpPeersCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listBgpPeers(cmd)
+
+    def delete(self, apiclient):
+        """Delete BGP Peer"""
+        cmd = deleteBgpPeer.deleteBgpPeerCmd()
+        cmd.id = self.id
+        apiclient.deleteBgpPeer(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update BGP Peer"""
+
+        cmd = updateBgpPeer.updateBgpPeerCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateBgpPeer(cmd)
+
+    @classmethod
+    def dedicate(cls, apiclient, id, account=None, domainid=None, projectid=None):
+        """Dedicate BGP Peer"""
+
+        cmd = dedicateBgpPeer.dedicateBgpPeerCmd()
+        cmd.id = id
+        cmd.account = account
+        cmd.domainid = domainid
+        cmd.projectid = projectid
+        return BgpPeer(apiclient.dedicateBgpPeer(cmd).__dict__)
+
+    def release(self, apiclient):
+        """Release BGP Peer"""
+
+        cmd = releaseBgpPeer.releaseBgpPeerCmd()
+        cmd.id = self.id
+        return apiclient.releaseBgpPeer(cmd)
+
+
+class SharedFS:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage Shared FileSystem"""
+    @classmethod
+    def create(cls, apiclient, services, name, description=None, account=None, domainid=None, projectid=None,
+               size=None, zoneid=None, diskofferingid=None, serviceofferingid=None,
+               filesystem=None, provider=None, networkid=None):
+        """Create Shared FileSystem"""
+        cmd = createSharedFileSystem.createSharedFileSystemCmd()
+        cmd.name = name
+
+        if description:
+            cmd.description = description
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
+
+        if account:
+            cmd.account = account
+        elif "account" in services:
+            cmd.account = services["account"]
+
+        if domainid:
+            cmd.domainid = domainid
+        elif "domainid" in services:
+            cmd.domainid = services["domainid"]
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if size:
+            cmd.size = size
+
+        if networkid:
+            cmd.networkid = networkid
+        elif "networkid" in services:
+            cmd.networkid = services["networkid"]
+
+        if filesystem:
+            cmd.filesystem = filesystem
+
+        if provider:
+            cmd.provider = provider
+
+        if serviceofferingid:
+            cmd.serviceofferingid = serviceofferingid
+        elif "serviceofferingid" in services:
+            cmd.serviceofferingid = services["serviceofferingid"]
+
+        return SharedFS(apiclient.createSharedFileSystem(cmd).__dict__)
+
+    def delete(self, apiclient, expunge=True, forced=True):
+        """Delete Shared FileSystem"""
+        cmd = destroySharedFileSystem.destroySharedFileSystemCmd()
+        cmd.id = self.id
+        cmd.expunge = expunge
+        cmd.forced = forced
+        apiclient.destroySharedFileSystem(cmd)
+
+    def stop(self, apiclient, forced=True):
+        """Stop Shared FileSystem"""
+        cmd = stopSharedFileSystem.stopSharedFileSystemCmd()
+        cmd.id = self.id
+        cmd.forced = forced
+        apiclient.stopSharedFileSystem(cmd)
+
+    def start(self, apiclient):
+        """Start Shared FileSystem"""
+        cmd = startSharedFileSystem.startSharedFileSystemCmd()
+        cmd.id = self.id
+        apiclient.startSharedFileSystem(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listSharedFileSystems.listSharedFileSystemCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listSharedFileSystems(cmd))
+
+    def update(self, apiclient, name=None, description=None):
+        """Update Shared FileSystem"""
+        cmd = updateSharedFileSystem.updateSharedFileSystemCmd()
+        cmd.id = self.id
+        if name:
+            cmd.name = name
+        if description:
+            cmd.description = description
+        return (apiclient.updateSharedFileSystem(cmd))
+
+    def changediskoffering(self, apiclient, diskofferingid=None, size=None):
+        """Change Disk Offering/Size of the Shared FileSystem"""
+        cmd = changeSharedFileSystemDiskOffering.changeSharedFileSystemDiskOfferingCmd()
+        cmd.id = self.id
+        cmd.diskofferingid = diskofferingid
+        cmd.size = size
+        return (apiclient.changeSharedFileSystemDiskOffering(cmd))

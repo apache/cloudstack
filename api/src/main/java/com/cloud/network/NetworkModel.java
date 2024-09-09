@@ -173,6 +173,8 @@ public interface NetworkModel {
 
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
 
+    boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services);
+
     boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
     String getNetworkTag(HypervisorType hType, Network network);
@@ -356,4 +358,8 @@ public interface NetworkModel {
 
     void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
+    boolean isSecurityGroupSupportedForZone(Long zoneId);
+
+    boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+                                                List<Long> securityGroupsIds);
 }
