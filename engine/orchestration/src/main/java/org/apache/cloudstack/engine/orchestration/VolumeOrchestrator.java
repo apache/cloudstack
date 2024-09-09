@@ -55,7 +55,6 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -585,8 +584,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, volume.getDataCenterId());
         boolean skipCopyToSecondary = false;
-        Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
-        boolean keepOnPrimary = MapUtils.isNotEmpty(capabilities) && capabilities.containsKey(DataStoreCapabilities.KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP.toString());
+        boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
+
         if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
             skipCopyToSecondary = true;
         }
