@@ -186,7 +186,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public Map<String, String> getCapabilities() {
         Map<String, String> mapCapabilities = new HashMap<>();
         mapCapabilities.put(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString(), Boolean.TRUE.toString());
-        mapCapabilities.put(DataStoreCapabilities.KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP.toString(), Boolean.TRUE.toString());
         return mapCapabilities;
     }
 
