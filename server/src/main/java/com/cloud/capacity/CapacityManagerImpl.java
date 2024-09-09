@@ -712,7 +712,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VMInstanceVO vm : vmsByLastHostId) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
-            // use creation time if update time is null
             long lastModificationTime = Optional.ofNullable(vm.getUpdateTime()).orElse(vm.getCreated()).getTime();
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - lastModificationTime) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
