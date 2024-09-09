@@ -154,7 +154,6 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -1677,13 +1676,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
                 boolean skipCopyToSecondary = false;
-
-                Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
-                boolean keepOnPrimary = MapUtils.isNotEmpty(capabilities) && capabilities.containsKey(DataStoreCapabilities.KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP.toString());
+                boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
                 if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
                     skipCopyToSecondary = true;
                 }
-                if (dataStoreRole == DataStoreRole.Image) {
+                if (dataStoreRole == DataStoreRole.Image || !skipCopyToSecondary) {
                     snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
                     _accountMgr.checkAccess(caller, null, true, snapInfo);
                     DataStore snapStore = snapInfo.getDataStore();

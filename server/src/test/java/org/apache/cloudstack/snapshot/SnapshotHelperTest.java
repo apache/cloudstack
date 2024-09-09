@@ -46,7 +46,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -108,8 +107,6 @@ public class SnapshotHelperTest {
         Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
         Mockito.when(snapshotInfoMock.getDataStore().getId()).thenReturn(1L);
         Mockito.when(snapshotInfoMock.getSnapshotId()).thenReturn(1L);
-        Mockito.when(snapshotInfoMock.getDataStore().getDriver()).thenReturn(storeDriver);
-        Mockito.when(snapshotInfoMock.getDataStore().getDriver().getCapabilities()).thenReturn(new HashMap<>());
         snapshotHelperSpy.expungeTemporarySnapshot(false, snapshotInfoMock);
         Mockito.verifyNoInteractions(snapshotServiceMock, snapshotDataStoreDaoMock);
     }
@@ -122,8 +119,6 @@ public class SnapshotHelperTest {
         Mockito.when(store.getRole()).thenReturn(DataStoreRole.Image);
         Mockito.when(store.getId()).thenReturn(1L);
         Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
-        Mockito.when(snapshotInfoMock.getDataStore().getDriver()).thenReturn(storeDriver);
-        Mockito.when(snapshotInfoMock.getDataStore().getDriver().getCapabilities()).thenReturn(new HashMap<>());
         snapshotHelperSpy.expungeTemporarySnapshot(true, snapshotInfoMock);
     }
 
