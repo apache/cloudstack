@@ -1091,8 +1091,8 @@ public class VmwareHelper {
      * @param host              host to derive the recommended disk controllers from. Must be provided with <code>guestOsIdentifier</code>.
      * @param guestOsIdentifier used to derive the recommended disk controllers from the host.
      */
-    public static Pair<String, String> convertRecommendedDiskControllers(Pair<String, String> controllerInfo, VirtualMachineMO vmMo,
-                                                                         VmwareHypervisorHost host, String guestOsIdentifier) throws Exception {
+    public static Pair<String, String> chooseRequiredDiskControllers(Pair<String, String> controllerInfo, VirtualMachineMO vmMo,
+                                                                     VmwareHypervisorHost host, String guestOsIdentifier) throws Exception {
         String recommendedDiskControllerClassName = vmMo != null ? vmMo.getRecommendedDiskController(null) : host.getRecommendedDiskController(guestOsIdentifier);
         String recommendedDiskController = DiskControllerType.getType(recommendedDiskControllerClassName).toString();
 

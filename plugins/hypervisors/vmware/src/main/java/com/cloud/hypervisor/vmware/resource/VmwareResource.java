@@ -1975,8 +1975,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return;
         }
 
-        Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(controllerInfo, vmMo, null, null);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(convertedDiskControllers);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, vmMo, null, null);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         if (scsiDiskController == null) {
             return;
         }
@@ -2329,7 +2329,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             int controllerKey;
-            Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(controllerInfo,vmMo, null, null);
+            Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo,vmMo, null, null);
 
             //
             // Setup ROOT/DATA disk devices
@@ -2354,7 +2354,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, convertedDiskControllers, deployAsIs);
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
                     controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
                     if (vol.getType() == Volume.Type.DATADISK) {

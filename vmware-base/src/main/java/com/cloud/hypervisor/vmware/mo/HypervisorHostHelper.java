@@ -1567,8 +1567,8 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(controllerInfo, null, host, guestOsIdentifier);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(convertedDiskControllers);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, null, host, guestOsIdentifier);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         // If there is requirement for a SCSI controller, ensure to create those.
         if (scsiDiskController != null) {
         int busNum = 0;
