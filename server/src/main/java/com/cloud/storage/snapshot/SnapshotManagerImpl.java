@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import com.cloud.storage.StoragePoolStatus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,10 +54,12 @@ import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
@@ -135,7 +138,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -181,8 +183,6 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
@@ -1725,14 +1725,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     private boolean copySnapshotOnPool(SnapshotInfo snapshot, SnapshotStrategy snapshotStrategy, Long storagePoolId) {
         DataStore store = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         SnapshotInfo snapshotOnStore =  (SnapshotInfo) store.create(snapshot);
-//        if (snapshotOnStore.getStatus() == ObjectInDataStoreStateMachine.State.Allocated) {
-//            snapshotOnStore.processEvent(Event.CreateOnlyRequested);
-//        } else if (snapshotOnStore.getStatus() == ObjectInDataStoreStateMachine.State.Ready) {
-//            snapshotOnStore.processEvent(Event.CopyRequested);
-//        } else {
-//            logger.info(String.format("Cannot copy snapshot to another storage in different zone. It's not in the right state %s", snapshotOnStore.getStatus()));
-//            return false;
-//        }
 
         try {
             AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshot, snapshotOnStore, snapshotStrategy);
@@ -1753,10 +1745,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
-//        boolean copySuccessful = snapshotStrategy.copySnapshot(snapshot, snapshotOnStore, null);
-//        if (!copySuccessful) {
-//            snapshotOnStore.processEvent(Event.OperationFailed);
-//        }
         return true;
     }
 

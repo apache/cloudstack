@@ -44,10 +44,5 @@ public enum DataStoreCapabilities {
     /**
     * indicates that the driver supports copying snapshot between zones on pools of the same type
     */
-    CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE,
-    /**
-     * indicates that the storage does not need to delete the snapshot when creating a volume/template from it
-     * and the setting `snapshot.backup.to.secondary` is enabled
-     */
-    KEEP_SNAPSHOT_ON_PRIMARY_AND_BACKUP
+    CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE
 }
