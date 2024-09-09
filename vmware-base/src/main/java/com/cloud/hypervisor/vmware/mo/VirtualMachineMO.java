@@ -3169,7 +3169,7 @@ public class VirtualMachineMO extends BaseMO {
 
         int deviceCount = 0;
         int ideDeviceUnitNumber = -1;
-        if (devices != null && devices.size() > 0) {
+        if (devices != null) {
             for (VirtualDevice device : devices) {
                 if (device.getControllerKey() == null || device.getControllerKey() != controllerKey) {
                     continue;
