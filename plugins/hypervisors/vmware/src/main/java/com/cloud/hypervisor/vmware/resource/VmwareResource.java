@@ -2839,7 +2839,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     private Pair<String, String> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {
         String rootDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         String dataDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        return VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail);
+        VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
+        return new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail);
     }
 
     private String getBootModeFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {

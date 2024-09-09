@@ -2109,8 +2109,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     dataDiskControllerDetail = controllerInfo.get(VmDetailConstants.DATA_DISK_CONTROLLER);
                 }
 
-                Pair<String, String> updatedDiskControllers = VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail);
-                Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(updatedDiskControllers, vmMo, null, null);
+                VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
+                Pair<String, String> convertedDiskControllers = VmwareHelper.convertRecommendedDiskControllers(new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail), vmMo, null, null);
                 String diskController = VmwareHelper.getControllerBasedOnDiskType(convertedDiskControllers, disk);
 
                 vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
