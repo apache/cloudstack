@@ -1469,6 +1469,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
 
                 List<KubernetesClusterVmMapVO> vmMapList = kubernetesClusterVmMapDao.listByClusterId(kubernetesClusterId);
+                if (checkIfVmsAssociatedWithBackupOffering(vmMapList)) {
+                    throw new CloudRuntimeException("Unable to delete Kubernetes cluster, as node(s) are associated to a backup offering");
+                }
                 for (KubernetesClusterVmMapVO vmMap : vmMapList) {
                     try {
                         userVmService.destroyVm(vmMap.getVmId(), expunge);
@@ -1489,6 +1492,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             });
         }
+    }
+
+    private boolean checkIfVmsAssociatedWithBackupOffering(List<KubernetesClusterVmMapVO> vmMapList) {
+        for(KubernetesClusterVmMapVO vmMap : vmMapList) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmMap.getVmId());
+            if (Objects.nonNull(vm.getBackupOfferingId())) {
+               return true;
+            }
+        }
+        return false;
     }
 
     @Override
