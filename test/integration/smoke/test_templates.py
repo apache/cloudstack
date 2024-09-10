@@ -317,7 +317,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
-            cls._cleanup(cls.virtual_machine)
+            cls._cleanup.append(cls.virtual_machine)
             #Stop virtual machine
             cls.virtual_machine.stop(cls.apiclient)
 
@@ -1003,6 +1003,11 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 cls.services["disk_offering"]
             )
             cls._cleanup.append(cls.disk_offering)
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"]
+            )
+            cls._cleanup.append(cls.service_offering)
             cls.template = get_template(
                 cls.apiclient,
                 cls.zone.id,
@@ -1025,11 +1030,6 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
-            cls.service_offering = ServiceOffering.create(
-                cls.apiclient,
-                cls.services["service_offerings"]["tiny"]
-            )
-            cls._cleanup.append(cls.service_offering)
 
             #create virtual machine
             cls.virtual_machine = VirtualMachine.create(

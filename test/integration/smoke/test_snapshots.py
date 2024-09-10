@@ -119,12 +119,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestSnapshotRootDisk, self).tearDown()
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -226,39 +221,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # 5 - Take volume V snapshot -> S
         # 6 - List snapshot and verify it gets properly listed although Primary Storage was removed
 
-        # Create new volume
-        vol = Volume.create(
-            self.apiclient,
-            self.services["volume"],
-            diskofferingid=self.disk_offering.id,
-            zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
-        )
-        self.cleanup.append(vol)
-        self.assertIsNotNone(vol, "Failed to create volume")
-        vol_res = Volume.list(
-            self.apiclient,
-            id=vol.id
-        )
-        self.assertEqual(
-            validateList(vol_res)[0],
-            PASS,
-            "Invalid response returned for list volumes")
-        vol_uuid = vol_res[0].id
-        clusters = list_clusters(
-            self.apiclient,
-            zoneid=self.zone.id
-        )
-        assert isinstance(clusters,list) and len(clusters)>0
-
-        # Attach created volume to vm, then detach it to be able to migrate it
-        self.virtual_machine_with_disk.stop(self.apiclient)
-        self.virtual_machine_with_disk.attach_volume(
-            self.apiclient,
-            vol
-        )
-
         # Create new Primary Storage
         storage = StoragePool.create(self.apiclient,
                                      self.services["nfs2"],
@@ -300,6 +262,39 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             storage.type,
             storage_response.type,
             "Check storage pool type "
+        )
+
+        # Create new volume
+        vol = Volume.create(
+            self.apiclient,
+            self.services["volume"],
+            diskofferingid=self.disk_offering.id,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+        )
+        self.cleanup.append(vol)
+        self.assertIsNotNone(vol, "Failed to create volume")
+        vol_res = Volume.list(
+            self.apiclient,
+            id=vol.id
+        )
+        self.assertEqual(
+            validateList(vol_res)[0],
+            PASS,
+            "Invalid response returned for list volumes")
+        vol_uuid = vol_res[0].id
+        clusters = list_clusters(
+            self.apiclient,
+            zoneid=self.zone.id
+        )
+        assert isinstance(clusters,list) and len(clusters)>0
+
+        # Attach created volume to vm, then detach it to be able to migrate it
+        self.virtual_machine_with_disk.stop(self.apiclient)
+        self.virtual_machine_with_disk.attach_volume(
+            self.apiclient,
+            vol
         )
 
         self.virtual_machine_with_disk.detach_volume(

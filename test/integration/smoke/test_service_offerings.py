@@ -374,6 +374,7 @@ class TestServiceOfferings(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -383,10 +384,12 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering_1)
         cls.service_offering_2 = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering_2)
         cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
@@ -778,7 +781,19 @@ class TestServiceOfferings(cloudstackTestCase):
             self.apiclient,
             offering_data,
         )
-        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
+        self.cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
+
+        self.disk_offering2 = DiskOffering.create(
+                                            self.apiclient,
+                                            self.services["disk_offering"],
+                                            )
+        self.cleanup.append(self.disk_offering2)
+
+        self.serviceOfferingWithDiskOfferingStrictnessFalse2 = ServiceOffering.create(
+                    self.apiclient,
+                    offering_data,
+                )
+        self.cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
 
         self.virtual_machine_with_diskoffering_strictness_false = VirtualMachine.create(
             self.apiclient,
@@ -788,7 +803,7 @@ class TestServiceOfferings(cloudstackTestCase):
             serviceofferingid=self.serviceOfferingWithDiskOfferingStrictnessFalse.id,
             mode=self.services["mode"]
         )
-        self._cleanup.append(self.virtual_machine_with_diskoffering_strictness_false)
+        self.cleanup.append(self.virtual_machine_with_diskoffering_strictness_false)
 
         try:
             self.virtual_machine_with_diskoffering_strictness_false.stop(self.apiclient)
@@ -818,11 +833,6 @@ class TestServiceOfferings(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
-        self.disk_offering2 = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"],
-                                    )
-        self._cleanup.append(self.disk_offering2)
         offering_data = {
             'displaytext': 'TestDiskOfferingStrictnessFalse2',
             'cpuspeed': 1000,
@@ -833,11 +843,6 @@ class TestServiceOfferings(cloudstackTestCase):
             'diskofferingid': self.disk_offering2.id
         }
 
-        self.serviceOfferingWithDiskOfferingStrictnessFalse2 = ServiceOffering.create(
-            self.apiclient,
-            offering_data,
-        )
-        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_false.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessFalse2.id
