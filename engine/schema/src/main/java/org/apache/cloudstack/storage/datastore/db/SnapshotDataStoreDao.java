@@ -53,7 +53,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId);
 
-    SnapshotDataStoreVO findOneBySnapshotId(long snapshotId);
+    SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId);
 
     List<SnapshotDataStoreVO> listBySnapshotId(long snapshotId);
 

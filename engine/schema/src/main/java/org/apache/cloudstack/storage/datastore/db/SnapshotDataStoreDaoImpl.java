@@ -61,6 +61,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String KVM_CHECKPOINT_PATH = "kvm_checkpoint_path";
     private static final String URL_CREATED_BEFORE = "url_created_before";
     public static final String DOWNLOAD_URL = "downloadUrl";
+    public static final String DATA_CENTER_ID = "data_center_id";
 
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
@@ -84,6 +85,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             " store_role = ? and volume_id = ? and state = 'Ready'" +
             " order by created %s " +
             " limit 1";
+
+    private static final String FIND_SNAPSHOT_IN_ZONE = "SELECT ssr.* FROM " +
+            "snapshot_store_ref ssr, snapshots s " +
+            "WHERE ssr.snapshot_id=? AND ssr.snapshot_id = s.id AND s.data_center_id=?;";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -342,10 +347,22 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public SnapshotDataStoreVO findOneBySnapshotId(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
-        sc.setParameters(SNAPSHOT_ID, snapshotId);
-        return findOneBy(sc);
+    public SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId) {
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(FIND_SNAPSHOT_IN_ZONE)) {
+                preparedStatement.setLong(1, snapshotId);
+                preparedStatement.setLong(2, zoneId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return toEntityBean(resultSet, false);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn(String.format("Failed to find %s snapshot in zone %s due to [%s].", snapshotId, zoneId, e.getMessage()), e);
+        }
+        return null;
     }
 
     @Override

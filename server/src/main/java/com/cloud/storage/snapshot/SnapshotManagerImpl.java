@@ -740,15 +740,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         if (HypervisorType.KVM.equals(snapshot.getHypervisorType()) && kvmIncrementalSnapshot.valueIn(clusterId)) {
-            endChainIfNeeded(snapshotId);
+            endChainIfNeeded(snapshotId, snapshot.getDataCenterId());
         }
     }
 
-    private void endChainIfNeeded(Long snapshotId) {
-        SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId);
+    private void endChainIfNeeded(Long snapshotId, Long zoneId) {
+        SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId, zoneId);
         int chainSize = 1;
         while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
-            snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId());
+            snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotDataStoreVo.getParentSnapshotId(), zoneId);
             chainSize++;
         }
         if (chainSize >= snapshotDeltaMax.value()) {

@@ -25,6 +25,8 @@ import com.cloud.agent.api.ConvertSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.resource.CommandWrapper;
@@ -65,7 +67,7 @@ public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<Convert
 
             logger.debug(String.format("Converting snapshot [%s] to [%s]. The original snapshot is at [%s].", snapshotObjectTO.getId(), tempSnapshotPath, snapshotPath));
 
-            QemuImg qemuImg = new QemuImg(command.getWait());
+            QemuImg qemuImg = new QemuImg(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT));
 
             QemuImgFile snapshot = new QemuImgFile(snapshotPath, QemuImg.PhysicalDiskFormat.QCOW2);
             QemuImgFile tempSnapshot = new QemuImgFile(tempSnapshotPath, QemuImg.PhysicalDiskFormat.QCOW2);
