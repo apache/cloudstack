@@ -282,12 +282,14 @@ known_categories = {
     'Webhook': 'Webhook',
     'Webhooks': 'Webhook',
     'purgeExpungedResources': 'Resource',
+    'forgotPassword': 'Authentication',
+    'resetPassword': 'Authentication',
     'BgpPeer': 'BGP Peer',
     'createASNRange': 'AS Number Range',
     'listASNRange': 'AS Number Range',
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
-    'releaseASNumber': 'AS Number'
+    'releaseASNumber': 'AS Number',
 }
 
 
