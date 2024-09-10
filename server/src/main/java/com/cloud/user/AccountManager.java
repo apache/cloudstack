@@ -200,5 +200,7 @@ public interface AccountManager extends AccountService, Configurable {
 
     List<String> getApiNameList();
 
-    void checkApiAccess(Account caller, String command);
+    void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation);
+
+  void checkApiAccess(Account caller, String command);
 }

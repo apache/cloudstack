@@ -697,6 +697,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         final String trafficType = cmd.getTrafficType();
         final String protocol = cmd.getProtocol();
         final String action = cmd.getAction();
+        final String keyword = cmd.getKeyword();
         final Map<String, String> tags = cmd.getTags();
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -708,6 +709,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), Op.EQ);
         sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("reason", sb.entity().getReason(), Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             final SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -730,6 +732,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         final SearchCriteria<NetworkACLItemVO> sc = sb.create();
 
+        if (StringUtils.isNotBlank(keyword)) {
+            final SearchCriteria<NetworkACLItemVO> ssc = _networkACLItemDao.createSearchCriteria();
+            ssc.addOr("protocol", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("reason", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("acl_id", SearchCriteria.Op.SC, ssc);
+        }
         if (id != null) {
             sc.setParameters("id", id);
         }
@@ -747,7 +755,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (trafficType != null) {
             sc.setParameters("trafficType", trafficType);
         }
-
         if (aclId != null) {
             // Get VPC and check access
             final NetworkACL acl = _networkACLDao.findById(aclId);
@@ -764,7 +771,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
             // aclId is not specified
             // List permitted VPCs and filter aclItems
-            final List<Long> permittedAccounts = new ArrayList<Long>();
+            final List<Long> permittedAccounts = new ArrayList<>();
             Long domainId = cmd.getDomainId();
             boolean isRecursive = cmd.isRecursive();
             final String accountName = cmd.getAccountName();
@@ -780,7 +787,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final SearchCriteria<VpcVO> scVpc = sbVpc.create();
             _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
             final List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
-            final List<Long> vpcIds = new ArrayList<Long>();
+            final List<Long> vpcIds = new ArrayList<>();
             for (final VpcVO vpc : vpcs) {
                 vpcIds.add(vpc.getId());
             }

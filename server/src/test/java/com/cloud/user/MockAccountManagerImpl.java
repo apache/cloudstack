@@ -487,4 +487,8 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     public List<String> getApiNameList() {
         return null;
     }
+
+    @Override
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
+    }
 }

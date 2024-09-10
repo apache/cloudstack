@@ -154,8 +154,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo,
                                             Storage.StoragePoolType type, Map<String, String> details)
     {
-        logger.debug(String.format(
-            "Linstor createStoragePool: name: '%s', host: '%s', path: %s, userinfo: %s", name, host, path, userInfo));
+        logger.debug("Linstor createStoragePool: name: '{}', host: '{}', path: {}, userinfo: {}", name, host, path, userInfo);
         LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this);
 
         MapStorageUuidToStoragePool.put(name, storagePool);
@@ -190,7 +189,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
                                               Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
-        logger.debug(String.format("Linstor.createPhysicalDisk: %s;%s", name, format));
+        logger.debug("Linstor.createPhysicalDisk: {};{}", name, format);
         final String rscName = getLinstorRscName(name);
         LinstorStoragePool lpool = (LinstorStoragePool) pool;
         final DevelopersApi api = getLinstorAPI(pool);
@@ -231,7 +230,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
             }
         } catch (ApiException apiEx) {
-            logger.error(String.format("Linstor.createPhysicalDisk: ApiException: %s", apiEx.getBestMessage()));
+            logger.error("Linstor.createPhysicalDisk: ApiException: {}", apiEx.getBestMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
     }
@@ -254,9 +253,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             rcm.setOverrideProps(props);
             ApiCallRcList answers = api.resourceConnectionModify(rscName, inUseNode, localNodeName, rcm);
             if (answers.hasError()) {
-                logger.error(String.format(
-                        "Unable to set protocol C and 'allow-two-primaries' on %s/%s/%s",
-                        inUseNode, localNodeName, rscName));
+                logger.error("Unable to set protocol C and 'allow-two-primaries' on {}/{}/{}",
+                        inUseNode, localNodeName, rscName);
                 // do not fail here as adding allow-two-primaries property is only a problem while live migrating
             }
         }
@@ -265,7 +263,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details)
     {
-        logger.debug(String.format("Linstor: connectPhysicalDisk %s:%s -> %s", pool.getUuid(), volumePath, details));
+        logger.debug("Linstor: connectPhysicalDisk {}:{} -> {}", pool.getUuid(), volumePath, details);
         if (volumePath == null) {
             logger.warn("volumePath is null, ignoring");
             return false;
@@ -304,11 +302,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         rcm.deleteProps(deleteProps);
         ApiCallRcList answers = api.resourceConnectionModify(rscName, localNodeName, inUseNode, rcm);
         if (answers.hasError()) {
-            logger.error(
-                    String.format("Failed to remove 'protocol' and 'allow-two-primaries' on %s/%s/%s: %s",
+            logger.error("Failed to remove 'protocol' and 'allow-two-primaries' on {}/{}/{}: {}",
                             localNodeName,
                             inUseNode,
-                            rscName, LinstorUtil.getBestErrorMessage(answers)));
+                            rscName, LinstorUtil.getBestErrorMessage(answers));
             // do not fail here as removing allow-two-primaries property isn't fatal
         }
     }
@@ -512,7 +509,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
-        logger.debug(String.format("Linstor.copyPhysicalDisk: %s -> %s", disk.getPath(), name));
+        logger.debug("Linstor.copyPhysicalDisk: {} -> {}", disk.getPath(), name);
         final QemuImg.PhysicalDiskFormat sourceFormat = disk.getFormat();
         final String sourcePath = disk.getPath();
 
@@ -521,7 +518,16 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
-        logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
+        final DevelopersApi api = getLinstorAPI(destPools);
+        final String rscName = LinstorUtil.RSC_PREFIX + name;
+        try {
+            LinstorUtil.applyAuxProps(api, rscName, disk.getDispName(), disk.getVmName());
+        } catch (ApiException apiExc) {
+            logger.error("Error setting aux properties for {}", rscName);
+            logLinstorAnswers(apiExc.getApiCallRcList());
+        }
+
+        logger.debug("Linstor.copyPhysicalDisk: dstPath: {}", dstDisk.getPath());
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());

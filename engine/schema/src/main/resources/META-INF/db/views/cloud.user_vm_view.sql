@@ -54,6 +54,7 @@ SELECT
     `vm_instance`.`instance_name` AS `instance_name`,
     `vm_instance`.`guest_os_id` AS `guest_os_id`,
     `vm_instance`.`display_vm` AS `display_vm`,
+    `vm_instance`.`delete_protection` AS `delete_protection`,
     `guest_os`.`uuid` AS `guest_os_uuid`,
     `vm_instance`.`pod_id` AS `pod_id`,
     `host_pod_ref`.`uuid` AS `pod_uuid`,
