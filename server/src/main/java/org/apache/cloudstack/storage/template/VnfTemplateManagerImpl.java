@@ -291,7 +291,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
     @Override
     public SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner,
                                                             DeployVnfApplianceCmd cmd) {
-        if (zone == null || !zone.isSecurityGroupEnabled()) {
+        if (zone == null || !(zone.isSecurityGroupEnabled() || networkModel.isSecurityGroupSupportedForZone(zone.getId()))) {
             return null;
         }
         if (!cmd.getVnfConfigureManagement()) {

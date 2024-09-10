@@ -274,6 +274,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         templateResponse.setDomainId(template.getDomainUuid());
         templateResponse.setDomainName(template.getDomainName());
+        templateResponse.setDomainPath(template.getDomainPath());
 
         // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
         if (view == ResponseView.Full ||
@@ -331,6 +332,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
+        if (template.getArch() != null) {
+            templateResponse.setArch(template.getArch().getType());
+        }
 
         //set template children disks
         Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
@@ -413,6 +417,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         response.setDomainId(result.getDomainUuid());
         response.setDomainName(result.getDomainName());
+        response.setDomainPath(result.getDomainPath());
 
         // set details map
         if (result.getDetailName() != null) {
@@ -499,6 +504,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         isoResponse.setDomainId(iso.getDomainUuid());
         isoResponse.setDomainName(iso.getDomainName());
+        isoResponse.setDomainPath(iso.getDomainPath());
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
@@ -597,6 +603,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
+        if (iso.getArch() != null) {
+            isoResponse.setArch(iso.getArch().getType());
+        }
 
         isoResponse.setObjectName("iso");
         return isoResponse;

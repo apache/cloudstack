@@ -26,9 +26,13 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -52,6 +56,9 @@ import org.apache.cloudstack.api.command.user.backup.RemoveVirtualMachineFromBac
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
+import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -115,6 +122,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
@@ -146,6 +154,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
     private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private UserVmDao userVmDao;
     @Inject
     private ApiDispatcher apiDispatcher;
     @Inject
@@ -233,7 +243,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
         sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-
+        CallContext ctx = CallContext.current();
+        final Account caller = ctx.getCallingAccount();
+        if (Account.Type.NORMAL == caller.getType()) {
+            sb.and("user_backups_allowed", sb.entity().isUserDrivenBackupAllowed(), SearchCriteria.Op.EQ);
+        }
         final SearchCriteria<BackupOfferingVO> sc = sb.create();
 
         if (zoneId != null) {
@@ -242,6 +256,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (keyword != null) {
             sc.setParameters("name", "%" + keyword + "%");
+        }
+        if (Account.Type.NORMAL == caller.getType()) {
+            sc.setParameters("user_backups_allowed", true);
         }
         Pair<List<BackupOfferingVO>, Integer> result = backupOfferingDao.searchAndCount(sc, searchFilter);
         return new Pair<>(new ArrayList<>(result.first()), result.second());
@@ -262,7 +279,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDao.remove(offering.getId());
     }
 
-    private String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+    public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
         for (VolumeVO vol : vmVolumes) {
             list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
@@ -277,6 +294,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (!Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped, VirtualMachine.State.Shutdown).contains(vm.getState())) {
             throw new CloudRuntimeException("VM is not in running or stopped state");
+        }
+
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            }
         }
 
         validateForZone(vm.getDataCenterId());
@@ -330,6 +354,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                             backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage());
                     logger.error(msg);
                     logger.debug(msg, e);
+                    return null;
                 }
                 return vm;
             }
@@ -406,6 +431,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final VMInstanceVO vm = findVmById(vmId);
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            }
+        }
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
@@ -430,7 +461,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new InvalidParameterValueException("Invalid schedule: " + cmd.getSchedule() + " for interval type: " + cmd.getIntervalType());
         }
 
-        final BackupScheduleVO schedule = backupScheduleDao.findByVM(vmId);
+        final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
         if (schedule == null) {
             return backupScheduleDao.persist(new BackupScheduleVO(vmId, intervalType, scheduleString, timezoneId, nextDateTime));
         }
@@ -444,12 +475,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public BackupSchedule listBackupSchedule(final Long vmId) {
+    public List<BackupSchedule> listBackupSchedule(final Long vmId) {
         final VMInstanceVO vm = findVmById(vmId);
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
-        return backupScheduleDao.findByVM(vmId);
+        return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
     }
 
     @Override
@@ -472,6 +503,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final VMInstanceVO vm = findVmById(vmId);
         validateForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            }
+        }
 
         if (vm.getBackupOfferingId() == null) {
             throw new CloudRuntimeException("VM has not backup offering configured, cannot create backup before assigning it to a backup offering");
@@ -607,12 +645,24 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
-
-        final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
-        if (offering == null) {
-            throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
+        // This is done to handle historic backups if any with Veeam / Networker plugins
+        List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
+                vm.getBackupVolumeList() : backup.getBackedUpVolumes();
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        if (vmVolumes.size() != backupVolumes.size()) {
+            throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
         }
 
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
+        String errorMessage = "Failed to find backup offering of the VM backup.";
+        if (offering == null) {
+            logger.warn(errorMessage);
+        }
+        logger.debug("Attempting to get backup offering from VM backup");
+        offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            throw new CloudRuntimeException(errorMessage);
+        }
         String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "type", "status", "date");
         tryRestoreVM(backup, vm, offering, backupDetailsInMessage);
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
@@ -734,6 +784,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         validateForZone(backup.getZoneId());
 
         final VMInstanceVO vm = findVmById(vmId);
+        if (vm.getType().equals(VirtualMachine.Type.User)) {
+            UserVmVO userVm = userVmDao.findById(vmId);
+            if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            }
+        }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() != null && !BackupEnableAttachDetachVolumes.value()) {
@@ -749,26 +805,32 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM reference for the provided VM backup not found");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
-
-        Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
-        HostVO host = restoreInfo.first();
-        StoragePoolVO datastore = restoreInfo.second();
-
-        logger.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
-                " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
-
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find VM backup offering");
         }
 
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        VolumeVO backedUpVolume = volumeDao.findByUuid(backedUpVolumeUuid);
+        Pair<HostVO, StoragePoolVO> restoreInfo;
+        if (!"nas".equals(offering.getProvider())) {
+            restoreInfo = getRestoreVolumeHostAndDatastore(vm);
+        } else {
+            restoreInfo = getRestoreVolumeHostAndDatastoreForNas(vm, backedUpVolume);
+        }
+
+        HostVO host = restoreInfo.first();
+        StoragePoolVO datastore = restoreInfo.second();
+
+        logger.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
+                " (with external ID " + backup.getExternalId() + ") and attach it to VM: " + vm.getUuid());
+
         logger.debug(String.format("Trying to restore volume using host private IP address: [%s].", host.getPrivateIpAddress()));
 
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
         String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
 
-        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues);
+        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         if (BooleanUtils.isFalse(result.first())) {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
@@ -782,7 +844,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     protected Pair<Boolean, String> restoreBackedUpVolume(final String backedUpVolumeUuid, final BackupVO backup, BackupProvider backupProvider, String[] hostPossibleValues,
-            String[] datastoresPossibleValues) {
+            String[] datastoresPossibleValues, VMInstanceVO vm) {
         Pair<Boolean, String> result = new  Pair<>(false, "");
         for (String hostData : hostPossibleValues) {
             for (String datastoreData : datastoresPossibleValues) {
@@ -790,7 +852,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         backedUpVolumeUuid, hostData, datastoreData));
 
                 try {
-                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData);
+                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData, new Pair<>(vm.getName(), vm.getState()));
 
                     if (BooleanUtils.isTrue(result.first())) {
                         return result;
@@ -840,6 +902,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         HostVO hostVO = vm.getHostId() == null ?
                             getFirstHostFromStoragePool(storagePoolVO) :
                             hostDao.findById(vm.getHostId());
+        return new Pair<>(hostVO, storagePoolVO);
+    }
+
+    private Pair<HostVO, StoragePoolVO> getRestoreVolumeHostAndDatastoreForNas(VMInstanceVO vm, VolumeVO backedVolume) {
+        Long poolId = backedVolume.getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        HostVO hostVO = vm.getHostId() == null ?
+                getFirstHostFromStoragePool(storagePoolVO) :
+                hostDao.findById(vm.getHostId());
         return new Pair<>(hostVO, storagePoolVO);
     }
 
@@ -945,6 +1016,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(RestoreBackupCmd.class);
         cmdList.add(DeleteBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
+        cmdList.add(AddBackupRepositoryCmd.class);
+        cmdList.add(DeleteBackupRepositoryCmd.class);
+        cmdList.add(ListBackupRepositoriesCmd.class);
         return cmdList;
     }
 

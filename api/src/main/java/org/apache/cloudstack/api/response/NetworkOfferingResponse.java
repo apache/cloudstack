@@ -107,9 +107,9 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
 
-    @SerializedName(ApiConstants.NSX_MODE)
-    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
-    private String nsxMode;
+    @SerializedName(ApiConstants.NETWORK_MODE)
+    @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
+    private String networkMode;
 
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
@@ -158,6 +158,14 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.INTERNET_PROTOCOL)
     @Param(description = "the internet protocol of the network offering")
     private String internetProtocol;
+
+    @SerializedName(ApiConstants.SPECIFY_AS_NUMBER)
+    @Param(description = "true if network offering supports choosing AS numbers")
+    private Boolean specifyAsNumber;
+
+    @SerializedName(ApiConstants.ROUTING_MODE)
+    @Param(description = "the routing mode for the network offering, supported types are Static or Dynamic.")
+    private String routingMode;
 
     public void setId(String id) {
         this.id = id;
@@ -235,8 +243,8 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
         this.forTungsten = forTungsten;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setNetworkMode(String networkMode) {
+        this.networkMode = networkMode;
     }
 
     public void setIsPersistent(Boolean isPersistent) {
@@ -305,5 +313,21 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
+    }
+
+    public Boolean getSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 }

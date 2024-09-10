@@ -20,7 +20,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
@@ -83,6 +83,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.NetworkPermissionVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
@@ -416,6 +417,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     NsxProviderDao nsxProviderDao;
     @Inject
     private VirtualRouterProviderDao virtualRouterProviderDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    private BGPService bgpService;
+
     List<InternalLoadBalancerElementService> internalLoadBalancerElementServices = new ArrayList<>();
     Map<String, InternalLoadBalancerElementService> internalLoadBalancerElementServiceMap = new HashMap<>();
 
@@ -551,10 +557,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // Since it's non-conserve mode, only one service should be used for IP
         if (services.size() != 1) {
-            throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterValueException("There are multiple services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
-            throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
+            throw new InvalidParameterValueException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " + service.getName());
         }
         return true;
     }
@@ -600,7 +606,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 // We don't support multiple providers for one service now
                 if (!provider.equals(curProvider)) {
-                    throw new InvalidParameterException("There would be multiple providers for IP " + ip.getAddress() + " with the new network offering!");
+                    throw new InvalidParameterValueException("There would be multiple providers for IP " + ip.getAddress() + " with the new network offering!");
                 }
             }
         }
@@ -1378,6 +1384,40 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId) {
+        if (!GuestType.Isolated.equals(networkOffering.getGuestType())) {
+            if (cidrSize != null) {
+                throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks");
+            }
+            return;
+        }
+        if (ObjectUtils.allNotNull(cidr, cidrSize)) {
+            throw new InvalidParameterValueException("network cidr and cidr size are mutually exclusive");
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
+                && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
+            if (cidr != null) {
+                if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller.getId())) {
+                    throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of Isolated networks with ROUTED mode");
+                }
+                return;
+            }
+            if (cidrSize == null) {
+                throw new InvalidParameterValueException("network cidr or cidr size is required for Isolated networks with ROUTED mode");
+            }
+            Integer maxCidrSize = routedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
+            if (cidrSize > maxCidrSize) {
+                throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
+            }
+            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            if (cidrSize < minCidrSize) {
+                throw new InvalidParameterValueException("network cidr size cannot be smaller than minimum cidr size " + minCidrSize);
+            }
+        } else if (cidrSize != null) {
+            throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks with ROUTED mode: " + cidrSize);
+        }
+    }
+
     void validateSharedNetworkRouterIPs(String gateway, String startIP, String endIP, String netmask, String routerIPv4, String routerIPv6, String startIPv6, String endIPv6, String ip6Cidr, NetworkOffering ntwkOff) {
         if (ntwkOff.getGuestType() == GuestType.Shared) {
             validateSharedNetworkRouterIPv4(routerIPv4, startIP, endIP, gateway, netmask);
@@ -1453,6 +1493,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean hideIpAddressUsage = adminCalledUs && ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         String routerIPv4 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIp() : null;
         String routerIPv6 = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6() : null;
+        Long asNumber = cmd.getAsNumber();
 
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
@@ -1477,6 +1518,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip4Dns2 = cmd.getIp4Dns2();
         String ip6Dns1 = cmd.getIp6Dns1();
         String ip6Dns2 = cmd.getIp6Dns2();
+        Integer networkCidrSize = cmd.getCidrSize();
+        List<Long> bgpPeerIds = adminCalledUs ? ((CreateNetworkCmdByAdmin)cmd).getBgpPeerIds() : null;
 
         // Validate network offering id
         NetworkOffering ntwkOff = getAndValidateNetworkOffering(networkOfferingId);
@@ -1608,6 +1651,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
+        if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && ntwkOff.isSpecifyAsNumber() && asNumber == null) {
+            throw new InvalidParameterValueException("AS number is required for the network but not passed.");
+        }
+
+        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId());
+
         validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 
         Pair<String, String> ip6GatewayCidr = null;
@@ -1654,6 +1703,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // Don't allow to specify vlan if the caller is not ROOT admin
         if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
+        }
+
+        // Validate BGP peers
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            if (vpcId != null) {
+                throw new InvalidParameterValueException("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.");
+            }
+            if (!routedIpv4Manager.isDynamicRoutedNetwork(ntwkOff)) {
+                throw new InvalidParameterValueException("The network offering does not support Dynamic routing");
+            }
+            routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
         }
 
         if (ipv4) {
@@ -1730,7 +1790,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
+                externalId, routerIPv4, routerIPv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs, networkCidrSize);
 
         // retrieve, acquire and associate the correct IP addresses
         checkAndSetRouterSourceNatIp(owner, cmd, network);
@@ -1743,6 +1803,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
         }
 
+        // assign to network
+        if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
+            routedIpv4Manager.assignIpv4SubnetToNetwork(network);
+        }
+        if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff)) {
+            try {
+                bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
+            } catch (CloudRuntimeException ex) {
+                deleteNetwork(network.getId(), true);
+                throw ex;
+            }
+        }
+        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+            routedIpv4Manager.persistBgpPeersForGuestNetwork(network.getId(), bgpPeerIds);
+        }
+
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
             return implementedNetworkInCreation(caller, zone, network);
@@ -1750,9 +1826,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
+    private boolean isNonVpcNetworkSupportingDynamicRouting(NetworkOffering networkOffering) {
+        return !networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode();
+    }
+
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
-        if (Objects.nonNull(nsxProviderVO) && List.of(GuestType.L2, GuestType.Shared).contains(guestType)) {
+        if (Objects.nonNull(nsxProviderVO) && GuestType.L2.equals(guestType)) {
             throw new InvalidParameterValueException(
                     String.format("Creation of %s networks is not supported in NSX enabled zone %s", guestType.name(), zoneName)
             );
@@ -1768,7 +1848,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
                 null, null, null, false, null, owner, null, physicalNetwork, zoneId,
                 aclType, null, null, null, null, true, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
     }
 
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
@@ -2149,12 +2229,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanIdFinal,
+    protected Network commitNetwork(final Long networkOfferingId, final String gateway, final String startIP, final String endIP, final String netmask, final String networkDomain, final String vlanIdFinal,
                                   final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOffering ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
-                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs,
+                                  final Integer networkCidrSize) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -2210,7 +2291,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -2219,7 +2300,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, vrIfaceMTUs);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2,
+                                ip6Dns1, ip6Dns2, vrIfaceMTUs, networkCidrSize);
                     }
 
                     if (createVlan && network != null) {
@@ -2810,7 +2892,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
              * TODO Restarting a SDN based network requires updating the nics and the configuration
              * in the controller. This requires a non-trivial rewrite of the restart procedure.
              */
-            throw new InvalidParameterException("Unable to restart a running SDN network.");
+            throw new InvalidParameterValueException("Unable to restart a running SDN network.");
         }
 
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
@@ -4022,6 +4104,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return false;
         }
 
+        // network mode should be the same
+        NetworkOffering.NetworkMode oldNetworkMode = oldNetworkOffering.getNetworkMode() == null ? NetworkOffering.NetworkMode.NATTED: oldNetworkOffering.getNetworkMode();
+        NetworkOffering.NetworkMode newNetworkMode = newNetworkOffering.getNetworkMode() == null ? NetworkOffering.NetworkMode.NATTED: newNetworkOffering.getNetworkMode();
+        if (!oldNetworkMode.equals(newNetworkMode)) {
+            logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for network mode, can't upgrade");
+            return false;
+        }
+
         return canMoveToPhysicalNetwork(network, oldNetworkOfferingId, newNetworkOfferingId);
     }
 
@@ -4055,11 +4145,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         if (tags != null && tags.size() > 1) {
-            throw new InvalidParameterException("Only one tag can be specified for a physical network at this time");
+            throw new InvalidParameterValueException("Only one tag can be specified for a physical network at this time");
         }
 
         if (isolationMethods != null && isolationMethods.size() > 1) {
-            throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
+            throw new InvalidParameterValueException("Only one isolationMethod can be specified for a physical network at this time");
         }
 
         if (vnetRange != null && zoneType == NetworkType.Basic) {
@@ -4198,7 +4288,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (tags != null && tags.size() > 1) {
-            throw new InvalidParameterException("Unable to support more than one tag on network yet");
+            throw new InvalidParameterValueException("Unable to support more than one tag on network yet");
         }
 
         // If tags are null, then check if there are any other networks with null tags
