@@ -66,7 +66,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,7 +80,7 @@ import org.apache.cloudstack.backup.Backup.Metric;
 
 public class BackrollClient {
 
-    private static final Logger LOG = Logger.getLogger(BackrollClient.class);
+    private Logger LOG = LogManager.getLogger(BackrollClient.class);
 
     private int restoreTimeout;
 
@@ -121,19 +122,19 @@ public class BackrollClient {
                     .build();
         }
 
-        if (StringUtils.isEmpty(backrollToken) || !isAuthentificated()) {
+        if (StringUtils.isEmpty(backrollToken) || !isAuthenticated()) {
             login(appname, password);
         }
     }
 
     public String startBackupJob(final String jobId) {
-        LOG.info(String.format("Trying to start backup for Backroll job: %s", jobId));
+        LOG.info("Trying to start backup for Backroll job: {}", jobId);
 
         try {
-            loginIfAuthentificationFailed();
+            loginIfAuthenticationFailed();
 
             final HttpResponse response = post(String.format("/tasks/singlebackup/%s", jobId), null);
-            if(isResponseOk(response)) {
+            if (isResponseOk(response)) {
                 HttpEntity body = response.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 BackrollTaskRequestResponse backupTaskRequestResponse = new ObjectMapper().readValue(bodyStr, BackrollTaskRequestResponse.class);
@@ -142,21 +143,21 @@ public class BackrollClient {
                 return idBackupTask;
             }
         } catch (final IOException e) {
-            LOG.error(String.format("Failed to start Backroll backup job due to: %s", e.getMessage()));
+            LOG.error("Failed to start Backroll backup job due to: {}", e.getMessage());
         }
         return null;
     }
 
-    public String getBackupOfferingUrl(){
+    public String getBackupOfferingUrl() {
         LOG.info("Trying to list backroll backup policies");
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
 
             final HttpResponse backupPoliciesRequestResponse = get("/backup_policies");
 
-            if(isResponseOk(backupPoliciesRequestResponse)) {
+            if (isResponseOk(backupPoliciesRequestResponse)) {
                 HttpEntity body = backupPoliciesRequestResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 BackrollTaskRequestResponse backupTaskRequestResponse = new ObjectMapper().readValue(bodyStr, BackrollTaskRequestResponse.class);
@@ -164,7 +165,7 @@ public class BackrollClient {
                 return backupTaskRequestResponse.location.replace("/api/v1", "");
             }
         } catch (final IOException e) {
-            LOG.error(String.format("Failed to list Backroll jobs due to: %s", e.getMessage()));
+            LOG.error("Failed to list Backroll jobs due to: {}", e.getMessage());
         }
         return null;
     }
@@ -172,7 +173,7 @@ public class BackrollClient {
     public List<BackupOffering> getBackupOfferings(String idTask) {
         LOG.info("Trying to list backroll backup policies");
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
             String bodyStr = waitForGetRequestResponse(idTask);
@@ -184,18 +185,16 @@ public class BackrollClient {
                 policies.add(new BackrollOffering(policy.name, policy.id));
             }
             return policies;
-        } catch (final IOException e) {
-            LOG.error(String.format("Failed to list Backroll jobs due to: %s", e.getMessage()));
-        } catch (InterruptedException e) {
-            LOG.error(String.format("Failed to list Backroll jobs due to: %s", e.getMessage()));
+        } catch (final IOException |InterruptedException e) {
+            LOG.error("Failed to list Backroll jobs due to: {}", e.getMessage());
         }
         return new ArrayList<BackupOffering>();
     }
 
     public boolean restoreVMFromBackup(final String vmId, final String backupName) {
-        LOG.info(String.format("Start restore backup with backroll with backup %s for vm %s", backupName, vmId));
+        LOG.info("Start restore backup with backroll with backup {} for vm {}", backupName, vmId);
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
             JSONObject jsonBody = new JSONObject();
@@ -206,13 +205,13 @@ public class BackrollClient {
                 jsonBody.put("mode", "single");
 
             } catch (JSONException e) {
-                LOG.error(String.format("Backroll Error: %s", e.getMessage()));
+                LOG.error("Backroll Error: {}", e.getMessage());
             }
 
             final HttpResponse response = post(String.format("/tasks/restore/%s", vmId), jsonBody);
             LOG.debug(response.toString());
 
-            if(isResponseOk(response)) {
+            if (isResponseOk(response)) {
                 HttpEntity body = response.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 LOG.debug(bodyStr);
@@ -222,7 +221,7 @@ public class BackrollClient {
                 EntityUtils.consumeQuietly(response.getEntity());
 
                 String responseStatus = waitForGetRequestResponse(urlToRequest);
-                LOG.debug("RESTORE " + responseStatus);
+                LOG.debug("RESTORE {}", responseStatus);
                 if(responseStatus.contains("SUCCESS")) {
                     LOG.debug("RESTORE SUCCESS");
                     return true;
@@ -231,27 +230,27 @@ public class BackrollClient {
                 }
             }
         } catch (final IOException | InterruptedException e) {
-            LOG.error(String.format("Ouch! Failed to restore VM with Backroll due to: %s", e.getMessage()));
-            throw new CloudRuntimeException(String.format("Ouch! Failed to restore VM with Backroll due to: %s", e.getMessage()));
+            LOG.error("Ouch! Failed to restore VM with Backroll due to: {}", e.getMessage());
+            throw new CloudRuntimeException("Ouch! Failed to restore VM with Backroll due to: {}" + e.getMessage());
         }
         return false;
     }
 
     public BackrollTaskStatus checkBackupTaskStatus(String taskId) {
-        LOG.info(String.format("Trying to get backup status for Backroll task: %s", taskId));
+        LOG.info("Trying to get backup status for Backroll task: {}", taskId);
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
             final HttpResponse backupStatusResponse = get("/status/" + taskId);
 
-            if(isResponseOk(backupStatusResponse)) {
+            if (isResponseOk(backupStatusResponse)) {
                 BackrollTaskStatus status = new BackrollTaskStatus();
 
                 HttpEntity body = backupStatusResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
 
-                if(bodyStr.contains("FAILURE") || bodyStr.contains("PENDING")) {
+                if (bodyStr.contains("FAILURE") || bodyStr.contains("PENDING")) {
                     BackrollBackupStatusResponse backupStatusRequestResponse = new ObjectMapper().readValue(bodyStr, BackrollBackupStatusResponse.class);
                     EntityUtils.consumeQuietly(backupStatusResponse.getEntity());
                     status.setState(backupStatusRequestResponse.state);
@@ -266,23 +265,23 @@ public class BackrollClient {
             } else {
                 EntityUtils.consumeQuietly(backupStatusResponse.getEntity());
                 // throw new CloudRuntimeException("Failed to retrieve backups status for this VM via Backroll");
-                LOG.error(String.format("Failed to retrieve backups status for this VM via Backroll"));
+                LOG.error("Failed to retrieve backups status for this VM via Backroll");
             }
         } catch (final IOException e) {
-            LOG.error(String.format("Failed to check backups status due to: %s", e.getMessage()));
+            LOG.error("Failed to check backups status due to: {}", e.getMessage());
         }
         return null;
     }
 
     public boolean deleteBackup(final String vmId, final String backupName) {
-        LOG.info(String.format("Trying to delete backup %s for vm %s using Backroll", vmId, backupName));
+        LOG.info("Trying to delete backup {} for vm {} using Backroll", vmId, backupName);
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
             final HttpResponse response = delete(String.format("/virtualmachines/%s/backups/%s", vmId, backupName));
             LOG.debug(response.toString());
-            if(isResponseOk(response)) {
+            if (isResponseOk(response)) {
                 HttpEntity body = response.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 LOG.debug(bodyStr);
@@ -293,7 +292,7 @@ public class BackrollClient {
                 String responseStatus = waitForGetRequestResponse(urlToRequest);
                 LOG.debug(responseStatus);
                 BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = new ObjectMapper().readValue(responseStatus, BackrollBackupsFromVMResponse.class);
-                if(backrollBackupsFromVMResponse.state.equals("SUCCESS")) {
+                if (backrollBackupsFromVMResponse.state.equals("SUCCESS")) {
                     EntityUtils.consumeQuietly(response.getEntity());
                     return true;
                 } else {
@@ -304,15 +303,15 @@ public class BackrollClient {
             EntityUtils.consumeQuietly(response.getEntity());
             return false;
         } catch (final IOException | InterruptedException e) {
-            LOG.error(String.format("Failed to delete backup using Backroll due to: %s", e.getMessage()));
+            LOG.error("Failed to delete backup using Backroll due to: {}", e.getMessage());
         }
         return false;
     }
 
-    public Metric getVirtualMachineMetrics(final String vmId){
-        LOG.info(String.format("Trying to retrieve virtual machine metric from Backroll for vm %s", vmId));
+    public Metric getVirtualMachineMetrics(final String vmId) {
+        LOG.info("Trying to retrieve virtual machine metric from Backroll for vm {}", vmId);
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         Metric metric = new Metric(0L,0L);
 
@@ -320,7 +319,7 @@ public class BackrollClient {
 
             final HttpResponse metricsRequestResponse = get(String.format("/virtualmachines/%s/repository", vmId));
 
-            if(isResponseOk(metricsRequestResponse)) {
+            if (isResponseOk(metricsRequestResponse)) {
                 HttpEntity body = metricsRequestResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 LOG.debug(bodyStr);
@@ -333,13 +332,13 @@ public class BackrollClient {
 
                 BackrollVmMetricsResponse vmMetricsResponse = new ObjectMapper().readValue(bodyStr, BackrollVmMetricsResponse.class);
 
-                if(vmMetricsResponse != null) {
+                if (vmMetricsResponse != null) {
 
-                    if(vmMetricsResponse.state.equals("SUCCESS")) {
+                    if (vmMetricsResponse.state.equals("SUCCESS")) {
                         LOG.debug("SUCCESS ok");
-                        if(vmMetricsResponse.infos != null) {
-                            if(vmMetricsResponse.infos.cache != null) {
-                                if(vmMetricsResponse.infos.cache.stats != null) {
+                        if (vmMetricsResponse.infos != null) {
+                            if (vmMetricsResponse.infos.cache != null) {
+                                if (vmMetricsResponse.infos.cache.stats != null) {
                                     CacheStats stats = vmMetricsResponse.infos.cache.stats;
                                     long size = Long.parseLong(stats.totalSize);
                                     return new Metric(size,size);
@@ -352,21 +351,21 @@ public class BackrollClient {
                 EntityUtils.consumeQuietly(metricsRequestResponse.getEntity());
             }
         } catch (final IOException | InterruptedException e) {
-            LOG.error(String.format("Failed to retrieve virtual machine metrics with Backroll due to: %s", e.getMessage()));
+            LOG.error("Failed to retrieve virtual machine metrics with Backroll due to: {}", e.getMessage());
         }
 
         return metric;
     }
 
     public BackrollBackupMetrics getBackupMetrics(String vmId, String backupId) {
-        LOG.info(String.format("Trying to get backup metrics for VM: %s, and backup: %s", vmId, backupId));
+        LOG.info("Trying to get backup metrics for VM: {}, and backup: {}", vmId, backupId);
 
-        loginIfAuthentificationFailed();
+        loginIfAuthenticationFailed();
 
         try {
             final HttpResponse backupMetricsResponse = get(String.format("/virtualmachines/%s/backups/%s", vmId, backupId));
 
-            if(isResponseOk(backupMetricsResponse)) {
+            if (isResponseOk(backupMetricsResponse)) {
                 HttpEntity body = backupMetricsResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
 
@@ -379,7 +378,7 @@ public class BackrollClient {
 
                 BackrollBackupMetricsResponse metrics = new ObjectMapper().readValue(bodyStr, BackrollBackupMetricsResponse.class);
                 EntityUtils.consumeQuietly(backupMetricsResponse.getEntity());
-                if(metrics.info != null) {
+                if (metrics.info != null) {
                     return new BackrollBackupMetrics(Long.parseLong(metrics.info.originalSize), Long.parseLong(metrics.info.deduplicatedSize));
                 }
             } else {
@@ -387,20 +386,20 @@ public class BackrollClient {
                 throw new CloudRuntimeException("Failed to retrieve backups status for this VM via Backroll");
             }
         } catch (final IOException | InterruptedException e) {
-            LOG.error(String.format("Failed to check backups status due to: %s", e.getMessage()));
+            LOG.error("Failed to check backups status due to: {}", e.getMessage());
         }
         return null;
     }
 
     public List<BackrollVmBackup> getAllBackupsfromVirtualMachine(String vmId) {
-        LOG.info(String.format("Trying to retrieve all backups for vm %s", vmId));
+        LOG.info("Trying to retrieve all backups for vm {}", vmId);
 
         List<BackrollVmBackup> backups = new ArrayList<BackrollVmBackup>();
 
         try {
             HttpResponse backupsResponse = get(String.format("/virtualmachines/%s/backups", vmId));
 
-            if(isResponseOk(backupsResponse)) {
+            if (isResponseOk(backupsResponse)) {
                 HttpEntity body = backupsResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
 
@@ -414,8 +413,8 @@ public class BackrollClient {
                 VirtualMachineBackupsResponse response = new ObjectMapper().readValue(bodyStr, VirtualMachineBackupsResponse.class);
                 EntityUtils.consumeQuietly(backupsResponse.getEntity());
 
-                if(response.state.equals("SUCCESS")) {
-                    if(response.info.archives.size() > 0) {
+                if (response.state.equals("SUCCESS")) {
+                    if (response.info.archives.size() > 0) {
                         for (BackupInfos infos : response.info.archives) {
                             var dateStart = new DateTime(infos.start);
                             backups.add(new BackrollVmBackup(infos.id, infos.name, dateStart.toDate()));
@@ -435,7 +434,7 @@ public class BackrollClient {
         String xml = null;
         StringEntity params = null;
         if (json != null) {
-            LOG.debug("JSON " + json.toString());
+            LOG.debug("JSON {}", json.toString());
             params = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
         }
 
@@ -451,19 +450,19 @@ public class BackrollClient {
 
         final HttpResponse response = httpClient.execute(request);
 
-        LOG.info(String.format("Response received in POST request with body [%s] is: [%s] for URL [%s].", xml, response.toString(), url));
+        LOG.debug("Response received in POST request with body {} is: {} for URL {}.", xml, response.toString(), url);
 
         return response;
     }
 
     protected HttpResponse get(final String path) throws IOException {
         String url = apiURI.toString() + path;
-        LOG.debug(String.format("Backroll URL %s", url));
+        LOG.debug("Backroll URL {}", url);
         final HttpGet request = new HttpGet(url);
         request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
         request.setHeader("Content-type", "application/json");
         final HttpResponse response = httpClient.execute(request);
-        LOG.debug(String.format("Response received in GET request is: [%s] for URL: [%s].", response.toString(), url));
+        LOG.debug("Response received in GET request is: {} for URL: {}.", response.toString(), url);
         return response;
     }
 
@@ -473,12 +472,12 @@ public class BackrollClient {
         request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
         request.setHeader("Content-type", "application/json");
         final HttpResponse response = httpClient.execute(request);
-        LOG.debug(String.format("Response received in GET request is: [%s] for URL: [%s].", response.toString(), url));
+        LOG.debug("Response received in GET request is: {} for URL: {}.", response.toString(), url);
         return response;
     }
 
     private boolean isResponseOk(final HttpResponse response) {
-        if((response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
+        if ((response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
             response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED)) {
             return true;
         } else {
@@ -487,7 +486,7 @@ public class BackrollClient {
     }
 
     private boolean isResponseAuthorized(final HttpResponse response) {
-        return (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) ? true : false;
+        return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED;
     }
 
     private String waitForGetRequestResponse(String urlToRequest) throws IOException, InterruptedException {
@@ -498,11 +497,11 @@ public class BackrollClient {
         int threshold = 12; // 2 minutes
 
         do {
-            if(cpt == threshold){
+            if (cpt == threshold){
                 break;
             } else {
                 final HttpResponse response = get(urlToRequest);
-                LOG.debug("Backroll!!!" + response);
+                LOG.debug("Backroll!!! {}", response);
                 if (isResponseOk(response)) {
 
                     body = response.getEntity();
@@ -518,33 +517,33 @@ public class BackrollClient {
 
         } while (bodyStr.contains("PENDING"));
 
-        if(cpt == threshold){
+        if (cpt == threshold){
             bodyStr = "ERROR";
         }
 
         return bodyStr;
     }
 
-    private boolean isAuthentificated() {
+    private boolean isAuthenticated() {
         boolean result = false;
         try {
             final HttpResponse response = post("/auth", null);
             result = isResponseAuthorized(response);
             EntityUtils.consumeQuietly(response.getEntity());
         } catch (IOException e) {
-            LOG.error(String.format("Failed to authentificate to Backroll due to: %s", e.getMessage()));
+            LOG.error("Failed to authentificate to Backroll due to: {}", e.getMessage());
         }
         return result;
     }
 
-    private void loginIfAuthentificationFailed() {
-        if(!isAuthentificated()) {
+    private void loginIfAuthenticationFailed() {
+        if (!isAuthenticated()) {
             login(appname, password);
         }
     }
 
     private void login(final String appname, final String appsecret) {
-        LOG.info("Backroll client -  start login");
+        LOG.debug("Backroll client -  start login");
         final HttpPost request = new HttpPost(apiURI.toString() + "/login");
 
         request.addHeader("content-type", "application/json");
@@ -566,7 +565,7 @@ public class BackrollClient {
 
                 LoginApiResponse loginResponse = new ObjectMapper().readValue(bodyStr, LoginApiResponse.class);
                 backrollToken = loginResponse.accessToken;
-                LOG.debug(String.format("Backroll client -  Token : %s", backrollToken));
+                LOG.debug("Backroll client -  Token : {}", backrollToken);
 
                 EntityUtils.consumeQuietly(response.getEntity());
 
@@ -589,15 +588,15 @@ public class BackrollClient {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        LOG.info("Backroll client -  end login");
+        LOG.debug("Backroll client -  end login");
     }
 
     private List<BackrollBackup> getBackrollBackups(final String vmId) {
         try {
-            LOG.info("start to list Backroll backups for vm " + vmId);
+            LOG.info("start to list Backroll backups for vm {}", vmId);
             final HttpResponse backupsAskingResponse = get("/virtualmachines/" + vmId + "/backups");
 
-            if(isResponseOk(backupsAskingResponse)) {
+            if (isResponseOk(backupsAskingResponse)) {
                 HttpEntity body = backupsAskingResponse.getEntity();
                 String bodyStr = EntityUtils.toString(body);
                 BackrollTaskRequestResponse backupTaskRequestResponse = new ObjectMapper().readValue(bodyStr, BackrollTaskRequestResponse.class);
@@ -615,13 +614,12 @@ public class BackrollClient {
                 }
                 return backups;
             } else {
-                throw new CloudRuntimeException(
-                                    "Failed to retrieve backups for this VM via Backroll");
+                throw new CloudRuntimeException("Failed to retrieve backups for this VM via Backroll");
             }
         } catch (final IOException e) {
-            LOG.error("Failed to list backup form vm with Backroll due to:", e);
+            LOG.error("Failed to list backup form vm with Backroll due to: {}", e);
         } catch (InterruptedException e) {
-            LOG.error("Backroll Error:", e);
+            LOG.error("Backroll Error: {}", e);
         }
         return new ArrayList<BackrollBackup>();
     }
