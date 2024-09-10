@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.HypervisorGuru;
@@ -173,6 +172,7 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -186,6 +186,7 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
@@ -204,10 +205,12 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -230,11 +233,13 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -262,7 +267,9 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -282,6 +289,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -306,7 +314,12 @@ import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
+
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -475,9 +488,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
-    private Set<String> configValuesForValidation = new HashSet<String>();
-    private Set<String> weightBasedParametersForValidation = new HashSet<String>();
-    private Set<String> overprovisioningFactorsForValidation = new HashSet<String>();
+    private Set<String> configValuesForValidation = new HashSet<>();
+    private Set<String> weightBasedParametersForValidation = new HashSet<>();
+    private Set<String> overprovisioningFactorsForValidation = new HashSet<>();
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -529,6 +542,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
+    private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Override
@@ -574,7 +588,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
     }
 
-    private void weightBasedParametersForValidation() {
+    protected void weightBasedParametersForValidation() {
         weightBasedParametersForValidation.add(AlertManager.CPUCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageAllocatedCapacityThreshold.key());
         weightBasedParametersForValidation.add(AlertManager.StorageCapacityThreshold.key());
@@ -596,7 +610,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
     }
 
-    private void overProvisioningFactorsForValidation() {
+    protected void overProvisioningFactorsForValidation() {
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
@@ -646,7 +660,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         if (err) {
-            throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value");
+            throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value.");
         }
     }
 
@@ -688,9 +702,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
-
         if (validationMsg != null) {
-            logger.error("Invalid configuration option, name: " + name + ", value:" + value);
+            logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
         }
 
@@ -704,7 +717,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 value = DBEncryptionUtil.encrypt(value);
             }
 
-            switch (ConfigKey.Scope.valueOf(scope)) {
+            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+            switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
                 if (zone == null) {
@@ -795,6 +809,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
 
+            _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
@@ -807,6 +822,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
         }
+        _configDepot.invalidateConfigCache(name, ConfigKey.Scope.Global, null);
 
         PreparedStatement pstmt = null;
         if (Config.XenServerGuestNetwork.key().equalsIgnoreCase(name)) {
@@ -950,8 +966,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
-        validateIpAddressRelatedConfigValues(name, value);
-
         if (value == null) {
             return _configDao.findByName(name);
         }
@@ -1094,7 +1108,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         String newValue = null;
-        switch (ConfigKey.Scope.valueOf(scope)) {
+        ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+        switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(id);
                 if (zone == null) {
@@ -1179,18 +1194,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
+        _configDepot.invalidateConfigCache(name, scopeVal, id);
+
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
     }
 
-    protected String validateConfigurationValue(final String name, String value, final String scope) {
+    /**
+     * Validates whether a value is valid for the specified configuration. This includes type and range validation.
+     * @param name name of the configuration.
+     * @param value value to validate.
+     * @param scope scope of the configuration.
+     * @return null if the value is valid; otherwise, returns an error message.
+     */
+    protected String validateConfigurationValue(String name, String value, String scope) {
         final ConfigurationVO cfg = _configDao.findByName(name);
         if (cfg == null) {
             logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
 
-        final String configScope = cfg.getScope();
+        String configScope = cfg.getScope();
         if (scope != null) {
             if (!configScope.contains(scope) &&
                     !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
@@ -1199,11 +1223,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return "Invalid scope id provided for the parameter " + name;
             }
         }
-        Class<?> type = null;
-        final Config configuration = Config.getConfig(name);
+        Class<?> type;
+        Config configuration = Config.getConfig(name);
         if (configuration == null) {
             logger.warn("Did not find configuration " + name + " in Config.java. Perhaps moved to ConfigDepot");
-            final ConfigKey<?> configKey = _configDepot.get(name);
+            ConfigKey<?> configKey = _configDepot.get(name);
             if(configKey == null) {
                 logger.warn("Did not find configuration " + name + " in ConfigDepot too.");
                 return null;
@@ -1212,132 +1236,161 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             type = configuration.getType();
         }
-        //no need to validate further if a
-        //config can have null value.
-        String errMsg = null;
+
+        boolean isTypeValid = validateValueType(value, type);
+        if (!isTypeValid) {
+            return String.format("Value [%s] is not a valid [%s].", value, type);
+        }
+
+        return validateValueRange(name, value, type, configuration);
+    }
+
+    /**
+     * Returns whether a value is valid for a configuration of the provided type.
+     * Valid configuration values are:
+     *
+     * <ul>
+     *     <li>String: any value, including null;</li>
+     *     <li>Character: any value, including null;</li>
+     *     <li>Boolean: strings that equal "true" or "false" (case-sensitive);</li>
+     *     <li>Integer, Short, Long: strings that contain a valid int/short/long;</li>
+     *     <li>Float, Double: strings that contain a valid float/double, except infinity.</li>
+     * </ul>
+     *
+     * If a type isn't listed here, then the value will be considered invalid.
+     * @param value value to validate.
+     * @param type type of the configuration.
+     * @return boolean indicating whether the value is valid.
+     */
+    protected boolean validateValueType(String value, Class<?> type) {
+        if (type == String.class || type == Character.class) {
+            return true;
+        }
+
         try {
-            if (type.equals(Integer.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid integer value for parameter " + name;
+            if (type == Boolean.class) {
+                return value.equals("true") || value.equals("false");
+            } else if (type == Integer.class) {
                 Integer.parseInt(value);
-            } else if (type.equals(Float.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid float value for parameter " + name;
-                Float.parseFloat(value);
-            } else if (type.equals(Long.class)) {
-                errMsg = "There was error in trying to parse value: " + value + ". Please enter a valid long value for parameter " + name;
+            } else if (type == Long.class) {
                 Long.parseLong(value);
+            } else if (type == Short.class) {
+                Short.parseShort(value);
+            } else if (type == Float.class) {
+                float floatValue = Float.parseFloat(value);
+                return !Float.isInfinite(floatValue);
+            } else if (type == Double.class) {
+                double doubleValue = Double.parseDouble(value);
+                return !Double.isInfinite(doubleValue);
+            } else {
+                return false;
             }
-        } catch (final Exception e) {
-            // catching generic exception as some throws NullPointerException and some throws NumberFormatExcpeion
-            logger.error(errMsg);
-            return errMsg;
+            return true;
+        } catch (NullPointerException | NumberFormatException e) {
+            return false;
         }
+    }
 
-        if (value == null) {
-            if (type.equals(Boolean.class)) {
-                return "Please enter either 'true' or 'false'.";
+    /**
+     * If the specified configuration contains a range, validates if the value is in that range. If it doesn't contain
+     * a range, any value is considered valid.
+     * The value must be previously checked by `validateValueType` so there aren't casting exceptions here.
+     * @param name name of the configuration.
+     * @param value value to validate.
+     * @param type type of the value.
+     * @param configuration if the configuration uses Config instead of ConfigKey, the Config object; null otherwise.
+     * @return if the value is valid, returns null; if not, returns an error message.
+     */
+    protected String validateValueRange(String name, String value, Class<?> type, Config configuration) {
+        if (type.equals(Float.class)) {
+            Float val = Float.parseFloat(value);
+            if (overprovisioningFactorsForValidation.contains(name) && val <= 0f) {
+                return String.format("Value for configuration [%s] should be greater than 0.", name);
+            } else if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
+                return String.format("Please enter a value between 0 and 1 for the configuration parameter: [%s].", name);
             }
-            if (overprovisioningFactorsForValidation.contains(name)) {
-                final String msg = "value cannot be null for the parameter " + name;
-                logger.error(msg);
-                return msg;
-            }
-            return null;
-        }
-
-        value = value.trim();
-        try {
-            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) <= 0f) {
-                final String msg = name + " should be greater than 0";
-                logger.error(msg);
-                throw new InvalidParameterValueException(msg);
-            }
-        } catch (final NumberFormatException e) {
-            final String msg = "There was an error trying to parse the float value for: " + name;
-            logger.error(msg);
-            throw new InvalidParameterValueException(msg);
-        }
-
-        if (type.equals(Boolean.class)) {
-            if (!(value.equals("true") || value.equals("false"))) {
-                logger.error("Configuration variable " + name + " is expecting true or false instead of " + value);
-                return "Please enter either 'true' or 'false'.";
-            }
-            return null;
         }
 
         if (type.equals(Integer.class)) {
-            try {
-                final int val = Integer.parseInt(value);
-                if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
-                    //The value need to be between 0 to 255 because the mac generation needs a value of 8 bit
-                    //0 value is considered as disable.
-                    if(val < 0 || val > 255){
-                        throw new InvalidParameterValueException(name + " value should be between 0 and 255. 0 value will disable this feature");
-                    }
+            int val = Integer.parseInt(value);
+            if (NetworkModel.MACIdentifier.key().equalsIgnoreCase(name)) {
+                // The value needs to be between 0 to 255 because the MAC generation needs a value of 8 bits
+                // 0 is considered as disabled.
+                if (val < 0 || val > 255){
+                    return String.format("[%s] value should be between 0 and 255. 0 value will disable this feature.", name);
                 }
-
-                if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) || UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {
-                    if (val > 10) {
-                        throw new InvalidParameterValueException("Please enter a value between 0 and 10 for the configuration parameter: " + name + ", -1 will disable it");
-                    }
+            }
+            if (UnmanagedVMsManager.ThreadsOnMSToImportVMwareVMFiles.key().equalsIgnoreCase(name) ||
+                    UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.key().equalsIgnoreCase(name)) {
+                if (val < -1 || val > 10) {
+                    return String.format("Please enter a value between -1 and 10 for the configuration parameter: [%s]. -1 will disable it.", name);
                 }
-
-                if (configValuesForValidation.contains(name)) {
-                    if (val <= 0) {
-                        throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:" + name);
-                    }
-                    if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
-                        throw new InvalidParameterValueException("Please enter a value greater than 5 for the configuration parameter:" + name);
-                    }
-                    if ("remote.access.vpn.psk.length".equalsIgnoreCase(name)) {
-                        if (val < 8) {
-                            throw new InvalidParameterValueException("Please enter a value greater than 7 for the configuration parameter:" + name);
-                        }
-                        if (val > 256) {
-                            throw new InvalidParameterValueException("Please enter a value less than 257 for the configuration parameter:" + name);
-                        }
-                    }
-                    if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name)) {
-                        if (val > 1048576) {
-                            throw new InvalidParameterValueException("Please enter a value less than 1048576 for the configuration parameter:" + name);
-                        }
-                    }
+            } else if (configValuesForValidation.contains(name)) {
+                if (val <= 0) {
+                    return String.format("Please enter a positive value for the configuration parameter: [%s].", name);
                 }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the integer value for configuration parameter: " + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the integer value for configuration parameter: " + name);
+                if ("vm.password.length".equalsIgnoreCase(name) && val < 6) {
+                    return String.format("Please enter a value greater than 5 for the configuration parameter: [%s].",  name);
+                }
+                if ("remote.access.vpn.psk.length".equalsIgnoreCase(name) && (val < 8 || val > 256)) {
+                    return String.format("Please enter a value greater than 7 and less than 257 for the configuration parameter: [%s].", name);
+                }
+                if (UserDataManager.VM_USERDATA_MAX_LENGTH_STRING.equalsIgnoreCase(name) && val > 1048576) {
+                    return String.format("Please enter a value less than 1048577 for the configuration parameter: [%s].", name);
+                }
             }
         }
 
-        if (type.equals(Float.class)) {
-            try {
-                final Float val = Float.parseFloat(value);
-                if (weightBasedParametersForValidation.contains(name) && (val < 0f || val > 1f)) {
-                    throw new InvalidParameterValueException("Please enter a value between 0 and 1 for the configuration parameter: " + name);
+        if (type.equals(String.class)) {
+            if (SecStorageAllowedInternalDownloadSites.key().equalsIgnoreCase(name) && StringUtils.isNotEmpty(value)) {
+                final String[] cidrs = value.split(",");
+                for (final String cidr : cidrs) {
+                    if (!NetUtils.isValidIp4(cidr) && !NetUtils.isValidIp6(cidr) && !NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                        return String.format("Invalid CIDR %s value specified for the config %s.", cidr, name);
+                    }
                 }
-            } catch (final NumberFormatException e) {
-                logger.error("There was an error trying to parse the float value for configuration parameter: " + name);
-                throw new InvalidParameterValueException("There was an error trying to parse the float value for configuration parameter: " + name);
             }
         }
 
-        if (configuration == null ) {
-            //range validation has to be done per case basis, for now
-            //return in case of Configkey parameters
+        validateIpAddressRelatedConfigValues(name, value);
+
+        if (!shouldValidateConfigRange(name, value, configuration)) {
             return null;
+        }
+
+        String[] range = configuration.getRange().split(",");
+        if (type.equals(Integer.class)) {
+            return validateIfIntValueIsInRange(name, value, range[0]);
+        }
+        return validateIfStringValueIsInRange(name, value, range);
+    }
+
+    /**
+     * Returns a boolean indicating whether a Config's range should be validated. It should not be validated when:</br>
+     * <ul>
+     *  <li>The value is null;</li>
+     *  <li>The configuration uses ConfigKey instead of Config;</li>
+     *  <li>The Config does not have a specified range.</li>
+     * </ul>
+     */
+    protected boolean shouldValidateConfigRange(String name, String value, Config configuration) {
+        if (value == null) {
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as its provided value is null.", name);
+            return false;
+        }
+
+        if (configuration == null) {
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as it uses ConfigKey instead of Config.", name);
+            return false;
         }
 
         if (configuration.getRange() == null) {
-            return null;
+            logger.debug("Not proceeding with configuration [{}]'s range validation, as it does not have a specified range.", name);
+            return false;
         }
-        String[] range = configuration.getRange().split(",");
 
-        if (type.equals(String.class)) {
-            return validateIfStringValueIsInRange(name, value, range);
-        } else if (type.equals(Integer.class)) {
-            return validateIfIntValueIsInRange(name, value, range[0]);
-        }
-        return String.format("Invalid value for configuration [%s].", name);
+        logger.debug("Proceeding with configuration [{}]'s range validation.", name);
+        return true;
     }
 
     /**
@@ -6088,7 +6141,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Boolean forVpc = cmd.getForVpc();
         Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
-        String nsxMode = cmd.getNsxMode();
+        String networkModeStr = cmd.getNetworkMode();
         boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
@@ -6096,6 +6149,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
         final boolean enable = cmd.getEnable();
+        boolean specifyAsNumber = cmd.getSpecifyAsNumber();
+        String routingModeString = cmd.getRoutingMode();
         // check if valid domain
         if (CollectionUtils.isNotEmpty(domainIds)) {
             for (final Long domainId: domainIds) {
@@ -6127,20 +6182,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
         }
 
-        if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(nsxMode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+        NetworkOffering.NetworkMode networkMode = null;
+        if (networkModeStr != null) {
+            if (!EnumUtils.isValidEnum(NetworkOffering.NetworkMode.class, networkModeStr)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
-            }
-        } else {
-            if (Objects.nonNull(nsxMode)) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("nsxMode has is ignored for non-NSX enabled zones");
-                }
-                nsxMode = null;
-            }
+            networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
         }
 
         // Verify traffic type
@@ -6201,6 +6248,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             _networkSvc.validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(serviceOfferingId);
         }
+
+        NetworkOffering.RoutingMode routingMode = verifyRoutingMode(routingModeString);
 
         // configure service provider map
         final Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
@@ -6371,6 +6420,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.Connectivity, connectivityServiceCapabilityMap);
 
+        final Map<Capability, String> gatewayServiceCapabilityMap = cmd.getServiceCapabilities(Service.Gateway);
+        if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+            serviceCapabilityMap.put(Service.Gateway, gatewayServiceCapabilityMap);
+        }
+
         // if Firewall service is missing, add Firewall service/provider
         // combination
         if (firewallProvider != null) {
@@ -6407,7 +6461,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
@@ -6416,6 +6470,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
+    }
+
+    public static NetworkOffering.RoutingMode verifyRoutingMode(String routingModeString) {
+        NetworkOffering.RoutingMode routingMode = null;
+        if (routingModeString != null) {
+            try {
+                if (!SUPPORTED_ROUTING_MODE_STRS.contains(routingModeString.toLowerCase())) {
+                    throw new IllegalArgumentException(String.format("Unsupported value: %s", routingModeString));
+                }
+                routingMode = routingModeString.equalsIgnoreCase(Static.toString()) ? Static : Dynamic;
+            } catch (IllegalArgumentException e) {
+                String msg = String.format("Invalid value %s for Routing Mode, Supported values: %s, %s.",
+                        routingModeString, Static, Dynamic);
+                throw new InvalidParameterValueException(msg);
+            }
+        }
+        return routingMode;
     }
 
     void validateLoadBalancerServiceCapabilities(final Map<Capability, String> lbServiceCapabilityMap) {
@@ -6557,7 +6628,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, String mode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                                   final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6588,9 +6660,61 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (specifyAsNumber && !forNsx) {
+            String msg = "SpecifyAsNumber can only be true for network offerings for NSX";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && !Dynamic.equals(routingMode)) {
+            String msg = "SpecifyAsNumber can only be true for Dynamic Route Mode network offerings";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
+        if (specifyAsNumber && Boolean.TRUE.equals(forVpc)) {
+            String msg = "SpecifyAsNumber cannot be set for VPC network tiers. It needs to be defined at VPC level";
+            logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+
         // isPersistent should always be false for Shared network Offerings
         if (isPersistent && type == GuestType.Shared) {
             throw new InvalidParameterValueException("isPersistent should be false if network offering's type is " + type);
+        }
+
+        // Validate network mode
+        if (networkMode != null) {
+            if (type != GuestType.Isolated) {
+                throw new InvalidParameterValueException("networkMode should be set only for Isolated network offerings");
+            }
+            if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+                boolean useVirtualRouterOnly = true;
+                for (Service service : serviceProviderMap.keySet()) {
+                    Set<Provider> providers = serviceProviderMap.get(service);
+                    if (Arrays.asList(Service.SourceNat, Service.StaticNat, Service.Lb, Service.PortForwarding, Service.Vpn).contains(service)) {
+                        if (providers != null) {
+                            throw new InvalidParameterValueException("SourceNat/StaticNat/Lb/PortForwarding/Vpn service are not supported in ROUTED mode");
+                        }
+                    }
+                    if (useVirtualRouterOnly && Arrays.asList(Service.Firewall, Service.NetworkACL).contains(service)) {
+                        for (Provider provider : providers) {
+                            if (!Provider.VirtualRouter.equals(provider) && !Provider.VPCVirtualRouter.equals(provider)) {
+                                useVirtualRouterOnly = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (useVirtualRouterOnly) {
+                    // Add VirtualRouter/VPCVirtualRouter as provider of Gateway service
+                    if (forVpc) {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
+                    } else {
+                        serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
+                    }
+                }
+            }
         }
 
         // validate availability value
@@ -6669,9 +6793,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             final Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
-            if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
+            if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap)) {
                 sharedSourceNat = isSharedSourceNat(serviceProviderMap, sourceNatServiceCapabilityMap);
-                redundantRouter = isRedundantRouter(serviceProviderMap, sourceNatServiceCapabilityMap);
+                redundantRouter = isRedundantRouter(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, sourceNatServiceCapabilityMap);
+            }
+
+            final Map<Capability, String> gatewayServiceCapabilityMap = serviceCapabilityMap.get(Service.Gateway);
+            if (MapUtils.isNotEmpty(gatewayServiceCapabilityMap)) {
+                redundantRouter = redundantRouter || isRedundantRouter(serviceProviderMap.get(Service.Gateway), Service.Gateway, gatewayServiceCapabilityMap);
             }
 
             final Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
@@ -6719,12 +6848,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
         offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
-        if (Boolean.TRUE.equals(forNsx)) {
-            offeringFinal.setNsxMode(mode);
-        }
+        offeringFinal.setNetworkMode(networkMode);
 
         if (enableOffering) {
             offeringFinal.setState(NetworkOffering.State.Enabled);
+        }
+
+        offeringFinal.setSpecifyAsNumber(specifyAsNumber);
+        if (routingMode != null) {
+            offeringFinal.setRoutingMode(routingMode);
         }
 
         // Set VM AutoScaling capability
@@ -6825,11 +6957,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
     }
 
-    boolean isRedundantRouter(Map<Service, Set<Provider>> serviceProviderMap, Map<Capability, String> sourceNatServiceCapabilityMap) {
+    boolean isRedundantRouter(Set<Provider> providers, Service service, Map<Capability, String> sourceNatServiceCapabilityMap) {
         boolean redundantRouter = false;
         String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
         if (param != null) {
-            _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
+            _networkModel.checkCapabilityForProvider(providers, service, Capability.RedundantRouter, param);
             redundantRouter = param.contains("true");
         }
         return redundantRouter;
@@ -6907,6 +7039,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final Boolean isTagged = cmd.isTagged();
         final Boolean forVpc = cmd.getForVpc();
+        final String routingMode = cmd.getRoutingMode();
 
         if (domainId != null) {
             Domain domain = _entityMgr.findById(Domain.class, domainId);
@@ -6978,6 +7111,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // basic zone, and shouldn't display networkOfferings
                 return new Pair<List<? extends NetworkOffering>, Integer>(new ArrayList<NetworkOffering>(), 0);
             }
+        }
+
+        if (routingMode != null && EnumUtils.isValidEnumIgnoreCase(NetworkOffering.RoutingMode.class, routingMode)) {
+            sc.addAnd("routingMode", SearchCriteria.Op.EQ, routingMode);
         }
 
         // Don't return system network offerings to the user
@@ -7881,7 +8018,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
                 VM_SERVICE_OFFERING_MAX_CPU_CORES, VM_SERVICE_OFFERING_MAX_RAM_SIZE, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
-                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE
+                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs
         };
     }
 

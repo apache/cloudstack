@@ -73,6 +73,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
@@ -320,6 +321,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IpAddressManager _ipAddrMgr;
     @Inject
     private RoleService roleService;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Inject
     private PasswordPolicy passwordPolicy;
@@ -1066,6 +1069,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     logger.debug("Account specific Virtual IP ranges " + " are successfully released as a part of account id=" + accountId + " cleanup.");
                 }
             }
+
+            // remove dedicated IPv4 subnets
+            routedIpv4Manager.removeIpv4SubnetsForZoneByAccountId(accountId);
+
+            // remove dedicated BGP peers
+            routedIpv4Manager.removeBgpPeersByAccountId(accountId);
 
             // release account specific guest vlans
             List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
@@ -1842,7 +1851,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1862,7 +1878,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
             logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;

@@ -33,7 +33,7 @@
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%xEx{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%xEx{filters(${filters})}%n"/>
       </Console>
    </Appenders>
 

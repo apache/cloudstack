@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -98,10 +99,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VpcManagerImplTest {
@@ -155,6 +160,8 @@ public class VpcManagerImplTest {
     FirewallRulesDao firewallDao;
     @Mock
     NetworkACLVO networkACLVOMock;
+    @Mock
+    RoutedIpv4Manager routedIpv4Manager;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -178,6 +185,8 @@ public class VpcManagerImplTest {
     final Long vpcId = 1L;
 
     private AutoCloseable closeable;
+
+    private VpcOfferingVO vpcOfferingVO;
 
     private void registerCallContext() {
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
@@ -212,6 +221,7 @@ public class VpcManagerImplTest {
         manager._ntwkSvc = networkServiceMock;
         manager._firewallDao = firewallDao;
         manager._networkAclDao = networkACLDaoMock;
+        manager.routedIpv4Manager = routedIpv4Manager;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
         overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "false");
@@ -365,13 +375,13 @@ public class VpcManagerImplTest {
         manager.createVpcGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
                 "10.10.10.0/24", null, null, accountMock, null, physicalNetwork,
                 1L, null, null, 1L, null, accountMock,
-                true, null, null, null, null, null, null, null, new Pair<>(1000, 1000));
+                true, null, null, null, null, null, null, null, new Pair<>(1000, 1000), null);
 
         Mockito.verify(networkMgr, times(1)).createGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
                 "10.10.10.0/24", null, false, "cs1cloud.internal", accountMock, null,
                 physicalNetwork, zoneId, null, null, 1L, null, null,
                 true, null, null, null, null,
-                null, null, null, null, null, new Pair<>(1000, 1000));
+                null, null, null, null, null, new Pair<>(1000, 1000), null);
     }
 
     @Test
@@ -462,7 +472,7 @@ public class VpcManagerImplTest {
 
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {
         Mockito.when(accountManager.getAccount(vpcOwnerId)).thenReturn(account);
-        VpcOfferingVO vpcOfferingVO = Mockito.mock(VpcOfferingVO.class);
+        vpcOfferingVO = Mockito.mock(VpcOfferingVO.class);
         Mockito.when(vpcOfferingVO.getId()).thenReturn(vpcOfferingId);
         Mockito.when(vpcOfferingVO.getState()).thenReturn(VpcOffering.State.Enabled);
         Mockito.when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(vpcOfferingVO);
@@ -479,7 +489,7 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], null, null, null, true, 1500);
+                    ip4Dns[0], null, null, null, true, 1500, null, null, null);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
@@ -491,10 +501,44 @@ public class VpcManagerImplTest {
         try {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500);
+                    ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500, null, null, null);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }
+    }
+
+    @Test
+    public void testCreateVpc() {
+        mockVpcDnsResources(true, false);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
+        Mockito.when(vpc.getUuid()).thenReturn("uuid");
+        try {
+            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test
+    public void testCreateRoutedVpc() {
+        mockVpcDnsResources(true, false);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
+        Mockito.when(vpc.getUuid()).thenReturn("uuid");
+        doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
+        doNothing().when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyString());
+        try {
+            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+
+        verify(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyString());
     }
 
     @Test

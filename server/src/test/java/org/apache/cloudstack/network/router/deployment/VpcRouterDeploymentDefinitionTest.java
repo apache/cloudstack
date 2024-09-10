@@ -269,7 +269,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
     public void testFindSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // Prepare
         final PublicIp publicIp = mock(PublicIp.class);
-        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+        when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc, null)).thenReturn(publicIp);
         deployment.isPublicNetwork = true;
 
         // Execute

@@ -40,6 +40,10 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     @Param(description = "the domain name of the resource limit")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the resource limit belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.RESOURCE_TYPE)
     @Param(description = "resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
     private String resourceType;
@@ -84,6 +88,10 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setResourceType(Resource.ResourceType resourceType) {
         this.resourceType = Integer.valueOf(resourceType.getOrdinal()).toString();
         this.resourceTypeName = resourceType.getName();

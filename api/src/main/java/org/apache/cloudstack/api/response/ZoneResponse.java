@@ -149,6 +149,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
     private boolean nsxEnabled = false;
 
+    @SerializedName(ApiConstants.MULTI_ARCH)
+    @Param(description = "true, if zone contains clusters and hosts from different CPU architectures", since = "4.20")
+    private boolean multiArch;
+
+    @SerializedName(ApiConstants.ASN_RANGE)
+    @Param(description = "AS Number Range")
+    private String asnRange;
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -312,10 +320,6 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return networkType;
     }
 
-    public boolean isSecurityGroupsEnabled() {
-        return securityGroupsEnabled;
-    }
-
     public String getAllocationState() {
         return allocationState;
     }
@@ -332,16 +336,20 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return capacities;
     }
 
-    public boolean isLocalStorageEnabled() {
-        return localStorageEnabled;
-    }
-
     public Set<ResourceTagResponse> getTags() {
         return tags;
     }
 
     public Map<String, String> getResourceDetails() {
         return resourceDetails;
+    }
+
+    public boolean isSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
     }
 
     public Boolean getAllowUserSpecifyVRMtu() {
@@ -354,6 +362,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public Integer getRouterPublicInterfaceMaxMtu() {
         return routerPublicInterfaceMaxMtu;
+    }
+
+    public boolean isNsxEnabled() {
+        return nsxEnabled;
     }
 
     @Override
@@ -387,5 +399,17 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setNsxEnabled(boolean nsxEnabled) {
         this.nsxEnabled = nsxEnabled;
+    }
+
+    public void setMultiArch(boolean multiArch) {
+        this.multiArch = multiArch;
+    }
+
+    public void setAsnRange(String asnRange) {
+        this.asnRange = asnRange;
+    }
+
+    public String getAsnRange() {
+        return asnRange;
     }
 }
