@@ -5457,7 +5457,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SharedFSJoinVO sharedFSView = ApiDBUtils.newSharedFSView(sharedFS);
         return ApiDBUtils.newSharedFSResponse(view, sharedFSView);
     }
-    
+
     @Override
     public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
