@@ -25,7 +25,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 
 public class SingleCache<V> {
 
-    private final LoadingCache<Void, V> cache;
+    private final LoadingCache<Integer, V> cache;
 
     public SingleCache(long expireAfterWriteSeconds, Supplier<V> loader) {
         this.cache = Caffeine.newBuilder()
@@ -35,11 +35,11 @@ public class SingleCache<V> {
     }
 
     public V get() {
-        return cache.get(null);
+        return cache.get(0);
     }
 
     public void invalidate() {
-        cache.invalidate(null);
+        cache.invalidate(0);
     }
 
     public void clear() {

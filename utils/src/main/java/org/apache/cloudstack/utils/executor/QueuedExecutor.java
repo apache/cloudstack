@@ -28,7 +28,9 @@ import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
 
-public class QueueExecutor<K> {
+import com.cloud.utils.concurrency.NamedThreadFactory;
+
+public class QueuedExecutor<K> {
 
     private final String name;
     private final int processingSize;
@@ -38,15 +40,15 @@ public class QueueExecutor<K> {
     private final Logger logger;
     private final Consumer<K> consumer;
 
-    public QueueExecutor(String name, int processingSize, int processingInterval, Logger logger,
-             Consumer<K> consumer) {
+    public QueuedExecutor(String name, int processingSize, int processingInterval, int maxThreads, Logger logger,
+              Consumer<K> consumer) {
         this.name = name;
         this.processingSize = processingSize;
         this.processingInterval = processingInterval;
         this.logger = logger;
         this.consumer = consumer;
         requestQueue = new LinkedBlockingQueue<>(processingSize);
-        executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService = Executors.newScheduledThreadPool(maxThreads, new NamedThreadFactory(name));
     }
 
     public void queueRequest(K request) {

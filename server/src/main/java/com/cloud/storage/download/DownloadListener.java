@@ -16,19 +16,14 @@
 // under the License.
 package com.cloud.storage.download;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-
-import org.apache.cloudstack.utils.cache.LazyCache;
-import org.apache.cloudstack.utils.cache.SingleCache;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -43,6 +38,9 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -62,8 +60,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.storage.upload.UploadListener;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * Monitor progress of template download to a single storage server
@@ -142,9 +138,16 @@ public class DownloadListener implements Listener {
 
     private LazyCache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
 
+    private List<Hypervisor.HypervisorType> listAvailHypervisorInZone(long zoneId) {
+        if (_resourceMgr == null) {
+            return Collections.emptyList();
+        }
+        return _resourceMgr.listAvailHypervisorInZone(zoneId);
+    }
+
     protected void initZoneHypervisorsCache() {
         zoneHypervisorsCache =
-                new LazyCache<>(32, 30, _resourceMgr::listAvailHypervisorInZone);
+                new LazyCache<>(32, 30, this::listAvailHypervisorInZone);
     }
 
     // TODO: this constructor should be the one used for template only, remove other template constructor later
@@ -289,7 +292,6 @@ public class DownloadListener implements Listener {
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
-            // FIXME: CPU and DB hotspot
             List<Hypervisor.HypervisorType> hypervisors = zoneHypervisorsCache.get(agent.getDataCenterId());
             Hypervisor.HypervisorType hostHyper = agent.getHypervisorType();
             if (hypervisors.contains(hostHyper)) {

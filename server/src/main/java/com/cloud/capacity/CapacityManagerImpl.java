@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -37,7 +38,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.cache.LazyCache;
-import org.apache.cloudstack.utils.executor.QueueExecutor;
+import org.apache.cloudstack.utils.cache.SingleCache;
+import org.apache.cloudstack.utils.executor.QueuedExecutor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -144,7 +147,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     MessageBus _messageBus;
 
     private LazyCache<Long, Pair<ClusterDetailsVO, ClusterDetailsVO>> clusterValuesCache;
-    private QueueExecutor<Host> hostCapacityUpdateExecutor;
+    private SingleCache<Map<Long, ServiceOfferingVO>> serviceOfferingsCache;
+    private QueuedExecutor<Host> hostCapacityUpdateExecutor;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -154,8 +158,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
 
-        hostCapacityUpdateExecutor = new QueueExecutor<>("HostCapacityUpdateExecutor", 10, 10,
-                s_logger, this::updateCapacityForHostInternal);
+        hostCapacityUpdateExecutor = new QueuedExecutor<>("HostCapacityUpdateExecutor", 10, 10,
+                1, s_logger, this::updateCapacityForHostInternal);
 
         return true;
     }
@@ -165,6 +169,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, this);
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, this);
         clusterValuesCache = new LazyCache<>(16, 60, this::getClusterValues);
+        serviceOfferingsCache = new SingleCache<>(60, this::getServiceOfferingsMap);
         hostCapacityUpdateExecutor.startProcessing();
         return true;
     }
@@ -641,16 +646,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return totalAllocatedSize;
     }
 
-    protected void updateCapacityForHostInternal(final Host host) {
-        // prepare the service offerings
-        List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-        Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-        for (ServiceOfferingVO offering : offerings) {
-            offeringsMap.put(offering.getId(), offering);
-        }
-        updateCapacityForHost(host, offeringsMap);
-    }
-
     @DB
     @Override
     public void updateCapacityForHost(final Host host) {
@@ -662,9 +657,33 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 _clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio"));
     }
 
+
+    protected Map<Long, ServiceOfferingVO> getServiceOfferingsMap() {
+        List<ServiceOfferingVO> serviceOfferings = _offeringsDao.listAllIncludingRemoved();
+        if (CollectionUtils.isEmpty(serviceOfferings)) {
+            return new HashMap<>();
+        }
+        return serviceOfferings.stream()
+                .collect(Collectors.toMap(
+                        ServiceOfferingVO::getId,
+                        offering -> offering
+                ));
+    }
+
+    protected ServiceOfferingVO getServiceOffering(long id) {
+        Map <Long, ServiceOfferingVO> map = serviceOfferingsCache.get();
+        if (map.containsKey(id)) {
+            return map.get(id);
+        }
+        ServiceOfferingVO serviceOfferingVO = _offeringsDao.findByIdIncludingRemoved(id);
+        if (serviceOfferingVO != null) {
+            serviceOfferingsCache.invalidate();
+        }
+        return serviceOfferingVO;
+    }
+
     @DB
-    @Override
-    public void updateCapacityForHost(final Host host, final Map<Long, ServiceOfferingVO> offeringsMap) {
+    protected void updateCapacityForHostInternal(final Host host) {
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -699,7 +718,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
             cpuOvercommitRatio = (vmDetailCpu != null) ? Float.parseFloat(vmDetailCpu) : clusterCpuOvercommitRatio;
             ramOvercommitRatio = (vmDetailRam != null) ? Float.parseFloat(vmDetailRam) : clusterRamOvercommitRatio;
-            ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+            ServiceOffering so = getServiceOffering(vm.getServiceOfferingId());
             if (so == null) {
                 so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
             }
@@ -728,6 +747,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + vmsByLastHostId.size() + " VM, not running on host " + host.getId());
         }
+
         for (VMInstanceVO vm : vmsByLastHostId) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
@@ -740,7 +760,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     cpuOvercommitRatio = Float.parseFloat(vmDetailCpu.getValue());
                     ramOvercommitRatio = Float.parseFloat(vmDetailRam.getValue());
                 }
-                ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+                ServiceOffering so = getServiceOffering(vm.getServiceOfferingId());
                 Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
                 if (so == null) {
                     so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
