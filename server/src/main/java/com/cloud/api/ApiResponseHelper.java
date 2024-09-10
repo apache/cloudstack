@@ -5517,8 +5517,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SharedFSJoinVO sharedFSView = ApiDBUtils.newSharedFSView(sharedFS);
         return ApiDBUtils.newSharedFSResponse(view, sharedFSView);
     }
-
-    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
+protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
         Set<Long> guestOsCategoryIds = responses.stream().map(TemplateResponse::getOsTypeCategoryId).collect(Collectors.toSet());
         Map<Long, ResourceIcon> guestOsCategoryIcons =
                 resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
@@ -5552,7 +5551,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setResourceIconResponse(iconResponse);
         }
     }
-
     @Override
     public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
