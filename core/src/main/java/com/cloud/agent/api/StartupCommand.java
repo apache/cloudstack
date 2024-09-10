@@ -47,6 +47,7 @@ public class StartupCommand extends Command {
     String resourceName;
     String gatewayIpAddress;
     String msHostList;
+    String arch;
 
     public StartupCommand(Host.Type type) {
         this.type = type;
@@ -288,6 +289,14 @@ public class StartupCommand extends Command {
 
     public void setMSHostList(String msHostList) {
         this.msHostList = msHostList;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 
     @Override

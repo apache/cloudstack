@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -236,7 +237,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Zone);
                 if (group == null) {
                     logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
                     throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
@@ -372,10 +373,10 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Pod);
                 if (group == null) {
-                    logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                    logger.error("Unable to dedicate pod due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate pod. Please contact Cloud Support.");
                 }
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, podId, null, null, null, null, group.getId());
                 try {
@@ -485,10 +486,10 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Cluster);
                 if (group == null) {
-                    logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                    logger.error("Unable to dedicate cluster due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate cluster. Please contact Cloud Support.");
                 }
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, clusterId, null, null, null, group.getId());
                 try {
@@ -582,10 +583,10 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             @Override
             public List<DedicatedResourceVO> doInTransaction(TransactionStatus status) {
                 // find or create the affinity group by name under this account/domain
-                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal);
+                AffinityGroup group = findOrCreateDedicatedAffinityGroup(domainId, accountIdFinal, DedicatedResources.Type.Host);
                 if (group == null) {
-                    logger.error("Unable to dedicate zone due to, failed to create dedication affinity group");
-                    throw new CloudRuntimeException("Failed to dedicate zone. Please contact Cloud Support.");
+                    logger.error("Unable to dedicate host due to, failed to create dedication affinity group");
+                    throw new CloudRuntimeException("Failed to dedicate host. Please contact Cloud Support.");
                 }
                 DedicatedResourceVO dedicatedResource = new DedicatedResourceVO(null, null, null, hostId, null, null, group.getId());
                 try {
@@ -607,7 +608,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
 
     }
 
-    private AffinityGroup findOrCreateDedicatedAffinityGroup(Long domainId, Long accountId) {
+    private AffinityGroup findOrCreateDedicatedAffinityGroup(Long domainId, Long accountId, DedicatedResources.Type dedicatedResource) {
         if (domainId == null) {
             return null;
         }
@@ -624,24 +625,25 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             if (group != null) {
                 return group;
             }
-            // default to a groupname with account/domain information
-            affinityGroupName = "DedicatedGrp-" + accountName;
 
+            // defaults to a groupName with resourceType and account/domain information
+            affinityGroupName = String.format("Dedicated%sGrp-%s", dedicatedResource, accountName);
         } else {
             // domain level group
             group = _affinityGroupDao.findDomainLevelGroupByType(domainId, "ExplicitDedication");
             if (group != null) {
                 return group;
             }
-            // default to a groupname with account/domain information
+
+            // defaults to a groupName with resourceType and account/domain information
             String domainName = _domainDao.findById(domainId).getName();
-            affinityGroupName = "DedicatedGrp-domain-" + domainName;
+            affinityGroupName = String.format("Dedicated%sGrp-domain-%s", dedicatedResource, domainName);
         }
 
-        group = _affinityGroupService.createAffinityGroup(accountName, null, domainId, affinityGroupName, "ExplicitDedication", "dedicated resources group");
+        String description = String.format("Dedicated %s group", StringUtils.lowerCase(dedicatedResource.toString()));
+        group = _affinityGroupService.createAffinityGroup(accountName, null, domainId, affinityGroupName, "ExplicitDedication", description);
 
         return group;
-
     }
 
     private List<UserVmVO> getVmsOnHost(long hostId) {

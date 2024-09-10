@@ -332,6 +332,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
+        if (template.getArch() != null) {
+            templateResponse.setArch(template.getArch().getType());
+        }
 
         //set template children disks
         Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
@@ -600,6 +603,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
+        if (iso.getArch() != null) {
+            isoResponse.setArch(iso.getArch().getType());
+        }
 
         isoResponse.setObjectName("iso");
         return isoResponse;

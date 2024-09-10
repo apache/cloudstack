@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -69,6 +71,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -157,7 +160,6 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -175,7 +177,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -264,6 +265,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     @Inject
     private UserVmService userVmService;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -429,15 +432,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support userdata that is required for Kubernetes cluster", network.getUuid()));
         }
+        if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+            throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
+        }
+        if (routedIpv4Manager.isRoutedNetwork(network)) {
+            logger.debug("No need to add firewall and port forwarding rules for ROUTED network. Assume the VMs are reachable.");
+            return;
+        }
         Long vpcId = network.getVpcId();
         if (vpcId == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support firewall that is required for Kubernetes cluster", network.getUuid()));
         }
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.PortForwarding)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support port forwarding that is required for Kubernetes cluster", network.getUuid()));
-        }
-        if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
-            throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
         }
         if (network.getVpcId() != null) {
             validateVpcTier(network);
@@ -592,7 +599,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (ntwk != null) {
             response.setNetworkId(ntwk.getUuid());
             response.setAssociatedNetworkName(ntwk.getName());
-            if (ntwk.getGuestType() == Network.GuestType.Isolated) {
+            if (!isDirectAccess(ntwk)) {
                 List<IPAddressVO> ipAddresses = ipAddressDao.listByAssociatedNetwork(ntwk.getId(), true);
                 if (ipAddresses != null && ipAddresses.size() == 1) {
                     response.setIpAddress(ipAddresses.get(0).getAddress().addr());
@@ -829,8 +836,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (network == null) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s parameter", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, ApiConstants.NETWORK_ID));
             }
-            if (Network.GuestType.Shared.equals(network.getGuestType())) {
-                throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s type of network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared.toString()));
+            if (isDirectAccess(network)) {
+                throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s network or %s network",
+                        ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared, NetworkOffering.NetworkMode.ROUTED));
             }
         }
 
@@ -851,7 +859,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 } else {
                     throw new InvalidParameterValueException(String.format("Network ID: %s is already under use by another Kubernetes cluster", network.getUuid()));
                 }
-            } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
+            }
+            if (isDirectAccess(network)) {
                 if (controlNodesCount > 1 && StringUtils.isEmpty(externalLoadBalancerIpAddress)) {
                     throw new InvalidParameterValueException(String.format("Multi-control nodes, HA Kubernetes cluster with %s network ID: %s needs an external load balancer IP address. %s parameter can be used",
                             network.getGuestType().toString(), network.getUuid(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS));
@@ -893,7 +902,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 List<KubernetesClusterDetailsVO> details = new ArrayList<>();
                 long kubernetesClusterId = kubernetesCluster.getId();
 
-                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+                if ((network != null && isDirectAccess(network)) || kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
                     addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, externalLoadBalancerIpAddress, true);
                 }
 
@@ -1999,7 +2008,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
         if (forNsx) {
-            defaultKubernetesServiceNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
+            defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
             defaultKubernetesServiceNetworkOffering.setForNsx(true);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
@@ -2013,6 +2022,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             networkOfferingServiceMapDao.persist(offService);
             logger.trace("Added service for the network offering: " + offService);
         }
+    }
+
+    @Override
+    public boolean isDirectAccess(Network network) {
+        return Network.GuestType.Shared.equals(network.getGuestType()) || routedIpv4Manager.isRoutedNetwork(network);
     }
 
     @Override

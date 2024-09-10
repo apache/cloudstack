@@ -472,6 +472,7 @@
 "label.dedicate.zone": "Zona dedicada",
 "label.dedicated": "Dedicado",
 "label.dedicated.vlan.vni.ranges": "Intervalo(s) de VLAN/VNI dedicados",
+"label.dedicatedresources": "Recursos dedicados",
 "label.default": "Padr\u00e3o",
 "label.default.use": "Uso padr\u00e3o",
 "label.default.view": "Visualiza\u00e7\u00e3o padr\u00e3o",

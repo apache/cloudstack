@@ -1409,7 +1409,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = disk.getPool();
-        PhysicalDiskFormat sourceFormat = disk.getFormat();
+        /* Linstor images are always stored as RAW, but Linstor uses qcow2 in DB,
+           to support snapshots(backuped) as qcow2 files. */
+        PhysicalDiskFormat sourceFormat = srcPool.getType() != StoragePoolType.Linstor ?
+                disk.getFormat() : PhysicalDiskFormat.RAW;
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;

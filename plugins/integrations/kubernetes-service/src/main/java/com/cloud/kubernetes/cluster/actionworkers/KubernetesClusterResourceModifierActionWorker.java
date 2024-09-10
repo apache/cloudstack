@@ -17,6 +17,31 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import com.cloud.network.rules.FirewallManager;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -61,9 +86,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLService;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
@@ -88,28 +111,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
@@ -133,6 +136,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected LoadBalancingRulesService lbService;
     @Inject
     protected RulesService rulesService;
+    @Inject
+    protected FirewallManager firewallManager;
     @Inject
     protected PortForwardingRulesDao portForwardingRulesDao;
     @Inject
@@ -169,6 +174,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String joinIpKey = "{{ k8s_control_node.join_ip }}";
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
+
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -181,7 +187,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 
         return k8sNodeConfig;
@@ -522,17 +527,22 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, final List<Long> removedVMIds) throws ResourceUnavailableException {
         if (!CollectionUtils.isEmpty(removedVMIds)) {
+            List<PortForwardingRuleVO> pfRules = new ArrayList<>();
+            List<PortForwardingRuleVO> revokedRules = new ArrayList<>();
             for (Long vmId : removedVMIds) {
-                List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+                pfRules.addAll(portForwardingRulesDao.listByNetwork(network.getId()));
                 for (PortForwardingRuleVO pfRule : pfRules) {
                     if (pfRule.getVirtualMachineId() == vmId) {
                         portForwardingRulesDao.remove(pfRule.getId());
+                        logger.trace("Marking PF rule {} with Revoke state", pfRule);
+                        pfRule.setState(FirewallRule.State.Revoke);
+                        revokedRules.add(pfRule);
                         logger.debug("The Port forwarding rule [%s] with the id [%s] was removed.", pfRule.getName(), pfRule.getId());
                         break;
                     }
                 }
             }
-            rulesService.applyPortForwardingRules(publicIp.getId(), account);
+            firewallManager.applyRules(revokedRules, false, true);
         }
     }
 
@@ -542,10 +552,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         for (PortForwardingRuleVO pfRule : pfRules) {
             if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
                 portForwardingRulesDao.remove(pfRule.getId());
-                logger.debug("The Port forwarding rule [{}] with the id [{}] was removed.", pfRule.getName(), pfRule.getId());
+                logger.debug("The Port forwarding rule [{}] with the id [{}] was mark as revoked.", pfRule.getName(), pfRule.getId());
+                pfRule.setState(FirewallRule.State.Revoke);
             }
         }
-        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+        firewallManager.applyRules(pfRules, false, true);
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,

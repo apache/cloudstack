@@ -14,8 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.consoleproxy.util;
+package com.cloud.dc.dao;
 
-public interface LoggerFactory {
-    Logger getLogger(Class<?> clazz);
+import com.cloud.dc.ASNumberRangeVO;
+import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
+
+public interface ASNumberRangeDao extends GenericDao<ASNumberRangeVO, Long> {
+
+    List<ASNumberRangeVO> listByZoneId(long zoneId);
 }

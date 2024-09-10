@@ -2937,8 +2937,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
-        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, userDataId, userDataDetails, isDynamicallyScalable,
-                cmd.getHttpMethod(), cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList, cmd.getDhcpOptionsMap());
+        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm,
+                cmd.getDeleteProtection(), osTypeId, userData,
+                userDataId, userDataDetails, isDynamicallyScalable, cmd.getHttpMethod(),
+                cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList,
+                cmd.getDhcpOptionsMap());
     }
 
     private boolean isExtraConfig(String detailName) {
@@ -3039,9 +3042,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-                                       Long userDataId, String userDataDetails, Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap)
-                    throws ResourceUnavailableException, InsufficientCapacityException {
+    public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha,
+                                       Boolean isDisplayVmEnabled, Boolean deleteProtection,
+                                       Long osTypeId, String userData, Long userDataId,
+                                       String userDataDetails, Boolean isDynamicallyScalable,
+                                       HTTPMethod httpMethod, String customId, String hostName,
+                                       String instanceName, List<Long> securityGroupIdList,
+                                       Map<String, Map<Integer, String>> extraDhcpOptionsMap
+    ) throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virtual machine with id " + id);
@@ -3074,6 +3082,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (isDisplayVmEnabled == null) {
             isDisplayVmEnabled = vm.isDisplayVm();
+        }
+
+        if (deleteProtection == null) {
+            deleteProtection = vm.isDeleteProtection();
         }
 
         boolean updateUserdata = false;
@@ -3190,7 +3202,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId, userDataDetails, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
+                userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
+                deleteProtection, customId, hostName, instanceName);
 
         if (updateUserdata) {
             updateUserData(vm);
@@ -3425,6 +3439,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (Arrays.asList(State.Destroyed, State.Expunging).contains(vm.getState()) && !expunge) {
             logger.debug("Vm id=" + vmId + " is already destroyed");
             return vm;
+        }
+
+        if (vm.isDeleteProtection()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Instance [id = %s, name = %s] has delete protection enabled and cannot be deleted.",
+                    vm.getUuid(), vm.getName()));
         }
 
         // check if vm belongs to AutoScale vm group in Disabled state
@@ -4007,7 +4027,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
                 null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
         if (newNetwork != null) {
             defaultNetwork = _networkDao.findById(newNetwork.getId());
         }
@@ -7835,7 +7855,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
                                     newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount,
                                     null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
-                                    null, null, true, null, null, null, null, null, null, null, null, null, null);
+                                    null, null, true, null, null, null, null, null, null, null, null, null, null, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).isPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);
@@ -8610,6 +8630,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         for (VolumeVO volume : volumes) {
             if (!(volume.getVolumeType() == Volume.Type.ROOT || volume.getVolumeType() == Volume.Type.DATADISK)) {
                 throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString() + " or " + Volume.Type.ROOT.toString());
+            }
+            if (volume.isDeleteProtection()) {
+                throw new InvalidParameterValueException(String.format(
+                        "Volume [id = %s, name = %s] has delete protection enabled and cannot be deleted",
+                        volume.getUuid(), volume.getName()));
             }
         }
     }

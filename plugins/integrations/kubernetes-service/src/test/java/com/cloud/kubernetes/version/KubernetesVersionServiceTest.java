@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.UpdateKubernetesSupportedVersionCmd;
@@ -213,6 +214,7 @@ public class KubernetesVersionServiceTest {
         when(cmd.getChecksum()).thenReturn(null);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
+        when(cmd.getArch()).thenReturn(CPU.CPUArch.amd64);
         Account systemAccount =  new AccountVO("system", 1L, "", Account.Type.ADMIN, "uuid");
         when(accountManager.getSystemAccount()).thenReturn(systemAccount);
         CallContext callContext = Mockito.mock(CallContext.class);

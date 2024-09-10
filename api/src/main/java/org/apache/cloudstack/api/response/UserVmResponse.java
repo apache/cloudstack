@@ -320,6 +320,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.DELETE_PROTECTION)
+    @Param(description = "true if vm has delete protection.", since = "4.20.0")
+    private boolean deleteProtection;
+
     @SerializedName(ApiConstants.SERVICE_STATE)
     @Param(description = "State of the Service from LB rule")
     private String serviceState;
@@ -993,6 +997,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDynamicallyScalable(Boolean dynamicallyScalable) {
         isDynamicallyScalable = dynamicallyScalable;
+    }
+
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
     }
 
     public String getOsTypeId() {

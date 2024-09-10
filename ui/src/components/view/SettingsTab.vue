@@ -175,10 +175,7 @@ export default {
         value: this.editableValue
       }).then(() => {
         var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.update.to')} ${this.editableValue}`
-        if (item.isdynamic) {
-          message += `. ${this.$t('message.setting.update.delay')}`
-        }
-        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
+        this.handleSuccessMessage(item, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
@@ -208,10 +205,7 @@ export default {
         name: item.name
       }).then(() => {
         var message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
-        if (item.isdynamic) {
-          message += `. ${this.$t('message.setting.update.delay')}`
-        }
-        this.handleSuccessMessage(item.name, this.$route.meta.name, message)
+        this.handleSuccessMessage(item, this.$route.meta.name, message)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.reset.config'))
@@ -226,12 +220,16 @@ export default {
         })
       })
     },
-    handleSuccessMessage (name, scope, message) {
-      var obj = this.warningMessages[name]
+    handleSuccessMessage (config, scope, message) {
+      var obj = this.warningMessages[config.name]
       if (obj && obj.scope === scope) {
-        this.$warning({ title: message, content: obj.warning })
+        var content = obj.warning
+        if (config.isdynamic) {
+          content = `this.$t('message.setting.update.delay').\n ${content}`
+        }
+        this.$warning({ title: message, content: content })
       } else {
-        this.$message.success(message)
+        this.$messageConfigSuccess(message, config)
       }
     }
   }
