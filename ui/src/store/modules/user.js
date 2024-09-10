@@ -24,7 +24,6 @@ import router from '@/router'
 import store from '@/store'
 import { oauthlogin, login, logout, api } from '@/api'
 import { i18n } from '@/locales'
-import { sourceToken } from '@/utils/request'
 
 import {
   ACCESS_TOKEN,

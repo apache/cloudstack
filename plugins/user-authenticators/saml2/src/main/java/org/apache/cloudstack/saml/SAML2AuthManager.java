@@ -73,6 +73,9 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "true",
             "When enabled (default and recommended), SAML2 signature checks are enforced and lack of signature in the SAML SSO response will cause login exception. Disabling this is not advisable but provided for backward compatibility for users who are able to accept the risks.", false);
 
+    ConfigKey<String> SAMLUserSessionKeyPathAttribute = new ConfigKey<String>("Advanced", String.class, "saml2.user.sessionkey.path", "",
+            "The Path attribute of sessionkey cookie when SAML users have logged in. If not set, it will be set to the path of SAML redirection URL (saml2.redirect.url).", true);
+
     SAMLProviderMetadata getSPMetadata();
     SAMLProviderMetadata getIdPMetadata(String entityId);
     Collection<SAMLProviderMetadata> getAllIdPMetadata();
