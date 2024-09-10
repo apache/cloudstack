@@ -444,6 +444,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Long.class, "systemvm.root.disk.size", "-1",
             "Size of root volume (in GB) of system VMs and virtual routers", true);
 
+    private boolean syncTransitioningVmPowerState;
+
     ScheduledExecutorService _executor = null;
 
     private long _nodeId;
@@ -839,6 +841,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _agentMgr.registerForHostEvents(this, true, true, true);
 
         _messageBus.subscribe(VirtualMachineManager.Topics.VM_POWER_STATE, MessageDispatcher.getDispatcher(this));
+
+        syncTransitioningVmPowerState = Boolean.TRUE.equals(VmSyncPowerStateTransitioning.value());
 
         return true;
     }
@@ -3829,11 +3833,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (ping.getHostVmStateReport() != null) {
                     _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport(), ping.getOutOfBand());
                 }
-
-                // CPU and DB hotspot
-                // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
-                // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
-                 scanStalledVMInTransitionStateOnUpHost(agentId);
+                scanStalledVMInTransitionStateOnUpHost(agentId);
                 processed = true;
             }
         }
@@ -4803,7 +4803,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VmOpLockStateRetry, VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval,
                 VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, VmConfigDriveForceHostCacheUse, VmConfigDriveUseHostCacheOnUnsupportedPool,
                 HaVmRestartHostUp, ResourceCountRunningVMsonly, AllowExposeHypervisorHostname, AllowExposeHypervisorHostnameAccountLevel, SystemVmRootDiskSize,
-                AllowExposeDomainInMetadata, MetadataCustomCloudName
+                AllowExposeDomainInMetadata, MetadataCustomCloudName, VmSyncPowerStateTransitioning
         };
     }
 
@@ -4995,6 +4995,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private void scanStalledVMInTransitionStateOnUpHost(final long hostId) {
+        if (!syncTransitioningVmPowerState) {
+            return;
+        }
         // Check VM that is stuck in Starting, Stopping, Migrating states, we won't check
         // VMs in expunging state (this need to be handled specially)
         //
@@ -5014,14 +5017,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (!_hostDao.isHostUp(hostId)) {
             return;
         }
-        // FIXME: CPU & DB hotspot: listStalledVMInTransitionStateOnUpHost
         final List<VMInstanceVO> hostTransitionVms = _vmDao.listByHostAndState(hostId, State.Starting, State.Stopping, State.Migrating);
         final List<VMInstanceVO> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostTransitionVms, cutTime);
         for (final VMInstanceVO vm : mostLikelyStoppedVMs) {
             handlePowerOffReportWithNoPendingJobsOnVM(vm);
         }
 
-        // FIXME: CPU & DB hotspot: listVMInTransitionStateWithRecentReportOnUpHost
         final List<VMInstanceVO> vmsWithRecentReport = listVMInTransitionStateWithRecentReportOnUpHost(hostTransitionVms, cutTime);
         for (final VMInstanceVO vm : vmsWithRecentReport) {
             if (vm.getPowerState() == PowerState.PowerOn) {
