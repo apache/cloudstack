@@ -5049,7 +5049,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (CollectionUtils.isEmpty(transitioningVms)) {
             return transitioningVms;
         }
-        List<Long> vmIdsInProgress = vmIdsInProgressCache.get(0);
+        List<Long> vmIdsInProgress = vmIdsInProgressCache.get();
         return transitioningVms.stream()
                 .filter(v -> v.getPowerStateUpdateTime().getTime() < cutTime && !vmIdsInProgress.contains(v.getId()))
                 .collect(Collectors.toList());
@@ -5060,7 +5060,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (CollectionUtils.isEmpty(transitioningVms)) {
             return transitioningVms;
         }
-        List<Long> vmIdsInProgress = vmIdsInProgressCache.get(0);
+        List<Long> vmIdsInProgress = vmIdsInProgressCache.get();
         return transitioningVms.stream()
                 .filter(v -> v.getPowerStateUpdateTime().getTime() > cutTime && !vmIdsInProgress.contains(v.getId()))
                 .collect(Collectors.toList());
