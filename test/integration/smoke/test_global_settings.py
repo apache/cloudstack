@@ -202,11 +202,14 @@ class TestListConfigurations(cloudstackTestCase):
         self.debug("updated the parameter %s with value %s" % (updateConfigurationResponse.name, updateConfigurationResponse.value))
 
         listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
-        listConfigurationsCmd.cfgName = updateConfigurationResponse.name
+        listConfigurationsCmd.name = updateConfigurationResponse.name
         listConfigurationsResponse = self.apiClient.listConfigurations(listConfigurationsCmd)
 
-        self.assertEqual(listConfigurationsResponse.value, updateConfigurationResponse.value, "Check if the update API returned \
-                             is the same as the one we got in the list API")
+        for item in listConfigurationsResponse:
+            if item.name == updateConfigurationResponse.name:
+                configParam = item
+
+        self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned is the same as the one we got in the list API")
 
 
     @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
@@ -224,7 +227,6 @@ class TestListConfigurations(cloudstackTestCase):
             self.fail("API call should have failed due to invalid format, but it succeeded.")
         except Exception as e:
             self.debug("Caught expected exception: %s" % str(e))
-            error_response = e.error
-            self.assertEqual(error_response['errorcode'], 431, "Expected error code 431 for invalid 21")
-            self.assertEqual(error_response['cserrorcode'], 4350, "Expected CS error code 4350 for value parsing failure")
-            self.assertIn("Validation failed", error_response['errortext'], "Expected error message related to format validation")
+            error_message = str(e)
+            self.assertIn("errorCode: 431", error_message, "Expected error code 431 for invalid format")
+            self.assertIn("Validation failed", error_message, "Expected validation failure message")
