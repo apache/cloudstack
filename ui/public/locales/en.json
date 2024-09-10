@@ -673,6 +673,7 @@
 "label.dedicate.zone": "Dedicate zone",
 "label.dedicated": "Dedicated",
 "label.dedicated.vlan.vni.ranges": "Dedicated VLAN/VNI ranges",
+"label.dedicatedresources": "Dedicated resources",
 "label.default": "Default",
 "label.default.use": "Default use",
 "label.default.view": "Default view",
