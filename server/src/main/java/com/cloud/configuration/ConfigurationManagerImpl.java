@@ -1422,7 +1422,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 String valueString = parts[1].trim();
 
                 if (commandName.isEmpty()) {
-                    String errorMessage = String.format("Validation failed: Command name is missing in '%s'.", commandName);
+                    String errorMessage = String.format("Validation failed: Command name is missing in '%s'.", command);
                     return new Pair<>(false, errorMessage);
                 }
 

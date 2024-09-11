@@ -360,7 +360,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         final Commands cmds = new Commands(Command.OnError.Stop);
         cmds.addCommand(cmd);
-        logger.debug(String.format("Wait time set on the command %s is %d seconds", cmd, cmd.getWait()));
         send(hostId, cmds, cmd.getWait());
         final Answer[] answers = cmds.getAnswers();
         if (answers != null && !(answers[0] instanceof UnsupportedAnswer)) {
