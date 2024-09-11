@@ -1408,13 +1408,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             for (String command : commands) {
                 command = command.trim();
                 if (!command.contains("=")) {
-                    String errorMessage = "Validation failed: Command '" + command + "' does not contain '='.";
+                    String errorMessage = String.format("Validation failed: Command '%s' does not contain '='.", command);
                     return new Pair<>(false, errorMessage);
                 }
 
                 String[] parts = command.split("=");
                 if (parts.length != 2) {
-                    String errorMessage = "Validation failed: Command '" + command + "' is not properly formatted.";
+                    String errorMessage = String.format("Validation failed: Command '%s' is not properly formatted.", command);
                     return new Pair<>(false, errorMessage);
                 }
 
@@ -1422,25 +1422,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 String valueString = parts[1].trim();
 
                 if (commandName.isEmpty()) {
-                    String errorMessage = "Validation failed: Command name is missing in '" + command + "'.";
+                    String errorMessage = String.format("Validation failed: Command name is missing in '%s'.", commandName);
                     return new Pair<>(false, errorMessage);
                 }
 
                 try {
                     int num = Integer.parseInt(valueString);
                     if (num <= 0) {
-                        String errorMessage = "Validation failed: The value for command '" + commandName + "' is not greater than 0. Invalid value: " + num;
+                        String errorMessage = String.format("Validation failed: The value for command '%s' is not greater than 0. Invalid value: %d", commandName, num);
                         return new Pair<>(false, errorMessage);
                     }
                 } catch (NumberFormatException e) {
-                    String errorMessage = "Validation failed: The value for command '" + commandName + "' is not a valid integer. Invalid value: " + valueString;
+                    String errorMessage = String.format("Validation failed: The value for command '%s' is not a valid integer. Invalid value: %s", commandName, valueString);
                     return new Pair<>(false, errorMessage);
                 }
             }
 
             return new Pair<>(true, "");
         } catch (Exception e) {
-            String errorMessage = "Validation failed: An error occurred while parsing the command string. Error: " + e.getMessage();
+            String errorMessage = String.format("Validation failed: An error occurred while parsing the command string. Error: %s", e.getMessage());
             return new Pair<>(false, errorMessage);
         }
     }
