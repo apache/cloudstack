@@ -1236,8 +1236,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
 
-        // FIXME: ConfigKey causes hotspot + connection leaks
-        // TODO: Implement LRU caching here...
         final Account account = accountMgr.getAccount(user.getAccountId());
         final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
