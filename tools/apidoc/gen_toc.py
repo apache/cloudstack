@@ -173,7 +173,7 @@ known_categories = {
     'removeIpFromNic': 'Nic',
     'updateVmNicIp': 'Nic',
     'listNics':'Nic',
-	'AffinityGroup': 'Affinity Group',
+    'AffinityGroup': 'Affinity Group',
     'ImageStore': 'Image Store',
     'addImageStore': 'Image Store',
     'listImageStore': 'Image Store',
