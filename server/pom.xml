@@ -102,6 +102,11 @@
             <version>${cs.commons-math3.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${cs.mustache.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-utils</artifactId>
             <version>${project.version}</version>

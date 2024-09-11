@@ -138,6 +138,7 @@ public class ApiConstants {
     public static final String DATACENTER_NAME = "datacentername";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DEFAULT_VALUE = "defaultvalue";
+    public static final String DELETE_PROTECTION = "deleteprotection";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION = "destination";
     public static final String DESTINATION_ZONE_ID = "destzoneid";

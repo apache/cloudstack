@@ -1455,7 +1455,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
 
-        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword(), false);
         String email = updateUserCmd.getEmail();
         if (StringUtils.isNotBlank(email)) {
             user.setEmail(email);
@@ -1483,7 +1483,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
         if (newPassword == null) {
             logger.trace("No new password to update for user: " + user.getUuid());
             return;
@@ -1498,16 +1498,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        boolean skipValidation = isAdmin || skipCurrentPassValidation;
         if (isAdmin) {
             logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
-        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+        if (!skipValidation && StringUtils.isBlank(currentPassword)) {
             throw new InvalidParameterValueException("To set a new password the current password must be provided.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
         }
-        if (!isAdmin) {
+        if (!skipValidation) {
             validateCurrentPassword(user, currentPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);

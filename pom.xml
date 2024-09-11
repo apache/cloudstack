@@ -169,6 +169,7 @@
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
+        <cs.mustache.version>0.9.14</cs.mustache.version>
         <cs.mysql.version>8.0.33</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
