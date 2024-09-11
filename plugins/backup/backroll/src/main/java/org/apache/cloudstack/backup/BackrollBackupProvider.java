@@ -116,11 +116,6 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
-        throw new CloudRuntimeException("Backroll plugin does not support this feature");
-    }
-
-    @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         if (CollectionUtils.isEmpty(vms)) {
@@ -379,5 +374,11 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
     private String getBackupName(Backup backup) {
         return backup.getExternalId().substring(backup.getExternalId().indexOf(",") + 1);
+    }
+
+    @Override
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+        logger.debug("Restoring volume {} from backup {} on the Backroll Backup Provider", volumeUuid, backup.getUuid());
+        throw new CloudRuntimeException("Backroll plugin does not support this feature");
     }
 }
