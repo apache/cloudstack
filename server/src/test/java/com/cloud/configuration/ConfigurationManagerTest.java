@@ -1442,7 +1442,7 @@ public class ConfigurationManagerTest {
         try {
             configurationMgr.validateSpecificConfigurationValues(name, validValue, String.class);
         } catch (InvalidParameterValueException e) {
-            Assert.fail("Exception should not be thrown for a valid command string with positive integers.");
+            Assert.fail("Exception should not be thrown for a valid command string with positive integers, but there is an error " + e);
         }
     }
 

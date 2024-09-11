@@ -430,7 +430,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (timeout > 0) {
             result = timeout;
         } else {
-            logger.debug(String.format("Considering the Wait global setting %d, since wait time set on command is 0", Wait.value()));
             result = Wait.value();
         }
 
@@ -439,7 +438,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected int getTimeoutFromGranularWaitTime(final Commands commands) {
-        logger.debug("Looking for the commands.timeout global setting for any command-specific timeout value");
         String commandWaits = GranularWaitTimeForCommands.value().trim();
 
         int maxWait = 0;
@@ -452,7 +450,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     Integer commandTimeout = commandTimeouts.get(simpleCommandName);
 
                     if (commandTimeout != null) {
-                        logger.debug(String.format("Timeout %d found for command %s in commands.timeout global setting", commandTimeout, cmd.toString()));
                         if (commandTimeout > maxWait) {
                             maxWait = commandTimeout;
                         }
@@ -492,6 +489,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         int wait = getTimeout(commands, timeout);
+        logger.debug(String.format("Wait time setting on %s is %d seconds", commands, wait));
         for (Command cmd : commands) {
             cmd.setWait(wait);
         }
@@ -1055,7 +1053,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         for (final Command cmd : cmds) {
-            logger.debug(String.format("Wait time set on the command %s is %d", cmd, cmd.getWait()));
             if (cmd.getWait() > wait) {
                 wait = cmd.getWait();
             }
