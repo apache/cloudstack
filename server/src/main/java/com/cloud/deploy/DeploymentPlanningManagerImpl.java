@@ -766,7 +766,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Long> allDedicatedPods = _dedicatedDao.listAllPods();
         allPodsInDc.retainAll(allDedicatedPods);
 
-        List<Long> allClustersInDc = _clusterDao.listAllClusters(dc.getId());
+        List<Long> allClustersInDc = _clusterDao.listAllClusterIds(dc.getId());
         List<Long> allDedicatedClusters = _dedicatedDao.listAllClusters();
         allClustersInDc.retainAll(allDedicatedClusters);
 

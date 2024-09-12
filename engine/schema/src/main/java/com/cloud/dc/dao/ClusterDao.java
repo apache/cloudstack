@@ -51,7 +51,7 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<ClusterVO> listClustersByDcId(long zoneId);
 
-    List<Long> listAllClusters(Long zoneId);
+    List<Long> listAllClusterIds(Long zoneId);
 
     boolean getSupportsResigning(long clusterId);
 }
