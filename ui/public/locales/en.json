@@ -530,7 +530,7 @@
 "label.complete": "Complete",
 "label.compute": "Compute",
 "label.compute.offerings": "Compute offerings",
-"label.compute.offering.for.vm": "Compute offering for VM",
+"label.compute.offering.for.sharedfs.instance": "Compute offering for Instance",
 "label.computeonly.offering": "Compute only disk offering",
 "label.computeonly.offering.tooltip": "Option to specify root disk related information in the compute offering or to directly link a disk offering to the compute offering",
 "label.conditions": "Conditions",
