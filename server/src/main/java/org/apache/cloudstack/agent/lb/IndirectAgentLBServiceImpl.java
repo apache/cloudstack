@@ -41,12 +41,9 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
@@ -134,63 +131,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         hostIdList.sort(Comparator.comparingLong(x -> x));
         return hostIdList;
     }
-
-//    private List<Host> getAllAgentBasedHosts() {
-//        final List<HostVO> allHosts = hostDao.listAll();
-//        if (allHosts == null) {
-//            return new ArrayList<>();
-//        }
-//        final List <Host> agentBasedHosts = new ArrayList<>();
-//        for (final Host host : allHosts) {
-//            conditionallyAddHost(agentBasedHosts, host);
-//        }
-//        return agentBasedHosts;
-//    }
-//
-//    private void conditionallyAddHost(List<Host> agentBasedHosts, Host host) {
-//        if (host == null) {
-//            if (LOG.isTraceEnabled()) {
-//                LOG.trace("trying to add no host to a list");
-//            }
-//            return;
-//        }
-//
-//        EnumSet<ResourceState> allowedStates = EnumSet.of(
-//                ResourceState.Enabled,
-//                ResourceState.Maintenance,
-//                ResourceState.Disabled,
-//                ResourceState.ErrorInMaintenance,
-//                ResourceState.PrepareForMaintenance);
-//        // so the remaining EnumSet<ResourceState> disallowedStates = EnumSet.complementOf(allowedStates)
-//        // would be {ResourceState.Creating, ResourceState.Error};
-//        if (!allowedStates.contains(host.getResourceState())) {
-//            if (LOG.isTraceEnabled()) {
-//                LOG.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
-//            }
-//            return;
-//        }
-//
-//        if (host.getType() != Host.Type.Routing
-//                && host.getType() != Host.Type.ConsoleProxy
-//                && host.getType() != Host.Type.SecondaryStorage
-//                && host.getType() != Host.Type.SecondaryStorageVM) {
-//            if (LOG.isTraceEnabled()) {
-//                LOG.trace(String.format("host is of wrong type, not adding to the host list, (id = %s, type = %s)", host.getUuid(), host.getType()));
-//            }
-//            return;
-//        }
-//
-//        if (host.getHypervisorType() != null
-//                && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
-//
-//            if (LOG.isTraceEnabled()) {
-//                LOG.trace(String.format("hypervisor is not the right type, not adding to the host list, (id = %s, hypervisortype = %s)", host.getUuid(), host.getHypervisorType()));
-//            }
-//            return;
-//        }
-//
-//        agentBasedHosts.add(host);
-//    }
 
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
         return hostDao.findHostIdsByZoneClusterResourceStateAndType(zoneId, clusterId,
