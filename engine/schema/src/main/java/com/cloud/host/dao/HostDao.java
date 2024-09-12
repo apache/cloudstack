@@ -170,4 +170,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> findHostIdsByZoneClusterResourceStateAndType(final Long zoneId, final Long clusterId,
             final List<ResourceState> resourceStates, final List<Type> types);
+
+    List<Long> listAllIds();
 }

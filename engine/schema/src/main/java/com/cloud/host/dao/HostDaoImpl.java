@@ -1543,4 +1543,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", types.toArray());
         return customSearch(sc, null);
     }
+
+    @Override
+    public List<Long> listAllIds() {
+        GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.done();
+        return customSearch(sb.create(), null);
+    }
 }
