@@ -299,7 +299,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
             if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
             }
         }
 
@@ -434,7 +434,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
             if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
             }
         }
         validateForZone(vm.getDataCenterId());
@@ -507,7 +507,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
             if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
             }
         }
 
@@ -787,7 +787,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getType().equals(VirtualMachine.Type.User)) {
             UserVmVO userVm = userVmDao.findById(vmId);
             if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+                throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
             }
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);

@@ -1187,7 +1187,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
         if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem VM");
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);

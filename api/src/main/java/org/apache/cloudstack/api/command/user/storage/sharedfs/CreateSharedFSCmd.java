@@ -130,7 +130,7 @@ public class CreateSharedFSCmd extends BaseAsyncCreateCmd implements UserCmd {
             type = CommandType.UUID,
             required = true,
             entityType = ServiceOfferingResponse.class,
-            description = "the service offering to use for the shared filesystem VM hosting the data. The offering should be HA enabled and the cpu count and memory size should be greater than equal to sharedfsvm.min.cpu.count and sharedfsvm.min.ram.size respectively")
+            description = "the service offering to use for the shared filesystem instance hosting the data. The offering should be HA enabled and the cpu count and memory size should be greater than equal to sharedfsvm.min.cpu.count and sharedfsvm.min.ram.size respectively")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.FILESYSTEM,
