@@ -546,7 +546,7 @@ export default {
     },
     {
       name: 'sharedfs',
-      title: 'label.sharedfs',
+      title: 'label.shared.filesystems',
       icon: 'file-text-outlined',
       permission: ['listSharedFileSystems'],
       resourceType: 'SharedFS',
