@@ -57,6 +57,10 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
+import org.apache.cloudstack.api.command.admin.bgp.CreateASNRangeCmd;
+import org.apache.cloudstack.api.command.admin.bgp.DeleteASNRangeCmd;
+import org.apache.cloudstack.api.command.admin.bgp.ListASNRangesCmd;
+import org.apache.cloudstack.api.command.admin.bgp.ReleaseASNumberCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForZoneCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateIpv4SubnetForGuestNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateIpv4SubnetForZoneCmd;
@@ -74,6 +78,7 @@ import org.apache.cloudstack.api.command.admin.network.bgp.DeleteBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ListBgpPeersCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.ReleaseDedicatedBgpPeerCmd;
 import org.apache.cloudstack.api.command.admin.network.bgp.UpdateBgpPeerCmd;
+import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.api.command.user.network.routing.CreateRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.routing.DeleteRoutingFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.network.routing.ListRoutingFirewallRulesCmd;
@@ -154,6 +159,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
+                RoutedNetworkVpcEnabled,
                 RoutedNetworkIPv4MaxCidrSize, RoutedNetworkIPv4MinCidrSize, RoutedIPv4NetworkCidrAutoAllocationEnabled,
                 RoutedVpcIPv4MaxCidrSize, RoutedVpcIPv4MinCidrSize, UseSystemBgpPeers
         };
@@ -162,19 +168,25 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!RoutedNetworkVpcEnabled.value()) {
+            return cmdList;
+        }
         cmdList.add(CreateIpv4SubnetForZoneCmd.class);
         cmdList.add(DeleteIpv4SubnetForZoneCmd.class);
         cmdList.add(ListIpv4SubnetsForZoneCmd.class);
         cmdList.add(UpdateIpv4SubnetForZoneCmd.class);
         cmdList.add(DedicateIpv4SubnetForZoneCmd.class);
         cmdList.add(ReleaseDedicatedIpv4SubnetForZoneCmd.class);
+
         cmdList.add(CreateIpv4SubnetForGuestNetworkCmd.class);
         cmdList.add(ListIpv4SubnetsForGuestNetworkCmd.class);
         cmdList.add(DeleteIpv4SubnetForGuestNetworkCmd.class);
+
         cmdList.add(CreateRoutingFirewallRuleCmd.class);
         cmdList.add(ListRoutingFirewallRulesCmd.class);
         cmdList.add(UpdateRoutingFirewallRuleCmd.class);
         cmdList.add(DeleteRoutingFirewallRuleCmd.class);
+
         cmdList.add(CreateBgpPeerCmd.class);
         cmdList.add(DeleteBgpPeerCmd.class);
         cmdList.add(ListBgpPeersCmd.class);
@@ -183,6 +195,13 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         cmdList.add(ReleaseDedicatedBgpPeerCmd.class);
         cmdList.add(ChangeBgpPeersForNetworkCmd.class);
         cmdList.add(ChangeBgpPeersForVpcCmd.class);
+
+        cmdList.add(CreateASNRangeCmd.class);
+        cmdList.add(ListASNRangesCmd.class);
+        cmdList.add(DeleteASNRangeCmd.class);
+        cmdList.add(ListASNumbersCmd.class);
+        cmdList.add(ReleaseASNumberCmd.class);
+
         return cmdList;
     }
 

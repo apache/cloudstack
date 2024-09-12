@@ -57,6 +57,13 @@ import java.util.List;
 
 public interface RoutedIpv4Manager extends PluggableService, Configurable {
 
+    ConfigKey<Boolean> RoutedNetworkVpcEnabled = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Boolean.class,
+            "routed.network.vpc.enabled",
+            "true",
+            "If true, the Routed network and VPC are enabled in the zone.",
+            true,
+            ConfigKey.Scope.Zone);
+
     ConfigKey<Integer> RoutedNetworkIPv4MaxCidrSize = new ConfigKey<>(ConfigKey.CATEGORY_NETWORK, Integer.class,
             "routed.network.ipv4.max.cidr.size", "30", "The maximum value of the cidr size for isolated networks in ROUTED mode",
             true, ConfigKey.Scope.Account);

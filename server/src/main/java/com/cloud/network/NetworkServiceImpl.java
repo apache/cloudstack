@@ -1384,7 +1384,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId) {
+    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId, long zoneId) {
         if (!GuestType.Isolated.equals(networkOffering.getGuestType())) {
             if (cidrSize != null) {
                 throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks");
@@ -1393,6 +1393,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         if (ObjectUtils.allNotNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("network cidr and cidr size are mutually exclusive");
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
+                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+            throw new InvalidParameterValueException("Routed network is not enabled in this zone");
         }
         if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
@@ -1655,7 +1659,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("AS number is required for the network but not passed.");
         }
 
-        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId());
+        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId(), zone.getId());
 
         validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 

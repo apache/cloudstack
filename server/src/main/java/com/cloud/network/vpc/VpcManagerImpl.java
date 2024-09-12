@@ -1162,7 +1162,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // Validate VPC cidr/cidrsize
-        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
+        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize, zoneId);
 
         // Validate BGP peers
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
@@ -1247,12 +1247,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return newVpc;
     }
 
-    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
+    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
         if (ObjectUtils.allNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr or cidr size must be specified");
         }
         if (ObjectUtils.allNotNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr and cidr size are mutually exclusive");
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(vpcOffering.getNetworkMode())
+                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+            throw new InvalidParameterValueException("Routed VPC is not enabled in this zone");
         }
         if (routedIpv4Manager.isVpcVirtualRouterGateway(vpcOffering)) {
             if (cidr != null) {
