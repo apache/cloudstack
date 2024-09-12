@@ -202,7 +202,9 @@ public class IndirectAgentLBServiceImplTest {
 
     @Test
     public void testGetOrderedRunningHostIdsOrderList() {
-        when(hostDao.listAll()).thenReturn(Arrays.asList(host4, host2, host1, host3));
+        doReturn(Arrays.asList(host4.getId(), host2.getId(), host1.getId(), host3.getId())).when(hostDao)
+                .findHostIdsByZoneClusterResourceStateAndType(Mockito.eq(DC_1_ID), Mockito.eq(null),
+                        Mockito.anyList(), Mockito.anyList());
         Assert.assertEquals(Arrays.asList(host1.getId(), host2.getId(), host3.getId(), host4.getId()),
                 agentMSLB.getOrderedHostIdList(DC_1_ID));
     }
