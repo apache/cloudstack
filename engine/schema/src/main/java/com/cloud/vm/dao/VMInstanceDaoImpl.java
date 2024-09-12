@@ -911,37 +911,34 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
-        return Transaction.execute(new TransactionCallback<>() {
-            @Override
-            public Boolean doInTransaction(TransactionStatus status) {
-                boolean needToUpdate = false;
-                VMInstanceVO instance = findById(instanceId);
-                if (instance != null
-                        && (null == instance.getPowerStateUpdateTime()
-                        || instance.getPowerStateUpdateTime().before(wisdomEra))) {
-                    Long savedPowerHostId = instance.getPowerHostId();
-                    if (instance.getPowerState() != powerState
-                            || savedPowerHostId == null
-                            || savedPowerHostId != powerHostId
-                            || !isPowerStateInSyncWithInstanceState(powerState, powerHostId, instance)) {
-                        instance.setPowerState(powerState);
-                        instance.setPowerHostId(powerHostId);
-                        instance.setPowerStateUpdateCount(1);
-                        instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                        needToUpdate = true;
-                        update(instanceId, instance);
-                    } else {
-                        // to reduce DB updates, consecutive same state update for more than 3 times
-                        if (instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
-                            instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
-                            instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
-                            needToUpdate = true;
-                            update(instanceId, instance);
-                        }
-                    }
-                }
-                return needToUpdate;
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            VMInstanceVO instance = findById(instanceId);
+            if (instance == null) {
+                return false;
             }
+            // Check if we need to update based on powerStateUpdateTime
+            if (instance.getPowerStateUpdateTime() == null || instance.getPowerStateUpdateTime().before(wisdomEra)) {
+                Long savedPowerHostId = instance.getPowerHostId();
+                boolean isStateMismatch = instance.getPowerState() != powerState
+                        || savedPowerHostId == null
+                        || !savedPowerHostId.equals(powerHostId)
+                        || !isPowerStateInSyncWithInstanceState(powerState, powerHostId, instance);
+
+                if (isStateMismatch) {
+                    instance.setPowerState(powerState);
+                    instance.setPowerHostId(powerHostId);
+                    instance.setPowerStateUpdateCount(1);
+                } else if (instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
+                    instance.setPowerStateUpdateCount(instance.getPowerStateUpdateCount() + 1);
+                } else {
+                    // No need to update if power state is already in sync and count exceeded
+                    return false;
+                }
+                instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+                update(instanceId, instance);
+                return true; // Return true since an update occurred
+            }
+            return false;
         });
     }
 
