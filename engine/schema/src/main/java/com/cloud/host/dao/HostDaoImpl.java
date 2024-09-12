@@ -1521,4 +1521,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<Status> statuses = customSearch(sc, null);
         return CollectionUtils.isNotEmpty(statuses) && Status.Up.equals(statuses.get(0));
     }
+
+    @Override
+    public List<Long> findHostIdsByZoneClusterResourceStateAndType(final Long zoneId, final Long clusterId,
+               final List<ResourceState> resourceStates, final List<Type> types) {
+        GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.IN);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("resourceState", resourceStates.toArray());
+        sc.setParameters("type", types.toArray());
+        return customSearch(sc, null);
+    }
 }

@@ -193,29 +193,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 //    }
 
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
-        GenericSearchBuilder<HostVO, Long> sb = hostDao.createSearchBuilder(Long.class);
-        sb.selectFields(sb.entity().getId());
-        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getResourceState(), SearchCriteria.Op.IN);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.IN);
-        sb.done();
-        SearchCriteria<Long> sc = sb.create();
-        if (zoneId != null) {
-            sc.setParameters("zoneId", zoneId);
-        }
-        if (clusterId != null) {
-            sc.setParameters("clusterId", clusterId);
-        }
-        sc.setParameters("state", List.of(
-                ResourceState.Enabled,
-                ResourceState.Maintenance,
-                ResourceState.Disabled,
-                ResourceState.ErrorInMaintenance,
-                ResourceState.PrepareForMaintenance).toArray());
-        sc.setParameters("type", List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
-                Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM).toArray());
-        return hostDao.customSearch(sc, null);
+        return hostDao.findHostIdsByZoneClusterResourceStateAndType(zoneId, clusterId,
+                List.of(ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
+                        ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance),
+                List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
+                        Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM));
     }
 
     private org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm getAgentMSLBAlgorithm() {
