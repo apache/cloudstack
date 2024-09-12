@@ -193,8 +193,8 @@ CREATE TABLE `cloud`.`ip4_guest_subnet_network_map` (
    CONSTRAINT `uc_ip4_guest_subnet_network_map__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`network_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
-ALTER TABLE `cloud`.`vpc_offerings` RENAME COLUMN `nsx_mode` TO `network_mode`;
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('network_offerings',  'nsx_mode', 'network_mode', 'varchar(32)  COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('vpc_offerings', 'nsx_mode', 'network_mode', 'varchar(32)  COMMENT "mode in which the network would route traffic"');
 ALTER TABLE `cloud`.`event` MODIFY COLUMN `type` varchar(50) NOT NULL;
 
 -- Add tables for AS Numbers and range
