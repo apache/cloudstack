@@ -86,9 +86,10 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             return msList;
         }
 
+        final org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm algorithm = getAgentMSLBAlgorithm();
         List<Long> hostIdList = orderedHostIdList;
         if (hostIdList == null) {
-            hostIdList = getOrderedHostIdList(dcId);
+            hostIdList = algorithm.isHostListNeeded() ? getOrderedHostIdList(dcId) : new ArrayList<>();
         }
 
         // just in case we have a host in creating state make sure it is in the list:
@@ -98,8 +99,6 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             hostIdList.add(hostId);
         }
-
-        final org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm algorithm = getAgentMSLBAlgorithm();
         return algorithm.sort(msList, hostIdList, hostId);
     }
 
