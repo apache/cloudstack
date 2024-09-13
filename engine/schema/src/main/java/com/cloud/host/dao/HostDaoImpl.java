@@ -183,6 +183,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         HostTypeCountSearch = createSearchBuilder();
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
+        HostTypeCountSearch.and("zoneId", HostTypeCountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        HostTypeCountSearch.and("resourceState", HostTypeCountSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.done();
 
         ResponsibleMsCountSearch = createSearchBuilder();
@@ -500,7 +502,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public Integer countAllByTypeInZone(long zoneId, Type type) {
         SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
         sc.setParameters("type", type);
-        sc.setParameters("dc", zoneId);
+        sc.setParameters("zoneId", zoneId);
         return getCount(sc);
     }
 
@@ -509,7 +511,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = HostTypeCountSearch.create();
         sc.setParameters("type", Type.Routing);
         sc.setParameters("resourceState", ResourceState.Enabled);
-        sc.setParameters("dc", zoneId);
+        sc.setParameters("zoneId", zoneId);
         return getCount(sc);
     }
 
