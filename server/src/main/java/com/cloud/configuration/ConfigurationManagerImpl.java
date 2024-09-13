@@ -1404,37 +1404,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected Pair<Boolean, String> validateCommaSeparatedKeyValueConfigWithPositiveIntegerValues(String value) {
         try {
-            String[] commands = value.split(",");
-            for (String command : commands) {
-                command = command.trim();
-                if (!command.contains("=")) {
-                    String errorMessage = String.format("Validation failed: Command '%s' does not contain '='.", command);
-                    return new Pair<>(false, errorMessage);
-                }
-
-                String[] parts = command.split("=");
-                if (parts.length != 2) {
-                    String errorMessage = String.format("Validation failed: Command '%s' is not properly formatted.", command);
-                    return new Pair<>(false, errorMessage);
-                }
-
-                String commandName = parts[0].trim();
-                String valueString = parts[1].trim();
-
-                if (commandName.isEmpty()) {
-                    String errorMessage = String.format("Validation failed: Command name is missing in '%s'.", command);
-                    return new Pair<>(false, errorMessage);
-                }
-
-                try {
-                    int num = Integer.parseInt(valueString);
-                    if (num <= 0) {
-                        String errorMessage = String.format("Validation failed: The value for command '%s' is not greater than 0. Invalid value: %d", commandName, num);
+            if (StringUtils.isNotEmpty(value)) {
+                String[] commands = value.split(",");
+                for (String command : commands) {
+                    command = command.trim();
+                    if (!command.contains("=")) {
+                        String errorMessage = String.format("Validation failed: Command '%s' does not contain '='.", command);
                         return new Pair<>(false, errorMessage);
                     }
-                } catch (NumberFormatException e) {
-                    String errorMessage = String.format("Validation failed: The value for command '%s' is not a valid integer. Invalid value: %s", commandName, valueString);
-                    return new Pair<>(false, errorMessage);
+
+                    String[] parts = command.split("=");
+                    if (parts.length != 2) {
+                        String errorMessage = String.format("Validation failed: Command '%s' is not properly formatted.", command);
+                        return new Pair<>(false, errorMessage);
+                    }
+
+                    String commandName = parts[0].trim();
+                    String valueString = parts[1].trim();
+
+                    if (commandName.isEmpty()) {
+                        String errorMessage = String.format("Validation failed: Command name is missing in '%s'.", command);
+                        return new Pair<>(false, errorMessage);
+                    }
+
+                    try {
+                        int num = Integer.parseInt(valueString);
+                        if (num <= 0) {
+                            String errorMessage = String.format("Validation failed: The value for command '%s' is not greater than 0. Invalid value: %d", commandName, num);
+                            return new Pair<>(false, errorMessage);
+                        }
+                    } catch (NumberFormatException e) {
+                        String errorMessage = String.format("Validation failed: The value for command '%s' is not a valid integer. Invalid value: %s", commandName, valueString);
+                        return new Pair<>(false, errorMessage);
+                    }
                 }
             }
 
