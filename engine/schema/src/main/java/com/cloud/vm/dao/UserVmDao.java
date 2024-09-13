@@ -87,10 +87,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 
     void loadDetails(UserVmVO vm);
 
-    void saveDetails(UserVmVO vm);
-
-    void saveDetails(UserVmVO vm, List<String> hiddenDetails);
-
     List<Long> listPodIdsHavingVmsforAccount(long zoneId, long accountId);
 
     public Long countAllocatedVMsForAccount(long accountId, boolean runningVMsonly);

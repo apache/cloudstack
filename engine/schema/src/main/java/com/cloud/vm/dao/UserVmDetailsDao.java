@@ -20,6 +20,14 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceVO;
+
+import java.util.List;
 
 public interface UserVmDetailsDao extends GenericDao<UserVmDetailVO, Long>, ResourceDetailsDao<UserVmDetailVO> {
+
+    public void saveDetails(VMInstanceVO vm);
+
+    public void saveDetails(VMInstanceVO vm, List<String> hiddenDetails);
+
 }

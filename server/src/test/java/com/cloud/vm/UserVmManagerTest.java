@@ -63,6 +63,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -144,6 +145,8 @@ public class UserVmManagerTest {
     private UserDao _userDao;
     @Mock
     private UserVmDao _vmDao;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
     @Mock
     private VMInstanceDao _vmInstanceDao;
     @Mock
@@ -820,20 +823,20 @@ public class UserVmManagerTest {
     public void testPersistDeviceBusInfoWithNullController() {
         when(_vmMock.getDetail(any(String.class))).thenReturn(null);
         _userVmMgr.persistDeviceBusInfo(_vmMock, null);
-        verify(_vmDao, times(0)).saveDetails(any(UserVmVO.class));
+        verify(userVmDetailsDao, times(0)).saveDetails(any(UserVmVO.class));
     }
 
     @Test
     public void testPersistDeviceBusInfoWithEmptyController() {
         when(_vmMock.getDetail(any(String.class))).thenReturn("");
         _userVmMgr.persistDeviceBusInfo(_vmMock, "");
-        verify(_vmDao, times(0)).saveDetails(any(UserVmVO.class));
+        verify(userVmDetailsDao, times(0)).saveDetails(any(UserVmVO.class));
     }
 
     @Test
     public void testPersistDeviceBusInfo() {
         when(_vmMock.getDetail(any(String.class))).thenReturn(null);
         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
-        verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+        verify(userVmDetailsDao, times(1)).saveDetails(any(UserVmVO.class));
     }
 }

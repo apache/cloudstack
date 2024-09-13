@@ -227,6 +227,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
+    @Inject
+    private VMTemplateDao _templateDao;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -673,6 +675,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     protected ConsoleProxyVO createOrUpdateConsoleProxy(ConsoleProxyVO proxy, long dataCenterId, long id, String name,
             ServiceOffering serviceOffering, VMTemplateVO template, Account systemAccount) {
+        _templateDao.loadDetails(template);
         if (proxy == null) {
             proxy = new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(),
                     template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAccount.getDomainId(),
@@ -686,6 +689,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         proxy.setHypervisorType(template.getHypervisorType());
         proxy.setGuestOSId(template.getGuestOSId());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+        proxy.setDetails(template.getDetails());
+        userVmDetailsDao.saveDetails(proxy);
         consoleProxyDao.update(proxy.getId(), proxy);
         return proxy;
     }

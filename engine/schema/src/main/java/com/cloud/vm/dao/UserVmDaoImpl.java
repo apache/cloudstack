@@ -57,7 +57,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -429,29 +428,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             Map<String, String> details = _detailsDao.listDetailsKeyPairs(vm.getId());
             vm.setDetails(details);
         }
-    }
-
-    @Override
-    public void saveDetails(UserVmVO vm) {
-        saveDetails(vm, new ArrayList<String>());
-    }
-
-    @Override
-    public void saveDetails(UserVmVO vm, List<String> hiddenDetails) {
-        Map<String, String> detailsStr = vm.getDetails();
-        if (detailsStr == null) {
-            return;
-        }
-
-        final Map<String, Boolean> visibilityMap = _detailsDao.listDetailsVisibility(vm.getId());
-
-        List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
-        for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
-            boolean display = !hiddenDetails.contains(entry.getKey()) && visibilityMap.getOrDefault(entry.getKey(), true);
-            details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
-        }
-
-        _detailsDao.saveDetails(details);
     }
 
     @Override

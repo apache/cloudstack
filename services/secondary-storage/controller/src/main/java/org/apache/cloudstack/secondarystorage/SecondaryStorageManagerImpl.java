@@ -622,6 +622,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     protected SecondaryStorageVmVO createOrUpdateSecondaryStorageVm(SecondaryStorageVmVO ssvm, long dataCenterId,
                 long id, String name, ServiceOffering serviceOffering, VMTemplateVO template, Account systemAccount,
                 SecondaryStorageVm.Role role) {
+        _templateDao.loadDetails(template);
         if (ssvm == null) {
             ssvm = new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(),
                     template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAccount.getDomainId(),
@@ -634,6 +635,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         ssvm.setHypervisorType(template.getHypervisorType());
         ssvm.setGuestOSId(template.getGuestOSId());
         ssvm.setDynamicallyScalable(template.isDynamicallyScalable());
+        ssvm.setDetails(template.getDetails());
+        _vmDetailsDao.saveDetails(ssvm);
         _secStorageVmDao.update(ssvm.getId(), ssvm);
         return ssvm;
     }
