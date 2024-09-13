@@ -643,8 +643,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
-                    final List<HostVO> hosts = listAllHostsInCluster(clusterId);
-                    if (!hosts.isEmpty()) {
+                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(clusterId);
+                    if (!hostIds.isEmpty()) {
                         final CloudRuntimeException ex =
                                 new CloudRuntimeException("Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
                         ex.addProxyObject(cluster.getUuid(), "clusterId");
@@ -962,8 +962,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 Host hostRemoved = _hostDao.findById(hostId);
                 _hostDao.remove(hostId);
                 if (clusterId != null) {
-                    final List<HostVO> hosts = listAllHostsInCluster(clusterId);
-                    if (hosts.size() == 0) {
+                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(clusterId);
+                    if (CollectionUtils.isEmpty(hostIds)) {
                         final ClusterVO cluster = _clusterDao.findById(clusterId);
                         cluster.setGuid(null);
                         _clusterDao.update(clusterId, cluster);
@@ -1087,8 +1087,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                     final Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
 
-                    final List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
-                    if (hosts.size() > 0) {
+                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(cmd.getId());
+                    if (!hostIds.isEmpty()) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
                         }
@@ -3034,10 +3034,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
         final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
         // get agents for the cluster
-        final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
-        for (final HostVO host : hosts) {
+        final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(command.getClusterId());
+        for (final Long hostId : hostIds) {
             try {
-                final Boolean result = propagateResourceEvent(host.getId(), ResourceState.Event.UpdatePassword);
+                final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
@@ -3046,8 +3046,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             if (shouldUpdateHostPasswd) {
-                final boolean isUpdated = doUpdateHostPassword(host.getId());
+                final boolean isUpdated = doUpdateHostPassword(hostId);
                 if (!isUpdated) {
+                    HostVO host = _hostDao.findById(hostId);
                     throw new CloudRuntimeException(
                             String.format("CloudStack failed to update the password of %s. Please make sure you are still able to connect to your hosts.", host));
                 }

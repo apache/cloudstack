@@ -81,6 +81,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    HostVO findAnyStateHypervisorHostInCluster(long clusterId);
+
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
 
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
@@ -174,4 +176,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllIds();
 
     List<HypervisorType> findDistinctHypervisorTypesForZone(final long zoneId);
+
+    List<Long> listAllHostIdsInCluster(final long clusterId);
 }

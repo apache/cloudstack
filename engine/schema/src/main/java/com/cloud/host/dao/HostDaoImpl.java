@@ -456,6 +456,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostIdSearch = createSearchBuilder(Long.class);
         HostIdSearch.selectFields(HostIdSearch.entity().getId());
         HostIdSearch.and("dataCenterId", HostIdSearch.entity().getDataCenterId(), Op.EQ);
+        HostIdSearch.and("clusterId", HostIdSearch.entity().getClusterId(), Op.EQ);
         HostIdSearch.done();
 
         _statusAttr = _allAttributes.get("status");
@@ -1256,6 +1257,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public HostVO findAnyStateHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        List<HostVO> list = listBy(sc, new Filter(1));
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    @Override
     public HostVO findOldestExistentHypervisorHostInCluster(long clusterId) {
         SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
         sc.setParameters("type", Host.Type.Routing);
@@ -1548,10 +1558,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<Long> listAllIds() {
-        GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
-        sb.selectFields(sb.entity().getId());
-        sb.done();
-        return customSearch(sb.create(), null);
+        return customSearch(HostIdSearch.create(), null);
     }
 
     @Override
@@ -1564,6 +1571,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HypervisorType> sc = sb.create();
         sc.setParameters("zoneId", zoneId);
         sc.setParameters("type", Type.Routing);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listAllHostIdsInCluster(final long clusterId) {
+        SearchCriteria<Long> sc = HostIdSearch.create();
+        sc.setParameters("clusterId", clusterId);
         return customSearch(sc, null);
     }
 }

@@ -4860,7 +4860,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private boolean updateHostsInCluster(final UpdateHostPasswordCmd command) {
         // get all the hosts in this cluster
-        final List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(command.getClusterId());
+        final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(command.getClusterId());
 
         String userNameWithoutSpaces = StringUtils.deleteWhitespace(command.getUsername());
         if (StringUtils.isBlank(userNameWithoutSpaces)) {
@@ -4870,19 +4870,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                for (final HostVO h : hosts) {
+                for (final Long hostId : hostIds) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Changing password for host name = " + h.getName());
+                        s_logger.debug("Changing password for host ID: " + hostId);
                     }
                     // update password for this host
-                    final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    final DetailVO nv = _detailsDao.findDetail(hostId, ApiConstants.USERNAME);
                     if (nv == null) {
-                        final DetailVO nvu = new DetailVO(h.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                        final DetailVO nvu = new DetailVO(hostId, ApiConstants.USERNAME, userNameWithoutSpaces);
                         _detailsDao.persist(nvu);
-                        final DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
+                        final DetailVO nvp = new DetailVO(hostId, ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
                     } else if (nv.getValue().equals(userNameWithoutSpaces)) {
-                        final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        final DetailVO nvp = _detailsDao.findDetail(hostId, ApiConstants.PASSWORD);
                         nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
                     } else {
