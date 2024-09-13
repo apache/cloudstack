@@ -546,14 +546,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public List<VMTemplateVO> listAllReadySystemVMTemplates(Long zoneId) {
-        List<HypervisorType> availableHypervisors = _hostDao.findDistinctHypervisorTypesForZone(zoneId);
-        if (CollectionUtils.isEmpty(availableHypervisors)) {
-            return Collections.emptyList();
+        List<HypervisorType> availableHypervisors = null;
+        if (zoneId != null) {
+            availableHypervisors = _hostDao.findDistinctHypervisorTypesForZone(zoneId);
+            if (CollectionUtils.isEmpty(availableHypervisors)) {
+                return Collections.emptyList();
+            }
         }
         SearchCriteria<VMTemplateVO> sc = readySystemTemplateSearch.create();
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
         sc.setParameters("state", VirtualMachineTemplate.State.Active);
-        sc.setParameters("hypervisorType", availableHypervisors.toArray());
+        if (CollectionUtils.isNotEmpty(availableHypervisors)) {
+            sc.setParameters("hypervisorType", availableHypervisors.toArray());
+        }
         sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState",
                 List.of(VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
                         VMTemplateStorageResourceAssoc.Status.BYPASSED).toArray());
