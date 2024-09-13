@@ -41,6 +41,7 @@ import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.cloudstack.utils.cache.SingleCache;
 import org.apache.cloudstack.utils.executor.QueuedExecutor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -801,9 +802,24 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
         }
 
-        CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
-        CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
-        CapacityVO cpuCoreCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU_CORE);
+        List<CapacityVO> capacities = _capacityDao.listByHostIdTypes(host.getId(), List.of(Capacity.CAPACITY_TYPE_CPU,
+                Capacity.CAPACITY_TYPE_MEMORY,
+                CapacityVO.CAPACITY_TYPE_CPU_CORE));
+        CapacityVO cpuCap = null;
+        CapacityVO memCap = null;
+        CapacityVO cpuCoreCap = null;
+        for (CapacityVO c : capacities) {
+            if (c.getCapacityType() == Capacity.CAPACITY_TYPE_CPU) {
+                cpuCap = c;
+            } else if (c.getCapacityType() == Capacity.CAPACITY_TYPE_MEMORY) {
+                memCap = c;
+            } else if (c.getCapacityType() == Capacity.CAPACITY_TYPE_CPU_CORE) {
+                cpuCoreCap = c;
+            }
+            if (ObjectUtils.allNotNull(cpuCap, memCap, cpuCoreCap)) {
+                break;
+            }
+        }
 
         if (cpuCoreCap != null) {
             long hostTotalCpuCore = host.getCpus().longValue();
