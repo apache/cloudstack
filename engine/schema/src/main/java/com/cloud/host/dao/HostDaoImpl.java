@@ -1551,4 +1551,17 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sb.done();
         return customSearch(sb.create(), null);
     }
+
+    @Override
+    public List<HypervisorType> findDistinctHypervisorTypesForZone(long zoneId) {
+        GenericSearchBuilder<HostVO, HypervisorType> sb = createSearchBuilder(HypervisorType.class);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.select(null, Func.DISTINCT, sb.entity().getHypervisorType());
+        sb.done();
+        SearchCriteria<HypervisorType> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("type", Type.Routing);
+        return customSearch(sc, null);
+    }
 }
