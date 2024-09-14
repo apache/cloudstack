@@ -176,7 +176,7 @@ export default {
         if (this.detailOptions[this.newKey]) {
           return { value: this.detailOptions[this.newKey] }
         } else {
-          return ''
+          return []
         }
       }
       return this.detailOptions[this.newKey].map(value => {
