@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -155,35 +156,49 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     private boolean deleteSnapshot(Long snapshotId, Long zoneId, SnapshotVO snapshotVO, String name, StoragePoolVO storage) {
 
-        boolean res;
+        boolean res = false;
         SpConnectionDesc conn = StorPoolUtil.getSpConnection(storage.getUuid(), storage.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
         SpApiResponse resp = StorPoolUtil.snapshotDelete(name, conn);
+        List<SnapshotInfo> snapshotInfos = snapshotDataFactory.getSnapshots(snapshotId, zoneId);
+        processResult(snapshotInfos, ObjectInDataStoreStateMachine.Event.DestroyRequested);
         if (resp.getError() != null) {
             if (resp.getError().getDescr().contains("still exported")) {
+                processResult(snapshotInfos, Event.OperationFailed);
                 throw new CloudRuntimeException(String.format("The snapshot [%s] was exported to another cluster. [%s]", name, resp.getError()));
             }
             final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
             StorPoolUtil.spLog(err);
             if (resp.getError().getName().equals("objectDoesNotExist")) {
-                markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, storage.getId());
+                return true;
             }
-            res = false;
         } else {
-            markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, storage.getId());
             res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
             StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+        }
+        if (res) {
+            processResult(snapshotInfos, Event.OperationSuccessed);
+            cleanUpDestroyedRecords(snapshotId);
+        } else {
+            processResult(snapshotInfos, Event.OperationFailed);
         }
         return res;
     }
 
-    private void markSnapshotAsDestroyedIfAlreadyRemoved(Long snapshotId, Long storeId) {
-        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Primary, storeId, snapshotId);
-        if (snapshotOnPrimary != null) {
-            snapshotOnPrimary.setState(State.Destroyed);
-            _snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+    private void cleanUpDestroyedRecords(Long snapshotId) {
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listBySnapshotId(snapshotId);
+        for (SnapshotDataStoreVO snapshot : snapshots) {
+            if (snapshot.getInstallPath().contains("/dev/storpool-byid") && State.Destroyed.equals(snapshot.getState())) {
+                _snapshotStoreDao.remove(snapshot.getId());
+            }
         }
     }
 
+    private void processResult(List<SnapshotInfo> snapshotInfos, ObjectInDataStoreStateMachine.Event event) {
+        for (SnapshotInfo snapshot : snapshotInfos) {
+                SnapshotObject snapshotObject = (SnapshotObject) snapshot;
+                snapshotObject.processEvent(event);
+        }
+    }
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         logger.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
@@ -196,9 +211,15 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             return StrategyPriority.CANT_HANDLE;
         }
         List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getId());
-        boolean snapshotNotOnStorPool = snapshots.stream().filter(s -> s.getStoreRole().equals(DataStoreRole.Primary)).count() == 0;
+        boolean snapshotNotOnStorPool = snapshots.stream().filter(s -> DataStoreRole.Primary.equals(s.getStoreRole())).count() == 0;
 
         if (snapshotNotOnStorPool) {
+            for (SnapshotJoinVO snapshotOnStore : snapshots) {
+                SnapshotDataStoreVO snap = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Image);
+                if (snap != null && snap.getInstallPath() != null && snap.getInstallPath().startsWith(StorPoolUtil.SP_DEV_PATH)) {
+                    return StrategyPriority.HIGHEST;
+                }
+            }
             return StrategyPriority.CANT_HANDLE;
         }
         for (StoragePoolVO pool : pools) {
