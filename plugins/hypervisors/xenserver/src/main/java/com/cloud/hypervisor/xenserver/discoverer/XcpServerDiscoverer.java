@@ -147,7 +147,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             sc.and(sc.entity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);
-            List<Long> clusterHostIds = _hostDao.listAllHostIdsInCluster(clu.getId());
+            List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clu.getId());
             if (CollectionUtils.isEmpty(clusterHostIds)) {
                 clu.setGuid(null);
                 _clusterDao.update(clu.getId(), clu);
@@ -248,7 +248,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (clu.getGuid() == null) {
                 setClusterGuid(clu, poolUuid);
             } else {
-                List<Long> clusterHostIds = _hostDao.listAllHostIdsInCluster(clusterId);
+                List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clusterId);
                 if (CollectionUtils.isNotEmpty(clusterHostIds)) {
                     if (!clu.getGuid().equals(poolUuid)) {
                         String msg = "Please join the host " +  hostIp + " to XS pool  "

@@ -89,26 +89,27 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByDataCenterId(Long zoneId);
 
+    List<Long> listIdsByDataCenterId(Long zoneId);
+
     List<HostVO> findByPodId(Long podId);
 
+    List<Long> listIdsByPodId(Long podId);
+
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<Long> listIdsByClusterId(Long clusterId);
 
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
      * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
-    List<HostVO> listByDataCenterId(long id);
-
-    /**
-     * Returns hosts that are from the given Data Center/Zone and at a given state (e.g. Creating, Enabled, Disabled, etc).
-     */
-    List<HostVO> listByDataCenterIdAndState(long id, ResourceState state);
+    List<Long> listEnabledIdsByDataCenterId(long id);
 
     /**
      * Returns hosts that are 'Up' and 'Disabled' from the given Data Center/Zone
      */
-    List<HostVO> listDisabledByDataCenterId(long id);
+    List<Long> listDisabledIdsByDataCenterId(long id);
 
     List<HostVO> listByDataCenterIdAndHypervisorType(long zoneId, Hypervisor.HypervisorType hypervisorType);
 
@@ -176,6 +177,4 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllIds();
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
-
-    List<Long> listAllHostIdsInCluster(final long clusterId);
 }

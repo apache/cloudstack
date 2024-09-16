@@ -385,9 +385,9 @@ public class ImplicitPlannerTest {
         when(serviceOfferingDetailsDao.listDetailsKeyPairs(offeringId)).thenReturn(details);
 
         // Initialize hosts in clusters
-        when(hostDao.listAllHostIdsInCluster(1)).thenReturn(List.of(5L));
-        when(hostDao.listAllHostIdsInCluster(2)).thenReturn(List.of(6L));
-        when(hostDao.listAllHostIdsInCluster(3)).thenReturn(List.of(7L));
+        when(hostDao.listIdsByClusterId(1L)).thenReturn(List.of(5L));
+        when(hostDao.listIdsByClusterId(2L)).thenReturn(List.of(6L));
+        when(hostDao.listIdsByClusterId(3L)).thenReturn(List.of(7L));
 
         // Mock vms on each host.
         long offeringIdForVmsOfThisAccount = 15L;

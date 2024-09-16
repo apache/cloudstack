@@ -4860,7 +4860,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private boolean updateHostsInCluster(final UpdateHostPasswordCmd command) {
         // get all the hosts in this cluster
-        final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(command.getClusterId());
+        final List<Long> hostIds = _hostDao.listIdsByClusterId(command.getClusterId());
 
         String userNameWithoutSpaces = StringUtils.deleteWhitespace(command.getUsername());
         if (StringUtils.isBlank(userNameWithoutSpaces)) {

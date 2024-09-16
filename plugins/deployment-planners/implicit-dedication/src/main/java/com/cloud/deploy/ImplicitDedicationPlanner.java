@@ -78,7 +78,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         List<Long> allHosts = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(clusterList)) {
             allHosts = clusterList.stream()
-                    .flatMap(cluster -> hostDao.listAllHostIdsInCluster(cluster).stream())
+                    .flatMap(cluster -> hostDao.listIdsByClusterId(cluster).stream())
                     .collect(Collectors.toList());
         }
 
@@ -227,7 +227,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
         }
         return clusterList.stream()
                 .filter(cluster -> {
-                    Set<Long> hostsInClusterSet = new HashSet<>(hostDao.listAllHostIdsInCluster(cluster));
+                    Set<Long> hostsInClusterSet = new HashSet<>(hostDao.listIdsByClusterId(cluster));
                     return !hostsSet.containsAll(hostsInClusterSet);
                 })
                 .collect(Collectors.toList());
@@ -253,7 +253,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
             List<Long> allHosts = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(clusterList)) {
                 allHosts = clusterList.stream()
-                        .flatMap(cluster -> hostDao.listAllHostIdsInCluster(cluster).stream())
+                        .flatMap(cluster -> hostDao.listIdsByClusterId(cluster).stream())
                         .collect(Collectors.toList());
             }
             // Go over all the hosts in the cluster and get a list of

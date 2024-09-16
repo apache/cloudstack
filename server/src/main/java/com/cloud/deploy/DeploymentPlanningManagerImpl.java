@@ -649,10 +649,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      * Adds disabled Hosts to the ExcludeList in order to avoid them at the deployment planner.
      */
     protected void avoidDisabledHosts(DataCenter dc, ExcludeList avoids) {
-        List<HostVO> disabledHosts = _hostDao.listDisabledByDataCenterId(dc.getId());
-        for (HostVO host : disabledHosts) {
-            avoids.addHost(host.getId());
-        }
+        List<Long> disabledHostIds = _hostDao.listDisabledIdsByDataCenterId(dc.getId());
+        disabledHostIds.forEach(avoids::addHost);
     }
 
     /**

@@ -2350,7 +2350,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
 
         // Check if there are any non-removed hosts in the zone.
-        if (!_hostDao.listByDataCenterId(zoneId).isEmpty()) {
+        if (!_hostDao.listEnabledIdsByDataCenterId(zoneId).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are servers in this zone.");
         }
 

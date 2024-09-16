@@ -643,7 +643,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
-                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(clusterId);
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(clusterId);
                     if (!hostIds.isEmpty()) {
                         final CloudRuntimeException ex =
                                 new CloudRuntimeException("Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
@@ -962,7 +962,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 Host hostRemoved = _hostDao.findById(hostId);
                 _hostDao.remove(hostId);
                 if (clusterId != null) {
-                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(clusterId);
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(clusterId);
                     if (CollectionUtils.isEmpty(hostIds)) {
                         final ClusterVO cluster = _clusterDao.findById(clusterId);
                         cluster.setGuid(null);
@@ -1087,7 +1087,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                     final Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
 
-                    final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(cmd.getId());
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(cmd.getId());
                     if (!hostIds.isEmpty()) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Cluster: " + cmd.getId() + " still has hosts, can't remove");
@@ -2425,10 +2425,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         boolean clusterSupportsResigning = true;
 
-        List<HostVO> hostVOs = _hostDao.findByClusterId(host.getClusterId());
+        List<Long> hostIds = _hostDao.listIdsByClusterId(host.getClusterId());
 
-        for (HostVO hostVO : hostVOs) {
-            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostVO.getId(), name);
+        for (Long hostId : hostIds) {
+            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostId, name);
 
             if (hostDetailVO == null || Boolean.parseBoolean(hostDetailVO.getValue()) == false) {
                 clusterSupportsResigning = false;
@@ -3034,7 +3034,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
         final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
         // get agents for the cluster
-        final List<Long> hostIds = _hostDao.listAllHostIdsInCluster(command.getClusterId());
+        final List<Long> hostIds = _hostDao.listIdsByClusterId(command.getClusterId());
         for (final Long hostId : hostIds) {
             try {
                 final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.UpdatePassword);
