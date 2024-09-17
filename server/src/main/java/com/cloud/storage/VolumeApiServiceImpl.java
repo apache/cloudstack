@@ -2356,7 +2356,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (vm != null && vm.getType().equals(VirtualMachine.Type.User)) {
                         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
                         if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem VM");
+                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem Instance");
                         }
                     }
                 }
@@ -2497,7 +2497,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
         if (!allowAttachForSharedFS && UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem VM");
+            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem Instance");
         }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
@@ -2923,7 +2923,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = _userVmDao.findById(vmId);
 
         if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem VM");
+            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem Instance");
         }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
