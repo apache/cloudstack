@@ -205,7 +205,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     @SerializedName(ApiConstants.VPC_ACCESS)
     @Param(description = "Whether the calling account has access to this network's VPC", since = "4.20")
-    private boolean vpcAccess;
+    private Boolean vpcAccess;
 
     @SerializedName(ApiConstants.VPC_ID)
     @Param(description = "VPC the Network belongs to")
@@ -531,7 +531,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.vpcAccess = vpcAccess;
     }
 
-    public boolean getVpcAccess() {
+    public Boolean getVpcAccess() {
         return vpcAccess;
     }
 
