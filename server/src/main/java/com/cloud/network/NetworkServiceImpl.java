@@ -1395,7 +1395,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("network cidr and cidr size are mutually exclusive");
         }
         if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                && !routedIpv4Manager.isRoutedNetworkVpcEnabled(zoneId)) {
             throw new InvalidParameterValueException("Routed network is not enabled in this zone");
         }
         if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
@@ -1409,11 +1409,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (cidrSize == null) {
                 throw new InvalidParameterValueException("network cidr or cidr size is required for Isolated networks with ROUTED mode");
             }
-            Integer maxCidrSize = routedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
+            Integer maxCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
             if (cidrSize > maxCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
             }
-            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            Integer minCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
             if (cidrSize < minCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be smaller than minimum cidr size " + minCidrSize);
             }

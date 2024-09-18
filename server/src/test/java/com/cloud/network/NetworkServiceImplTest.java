@@ -763,6 +763,7 @@ public class NetworkServiceImplTest {
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
         doNothing().when(routedIpv4Manager).assignIpv4SubnetToNetwork(nullable(Network.class));
 
@@ -791,6 +792,7 @@ public class NetworkServiceImplTest {
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, true, true);
         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
@@ -818,6 +820,7 @@ public class NetworkServiceImplTest {
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
 
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
@@ -845,6 +848,7 @@ public class NetworkServiceImplTest {
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
         when(routedIpv4Manager.isDynamicRoutedNetwork(networkOfferingVO)).thenReturn(true);
         doThrow(new InvalidParameterValueException("validation error")).when(routedIpv4Manager).validateBgpPeers(nullable(Account.class), nullable(Long.class), any(List.class));

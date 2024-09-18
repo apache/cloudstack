@@ -1640,4 +1640,9 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     public void removeBgpPeersByDomainId(long domainId) {
         bgpPeerDao.removeByDomainId(domainId);
     }
+
+    @Override
+    public Boolean isRoutedNetworkVpcEnabled(long zoneId) {
+        return RoutedNetworkVpcEnabled.valueIn(zoneId);
+    }
 }

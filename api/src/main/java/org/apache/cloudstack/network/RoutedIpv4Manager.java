@@ -203,4 +203,6 @@ public interface RoutedIpv4Manager extends PluggableService, Configurable {
     void removeBgpPeersByAccountId(long accountId);
 
     void removeBgpPeersByDomainId(long domainId);
+
+    Boolean isRoutedNetworkVpcEnabled(long zoneId);
 }
