@@ -53,6 +53,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.agent.AgentManager;
@@ -139,6 +140,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Pair<Integer, Listener>> _cmdMonitors = new ArrayList<Pair<Integer, Listener>>(17);
     protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
     protected List<Long> _loadingAgents = new ArrayList<Long>();
+    protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
     private final Lock _agentStatusLock = new ReentrantLock();
 
@@ -240,6 +242,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+
+        initializeCommandTimeouts();
 
         return true;
     }
@@ -437,30 +441,31 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected int getTimeoutFromGranularWaitTime(final Commands commands) {
-        String commandWaits = GranularWaitTimeForCommands.value().trim();
-
         int maxWait = 0;
-        if (StringUtils.isNotEmpty(commandWaits)) {
-            try {
-                Map<String, Integer> commandTimeouts = getCommandTimeoutsMap(commandWaits);
-
-                for (final Command cmd : commands) {
-                    String simpleCommandName = cmd.getClass().getSimpleName();
-                    Integer commandTimeout = commandTimeouts.get(simpleCommandName);
-
-                    if (commandTimeout != null) {
-                        if (commandTimeout > maxWait) {
-                            maxWait = commandTimeout;
-                        }
-                    }
+        if (MapUtils.isNotEmpty(_commandTimeouts)) {
+            for (final Command cmd : commands) {
+                String simpleCommandName = cmd.getClass().getSimpleName();
+                Integer commandTimeout = _commandTimeouts.get(simpleCommandName);
+                if (commandTimeout != null && commandTimeout > maxWait) {
+                    maxWait = commandTimeout;
                 }
-            } catch (Exception e) {
-                logger.error(String.format("Error while processing the commands.timeout global setting for the granular timeouts for the command, " +
-                        "falling back to the command timeout: %s", e.getMessage()));
             }
         }
 
         return maxWait;
+    }
+
+    private void initializeCommandTimeouts() {
+        String commandWaits = GranularWaitTimeForCommands.value().trim();
+        if (StringUtils.isNotEmpty(commandWaits)) {
+            try {
+                _commandTimeouts = getCommandTimeoutsMap(commandWaits);
+                logger.info(String.format("Timeouts for management server internal commands successfully initialized from global setting commands.timeout: %s", _commandTimeouts));
+            } catch (Exception e) {
+                logger.error("Error initializing command timeouts map: " + e.getMessage());
+                _commandTimeouts = new HashMap<>();
+            }
+        }
     }
 
     private Map<String, Integer> getCommandTimeoutsMap(String commandWaits) {
