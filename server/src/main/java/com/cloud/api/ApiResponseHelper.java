@@ -1144,7 +1144,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ipResponse;
     }
 
-    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter, Consumer<Boolean> vpcAccessSetter) {
+    protected void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter, Consumer<Boolean> vpcAccessSetter) {
         if (vpcId == null) {
             return;
         }
@@ -1164,7 +1164,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         vpcUuidSetter.accept(vpc.getUuid());
     }
 
-    private void setAclIdInResponse(Network network, NetworkResponse response) {
+    protected void setAclIdInResponse(Network network, NetworkResponse response) {
         if (network.getNetworkACLId() == null) {
             return;
         }
@@ -1174,7 +1174,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             return;
         }
 
-        if (!response.getVpcAccess() && acl.getVpcId() != 0) {
+        if (Boolean.FALSE.equals(response.getVpcAccess()) && acl.getVpcId() != 0) {
             logger.debug("[{}] not set in response, since caller does not have access to it.", acl);
             return;
         }
