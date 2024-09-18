@@ -174,4 +174,3 @@ public class BGPServiceImplTest {
         verify(vpcVirtualRouterElement).applyBgpPeers(eq(vpc), eq(null), any());
     }
 }
-
