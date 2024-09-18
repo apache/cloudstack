@@ -17,17 +17,20 @@
 package com.cloud.api;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -48,6 +51,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
@@ -91,6 +95,9 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDao;
+import org.apache.cloudstack.storage.sharedfs.query.vo.SharedFSJoinVO;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -101,7 +108,6 @@ import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
@@ -127,7 +133,6 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
@@ -181,9 +186,11 @@ import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -450,7 +457,7 @@ public class ApiDBUtils {
     static VolumeJoinDao s_volJoinDao;
     static StoragePoolJoinDao s_poolJoinDao;
     static StoragePoolTagsDao s_tagDao;
-    static HostTagDao s_hostTagDao;
+    static HostTagsDao s_hostTagDao;
     static ImageStoreJoinDao s_imageStoreJoinDao;
     static AccountJoinDao s_accountJoinDao;
     static AsyncJobJoinDao s_jobJoinDao;
@@ -488,6 +495,8 @@ public class ApiDBUtils {
     static ResourceManagerUtil s_resourceManagerUtil;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
     static ObjectStoreDao s_objectStoreDao;
+
+    static SharedFSJoinDao s_sharedFSJoinDao;
 
     static BucketDao s_bucketDao;
     static VirtualMachineManager s_virtualMachineManager;
@@ -673,7 +682,7 @@ public class ApiDBUtils {
     @Inject
     private StoragePoolTagsDao tagDao;
     @Inject
-    private HostTagDao hosttagDao;
+    private HostTagsDao hosttagDao;
     @Inject
     private ImageStoreJoinDao imageStoreJoinDao;
     @Inject
@@ -756,6 +765,8 @@ public class ApiDBUtils {
     private BucketDao bucketDao;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private SharedFSJoinDao sharedFSJoinDao;
 
     @PostConstruct
     void init() {
@@ -891,6 +902,7 @@ public class ApiDBUtils {
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
+        s_sharedFSJoinDao = sharedFSJoinDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1101,8 +1113,8 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
-        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId, includingRemoved);
         return off;
     }
     public static DomainVO findDomainById(Long domainId) {
@@ -2019,8 +2031,8 @@ public class ApiDBUtils {
         return s_volJoinDao.newVolumeView(vr);
     }
 
-    public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr) {
-        return s_poolJoinDao.newStoragePoolResponse(vr);
+    public static StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO vr, boolean customStats) {
+        return s_poolJoinDao.newStoragePoolResponse(vr, customStats);
     }
 
     public static StorageTagResponse newStorageTagResponse(StoragePoolTagVO vr) {
@@ -2075,6 +2087,29 @@ public class ApiDBUtils {
             }
         }
         return response;
+    }
+
+    public static List<AccountResponse> newAccountResponses(ResponseView view, EnumSet<DomainDetails> details, AccountJoinVO... accounts) {
+        List<AccountResponse> responseList = new ArrayList<>();
+
+        List<Long> roleIdList = Arrays.stream(accounts).map(AccountJoinVO::getRoleId).collect(Collectors.toList());
+        Map<Long,Role> roleIdMap = s_roleService.findRoles(roleIdList, false).stream().collect(Collectors.toMap(Role::getId, Function.identity()));
+
+        for (AccountJoinVO account : accounts) {
+            AccountResponse response = s_accountJoinDao.newAccountResponse(view, details, account);
+            // Populate account role information
+            if (account.getRoleId() != null) {
+                Role role = roleIdMap.get(account.getRoleId());
+                if (role != null) {
+                    response.setRoleId(role.getUuid());
+                    response.setRoleType(role.getRoleType());
+                    response.setRoleName(role.getName());
+                }
+            }
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     public static AccountJoinVO newAccountView(Account e) {
@@ -2243,5 +2278,17 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
+    }
+
+    public static SharedFSResponse newSharedFSResponse(ResponseView view, SharedFSJoinVO sharedFSView) {
+        return s_sharedFSJoinDao.newSharedFSResponse(view, sharedFSView);
+    }
+
+    public static SharedFSJoinVO newSharedFSView(SharedFS sharedFS) {
+        return s_sharedFSJoinDao.newSharedFSView(sharedFS);
+    }
+
+    public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
+        return s_clusterDao.getClustersArchsByZone(zoneId);
     }
 }

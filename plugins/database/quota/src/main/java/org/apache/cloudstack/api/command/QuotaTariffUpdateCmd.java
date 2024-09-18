@@ -20,6 +20,7 @@ import com.cloud.user.Account;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -27,6 +28,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 
 import javax.inject.Inject;
@@ -50,8 +52,8 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
             "Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " endDate=2009-06-03.", since = "4.18.0.0")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 65535, since = "4.18.0.0")
@@ -61,11 +63,12 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
             since = "4.18.0.0")
     private String description;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule. It can receive a JS script that results in either " +
-            "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
-            "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
-            "value will be applied. Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE +
+            " Inform empty to remove the activation rule.", length = 65535, since = "4.18.0.0")
     private String activationRule;
+
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
+    private Integer position;
 
     public Integer getUsageType() {
         return usageType;
@@ -109,11 +112,12 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        CallContext.current().setEventDetails(String.format("Tariff: %s, description: %s, value: %s", getName(), getDescription(), getValue()));
         final QuotaTariffVO result = _responseBuilder.updateQuotaTariffPlan(this);
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update quota tariff plan");
         }
-        final QuotaTariffResponse response = _responseBuilder.createQuotaTariffResponse(result);
+        final QuotaTariffResponse response = _responseBuilder.createQuotaTariffResponse(result, true);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -121,6 +125,19 @@ public class QuotaTariffUpdateCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.QuotaTariff;
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
     }
 
 }

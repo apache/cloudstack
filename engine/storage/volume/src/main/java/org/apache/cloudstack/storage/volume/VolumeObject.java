@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
+import com.cloud.storage.StorageManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
@@ -118,6 +119,7 @@ public class VolumeObject implements VolumeInfo {
     private MigrationOptions migrationOptions;
     private boolean directDownload;
     private String vSphereStoragePolicyId;
+    private boolean followRedirects;
 
     private final List<Volume.State> volumeStatesThatShouldNotTransitWhenDataStoreRoleIsImage = Arrays.asList(Volume.State.Migrating, Volume.State.Uploaded, Volume.State.Copying,
       Volume.State.Expunged);
@@ -128,6 +130,7 @@ public class VolumeObject implements VolumeInfo {
 
     public VolumeObject() {
         _volStateMachine = Volume.State.getStateMachine();
+        this.followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
     }
 
     protected void configure(DataStore dataStore, VolumeVO volumeVO) {
@@ -930,5 +933,15 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setEncryptFormat(String encryptFormat) {
         volumeVO.setEncryptFormat(encryptFormat);
+    }
+
+    @Override
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
+    }
+
+    @Override
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 }

@@ -57,8 +57,9 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         this(url, null, null, null, null);
     }
 
-    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum, String downloadPath) {
-        super(url, destPool, templateId, checksum, downloadPath);
+    public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum,
+               String downloadPath) {
+        super(url, destPool, templateId, checksum, downloadPath, false);
         parseUrl();
     }
 

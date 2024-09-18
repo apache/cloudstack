@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.host;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
@@ -54,6 +55,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     }
     public static final String HOST_UEFI_ENABLE = "host.uefi.enable";
     public static final String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
+    public static final String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
 
     /**
      * @return name of the machine.
@@ -207,4 +209,6 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     boolean isDisabled();
 
     ResourceState getResourceState();
+
+    CPU.CPUArch getArch();
 }

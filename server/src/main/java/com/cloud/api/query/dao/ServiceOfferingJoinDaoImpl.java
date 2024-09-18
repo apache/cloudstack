@@ -19,32 +19,38 @@ package com.cloud.api.query.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.db.TransactionLegacy;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
 
-import javax.inject.Inject;
+import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
 
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
@@ -54,9 +60,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private ConfigurationDao configDao;
+    @Inject
     private AccountManager accountManager;
 
     private SearchBuilder<ServiceOfferingJoinVO> sofIdSearch;
+
+    private SearchBuilder<ServiceOfferingJoinVO> srvOfferingSearch;
 
     /**
      * Constant used to convert GB into Bytes (or the other way around).
@@ -83,6 +93,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         sofIdSearch.and("id", sofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         sofIdSearch.done();
 
+        srvOfferingSearch = createSearchBuilder();
+        srvOfferingSearch.and("idIN", srvOfferingSearch.entity().getId(), SearchCriteria.Op.IN);
+        srvOfferingSearch.done();
+
         this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
     }
 
@@ -103,6 +117,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
         offeringResponse.setId(offering.getUuid());
         offeringResponse.setName(offering.getName());
+        offeringResponse.setState(offering.getState().toString());
         offeringResponse.setIsSystemOffering(offering.isSystemUse());
         offeringResponse.setDefaultUse(offering.isDefaultUse());
         offeringResponse.setSystemVmType(offering.getSystemVmType());
@@ -155,6 +170,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 if (vsphereStoragePolicyVO != null)
                     offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
             }
+            String purgeResource = offeringDetails.get(ServiceOffering.PURGE_DB_ENTITIES_KEY);
+            if (StringUtils.isNotBlank(purgeResource)) {
+                offeringResponse.setPurgeResources(Boolean.parseBoolean(purgeResource));
+            }
         }
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
@@ -182,10 +201,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         return offerings.get(0);
     }
 
-
     @Override
     public Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath) {
-        logger.debug(String.format("Retrieving the domains of the service offerings used by domain with path [%s].", domainPath));
+        logger.debug("Retrieving the domains of the service offerings used by domain with path [{}].", domainPath);
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_SERVICE_OFFERINGS_USED_BY_DOMAIN_PATH)) {
@@ -214,5 +232,52 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
             return new HashMap<>();
         }
+    }
+
+    @Override
+    public List<ServiceOfferingJoinVO> searchByIds(Long... offeringIds) {
+        Filter searchFilter = new Filter(ServiceOfferingJoinVO.class, "sortKey", SortKeyAscending.value());
+        searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
+
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<ServiceOfferingJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (offeringIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= offeringIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = offeringIds[j];
+                }
+                SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+                sc.setParameters("idIN", ids);
+                List<ServiceOfferingJoinVO> offerings = searchIncludingRemoved(sc, searchFilter, null, false);
+                if (offerings != null) {
+                    uvList.addAll(offerings);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < offeringIds.length) {
+            int batch_size = (offeringIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = offeringIds[j];
+            }
+            SearchCriteria<ServiceOfferingJoinVO> sc = srvOfferingSearch.create();
+            sc.setParameters("idIN", ids);
+            List<ServiceOfferingJoinVO> offerings = searchIncludingRemoved(sc, searchFilter, null, false);
+            if (offerings != null) {
+                uvList.addAll(offerings);
+            }
+        }
+        return uvList;
     }
 }

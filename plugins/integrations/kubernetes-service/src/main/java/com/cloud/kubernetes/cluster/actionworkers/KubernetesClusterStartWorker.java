@@ -139,6 +139,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String clusterToken = "{{ k8s_control_node.cluster.token }}";
         final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
+
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
         if (!serverIp.equals(controlNodeIp)) {
@@ -189,7 +190,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         Pair<String, Map<Long, Network.IpAddresses>> ipAddresses = getKubernetesControlNodeIpAddresses(zone, network, owner);
         String controlNodeIp = ipAddresses.first();
         Map<Long, Network.IpAddresses> requestedIps = ipAddresses.second();
-        if (Network.GuestType.Shared.equals(network.getGuestType()) && StringUtils.isEmpty(serverIp)) {
+        if (StringUtils.isEmpty(serverIp) && manager.isDirectAccess(network)) {
             serverIp = controlNodeIp;
         }
         Network.IpAddresses addrs = new Network.IpAddresses(controlNodeIp, null);
@@ -215,7 +216,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
-        if (zone.isSecurityGroupEnabled()) {
+        if (kubernetesCluster.getSecurityGroupId() != null &&
+                networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+                        List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
@@ -241,6 +244,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String clusterHACertificateKey = "{{ k8s_control_node.cluster.ha.certificate.key }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
+
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -289,7 +293,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
-        if (zone.isSecurityGroupEnabled()) {
+        if (kubernetesCluster.getSecurityGroupId() != null &&
+                networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds, List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
@@ -377,9 +382,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     protected void setupKubernetesClusterNetworkRules(Network network, List<UserVm> clusterVMs) throws ManagementServerException {
-        if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
+        if (manager.isDirectAccess(network)) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
+                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network or ROUTED network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
             }
             return;
         }
@@ -489,7 +494,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         publicIpAddress = publicIpSshPort.first();
         if (StringUtils.isEmpty(publicIpAddress) &&
-                (Network.GuestType.Isolated.equals(network.getGuestType()) || kubernetesCluster.getControlNodeCount() > 1)) { // Shared network, single-control node cluster won't have an IP yet
+                (!manager.isDirectAccess(network) || kubernetesCluster.getControlNodeCount() > 1)) { // Shared network, single-control node cluster won't have an IP yet
             logTransitStateAndThrow(Level.ERROR, String.format("Failed to start Kubernetes cluster : %s as no public IP found for the cluster" , kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
         }
         // Allow account creating the kubernetes cluster to access systemVM template
@@ -533,8 +538,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         attachIsoKubernetesVMs(clusterVMs);
         if (!KubernetesClusterUtil.isKubernetesClusterControlVmRunning(kubernetesCluster, publicIpAddress, publicIpSshPort.second(), startTimeoutTime)) {
-            String msg = String.format("Failed to setup Kubernetes cluster : %s in usable state as unable to access control node VMs of the cluster", kubernetesCluster.getName());
-            if (kubernetesCluster.getControlNodeCount() > 1 && Network.GuestType.Shared.equals(network.getGuestType())) {
+            String msg = String.format("Failed to setup Kubernetes cluster : %s is not in usable state as the system is unable to access control node VMs of the cluster", kubernetesCluster.getName());
+            if (kubernetesCluster.getControlNodeCount() > 1 && manager.isDirectAccess(network)) {
                 msg = String.format("%s. Make sure external load-balancer has port forwarding rules for SSH access on ports %d-%d and API access on port %d",
                         msg,
                         CLUSTER_NODES_DEFAULT_START_SSH_PORT,

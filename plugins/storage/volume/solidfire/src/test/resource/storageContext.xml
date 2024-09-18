@@ -22,7 +22,7 @@
   xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
   xsi:schemaLocation="http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans.xsd
-                         http://www.springframework.org/schema/tx 
+                         http://www.springframework.org/schema/tx
        http://www.springframework.org/schema/tx/spring-tx.xsd
        http://www.springframework.org/schema/aop
        http://www.springframework.org/schema/aop/spring-aop.xsd
@@ -35,7 +35,7 @@
   <context:component-scan base-package="com.cloud.utils.component" />
   <context:component-scan base-package="com.cloud.host.dao" />
   <context:component-scan base-package="com.cloud.dc.dao" />
- 
+
    <context:component-scan base-package=" com.cloud.upgrade.dao" />
    <tx:annotation-driven transaction-manager="transactionManager" />
   <bean id="aopTestBean" class="org.apache.cloudstack.storage.test.AopTestAdvice"/>
@@ -43,10 +43,10 @@
     <aop:aspect id="AopTestAdvice" ref="aopTestBean">
     <aop:pointcut id="aoptest"
       expression="@annotation(com.cloud.utils.db.DB)" />
-      <aop:around pointcut-ref="aoptest" method="AopTestMethod"/> 
+      <aop:around pointcut-ref="aoptest" method="AopTestMethod"/>
     </aop:aspect>
   </aop:config>
-  
+
   <bean class="org.apache.cloudstack.storage.test.ChildTestConfiguration" />
 
 </beans>

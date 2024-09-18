@@ -16,6 +16,8 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
@@ -25,6 +27,15 @@ export default {
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created', 'hostcontrolstate'],
+  tabs: [{
+    name: 'details',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'InternalLbVm',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
+  }],
   actions: [
     {
       api: 'startInternalLoadBalancerVM',

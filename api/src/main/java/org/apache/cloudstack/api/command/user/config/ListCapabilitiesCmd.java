@@ -55,6 +55,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));
         response.setAllowUserViewAllDomainAccounts((Boolean)capabilities.get("allowUserViewAllDomainAccounts"));
+        response.setAllowUserForceStopVM((Boolean)capabilities.get(ApiConstants.ALLOW_USER_FORCE_STOP_VM));
         response.setKubernetesServiceEnabled((Boolean)capabilities.get("kubernetesServiceEnabled"));
         response.setKubernetesClusterExperimentalFeaturesEnabled((Boolean)capabilities.get("kubernetesClusterExperimentalFeaturesEnabled"));
         response.setCustomHypervisorDisplayName((String) capabilities.get("customHypervisorDisplayName"));
@@ -69,6 +70,8 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setInstancesStatsUserOnly((Boolean) capabilities.get(ApiConstants.INSTANCES_STATS_USER_ONLY));
         response.setInstancesDisksStatsRetentionEnabled((Boolean) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED));
         response.setInstancesDisksStatsRetentionTime((Integer) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME));
+        response.setSharedFsVmMinCpuCount((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT));
+        response.setSharedFsVmMinRamSize((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

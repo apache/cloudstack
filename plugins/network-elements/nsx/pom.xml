@@ -49,6 +49,12 @@
             <groupId>com.vmware.vapi</groupId>
             <artifactId>vapi-authentication</artifactId>
             <version>2.40.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.vmware.vapi</groupId>

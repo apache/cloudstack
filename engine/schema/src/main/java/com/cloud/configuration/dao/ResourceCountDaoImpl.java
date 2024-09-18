@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -56,27 +57,30 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     private final SearchBuilder<ResourceCountVO> TypeSearch;
     private final SearchBuilder<ResourceCountVO> TypeNullTagSearch;
     private final SearchBuilder<ResourceCountVO> NonMatchingTagsSearch;
-
     private final SearchBuilder<ResourceCountVO> AccountSearch;
     private final SearchBuilder<ResourceCountVO> DomainSearch;
+    private final SearchBuilder<ResourceCountVO> IdsSearch;
 
     @Inject
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
 
+    protected static final String INCREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` + ? WHERE `id` IN (?)";
+    protected static final String DECREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` - ? WHERE `id` IN (?)";
+
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
         TypeSearch.and("type", TypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.IN);
+        TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         TypeSearch.and("tag", TypeSearch.entity().getTag(), SearchCriteria.Op.EQ);
         TypeSearch.done();
 
         TypeNullTagSearch = createSearchBuilder();
         TypeNullTagSearch.and("type", TypeNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeNullTagSearch.and("accountId", TypeNullTagSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        TypeNullTagSearch.and("domainId", TypeNullTagSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        TypeNullTagSearch.and("accountId", TypeNullTagSearch.entity().getAccountId(), SearchCriteria.Op.IN);
+        TypeNullTagSearch.and("domainId", TypeNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
         TypeNullTagSearch.and("tag", TypeNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
         TypeNullTagSearch.done();
 
@@ -90,6 +94,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
         AccountSearch = createSearchBuilder();
         DomainSearch = createSearchBuilder();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("id", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
     }
 
     @PostConstruct
@@ -109,6 +117,19 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
     @Override
     public ResourceCountVO findByOwnerAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag) {
+        List<ResourceCountVO> resourceCounts = findByOwnersAndTypeAndTag(List.of(ownerId), ownerType, type, tag);
+        if (CollectionUtils.isNotEmpty(resourceCounts)) {
+            return resourceCounts.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public List<ResourceCountVO> findByOwnersAndTypeAndTag(List<Long> ownerIdList, ResourceOwnerType ownerType, ResourceType type, String tag) {
+        if (CollectionUtils.isEmpty(ownerIdList)) {
+            return new ArrayList<>();
+        }
         SearchCriteria<ResourceCountVO> sc = tag != null ? TypeSearch.create() : TypeNullTagSearch.create();
         sc.setParameters("type", type);
         if (tag != null) {
@@ -116,13 +137,13 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         }
 
         if (ownerType == ResourceOwnerType.Account) {
-            sc.setParameters("accountId", ownerId);
-            return findOneIncludingRemovedBy(sc);
+            sc.setParameters("accountId", ownerIdList.toArray());
+            return listIncludingRemovedBy(sc);
         } else if (ownerType == ResourceOwnerType.Domain) {
-            sc.setParameters("domainId", ownerId);
-            return findOneIncludingRemovedBy(sc);
+            sc.setParameters("domainId", ownerIdList.toArray());
+            return listIncludingRemovedBy(sc);
         } else {
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -152,6 +173,26 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         ResourceCountVO resourceCountVO = findById(id);
         resourceCountVO.setCount(resourceCountVO.getCount() + delta);
         return update(resourceCountVO.getId(), resourceCountVO);
+    }
+
+    @Override
+    public boolean updateCountByDeltaForIds(List<Long> ids, boolean increment, long delta) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return false;
+        }
+        String updateSql = increment ? INCREMENT_COUNT_BY_IDS_SQL : DECREMENT_COUNT_BY_IDS_SQL;
+
+        String poolIdsInStr = ids.stream().map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
+        String sql = updateSql.replace("(?)", poolIdsInStr);
+
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+            pstmt.setLong(1, delta);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override
@@ -344,5 +385,15 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             sc.setParameters("tags", tags.toArray());
         }
         remove(sc);
+    }
+
+    @Override
+    public List<ResourceCountVO> lockRows(Set<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<ResourceCountVO> sc = IdsSearch.create();
+        sc.setParameters("id", ids.toArray());
+        return lockRows(sc, null, true);
     }
 }

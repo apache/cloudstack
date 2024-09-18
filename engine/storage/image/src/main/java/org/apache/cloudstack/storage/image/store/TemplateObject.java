@@ -23,6 +23,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
+import com.cloud.storage.StorageManager;
 import com.cloud.user.UserData;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -74,11 +76,17 @@ public class TemplateObject implements TemplateInfo {
     VMTemplatePoolDao templatePoolDao;
     @Inject
     TemplateDataStoreDao templateStoreDao;
+    final private boolean followRedirects;
 
     public TemplateObject() {
+        this.followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
     }
 
     protected void configure(VMTemplateVO template, DataStore dataStore) {
+        if (template == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.warn(msg);
+        }
         imageVO = template;
         this.dataStore = dataStore;
     }
@@ -95,6 +103,10 @@ public class TemplateObject implements TemplateInfo {
     }
 
     public VMTemplateVO getImage() {
+        if (imageVO == null) {
+            String msg = String.format("Template Object is not properly initialised %s", this.toString());
+            logger.error(msg);
+        } // somehow the nullpointer is needed : refacter needed!?!
         return imageVO;
     }
 
@@ -340,6 +352,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public CPU.CPUArch getArch() {
+        return imageVO.getArch();
+    }
+
+    @Override
     public DataTO getTO() {
         DataTO to = null;
         if (dataStore == null) {
@@ -573,5 +590,10 @@ public class TemplateObject implements TemplateInfo {
     public Date getUpdated() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 }

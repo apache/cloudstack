@@ -446,7 +446,7 @@ public class SystemVmTemplateRegistration {
     private List<String> fetchAllHypervisors(Long zoneId) {
         List<String> hypervisorList = new ArrayList<>();
         List<Hypervisor.HypervisorType> hypervisorTypes = clusterDao.getAvailableHypervisorInZone(zoneId);
-        hypervisorList = hypervisorTypes.stream().distinct().map(Enum::name).collect(Collectors.toList());
+        hypervisorList = hypervisorTypes.stream().distinct().map(Hypervisor.HypervisorType::name).collect(Collectors.toList());
         return hypervisorList;
     }
 
@@ -483,19 +483,19 @@ public class SystemVmTemplateRegistration {
             templateZoneVO = vmTemplateZoneDao.persist(templateZoneVO);
         } else {
             templateZoneVO.setLastUpdated(new java.util.Date());
-            if (vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
+            if (!vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
                 templateZoneVO = null;
             }
         }
         return templateZoneVO;
     }
 
-    private void createCrossZonesTemplateZoneRefEntries(VMTemplateVO template) {
+    private void createCrossZonesTemplateZoneRefEntries(Long templateId) {
         List<DataCenterVO> dcs = dataCenterDao.listAll();
         for (DataCenterVO dc : dcs) {
-            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), template.getId());
+            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), templateId);
             if (templateZoneVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template for hypervisor: %s and zone: %s", template.getHypervisorType().name(), dc));
+                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template (id: %s) and zone: %s", templateId, dc));
             }
         }
     }
@@ -625,8 +625,9 @@ public class SystemVmTemplateRegistration {
                 throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
             }
             templateId = template.getId();
-            createCrossZonesTemplateZoneRefEntries(template);
         }
+        createCrossZonesTemplateZoneRefEntries(templateId);
+
         details.setId(templateId);
         String destTempFolderName = String.valueOf(templateId);
         String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
@@ -719,8 +720,8 @@ public class SystemVmTemplateRegistration {
     }
 
     private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().map(Enum::name).
-                map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
+        Set<String> hypervisors = hypervisorsInUse.stream().
+                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
         List<String> templates = new ArrayList<>();
         for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
             templates.add(FileNames.get(hypervisorType));

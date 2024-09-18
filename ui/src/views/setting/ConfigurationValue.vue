@@ -110,9 +110,14 @@
           </a-select>
         </a-tooltip>
       </span>
-      <span v-else-if="configrecord.type === 'Order'">
+      <span v-else-if="configrecord.type === 'Order' || configrecord.type === 'WhitespaceSeparatedListWithOptions'">
         <a-tooltip :title="editableValue.join(', ')">
-          <b>{{ $t('message.select.deselect.to.sort') }}</b>
+          <b v-if="configrecord.type === 'Order'">
+            {{ $t('message.select.deselect.to.sort') }}
+          </b>
+          <b v-else>
+            {{ $t('message.select.deselect.desired.options') }}
+          </b>
           <br />
           <a-select
             style="width: 20vw"
@@ -241,6 +246,9 @@ export default {
       if (['Order', 'CSV'].includes(configrecord.type)) {
         newValue = newValue.join(',')
       }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        newValue = newValue.join(' ')
+      }
       const params = {
         name: configrecord.name,
         value: newValue
@@ -250,7 +258,7 @@ export default {
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
+        this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
         if (json.updateconfigurationresponse &&
           json.updateconfigurationresponse.configuration &&
           !json.updateconfigurationresponse.configuration.isdynamic &&
@@ -266,7 +274,7 @@ export default {
         this.$message.error(this.$t('message.error.save.setting'))
         this.$notification.error({
           message: this.$t('label.error'),
-          description: this.$t('message.error.save.setting')
+          description: error?.response?.data?.updateconfigurationresponse?.errortext || this.$t('message.error.save.setting')
         })
       }).finally(() => {
         this.valueLoading = false
@@ -287,7 +295,7 @@ export default {
         }
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`)
+        this.$messageConfigSuccess(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`, configrecord)
         if (json.resetconfigurationresponse &&
           json.resetconfigurationresponse.configuration &&
           !json.resetconfigurationresponse.configuration.isdynamic &&
@@ -331,6 +339,13 @@ export default {
         } else {
           return []
         }
+      }
+      if (configrecord.type === 'WhitespaceSeparatedListWithOptions') {
+        if (configrecord.value && configrecord.value.length > 0) {
+          return String(configrecord.value).split(' ')
+        }
+
+        return []
       }
       if (configrecord.value) {
         return String(configrecord.value)

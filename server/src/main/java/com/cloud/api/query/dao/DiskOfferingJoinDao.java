@@ -33,4 +33,6 @@ public interface DiskOfferingJoinDao extends GenericDao<DiskOfferingJoinVO, Long
     DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO dof);
 
     DiskOfferingJoinVO newDiskOfferingView(DiskOffering dof);
+
+    List<DiskOfferingJoinVO> searchByIds(Long... idArray);
 }

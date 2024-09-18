@@ -92,6 +92,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -367,6 +368,7 @@ public class TemplateServiceImpl implements TemplateService {
                     toBeDownloaded.addAll(allTemplates);
 
                     final StateMachine2<VirtualMachineTemplate.State, VirtualMachineTemplate.Event, VirtualMachineTemplate> stateMachine = VirtualMachineTemplate.State.getStateMachine();
+                    Boolean followRedirect = StorageManager.DataStoreDownloadFollowRedirects.value();
                     for (VMTemplateVO tmplt : allTemplates) {
                         String uniqueName = tmplt.getUniqueName();
                         TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
@@ -447,7 +449,8 @@ public class TemplateServiceImpl implements TemplateService {
                                         try {
                                             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId),
                                                     com.cloud.configuration.Resource.ResourceType.secondary_storage,
-                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
+                                                    tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl(),
+                                                            followRedirect));
                                         } catch (ResourceAllocationException e) {
                                             logger.warn(e.getMessage());
                                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null, e.getMessage(), e.getMessage());
@@ -528,11 +531,6 @@ public class TemplateServiceImpl implements TemplateService {
                         for (VMTemplateVO tmplt : toBeDownloaded) {
                             if (tmplt.getUrl() == null) { // If url is null, skip downloading
                                 logger.info("Skip downloading template " + tmplt.getUniqueName() + " since no url is specified.");
-                                continue;
-                            }
-                            // if this is private template, skip sync to a new image store
-                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
-                                logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
                             }
 
@@ -816,7 +814,7 @@ public class TemplateServiceImpl implements TemplateService {
         String templateName = dataDiskTemplate.isIso() ? dataDiskTemplate.getPath().substring(dataDiskTemplate.getPath().lastIndexOf(File.separator) + 1) : template.getName() + suffix + diskCount;
         VMTemplateVO templateVO = new VMTemplateVO(templateId, templateName, format, false, false, false, ttype, template.getUrl(),
                 template.requiresHvm(), template.getBits(), template.getAccountId(), null, templateName, false, guestOsId, false, template.getHypervisorType(), null,
-                null, false, false, false, false);
+                null, false, false, false, false, template.getArch());
         if (dataDiskTemplate.isIso()){
             templateVO.setUniqueName(templateName);
         }

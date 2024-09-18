@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -54,6 +55,7 @@ jobs:
                   smoke/test_deploy_vm_with_userdata
                   smoke/test_deploy_vms_in_parallel
                   smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_restore_vm
                   smoke/test_diagnostics
                   smoke/test_direct_download
                   smoke/test_disk_offerings
@@ -85,7 +87,9 @@ jobs:
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
                   smoke/test_nested_virtualization
-                  smoke/test_set_sourcenat",
+                  smoke/test_set_sourcenat
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -131,6 +135,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
@@ -221,7 +226,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
 
       - name: Install Build Dependencies
@@ -279,7 +284,7 @@ jobs:
 
       - name: Start CloudStack Management Server with Simulator
         run: |
-          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver"
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
@@ -313,10 +318,11 @@ jobs:
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true
           flags: simulator-marvin-tests
           verbose: true
           name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}

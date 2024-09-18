@@ -17,7 +17,8 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div style="width: 100%; display: flex">
+
+     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
         style="width: 100%; margin-right: 10px"
@@ -31,6 +32,14 @@
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
+      <div class="search-bar">
+        <a-input-search
+          style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          @search="fetchData"
+        />
+      </div>
     </div>
 
     <div class="list">
@@ -90,6 +99,16 @@
               </div>
             </div>
             <div class="list__actions">
+              <tooltip-button
+                v-if="element.id !== acls[0].id"
+                :tooltip="$t('label.move.to.top')"
+                icon="vertical-align-top-outlined"
+                @onClick="() => moveRuleToTop(element)" />
+              <tooltip-button
+                v-if="element.id !== acls[acls.length - 1].id"
+                :tooltip="$t('label.move.to.bottom')"
+                icon="vertical-align-bottom-outlined"
+                @onClick="() => moveRuleToBottom(element)" />
               <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(element)" />
               <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(element)" />
               <tooltip-button
@@ -314,6 +333,7 @@ export default {
   },
   data () {
     return {
+      searchQuery: '', // Bind this to the search input
       acls: [],
       fetchLoading: false,
       protocolNumbers: [],
@@ -358,6 +378,10 @@ export default {
       }
 
       keys = Object.keys(data[0])
+      for (var i = 1; i < data.length; ++i) {
+        const rowKeys = Object.keys(data[i])
+        keys = keys.concat(rowKeys.filter(k => !keys.includes(k)))
+      }
 
       result = ''
       result += keys.join(columnDelimiter)
@@ -419,7 +443,11 @@ export default {
     },
     fetchData () {
       this.fetchLoading = true
-      api('listNetworkACLs', { aclid: this.resource.id }).then(json => {
+      const params = {
+        aclid: this.resource.id,
+        keyword: this.searchQuery
+      }
+      api('listNetworkACLs', params).then(json => {
         this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)
@@ -705,6 +733,12 @@ export default {
 
       if (e.moved.newIndex + 1 < this.acls.length) nextaclruleid = this.acls[e.moved.newIndex + 1].id
 
+      this.moveRule(
+        id,
+        previousaclruleid,
+        nextaclruleid)
+    },
+    moveRule (id, previousaclruleid, nextaclruleid) {
       this.fetchLoading = true
       api('moveNetworkAclItem', {
         id,
@@ -736,6 +770,12 @@ export default {
         this.$notifyError(error)
         this.fetchLoading = false
       })
+    },
+    moveRuleToTop (element) {
+      this.moveRule(element.id, null, this.acls[0].id)
+    },
+    moveRuleToBottom (element) {
+      this.moveRule(element.id, this.acls[this.acls.length - 1].id, null)
     },
     exportAclList () {
       const csvData = this.csv({ data: this.acls })

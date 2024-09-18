@@ -43,16 +43,19 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String checksum;
     private boolean redownload = false;
     protected String temporaryDownloadPath;
+    private boolean followRedirects;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
     protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId,
-                                           final String checksum, final String temporaryDownloadPath) {
+                                           final String checksum, final String temporaryDownloadPath,
+                                           final boolean followRedirects) {
         this.url = url;
         this.destPoolPath = destPoolPath;
         this.templateId = templateId;
         this.checksum = checksum;
         this.temporaryDownloadPath = temporaryDownloadPath;
+        this.followRedirects = followRedirects;
     }
 
     private static String directDownloadDir = "template";
@@ -110,6 +113,14 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     public boolean isRedownload() {
         return redownload;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 
     /**

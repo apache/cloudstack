@@ -20,9 +20,12 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.offering.ServiceOffering.State;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -42,6 +45,10 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private State state;
 
     @Column(name = "display_text")
     private String displayText;
@@ -229,6 +236,10 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getName() {
         return name;
+    }
+
+    public State getState() {
+        return state;
     }
 
     public String getDisplayText() {

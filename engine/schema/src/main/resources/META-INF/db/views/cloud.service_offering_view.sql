@@ -24,6 +24,7 @@ SELECT
     `service_offering`.`id` AS `id`,
     `service_offering`.`uuid` AS `uuid`,
     `service_offering`.`name` AS `name`,
+    `service_offering`.`state` AS `state`,
     `service_offering`.`display_text` AS `display_text`,
     `disk_offering`.`provisioning_type` AS `provisioning_type`,
     `service_offering`.`created` AS `created`,
@@ -84,7 +85,7 @@ SELECT
 FROM
     `cloud`.`service_offering`
         INNER JOIN
-    `cloud`.`disk_offering_view` AS `disk_offering` ON service_offering.disk_offering_id = disk_offering.id
+    `cloud`.`disk_offering` ON service_offering.disk_offering_id = disk_offering.id
         LEFT JOIN
     `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
         LEFT JOIN
@@ -108,7 +109,5 @@ FROM
         LEFT JOIN
     `cloud`.`service_offering_details` AS `vsphere_storage_policy` ON `vsphere_storage_policy`.`service_offering_id` = `service_offering`.`id`
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
-WHERE
-        `service_offering`.`state`='Active'
 GROUP BY
     `service_offering`.`id`;

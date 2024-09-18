@@ -64,8 +64,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -73,8 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    protected Logger logger = LogManager.getLogger(getClass());
+public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
@@ -148,7 +145,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         String uri = String.format("%s://%s%s", scheme, storageHost, hostPath);
 
         Object localStorage = dsInfos.get("localStorage");
-           if (localStorage != null) {
+        if (localStorage != null) {
             hostPath = hostPath.contains("//") ? hostPath.replaceFirst("/", "") : hostPath;
             hostPath = hostPath.replace("+", " ");
         }
@@ -412,6 +409,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                 throw new CloudRuntimeException("Storage has already been added as local storage");
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
+                String reason = storageMgr.getStoragePoolMountFailureReason(e.getMessage());
+                if (reason != null) {
+                    throw new CloudRuntimeException(reason);
+                }
             }
         }
 
@@ -427,7 +428,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean attachZone(DataStore dataStore, ZoneScope scope, HypervisorType hypervisorType) {
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
+        List<HostVO> hosts = _resourceMgr.listAllUpHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         logger.debug("In createPool. Attaching the pool to each of the hosts.");
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
@@ -439,6 +440,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
                     throw new CloudRuntimeException("Storage has already been added as local storage to host: " + host.getName());
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                String reason = storageMgr.getStoragePoolMountFailureReason(e.getMessage());
+                if (reason != null) {
+                    throw new CloudRuntimeException(reason);
+                }
             }
         }
         if (poolHosts.isEmpty()) {
@@ -459,8 +464,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean cancelMaintain(DataStore store) {
-        dataStoreHelper.cancelMaintain(store);
         storagePoolAutmation.cancelMaintain(store);
+        dataStoreHelper.cancelMaintain(store);
         return true;
     }
 

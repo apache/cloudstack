@@ -26,7 +26,7 @@
         <a-button
           type="dashed"
           style="width: 100%"
-          :disabled="!('updateTemplate' in $store.getters.apis && 'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner())"
+          :disabled="!(isAdminOrOwner() && hasSettingUpdatePermission())"
           @click="onShowAddDetail">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.setting') }}
@@ -96,18 +96,16 @@
         </a-list-item-meta>
         <template #actions>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <tooltip-button
               :tooltip="$t('label.edit')"
               icon="edit-outlined"
-              :disabled="deployasistemplate === true"
+              :disabled="deployasistemplate === true || item.name.startsWith('extraconfig')"
               v-if="!item.edit"
               @onClick="showEditDetail(index)" />
           </div>
           <div
-            v-if="!disableSettings && 'updateTemplate' in $store.getters.apis &&
-              'updateVirtualMachine' in $store.getters.apis && isAdminOrOwner() && allowEditOfDetail(item.name)">
+            v-if="!disableSettings && isAdminOrOwner() && allowEditOfDetail(item.name) && hasSettingUpdatePermission()">
             <a-popconfirm
               :title="`${$t('label.delete.setting')}?`"
               @confirm="deleteDetail(index)"
@@ -115,7 +113,12 @@
               :cancelText="$t('label.no')"
               placement="left"
             >
-              <tooltip-button :tooltip="$t('label.delete')" :disabled="deployasistemplate === true" type="primary" :danger="true" icon="delete-outlined" />
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                :disabled="deployasistemplate === true || item.name.startsWith('extraconfig')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
             </a-popconfirm>
           </div>
         </template>
@@ -307,6 +310,10 @@ export default {
         this.error = this.$t('message.error.provide.setting')
         return
       }
+      if (this.newKey.startsWith('extraconfig')) {
+        this.error = this.$t('error.unable.to.add.setting.extraconfig')
+        return
+      }
       if (!this.allowEditOfDetail(this.newKey)) {
         this.error = this.$t('error.unable.to.proceed')
         return
@@ -333,6 +340,12 @@ export default {
       this.newValue = ''
       this.error = false
       this.showAddDetail = false
+    },
+    hasSettingUpdatePermission () {
+      return (
+        (this.resourceType === 'Template' && 'updateTemplate' in this.$store.getters.apis) ||
+        (this.resourceType === 'UserVm' && 'updateVirtualMachine' in this.$store.getters.apis)
+      )
     }
   }
 }

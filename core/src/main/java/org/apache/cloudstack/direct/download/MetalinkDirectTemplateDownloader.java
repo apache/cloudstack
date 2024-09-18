@@ -39,16 +39,15 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
     private Integer soTimeout;
 
     protected DirectTemplateDownloader createDownloaderForMetalinks(String url, Long templateId,
-                                                                    String destPoolPath, String checksum,
-                                                                    Map<String, String> headers,
-                                                                    Integer connectTimeout, Integer soTimeout,
-                                                                    Integer connectionRequestTimeout, String temporaryDownloadPath) {
+                String destPoolPath, String checksum, Map<String, String> headers, Integer connectTimeout,
+                Integer soTimeout, Integer connectionRequestTimeout, String temporaryDownloadPath) {
         if (url.toLowerCase().startsWith("https:")) {
             return new HttpsDirectTemplateDownloader(url, templateId, destPoolPath, checksum, headers,
-                    connectTimeout, soTimeout, connectionRequestTimeout, temporaryDownloadPath);
+                    connectTimeout, soTimeout, connectionRequestTimeout, temporaryDownloadPath,
+                    this.isFollowRedirects());
         } else if (url.toLowerCase().startsWith("http:")) {
             return new HttpDirectTemplateDownloader(url, templateId, destPoolPath, checksum, headers,
-                    connectTimeout, soTimeout, temporaryDownloadPath);
+                    connectTimeout, soTimeout, temporaryDownloadPath, this.isFollowRedirects());
         } else if (url.toLowerCase().startsWith("nfs:")) {
             return new NfsDirectTemplateDownloader(url);
         } else {
@@ -57,13 +56,14 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         }
     }
 
-    protected MetalinkDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, null);
+    protected MetalinkDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null, followRedirects);
     }
 
     public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum,
-                                            Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
-        super(url, destPoolPath, templateId, checksum, downloadPath);
+                Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath,
+                boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, downloadPath, followRedirects);
         this.headers = headers;
         this.connectTimeout = connectTimeout;
         this.soTimeout = soTimeout;

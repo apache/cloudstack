@@ -808,8 +808,13 @@ public class VmwareHelper {
                 instance.setMemory(configSummary.getMemorySizeMB());
             }
 
-            ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
-            instance.setClusterName(clusterMo.getName());
+            try {
+                ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
+                instance.setClusterName(clusterMo.getName());
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get unmanaged instance cluster info, due to: " + e.getMessage());
+            }
+
             instance.setHostName(hyperHost.getHyperHostName());
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
@@ -839,7 +844,7 @@ public class VmwareHelper {
             instance.setDisks(getUnmanageInstanceDisks(vmMo));
             instance.setNics(getUnmanageInstanceNics(hyperHost, vmMo));
         } catch (Exception e) {
-            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage());
+            LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
     }

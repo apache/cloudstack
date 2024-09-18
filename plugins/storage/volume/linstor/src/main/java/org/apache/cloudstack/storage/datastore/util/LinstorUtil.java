@@ -18,12 +18,14 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
-import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Node;
+import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
+import com.linbit.linstor.api.model.Resource;
+import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
@@ -52,7 +54,7 @@ public class LinstorUtil {
     public static final String CLUSTER_DEFAULT_MAX_IOPS = "clusterDefaultMaxIops";
 
     public static DevelopersApi getLinstorAPI(String linstorUrl) {
-        ApiClient client = Configuration.getDefaultApiClient();
+        ApiClient client = new ApiClient();
         client.setBasePath(linstorUrl);
         return new DevelopersApi(client);
     }
@@ -78,16 +80,16 @@ public class LinstorUtil {
         return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
-    public static com.linbit.linstor.api.model.StoragePool
-    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    public static List<com.linbit.linstor.api.model.StoragePool>
+    getDiskfulStoragePools(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
     {
         List<ResourceWithVolumes> resources = api.viewResources(
-            Collections.emptyList(),
-            Collections.singletonList(rscName),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            null,
-            null);
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                null,
+                null);
 
         String nodeName = null;
         String storagePoolName = null;
@@ -108,13 +110,24 @@ public class LinstorUtil {
         }
 
         List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
-            Collections.singletonList(nodeName),
-            Collections.singletonList(storagePoolName),
-            Collections.emptyList(),
-            null,
-            null
+                Collections.singletonList(nodeName),
+                Collections.singletonList(storagePoolName),
+                Collections.emptyList(),
+                null,
+                null,
+                true
         );
-        return !sps.isEmpty() ? sps.get(0) : null;
+        return sps != null ? sps : Collections.emptyList();
+    }
+
+    public static com.linbit.linstor.api.model.StoragePool
+    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    {
+        List<com.linbit.linstor.api.model.StoragePool> sps = getDiskfulStoragePools(api, rscName);
+        if (sps != null) {
+            return !sps.isEmpty() ? sps.get(0) : null;
+        }
+        return null;
     }
 
     public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {
@@ -156,7 +169,8 @@ public class LinstorUtil {
                 rscGrps.get(0).getSelectFilter().getStoragePoolList(),
                 null,
                 null,
-                null
+                null,
+                true
         );
     }
 
@@ -173,5 +187,81 @@ public class LinstorUtil {
             LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
+    }
+
+    /**
+     * Check if any resource of the given name is InUse on any host.
+     *
+     * @param api developer api object to use
+     * @param rscName resource name to check in use state.
+     * @return NodeName where the resource is inUse, if not in use `null`
+     * @throws ApiException forwards api errors
+     */
+    public static String isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs != null) {
+            return rscs.stream()
+                    .filter(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()))
+                    .map(Resource::getNodeName)
+                    .findFirst()
+                    .orElse(null);
+        }
+        LOGGER.error("isResourceInUse: null returned from resourceList");
+        return null;
+    }
+
+    /**
+     * Try to get the device path for the given resource name.
+     * This could be made a bit more direct after java-linstor api is fixed for layer data subtypes.
+     * @param api developer api object to use
+     * @param rscName resource name to get the device path
+     * @return The device path of the resource.
+     * @throws ApiException if Linstor API call failed.
+     * @throws CloudRuntimeException if no device path could be found.
+     */
+    public static String getDevicePath(DevelopersApi api, String rscName) throws ApiException, CloudRuntimeException {
+        List<ResourceWithVolumes> resources = api.viewResources(
+                Collections.emptyList(),
+                Collections.singletonList(rscName),
+                Collections.emptyList(),
+                null,
+                null,
+                null);
+        for (ResourceWithVolumes rsc : resources) {
+            if (!rsc.getVolumes().isEmpty()) {
+                // CloudStack resource always only have 1 volume
+                String devicePath = rsc.getVolumes().get(0).getDevicePath();
+                if (devicePath != null && !devicePath.isEmpty()) {
+                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
+                    return devicePath;
+                }
+            }
+        }
+
+        final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
+        LOGGER.error(errMsg);
+        throw new CloudRuntimeException("Linstor: " + errMsg);
+    }
+
+    public static ApiCallRcList applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
+            throws ApiException
+    {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        if (dispName != null)
+        {
+            props.put("Aux/cs-name", dispName);
+        }
+        if (vmName != null)
+        {
+            props.put("Aux/cs-vm-name", vmName);
+        }
+        ApiCallRcList answers = new ApiCallRcList();
+        if (!props.isEmpty())
+        {
+            rdm.setOverrideProps(props);
+            answers = api.resourceDefinitionModify(rscName, rdm);
+        }
+        return answers;
     }
 }

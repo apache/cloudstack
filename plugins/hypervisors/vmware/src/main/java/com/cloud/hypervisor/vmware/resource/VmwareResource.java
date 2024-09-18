@@ -48,12 +48,14 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
@@ -782,7 +784,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
      */
     protected EnumMap<VmwareStorageProcessorConfigurableFields, Object> examineStorageSubSystemCommandFullCloneFlagForVmware(CopyCommand cmd,
             EnumMap<VmwareStorageProcessorConfigurableFields, Object> params) {
-        EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<VmwareStorageProcessorConfigurableFields, Object>(params);
+        EnumMap<VmwareStorageProcessorConfigurableFields, Object> paramsCopy = new EnumMap<>(params);
         HypervisorType hypervisor = cmd.getDestTO().getHypervisorType();
         if (hypervisor != null && hypervisor.equals(HypervisorType.VMware)) {
             DataStoreTO destDataStore = cmd.getDestTO().getDataStore();
@@ -2201,7 +2203,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     throw new Exception("Failed to find the newly create or relocated VM. vmName: " + vmInternalCSName);
                 }
             }
-            if (deployAsIs) {
+            if (deployAsIs && !vmMo.hasSnapshot()) {
                 logger.info("Mapping VM disks to spec disks and tearing down datadisks (if any)");
                 mapSpecDisksToClonedDisksAndTearDownDatadisks(vmMo, vmInternalCSName, specDisks);
             }
@@ -2277,15 +2279,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 // attach ISO (for patching of system VM)
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    String msg = "Failed to prepare secondary storage on host, NFS secondary or cache store url: " + secStoreUrl + " in dc "+ _dcId;
                     throw new Exception(msg);
                 }
                 DatastoreMO secDsMo = new DatastoreMO(hyperHost.getContext(), morSecDs);
@@ -2736,8 +2738,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private DiskTO[] getDisks(DiskTO[] sortedDisks) {
        return Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
-                vol.getPath().contains("configdrive"))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
+                vol.getPath().contains(ConfigDrive.CONFIGDRIVEDIR))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
     }
+
     private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
                               VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
         TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
@@ -3070,7 +3073,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private String appendFileType(String path, String fileType) {
-        if (path.toLowerCase().endsWith(fileType.toLowerCase())) {
+        if (StringUtils.isBlank(path)) {
+            throw new CloudRuntimeException("No path given, cannot append filetype " + fileType);
+        }
+        if (fileType == null || path.toLowerCase().endsWith(fileType.toLowerCase())) {
             return path;
         }
 
@@ -4443,6 +4449,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                             logger.warn(msg);
                         }
+
+                        disconnectConfigDriveIsoIfExists(vmMo);
                         return new StopAnswer(cmd, msg, true);
                     }
 
@@ -4458,6 +4466,30 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
         } catch (Exception e) {
             return new StopAnswer(cmd, createLogMessageException(e, cmd), false);
+        }
+    }
+
+    private void disconnectConfigDriveIsoIfExists(VirtualMachineMO vmMo) {
+        try {
+            List<VirtualDevice> isoDevices = vmMo.getIsoDevices();
+            if (CollectionUtils.isEmpty(isoDevices)) {
+                return;
+            }
+
+            for (VirtualDevice isoDevice : isoDevices) {
+                if (!(isoDevice.getBacking() instanceof VirtualCdromIsoBackingInfo)) {
+                    continue;
+                }
+                String isoFilePath = ((VirtualCdromIsoBackingInfo)isoDevice.getBacking()).getFileName();
+                if (!isoFilePath.contains(ConfigDrive.CONFIGDRIVEDIR)) {
+                    continue;
+                }
+                logger.info(String.format("Disconnecting config drive at location: %s", isoFilePath));
+                vmMo.detachIso(isoFilePath, true);
+                return;
+            }
+        } catch (Exception e) {
+            logger.warn(String.format("Couldn't check/disconnect config drive, error: %s", e.getMessage()), e);
         }
     }
 
@@ -4610,15 +4642,15 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             List<Pair<String, Long>> secStoreUrlAndIdList = mgr.getSecondaryStorageStoresUrlAndIdList(Long.parseLong(_dcId));
             for (Pair<String, Long> secStoreUrlAndId : secStoreUrlAndIdList) {
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = String.format("Secondary storage for dc %s is not ready yet?", _dcId);
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
 
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnHost(secStoreUrl);
                 if (morSecDs == null) {
-                    String msg = "Failed to prepare secondary storage on host, secondary store url: " + secStoreUrl;
+                    String msg = "Failed to prepare secondary storage on host, NFS secondary or cache store url: " + secStoreUrl + " in dc "+ _dcId;
                     throw new Exception(msg);
                 }
             }
@@ -7340,14 +7372,14 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 VmwareManager mgr = targetHyperHost.getContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
                 Pair<String, Long> secStoreUrlAndId = mgr.getSecondaryStorageStoreUrlAndId(Long.parseLong(_dcId));
                 String secStoreUrl = secStoreUrlAndId.first();
-                Long secStoreId = secStoreUrlAndId.second();
                 if (secStoreUrl == null) {
-                    String msg = "secondary storage for dc " + _dcId + " is not ready yet?";
+                    String msg = String.format("NFS secondary or cache storage of dc %s either doesn't have enough capacity (has reached %d%% usage threshold) or not ready yet, or non-NFS secondary storage is used",
+                            _dcId, Math.round(CapacityManager.SecondaryStorageCapacityThreshold.value() * 100));
                     throw new Exception(msg);
                 }
                 ManagedObjectReference morSecDs = prepareSecondaryDatastoreOnSpecificHost(secStoreUrl, targetHyperHost);
                 if (morSecDs == null) {
-                    throw new Exception(String.format("Failed to prepare secondary storage on host, secondary store url: %s", secStoreUrl));
+                    throw new Exception(String.format("Failed to prepare secondary storage on host, NFS secondary or cache store url: %s in dc %s", secStoreUrl, _dcId));
                 }
             }
 

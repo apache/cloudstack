@@ -113,6 +113,20 @@ public class ScriptTest {
     }
 
     @Test
+    public void executeWithOutputInterpreterAllLinesParserLargeOutput() {
+        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        Script script = new Script("seq");
+        script.add("-f");
+        script.add("my text to test cloudstack %g");
+        script.add("4096"); // AllLinesParser doesn't work with that amount of data
+        String value = script.execute(parser);
+        // it is a stack trace in this case as string
+        Assert.assertNull(value);
+        Assert.assertEquals(129965, parser.getLines().length());
+    }
+
+    @Test
     public void runSimpleBashScriptNotExisting() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         String output = Script.runSimpleBashScript("/not/existing/scripts/"

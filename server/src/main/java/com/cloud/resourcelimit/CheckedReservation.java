@@ -62,11 +62,46 @@ public class CheckedReservation  implements AutoCloseable {
         return String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName());
     }
 
-    protected void checkLimitAndPersistReservation(Account account, ResourceType resourceType, String tag, Long amount) throws ResourceAllocationException {
-        resourceLimitService.checkResourceLimitWithTag(account, resourceType, tag, amount);
+    private void removeAllReservations() {
+        if (CollectionUtils.isEmpty(reservations)) {
+            return;
+        }
+        CallContext.current().removeContextParameter(getContextParameterKey());
+        for (ResourceReservation reservation : reservations) {
+            reservationDao.remove(reservation.getId());
+        }
+        this.reservations = null;
+    }
+
+    protected void checkLimitAndPersistReservations(Account account, ResourceType resourceType, Long resourceId, List<String> resourceLimitTags, Long amount) throws ResourceAllocationException {
+        try {
+            checkLimitAndPersistReservation(account, resourceType, resourceId, null, amount);
+            if (CollectionUtils.isNotEmpty(resourceLimitTags)) {
+                for (String tag : resourceLimitTags) {
+                    checkLimitAndPersistReservation(account, resourceType, resourceId, tag, amount);
+                }
+            }
+        } catch (ResourceAllocationException rae) {
+            removeAllReservations();
+            throw rae;
+        }
+    }
+
+    protected void checkLimitAndPersistReservation(Account account, ResourceType resourceType, Long resourceId, String tag, Long amount) throws ResourceAllocationException {
+        if (amount > 0) {
+            resourceLimitService.checkResourceLimitWithTag(account, resourceType, tag, amount);
+        }
         ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), resourceType, tag, amount);
+        if (resourceId != null) {
+            reservationVO.setResourceId(resourceId);
+        }
         ResourceReservation reservation = reservationDao.persist(reservationVO);
         this.reservations.add(reservation);
+    }
+
+    public CheckedReservation(Account account, ResourceType resourceType, List<String> resourceLimitTags, Long amount,
+            ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        this(account, resourceType, null, resourceLimitTags, amount, reservationDao, resourceLimitService);
     }
 
     /**
@@ -77,8 +112,8 @@ public class CheckedReservation  implements AutoCloseable {
      * @param amount positive number of the resource type to reserve
      * @throws ResourceAllocationException
      */
-    public CheckedReservation(Account account, ResourceType resourceType, List<String> resourceLimitTags, Long amount,
-          ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+    public CheckedReservation(Account account, ResourceType resourceType, Long resourceId, List<String> resourceLimitTags, Long amount,
+                              ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
         this.reservationDao = reservationDao;
         this.resourceLimitService = resourceLimitService;
         this.account = account;
@@ -86,36 +121,28 @@ public class CheckedReservation  implements AutoCloseable {
         this.amount = amount;
         this.reservations = new ArrayList<>();
         this.resourceLimitTags = resourceLimitTags;
-        setGlobalLock();
-        if (this.amount != null && this.amount <= 0) {
-            if(logger.isDebugEnabled()){
-                logger.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, %s ", account.getAccountName(), account.getDomainId(), resourceType, amount));
-            }
-            this.amount = null;
-        }
 
-        if (this.amount != null) {
-            if(quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
-                try {
-                    checkLimitAndPersistReservation(account, resourceType, null, amount);
-                    if (CollectionUtils.isNotEmpty(resourceLimitTags)) {
-                        for (String tag: resourceLimitTags) {
-                            checkLimitAndPersistReservation(account, resourceType, tag, amount);
-                        }
+        if (this.amount != null && this.amount != 0) {
+            if (amount > 0) {
+                setGlobalLock();
+                if (quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
+                    try {
+                        checkLimitAndPersistReservations(account, resourceType, resourceId, resourceLimitTags, amount);
+                        CallContext.current().putContextParameter(getContextParameterKey(), getIds());
+                    } catch (NullPointerException npe) {
+                        throw new CloudRuntimeException("not enough means to check limits", npe);
+                    } finally {
+                        quotaLimitLock.unlock();
                     }
-                    CallContext.current().putContextParameter(getContextParameterKey(), getIds());
-                } catch (NullPointerException npe) {
-                    throw new CloudRuntimeException("not enough means to check limits", npe);
-                } finally {
-                    quotaLimitLock.unlock();
+                } else {
+                    throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", quotaLimitLock.getName()), resourceType);
                 }
             } else {
-                throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", quotaLimitLock.getName()), resourceType);
+                checkLimitAndPersistReservations(account, resourceType, resourceId, resourceLimitTags, amount);
             }
         } else {
-            if(logger.isDebugEnabled()) {
-                logger.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, tag: %s", account.getAccountName(), account.getDomainId(), resourceType, getResourceLimitTagsAsString()));
-            }
+            logger.debug("not reserving any amount of resources for {} in domain {}, type: {}, tag: {}",
+                    account.getAccountName(), account.getDomainId(), resourceType, getResourceLimitTagsAsString());
         }
     }
 
@@ -136,14 +163,7 @@ public class CheckedReservation  implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (CollectionUtils.isEmpty(reservations)) {
-            return;
-        }
-        CallContext.current().removeContextParameter(getContextParameterKey());
-        for (ResourceReservation reservation : reservations) {
-            reservationDao.remove(reservation.getId());
-        }
-        reservations = null;
+        removeAllReservations();
     }
 
     public Account getAccount() {

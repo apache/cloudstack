@@ -37,4 +37,22 @@ public class CreateServiceOfferingCmdTest {
         Assert.assertEquals(createServiceOfferingCmd.getDisplayText(), netName);
     }
 
+    @Test
+    public void testIsPurgeResourcesNoOrNullValue() {
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+    }
+
+    @Test
+    public void testIsPurgeResourcesFalse() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", false);
+        Assert.assertFalse(createServiceOfferingCmd.isPurgeResources());
+    }
+
+    @Test
+    public void testIsPurgeResourcesTrue() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", true);
+        Assert.assertTrue(createServiceOfferingCmd.isPurgeResources());
+    }
 }

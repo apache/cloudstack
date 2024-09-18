@@ -43,12 +43,12 @@ function installed() {
 function doinstall() {
     yum install "$@" || return $?
 }
-    
+
 function doupdate() {
     yum update --enablerepo='cloud-temp' 'cloud-*' || return $?
     rpm -Uvh --force cloud-scripts-*.rpm
 }
-    
+
 function doremove() {
     yum remove "$@" || return $?
 }
@@ -60,7 +60,7 @@ trap "cleanup" INT TERM EXIT
 cd `dirname "$0"`
 setuprepo
 
-installms="    M) Install the Management Server   
+installms="    M) Install the Management Server
 "
 installag="    A) Install the Agent
 "
@@ -68,7 +68,7 @@ installbm="    B) Install BareMetal Agent
 "
 installus="    S) Install the Usage Monitor
 "
-installdb="    D) Install the database server     
+installdb="    D) Install the database server
 "
 quitoptio="    Q) Quit
 "
@@ -139,7 +139,7 @@ elif [ "$installtype" == "d" -o "$installtype" == "D" ] ; then
 
     echo "Installing the MySQL server..." >&2
     if doinstall mysql-server ; then
-        /sbin/chkconfig --add mysqld 
+        /sbin/chkconfig --add mysqld
         /sbin/chkconfig --level 345 mysqld on
         if /sbin/service mysqld status > /dev/null 2>&1 ; then
             echo "Restarting the MySQL server..." >&2

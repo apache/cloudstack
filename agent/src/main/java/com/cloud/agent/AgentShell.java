@@ -222,7 +222,7 @@ public class AgentShell implements IAgentShell, Daemon {
             throw new ConfigurationException("Unable to find agent.properties.");
         }
 
-        LOGGER.info("agent.properties found at " + file.getAbsolutePath());
+        LOGGER.info("agent.properties found at {}", file.getAbsolutePath());
 
         try {
             PropertiesUtil.loadFromFile(_properties, file);
@@ -382,7 +382,7 @@ public class AgentShell implements IAgentShell, Daemon {
         if (_version == null) {
             throw new CloudRuntimeException("Unable to find the implementation version of this agent");
         }
-        LOGGER.info("Implementation Version is " + _version);
+        LOGGER.info("Implementation Version is {}", _version);
 
         loadProperties();
         parseCommand(args);
@@ -390,7 +390,7 @@ public class AgentShell implements IAgentShell, Daemon {
         if (LOGGER.isDebugEnabled()) {
             List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
             for (String property : properties) {
-                LOGGER.debug("Found property: " + property);
+                LOGGER.debug("Found property: {}", property);
             }
         }
 
@@ -411,7 +411,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
     private void launchAgent() throws ConfigurationException {
         String resourceClassNames = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RESOURCE);
-        LOGGER.trace("resource=" + resourceClassNames);
+        LOGGER.trace("resource={}", resourceClassNames);
         if (resourceClassNames != null) {
             launchAgentFromClassInfo(resourceClassNames);
             return;
@@ -444,7 +444,7 @@ public class AgentShell implements IAgentShell, Daemon {
             LOGGER.error("Unable to retrieve the type");
             throw new ConfigurationException("Unable to retrieve the type of this agent.");
         }
-        LOGGER.trace("Launching agent based on type=" + typeInfo);
+        LOGGER.trace("Launching agent based on type={}", typeInfo);
     }
 
     public void launchNewAgent(ServerResource resource) throws ConfigurationException {
@@ -506,7 +506,7 @@ public class AgentShell implements IAgentShell, Daemon {
             String pidDir = getProperty(null, "piddir");
 
             final String run = "agent." + instance + "pid";
-            LOGGER.debug("Checking to see if " + run + " exists.");
+            LOGGER.debug("Checking to see if {} exists.", run);
             ProcessUtil.pidCheck(pidDir, run);
 
             launchAgent();

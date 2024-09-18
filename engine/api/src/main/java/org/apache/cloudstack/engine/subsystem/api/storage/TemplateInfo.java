@@ -21,7 +21,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.UserData;
 
-public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
+public interface TemplateInfo extends DownloadableDataInfo, VirtualMachineTemplate {
     @Override
     String getUniqueName();
 

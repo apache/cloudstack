@@ -49,6 +49,8 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     private DataStoreTO _store;
     private DataStoreTO cacheStore;
 
+    private boolean followRedirects = false;
+
     protected DownloadCommand() {
     }
 
@@ -65,6 +67,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         installPath = that.installPath;
         _store = that._store;
         _proxy = that._proxy;
+        followRedirects = that.followRedirects;
     }
 
     public DownloadCommand(TemplateObjectTO template, Long maxDownloadSizeInBytes) {
@@ -80,6 +83,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
             setSecUrl(((NfsTO)_store).getUrl());
         }
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.followRedirects = template.isFollowRedirects();
     }
 
     public DownloadCommand(TemplateObjectTO template, String user, String passwd, Long maxDownloadSizeInBytes) {
@@ -95,6 +99,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         _store = volume.getDataStore();
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         resourceType = ResourceType.VOLUME;
+        this.followRedirects = volume.isFollowRedirects();
     }
 
     public DownloadCommand(SnapshotObjectTO snapshot, Long maxDownloadSizeInBytes, String url) {
@@ -193,5 +198,13 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
     public DataStoreTO getCacheStore() {
         return cacheStore;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 }

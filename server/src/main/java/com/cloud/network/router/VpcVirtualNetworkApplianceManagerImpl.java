@@ -30,6 +30,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -66,10 +68,14 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.MonitoringServiceVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -134,6 +140,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected NetworkDao networkDao;
     @Inject
     protected VpcDao vpcDao;
+    @Inject
+    private LoadBalancerDao loadBalancerDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -225,6 +233,54 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
 
+    @Override
+    public boolean stopKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "stop");
+    }
+
+    @Override
+    public boolean startKeepAlivedOnRouter(VirtualRouter router,
+            Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        return manageKeepalivedServiceOnRouter(router, network, "start");
+    }
+
+    private boolean manageKeepalivedServiceOnRouter(VirtualRouter router,
+            Network network, String action) throws ConcurrentOperationException, ResourceUnavailableException {
+        if (network.getTrafficType() != TrafficType.Guest) {
+            logger.warn("Network {} is not of type {}", network, TrafficType.Guest);
+            return false;
+        }
+        boolean result = true;
+        try {
+            if (router.getState() == State.Running) {
+                final ManageServiceCommand stopCommand = new ManageServiceCommand("keepalived", action);
+                stopCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+
+                final Commands cmds = new Commands(Command.OnError.Stop);
+                cmds.addCommand("manageKeepalived", stopCommand);
+                _nwHelper.sendCommandsToRouter(router, cmds);
+
+                final Answer setupAnswer = cmds.getAnswer("manageKeepalived");
+                if (!(setupAnswer != null && setupAnswer.getResult())) {
+                    logger.warn("Unable to {} keepalived on router {}", action, router);
+                    result = false;
+                }
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                logger.debug("Router {} is in {}, so not sending command to the backend", router.getInstanceName(), router.getState());
+            } else {
+                String message = "Unable to " + action + " keepalived on virtual router [" + router + "] is not in the right state " + router.getState();
+                logger.warn(message);
+                throw new ResourceUnavailableException(message, DataCenter.class, router.getDataCenterId());
+            }
+        } catch (final Exception ex) {
+            logger.warn("Failed to {}  keepalived on router {} to network {} due to {}", action, router, network, ex.getLocalizedMessage());
+            logger.debug("Failed to {}  keepalived on router {} to network {}", action, router, network, ex);
+            result = false;
+        }
+        return result;
+    }
+
     protected boolean setupVpcGuestNetwork(final Network network, final VirtualRouter router, final boolean add, final NicProfile guestNic) throws ConcurrentOperationException,
     ResourceUnavailableException {
 
@@ -296,6 +352,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
                 if (defaultIp6Dns2 != null) {
                     buf.append(" ip6dns2=").append(defaultIp6Dns2);
+                }
+                if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                    buf.append(" is_routed=true");
                 }
             }
         }
@@ -405,6 +464,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());
+                    if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                        continue;
+                    }
                     final NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(domainRouterVO.getPrivateIpAddress(), domainRouterVO.getInstanceName(), true, publicNic.getIPv4Address(), vpc.getCidr());
                     usageCmds.add(netUsageCmd);
                     UserStatisticsVO stats = _userStatsDao.findBy(domainRouterVO.getAccountId(), domainRouterVO.getDataCenterId(), publicNtwk.getId(), publicNic.getIPv4Address(), domainRouterVO.getId(),
@@ -531,10 +593,30 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 cmds.addCommand(finishCmd);
             }
 
+            createApplyLoadBalancingRulesCommandsForVpc(cmds, domainRouterVO, provider, guestNics);
+
             // Add network usage commands
             cmds.addCommands(usageCmds);
         }
         return true;
+    }
+
+    private void createApplyLoadBalancingRulesCommandsForVpc(final Commands cmds, DomainRouterVO domainRouterVO, Provider provider,
+                                                             List<Pair<Nic, Network>> guestNics) {
+        final List<LoadBalancerVO> lbs = loadBalancerDao.listByVpcIdAndScheme(domainRouterVO.getVpcId(), Scheme.Public);
+        final List<LoadBalancingRule> lbRules = new ArrayList<>();
+        createLoadBalancingRulesList(lbRules, lbs);
+        logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of VPC VR " + domainRouterVO + " start.");
+        if (!lbRules.isEmpty()) {
+            for (final Pair<Nic, Network> nicNtwk : guestNics) {
+                final Nic guestNic = nicNtwk.first();
+                final long guestNetworkId = guestNic.getNetworkId();
+                if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
+                    _commandSetupHelper.createApplyLoadBalancingRulesCommands(lbRules, domainRouterVO, cmds, guestNetworkId);
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -681,7 +763,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
 
         if (domainRouterVO.getState() == State.Starting || domainRouterVO.getState() == State.Running) {
-            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(domainRouterVO, provider, guestNetworkId, IpAddress.State.Releasing);
+            final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId, IpAddress.State.Releasing);
 
             if (publicIps != null && !publicIps.isEmpty()) {
                 logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + domainRouterVO + " start.");

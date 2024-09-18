@@ -26,10 +26,16 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.configuration.Resource;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import org.apache.cloudstack.reservation.ReservationVO;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.network.Network;
@@ -91,6 +97,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     NetworkDao networkDao;
     @Inject
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Inject
+    ReservationDao reservationDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -198,6 +206,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccount.and("type", CountByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
         CountByAccount.and("displayVm", CountByAccount.entity().isDisplayVm(), SearchCriteria.Op.EQ);
+        CountByAccount.and("idNIN", CountByAccount.entity().getId(), SearchCriteria.Op.NIN);
         CountByAccount.done();
 
         CountActiveAccount = createSearchBuilder(Long.class);
@@ -265,8 +274,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
 
     @Override
-    public void updateVM(long id, String displayName, boolean enable, Long osTypeId, String userData, Long userDataId, String userDataDetails, boolean displayVm,
-                         boolean isDynamicallyScalable, String customId, String hostName, String instanceName) {
+    public void updateVM(long id, String displayName, boolean enable, Long osTypeId,
+                         String userData, Long userDataId, String userDataDetails,
+                         boolean displayVm, boolean isDynamicallyScalable,
+                         boolean deleteProtection, String customId, String hostName,
+                         String instanceName) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
         vo.setHaEnabled(enable);
@@ -276,6 +288,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         vo.setUserDataDetails(userDataDetails);
         vo.setDisplayVm(displayVm);
         vo.setDynamicallyScalable(isDynamicallyScalable);
+        vo.setDeleteProtection(deleteProtection);
         if (hostName != null) {
             vo.setHostName(hostName);
         }
@@ -697,6 +710,9 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     @Override
     public Long countAllocatedVMsForAccount(long accountId, boolean runningVMsonly) {
+        List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, Resource.ResourceType.user_vm, null);
+        List<Long> reservedResourceIds = reservations.stream().filter(reservation -> reservation.getReservedAmount() > 0).map(ReservationVO::getResourceId).collect(Collectors.toList());
+
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.User);
@@ -705,6 +721,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         else
             sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
         sc.setParameters("displayVm", 1);
+
+        if (CollectionUtils.isNotEmpty(reservedResourceIds)) {
+            sc.setParameters("idNIN", reservedResourceIds.toArray());
+        }
+
         return customSearch(sc, null).get(0);
     }
 
@@ -792,4 +813,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("ids", ids.toArray());
         return listBy(sc);
     }
+
+    @Override
+    public UserVmVO persist(UserVmVO entity) {
+        return Transaction.execute((TransactionCallback<UserVmVO>) status -> {
+                UserVmVO userVM = super.persist(entity);
+                reservationDao.setResourceId(Resource.ResourceType.user_vm, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.cpu, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.memory, userVM.getId());
+                return userVM;
+            });
+        }
 }

@@ -65,6 +65,7 @@ public class ProjectInvitationJoinDaoImpl extends GenericDaoBase<ProjectInvitati
 
         response.setDomainId(invite.getDomainUuid());
         response.setDomainName(invite.getDomainName());
+        response.setDomainPath(invite.getDomainPath());
 
         response.setObjectName("projectinvitation");
         return response;

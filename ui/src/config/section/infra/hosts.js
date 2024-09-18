@@ -24,6 +24,7 @@ export default {
   icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
+  searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
     const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
@@ -31,7 +32,7 @@ export default {
   },
   params: { type: 'routing' },
   columns: () => {
-    const fields = ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'instances', 'powerstate']
+    const fields = ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'instances', 'powerstate', 'version']
     const metricsFields = ['cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
@@ -40,10 +41,15 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'arch', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Host',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
@@ -68,12 +74,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'istagarule', 'oscategoryid'],
-      mapping: {
-        oscategoryid: {
-          api: 'listOsCategories'
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
     },
     {
       api: 'provisionCertificate',
@@ -144,6 +146,7 @@ export default {
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
+      post: true,
       args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
       mapping: {
         hostid: {
@@ -280,7 +283,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting-outlined',
+      icon: 'control-outlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       docHelp: 'adminguide/hosts.html#kvm-rolling-maintenance',

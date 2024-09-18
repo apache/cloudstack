@@ -19,19 +19,33 @@
   <a-row :gutter="12" v-if="isPageAllowed">
     <a-col :md="24">
       <a-card class="breadcrumb-card">
-        <a-col :md="24" style="display: flex">
-          <breadcrumb style="padding-top: 6px; padding-left: 8px" />
-          <a-button
-            style="margin-left: 12px; margin-top: 4px"
-            :loading="viewLoading"
-            size="small"
-            shape="round"
-            @click="fetchData()" >
-            <template #icon><reload-outlined /></template>
-            {{ $t('label.refresh') }}
-          </a-button>
+      <a-row>
+        <a-col
+          :span="device === 'mobile' ? 24 : 12"
+          style="padding-left: 12px; margin-top: 10px"
+        >
+          <breadcrumb :resource="resource">
+            <template #end>
+              <a-tooltip placement="bottom">
+                <template #title>{{ $t('label.refresh') }}</template>
+                <a-button
+                  style="margin-top: 4px"
+                  :loading="viewLoading"
+                  shape="round"
+                  size="small"
+                  @click="fetchData()"
+                >
+                  <template #icon>
+                    <ReloadOutlined />
+                  </template>
+                  {{ $t('label.refresh') }}
+                </a-button>
+              </a-tooltip>
+            </template>
+          </breadcrumb>
         </a-col>
-      </a-card>
+      </a-row>
+    </a-card>
     </a-col>
     <a-col
       :md="24">
@@ -1074,6 +1088,7 @@ export default {
       this.sourceHypervisor = value
       this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value])
       this.form.sourceAction = this.sourceActions[0].name || ''
+      this.selectedVmwareVcenter = undefined
       this.onSelectSourceAction(this.form.sourceAction)
     },
     onSelectSourceAction (value) {

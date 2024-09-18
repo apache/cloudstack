@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -31,7 +32,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.cpu.CPU;
 import com.cloud.user.UserData;
+import org.apache.cloudstack.util.CPUArchConverter;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -108,7 +112,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     private boolean crossZones = false;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "extractable")
@@ -165,6 +169,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Enumerated(value = EnumType.STRING)
     UserData.UserDataOverridePolicy userDataLinkPolicy;
 
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -207,7 +215,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
                         HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload,
-                        boolean deployAsIs) {
+                        boolean deployAsIs, CPU.CPUArch arch) {
         this(id,
             name,
             format,
@@ -233,6 +241,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         state = State.Active;
         this.directDownload = directDownload;
         this.deployAsIs = deployAsIs;
+        this.arch = arch;
     }
 
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type,
@@ -669,6 +678,15 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public void setUserDataLinkPolicy(UserData.UserDataOverridePolicy userDataLinkPolicy) {
         this.userDataLinkPolicy = userDataLinkPolicy;
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
     }
 
 }

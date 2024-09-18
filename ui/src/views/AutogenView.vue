@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -67,7 +67,7 @@
                   </a-select>
                 </a-tooltip>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver', 'sharedfs'].includes($route.name)"
                   style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -211,6 +211,11 @@
                 :pagination="true"
                 style="overflow-y: auto"
               >
+                <template #bodyCell="{ column, text }">
+                  <template v-if="column.key === 'allocated' && ['asnumbers', 'publicip'].includes($route.meta.name)">
+                    {{ $toLocaleDate(text) }}
+                  </template>
+                </template>
               </a-table>
             </div>
             <br v-if="currentAction.paramFields.length > 0"/>
@@ -229,7 +234,11 @@
                 v-if="!(currentAction.mapping && field.name in currentAction.mapping && currentAction.mapping[field.name].value)"
               >
                 <template #label>
-                  <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                  <tooltip-label
+                    v-if="['domain', 'guestcidraddress'].includes(field.name) && ['createZone', 'updateZone'].includes(currentAction.api)"
+                    :title="$t('label.default.network.' + field.name + '.isolated.network')"
+                    :tooltip="field.description"/>
+                  <tooltip-label v-else :title="$t('label.' + field.name)" :tooltip="field.description"/>
                 </template>
 
                 <a-switch
@@ -408,13 +417,15 @@
           :columns="columns"
           :items="items"
           :actions="actions"
+          :currentPage="page"
+          :pageSize="pageSize"
           :columnKeys="columnKeys"
           :selectedColumns="selectedColumns"
           ref="listview"
           @update-selected-columns="updateSelectedColumns"
           @selection-change="onRowSelectionChange"
           @refresh="fetchData"
-          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        />
         <a-pagination
           class="row-element"
           style="margin-top: 10px"
@@ -681,7 +692,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -690,7 +701,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -705,7 +716,6 @@ export default {
     },
     getOkProps () {
       if (this.selectedRowKeys.length > 0 && this.currentAction?.groupAction) {
-        return { props: { type: 'default' } }
       } else {
         return { props: { type: 'primary' } }
       }
@@ -735,7 +745,7 @@ export default {
       })
     },
     fetchData (params = {}) {
-      if (this.$route.name === 'deployVirtualMachine') {
+      if (['deployVirtualMachine', 'usage'].includes(this.$route.name)) {
         return
       }
       if (this.routeName !== this.$route.name) {
@@ -769,6 +779,9 @@ export default {
         'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
       }
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering'].includes(this.routeName) && this.$route.params.id) {
+        params.state = 'all'
+      }
       if (Object.keys(this.$route.query).length > 0) {
         if ('page' in this.$route.query) {
           this.page = Number(this.$route.query.page)
@@ -793,9 +806,9 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
-        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
-        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
+        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -816,7 +829,7 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = this.$route.meta.permission[0]
+        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -901,6 +914,7 @@ export default {
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
         delete params.isvnf
+        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp'
       }
 
       this.loading = true
@@ -948,11 +962,17 @@ export default {
         params.showIcon = true
       }
 
+      const customParamHandler = this.$route.meta.customParamHandler
+      if (customParamHandler && typeof customParamHandler === 'function') {
+        params = customParamHandler(params, this.$route.query)
+      }
+
       if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',
         'listClustersMetrics', 'listHostsMetrics', 'listStoragePoolsMetrics',
         'listImageStores', 'listSystemVms', 'listManagementServers',
         'listConfigurations', 'listHypervisorCapabilities',
-        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings'].includes(this.apiName)) {
+        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings',
+        'listASNumbers'].includes(this.apiName)) {
         delete params.listall
       }
 
@@ -985,6 +1005,12 @@ export default {
           this.items = []
         }
         this.itemCount = apiItemCount
+
+        if (this.dataView && this.$route.path.includes('/zone/') && 'listVmwareDcs' in this.$store.getters.apis) {
+          api('listVmwareDcs', { zoneid: this.items[0].id }).then(response => {
+            this.items[0].vmwaredc = response.listvmwaredcsresponse.VMwareDC
+          })
+        }
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
@@ -1544,13 +1570,16 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork',
+                'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering',
+                'updateZone', 'updateAccount', 'updateWebhook'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+              'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1745,6 +1774,12 @@ export default {
         } else if (filter === 'allocatedonly') {
           query.allocatedonly = 'true'
         }
+      } else if (this.$route.name === 'asnumbers') {
+        if (['allocatedonly', 'free'].includes(filter)) {
+          query.isallocated = (filter === 'allocatedonly')
+        } else {
+          delete query.isallocated
+        }
       } else if (this.$route.name === 'event') {
         if (filter === 'archived') {
           query.archived = true
@@ -1763,6 +1798,8 @@ export default {
         } else {
           query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
+      } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
+        query.state = filter
       }
       query.filter = filter
       query.page = '1'

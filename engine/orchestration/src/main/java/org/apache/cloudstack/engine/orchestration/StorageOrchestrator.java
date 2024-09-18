@@ -159,7 +159,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
-            logger.debug(String.format("Setting source image store: %s to read-only", srcDatastore.getId()));
+            logger.debug("Setting source image store: {} to read-only", srcDatastore.getId());
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -200,7 +200,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
-                logger.debug(String.format("%s: %s too large to be migrated to %s",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId));
+                logger.debug("{}: {} too large to be migrated to {}",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId);
                 skipped += 1;
                 continue;
             }
@@ -267,7 +267,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
-                logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
+                logger.debug("{}: {} too large to be migrated to {}", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId);
                 continue;
             }
 
@@ -302,7 +302,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         boolean success = true;
         if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
             if (migrationPolicy == MigrationPolicy.BALANCE) {
-                logger.debug("Migration completed : data stores have been balanced ");
+                logger.debug("Migration completed : data stores have been balanced");
                 if (destDatastoreId == srcDatastore.getId()) {
                     message = "Seems like source datastore has more free capacity than the destination(s)";
                 }
@@ -353,7 +353,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             task.setTemplateChain(templateChains);
         }
         futures.add((executor.submit(task)));
-        logger.debug(String.format("Migration of %s: %s is initiated. ", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
+        logger.debug(String.format("Migration of {}: {} is initiated.", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
         return storageCapacities;
     }
 
@@ -510,10 +510,10 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         Pair<Long, Long> imageStoreCapacity = storageCapacities.get(destStoreId);
         long usedCapacity = imageStoreCapacity.second() - imageStoreCapacity.first();
         if (imageStoreCapacity != null && (usedCapacity / (imageStoreCapacity.second() * 1.0)) <= CapacityManager.SecondaryStorageCapacityThreshold.value()) {
-            logger.debug("image store: " + destStoreId + " has sufficient capacity to proceed with migration of file");
+            logger.debug("image store: {} has sufficient capacity to proceed with migration of file.", destStoreId);
             return true;
         }
-        logger.debug("Image store capacity threshold exceeded, migration not possible");
+        logger.debug("Image store capacity threshold exceeded, migration not possible.");
         return false;
     }
 

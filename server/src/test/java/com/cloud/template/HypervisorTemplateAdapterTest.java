@@ -18,25 +18,26 @@
 
 package com.cloud.template;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.org.Grouping;
-import com.cloud.server.StatsCollector;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.exception.CloudRuntimeException;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -46,8 +47,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.Templa
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -70,30 +70,30 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.org.Grouping;
+import com.cloud.server.StatsCollector;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HypervisorTemplateAdapterTest {
     @Mock
-    EventBus _bus;
+    EventDistributor eventDistributor;
     List<Event> events = new ArrayList<>();
 
     @Mock
@@ -153,6 +153,8 @@ public class HypervisorTemplateAdapterTest {
 
     private AutoCloseable closeable;
 
+    private static final long zoneId = 1L;
+
     @Before
     public void before() {
         closeable = MockitoAnnotations.openMocks(this);
@@ -166,7 +168,7 @@ public class HypervisorTemplateAdapterTest {
         closeable.close();
     }
 
-    public UsageEventUtils setupUsageUtils() throws EventBusException {
+    public UsageEventUtils setupUsageUtils() {
         Mockito.when(_configDao.getValue(eq("publish.usage.events"))).thenReturn("true");
         Mockito.when(_usageEventDao.persist(Mockito.any(UsageEventVO.class))).then(new Answer<Void>() {
             @Override public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -178,16 +180,14 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_usageEventDao.listAll()).thenReturn(usageEvents);
 
-        doAnswer(new Answer<Void>() {
-            @Override public Void answer(InvocationOnMock invocation) throws Throwable {
-                Event event = (Event)invocation.getArguments()[0];
-                events.add(event);
-                return null;
-            }
-        }).when(_bus).publish(any(Event.class));
+        doAnswer((Answer<Void>) invocation -> {
+            Event event = (Event)invocation.getArguments()[0];
+            events.add(event);
+            return null;
+        }).when(eventDistributor).publish(any(Event.class));
 
         componentContextMocked = Mockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.getComponent(eq(EventBus.class))).thenReturn(_bus);
+        when(ComponentContext.getComponent(eq(EventDistributor.class))).thenReturn(eventDistributor);
 
         UsageEventUtils utils = new UsageEventUtils();
 
@@ -255,7 +255,7 @@ public class HypervisorTemplateAdapterTest {
     }
 
     //@Test
-    public void testEmitDeleteEventUuid() throws InterruptedException, ExecutionException, EventBusException {
+    public void testEmitDeleteEventUuid() throws InterruptedException, ExecutionException {
         //All the mocks required for this test to work.
         ImageStoreEntity store = mock(ImageStoreEntity.class);
         when(store.getId()).thenReturn(1l);
@@ -325,7 +325,6 @@ public class HypervisorTemplateAdapterTest {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(null);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
@@ -339,7 +338,7 @@ public class HypervisorTemplateAdapterTest {
         List<Long> zoneIds = List.of(1L);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
+        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
@@ -352,10 +351,10 @@ public class HypervisorTemplateAdapterTest {
     public void createTemplateWithinZonesTestZoneDoesNotHaveActiveHeuristicRulesShouldCallStandardImageStoreAllocation() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
-        List<Long> zoneIds = List.of(1L);
+        List<Long> zoneIds = List.of(zoneId);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
+        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
@@ -372,7 +371,6 @@ public class HypervisorTemplateAdapterTest {
         List<Long> zoneIds = List.of(1L);
 
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
-        Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(dataStoreMock).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
         Mockito.doNothing().when(_adapter).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.isNull());
 
@@ -384,34 +382,31 @@ public class HypervisorTemplateAdapterTest {
     @Test(expected = CloudRuntimeException.class)
     public void getImageStoresThrowsExceptionIfNotFoundTestNullImageStoreShouldThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(null);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void getImageStoresThrowsExceptionIfNotFoundTestEmptyImageStoreShouldThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
         List<DataStore> imageStoresList = new ArrayList<>();
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(imageStoresList);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test
     public void getImageStoresThrowsExceptionIfNotFoundTestNonEmptyImageStoreShouldNotThrowCloudRuntimeException() {
         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
-        List<Long> zoneIds = List.of(1L);
         DataStore dataStoreMock = Mockito.mock(DataStore.class);
         List<DataStore> imageStoresList = List.of(dataStoreMock);
 
         Mockito.when(dataStoreManagerMock.getImageStoresByZoneIds(Mockito.anyLong())).thenReturn(imageStoresList);
 
-        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneIds, templateProfileMock);
+        _adapter.getImageStoresThrowsExceptionIfNotFound(zoneId, templateProfileMock);
     }
 
     @Test

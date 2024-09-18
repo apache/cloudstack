@@ -773,8 +773,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
         // Prepare
         when(mockNw.isRedundant()).thenReturn(isRedundant);
-        when(mockNetworkModel.isProviderSupportServiceInNetwork(
-                NW_ID_1, Service.SourceNat, Provider.VirtualRouter)).thenReturn(isPublicNw);
+        when(mockNetworkModel.isAnyServiceSupportedInNetwork(
+                NW_ID_1, Provider.VirtualRouter, Service.SourceNat, Service.Gateway)).thenReturn(isPublicNw);
         // Execute
         final boolean canProceedDeployment = deployment.prepareDeployment();
         // Assert

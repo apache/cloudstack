@@ -48,6 +48,7 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.storage.resource.IpTablesHelper;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.cloudstack.utils.security.ChecksumValue;
@@ -662,8 +663,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String user, String password,
+            long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType, boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
@@ -683,6 +685,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         } else {
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
+        td.setFollowRedirects(followRedirects);
         DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
         dj.setTmpltPath(installPathPrefix);
         jobs.put(jobId, dj);
@@ -718,8 +721,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-            String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm,
+            Long accountId, String descr, String cksum, String installPathPrefix, String templatePath, String user,
+            String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType,
+            boolean followRedirects) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix;
@@ -766,6 +771,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     throw new CloudRuntimeException("Unable to download from URL: " + url);
                 }
             }
+            td.setFollowRedirects(followRedirects);
             // NOTE the difference between installPathPrefix and templatePath
             // here. instalPathPrefix is the absolute path for template
             // including mount directory
@@ -902,12 +908,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String jobId = null;
         if (dstore instanceof S3TO) {
             jobId =
-                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(),
+                            cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
+                            installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         } else {
             jobId =
-                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
-                            cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+                    downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(),
+                            cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(), installPathPrefix,
+                            cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType,
+                            cmd.isFollowRedirects());
         }
         sleep();
         if (jobId == null) {
@@ -1217,17 +1227,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void blockOutgoingOnPrivate() {
-        Script command = new Script("/bin/bash", logger);
-        String intf = "eth1";
-        command.add("-c");
-        command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;" + "iptables -A OUTPUT -o " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
-
-        String result = command.execute();
-        if (result != null) {
-            logger.warn("Error in blocking outgoing to port 80/443 err=" + result);
-            return;
-        }
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 80 -j REJECT;"
+                , "Error in blocking outgoing to port 80");
+        IpTablesHelper.addConditionally(IpTablesHelper.OUTPUT_CHAIN
+                , false
+                , "-o " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE + " -p tcp -m state --state NEW -m tcp --dport 443 -j REJECT;"
+                , "Error in blocking outgoing to port 443");
     }
 
     @Override
@@ -1253,17 +1260,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (result != null) {
             logger.warn("Error in stopping httpd service err=" + result);
         }
-        String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-        String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 
-        command = new Script("/bin/bash", logger);
-        command.add("-c");
-        command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i " + intf +
-                " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j ACCEPT;");
-
-        result = command.execute();
+        result = IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , true
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport " + TemplateConstants.DEFAULT_TMPLT_COPY_PORT + " -j ACCEPT"
+                , "Error in opening up apache2 port " + TemplateConstants.TMPLT_COPY_INTF_PRIVATE);
         if (result != null) {
-            logger.warn("Error in opening up apache2 port err=" + result);
+            return;
+        }
+        result = IpTablesHelper.addConditionally(IpTablesHelper.INPUT_CHAIN
+                , true
+                , "-i " + TemplateConstants.DEFAULT_TMPLT_COPY_INTF + " -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT;"
+                , "Error in opening up apache2 port 443");
+        if (result != null) {
             return;
         }
 

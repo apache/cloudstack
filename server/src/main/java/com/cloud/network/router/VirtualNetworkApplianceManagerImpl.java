@@ -65,6 +65,10 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.network.dao.BgpPeerDao;
+import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -122,6 +126,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -340,6 +345,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject private ManagementServer mgr;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    BgpPeerDao bgpPeerDao;
+    @Inject
+    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -2137,6 +2148,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final StringBuilder buf = new StringBuilder();
 
+        final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+        boolean ipv4Routed = NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode());
+        if (ipv4Routed) {
+            buf.append(" is_routed=true");
+        }
+
         boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
         if (isIpv6Supported) {
             buf.append(" ip6firewall=true");
@@ -2404,6 +2421,17 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return controlNic;
     }
 
+    protected NicProfile getGuestNic(final VirtualMachineProfile profile) {
+        NicProfile guestNic = null;
+        for (final NicProfile nic : profile.getNics()) {
+            if (nic.getTrafficType() == TrafficType.Guest) {
+                guestNic = nic;
+                break;
+            }
+        }
+        return guestNic;
+    }
+
     protected void finalizeSshAndVersionAndNetworkUsageOnStart(final Commands cmds, final VirtualMachineProfile profile, final DomainRouterVO router, final NicProfile controlNic) {
         final DomainRouterVO vr = _routerDao.findById(profile.getId());
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922));
@@ -2417,7 +2445,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Network usage command to create iptables rules
         final boolean forVpc = vr.getVpcId() != null;
         if (!forVpc) {
-            cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIPv4Address(), router.getHostName(), "create", forVpc));
+            final NicProfile guestNic = getGuestNic(profile);
+            if (guestNic != null) {
+                Network network = _networkDao.findById(guestNic.getNetworkId());
+                if (!routedIpv4Manager.isRoutedNetwork(network)) {
+                    cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIPv4Address(), router.getHostName(), "create", forVpc));
+                }
+            }
         }
     }
 
@@ -2439,16 +2473,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     protected void finalizeNetworkRulesForNetwork(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
         logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
 
-        final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId);
         final List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
         final List<FirewallRule> ipv6firewallRules = new ArrayList<>();
 
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
-            //create egress default rule for VR
+            // create egress default rule for VR
             createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
 
+            // add routing ingress firewall rules which do not have public IPs
+            firewallRulesEgress.addAll(_rulesDao.listRoutingIngressFirewallRules(guestNetworkId));
+
+            // create egress default Ipv6 rules for VR
             createDefaultEgressIpv6FirewallRule(ipv6firewallRules, guestNetworkId);
             ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Egress));
             ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
@@ -2463,6 +2501,21 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
         if (!ipv6firewallRules.isEmpty()) {
             _commandSetupHelper.createIpv6FirewallRulesCommands(ipv6firewallRules, router, cmds, guestNetworkId);
+        }
+
+        // Apply BGP peers
+        final Network guestNetwork = _networkDao.findById(guestNetworkId);
+        if (guestNetwork.getVpcId() != null) {
+            final Vpc vpc = _vpcDao.findById(guestNetwork.getVpcId());
+            if (routedIpv4Manager.isDynamicRoutedVpc(vpc)) {
+                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(guestNetwork.getVpcId());
+                _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
+            }
+        } else {
+            if (routedIpv4Manager.isDynamicRoutedNetwork(guestNetwork)) {
+                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(guestNetworkId);
+                _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
+            }
         }
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -2544,28 +2597,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
 
-            final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(guestNetworkId, Scheme.Public);
-            final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-            if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
-                // Re-apply load balancing rules
-                for (final LoadBalancerVO lb : lbs) {
-                    final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                    final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                    final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
-                    final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
-                    final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
-                    final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
-                    lbRules.add(loadBalancing);
-                }
-            }
-
-            logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
-            if (!lbRules.isEmpty()) {
-                _commandSetupHelper.createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
-            }
+            createApplyLoadBalancingRulesCommands(cmds, router, provider, guestNetworkId);
         }
         // Reapply dhcp and dns configuration.
-        final Network guestNetwork = _networkDao.findById(guestNetworkId);
         if (guestNetwork.getGuestType() == GuestType.Shared && _networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
             final Map<Network.Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(
                     _networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId()), Service.Dhcp);
@@ -2586,6 +2620,35 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     _commandSetupHelper.configDnsMasq(router, _networkDao.findById(guestNetworkId), cmds);
                 }
             }
+        }
+    }
+
+    private void createApplyLoadBalancingRulesCommands(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
+        if (router.getVpcId() != null) {
+            return;
+        }
+        final List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkIdAndScheme(guestNetworkId, Scheme.Public);
+        final List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
+            // Re-apply load balancing rules
+            createLoadBalancingRulesList(lbRules, lbs);
+        }
+
+        logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
+        if (!lbRules.isEmpty()) {
+            _commandSetupHelper.createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
+        }
+    }
+
+    protected void createLoadBalancingRulesList(List<LoadBalancingRule> lbRules, final List<LoadBalancerVO> lbs) {
+        for (final LoadBalancerVO lb : lbs) {
+            final List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            final List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+            final List<LbHealthCheckPolicy> hcPolicyList = _lbMgr.getHealthCheckPolicies(lb.getId());
+            final Ip sourceIp = _networkModel.getPublicIpAddress(lb.getSourceIpAddressId()).getAddress();
+            final LbSslCert sslCert = _lbMgr.getLbSslCert(lb.getId());
+            final LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList, hcPolicyList, sourceIp, sslCert, lb.getLbProtocol());
+            lbRules.add(loadBalancing);
         }
     }
 
@@ -2635,7 +2698,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     protected void finalizeIpAssocForNetwork(final Commands cmds, final VirtualRouter router, final Provider provider, final Long guestNetworkId,
             final Map<String, String> vlanMacAddress) {
 
-        final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(provider, guestNetworkId);
 
         if (publicIps != null && !publicIps.isEmpty()) {
             logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
@@ -2646,18 +2709,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
     }
 
-    protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(final VirtualRouter router, final Provider provider, final Long guestNetworkId,
+    protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(final Provider provider, final Long guestNetworkId,
             final com.cloud.network.IpAddress.State... skipInStates) {
-        final long ownerId = router.getAccountId();
-        final List<? extends IpAddress> userIps;
 
-        final Network guestNetwork = _networkDao.findById(guestNetworkId);
-        if (guestNetwork.getGuestType() == GuestType.Shared) {
-            // ignore the account id for the shared network
-            userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
-        } else {
-            userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
-        }
+        final List<? extends IpAddress> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
 
         final List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
@@ -2998,6 +3053,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROUTER_START, eventDescription = "restarting router VM for HA", async = true)
+    public void startRouterForHA(VirtualMachine vm, Map<Param, Object> params, DeploymentPlanner planner)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+            OperationTimedoutException {
+        _itMgr.advanceStart(vm.getUuid(), params, planner);
+    }
+
+    @Override
     public List<VirtualRouter> getRoutersForNetwork(final long networkId) {
         final List<DomainRouterVO> routers = _routerDao.findByNetwork(networkId);
         final List<VirtualRouter> vrs = new ArrayList<VirtualRouter>(routers.size());
@@ -3116,6 +3179,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 //[TODO] Avoiding the NPE now, but I have to find out what is going on with the network. - Wilder Rodrigues
                 if (network == null) {
                     logger.error("Could not find a network with ID => " + routerNic.getNetworkId() + ". It might be a problem!");
+                    continue;
+                }
+                if (routedIpv4Manager.isRoutedNetwork(network)) {
                     continue;
                 }
                 if (forVpc && network.getTrafficType() == TrafficType.Public || !forVpc && network.getTrafficType() == TrafficType.Guest

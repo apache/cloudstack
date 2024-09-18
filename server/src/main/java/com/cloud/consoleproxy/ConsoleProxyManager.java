@@ -16,10 +16,19 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.utils.component.Manager;
-import com.cloud.vm.ConsoleProxyVO;
+import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.component.Manager;
+import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
 
@@ -36,6 +45,9 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     String ALERT_SUBJECT = "proxy-alert";
     String CERTIFICATE_NAME = "CPVMCertificate";
 
+    ConfigKey<Boolean> ConsoleProxySslEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "consoleproxy.sslEnabled", "false",
+            "Enable SSL for console proxy", false);
+
     ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
         "If true, noVNC console will be default console for virtual machines", true);
 
@@ -49,6 +61,10 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     void resumeLastManagementState();
 
     ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting);
+
+    void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+            OperationTimedoutException;
 
     boolean stopProxy(long proxyVmId);
 

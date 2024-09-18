@@ -196,11 +196,15 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<ImageStoreVO> storesInZone = dataStoreDao.listStoresByZoneId(template.getDataCenterId());
         Long[] storeIds = storesInZone.stream().map(ImageStoreVO::getId).toArray(Long[]::new);
         List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(template.getId(), storeIds);
+
+        List<Long> dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        Map<Long, ImageStoreVO> imageStoreMap = dataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(ImageStoreVO::getId, imageStore -> imageStore));
+
         List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO imageStore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            ImageStoreVO imageStore = imageStoreMap.get(templateInStore.getDataStoreId());
             if (imageStore != null) {
                 downloadDetailInImageStores.put("datastore", imageStore.getName());
                 if (view.equals(ResponseView.Full)) {
@@ -217,9 +221,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         List<VMTemplateStoragePoolVO> templatesInPool = templatePoolDao.listByTemplateId(template.getId(), poolIds);
 
+        dataStoreIdList = templatesInStore.stream().map(TemplateDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        Map<Long, StoragePoolVO> storagePoolMap = primaryDataStoreDao.listByIds(dataStoreIdList).stream().collect(Collectors.toMap(StoragePoolVO::getId, store -> store));
+
         for (VMTemplateStoragePoolVO templateInPool : templatesInPool) {
             downloadDetailInImageStores = new HashMap<>();
-            StoragePoolVO storagePool = primaryDataStoreDao.findById(templateInPool.getDataStoreId());
+            StoragePoolVO storagePool = storagePoolMap.get(templateInPool.getDataStoreId());
             if (storagePool != null) {
                 downloadDetailInImageStores.put("datastore", storagePool.getName());
                 if (view.equals(ResponseView.Full)) {
@@ -267,6 +274,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         templateResponse.setDomainId(template.getDomainUuid());
         templateResponse.setDomainName(template.getDomainName());
+        templateResponse.setDomainPath(template.getDomainPath());
 
         // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
         if (view == ResponseView.Full ||
@@ -324,6 +332,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDirectDownload(template.isDirectDownload());
         templateResponse.setDeployAsIs(template.isDeployAsIs());
         templateResponse.setRequiresHvm(template.isRequiresHvm());
+        if (template.getArch() != null) {
+            templateResponse.setArch(template.getArch().getType());
+        }
 
         //set template children disks
         Set<ChildTemplateResponse> childTemplatesSet = new HashSet<ChildTemplateResponse>();
@@ -406,6 +417,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         response.setDomainId(result.getDomainUuid());
         response.setDomainName(result.getDomainName());
+        response.setDomainPath(result.getDomainPath());
 
         // set details map
         if (result.getDetailName() != null) {
@@ -492,6 +504,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // populate domain
         isoResponse.setDomainId(iso.getDomainUuid());
         isoResponse.setDomainName(iso.getDomainName());
+        isoResponse.setDomainPath(iso.getDomainPath());
 
         Account caller = CallContext.current().getCallingAccount();
         boolean isAdmin = false;
@@ -590,6 +603,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 _accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         isoResponse.setDirectDownload(iso.isDirectDownload());
+        if (iso.getArch() != null) {
+            isoResponse.setArch(iso.getArch().getType());
+        }
 
         isoResponse.setObjectName("iso");
         return isoResponse;

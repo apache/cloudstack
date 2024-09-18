@@ -347,6 +347,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public List<String> getApiNameList() {
+        return null;
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;
@@ -508,5 +513,15 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return null;
+    }
+
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
+                                               String currentPassword,
+                                               boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
     }
 }

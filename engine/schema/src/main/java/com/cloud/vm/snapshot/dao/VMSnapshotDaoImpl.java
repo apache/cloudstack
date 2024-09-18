@@ -17,12 +17,14 @@
 
 package com.cloud.vm.snapshot.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -180,4 +182,29 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
         return rows > 0;
     }
 
+    @Override
+    public List<VMSnapshotVO> searchByVms(List<Long> vmIds) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VMSnapshotVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<VMSnapshotVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return search(sc, null);
+    }
+
+    @Override
+    public List<VMSnapshotVO> searchRemovedByVms(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<VMSnapshotVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        SearchCriteria<VMSnapshotVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        Filter filter = new Filter(VMSnapshotVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
 }
