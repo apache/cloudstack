@@ -42,6 +42,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -63,6 +64,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
@@ -236,6 +238,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     VlanDao _vlanDao = null;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     VpcServiceMapDao _vpcSrvcDao;
     @Inject
@@ -2927,9 +2931,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
         final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId) == null;
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
                 // update ip address with networkId
                 ip.setVpcId(vpcId);
@@ -2939,8 +2944,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 // mark ip as allocated
                 _ipAddrMgr.markPublicIpAsAllocated(ip);
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            s_logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+            throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+        }
 
         s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
         CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
