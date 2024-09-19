@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.alert.AlertManager;
+import com.cloud.cpu.CPU;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostTagVO;
@@ -426,6 +427,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String url = cmd.getUrl();
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
+        CPU.CPUArch arch = cmd.getArch();
 
         if (url != null) {
             url = URLDecoder.decode(url);
@@ -525,6 +527,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         cluster.setClusterType(clusterType);
         cluster.setAllocationState(allocationState);
+        cluster.setArch(arch.getType());
         try {
             cluster = _clusterDao.persist(cluster);
         } catch (final Exception e) {
@@ -1141,6 +1144,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String allocationState = cmd.getAllocationState();
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
+        CPU.CPUArch arch = cmd.getArch();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -1211,6 +1215,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } else {
                 doUpdate = true;
             }
+        }
+
+        if (arch != null) {
+            cluster.setArch(arch.getType());
+            doUpdate = true;
         }
 
         if (doUpdate) {
@@ -2353,6 +2362,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setLastPinged(System.currentTimeMillis() >> 10);
         host.setHostTags(hostTags, false);
         host.setDetails(details);
+        host.setArch(CPU.CPUArch.fromType(startup.getArch()));
         if (startup.getStorageIpAddressDeux() != null) {
             host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
             host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
@@ -2746,6 +2756,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() +
                     " whose hypervisor type is: " + clusterVO.getHypervisorType());
         }
+        CPU.CPUArch hostCpuArch = CPU.CPUArch.fromType(ssCmd.getCpuArch());
+        if (hostCpuArch != null && clusterVO.getArch() != null && hostCpuArch != clusterVO.getArch()) {
+            String msg = String.format("Can't add a host whose arch is: %s into cluster of arch type: %s",
+                    hostCpuArch.getType(), clusterVO.getArch().getType());
+            logger.error(msg);
+            throw new IllegalArgumentException(msg);
+        }
 
         final Map<String, String> hostDetails = ssCmd.getHostDetails();
         if (hostDetails != null) {
@@ -2764,6 +2781,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setCaps(ssCmd.getCapabilities());
         host.setCpuSockets(ssCmd.getCpuSockets());
         host.setCpus(ssCmd.getCpus());
+        host.setArch(hostCpuArch);
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
@@ -3400,7 +3418,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostGpuGroupsVO> listAvailableGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final Filter searchFilter = new Filter(VGPUTypesVO.class, "remainingCapacity", false, null, null);
+        Filter searchFilter = new Filter(null, null);
+        searchFilter.addOrderBy(VGPUTypesVO.class, "remainingCapacity", false, "groupId");
         final SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("groupName", groupName);

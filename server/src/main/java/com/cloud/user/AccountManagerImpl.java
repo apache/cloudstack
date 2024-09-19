@@ -73,6 +73,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
@@ -320,6 +321,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IpAddressManager _ipAddrMgr;
     @Inject
     private RoleService roleService;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Inject
     private PasswordPolicy passwordPolicy;
@@ -1067,6 +1070,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // remove dedicated IPv4 subnets
+            routedIpv4Manager.removeIpv4SubnetsForZoneByAccountId(accountId);
+
+            // remove dedicated BGP peers
+            routedIpv4Manager.removeBgpPeersByAccountId(accountId);
+
             // release account specific guest vlans
             List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
             for (AccountGuestVlanMapVO map : maps) {
@@ -1446,7 +1455,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
 
-        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword(), false);
         String email = updateUserCmd.getEmail();
         if (StringUtils.isNotBlank(email)) {
             user.setEmail(email);
@@ -1474,7 +1483,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
         if (newPassword == null) {
             logger.trace("No new password to update for user: " + user.getUuid());
             return;
@@ -1489,16 +1498,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        boolean skipValidation = isAdmin || skipCurrentPassValidation;
         if (isAdmin) {
             logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
-        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+        if (!skipValidation && StringUtils.isBlank(currentPassword)) {
             throw new InvalidParameterValueException("To set a new password the current password must be provided.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
         }
-        if (!isAdmin) {
+        if (!skipValidation) {
             validateCurrentPassword(user, currentPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
@@ -1842,7 +1852,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1862,7 +1879,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
             logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;

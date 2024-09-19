@@ -159,6 +159,10 @@ public class VpcVO implements Vpc {
         return cidr;
     }
 
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
+    }
+
     @Override
     public long getDomainId() {
         return domainId;

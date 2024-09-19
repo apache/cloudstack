@@ -211,7 +211,7 @@ export default {
       const values = this.handleRemoveFields(formRaw)
 
       this.loading = true
-      api('quotaValidateActivationRule', {
+      api('quotaValidateActivationRule', {}, 'POST', {
         activationRule: values.activationRule || ' ',
         usageType: values?.usageType?.split('-')[0]
       }).then(response => {
