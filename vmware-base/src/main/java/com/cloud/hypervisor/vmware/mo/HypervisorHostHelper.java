@@ -1574,15 +1574,8 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        String newRootDiskController = controllerInfo.first();
-        String newDataDiskController = controllerInfo.second();
-        String recommendedController = null;
-        if (VmwareHelper.isControllerOsRecommended(newRootDiskController) || VmwareHelper.isControllerOsRecommended(newDataDiskController)) {
-            recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
-        }
-
-        Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(updatedControllerInfo, recommendedController);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, null, host, guestOsIdentifier);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         // If there is requirement for a SCSI controller, ensure to create those.
         if (scsiDiskController != null) {
         int busNum = 0;
@@ -2256,19 +2249,11 @@ public class HypervisorHostHelper {
         return morHyperHost;
     }
 
-    public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
+    public static String getScsiController(Pair<String, String> controllerInfo) {
         String rootDiskController = controllerInfo.first();
         String dataDiskController = controllerInfo.second();
 
-        // If "osdefault" is specified as controller type, then translate to actual recommended controller.
-        if (VmwareHelper.isControllerOsRecommended(rootDiskController)) {
-            rootDiskController = recommendedController;
-        }
-        if (VmwareHelper.isControllerOsRecommended(dataDiskController)) {
-            dataDiskController = recommendedController;
-        }
-
-        String scsiDiskController = null; //If any of the controller provided is SCSI then return it's sub-type.
+        String scsiDiskController; //If any of the controller provided is SCSI then return it's sub-type.
         if (isIdeController(rootDiskController) && isIdeController(dataDiskController)) {
             //Default controllers would exist
             return null;
