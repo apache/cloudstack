@@ -384,18 +384,13 @@ export default {
                   this.setAsDefault(this.nic)
                 } else {
                   this.$notifyError('NIC data not found.')
-                  this.loadingNic = false
-                  this.closeModals()
                 }
               } catch (error) {
                 this.$notifyError('Failed to fetch NIC data.')
-                this.loadingNic = false
-                this.closeModals()
               }
-            } else {
-              this.loadingNic = false
-              this.closeModals()
             }
+            this.loadingNic = false
+            this.closeModals()
           },
           errorMessage: this.$t('message.add.network.failed'),
           errorMethod: () => {
