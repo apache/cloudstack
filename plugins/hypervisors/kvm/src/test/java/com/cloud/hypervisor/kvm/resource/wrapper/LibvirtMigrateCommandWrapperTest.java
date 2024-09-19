@@ -26,10 +26,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -585,6 +587,14 @@ public class LibvirtMigrateCommandWrapperTest {
             "  </devices>\n" +
             "</domain>\n";
 
+    private Map<String, MigrateDiskInfo> createMapMigrateStorage(String sourceText, String path) {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, sourceText);
+        mapMigrateStorage.put(path, diskInfo);
+        return mapMigrateStorage;
+    }
+
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
@@ -761,10 +771,8 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorage() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
 
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourctest");
-        mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
         final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage, true);
 
         InputStream in = IOUtils.toInputStream(result);
@@ -778,7 +786,6 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void testReplaceStorageWithSecrets() throws Exception {
-        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
 
         final String xmlDesc =
             "<domain type='kvm' id='3'>" +
@@ -799,8 +806,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
         final String volumeFile = "3530f749-82fd-458e-9485-a357e6e541db";
         String newDiskPath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + volumeFile;
-        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, newDiskPath);
-        mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage(newDiskPath, "/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048");
         final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
         final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
 
@@ -951,4 +957,64 @@ public class LibvirtMigrateCommandWrapperTest {
 
         Assert.assertEquals(updateShares, newVmCpuShares);
     }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoDiskDefinitions() {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(new ArrayList<>(), mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestNoMapMigrateStorage() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, new HashMap<>());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestPathIsNotFound() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6");
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getMigrateStorageDeviceLabelsTestFindPathAndLabels() {
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+        DiskDef diskDef1 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath1");
+        diskDef0.setDiskLabel("vda");
+        disks.add(diskDef0);
+
+        diskDef1.setDiskPath("volPath2");
+        diskDef1.setDiskLabel("vdb");
+        disks.add(diskDef1);
+
+        Map<String, MigrateDiskInfo> mapMigrateStorage = createMapMigrateStorage("sourceTest", "volPath1");
+        mapMigrateStorage.put("volPath2", new MigrateDiskInfo("123457", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourceText"));
+
+        Set<String> result = libvirtMigrateCmdWrapper.getMigrateStorageDeviceLabels(disks, mapMigrateStorage);
+
+        assertTrue(result.containsAll(Arrays.asList("vda", "vdb")));
+    }
+
 }

@@ -316,6 +316,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
+        Runtime.getRuntime().addShutdownHook(new AbandonJob());
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if (_heartbeatLock.lock(3)) { // 3 second timeout
@@ -345,8 +346,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (_sanity != null) {
             _sanity.cancel(true);
         }
+
         return true;
     }
+
 
     @Override
     public void run() {
@@ -2180,6 +2183,19 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 }
             } catch (SQLException e) {
                 s_logger.error("Error in sanity check", e);
+            }
+        }
+    }
+    private class AbandonJob extends Thread {
+        @Override
+        public void run() {
+            s_logger.info("exitting Usage Manager");
+            deleteOpenjob();
+        }
+        private void deleteOpenjob() {
+            UsageJobVO job = _usageJobDao.isOwner(_hostname, _pid);
+            if (job != null) {
+                _usageJobDao.remove(job.getId());
             }
         }
     }

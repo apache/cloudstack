@@ -113,22 +113,20 @@ def bool_to_yn(val):
 def get_device_info():
     """ Returns all devices on system with their ipv4 ip netmask """
     list = []
+    mtu = None
     for i in execute("ip addr show |grep -v secondary"):
         vals = i.strip().lstrip().rstrip().split()
-        if re.search('[0-9]:',vals[0]):
-            to={}
-            to['mtu'] = vals[4]
-            list.append(to)
+        if re.search('[0-9]:', vals[0]):
+            mtu = vals[4]
 
         if vals[0] == "inet":
-            if len(list) > 0:
-                to = list.pop(len(list)-1)
-            else:
-                to={}
+            to = {}
             to['ip'] = vals[1]
             to['dev'] = vals[-1]
             to['network'] = IPNetwork(to['ip'])
             to['dnsmasq'] = False
+            if mtu:
+                to['mtu'] = mtu
             list.append(to)
     return list
 
@@ -223,7 +221,7 @@ def save_iptables(command, iptables_file):
 
 def execute2(command, wait=True):
     """ Execute command """
-    logging.info("Executing: %s" % command)
+    logging.info("Executing2: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if wait:
         p.wait()

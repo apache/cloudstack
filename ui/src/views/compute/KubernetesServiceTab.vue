@@ -204,7 +204,7 @@ export default {
       virtualmachines: [],
       vmColumns: [],
       networkLoading: false,
-      network: {},
+      network: null,
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
@@ -382,7 +382,28 @@ export default {
       this.virtualmachines.map(x => { x.ipaddress = x.nic[0].ipaddress })
       this.instanceLoading = false
     },
-    fetchPublicIpAddress () {
+    fetchNetwork () {
+      this.networkLoading = true
+      return new Promise((resolve, reject) => {
+        api('listNetworks', {
+          listAll: true,
+          id: this.resource.networkid
+        }).then(json => {
+          const networks = json.listnetworksresponse.network
+          if (this.arrayHasItems(networks)) {
+            this.network = networks[0]
+          }
+          resolve(this.network)
+        })
+        this.networkLoading = false
+      })
+    },
+    async fetchPublicIpAddress () {
+      await this.fetchNetwork()
+      if (this.network && this.network.type === 'Shared') {
+        this.publicIpAddress = null
+        return
+      }
       this.networkLoading = true
       var params = {
         listAll: true,

@@ -3066,7 +3066,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private String appendFileType(String path, String fileType) {
-        if (path.toLowerCase().endsWith(fileType.toLowerCase())) {
+        if (StringUtils.isBlank(path)) {
+            throw new CloudRuntimeException("No path given, cannot append filetype " + fileType);
+        }
+        if (fileType == null || path.toLowerCase().endsWith(fileType.toLowerCase())) {
             return path;
         }
 

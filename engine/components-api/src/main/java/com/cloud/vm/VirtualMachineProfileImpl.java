@@ -264,11 +264,13 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         _offering = offering;
     }
 
+    @Override
     public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
         this.cpuOvercommitRatio = cpuOvercommitRatio;
 
     }
 
+    @Override
     public void setMemoryOvercommitRatio(Float memoryOvercommitRatio) {
         this.memoryOvercommitRatio = memoryOvercommitRatio;
 

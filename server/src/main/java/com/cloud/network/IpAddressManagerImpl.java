@@ -343,6 +343,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (possibleAddr.getState() != State.Free) {
                     continue;
                 }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("trying ip address %s", possibleAddr.getAddress()));
+                }
                 possibleAddr.setSourceNat(sourceNat);
                 possibleAddr.setAllocatedTime(new Date());
                 possibleAddr.setAllocatedInDomainId(owner.getDomainId());
@@ -357,15 +360,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     possibleAddr.setAssociatedWithNetworkId(guestNetworkId);
                     possibleAddr.setVpcId(vpcId);
                 }
-                if (_ipAddressDao.lockRow(possibleAddr.getId(), true) != null) {
-                    final IPAddressVO userIp = _ipAddressDao.findById(possibleAddr.getId());
-                    if (userIp.getState() == State.Free) {
-                        possibleAddr.setState(State.Allocating);
-                        if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
-                            finalAddress = possibleAddr;
-                            break;
-                        }
-                    }
+                finalAddress = assignIpAddressWithLock(possibleAddr);
+                if (finalAddress != null) {
+                    break;
                 }
             }
 
@@ -385,6 +382,29 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
             return finalAddress;
         });
+    }
+
+    private IPAddressVO assignIpAddressWithLock(IPAddressVO possibleAddr) {
+        IPAddressVO finalAddress = null;
+        IPAddressVO userIp = _ipAddressDao.acquireInLockTable(possibleAddr.getId());
+        if (userIp != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("locked row for ip address %s (id: %s)", possibleAddr.getAddress(), possibleAddr.getUuid()));
+            }
+            if (userIp.getState() == State.Free) {
+                possibleAddr.setState(State.Allocating);
+                if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
+                    s_logger.info(String.format("successfully allocated ip address %s", possibleAddr.getAddress()));
+                    finalAddress = possibleAddr;
+                }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("locked ip address %s is not free (%s)", possibleAddr.getAddress(), userIp.getState()));
+                }
+            }
+            _ipAddressDao.releaseFromLockTable(possibleAddr.getId());
+        }
+        return finalAddress;
     }
 
     @Override

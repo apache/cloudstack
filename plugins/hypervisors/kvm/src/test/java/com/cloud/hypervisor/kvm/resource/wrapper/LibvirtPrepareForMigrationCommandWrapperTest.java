@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,15 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import com.cloud.agent.api.PrepareForMigrationAnswer;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.to.DpdkTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,8 +31,12 @@ import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.to.DpdkTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(value = {LibvirtPrepareForMigrationCommandWrapper.class})
@@ -71,5 +73,30 @@ public class LibvirtPrepareForMigrationCommandWrapperTest {
                 libvirtComputingResourceMock, virtualMachineTOMock);
 
         Assert.assertEquals(cpuShares, prepareForMigrationAnswer.getNewVmCpuShares().intValue());
+    }
+
+    private String getTempFilepath() {
+        return String.format("%s/%s.txt", System.getProperty("java.io.tmpdir"), UUID.randomUUID());
+    }
+
+    private void runTestRemoveDpdkPortForCommandInjection(String portWithCommand) {
+        try {
+            libvirtPrepareForMigrationCommandWrapperSpy.removeDpdkPort(portWithCommand);
+            Assert.fail(String.format("Command injection working for portWithCommand: %s", portWithCommand));
+        } catch (CloudRuntimeException ignored) {}
+    }
+
+    @Test
+    public void testRemoveDpdkPortForCommandInjection() {
+        List<String> commandVariants = List.of(
+                "';touch %s'",
+                ";touch %s",
+                "&& touch %s",
+                "|| touch %s",
+                UUID.randomUUID().toString());
+        for (String cmd : commandVariants) {
+            String portWithCommand = String.format(cmd, getTempFilepath());
+            runTestRemoveDpdkPortForCommandInjection(portWithCommand);
+        }
     }
 }
