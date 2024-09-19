@@ -3195,7 +3195,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             });
         } catch (Exception e) {
-            s_logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+            logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
             throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
         }
 

@@ -1569,7 +1569,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
             return _ipAddressDao.findById(ipId);
         } catch (Exception e) {
-            s_logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
+            logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
             throw new CloudRuntimeException(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
         } finally {
             if (!success && releaseOnFailure) {
