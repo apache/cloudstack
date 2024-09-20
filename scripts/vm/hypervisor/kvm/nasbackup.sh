@@ -100,6 +100,12 @@ mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
   mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+  if [ $? -eq 0 ]; then
+      echo "Successfully mounted ${NAS_TYPE} store"
+  else
+      echo "Failed to mount ${NAS_TYPE} store"
+      exit 1
+  fi
 }
 
 function usage {
