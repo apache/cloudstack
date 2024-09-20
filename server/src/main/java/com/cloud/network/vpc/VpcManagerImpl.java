@@ -43,13 +43,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.bgp.BGPService;
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
-import com.cloud.configuration.ConfigurationManagerImpl;
-import com.cloud.dc.ASNumberVO;
-import com.cloud.bgp.BGPService;
-import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -75,6 +76,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -249,6 +251,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     VlanDao _vlanDao = null;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     VpcServiceMapDao _vpcSrvcDao;
     @Inject
@@ -3175,9 +3179,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
         final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId, false) == null;
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
                 // update ip address with networkId
                 ip.setVpcId(vpcId);
@@ -3187,8 +3192,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 // mark ip as allocated
                 _ipAddrMgr.markPublicIpAsAllocated(ip);
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+            throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+        }
 
         logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
         CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());

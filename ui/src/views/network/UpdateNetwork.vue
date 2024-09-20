@@ -141,7 +141,7 @@
           </template>
           <a-switch v-model:checked="form.changecidr" />
         </a-form-item>
-        <a-form-item name="networkdomain" ref="networkdomain" v-if="isUpdatingIsolatedNetwork">
+        <a-form-item name="networkdomain" ref="networkdomain" v-if="hasNetworkDomain">
           <template #label>
             <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.guestvmcidr.description"/>
           </template>
@@ -274,7 +274,7 @@ export default {
       ip6dns1: this.resource.ip6dns1,
       ip6dns2: this.resource.ip6dns2
     }
-    if (this.isUpdatingIsolatedNetwork) {
+    if (this.hasNetworkDomain) {
       this.resourceValues.networkdomain = this.resource.networkdomain
     }
     for (var field in this.resourceValues) {
@@ -288,6 +288,12 @@ export default {
   computed: {
     isUpdatingIsolatedNetwork () {
       return this.resource && this.resource.type === 'Isolated'
+    },
+    isUpdatingSharedNetwork () {
+      return this.resource && this.resource.type === 'Shared'
+    },
+    hasNetworkDomain () {
+      return this.isUpdatingIsolatedNetwork || this.isUpdatingSharedNetwork
     },
     selectedNetworkOfferingSupportsDns () {
       if (this.networkOffering) {

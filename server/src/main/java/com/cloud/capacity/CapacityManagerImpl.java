@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -709,7 +710,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VMInstanceVO vm : vmsByLastHostId) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
-            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) / 1000;
+            long lastModificationTime = Optional.ofNullable(vm.getUpdateTime()).orElse(vm.getCreated()).getTime();
+            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - lastModificationTime) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                 UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
                 UserVmDetailVO vmDetailRam = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);

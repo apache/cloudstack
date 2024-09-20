@@ -47,7 +47,7 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'state', 'ipaddress']
+        const fields = ['displayname', 'state', 'ipaddress']
         const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
@@ -77,7 +77,7 @@ export default {
         fields.push('zonename')
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
+      searchFilters: ['displayname', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
@@ -222,7 +222,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
-          show: (record) => { return !record.backupofferingid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return !record.backupofferingid },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -237,7 +237,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           args: ['virtualmachineid'],
-          show: (record) => { return record.backupofferingid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.backupofferingid },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }
@@ -251,7 +251,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,
-          show: (record) => { return record.backupofferingid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.backupofferingid },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/BackupScheduleWizard.vue'))),
           mapping: {
             virtualmachineid: {
@@ -270,7 +270,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
           dataView: true,
           args: ['virtualmachineid', 'forced'],
-          show: (record) => { return record.backupofferingid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.backupofferingid },
           mapping: {
             virtualmachineid: {
               value: (record, params) => { return record.id }

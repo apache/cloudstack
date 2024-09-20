@@ -818,8 +818,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = eventIdPage.second();
         Long[] idArray = eventIdPage.first().toArray(new Long[0]);
 
-        if (count == 0) {
-            return new Pair<>(new ArrayList<>(), count);
+        /**
+         * Need to check array empty, because {@link com.cloud.utils.db.GenericDaoBase#searchAndCount(SearchCriteria, Filter, boolean)}
+         * makes two calls: first to get objects and second to get count.
+         * List events has start date filter, there is highly possible cause where no objects loaded
+         * and next millisecond new event added and finally we ended up with count = 1 and no ids.
+         */
+        if (count == 0 || idArray.length < 1) {
+            count = 0;
         }
 
         List<EventJoinVO> events = _eventJoinDao.searchByIds(idArray);
