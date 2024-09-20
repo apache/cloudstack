@@ -495,7 +495,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         int wait = getTimeout(commands, timeout);
         logger.debug(String.format("Wait time setting on %s is %d seconds", commands, wait));
         for (Command cmd : commands) {
-            cmd.setWait(wait);
+            String simpleCommandName = cmd.getClass().getSimpleName();
+            Integer commandTimeout = _commandTimeouts.get(simpleCommandName);
+            if (commandTimeout != null) {
+                cmd.setWait(wait);
+            }
         }
 
         if (CheckTxnBeforeSending.value()) {
