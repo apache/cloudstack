@@ -60,7 +60,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             Boolean.class,
             "powerflex.connect.on.demand",
             Boolean.FALSE.toString(),
-            "Connect PowerFlex client on Host when first Volume created and disconnect when last Volume deleted (or always stay connected otherwise).",
+            "Connect PowerFlex client on Host when first Volume is mapped to SDC and disconnect when last Volume is unmapped from SDC," +
+                    " otherwise no action (that is connection remains in the same state whichever it is, connected or disconnected).",
             Boolean.TRUE,
             ConfigKey.Scope.Zone);
 
