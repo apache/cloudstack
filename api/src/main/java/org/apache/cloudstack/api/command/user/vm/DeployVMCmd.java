@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -55,7 +56,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel;
@@ -283,6 +283,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public String getDisplayName() {
+        if (StringUtils.isEmpty(displayName)) {
+            displayName = name;
+        }
         return displayName;
     }
 
