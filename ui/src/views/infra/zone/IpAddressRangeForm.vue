@@ -34,12 +34,13 @@
           <template v-if="column.key === 'gateway'">
             <div> {{  record.gateway }}</div>
             <div v-if="record.fornsx"> <a-tag color="processing"> {{ $t('label.tag.nsx') }} </a-tag> </div>
-            <div v-else-if="isNsxZone"> <a-tag color="processing"> {{ $t('label.tag.systemvm') }}  </a-tag> </div>
+            <div v-else-if="record.fornetris"> <a-tag color="processing"> {{ $t('label.tag.netris') }} </a-tag> </div>
+            <div v-else-if="isNsxZone || isNetrisZone"> <a-tag color="processing"> {{ $t('label.tag.systemvm') }}  </a-tag> </div>
           </template>
           <template v-if="column.key === 'actions'">
             <tooltip-button
               :tooltip="$t('label.delete')"
-              :disabled="(record.fornsx && !forNsx) || (!record.fornsx && forNsx)"
+              :disabled="((record.fornsx && !forNsx) || (!record.fornsx && forNsx)) || ((record.fornetris && !forNetris) || (!record.fornetris && forNetris)) "
               type="primary"
               :danger="true"
               icon="delete-outlined"
@@ -76,7 +77,7 @@
                 <a-form-item name="vlan" ref="vlan">
                   <a-input
                     v-model:value="form.vlan"
-                    :disabled="forNsx"
+                    :disabled="forNsx || forNetris"
                     :placeholder="$t('label.vlan')"
                   />
                 </a-form-item>
@@ -175,6 +176,14 @@ export default {
     isNsxZone: {
       type: Boolean,
       default: false
+    },
+    forNetris: {
+      type: Boolean,
+      default: false
+    },
+    isNetrisZone: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -271,7 +280,8 @@ export default {
           startIp: values.startIp,
           endIp: values.endIp,
           fornsx: this.forNsx,
-          forsystemvms: this.isNsxZone && !this.forNsx
+          fornetris: this.forNetris,
+          forsystemvms: (this.isNsxZone && !this.forNsx) || (this.isNetrisZone && !this.forNetris)
         })
         this.formRef.value.resetFields()
       }).catch(error => {

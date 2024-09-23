@@ -51,7 +51,7 @@
       :isFixError="isFixError"
     />
     <ip-address-range-form
-      v-if="steps && ['publicTraffic', 'nsxPublicTraffic'].includes(steps[currentStep].formKey)"
+      v-if="steps && ['publicTraffic', 'nsxPublicTraffic', 'netrisPublicTraffic'].includes(steps[currentStep].formKey)"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
@@ -62,6 +62,9 @@
       :isFixError="isFixError"
       :forNsx="steps[currentStep].formKey === 'nsxPublicTraffic'"
       :isNsxZone="isNsxZone"
+      :forNetris="steps[currentStep].formKey === 'netrisPublicTraffic'"
+      :isNetrisZone="isNetrisZone"
+      :provider="providersDetails"
     />
 
     <static-inputs-form
@@ -127,7 +130,7 @@
     </div>
     <div v-else>
       <advanced-guest-traffic-form
-        v-if="steps && steps[currentStep].formKey === 'guestTraffic' && !isNsxZone"
+        v-if="steps && steps[currentStep].formKey === 'guestTraffic' && !isNsxZone && !isNetrisZone"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -230,7 +233,7 @@ export default {
       if (!this.prefillContent.physicalNetworks) {
         isNetris = false
       } else {
-        const netrisIdx = this.prefillContent.physicalNetworks.findIndex(network => network.isolationMethod === 'NETRIS')
+        const netrisIdx = this.prefillContent.physicalNetworks.findIndex(network => network.isolationMethod === 'Netris')
         isNetris = netrisIdx > -1
       }
       return isNetris
@@ -277,11 +280,18 @@ export default {
           trafficType: 'public'
         })
       }
+      if (this.isNetrisZone) {
+        steps.push({
+          title: 'label.public.traffic.netris',
+          formKey: 'netrisPublicTraffic',
+          trafficType: 'public'
+        })
+      }
       steps.push({
         title: 'label.pod',
         formKey: 'pod'
       })
-      if (!this.isTungstenZone && !this.isNsxZone) {
+      if (!this.isTungstenZone && !this.isNsxZone && !this.isNetrisZone) {
         steps.push({
           title: 'label.guest.traffic',
           formKey: 'guestTraffic',
@@ -295,6 +305,15 @@ export default {
       })
 
       return steps
+    },
+    providersDetails () {
+      console.log(this.currentStep)
+      return {
+        forNsx: this.steps[this.currentStep].formKey === 'nsxPublicTraffic',
+        isNsxZone: this.isNsxZone,
+        forNetris: this.steps[this.currentStep].formKey === 'netrisPublicTraffic',
+        isNetrisZone: this.isNetrisZone
+      }
     },
     stepScales () {
       if (!this.isMobile() && this.steps.length > 4) {
@@ -622,7 +641,7 @@ export default {
     }
     this.scrollToStepActive()
     if (this.zoneType === 'Basic' ||
-      (this.zoneType === 'Advanced' && (this.sgEnabled || this.isNsxZone))) {
+      (this.zoneType === 'Advanced' && (this.sgEnabled || this.isNsxZone || this.isNetrisZone))) {
       this.skipGuestTrafficStep = false
     } else {
       this.fetchConfiguration()
