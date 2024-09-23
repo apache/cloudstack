@@ -3185,6 +3185,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + toHumanReadableSize(totalOverProvCapacity));
 
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        System.out.println("Wei storageAllocatedThreshold = " + storageAllocatedThreshold);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + toHumanReadableSize(totalOverProvCapacity) + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate)
@@ -3192,14 +3193,24 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
+        System.out.println("Wei usedPercentage = " + usedPercentage);
 
         if (usedPercentage > storageAllocatedThreshold) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation since its allocated percentage: " + usedPercentage
-                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
+                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold);
+            }
+            if (!AllowVolumeReSizeBeyongAllocation.valueIn(pool.getId())) {
+                logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyongAllocation.key()));
+                return false;
             }
 
-            return false;
+            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getDataCenterId());
+            if (usedPercentage > storageAllocatedThresholdForResize) {
+                logger.debug(String.format("Skipping the pool %s since its allocated percentage: %s has crossed the allocated %s: %s",
+                        pool, usedPercentage, CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key(), storageAllocatedThresholdForResize));
+                return false;
+            }
         }
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
@@ -4050,7 +4061,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                DataStoreDownloadFollowRedirects
+                DataStoreDownloadFollowRedirects,
+                AllowVolumeReSizeBeyongAllocation
         };
     }
 
