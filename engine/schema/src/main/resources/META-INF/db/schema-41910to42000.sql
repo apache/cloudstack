@@ -425,3 +425,21 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for vm" ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for volumes" ');
+
+-- Netris Plugin
+CREATE TABLE `cloud`.`netris_providers` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40),
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
+    `name` varchar(40),
+    `hostname` varchar(255) NOT NULL,
+    `port` varchar(255),
+    `username` varchar(255) NOT NULL,
+    `password` varchar(255) NOT NULL,
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_netris_providers__zone_id` FOREIGN KEY `fk_netris_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    INDEX `i_netris_providers__zone_id`(`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
