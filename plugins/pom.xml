@@ -105,6 +105,7 @@
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
+        <module>network-elements/netris</module>
         <module>network-elements/netscaler</module>
         <module>network-elements/nicira-nvp</module>
         <module>network-elements/opendaylight</module>
