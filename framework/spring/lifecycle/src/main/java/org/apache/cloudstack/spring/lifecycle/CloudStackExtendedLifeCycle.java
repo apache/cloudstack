@@ -69,6 +69,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
+                logger.info("starting bean " + lifecycle.getName());
                 lifecycle.start();
 
                 if (lifecycle instanceof ManagementBean) {
@@ -93,6 +94,8 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
     }
 
     public void stopBeans() {
+        logger.info("Stopping CloudStack Components");
+
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
@@ -100,6 +103,8 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
                 lifecycle.stop();
             }
         });
+
+        logger.info("Done Stopping CloudStack Components");
     }
 
     private void configure() {
@@ -109,6 +114,7 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
             @Override
             public void with(ComponentLifecycle lifecycle) {
                 try {
+                    logger.info("configuring bean " + lifecycle.getName());
                     lifecycle.configure(lifecycle.getName(), lifecycle.getConfigParams());
                 } catch (ConfigurationException e) {
                     logger.error("Failed to configure " +  lifecycle.getName(), e);

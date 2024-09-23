@@ -24,7 +24,12 @@ public class CloudStackExtendedLifeCycleStart extends AbstractSmartLifeCycle imp
 
     @Override
     public void stop() {
-        lifeCycle.stopBeans();
+        try {
+            lifeCycle.stopBeans();
+        } catch (Exception e) {
+            logger.error("Error on stopping beans - " + e.getMessage(), e);
+        }
+
         super.stop();
     }
 
@@ -43,7 +48,10 @@ public class CloudStackExtendedLifeCycleStart extends AbstractSmartLifeCycle imp
 
     @Override
     public void run() {
-        lifeCycle.startBeans();
+        try {
+            lifeCycle.startBeans();
+        } catch (Exception e) {
+            logger.error("Error on starting beans - " + e.getMessage(), e);
+        }
     }
-
 }
