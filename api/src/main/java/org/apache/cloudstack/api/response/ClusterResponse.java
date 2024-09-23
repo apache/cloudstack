@@ -59,6 +59,10 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
     @Param(description = "the hypervisor type of the cluster")
     private String hypervisorType;
 
+    @SerializedName(ApiConstants.EXTERNAL_PROVISIONER)
+    @Param(description = "the provisioner name for the hypervisor type external")
+    private String externalProvisioner;
+
     @SerializedName("clustertype")
     @Param(description = "the type of the cluster")
     private String clusterType;
@@ -218,6 +222,14 @@ public class ClusterResponse extends BaseResponseWithAnnotations {
         if (resourceDetails.containsKey("password")) {
             resourceDetails.remove("password");
         }
+    }
+
+    public void setExternalProvisioner(String externalProvisioner) {
+        this.externalProvisioner = externalProvisioner;
+    }
+
+    public String getExternalProvisioner() {
+        return externalProvisioner;
     }
 
     public Map<String, String> getResourceDetails() {

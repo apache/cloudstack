@@ -135,6 +135,7 @@
 
     <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >
         <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
+        <property name="externalProvisioners" value="#{externalProvisionersRegistry.registered}" />
     </bean>
 
     <bean id="externalDeviceUsageManagerImpl" class="com.cloud.network.ExternalDeviceUsageManagerImpl" />

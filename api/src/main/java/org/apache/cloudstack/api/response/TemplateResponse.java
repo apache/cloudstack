@@ -131,6 +131,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
 
+    @SerializedName(ApiConstants.EXTERNAL_PROVISIONER)
+    @Param(description = "the provisioner name for the hypervisor type external")
+    private String provisioner;
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
@@ -355,6 +359,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
+    }
+
+    public void setExternalProvisioner(String provisioner) {
+        this.provisioner = provisioner;
     }
 
     @Override
