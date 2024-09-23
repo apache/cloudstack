@@ -19,33 +19,22 @@ package org.apache.cloudstack.backup;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmService;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
@@ -72,7 +61,6 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -173,16 +161,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private VolumeApiService volumeApiService;
-    @Inject
-    private VolumeOrchestrationService volumeOrchestrationService;
-    @Inject
-    private VMTemplateDao templateDao;
-    @Inject
-    private NicDao nicDao;
-    @Inject
-    private NetworkDao networkDao;
-    @Inject
-    protected UserVmService userVmService;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -642,9 +620,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
-        if (VirtualMachine.State.Expunging.equals(vm.getState()) && vm.getRemoved() != null) {
-            restoreExpungedVm(vm);
-        }
+
         // This is done to handle historic backups if any with Veeam / Networker plugins
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
@@ -703,28 +679,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             throw new CloudRuntimeException(String.format("Error restoring VM from backup [%s].", backupDetailsInMessage));
         }
-    }
-
-    private void restoreExpungedVm(VMInstanceVO vm) {
-        VMTemplateVO template = templateDao.findById(vm.getTemplateId());
-        if (Objects.isNull(template)) {
-            throw new CloudRuntimeException("Failed to find VM template to restore the VM");
-        }
-        List<Long> networkIds = nicDao.listByVmId(vm.getId()).stream().sorted(Comparator.comparing(NicVO::getDeviceId)).map(NicVO::getNetworkId).collect(Collectors.toList());
-        for (Long networkId : networkIds) {
-            NetworkVO networkVO = networkDao.findById(networkId);
-            if (Objects.isNull(networkVO)) {
-                throw new CloudRuntimeException("Failed to find network all networks the VM was previously attached to");
-            }
-        }
-
-        CallContext ctx = CallContext.current();
-        final Account owner = ctx.getCallingAccount();
-//        userVmService.createAdvancedVirtualMachine(vm.getDataCenterId(), vm.getServiceOfferingId(), template.getId(), networkIds, owner,
-//                vm.getHostName(), vm.getHostName(), null, null, null,
-//                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, null, null, null, keypairs,
-//                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, null, null);
-
     }
 
     /**
