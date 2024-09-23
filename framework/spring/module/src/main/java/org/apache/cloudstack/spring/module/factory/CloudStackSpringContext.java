@@ -77,10 +77,10 @@ public class CloudStackSpringContext {
         for (String appName : contextMap.keySet()) {
             ApplicationContext contex = contextMap.get(appName);
             if (contex instanceof ConfigurableApplicationContext) {
-                logger.trace("Registering shutdown hook for bean "+ appName);
+                logger.trace("Registering shutdown hook for bean {}.", appName);
                 ((ConfigurableApplicationContext)contex).registerShutdownHook();
             } else {
-                logger.warn("Shutdown hook not registered for bean " + appName);
+                logger.warn("Shutdown hook not registered for bean {}.", appName);
             }
         }
     }

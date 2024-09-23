@@ -69,11 +69,11 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
-                logger.info("starting bean " + lifecycle.getName());
+                logger.info("starting bean {}.", lifecycle.getName());
                 try {
                     lifecycle.start();
                 } catch (Exception e) {
-                    logger.error(String.format("Error on starting bean %s - %s", lifecycle.getName(), e.getMessage()), e);
+                    logger.error("Error on starting bean {} - {}", lifecycle.getName(), e.getMessage(), e);
                 }
 
                 if (lifecycle instanceof ManagementBean) {
@@ -103,11 +103,11 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
         with(new WithComponentLifeCycle() {
             @Override
             public void with(ComponentLifecycle lifecycle) {
-                logger.info("stopping bean " + lifecycle.getName());
+                logger.info("stopping bean {}.", lifecycle.getName());
                 try {
                     lifecycle.stop();
                 } catch (Exception e) {
-                    logger.error(String.format("Error on stopping bean %s - %s", lifecycle.getName(), e.getMessage()), e);
+                    logger.error("Error on stopping bean {} - {}", lifecycle.getName(), e.getMessage(), e);
                 }
             }
         });
@@ -122,13 +122,13 @@ public class CloudStackExtendedLifeCycle extends AbstractBeanCollector {
             @Override
             public void with(ComponentLifecycle lifecycle) {
                 try {
-                    logger.info("configuring bean " + lifecycle.getName());
+                    logger.info("configuring bean {}.", lifecycle.getName());
                     lifecycle.configure(lifecycle.getName(), lifecycle.getConfigParams());
                 } catch (ConfigurationException e) {
                     logger.error("Failed to configure " +  lifecycle.getName(), e);
                     throw new CloudRuntimeException(e);
                 } catch (Exception e) {
-                    logger.error(String.format("Error on configuring bean %s - %s", lifecycle.getName(), e.getMessage()), e);
+                    logger.error("Error on configuring bean {} - {}", lifecycle.getName(), e.getMessage(), e);
                 }
             }
         });
