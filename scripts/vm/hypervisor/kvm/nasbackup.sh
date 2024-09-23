@@ -32,6 +32,46 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 
+vercomp() {
+  local IFS=.
+  local i ver1=($1) ver2=($3)
+
+  # Compare each segment of the version numbers
+  for ((i=0; i<${#ver1[@]}; i++)); do
+      if [[ -z ${ver2[i]} ]]; then
+          ver2[i]=0
+      fi
+
+      if ((10#${ver1[i]} > 10#${ver2[i]})); then
+          return 1  # Version 1 is greater
+      elif ((10#${ver1[i]} < 10#${ver2[i]})); then
+          return 2  # Version 2 is greater
+      fi
+  done
+  return 0  # Versions are equal
+}
+
+sanity_checks() {
+  hvVersion=$(virsh version | grep hypervisor | awk '{print $(NF)}')
+  libvVersion=$(virsh version | grep libvirt | awk '{print $(NF)}' | tail -n 1)
+  apiVersion=$(virsh version | grep API | awk '{print $(NF)}')
+
+  # Compare qemu version (hvVersion >= 4.2.0)
+  vercomp "$hvVersion" ">=" "4.2.0"
+  hvStatus=$?
+
+  # Compare libvirt version (libvVersion >= 7.2.0)
+  vercomp "$libvVersion" ">=" "7.2.0"
+  libvStatus=$?
+
+  if [[ ($hvStatus -eq 0 || $hvStatus -eq 1) && ($libvStatus -eq 0 || $libvStatus -eq 1) ]]; then
+    echo "Success \t\t [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
+  else
+    echo "Failure... \tYour QEMU version $hvVersion or libvirt version $libvVersion is unsupported. Consider upgrading to the required minimum version of QEMU: 4.2.0 and Libvirt: 7.2.0"
+    exit 1
+  fi
+}
+
 ### Operation methods ###
 
 backup_running_vm() {
@@ -162,6 +202,9 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Perform Initial sanity checks
+sanity_checks
 
 if [ "$OP" = "backup" ]; then
   STATE=$(virsh -c qemu:///system list | grep $VM | awk '{print $3}')
