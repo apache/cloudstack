@@ -125,6 +125,7 @@ export default {
         launching: 'message.please.wait.while.zone.is.being.created'
       },
       nsx: false,
+      netris: false,
       isLaunchZone: false,
       processStatus: null,
       messageError: '',
@@ -218,6 +219,7 @@ export default {
       const index = this.steps.findIndex(step => step.index === this.currentStep)
       this.steps[index].status = status
       this.nsx = false
+      this.netris = false
     },
     handleBack (e) {
       this.$emit('backPressed')
@@ -487,7 +489,10 @@ export default {
               if (physicalNetwork.isolationMethod === 'NSX' &&
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
                 this.stepData.isNsxZone = true
-                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
+              if (physicalNetwork.isolationMethod === 'NETRIS' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
+                this.stepData.isNetrisZone = true
               }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
@@ -909,6 +914,8 @@ export default {
         this.addStep(message, trafficType)
         if (trafficType === 'nsxPublicTraffic') {
           this.nsx = false
+        } else if (trafficType === 'netrisPublicTraffic') {
+          this.netris = false
         }
 
         let stopNow = false
@@ -937,7 +944,7 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
-          } else if (publicVlanIpRange.fornsx) {
+          } else if (publicVlanIpRange.fornsx) { // TODO: should this be the same for Netris?
             params.vlan = null
           } else {
             params.vlan = 'untagged'
@@ -987,6 +994,8 @@ export default {
             await this.stepCreateTungstenFabricPublicNetwork()
           } else if (this.stepData.isNsxZone) {
             await this.stepAddNsxController()
+          } else if (this.stepData.isNetrisZone) {
+            await this.stepAddNetrisController()
           } else {
             await this.stepConfigureStorageTraffic()
           }
@@ -1083,6 +1092,35 @@ export default {
           this.stepData.stepMove.push('addNsxController')
         }
         this.stepData.stepMove.push('nsx')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async stepAddNetrisController () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.add.netris.controller', 'netris')
+      if (this.stepData.stepMove.includes('netris')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('addNetrisProvider')) {
+          const providerParams = {}
+          providerParams.name = this.prefillContent?.netrisName || ''
+          providerParams.netrisproviderhostname = this.prefillContent?.netrisHostname || ''
+          providerParams.netrisproviderport = this.prefillContent?.netrisPort || ''
+          providerParams.username = this.prefillContent?.username || ''
+          providerParams.password = this.prefillContent?.password || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+
+          await this.addNetrisProvider(providerParams)
+          this.stepData.stepMove.push('addNetrisController')
+        }
+        this.stepData.stepMove.push('netris')
         await this.stepConfigureStorageTraffic()
       } catch (e) {
         this.messageError = e
@@ -2240,6 +2278,16 @@ export default {
     addNsxController (args) {
       return new Promise((resolve, reject) => {
         api('addNsxController', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    addNetrisPovider (args) {
+      return new Promise((resolve, reject) => {
+        api('addNetrisProvider', {}, 'POST', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
