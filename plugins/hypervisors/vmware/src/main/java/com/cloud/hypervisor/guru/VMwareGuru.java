@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.agent.api.CleanupVMCommand;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.utils.LogUtils;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NfsTO;

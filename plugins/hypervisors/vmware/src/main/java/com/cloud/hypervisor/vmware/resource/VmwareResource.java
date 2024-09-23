@@ -46,7 +46,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.cloud.agent.api.CleanupVMCommand;
-import com.vmware.vim25.StorageIOAllocationInfo;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
