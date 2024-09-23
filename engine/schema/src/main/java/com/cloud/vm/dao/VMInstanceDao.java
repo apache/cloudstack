@@ -170,4 +170,10 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> searchRemovedByRemoveDate(final Date startDate, final Date endDate, final Long batchSize,
              List<Long> skippedVmIds);
 
+    List<VMInstanceVO> listIdServiceOfferingForUpVmsByHostId(Long hostId);
+
+    List<VMInstanceVO> listIdServiceOfferingForVmsMigratingFromHost(Long hostId);
+
+    List<VMInstanceVO> listIdServiceOfferingForVmsByLastHostId(Long hostId);
+
 }

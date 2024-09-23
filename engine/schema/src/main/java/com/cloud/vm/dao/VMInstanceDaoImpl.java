@@ -74,6 +74,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> LHVMClusterSearch;
     protected SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
+    protected SearchBuilder<VMInstanceVO> IdServiceOfferingIdSelectSearch;
     protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
     protected SearchBuilder<VMInstanceVO> TemplateNonExpungedSearch;
     protected SearchBuilder<VMInstanceVO> NameLikeSearch;
@@ -170,6 +171,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         AllFieldsSearch.and("type", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.done();
+
+        IdServiceOfferingIdSelectSearch = createSearchBuilder();
+        IdServiceOfferingIdSelectSearch.and("host", IdServiceOfferingIdSelectSearch.entity().getHostId(), Op.EQ);
+        IdServiceOfferingIdSelectSearch.and("lastHost", IdServiceOfferingIdSelectSearch.entity().getLastHostId(), Op.EQ);
+        IdServiceOfferingIdSelectSearch.and("state", IdServiceOfferingIdSelectSearch.entity().getState(), Op.EQ);
+        IdServiceOfferingIdSelectSearch.and("states", IdServiceOfferingIdSelectSearch.entity().getState(), Op.IN);
+        IdServiceOfferingIdSelectSearch.selectFields(IdServiceOfferingIdSelectSearch.entity().getId(), IdServiceOfferingIdSelectSearch.entity().getServiceOfferingId());
+        IdServiceOfferingIdSelectSearch.done();
 
         ZoneTemplateNonExpungedSearch = createSearchBuilder();
         ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterId(), Op.EQ);
@@ -1050,5 +1059,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         }
         Filter filter = new Filter(VMInstanceVO.class, "id", true, 0L, batchSize);
         return searchIncludingRemoved(sc, filter, null, false);
+    }
+
+    @Override
+    public List<VMInstanceVO> listIdServiceOfferingForUpVmsByHostId(Long hostId) {
+        SearchCriteria<VMInstanceVO> sc = IdServiceOfferingIdSelectSearch.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("states", new Object[] {State.Starting, State.Running, State.Stopping, State.Migrating});
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<VMInstanceVO> listIdServiceOfferingForVmsMigratingFromHost(Long hostId) {
+        SearchCriteria<VMInstanceVO> sc = IdServiceOfferingIdSelectSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Migrating);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<VMInstanceVO> listIdServiceOfferingForVmsByLastHostId(Long hostId) {
+        SearchCriteria<VMInstanceVO> sc = IdServiceOfferingIdSelectSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Stopped);
+        return customSearch(sc, null);
     }
 }

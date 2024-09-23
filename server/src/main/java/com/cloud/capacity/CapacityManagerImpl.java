@@ -684,6 +684,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return serviceOfferingVO;
     }
 
+    protected Map<String, String> getVmDetailsForCapacityCalculation(long vmId) {
+        return _userVmDetailsDao.listDetailsKeyPairs(vmId,
+                List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO,
+                        VmDetailConstants.MEMORY_OVER_COMMIT_RATIO,
+                        UsageEventVO.DynamicParameters.memory.name(),
+                        UsageEventVO.DynamicParameters.cpuNumber.name(),
+                        UsageEventVO.DynamicParameters.cpuSpeed.name()));
+    }
+
     @DB
     protected void updateCapacityForHostInternal(final Host host) {
         long usedCpuCore = 0;
@@ -694,12 +703,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         long reservedCpu = 0;
         final CapacityState capacityState = (host.getResourceState() == ResourceState.Enabled) ? CapacityState.Enabled : CapacityState.Disabled;
 
-        List<VMInstanceVO> vms = _vmDao.listUpByHostId(host.getId());
+        List<VMInstanceVO> vms = _vmDao.listIdServiceOfferingForUpVmsByHostId(host.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + vms.size() + " VMs on host " + host.getId());
         }
 
-        final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(host.getId());
+        final List<VMInstanceVO> vosMigrating = _vmDao.listIdServiceOfferingForVmsMigratingFromHost(host.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + vosMigrating.size() + " VMs are Migrating from host " + host.getId());
         }
@@ -714,9 +723,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VMInstanceVO vm : vms) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
-            Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
-            String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
-            String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
+            Map<String, String> vmDetails = getVmDetailsForCapacityCalculation(vm.getId());
+            String vmDetailCpu = vmDetails.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+            String vmDetailRam = vmDetails.get(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
             // if vmDetailCpu or vmDetailRam is not null it means it is running in a overcommitted cluster.
             cpuOvercommitRatio = (vmDetailCpu != null) ? Float.parseFloat(vmDetailCpu) : clusterCpuOvercommitRatio;
             ramOvercommitRatio = (vmDetailRam != null) ? Float.parseFloat(vmDetailRam) : clusterRamOvercommitRatio;
@@ -745,7 +754,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
         }
 
-        List<VMInstanceVO> vmsByLastHostId = _vmDao.listByLastHostId(host.getId());
+        List<VMInstanceVO> vmsByLastHostId = _vmDao.listIdServiceOfferingForVmsByLastHostId(host.getId());
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Found " + vmsByLastHostId.size() + " VM, not running on host " + host.getId());
         }
@@ -756,17 +765,17 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             long lastModificationTime = Optional.ofNullable(vm.getUpdateTime()).orElse(vm.getCreated()).getTime();
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - lastModificationTime) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
-                UserVmDetailVO vmDetailRam = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
+                Map<String, String> vmDetails = getVmDetailsForCapacityCalculation(vm.getId());
+                String vmDetailCpu = vmDetails.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+                String vmDetailRam = vmDetails.get(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
                 if (vmDetailCpu != null) {
                     //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
-                    cpuOvercommitRatio = Float.parseFloat(vmDetailCpu.getValue());
+                    cpuOvercommitRatio = Float.parseFloat(vmDetailCpu);
                 }
                 if (vmDetailRam != null) {
-                    ramOvercommitRatio = Float.parseFloat(vmDetailRam.getValue());
+                    ramOvercommitRatio = Float.parseFloat(vmDetailRam);
                 }
                 ServiceOffering so = getServiceOffering(vm.getServiceOfferingId());
-                Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
                 if (so == null) {
                     so = _offeringsDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
                 }
