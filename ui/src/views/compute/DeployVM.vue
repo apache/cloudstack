@@ -173,7 +173,7 @@
                           :key="templateKey"
                           @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
-                         <div>
+                         <div v-if="template.hypervisor !== 'External'">
                           {{ $t('label.override.rootdisk.size') }}
                           <a-switch
                             v-model:checked="form.rootdisksizeitem"
@@ -311,7 +311,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="tabKey!=='isoid'">
+                    <span v-if="tabKey!=='isoid' && template.hypervisor !== 'External'">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -390,9 +390,10 @@
               <a-step
                 v-else
                 :title="tabKey === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :disabled="template.hypervisor === 'External' ? true : false"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected && template.hypervisor !== 'External'">
                     <disk-offering-selection
                       :items="options.diskOfferings"
                       :row-count="rowCount.diskOfferings"
@@ -417,6 +418,9 @@
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
+                  </div>
+                  <div v-else-if="template.hypervisor === 'External'" style="margin-bottom: 20px; margin-top: 7px">
+                    {{ $t('message.host.external.datadisk') }}
                   </div>
                 </template>
               </a-step>
@@ -591,7 +595,7 @@
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
                     </a-form-item>
-                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
+                    <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled" v-if="template.hypervisor !== 'External'">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
                       </template>
@@ -785,6 +789,58 @@
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
                     {{ $t('message.vm.review.launch') }}
+                    <a-form-item v-if="template.hypervisor === 'External'">
+                      <br />
+                      <a-button style="width: 100%" ref="details" type="primary" @click="addExternalDetails">
+                        <template #icon><plus-outlined /></template>
+                        {{ $t('label.add.external.details') }}
+                      </a-button>
+                      <a-form-item>
+                        <div v-show="showAddDetail">
+                          <br/>
+                          <a-input-group
+                            type="text"
+                            compact>
+                            <a-input
+                              style="width: 25%;"
+                              ref="keyElm"
+                              v-model:value="newKey"
+                              :placeholder="$t('label.name')"
+                              @change="e => onAddInputChange(e, 'newKey')" />
+                            <a-input
+                              class="tag-disabled-input"
+                              style=" width: 30px; margin-left: 10px; margin-right: 10px; pointer-events: none; text-align: center"
+                              placeholder="="
+                              disabled />
+                            <a-input
+                              style="width: 35%;"
+                              v-model:value="newValue"
+                              :placeholder="$t('label.value')"
+                              @change="e => onAddInputChange(e, 'newValue')" />
+                            <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
+                            <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
+                          </a-input-group>
+                        </div>
+                      </a-form-item>
+                      <a-list size="medium">
+                        <a-list-item :key="index" v-for="(item, index) in externalDetails">
+                          <span style="padding-left: 11px; width: 14%;"> {{ item.name }} </span>
+                          <a-input
+                            class="tag-disabled-input"
+                            style=" width: 30px; margin-left: 105px; margin-right: 10px; pointer-events: none; text-align: center"
+                            placeholder="="
+                            disabled />
+                          <span style="padding-left: 0px; width: 64%;"> {{ item.value }}</span>
+                          <tooltip-button
+                            style="width: 30%;"
+                            :tooltip="$t('label.delete')"
+                            :type="primary"
+                            :danger="true"
+                            icon="delete-outlined"
+                            @onClick="removeDetail(index)"/>
+                        </a-list-item>
+                      </a-list>
+                    </a-form-item>
                     <a-form-item :label="$t('label.name.optional')" name="name" ref="name">
                       <a-input v-model:value="form.name" />
                     </a-form-item>
@@ -899,6 +955,7 @@ import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
 
 export default {
@@ -920,6 +977,7 @@ export default {
     SecurityGroupSelection,
     ResourceIcon,
     TooltipLabel,
+    TooltipButton,
     InstanceNicsNetworkSelectListView
   },
   props: {
@@ -1090,6 +1148,10 @@ export default {
       selectedZone: '',
       formModel: {},
       nicToNetworkSelection: [],
+      showAddDetail: false,
+      newKey: '',
+      newValue: '',
+      externalDetails: [],
       selectedArchitecture: null,
       architectureTypes: {
         opts: [
@@ -1875,6 +1937,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.dataPreFill.hypervisorType = template.hypervisor
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1999,6 +2062,34 @@ export default {
       } else {
         this.fetchAllIsos()
       }
+    },
+    addExternalDetails () {
+      this.showAddDetail = true
+    },
+    onAddInputChange (val, obj) {
+      this.error = false
+      this[obj].concat(val.data)
+    },
+    addDetail () {
+      if (this.newKey === '' || this.newValue === '') {
+        this.error = this.$t('message.error.provide.setting')
+        return
+      }
+      this.error = false
+      this.externalDetails.push({ name: this.newKey, value: this.newValue })
+      this.newKey = ''
+      this.newValue = ''
+    },
+    closeDetail () {
+      this.newKey = ''
+      this.newValue = ''
+      this.error = false
+      this.showAddDetail = false
+    },
+    removeDetail (index) {
+      this.externalDetails.splice(index, 1)
+      this.newKey = ''
+      this.newValue = ''
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2233,6 +2324,12 @@ export default {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
           }
+        }
+
+        if (this.externalDetails.length > 0) {
+          this.externalDetails.forEach(function (item, index) {
+            deployVmData['externaldetails[0].' + item.name] = item.value
+          })
         }
 
         const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
@@ -2968,5 +3065,14 @@ export default {
         background: transparent !important;
       }
     }
+  }
+
+  .detail-input {
+    width: calc(calc(100% / 4) - 45px);
+  }
+
+  .detail-button {
+    width: 30px;
+    margin-left: 5px;
   }
 </style>

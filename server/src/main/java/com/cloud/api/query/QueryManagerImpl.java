@@ -36,6 +36,9 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
+import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -617,6 +620,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private AsyncJobManager jobManager;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -4595,7 +4600,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
                 cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
                 listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
-                templateType, isVnf, cmd.getArch());
+                templateType, isVnf, cmd.getArch(), cmd.getExternalProvisioner());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
@@ -4604,7 +4609,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf, CPU.CPUArch arch) {
+            Boolean isVnf, CPU.CPUArch arch, String externalProvisioner) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -4636,6 +4641,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.join("storagePool", storagePoolSb, storagePoolSb.entity().getTemplateId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (StringUtils.isNotEmpty(externalProvisioner)) {
+            SearchBuilder<VMTemplateDetailVO> templateDetailSB = templateDetailsDao.createSearchBuilder();
+            templateDetailSB.and("name", templateDetailSB.entity().getName(), SearchCriteria.Op.EQ);
+            templateDetailSB.and("value", templateDetailSB.entity().getValue(), SearchCriteria.Op.EQ);
+            sb.join("templateExternalDetail", templateDetailSB, templateDetailSB.entity().getResourceId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
         if (imageStoreId != null) {
@@ -4650,7 +4662,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
         }
 
-        // verify templateId parameter and specially handle it
+        if (StringUtils.isNotEmpty(externalProvisioner)) {
+            sc.setJoinParameters("templateExternalDetail", "name", ApiConstants.EXTERNAL_PROVISIONER);
+            sc.setJoinParameters("templateExternalDetail", "value", externalProvisioner);
+        }
+
+            // verify templateId parameter and specially handle it
         if (templateId != null) {
             template = _templateDao.findByIdIncludingRemoved(templateId); // Done for backward compatibility - Bug-5221
             if (template == null) {
@@ -4900,7 +4917,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (onlyReady) {
             SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
             readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
-            readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+            readySc.addOr("format", SearchCriteria.Op.IN, ImageFormat.BAREMETAL, ImageFormat.EXTERNAL);
             SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
             isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
             isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
@@ -5035,7 +5052,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
-                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch());
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch(), null);
     }
 
     @Override

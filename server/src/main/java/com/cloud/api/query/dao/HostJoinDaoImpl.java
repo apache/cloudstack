@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.response.GpuResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
@@ -253,9 +254,14 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 } else {
                     hostResponse.setUefiCapability(new Boolean(false));
                 }
+                if (host.getHypervisorType() != null) {
+                    if (host.getHypervisorType() == Hypervisor.HypervisorType.External) {
+                        hostResponse.setExternalProvisioner(hostDetails.get(ApiConstants.EXTERNAL_PROVISIONER));
+                    }
+                }
             }
             if (details.contains(HostDetails.all) && (host.getHypervisorType() == Hypervisor.HypervisorType.KVM ||
-                    host.getHypervisorType() == Hypervisor.HypervisorType.Custom)) {
+                    host.getHypervisorType() == Hypervisor.HypervisorType.Custom || host.getHypervisorType() == Hypervisor.HypervisorType.External)) {
                 //only kvm has the requirement to return host details
                 try {
                     hostResponse.setDetails(hostDetails, host.getHypervisorType());

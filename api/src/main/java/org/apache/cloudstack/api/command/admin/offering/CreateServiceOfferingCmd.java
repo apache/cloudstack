@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -251,6 +252,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since="4.20")
     private Boolean purgeResources;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
+    protected Map externalDetails;
 
 
     /////////////////////////////////////////////////////
@@ -359,7 +362,19 @@ public class CreateServiceOfferingCmd extends BaseCmd {
                 }
             }
         }
+
+        detailsMap.putAll(getExternalDetails());
         return detailsMap;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
     }
 
     public Long getRootDiskSize() {
