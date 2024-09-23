@@ -17,6 +17,7 @@
 package com.cloud.resource;
 
 import com.cloud.configuration.Config;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -39,6 +40,8 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
     @Inject
     protected ClusterDao _clusterDao;
+    @Inject
+    protected ClusterDetailsDao _clusterDetailsDao;
     @Inject
     protected ConfigurationDao _configDao;
     @Inject

@@ -21,9 +21,12 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 
+import java.util.Map;
+
 public class RebootCommand extends Command {
     String vmName;
     VirtualMachineTO vm;
+    private Map<String, String> _details;
     protected boolean executeInSequence = false;
 
     protected RebootCommand() {
@@ -44,6 +47,14 @@ public class RebootCommand extends Command {
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return _details;
     }
 
     @Override

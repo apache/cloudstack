@@ -278,6 +278,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].server.type=typevalue")
+    protected Map externalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -351,9 +354,22 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             customparameterMap.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, BooleanUtils.toStringTrueFalse(nicPackedVirtQueues));
         }
 
+        if (MapUtils.isNotEmpty(externalDetails)) {
+            customparameterMap.putAll(getExternalDetails());
+        }
+
         return customparameterMap;
     }
 
+    public Map<String, String> getExternalDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
+    }
 
     public ApiConstants.BootMode getBootMode() {
         if (StringUtils.isNotBlank(bootMode)) {

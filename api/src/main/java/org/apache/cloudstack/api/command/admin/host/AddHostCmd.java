@@ -17,9 +17,12 @@
 package org.apache.cloudstack.api.command.admin.host;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -75,6 +78,12 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
+    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external")
+    private String provisioner;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
+    protected Map externalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -111,12 +120,26 @@ public class AddHostCmd extends BaseCmd {
         return hypervisor;
     }
 
+    public String getExternalProvisioner() {
+        return provisioner;
+    }
+
     public List<String> getHostTags() {
         return hostTags;
     }
 
     public String getAllocationState() {
         return allocationState;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
     }
 
     /////////////////////////////////////////////////////

@@ -21,10 +21,12 @@ import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -73,6 +75,9 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
     protected String hypervisor;
+
+    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external")
+    private String provisioner;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
@@ -178,6 +183,9 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             since = "4.20")
     private String arch;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
+    protected Map externalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -196,6 +204,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     public String getHypervisor() {
         return hypervisor;
+    }
+
+    public String getExternalProvisioner() {
+        return provisioner;
     }
 
     public Boolean isFeatured() {
@@ -303,6 +315,16 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return CPU.CPUArch.fromType(arch);
     }
 
+    public Map<String, String> getExternalDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -368,6 +390,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
                 || getHypervisor().equalsIgnoreCase(customHypervisor))) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Parameter directdownload " +
                     "is only allowed for KVM or %s templates", customHypervisor));
+        }
+
+        if (getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.External.toString()) && getExternalProvisioner() == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("External provisioner input is required in case of hypervisor type external"));
         }
 
         if (!isDeployAsIs() && osTypeId == null) {

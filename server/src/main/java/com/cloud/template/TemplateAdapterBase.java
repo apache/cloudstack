@@ -118,7 +118,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     protected @Inject
     ImageStoreDao _imgStoreDao;
     @Inject
-    TemplateManager templateMgr;
+    protected TemplateManager templateMgr;
     @Inject
     ConfigurationServer _configServer;
     @Inject
@@ -312,6 +312,15 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 }
             }
         }
+
+        if (HypervisorType.External.equals(hypervisorType) && MapUtils.isNotEmpty(cmd.getExternalDetails())) {
+            if (details != null) {
+                details.putAll(cmd.getExternalDetails());
+            } else {
+                details = cmd.getExternalDetails();
+            }
+        }
+
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,

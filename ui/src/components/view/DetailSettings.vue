@@ -42,8 +42,7 @@
             :filterOption="(input, option) => filterOption(input, option, 'key')"
             v-model:value="newKey"
             :options="detailKeys"
-            :placeholder="$t('label.name')"
-            @change="e => onAddInputChange(e, 'newKey')" />
+            :placeholder="$t('label.name')" />
           <a-input
             class="tag-disabled-input"
             style=" width: 30px; border-left: 0; pointer-events: none; text-align: center"
@@ -54,8 +53,7 @@
             :filterOption="(input, option) => filterOption(input, option, 'value')"
             v-model:value="newValue"
             :options="detailValues"
-            :placeholder="$t('label.value')"
-            @change="e => onAddInputChange(e, 'newValue')" />
+            :placeholder="$t('label.value')" />
           <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
           <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
         </a-input-group>
@@ -245,6 +243,7 @@ export default {
     },
     onAddInputChange (val, obj) {
       this.error = false
+      console.log(val)
       this[obj] = val
     },
     isAdminOrOwner () {

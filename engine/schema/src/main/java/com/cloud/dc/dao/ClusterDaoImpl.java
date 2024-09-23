@@ -47,6 +47,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -152,6 +153,27 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("hypervisorType", hyType);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ClusterVO> listByDatacenterExternalHypervisorProvisioner(long dcId, String provisioner) {
+        SearchBuilder<ClusterVO> ZoneExternalHyTypeSearch = createSearchBuilder();
+        ZoneExternalHyTypeSearch.and("hypervisorType", ZoneExternalHyTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        ZoneExternalHyTypeSearch.and("dataCenterId", ZoneExternalHyTypeSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        SearchBuilder<ClusterDetailsVO> clusterDetails = clusterDetailsDao.createSearchBuilder();
+        ClusterDetailsVO tagEntity = clusterDetails.entity();
+        clusterDetails.and("provisioner", tagEntity.getName(), SearchCriteria.Op.EQ);
+        clusterDetails.and("value", tagEntity.getValue(), SearchCriteria.Op.EQ);
+        ZoneExternalHyTypeSearch.join("clusterDetails", clusterDetails, ZoneExternalHyTypeSearch.entity().getId(), tagEntity.getClusterId(), JoinBuilder.JoinType.INNER);
+        ZoneExternalHyTypeSearch.done();
+
+        SearchCriteria<ClusterVO> sc = ZoneExternalHyTypeSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("hypervisorType", HypervisorType.External.toString());
+        sc.setJoinParameters("clusterDetails", "provisioner", ApiConstants.EXTERNAL_PROVISIONER);
+        sc.setJoinParameters("clusterDetails", "value", provisioner);
+
         return listBy(sc);
     }
 

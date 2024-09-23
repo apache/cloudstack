@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -143,6 +144,10 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
         if (userVm == null) {
             throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
+        }
+
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Migrate VM instance operation is not allowed for External hypervisor type");
         }
 
         Host destinationHost = null;

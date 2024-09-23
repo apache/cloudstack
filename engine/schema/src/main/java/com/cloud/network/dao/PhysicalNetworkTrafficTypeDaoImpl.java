@@ -125,7 +125,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
             sc = simulatorAllFieldsSearch.create();
         } else if (hType == HypervisorType.Ovm) {
             sc = ovmAllFieldsSearch.create();
-        } else if (hType == HypervisorType.BareMetal) {
+        } else if (hType == HypervisorType.BareMetal || hType == HypervisorType.External) {
             return null;
         } else if (hType == HypervisorType.Hyperv) {
             sc = hypervAllFieldsSearch.create();

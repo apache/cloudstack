@@ -110,4 +110,9 @@ public interface VmDetailConstants {
     // CPU mode and model, ADMIN only
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
+    String MAC_ADDRESS = "mac_address";
+    String EXPUNGE_EXTERNAL_SERVER = "expunge.external.server";
+    String EXTERNAL_DETAIL_PREFIX = "External:";
+    String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
+    String CLOUDSTACK_VLAN = "cloudstack.vlan";
 }

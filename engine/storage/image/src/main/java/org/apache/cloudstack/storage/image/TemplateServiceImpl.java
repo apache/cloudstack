@@ -236,6 +236,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
         /* Baremetal need not to download any template */
         availHypers.remove(HypervisorType.BareMetal);
+        availHypers.remove(HypervisorType.External);
         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
         // download.
 
@@ -526,6 +527,7 @@ public class TemplateServiceImpl implements TemplateService {
                         }
                         /* Baremetal need not to download any template */
                         availHypers.remove(HypervisorType.BareMetal);
+                        availHypers.remove(HypervisorType.External);
                         availHypers.add(HypervisorType.None); // bug 9809: resume ISO
                         // download.
                         for (VMTemplateVO tmplt : toBeDownloaded) {

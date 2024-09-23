@@ -1125,4 +1125,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
     }
+
+    @Override
+    public String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
+        return null;
+    }
 }

@@ -263,6 +263,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
 
+import static java.util.Objects.isNull;
+
 /**
  * NetworkServiceImpl implements NetworkService.
  */
@@ -6306,5 +6308,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
 
         _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
+    }
+
+    @Override
+    public String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
+        String segmentName = String.format("D%s-A%s-Z%s",  domainId, accountId, zoneId);
+        if (isNull(vpcId)) {
+            return String.format("%s-S%s", segmentName, networkId);
+        }
+        return String.format("%s-V%s-S%s",segmentName, vpcId, networkId);
     }
 }
