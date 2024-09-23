@@ -65,11 +65,20 @@ sanity_checks() {
   libvStatus=$?
 
   if [[ ($hvStatus -eq 0 || $hvStatus -eq 1) && ($libvStatus -eq 0 || $libvStatus -eq 1) ]]; then
-    echo "Success \t\t [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
+    echo "Success... [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
   else
-    echo "Failure... \tYour QEMU version $hvVersion or libvirt version $libvVersion is unsupported. Consider upgrading to the required minimum version of QEMU: 4.2.0 and Libvirt: 7.2.0"
+    echo "Failure... Your QEMU version $hvVersion or libvirt version $libvVersion is unsupported. Consider upgrading to the required minimum version of QEMU: 4.2.0 and Libvirt: 7.2.0"
     exit 1
   fi
+
+  echo "Checking Permissions"
+    if groups $USER | grep -q '\blibvirt\b'; then
+      echo "Success... User $USER is part of libvirt group"
+    else
+      echo "Failure - User $USER is not part of libvirt group"
+      exit 1
+    fi
+    echo "Environment Sanity Checks successfully passed"
 }
 
 ### Operation methods ###
