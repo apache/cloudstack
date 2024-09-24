@@ -1812,7 +1812,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId);
             } else {
-                if (networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+                if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
