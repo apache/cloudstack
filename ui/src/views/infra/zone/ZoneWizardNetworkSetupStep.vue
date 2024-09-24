@@ -64,7 +64,6 @@
       :isNsxZone="isNsxZone"
       :forNetris="steps[currentStep].formKey === 'netrisPublicTraffic'"
       :isNetrisZone="isNetrisZone"
-      :provider="providersDetails"
     />
 
     <static-inputs-form
@@ -305,15 +304,6 @@ export default {
       })
 
       return steps
-    },
-    providersDetails () {
-      console.log(this.currentStep)
-      return {
-        forNsx: this.steps[this.currentStep].formKey === 'nsxPublicTraffic',
-        isNsxZone: this.isNsxZone,
-        forNetris: this.steps[this.currentStep].formKey === 'netrisPublicTraffic',
-        isNetrisZone: this.isNetrisZone
-      }
     },
     stepScales () {
       if (!this.isMobile() && this.steps.length > 4) {
