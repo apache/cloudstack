@@ -23,12 +23,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
