@@ -51,7 +51,7 @@
           <a-input v-model:value="form.accessKey" />
         </a-form-item>
         <a-form-item name="secretKey" ref="secretKey" :label="$t('label.secret.key')">
-          <a-input v-model:value="form.secretKey" />
+          <a-input-password v-model:value="form.secretKey" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
