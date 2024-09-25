@@ -989,7 +989,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     /**
-     *  Injects variables into JavaScript interpreter. It's necessary to remove all dots from the given variables for the interpreter
+     *  Injects variables into JavaScript interpreter. It's necessary to remove all dots from the given variables, as the interpreter
      *  does not interpret the variables as attributes of objects.
      *
      * @param jsInterpreter the {@link JsInterpreter} which the variables will be injected.
