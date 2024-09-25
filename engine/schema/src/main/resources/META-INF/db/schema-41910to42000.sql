@@ -425,3 +425,9 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for vm" ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for volumes" ');
+
+ALTER TABLE `cloud`.`user`
+    ADD COLUMN `api_key_access` boolean;
+
+ALTER TABLE `cloud`.`account`
+    ADD COLUMN `api_key_access` boolean;

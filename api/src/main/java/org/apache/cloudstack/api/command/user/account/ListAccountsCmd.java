@@ -70,6 +70,9 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
                description = "comma separated list of account details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List accounts by the Api key access value", since = "4.20.1.0")
+    private String apiKeyAccess;
+
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for accounts")
     private Boolean showIcon;
@@ -118,6 +121,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
             }
         }
         return dv;
+    }
+
+    public String getApiKeyAccess() {
+        return apiKeyAccess;
     }
 
     public boolean getShowIcon() {

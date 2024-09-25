@@ -35,6 +35,7 @@ public class ApiConstants {
     public static final String ALLOW_USER_FORCE_STOP_VM = "allowuserforcestopvm";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
+    public static final String API_KEY_ACCESS = "apikeyaccess";
     public static final String ARCHIVED = "archived";
     public static final String ARCH = "arch";
     public static final String AS_NUMBER = "asnumber";
@@ -1238,5 +1239,31 @@ public class ApiConstants {
 
     public enum DomainDetails {
         all, resource, min;
+    }
+
+    public enum ApiKeyAccess {
+        DISABLED(false),
+        ENABLED(true),
+        INHERIT(null);
+
+        Boolean apiKeyAccess;
+
+        ApiKeyAccess(Boolean keyAccess) {
+            apiKeyAccess = keyAccess;
+        }
+
+        public Boolean toBoolean() {
+            return apiKeyAccess;
+        }
+
+        public static ApiKeyAccess fromBoolean(Boolean value) {
+            if (value == null) {
+                return INHERIT;
+            } else if (value) {
+                return ENABLED;
+            } else {
+                return DISABLED;
+            }
+        }
     }
 }
