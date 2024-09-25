@@ -106,6 +106,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -6673,6 +6674,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("networkMode should be set only for Isolated network offerings");
             }
             if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+                if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+                    throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed networks", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+                }
                 boolean useVirtualRouterOnly = true;
                 for (Service service : serviceProviderMap.keySet()) {
                     Set<Provider> providers = serviceProviderMap.get(service);

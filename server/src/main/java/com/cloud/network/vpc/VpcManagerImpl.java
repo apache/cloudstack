@@ -500,6 +500,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
             networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
         }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode) && !RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+        }
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
 
