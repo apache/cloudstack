@@ -75,6 +75,7 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         long domainId = usr.getDomainId();
         boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(domainId));
         userResponse.set2FAmandated(is2FAmandated);
+        userResponse.setApiKeyAccess(usr.getApiKeyAccess());
 
         // set async job
         if (usr.getJobId() != null) {
