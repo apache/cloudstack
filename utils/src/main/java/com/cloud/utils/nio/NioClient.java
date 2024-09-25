@@ -51,7 +51,7 @@ public class NioClient extends NioConnection {
         try {
             _clientConnection = SocketChannel.open();
 
-            s_logger.info("Connecting to " + _host + ":" + _port);
+            s_logger.info(getConnectionName() + "Connecting to " + _host + ":" + _port);
             final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
             _clientConnection.connect(peerAddr);
             _clientConnection.configureBlocking(false);
@@ -61,13 +61,13 @@ public class NioClient extends NioConnection {
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             sslEngine.beginHandshake();
-            if (!Link.doHandshake(_clientConnection, sslEngine)) {
-                s_logger.error("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
+            if (!Link.doHandshake(_clientConnection, sslEngine, getSslHandshakeTimeout())) {
+                s_logger.error(getConnectionName() + "SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
                 _selector.close();
                 throw new IOException("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
             }
-            s_logger.info("SSL: Handshake done");
-            s_logger.info("Connected to " + _host + ":" + _port);
+            s_logger.info(getConnectionName() + "SSL: Handshake done");
+            s_logger.info(getConnectionName() + "Connected to " + _host + ":" + _port);
 
             final Link link = new Link(peerAddr, this);
             link.setSSLEngine(sslEngine);
@@ -81,6 +81,7 @@ public class NioClient extends NioConnection {
             _selector.close();
             throw new IOException("Failed to initialise security", e);
         } catch (final IOException e) {
+            s_logger.error(getConnectionName() + "IOException", e);
             _selector.close();
             throw e;
         }
