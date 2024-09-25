@@ -32,12 +32,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.cloudian.client.CloudianClient;
+import org.apache.cloudstack.cloudian.client.CloudianCredential;
 import org.apache.cloudstack.cloudian.client.CloudianGroup;
 import org.apache.cloudstack.cloudian.client.CloudianUser;
+import org.apache.cloudstack.cloudian.client.CloudianUserBucketUsage;
+import org.apache.cloudstack.cloudian.client.CloudianUserBucketUsage.CloudianBucketUsage;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -116,6 +120,197 @@ public class CloudianClientTest {
     }
 
     /////////////////////////////////////////////////////
+    //////////////// System API tests ///////////////////
+    /////////////////////////////////////////////////////
+
+    @Test
+    public void getServerVersion() {
+        final String expect = "8.1 Compiled: 2023-11-11 16:30";
+        wireMockRule.stubFor(get(urlEqualTo("/system/version"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(expect)));
+
+        String version = client.getServerVersion();
+        Assert.assertEquals(expect, version);
+    }
+
+    @Test
+    public void getUserBucketUsagesEmptyGroup() {
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(200)
+                        .withBody("[]")));
+        List<CloudianUserBucketUsage> bucketUsages = client.getUserBucketUsages("mygroup", null, null);
+        Assert.assertEquals(0, bucketUsages.size());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getUserBucketUsagesNoSuchGroup() {
+        // no group, no user, no bucket etc are all 400
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+        client.getUserBucketUsages("mygroup", null, null);
+        Assert.fail("The request should throw an exception");
+    }
+
+    @Test
+    public void getUserBucketUsagesUserNoBuckets() {
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup&userId=u1"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(200)
+                        .withBody("[{\"userId\": \"u1\", \"buckets\": []}]")));
+        List<CloudianUserBucketUsage> bucketUsages = client.getUserBucketUsages("mygroup", "u1", null);
+        Assert.assertEquals(1, bucketUsages.size());
+        CloudianUserBucketUsage u1 = bucketUsages.get(0);
+        Assert.assertEquals("u1", u1.getUserId());
+        Assert.assertEquals(0, u1.getBuckets().size());
+    }
+
+    @Test
+    public void getUserBucketUsagesForBucket() {
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup&userId=u1&bucket=b1"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(200)
+                        .withBody("[{\"userId\": \"u1\", \"buckets\": [{\"bucketName\":\"b1\",\"objectCount\":1,\"byteCount\":5,\"policyName\":\"p1\"}]}]")));
+        List<CloudianUserBucketUsage> bucketUsages = client.getUserBucketUsages("mygroup", "u1", "b1");
+        Assert.assertEquals(1, bucketUsages.size());
+        CloudianUserBucketUsage u1 = bucketUsages.get(0);
+        Assert.assertEquals("u1", u1.getUserId());
+        Assert.assertEquals(1, u1.getBuckets().size());
+        CloudianBucketUsage cbu = u1.getBuckets().get(0);
+        Assert.assertEquals("b1", cbu.getBucketName());
+        Assert.assertEquals(5L, cbu.getByteCount().longValue());
+        Assert.assertEquals(1L, cbu.getObjectCount().longValue());
+        Assert.assertEquals("p1", cbu.getPolicyName());
+    }
+
+    @Test
+    public void getUserBucketUsagesOneUserTwoBuckets() {
+        CloudianUserBucketUsage expect_u1 = new CloudianUserBucketUsage();
+        expect_u1.setUserId("u1");
+        CloudianBucketUsage b1 = new CloudianBucketUsage();
+        b1.setBucketName("b1");
+        b1.setByteCount(123L);
+        b1.setObjectCount(456L);
+        b1.setPolicyName("pname");
+        CloudianBucketUsage b2 = new CloudianBucketUsage();
+        b2.setBucketName("b2");
+        b2.setByteCount(789L);
+        b2.setObjectCount(0L);
+        b2.setPolicyName("pname2");
+        List<CloudianBucketUsage> buckets = new ArrayList<CloudianBucketUsage>();
+        buckets.add(b1);
+        buckets.add(b2);
+        expect_u1.setBuckets(buckets);
+        int expect_size = buckets.size();
+
+        int bucket_count = 0;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[{\"userId\": \"u1\", \"buckets\": [");
+        for (CloudianBucketUsage b : buckets) {
+                sb.append("{\"bucketName\": \"");
+                sb.append(b.getBucketName());
+                sb.append("\", \"byteCount\": ");
+                sb.append(b.getByteCount());
+                sb.append(", \"objectCount\": ");
+                sb.append(b.getObjectCount());
+                sb.append(", \"policyName\": \"");
+                sb.append(b.getPolicyName());
+                sb.append("\"}");
+                if (++bucket_count < expect_size) {
+                        sb.append(",");
+                }
+        }
+        sb.append("]}]");
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup&userId=u1"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(200)
+                        .withBody(sb.toString())));
+        List<CloudianUserBucketUsage> bucketUsages = client.getUserBucketUsages("mygroup", "u1", null);
+        Assert.assertEquals(1, bucketUsages.size());
+        CloudianUserBucketUsage u1 = bucketUsages.get(0);
+        Assert.assertEquals("u1", u1.getUserId());
+        Assert.assertEquals(expect_size, u1.getBuckets().size());
+        for (int i = 0; i < expect_size; i++) {
+                CloudianBucketUsage actual = u1.getBuckets().get(i);
+                CloudianBucketUsage expected = buckets.get(i);
+                Assert.assertEquals(expected.getBucketName(), actual.getBucketName());
+                Assert.assertEquals(expected.getByteCount(), actual.getByteCount());
+                Assert.assertEquals(expected.getObjectCount(), actual.getObjectCount());
+                Assert.assertEquals(expected.getPolicyName(), actual.getPolicyName());
+        }
+    }
+
+    @Test
+    public void getUserBucketUsagesTwoUsers() {
+        CloudianUserBucketUsage expect_u1 = new CloudianUserBucketUsage();
+        expect_u1.setUserId("u1");
+        CloudianBucketUsage b1 = new CloudianBucketUsage();
+        b1.setBucketName("b1");
+        b1.setByteCount(123L);
+        b1.setObjectCount(456L);
+        b1.setPolicyName("pname");
+        CloudianBucketUsage b2 = new CloudianBucketUsage();
+        b2.setBucketName("b2");
+        b2.setByteCount(789L);
+        b2.setObjectCount(0L);
+        b2.setPolicyName("pname2");
+        List<CloudianBucketUsage> buckets = new ArrayList<CloudianBucketUsage>();
+        buckets.add(b1);
+        buckets.add(b2);
+        expect_u1.setBuckets(buckets);
+        int expect_size = buckets.size();
+
+        int bucket_count = 0;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[{\"userId\": \"u1\", \"buckets\": [");
+        for (CloudianBucketUsage b : buckets) {
+                sb.append("{\"bucketName\": \"");
+                sb.append(b.getBucketName());
+                sb.append("\", \"byteCount\": ");
+                sb.append(b.getByteCount());
+                sb.append(", \"objectCount\": ");
+                sb.append(b.getObjectCount());
+                sb.append(", \"policyName\": \"");
+                sb.append(b.getPolicyName());
+                sb.append("\"}");
+                if (++bucket_count < expect_size) {
+                        sb.append(",");
+                }
+        }
+        sb.append("]}, {\"userId\": \"u2\", \"buckets\": []}]");
+        wireMockRule.stubFor(get(urlEqualTo("/system/bucketusage?groupId=mygroup"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(200)
+                        .withBody(sb.toString())));
+        List<CloudianUserBucketUsage> bucketUsages = client.getUserBucketUsages("mygroup", null, null);
+        Assert.assertEquals(2, bucketUsages.size());
+        CloudianUserBucketUsage u1 = bucketUsages.get(0);
+        Assert.assertEquals("u1", u1.getUserId());
+        Assert.assertEquals(expect_size, u1.getBuckets().size());
+        for (int i = 0; i < expect_size; i++) {
+                CloudianBucketUsage actual = u1.getBuckets().get(i);
+                CloudianBucketUsage expected = buckets.get(i);
+                Assert.assertEquals(expected.getBucketName(), actual.getBucketName());
+                Assert.assertEquals(expected.getByteCount(), actual.getByteCount());
+                Assert.assertEquals(expected.getObjectCount(), actual.getObjectCount());
+                Assert.assertEquals(expected.getPolicyName(), actual.getPolicyName());
+        }
+        // 2nd user has 0 buckets
+        CloudianUserBucketUsage u2 = bucketUsages.get(1);
+        Assert.assertEquals("u2", u2.getUserId());
+        Assert.assertEquals(0, u2.getBuckets().size());
+    }
+
+    /////////////////////////////////////////////////////
     //////////////// User API tests /////////////////////
     /////////////////////////////////////////////////////
 
@@ -163,14 +358,25 @@ public class CloudianClientTest {
     }
 
     @Test
+    public void listUserAccountNotFound() {
+        wireMockRule.stubFor(get(urlPathMatching("/user?.*"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(204) // 204 not found
+                        .withBody("")));
+
+        final CloudianUser user = client.listUser("abc", "xyz");
+        Assert.assertNull(user);
+    }
+
+    @Test(expected = ServerApiException.class)
     public void listUserAccountFail() {
         wireMockRule.stubFor(get(urlPathMatching("/user?.*"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
                         .withBody("")));
 
-        final CloudianUser user = client.listUser("abc", "xyz");
-        Assert.assertNull(user);
+        client.listUser("abc", "xyz");
     }
 
     @Test
@@ -188,31 +394,26 @@ public class CloudianClientTest {
     }
 
     @Test
-    public void testEmptyListUsersResponse() {
+    public void listUserAccountsEmptyList() {
+        // empty body with 200 is returned if either:
+        // 1. the group is unknown (ie. there is no not found case)
+        // 2. the group contains no users
         wireMockRule.stubFor(get(urlPathMatching("/user/list"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
-                        .withStatus(204)
                         .withBody("")));
-        Assert.assertTrue(client.listUsers("someGroup").size() == 0);
-
-        wireMockRule.stubFor(get(urlPathMatching("/user"))
-                .willReturn(aResponse()
-                        .withHeader("content-type", "application/json")
-                        .withStatus(204)
-                        .withBody("")));
-        Assert.assertNull(client.listUser("someUserId", "someGroupId"));
+        Assert.assertEquals(0, client.listUsers("someGroup").size());
     }
 
-    @Test
+    @Test(expected = ServerApiException.class)
     public void listUserAccountsFail() {
         wireMockRule.stubFor(get(urlPathMatching("/user/list?.*"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
+                        .withStatus(204)  // bad protocol response
                         .withBody("")));
 
-        final List<CloudianUser> users = client.listUsers("xyz");
-        Assert.assertEquals(users.size(), 0);
+        client.listUsers("xyz");
     }
 
     @Test
@@ -265,6 +466,125 @@ public class CloudianClientTest {
         Assert.assertFalse(result);
     }
 
+    @Test
+    public void createCredential() {
+        final String expected_ak = "28d945de2a2623fc9483";
+        final String expected_sk = "j2OrPGHF69hp3YsZHRHOCWdAQDabppsBtD7kttr9";
+        final long expected_createDate = 1502285593100L;
+
+        final String json = String.format("{\"accessKey\": \"%s\", \"active\": true, \"createDate\": 1502285593100, \"expireDate\": null, \"secretKey\": \"%s\"}", expected_ak, expected_sk);
+        wireMockRule.stubFor(put(urlPathMatching("/user/credentials.*"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(json)));
+
+        CloudianCredential credential = client.createCredential("u1", "g1");
+        Assert.assertEquals(expected_ak, credential.getAccessKey());
+        Assert.assertEquals(expected_sk, credential.getSecretKey());
+        Assert.assertEquals(true, credential.getActive());
+        Assert.assertEquals(expected_createDate, credential.getCreateDate().getTime());
+        Assert.assertNull(credential.getExpireDate());
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void createCredentialNoSuchUser() {
+        wireMockRule.stubFor(put(urlPathMatching("/user/credentials.*"))
+                .willReturn(aResponse()
+                        .withStatus(400)
+                        .withBody("")));
+        client.createCredential("u1", "g1");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void createCredentialMaxCredentials() {
+        wireMockRule.stubFor(put(urlPathMatching("/user/credentials.*"))
+                .willReturn(aResponse()
+                        .withStatus(403)
+                        .withBody("")));
+        client.createCredential("u1", "g1");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void createCredentialBadMissingResponse() {
+        wireMockRule.stubFor(put(urlPathMatching("/user/credentials.*"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody("")));  // 200 should return a credential
+        client.createCredential("u1", "g1");
+    }
+
+    @Test
+    public void listCredentials() {
+        final String expected_ak = "28d945de2a2623fc9483";
+        final String expected_sk = "j2OrPGHF69hp3YsZHRHOCWdAQDabppsBtD7kttr9";
+
+        final String json = String.format("[{\"accessKey\": \"%s\", \"active\": true, \"createDate\": 1502285593100, \"expireDate\": null, \"secretKey\": \"%s\"}]", expected_ak, expected_sk);
+        wireMockRule.stubFor(get(urlPathMatching("/user/credentials/list.*"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(json)));
+
+        List<CloudianCredential> credentials = client.listCredentials("u1", "g1");
+        Assert.assertEquals(1, credentials.size());
+        Assert.assertEquals(expected_ak, credentials.get(0).getAccessKey());
+    }
+
+    @Test
+    public void listCredentialsMany() {
+        final String expected_ak = "28d945de2a2623fc9483";
+        final String expected_sk = "j2OrPGHF69hp3YsZHRHOCWdAQDabppsBtD7kttr9";
+        final int expected_size = 3;
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < expected_size; i++) {
+                sb.append(String.format("{\"accessKey\": \"%s-%d\", \"active\": true, \"createDate\": 1502285593100, \"expireDate\": null, \"secretKey\": \"%s-%d\"}", expected_ak, i, expected_sk, i));
+                if (i + 1 < expected_size) {
+                        sb.append(",");
+                }
+        }
+        sb.append("]");
+        String json = sb.toString();
+        wireMockRule.stubFor(get(urlPathMatching("/user/credentials/list.*"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(json)));
+
+        List<CloudianCredential> credentials = client.listCredentials("u1", "g1");
+        Assert.assertEquals(expected_size, credentials.size());
+        Assert.assertEquals(expected_ak + "-2", credentials.get(2).getAccessKey());
+    }
+
+    @Test
+    public void listCredentialsEmptyList() {
+        wireMockRule.stubFor(get(urlPathMatching("/user/credentials/list.*"))
+                .willReturn(aResponse()
+                        .withStatus(204)  // 204 is empty list for credentials
+                        .withBody("")));
+
+        List<CloudianCredential> credentials = client.listCredentials("u1", "g1");
+        Assert.assertEquals(0, credentials.size());
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void listCredentialsNoSuchUser() {
+        wireMockRule.stubFor(get(urlPathMatching("/user/credentials/list.*"))
+                .willReturn(aResponse()
+                        .withStatus(400)  // No such user case
+                        .withBody("")));
+
+        client.listCredentials("u1", "g1");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void listCredentialsBad200EmptyBody() {
+        wireMockRule.stubFor(get(urlPathMatching("/user/credentials/list.*"))
+                .willReturn(aResponse()
+                        .withStatus(200)  // Bad protocol. should be 204 if empty
+                        .withBody("")));
+
+        client.listCredentials("u1", "g1");
+    }
+
     //////////////////////////////////////////////////////
     //////////////// Group API tests /////////////////////
     //////////////////////////////////////////////////////
@@ -310,14 +630,24 @@ public class CloudianClientTest {
     }
 
     @Test
+    public void listGroupNotFound() {
+        wireMockRule.stubFor(get(urlPathMatching("/group.*"))
+                .willReturn(aResponse()
+                        .withHeader("content-type", "application/json")
+                        .withStatus(204) // group not found
+                        .withBody("")));
+        Assert.assertNull(client.listGroup("someGroup"));
+    }
+
+    @Test(expected = ServerApiException.class)
     public void listGroupFail() {
+        // Returning 200 with an empty body is not expected behaviour
         wireMockRule.stubFor(get(urlPathMatching("/group.*"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
                         .withBody("")));
 
-        final CloudianGroup group = client.listGroup("xyz");
-        Assert.assertNull(group);
+        client.listGroup("xyz");
     }
 
     @Test
@@ -335,33 +665,24 @@ public class CloudianClientTest {
     }
 
     @Test
-    public void listGroupsFail() {
+    public void listGroupsEmptyList() {
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
                         .withBody("")));
 
         final List<CloudianGroup> groups = client.listGroups();
-        Assert.assertEquals(groups.size(), 0);
+        Assert.assertEquals(0, groups.size());
     }
 
-    @Test
-    public void testEmptyListGroupResponse() {
+    @Test(expected = ServerApiException.class)
+    public void listGroupsBad204Response() {
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
                         .withHeader("content-type", "application/json")
-                        .withStatus(204)
+                        .withStatus(204)  // bad response. should never be 204
                         .withBody("")));
-
-        Assert.assertTrue(client.listGroups().size() == 0);
-
-
-        wireMockRule.stubFor(get(urlPathMatching("/group"))
-                .willReturn(aResponse()
-                        .withHeader("content-type", "application/json")
-                        .withStatus(204)
-                        .withBody("")));
-        Assert.assertNull(client.listGroup("someGroup"));
+        client.listGroups();
     }
 
     @Test
