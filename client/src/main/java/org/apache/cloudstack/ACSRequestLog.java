@@ -38,17 +38,10 @@ public class ACSRequestLog extends NCSARequestLog {
     private static final ThreadLocal<StringBuilder> buffers =
             ThreadLocal.withInitial(() -> new StringBuilder(256));
 
-    private static final String MY_URL = "/client/api/**";
-
-    private final PathPattern pattern;
-
     private final DateCache dateCache;
 
     public ACSRequestLog() {
         super();
-
-        PathPatternParser pp = new PathPatternParser();
-        pattern = pp.parse(MY_URL);
 
         TimeZone timeZone = TimeZone.getTimeZone("GMT");
         Locale locale = Locale.getDefault();
@@ -58,37 +51,34 @@ public class ACSRequestLog extends NCSARequestLog {
     @Override
     public void log(Request request, Response response) {
         String requestURI = StringUtils.cleanString(request.getRequestURI());
-        if (RequestMethod.GET.name().equals(request.getMethod()) &&
-                pattern.matches(PathContainer.parsePath(requestURI))) {
-            try {
-                StringBuilder sb = buffers.get();
-                sb.setLength(0);
+        String parameters = StringUtils.cleanString(String.valueOf(request.getQueryParameters()));
+        try {
+            StringBuilder sb = buffers.get();
+            sb.setLength(0);
 
-                sb.append(request.getHttpChannel().getEndPoint()
-                                .getRemoteAddress().getAddress()
-                                .getHostAddress())
-                        .append(" - - [")
-                        .append(dateCache.format(request.getTimeStamp()))
-                        .append("] \"")
-                        .append(request.getMethod())
-                        .append(" ")
-                        .append(requestURI)
-                        .append(" ")
-                        .append(request.getProtocol())
-                        .append("\" ")
-                        .append(response.getStatus())
-                        .append(" ")
-                        .append(response.getHttpChannel().getBytesWritten()) // apply filter here?
-                        .append(" \"-\" \"")
-                        .append(request.getHeader("User-Agent"))
-                        .append("\"");
+            sb.append(request.getHttpChannel().getEndPoint()
+                            .getRemoteAddress().getAddress()
+                            .getHostAddress())
+                    .append(" - - [")
+                    .append(dateCache.format(request.getTimeStamp()))
+                    .append("] \"")
+                    .append(request.getMethod())
+                    .append(" ")
+                    .append(requestURI)
+                    .append(parameters)
+                    .append(" ")
+                    .append(request.getProtocol())
+                    .append("\" ")
+                    .append(response.getStatus())
+                    .append(" ")
+                    .append(response.getHttpChannel().getBytesWritten()) // apply filter here?
+                    .append(" \"-\" \"")
+                    .append(request.getHeader("User-Agent"))
+                    .append("\"");
 
-                write(sb.toString());
-            } catch (Exception e) {
-                LOG.warn("Unable to log request", e);
-            }
-        } else {
-            super.log(request, response);
+            write(sb.toString());
+        } catch (Exception e) {
+            LOG.warn("Unable to log request", e);
         }
     }
 
