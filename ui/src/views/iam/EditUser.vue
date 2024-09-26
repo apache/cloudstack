@@ -81,6 +81,21 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="apikeyaccess" name="apikeyaccess">
+          <template #label>
+            <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
+          </template>
+          <a-select
+            v-model:value="form.apikeyaccess"
+            showSearch
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="Disabled">Disabled</a-select-option>
+            <a-select-option value="Enabled">Enabled</a-select-option>
+            <a-select-option value="Inherit">Inherit</a-select-option>
+          </a-select>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -187,7 +202,8 @@ export default {
           username: values.username,
           email: values.email,
           firstname: values.firstname,
-          lastname: values.lastname
+          lastname: values.lastname,
+          apikeyaccess: values.apikeyaccess
         }
         if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
           params.timezone = values.timezone
