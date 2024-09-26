@@ -39,7 +39,7 @@ public class NioClient extends NioConnection {
     protected SocketChannel _clientConnection;
 
     public NioClient(final String name, final String host, final int port, final int workers, final HandlerFactory factory) {
-        super(name, port, workers, factory);
+        super(name, port, workers, 1, 2, factory);
         _host = host;
     }
 

@@ -197,8 +197,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
     protected final ConfigKey<Integer> Port = new ConfigKey<Integer>("Advanced", Integer.class, "port", "8250", "Port to listen on for remote agent connections.", false);
-    protected final ConfigKey<Integer> RemoteAgentSslHandshakeTimeout = new ConfigKey<>("Advanced", Integer.class, "agent.ssl.handshake.timeout", "30",
+    protected final ConfigKey<Integer> RemoteAgentSslHandshakeTimeout = new ConfigKey<>("Advanced",
+            Integer.class, "agent.ssl.handshake.timeout", "30",
             "Seconds after which SSL handshake times out during remote agent connections.", false);
+    protected final ConfigKey<Integer> RemoteAgentSslHandshakeMinWorkers = new ConfigKey<>("Advanced",
+            Integer.class, "agent.ssl.handshake.min.workers", "5",
+            "Number of minimum worker threads handling SSL handshake with remote agents.", false);
+    protected final ConfigKey<Integer> RemoteAgentSslHandshakeMaxWorkers = new ConfigKey<>("Advanced",
+            Integer.class, "agent.ssl.handshake.min.workers", "100",
+            "Number of maximum worker threads handling SSL handshake with remote agents.", false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -233,7 +240,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this, caService, RemoteAgentSslHandshakeTimeout.value());
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10,
+                RemoteAgentSslHandshakeMinWorkers.value(), RemoteAgentSslHandshakeMaxWorkers.value(), this,
+                caService, RemoteAgentSslHandshakeTimeout.value());
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         // executes all agent commands other than cron and ping

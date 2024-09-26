@@ -403,9 +403,12 @@ public class AgentShell implements IAgentShell, Daemon {
             _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
-        s_logger.info("Defaulting to the constant time backoff algorithm");
+        s_logger.info("Defaulting to the range time backoff algorithm");
         _backoff = new ConstantTimeBackoff();
-        _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
+        Map<String, Object> map = new HashMap<>();
+        map.put("minSeconds", _properties.getProperty("backoff.min.seconds"));
+        map.put("maxSeconds", _properties.getProperty("backoff.max.seconds"));
+        _backoff.configure("RangeTimeBackoff", map);
     }
 
     private void launchAgent() throws ConfigurationException {

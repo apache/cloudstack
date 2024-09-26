@@ -46,7 +46,7 @@ public class SSLUtils {
      * It returns recommended protocols that are considered secure.
      */
     public static String[] getRecommendedProtocols() {
-        return new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" };
+        return new String[] { "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
     }
 
     /**
@@ -66,7 +66,7 @@ public class SSLUtils {
     }
 
     public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance("TLSv1.2");
+        return SSLContext.getInstance("TLSv1.3");
     }
 
     public static SSLContext getSSLContext(String provider) throws NoSuchAlgorithmException, NoSuchProviderException {
