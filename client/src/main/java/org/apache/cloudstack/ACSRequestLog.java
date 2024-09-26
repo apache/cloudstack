@@ -24,10 +24,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.DateCache;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.springframework.http.server.PathContainer;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.util.pattern.PathPattern;
-import org.springframework.web.util.pattern.PathPatternParser;
 
 import java.util.Locale;
 import java.util.TimeZone;
