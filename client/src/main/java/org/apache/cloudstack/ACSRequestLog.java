@@ -46,8 +46,7 @@ public class ACSRequestLog extends NCSARequestLog {
 
     @Override
     public void log(Request request, Response response) {
-        String requestURI = StringUtils.cleanString(request.getRequestURI());
-        String parameters = StringUtils.cleanString(String.valueOf(request.getQueryParameters()));
+        String requestURI = StringUtils.cleanString(request.getOriginalURI());
         try {
             StringBuilder sb = buffers.get();
             sb.setLength(0);
@@ -61,7 +60,6 @@ public class ACSRequestLog extends NCSARequestLog {
                     .append(request.getMethod())
                     .append(" ")
                     .append(requestURI)
-                    .append(parameters)
                     .append(" ")
                     .append(request.getProtocol())
                     .append("\" ")
