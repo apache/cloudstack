@@ -21,7 +21,6 @@ package org.apache.cloudstack;
 import com.cloud.utils.StringUtils;
 import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.RequestLogWriter;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.DateCache;
 import org.eclipse.jetty.util.component.LifeCycle;
