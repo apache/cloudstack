@@ -39,6 +39,11 @@ import java.util.regex.Pattern;
 public class JsInterpreterHelper {
     private final Logger logger = LogManager.getLogger(getClass());
 
+    private static final String NAME = "name";
+    private static final String PROPERTY = "property";
+    private static final String TYPE = "type";
+    private static final String CALL_EXPRESSION = "CallExpression";
+
     private int callExpressions;
 
     private StringBuilder variable;
@@ -110,11 +115,11 @@ public class JsInterpreterHelper {
 
         if (fieldName == null) {
             String key = fields.getKey();
-            if ("type".equals(key) && "CallExpression".equals(node.textValue())) {
+            if (TYPE.equals(key) && CALL_EXPRESSION.equals(node.textValue())) {
                 callExpressions++;
             }
 
-            if ("name".equals(key) || "property".equals(key)) {
+            if (NAME.equals(key) || PROPERTY.equals(key)) {
                 appendFieldValueToVariable(key, node);
             }
         }
@@ -135,11 +140,11 @@ public class JsInterpreterHelper {
         Iterator<String> iterator = node.fieldNames();
         while (iterator.hasNext()) {
             fieldName = iterator.next();
-            if ("type".equals(fieldName) && "CallExpression".equals(node.get(fieldName).textValue())) {
+            if (TYPE.equals(fieldName) && CALL_EXPRESSION.equals(node.get(fieldName).textValue())) {
                 callExpressions++;
             }
 
-            if ("name".equals(fieldName) || "property".equals(fieldName)) {
+            if (NAME.equals(fieldName) || PROPERTY.equals(fieldName)) {
                 appendFieldValueToVariable(fieldName, node.get(fieldName));
             }
 
@@ -162,7 +167,7 @@ public class JsInterpreterHelper {
             return;
         }
 
-        if ("property".equals(key)) {
+        if (PROPERTY.equals(key)) {
             logger.trace("Appending field value [{}] to variable [{}] as the field name is \"property\".", nodeTextValue, variable);
             variable.append(".").append(nodeTextValue);
             return;
