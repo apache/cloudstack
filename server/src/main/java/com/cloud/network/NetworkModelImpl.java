@@ -788,13 +788,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+    public NetworkVO getNetworkWithSGWithFreeIPs(Account account, Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;
         }
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
+            try {
+                checkAccountNetworkPermissions(account, nw);
+            } catch (PermissionDeniedException e) {
+                continue;
+            }
+
             List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
             for (VlanVO vlan : vlans) {
                 if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
@@ -2775,7 +2781,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+    public boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone,
+                                                       List<Long> networkIds,
                                                        List<Long> securityGroupsIds) {
         if (zone.isSecurityGroupEnabled()) {
             return true;
@@ -2791,7 +2798,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 }
             }
         } else if (CollectionUtils.isNotEmpty(securityGroupsIds)) {
-            Network networkWithSecurityGroup = getNetworkWithSGWithFreeIPs(zone.getId());
+            Network networkWithSecurityGroup = getNetworkWithSGWithFreeIPs(account, zone.getId());
             return networkWithSecurityGroup != null;
         }
         return false;
