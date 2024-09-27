@@ -23,34 +23,52 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.EnumSet;
 
 public class Hypervisor {
     public static class HypervisorType {
+        public static enum Functionality {
+            DirectDownloadTemplate,
+            RootDiskSizeOverride;
+        }
+
         private static final Map<String, HypervisorType> hypervisorTypeMap = new LinkedHashMap<>();
         public static final HypervisorType None = new HypervisorType("None"); //for storage hosts
-        public static final HypervisorType XenServer = new HypervisorType("XenServer", ImageFormat.VHD);
-        public static final HypervisorType KVM = new HypervisorType("KVM", ImageFormat.QCOW2);
-        public static final HypervisorType VMware = new HypervisorType("VMware", ImageFormat.OVA);
+        public static final HypervisorType XenServer = new HypervisorType("XenServer", ImageFormat.VHD,
+                EnumSet.of(Functionality.RootDiskSizeOverride));
+        public static final HypervisorType KVM = new HypervisorType("KVM", ImageFormat.QCOW2,
+                EnumSet.of(Functionality.DirectDownloadTemplate, Functionality.RootDiskSizeOverride));
+        public static final HypervisorType VMware = new HypervisorType("VMware", ImageFormat.OVA,
+                EnumSet.of(Functionality.RootDiskSizeOverride));
         public static final HypervisorType Hyperv = new HypervisorType("Hyperv");
         public static final HypervisorType VirtualBox = new HypervisorType("VirtualBox");
         public static final HypervisorType Parralels = new HypervisorType("Parralels");
         public static final HypervisorType BareMetal = new HypervisorType("BareMetal");
-        public static final HypervisorType Simulator = new HypervisorType("Simulator");
+        public static final HypervisorType Simulator = new HypervisorType("Simulator", null,
+                EnumSet.of(Functionality.RootDiskSizeOverride));
         public static final HypervisorType Ovm = new HypervisorType("Ovm", ImageFormat.RAW);
         public static final HypervisorType Ovm3 = new HypervisorType("Ovm3", ImageFormat.RAW);
         public static final HypervisorType LXC = new HypervisorType("LXC");
-        public static final HypervisorType Custom = new HypervisorType("Custom");
+        public static final HypervisorType Custom = new HypervisorType("Custom", null,
+                EnumSet.of(Functionality.RootDiskSizeOverride));
         public static final HypervisorType Any = new HypervisorType("Any"); /*If you don't care about the hypervisor type*/
         private final String name;
         private final ImageFormat imageFormat;
+        private final Set<Functionality> supportedFunctionalities;
 
         public HypervisorType(String name) {
-            this(name, null);
+            this(name, null, EnumSet.noneOf(Functionality.class));
         }
 
         public HypervisorType(String name, ImageFormat imageFormat) {
+            this(name, imageFormat, EnumSet.noneOf(Functionality.class));
+        }
+
+        public HypervisorType(String name, ImageFormat imageFormat, Set<Functionality> supportedFunctionalities) {
             this.name = name;
             this.imageFormat = imageFormat;
+            this.supportedFunctionalities = supportedFunctionalities;
             if (name.equals("Parralels")){ // typo in the original code
                 hypervisorTypeMap.put("parallels", this);
             } else {
@@ -100,6 +118,15 @@ public class Hypervisor {
 
         public String name() {
             return name;
+        }
+
+        /**
+         * Make this method to be part of the properties of the hypervisor type itself.
+         *
+         * @return true if the hypervisor plugin support the specified functionality
+         */
+        public boolean isFunctionalitySupported(Functionality functionality) {
+            return supportedFunctionalities.contains(functionality);
         }
 
         @Override
