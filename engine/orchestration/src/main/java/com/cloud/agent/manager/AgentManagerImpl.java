@@ -204,7 +204,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Integer.class, "agent.ssl.handshake.min.workers", "5",
             "Number of minimum worker threads handling SSL handshake with remote agents.", false);
     protected final ConfigKey<Integer> RemoteAgentSslHandshakeMaxWorkers = new ConfigKey<>("Advanced",
-            Integer.class, "agent.ssl.handshake.min.workers", "100",
+            Integer.class, "agent.ssl.handshake.max.workers", "50",
             "Number of maximum worker threads handling SSL handshake with remote agents.", false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
@@ -1850,7 +1850,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
-                RemoteAgentSslHandshakeTimeout
+                RemoteAgentSslHandshakeTimeout, RemoteAgentSslHandshakeMinWorkers, RemoteAgentSslHandshakeMaxWorkers
         };
     }
 

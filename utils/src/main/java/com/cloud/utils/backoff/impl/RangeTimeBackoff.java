@@ -19,15 +19,15 @@
 
 package com.cloud.utils.backoff.impl;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
 
 /**
  * An implementation of BackoffAlgorithm that waits for some random seconds
@@ -48,6 +48,7 @@ public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
         try {
             asleep.put(current.getName(), current);
             long time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
+            LOG.info("Waiting " + current.getName() + " for " + time);
             Thread.sleep(time);
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
