@@ -81,7 +81,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="apikeyaccess" name="apikeyaccess">
+        <a-form-item v-if="isRootAdmin" ref="apikeyaccess" name="apikeyaccess">
           <template #label>
             <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
           </template>
@@ -142,6 +142,11 @@ export default {
   created () {
     this.initForm()
     this.fetchData()
+  },
+  computed: {
+    isRootAdmin () {
+      return this.$store.getters.userInfo?.roletype === 'Admin'
+    }
   },
   methods: {
     initForm () {

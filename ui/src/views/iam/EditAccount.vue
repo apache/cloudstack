@@ -57,7 +57,7 @@
             <a-select-option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="apikeyaccess" name="apikeyaccess">
+        <a-form-item v-if="isRootAdmin" ref="apikeyaccess" name="apikeyaccess">
           <template #label>
             <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
           </template>
@@ -110,6 +110,11 @@ export default {
     this.initForm()
     this.fetchData()
   },
+  computed: {
+    isRootAdmin () {
+      return this.$store.getters.userInfo?.roletype === 'Admin'
+    }
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -120,9 +125,6 @@ export default {
       this.domainId = this.resource.domainid
       this.form.apikeyaccess = this.resource.apikeyaccess
       this.fetchRoles()
-    },
-    isDomainAdmin () {
-      return this.$store.getters.userInfo.roletype === 'DomainAdmin'
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.user;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
 import org.apache.cloudstack.api.APICommand;
@@ -53,7 +54,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "List user by the username")
     private String username;
 
-    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List users by the Api key access value", since = "4.20.1.0")
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List users by the Api key access value", since = "4.20.1.0", authorized = {RoleType.Admin})
     private String apiKeyAccess;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
