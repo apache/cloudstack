@@ -300,7 +300,8 @@ export default {
         return
       }
       const listNetworkParams = {
-        id: networkId
+        id: networkId,
+        listall: true
       }
       api(`listNetworks`, listNetworkParams).then(json => {
         json.listnetworksresponse.network[0].service.forEach(service => {
@@ -309,7 +310,8 @@ export default {
 
             const listVmParams = {
               id: this.resource.id,
-              userdata: true
+              userdata: true,
+              listall: true
             }
             api('listVirtualMachines', listVmParams).then(json => {
               this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
