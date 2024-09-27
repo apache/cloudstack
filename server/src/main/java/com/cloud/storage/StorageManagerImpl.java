@@ -3202,8 +3202,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation since its allocated percentage: " + usedPercentage
                         + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold);
             }
-            if (!AllowVolumeReSizeBeyongAllocation.valueIn(pool.getId())) {
-                logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyongAllocation.key()));
+            if (!forVolumeResize) {
+                return false;
+            }
+            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getDataCenterId())) {
+                s_logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
                 return false;
             }
 
@@ -4064,7 +4067,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
-                AllowVolumeReSizeBeyongAllocation
+                AllowVolumeReSizeBeyondAllocation
         };
     }
 

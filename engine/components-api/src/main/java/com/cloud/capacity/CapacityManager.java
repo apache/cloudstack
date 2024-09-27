@@ -124,7 +124,7 @@ public interface CapacityManager {
                     ConfigKey.CATEGORY_ALERT,
                     Double.class,
                     StorageAllocatedCapacityDisableThresholdForVolumeResizeCK,
-                    "0.85",
+                    "0.90",
                     "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for volume resize. " +
                             "This is applicable only when volume.resize.allowed.beyond.allocation is set to true.",
                     true,
