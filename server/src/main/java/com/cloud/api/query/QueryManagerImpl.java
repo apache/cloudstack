@@ -34,6 +34,8 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.event.EventVO;
@@ -548,6 +550,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private NetworkDao networkDao;
+
+    @Inject
+    private IPAddressDao ipAddressDao;
 
     @Inject
     private NicDao nicDao;
@@ -1447,18 +1452,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyword != null) {
-            SearchBuilder<UserVmJoinVO> userVmJoinSearchBuilder = _userVmJoinDao.createSearchBuilder();
-            userVmJoinSearchBuilder.and().op("keywordDisplayName", userVmJoinSearchBuilder.entity().getDisplayName(), Op.LIKE);
-            userVmJoinSearchBuilder.or("keywordName", userVmJoinSearchBuilder.entity().getHostName(), Op.LIKE);
-            userVmJoinSearchBuilder.or("keywordState", userVmJoinSearchBuilder.entity().getState(), Op.EQ);
-            userVmJoinSearchBuilder.or("keywordIpAddress", userVmJoinSearchBuilder.entity().getIpAddress(), Op.LIKE);
-            userVmJoinSearchBuilder.or("keywordPublicIpAddress", userVmJoinSearchBuilder.entity().getPublicIpAddress(), Op.LIKE);
-            userVmJoinSearchBuilder.or("keywordIp6Address", userVmJoinSearchBuilder.entity().getIp6Address(), Op.LIKE);
+            userVmSearchBuilder.and().op("keywordDisplayName", userVmSearchBuilder.entity().getDisplayName(), Op.LIKE);
+            userVmSearchBuilder.or("keywordName", userVmSearchBuilder.entity().getHostName(), Op.LIKE);
+            userVmSearchBuilder.or("keywordState", userVmSearchBuilder.entity().getState(), Op.EQ);
             if (isRootAdmin) {
-                userVmJoinSearchBuilder.or("keywordInstanceName", userVmJoinSearchBuilder.entity().getInstanceName(), Op.LIKE );
+                userVmSearchBuilder.or("keywordInstanceName", userVmSearchBuilder.entity().getInstanceName(), Op.LIKE );
             }
-            userVmJoinSearchBuilder.cp();
-            userVmSearchBuilder.join("keyword", userVmJoinSearchBuilder, userVmJoinSearchBuilder.entity().getId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
+
+            SearchBuilder<IPAddressVO> ipAddressSearch = ipAddressDao.createSearchBuilder();
+            userVmSearchBuilder.join("ipAddressSearch", ipAddressSearch,
+                    ipAddressSearch.entity().getAssociatedWithVmId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.LEFT);
+
+            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+            userVmSearchBuilder.join("nicSearch", nicSearch, JoinBuilder.JoinType.LEFT,
+                    JoinBuilder.JoinCondition.AND,
+                    nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId());
+
+            userVmSearchBuilder.or("ipAddressSearch", "keywordPublicIpAddress", ipAddressSearch.entity().getAddress(), Op.LIKE);
+
+            userVmSearchBuilder.or("nicSearch", "keywordIpAddress", nicSearch.entity().getIPv4Address(), Op.LIKE);
+            userVmSearchBuilder.or("nicSearch", "keywordIp6Address", nicSearch.entity().getIPv6Address(), Op.LIKE);
+
+            userVmSearchBuilder.cp();
         }
 
         if (backupOfferingId != null) {
@@ -1548,14 +1563,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             String keywordMatch = "%" + keyword + "%";
-            userVmSearchCriteria.setJoinParameters("keyword","keywordDisplayName", keywordMatch);
-            userVmSearchCriteria.setJoinParameters("keyword","keywordName", keywordMatch);
-            userVmSearchCriteria.setJoinParameters("keyword","keywordState", keywordMatch);
-            userVmSearchCriteria.setJoinParameters("keyword","keywordIpAddress", keywordMatch);
-            userVmSearchCriteria.setJoinParameters("keyword","keywordPublicIpAddress", keywordMatch);
-            userVmSearchCriteria.setJoinParameters("keyword", "keywordIp6Address", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordDisplayName", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordName", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordState", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordIpAddress", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordPublicIpAddress", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordIp6Address", keywordMatch);
             if (isRootAdmin) {
-                userVmSearchCriteria.setJoinParameters("keyword", "keywordInstanceName", keywordMatch);
+                userVmSearchCriteria.setParameters("keyword", "keywordInstanceName", keywordMatch);
             }
         }
 
