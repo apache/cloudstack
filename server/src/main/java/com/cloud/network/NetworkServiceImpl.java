@@ -1395,10 +1395,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("network cidr and cidr size are mutually exclusive");
         }
         if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
-                && !routedIpv4Manager.isRoutedNetworkVpcEnabled(zoneId)) {
-            throw new InvalidParameterValueException("Routed network is not enabled in this zone");
-        }
-        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
             if (cidr != null) {
                 if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -1653,6 +1649,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (!ipv4 && ntwkOff.getGuestType() == GuestType.Shared && _networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)) {
                 throw new InvalidParameterValueException("Currently IPv6-only Shared network with Virtual Router provider is not supported.");
             }
+        }
+
+        if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())
+                && !routedIpv4Manager.isRoutedNetworkVpcEnabled(zone.getId())) {
+            throw new InvalidParameterValueException("Routed network is not enabled in this zone");
         }
 
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && ntwkOff.isSpecifyAsNumber() && asNumber == null) {

@@ -217,6 +217,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             throw new InvalidParameterValueException("Invalid IPv4 subnet: " + subnet);
         }
 
+        checkIfRoutedNetworkVpcEnabled(zoneId);
+
         // check conflicts
         List<DataCenterIpv4GuestSubnetVO> existingSubnets = dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId);
         checkConflicts(existingSubnets, subnet, null);
@@ -1036,6 +1038,8 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
         String password = createBgpPeerCmd.getPassword();
         Map<String, String> detailsStr = createBgpPeerCmd.getDetails();
 
+        checkIfRoutedNetworkVpcEnabled(zoneId);
+
         if (ObjectUtils.allNull(ip4Address, ip6Address)) {
             throw new InvalidParameterValueException("At least one of IPv4 and IPv6 address must be specified.");
         }
@@ -1644,5 +1648,11 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
     @Override
     public Boolean isRoutedNetworkVpcEnabled(long zoneId) {
         return RoutedNetworkVpcEnabled.valueIn(zoneId);
+    }
+
+    private void checkIfRoutedNetworkVpcEnabled(long zoneId) {
+        if (!isRoutedNetworkVpcEnabled(zoneId)) {
+            throw new InvalidParameterValueException("Routed networks and VPCs are not enabled for the zone.");
+        }
     }
 }

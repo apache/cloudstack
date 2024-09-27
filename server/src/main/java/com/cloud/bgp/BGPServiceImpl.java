@@ -24,6 +24,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -115,6 +116,9 @@ public class BGPServiceImpl implements BGPService {
             String msg = String.format("Cannot find a zone with ID %s", zoneId);
             LOGGER.error(msg);
             throw new InvalidParameterException(msg);
+        }
+        if (!routedIpv4Manager.isRoutedNetworkVpcEnabled(zoneId)) {
+            throw new InvalidParameterValueException("Cannot create ASN range as Routed networks and VPCs are not enabled for the zone.");
         }
         if (startASNumber > endASNumber) {
             String msg = "Please specify a valid AS Number range";

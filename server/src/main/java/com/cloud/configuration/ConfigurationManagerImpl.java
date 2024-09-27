@@ -6677,6 +6677,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
                     throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed networks", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
                 }
+                if (zoneIds != null) {
+                    for (Long zoneId: zoneIds) {
+                        if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed networks in zone (ID: %s)", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key(), zoneId));
+                        }
+                    }
+                }
                 boolean useVirtualRouterOnly = true;
                 for (Service service : serviceProviderMap.keySet()) {
                     Set<Provider> providers = serviceProviderMap.get(service);
