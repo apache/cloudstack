@@ -956,6 +956,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
+        if ("System".equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
+            logger.warn("Only Root Admin is allowed to edit the coniguration \"api.key.access\".");
+            throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
+        }
+
         if (value == null) {
             return _configDao.findByName(name);
         }
