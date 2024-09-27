@@ -956,7 +956,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ("System".equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
-            logger.warn("Only Root Admin is allowed to edit the coniguration \"api.key.access\".");
+            logger.warn("Only Root Admin is allowed to edit the coniguration " + name);
             throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
         }
 
