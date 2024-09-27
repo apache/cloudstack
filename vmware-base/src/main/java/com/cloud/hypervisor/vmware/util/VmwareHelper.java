@@ -1108,7 +1108,7 @@ public class VmwareHelper {
         }
 
         if (diskControllersShareTheSameBusType(convertedRootDiskController, convertedDataDiskController)) {
-            s_logger.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
+            LOGGER.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
             return new Pair<>(convertedRootDiskController, convertedRootDiskController);
         }
 
@@ -1133,10 +1133,10 @@ public class VmwareHelper {
      */
     public static String getControllerBasedOnDiskType(Pair<String, String> controllerInfo, DiskTO disk) {
         if (disk.getType() == Volume.Type.ROOT || disk.getDiskSeq() == 0) {
-            s_logger.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
+            LOGGER.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
             return controllerInfo.first();
         }
-        s_logger.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
+        LOGGER.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
         return controllerInfo.second();
     }
 }
