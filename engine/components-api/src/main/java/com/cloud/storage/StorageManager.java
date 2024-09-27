@@ -211,7 +211,7 @@ public interface StorageManager extends StorageService {
 
     ConfigKey<Boolean> AllowVolumeReSizeBeyongAllocation = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
             "Determines whether volume size can exceed the pool capacity allocation disable threshold (pool.storage.allocated.capacity.disablethreshold) when resize a volume",
-            true, ConfigKey.Scope.StoragePool);
+            true, ConfigKey.Scope.Zone);
 
     /**
      * should we execute in sequence not involving any storages?

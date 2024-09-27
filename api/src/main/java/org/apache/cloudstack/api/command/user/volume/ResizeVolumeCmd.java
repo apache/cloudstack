@@ -73,6 +73,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                description = "new disk offering id")
     private Long newDiskOfferingId;
 
+    @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,
+            description = "Flag for automatic migration of the volume whenever migration is required to apply the new size")
+    private Boolean autoMigrate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -127,6 +131,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getNewDiskOfferingId() {
         return newDiskOfferingId;
+    }
+
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? false : autoMigrate;
     }
 
     /////////////////////////////////////////////////////

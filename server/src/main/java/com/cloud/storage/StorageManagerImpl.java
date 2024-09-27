@@ -3101,7 +3101,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
             final long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
-            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
         }
     }
 
@@ -3164,6 +3164,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     protected boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
+        return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
+    }
+
+    protected boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize, boolean forVolumeResize) {
         // allocated space includes templates
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
 
@@ -3185,7 +3189,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + toHumanReadableSize(totalOverProvCapacity));
 
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
-        System.out.println("Wei storageAllocatedThreshold = " + storageAllocatedThreshold);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool: " + pool.getId() + " for storage allocation , maxSize : " + toHumanReadableSize(totalOverProvCapacity) + ", totalAllocatedSize : " + toHumanReadableSize(allocatedSizeWithTemplate)
@@ -3193,7 +3196,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
-        System.out.println("Wei usedPercentage = " + usedPercentage);
 
         if (usedPercentage > storageAllocatedThreshold) {
             if (logger.isDebugEnabled()) {
