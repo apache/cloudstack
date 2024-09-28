@@ -217,7 +217,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
         if (kubernetesCluster.getSecurityGroupId() != null &&
-                networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+                networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                         List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
@@ -294,7 +294,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             keypairs.add(kubernetesCluster.getKeyPair());
         }
         if (kubernetesCluster.getSecurityGroupId() != null &&
-                networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds, List.of(kubernetesCluster.getSecurityGroupId()))) {
+                networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
+                        List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
