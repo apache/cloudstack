@@ -373,7 +373,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
-    public static final ConfigKey<Boolean> apiKeyAccess = new ConfigKey<>("System", Boolean.class,
+    public static final ConfigKey<Boolean> apiKeyAccess = new ConfigKey<>(ConfigKey.CATEGORY_SYSTEM, Boolean.class,
             "api.key.access",
             "true",
             "Determines whether API (api-key/secret-key) access is allowed or not. Editable only by Root Admin.",
