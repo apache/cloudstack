@@ -64,6 +64,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public static final String DEFAULT_NAT_NSX_OFFERING_FOR_VPC = "DefaultNATNSXNetworkOfferingForVpc";
     public static final String DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB = "DefaultNATNSXNetworkOfferingForVpcWithInternalLB";
     public static final String DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC = "DefaultRoutedNSXNetworkOfferingForVpc";
+    public static final String DEFAULT_ROUTED_NETRIS_OFFERING_FOR_VPC = "DefaultRoutedNetrisNetworkOfferingForVpc";
     public static final String DEFAULT_NAT_NSX_OFFERING = "DefaultNATNSXNetworkOffering";
     public static final String DEFAULT_ROUTED_NSX_OFFERING = "DefaultRoutedNSXNetworkOffering";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
