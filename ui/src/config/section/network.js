@@ -872,7 +872,14 @@ export default {
       icon: 'partition-outlined',
       permission: ['listASNumbers'],
       show: () => {
-        return ['Admin'].includes(store.getters.userInfo.roletype)
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const AdvancedZonesWithRoutedmode = store.getters.zones.filter(zone => zone.routedmodeenabled)
+        if (isAdmin() && (AdvancedZonesWithRoutedmode && AdvancedZonesWithRoutedmode.length > 0)) {
+          return true
+        }
+        return false
       },
       filters: ['all', 'allocatedonly', 'free'],
       columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
@@ -1446,7 +1453,11 @@ export default {
         if (!store.getters.zones || store.getters.zones.length === 0) {
           return false
         }
-        return isAdmin()
+        const AdvancedZonesWithRoutedmode = store.getters.zones.filter(zone => zone.routedmodeenabled)
+        if (isAdmin() && (AdvancedZonesWithRoutedmode && AdvancedZonesWithRoutedmode.length > 0)) {
+          return true
+        }
+        return false
       },
       actions: [
         {

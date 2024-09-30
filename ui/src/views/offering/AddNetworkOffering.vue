@@ -740,10 +740,10 @@ export default {
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.routedNetworkEnabled = value === 'true'
+        if (!this.routedNetworkEnabled) {
+          this.networkmodes.pop()
+        }
       })
-      if (!this.routedNetworkEnabled) {
-        this.networkmodes.pop()
-      }
     },
     fetchZoneData () {
       const params = {}
