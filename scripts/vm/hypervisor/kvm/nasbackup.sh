@@ -71,14 +71,7 @@ sanity_checks() {
     exit 1
   fi
 
-  echo "Checking Permissions"
-    if groups $USER | grep -q '\blibvirt\b'; then
-      echo "Success... User $USER is part of libvirt group"
-    else
-      echo "Failure - User $USER is not part of libvirt group"
-      exit 1
-    fi
-    echo "Environment Sanity Checks successfully passed"
+  echo "Environment Sanity Checks successfully passed"
 }
 
 ### Operation methods ###
