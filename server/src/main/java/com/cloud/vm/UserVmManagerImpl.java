@@ -679,15 +679,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
-    public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
-            HypervisorType.KVM,
-            HypervisorType.VMware,
-            HypervisorType.XenServer,
-            HypervisorType.Simulator
-    ));
-
-    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
-
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -6598,9 +6589,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         HypervisorType hypervisorType = vm.getHypervisorType();
-        if (vm.getType() != VirtualMachine.Type.User && !HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS.contains(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following"
-                    + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
+        if (vm.getType() != VirtualMachine.Type.User &&
+                (!hypervisorType.isFunctionalitySupported(HypervisorType.Functionality.VmStorageMigration)
+                        || hypervisorType.equals(HypervisorType.XenServer))) {
+
+            List<HypervisorType> supportedHypervisors = HypervisorType.getListOfHypervisorsSupportingFunctionality(HypervisorType.Functionality.VmStorageMigration)
+                    .stream().filter(hypervisor -> !hypervisor.equals(HypervisorType.XenServer)).collect(Collectors.toList());
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following hypervisors: [%s].",
+                    hypervisorType, supportedHypervisors));
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -7310,8 +7307,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (!VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
+        if (!vm.getHypervisorType().isFunctionalitySupported(HypervisorType.Functionality.VmStorageMigration)) {
+            throw new InvalidParameterValueException(
+                    String.format("Unsupported hypervisor: %s for VM migration, we support [%s] only",
+                            vm.getHypervisorType(),
+                            HypervisorType.getListOfHypervisorsSupportingFunctionality(HypervisorType.Functionality.VmStorageMigration)));
         }
 
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
