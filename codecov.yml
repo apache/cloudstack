@@ -1,0 +1,3 @@
+ignore:
+  - api/src/main/java/org/apache/cloudstack/api/response/*
+  - plugins/integrations/kubernetes-service/src/main/java/com/cloud/kubernetes/cluster/*
