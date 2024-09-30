@@ -70,7 +70,7 @@ public class ChangeSharedFSServiceOfferingCmd extends BaseAsyncCmd implements Us
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the offering to use for the shared filesystem vm")
+            description = "the offering to use for the shared filesystem instance")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////

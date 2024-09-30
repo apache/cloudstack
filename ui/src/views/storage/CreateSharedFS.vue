@@ -151,7 +151,7 @@
       </span>
       <a-form-item ref="serviceofferingid" name="serviceofferingid">
         <template #label>
-          <tooltip-label :title="$t('label.compute.offering.for.vm')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+          <tooltip-label :title="$t('label.compute.offering.for.sharedfs.instance')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
         </template>
         <a-select
           v-model:value="form.serviceofferingid"

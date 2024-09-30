@@ -4220,7 +4220,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
 
                     //Add tungsten network service provider
-                    addDefaultTungstenProviderToPhysicalNetwork(pNetwork.getId());
+                    try {
+                        addDefaultTungstenProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add Tungsten provider to physical network due to:" + ex.getMessage());
+                    }
 
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
