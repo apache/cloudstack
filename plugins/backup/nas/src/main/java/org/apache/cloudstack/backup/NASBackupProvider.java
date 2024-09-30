@@ -373,8 +373,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             Long vmBackupSize = 0L;
             Long vmBackupProtectedSize = 0L;
             for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-                vmBackupSize += backup.getSize();
-                vmBackupProtectedSize += backup.getProtectedSize();
+                if (Objects.nonNull(backup.getSize())) {
+                    vmBackupSize += backup.getSize();
+                }
+                if (Objects.nonNull(backup.getProtectedSize())) {
+                    vmBackupProtectedSize += backup.getProtectedSize();
+                }
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
