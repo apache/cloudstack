@@ -432,3 +432,8 @@ CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.mshost_peer','fk_mshost_peer__
 CALL `cloud`.`IDEMPOTENT_DROP_INDEX`('i_mshost_peer__owner_peer_runid','mshost_peer');
 CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.mshost_peer', 'i_mshost_peer__owner_peer', '(owner_mshost, peer_mshost)');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.mshost_peer', 'fk_mshost_peer__owner_mshost', '(owner_mshost)', '`mshost`(`id`)');
+
+-- Create a new group for Usage Server related configurations
+INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Usage Server', 'Usage Server related configuration', 9);
+DELETE FROM `cloud`.`configuration_subgroup` WHERE `name`='Usage';
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Usage', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Usage Server'));
