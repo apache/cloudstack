@@ -531,7 +531,7 @@ public class BackrollClient {
             result = isResponseAuthorized(response);
             EntityUtils.consumeQuietly(response.getEntity());
         } catch (IOException e) {
-            LOG.error("Failed to authentificate to Backroll due to: {}", e.getMessage());
+            LOG.error("Failed to authenticate to Backroll due to: {}", e.getMessage());
         }
         return result;
     }
