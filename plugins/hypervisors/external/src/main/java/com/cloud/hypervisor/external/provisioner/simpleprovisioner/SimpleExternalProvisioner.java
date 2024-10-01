@@ -60,7 +60,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -69,8 +68,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimpleExternalProvisioner extends AdapterBase implements ExternalProvisioner, Configurable {
-
-    private static final Logger logger = Logger.getLogger(SimpleExternalProvisioner.class);
 
     public static final ConfigKey<String> SampleExternalConfig = new ConfigKey<>(String.class, "sample.external.provisioning.config", "Advanced", "",
             "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);

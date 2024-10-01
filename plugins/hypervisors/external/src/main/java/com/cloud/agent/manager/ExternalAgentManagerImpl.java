@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAgentManager, Configurable {
-    private static final Logger logger = Logger.getLogger(ExternalAgentManagerImpl.class);
 
     public static final ConfigKey<Boolean> expectMacAddressFromExternalProvisioner = new ConfigKey<>(Boolean.class, "expect.macaddress.from.external.provisioner", "Advanced", "true",
             "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);

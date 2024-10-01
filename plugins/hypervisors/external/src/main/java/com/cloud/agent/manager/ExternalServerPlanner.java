@@ -28,7 +28,6 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -52,7 +51,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ExternalServerPlanner extends AdapterBase implements DeploymentPlanner {
-    private static final Logger s_logger = Logger.getLogger(ExternalServerPlanner.class);
+
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
@@ -80,7 +79,7 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             DataCenter dc = _dcDao.findById(h.getDataCenterId());
             Pod pod = _podDao.findById(h.getPodId());
             Cluster c = _clusterDao.findById(h.getClusterId());
-            s_logger.debug(String.format("Start external VM instance %s on last used host %d", vm.getId(), h.getId()));
+            logger.debug(String.format("Start external VM instance %s on last used host %d", vm.getId(), h.getId()));
             return new DeployDestination(dc, pod, c, h);
         }
 
@@ -125,7 +124,7 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             return new DeployDestination(dc, pod, cluster, target);
         }
 
-        s_logger.warn(String.format("Cannot find suitable host for deploying external instance %s", vmProfile.getInstanceName()));
+        logger.warn(String.format("Cannot find suitable host for deploying external instance %s", vmProfile.getInstanceName()));
         return null;
     }
 

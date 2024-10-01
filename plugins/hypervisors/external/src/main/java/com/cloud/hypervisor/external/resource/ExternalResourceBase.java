@@ -53,7 +53,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -63,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ExternalResourceBase implements ServerResource {
-
-    private static final Logger logger = Logger.getLogger(ExternalResourceBase.class);
 
     @Inject
     ExternalAgentManager _externalAgentMgr = null;

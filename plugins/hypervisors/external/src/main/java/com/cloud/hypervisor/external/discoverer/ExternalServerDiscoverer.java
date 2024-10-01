@@ -40,7 +40,6 @@ import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -51,8 +50,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ExternalServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
-
-    private static final Logger s_logger = Logger.getLogger(ExternalServerDiscoverer.class);
 
     @Inject
     private AgentManager _agentMgr;
@@ -131,15 +128,15 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             String cluster = null;
             if (clusterId == null) {
                 String msg = "must specify cluster Id when adding host";
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(msg);
                 }
                 throw new RuntimeException(msg);
             } else {
                 ClusterVO clu = _clusterDao.findById(clusterId);
                 if (clu == null || (clu.getHypervisorType() != Hypervisor.HypervisorType.External)) {
-                    if (s_logger.isInfoEnabled())
-                        s_logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
+                    if (logger.isInfoEnabled())
+                        logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
                     return null;
                 }
                 cluster = Long.toString(clusterId);
@@ -152,8 +149,8 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             String pod;
             if (podId == null) {
                 String msg = "must specify pod Id when adding host";
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(msg);
+                if (logger.isDebugEnabled()) {
+                    logger.debug(msg);
                 }
                 throw new RuntimeException(msg);
             } else {
@@ -169,7 +166,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             params.put("guid", uri.toString());
 
             if (_params.get(ApiConstants.EXTERNAL_PROVISIONER) == null) {
-                s_logger.error("External provisioner must be defined to discover");
+                logger.error("External provisioner must be defined to discover");
                 return null;
             }
             params.put(ApiConstants.EXTERNAL_PROVISIONER, _params.get(ApiConstants.EXTERNAL_PROVISIONER));
@@ -177,7 +174,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             resources = createAgentResources(params);
             return resources;
         } catch (Exception ex) {
-            s_logger.error("Exception when discovering external hosts: " + ex.getMessage());
+            logger.error("Exception when discovering external hosts: " + ex.getMessage());
         }
         return null;
     }
@@ -195,10 +192,10 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
 
     private Map<ExternalResourceBase, Map<String, String>> createAgentResources(Map<String, Object> params) {
         try {
-            s_logger.info("Creating External Server Resources");
+            logger.info("Creating External Server Resources");
             return _externalAgentMgr.createServerResources(params);
         } catch (Exception ex) {
-            s_logger.warn("Caught exception at agent resource creation: " + ex.getMessage(), ex);
+            logger.warn("Caught exception at agent resource creation: " + ex.getMessage(), ex);
         }
         return null;
     }
