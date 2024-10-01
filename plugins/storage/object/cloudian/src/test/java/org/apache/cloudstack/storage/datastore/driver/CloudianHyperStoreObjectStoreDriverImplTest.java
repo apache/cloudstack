@@ -19,9 +19,12 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -50,14 +53,19 @@ import org.apache.cloudstack.storage.object.Bucket;
 
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.model.AccessKey;
+import com.amazonaws.services.identitymanagement.model.AccessKeyMetadata;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyRequest;
 import com.amazonaws.services.identitymanagement.model.CreateAccessKeyResult;
 import com.amazonaws.services.identitymanagement.model.CreateUserRequest;
 import com.amazonaws.services.identitymanagement.model.ListAccessKeysRequest;
+import com.amazonaws.services.identitymanagement.model.ListAccessKeysResult;
 import com.amazonaws.services.identitymanagement.model.PutUserPolicyRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
+import com.amazonaws.services.s3.model.ServerSideEncryptionRule;
 import com.amazonaws.services.s3.model.SetBucketCrossOriginConfigurationRequest;
+import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
+import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
 import com.cloud.agent.api.to.BucketTO;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -68,6 +76,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -75,6 +84,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
+import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
@@ -119,6 +129,10 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
     static long TEST_STORE_ID = 1010L;
     static long TEST_ACCOUNT_ID = 2010L;
     static long TEST_DOMAIN_ID = 3010L;
+    static String TEST_ADMIN_URL = "https://admin-endpoint:19443";
+    static String TEST_ADMIN_USER_NAME = "test_admin";
+    static String TEST_ADMIN_PASSWORD = "test_password";
+    static String TEST_ADMIN_VALIDATE_SSL = "true";
     static String TEST_BUCKET_NAME = "testbucketname";
     static String TEST_ROOT_AK = "root_access_key";
     static String TEST_ROOT_SK = "root_secret_key";
@@ -140,8 +154,15 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
         cloudianHyperStoreObjectStoreDriverImpl._accountDetailsDao = accountDetailsDao;
         cloudianHyperStoreObjectStoreDriverImpl._domainDao = domainDao;
 
+        // Setup to return the store url for cloudianClient
+        when(objectStoreDao.findById(TEST_STORE_ID)).thenReturn(objectStoreVO);
+        when(objectStoreVO.getUrl()).thenReturn(TEST_ADMIN_URL);
+
         // The StoreDetailMap has Endpoint info and Admin Credentials
         StoreDetailsMap = new HashMap<String, String>();
+        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_USER, TEST_ADMIN_USER_NAME);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_PASS, TEST_ADMIN_PASSWORD);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_VALIDATE_SSL, TEST_ADMIN_VALIDATE_SSL);
         StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL, TEST_S3_URL);
         StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_IAM_ENDPOINT_URL, TEST_IAM_URL);
         when(objectStoreDetailsDao.getDetails(TEST_STORE_ID)).thenReturn(StoreDetailsMap);
@@ -161,6 +182,11 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
     @After
     public void tearDown() throws Exception {
         closeable.close();
+    }
+
+    @Test
+    public void testGetStoreTO() {
+        assertNull(cloudianHyperStoreObjectStoreDriverImpl.getStoreTO(null));
     }
 
     @Test
@@ -296,7 +322,7 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
     }
 
     @Test
-    public void testCreateUser() throws Exception {
+    public void testCreateUserNotExists() throws Exception {
         // ensure no account credentials are returned in the account details for new user.
         Mockito.reset(accountDetailsDao);
         when(accountDetailsDao.findDetails(TEST_ACCOUNT_ID)).thenReturn(new HashMap<String, String>());
@@ -332,8 +358,13 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
         when(iamClient.createAccessKey(any(CreateAccessKeyRequest.class))).thenReturn(accessKeyResult);
 
         // Next Check what will be persisted in DB after everything created.
-        // No buckets to update the IAM keys for
-        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(new ArrayList<BucketVO>());
+        // Even though its not going to be true for a new user, lets have 1 bucket
+        // whose credentials need to be updated.
+        BucketVO bucketToUpdate = mock(BucketVO.class);
+        when(bucketToUpdate.getId()).thenReturn(9L);
+        List<BucketVO> bucketUpdateList = new ArrayList<BucketVO>();
+        bucketUpdateList.add(bucketToUpdate);
+        when(bucketDao.listByObjectStoreIdAndAccountId(TEST_STORE_ID, TEST_ACCOUNT_ID)).thenReturn(bucketUpdateList);
 
         // Test: The user should be created which involves:
         // creating the group, user and root credentials
@@ -363,6 +394,134 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
         assertEquals(TEST_IAM_SK, updatedDetails.get(CloudianHyperStoreUtil.KEY_IAM_SECRET_KEY));
         assertEquals(TEST_ROOT_AK, updatedDetails.get(CloudianHyperStoreUtil.KEY_ROOT_ACCESS_KEY));
         assertEquals(TEST_ROOT_SK, updatedDetails.get(CloudianHyperStoreUtil.KEY_ROOT_SECRET_KEY));
+
+        // Also verify that bucketToUpdate was updated with new credentials.
+        verify(bucketToUpdate, times(1)).setAccessKey(anyString());
+        verify(bucketToUpdate, times(1)).setSecretKey(anyString());
+        verify(bucketDao, times(1)).update(9L, bucketToUpdate);
+    }
+
+    @Test
+    public void testCreateUserExists() {
+        String hsUserId = "user1";
+        String hsGroupId = "group1";
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+        when(account.getUuid()).thenReturn(hsUserId);
+        when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+        when(domain.getUuid()).thenReturn(hsGroupId);
+
+        doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+
+        // Setup the user/group as existing and active
+        CloudianUser user = mock(CloudianUser.class);
+        CloudianGroup group = mock(CloudianGroup.class);
+        when(user.getActive()).thenReturn(true);
+        when(group.getActive()).thenReturn(true);
+        when(cloudianClient.listUser(hsUserId, hsGroupId)).thenReturn(user);
+        when(cloudianClient.listGroup(hsGroupId)).thenReturn(group);
+
+        // Setup the HS Credential to match known Root credential
+        CloudianCredential credential = new CloudianCredential();
+        credential.setAccessKey(TEST_ROOT_AK);
+        credential.setSecretKey(TEST_ROOT_SK);
+        credential.setActive(true);
+        credential.setCreateDate(new Date(1L));
+        List<CloudianCredential> credentials = new ArrayList<CloudianCredential>();
+        credentials.add(credential);
+        when(cloudianClient.listCredentials(hsUserId, hsGroupId)).thenReturn(credentials);
+
+        // Setup IAM to return 2 credentials, one that matches and one that doesn't
+        doReturn(iamClient).when(cloudianHyperStoreObjectStoreDriverImpl).getIAMClientByStoreId(TEST_STORE_ID, credential);
+        ListAccessKeysResult listAccessKeyResult = mock(ListAccessKeysResult.class);
+        List<AccessKeyMetadata> listAccessKeyMetadata = new ArrayList<AccessKeyMetadata>();
+        AccessKeyMetadata accessKeyNoMatch = mock(AccessKeyMetadata.class);
+        when(accessKeyNoMatch.getAccessKeyId()).thenReturn("no_match");
+        AccessKeyMetadata accessKeyMatch = mock(AccessKeyMetadata.class);
+        when(accessKeyMatch.getAccessKeyId()).thenReturn(TEST_IAM_AK);
+        listAccessKeyMetadata.add(accessKeyNoMatch);
+        listAccessKeyMetadata.add(accessKeyMatch);
+        when(listAccessKeyResult.getAccessKeyMetadata()).thenReturn(listAccessKeyMetadata);
+        when(iamClient.listAccessKeys(any())).thenReturn(listAccessKeyResult);
+
+        // Test: The user should exist and nothing needs to be created
+        // or persisted. There is one misc IAM credential to clean up.
+        boolean created = cloudianHyperStoreObjectStoreDriverImpl.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID);
+        assertTrue(created);
+
+        // THe No HyperStore user, group or credentials were created.
+        verify(cloudianClient, never()).addGroup(any(CloudianGroup.class));
+        verify(cloudianClient, never()).addUser(any(CloudianUser.class));
+        verify(cloudianClient, never()).createCredential(hsUserId, hsGroupId);
+
+        // List access keys finds 2 do deletes 1 that doesn't match.
+        verify(iamClient, times(1)).listAccessKeys(any());
+        verify(iamClient, times(1)).deleteAccessKey(any());
+
+        // And we don't create anything IAM related either.
+        verify(iamClient, never()).createUser(any());
+        verify(iamClient, never()).putUserPolicy(any());
+        verify(iamClient, never()).createAccessKey(any());
+
+        // Nothing needs to be persisted.
+        verify(accountDetailsDao, never()).persist(anyLong(), anyMap());
+    }
+
+    @Test
+    public void testCreateUserDisabledUserExists() {
+        String hsUserId = "user1";
+        String hsGroupId = "group1";
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+        when(account.getUuid()).thenReturn(hsUserId);
+        when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+        when(domain.getUuid()).thenReturn(hsGroupId);
+
+        doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+
+        // Setup the user to be found but inactive.
+        CloudianUser user = mock(CloudianUser.class);
+        when(user.getActive()).thenReturn(false);
+        when(cloudianClient.listUser(hsUserId, hsGroupId)).thenReturn(user);
+
+        // Test: user exists but is disabled. This condition requires HyperStore administrator action.
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID));
+        assertTrue(thrown.getMessage().contains("is Disabled. Consult"));
+    }
+
+    @Test
+    public void testCreateUserDisabledGroupExists() {
+        String hsUserId = "user1";
+        String hsGroupId = "group1";
+        when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+        when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+        when(account.getUuid()).thenReturn(hsUserId);
+        when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+        when(domain.getUuid()).thenReturn(hsGroupId);
+
+        doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+
+        // Setup the user to not be found so that we check for a group
+        when(cloudianClient.listUser(hsUserId, hsGroupId)).thenReturn(null);
+        CloudianGroup group = mock(CloudianGroup.class);
+        when(group.getActive()).thenReturn(false);
+        when(cloudianClient.listGroup(hsGroupId)).thenReturn(group);
+
+        // Test: user does not exist, check if group exists, it does but is marked disabled.
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.createUser(TEST_ACCOUNT_ID, TEST_STORE_ID));
+        assertTrue(thrown.getMessage().contains(String.format("The group %s is Disabled. Consult", hsGroupId)));
+    }
+
+    @Test
+    public void testListBuckets() {
+        Map<String, Long> bucketUsageMap = new HashMap<String, Long>();
+        bucketUsageMap.put("b1", 1L);
+        bucketUsageMap.put("b2", 2L);
+        when(cloudianHyperStoreObjectStoreDriverImpl.getAllBucketsUsage(anyLong())).thenReturn(bucketUsageMap);
+
+        List<Bucket> bucketList = cloudianHyperStoreObjectStoreDriverImpl.listBuckets(TEST_STORE_ID);
+        assertNotNull(bucketList);
+        assertEquals(2, bucketList.size());
     }
 
     @Test
@@ -402,5 +561,119 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
         when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
         // Quota is not implemented by HyperStore, we throw an CloudRuntimeException.
         cloudianHyperStoreObjectStoreDriverImpl.setBucketQuota(bucket, TEST_STORE_ID, 5000L);
+    }
+
+    @Test
+    public void testSetBucketEncryption() {
+        doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+        cloudianHyperStoreObjectStoreDriverImpl.setBucketEncryption(bucket, TEST_STORE_ID);
+
+        // setBucketEncryption should be called once with SSE set.
+        ArgumentCaptor<SetBucketEncryptionRequest> arg = ArgumentCaptor.forClass(SetBucketEncryptionRequest.class);
+        verify(s3Client, times(1)).setBucketEncryption(arg.capture());
+        SetBucketEncryptionRequest request = arg.getValue();
+        List<ServerSideEncryptionRule> rules = request.getServerSideEncryptionConfiguration().getRules();
+        assertEquals(1, rules.size());
+        assertEquals("AES256", rules.get(0).getApplyServerSideEncryptionByDefault().getSSEAlgorithm());
+    }
+
+    @Test
+    public void testDeleteBucketEncryption() throws Exception {
+        doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+        boolean deleted = cloudianHyperStoreObjectStoreDriverImpl.deleteBucketEncryption(bucket, TEST_STORE_ID);
+        assertTrue(deleted);
+        verify(s3Client, times(1)).deleteBucketEncryption(TEST_BUCKET_NAME);
+    }
+
+    @Test
+    public void testSetBucketVersioning() throws Exception {
+        doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+        ArgumentCaptor<SetBucketVersioningConfigurationRequest> arg = ArgumentCaptor.forClass(SetBucketVersioningConfigurationRequest.class);
+
+        boolean set = cloudianHyperStoreObjectStoreDriverImpl.setBucketVersioning(bucket, TEST_STORE_ID);
+        assertTrue(set);
+        verify(s3Client, times(1)).setBucketVersioningConfiguration(arg.capture());
+        SetBucketVersioningConfigurationRequest request = arg.getValue();
+        assertEquals(TEST_BUCKET_NAME, request.getBucketName());
+        assertEquals("Enabled", request.getVersioningConfiguration().getStatus());
+    }
+
+    @Test
+    public void testDeleteBucketVersioning() throws Exception {
+        doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+        ArgumentCaptor<SetBucketVersioningConfigurationRequest> arg = ArgumentCaptor.forClass(SetBucketVersioningConfigurationRequest.class);
+
+        boolean unSet = cloudianHyperStoreObjectStoreDriverImpl.deleteBucketVersioning(bucket, TEST_STORE_ID);
+        assertTrue(unSet);
+        verify(s3Client, times(1)).setBucketVersioningConfiguration(arg.capture());
+        SetBucketVersioningConfigurationRequest request = arg.getValue();
+        assertEquals(TEST_BUCKET_NAME, request.getBucketName());
+        assertEquals("Suspended", request.getVersioningConfiguration().getStatus());
+    }
+
+    @Test
+    public void testGetCloudianClientByStoreId() {
+        try (MockedStatic<CloudianHyperStoreUtil> mockStatic = Mockito.mockStatic(CloudianHyperStoreUtil.class)) {
+            mockStatic.when(() -> CloudianHyperStoreUtil.getCloudianClient(TEST_ADMIN_URL, TEST_ADMIN_USER_NAME, TEST_ADMIN_PASSWORD, true)).thenReturn(cloudianClient);
+            CloudianClient actualCC = cloudianHyperStoreObjectStoreDriverImpl.getCloudianClientByStoreId(TEST_STORE_ID);
+            assertNotNull(actualCC);
+            assertEquals(cloudianClient, actualCC);
+        }
+    }
+
+    @Test
+    public void testGetS3ClientByBucketAndStore() {
+        // Prepare Buckets the store knows about.
+        BucketVO b1 = new BucketVO(TEST_ACCOUNT_ID, 1L, TEST_STORE_ID, "b1", null, false, false, false, null);
+        BucketVO b2 = new BucketVO(TEST_ACCOUNT_ID, 1L, TEST_STORE_ID, "b2", null, false, false, false, null);
+        BucketVO b3 = new BucketVO(TEST_ACCOUNT_ID, 2L, TEST_STORE_ID, TEST_BUCKET_NAME, null, false, false, false, null);
+        BucketVO b4 = new BucketVO(TEST_ACCOUNT_ID, 2L, TEST_STORE_ID, "b4", null, false, false, false, null);
+        List<BucketVO> BucketList = new ArrayList<BucketVO>();
+        BucketList.add(b1);    // b1 owned by domain 1, exists
+        BucketList.add(b2);    // b2 owned by domain 1, exists
+        BucketList.add(b3);    // b3 owned by domain 2, exists - our TEST BUCKET
+        BucketList.add(b4);    // b4 owned by domain 2, exists
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(BucketList);
+
+        AccountDetailVO accessKeyDetail = mock(AccountDetailVO.class);
+        when(accessKeyDetail.getValue()).thenReturn(TEST_ROOT_AK);
+        when(accountDetailsDao.findDetail(TEST_ACCOUNT_ID, CloudianHyperStoreUtil.KEY_ROOT_ACCESS_KEY)).thenReturn(accessKeyDetail);
+        AccountDetailVO secretKeyDetail = mock(AccountDetailVO.class);
+        when(secretKeyDetail.getValue()).thenReturn(TEST_ROOT_SK);
+        when(accountDetailsDao.findDetail(TEST_ACCOUNT_ID, CloudianHyperStoreUtil.KEY_ROOT_SECRET_KEY)).thenReturn(secretKeyDetail);
+
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+
+        try (MockedStatic<CloudianHyperStoreUtil> mockStatic = Mockito.mockStatic(CloudianHyperStoreUtil.class)) {
+            mockStatic.when(() -> CloudianHyperStoreUtil.getS3Client(TEST_S3_URL, TEST_ROOT_AK, TEST_ROOT_SK)).thenReturn(s3Client);
+            AmazonS3 actualS3Client = cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID);
+            assertNotNull(actualS3Client);
+            assertEquals(s3Client, actualS3Client);
+        }
+    }
+
+    @Test
+    public void testGetS3ClientByBucketAndStoreNoMatch() {
+        // Prepare Buckets the store knows about.
+        BucketVO b1 = new BucketVO(TEST_ACCOUNT_ID, 1L, TEST_STORE_ID, "b1", null, false, false, false, null);
+        List<BucketVO> BucketList = new ArrayList<BucketVO>();
+        BucketList.add(b1);    // b1 owned by domain 1, exists
+        when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(BucketList);
+
+        // The test bucket name won't match anything prepared above
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+
+        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
+        assertTrue(thrown.getMessage().contains("not found"));
     }
 }

@@ -70,6 +70,7 @@ Details MAP
 ```
 
 The following "details" map entries are all required.
+
 - validateSSL : The ADMIN API is internal and may not have a proper SSL Certificate.
 - accesskey : Reuse of a shared configuration parameter to pass the Admin Username.
 - secretkey : Reuse of a shared configuration parameter to pass the Admin password.
@@ -97,7 +98,7 @@ The following additional resources are also created for each HyperStore User.
 | Root Credential Pair | These credentials have full access to the HyperStore User account. They are used to manage the IAM user resources listed below as well as to perform any top level bucket actions such as creating buckets, updating policies, enabling versioning etc. |
 | IAM User "CloudStack" | The "CloudStack" IAM user is created with an inline policy as-per below. The IAM user is used by the CloudStack Bucket Browser UI to manage bucket contents.|
 | IAM User Policy | This inline IAM user policy grants the "CloudStack" IAM user permission to any S3 action except `s3:createBucket` and `s3:deleteBucket`. This is mostly to ensure that all Buckets remain under CloudStack control as well as to restrict control over IAM actions.|
-| IAM User Credential Pair | The "CloudStack" IAM user credentials are also managed by the plugin and are made available to the user under the "Bucket Details" page. They are additionally used by the CloudStack Bucket Browser UI. They are restricted by the aforementioned user policy.
+| IAM User Credential Pair | The "CloudStack" IAM user credentials are also managed by the plugin and are made available to the user under the "Bucket Details" page. They are additionally used by the CloudStack Bucket Browser UI. They are restricted by the aforementioned user policy.|
 
 ## Bucket Management
 
@@ -119,6 +120,7 @@ Two "policies" are configurable using the CloudStack interface.
 
 - Private : Objects are only accessible to the bucket owner. This is the equivalent of no bucket policy (and is implemented that way).
 - Public : Objects are readable to everyone. Listing of all bucket objects is not granted so the object name must be known in order to access it.
+
   ```json
   {
     "Version": "2012-10-17",

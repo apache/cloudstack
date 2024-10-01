@@ -164,6 +164,16 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             String msg = String.format("The User id=%s group id=%s is Disabled. Consult your HyperStore Administrator.", hsUserId, hsGroupId);
             logger.error(msg);
             throw new CloudRuntimeException(msg);
+        } else {
+            // User exists and is active. We know that the group therefore exists but
+            // we should ensure that it is active or it will lead to unknown access key errors
+            // which might confuse the administrator. Checking is clearer.
+            CloudianGroup group = client.listGroup(hsGroupId);
+            if (group != null && ! group.getActive()) {
+                String msg = String.format("The group id=%s is Disabled. Consult your HyperStore Administrator.", hsGroupId);
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
         }
 
         // We either created a new account or found an existing one.
@@ -193,7 +203,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
      * @return an AccessKey object for newly created IAM credentials or null if existing credentials were ok
      *    and nothing was created.
      */
-    private AccessKey createIAMCredentials(long storeId, Map<String, String> details, CloudianCredential credential) {
+    protected AccessKey createIAMCredentials(long storeId, Map<String, String> details, CloudianCredential credential) {
         AmazonIdentityManagement iamClient = getIAMClientByStoreId(storeId, credential);
         final String iamUser = CloudianHyperStoreUtil.IAM_USER_USERNAME;
 
@@ -360,7 +370,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
         // Group exists. Confirm that it is usable.
         if (! group.getActive()) {
-            String msg = String.format("The Group %s is Disabled. Consult your HyperStore Administrator.", hsGroupId);
+            String msg = String.format("The group %s is Disabled. Consult your HyperStore Administrator.", hsGroupId);
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
