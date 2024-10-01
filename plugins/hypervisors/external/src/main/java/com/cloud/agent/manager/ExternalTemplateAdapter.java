@@ -54,7 +54,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Arrays;
@@ -63,7 +62,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ExternalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
-    private final static Logger logger = Logger.getLogger(ExternalTemplateAdapter.class);
     @Inject
     HostDao _hostDao;
     @Inject
