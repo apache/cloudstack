@@ -92,7 +92,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private String hypervisor;
 
     @SerializedName(ApiConstants.EXTERNAL_PROVISIONER)
-    @Param(description = "the provisioner name for the hypervisor type external")
+    @Param(description = "the provisioner name for the hypervisor type external", since = "4.21.0")
     private String externalProvisioner;
 
     @SerializedName("cpusockets")

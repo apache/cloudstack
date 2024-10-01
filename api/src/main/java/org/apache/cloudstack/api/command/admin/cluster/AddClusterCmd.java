@@ -68,7 +68,7 @@ public class AddClusterCmd extends BaseCmd {
                description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external")
+    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
     private String provisioner;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,

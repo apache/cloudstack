@@ -70,7 +70,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this host", since = "4.11", authorized = {RoleType.Admin})
     private String annotation;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
     protected Map externalDetails;
 
     /////////////////////////////////////////////////////
