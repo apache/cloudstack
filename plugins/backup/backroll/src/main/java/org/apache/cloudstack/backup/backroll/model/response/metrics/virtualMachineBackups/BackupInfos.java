@@ -1,7 +1,3 @@
-package org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachineBackups;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -18,6 +14,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachineBackups;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BackupInfos {
     @JsonProperty("archive")
     public String archive;
