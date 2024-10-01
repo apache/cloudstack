@@ -2234,7 +2234,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void prepareNicIfExternalProvisionerInvolved(VirtualMachineProfile vmProfile, DeployDestination dest, long nicId) {
-        HostVO host = _hostDao.findById(dest.getHost().getId());
         if (Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
             if (_userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
                 return;
@@ -2243,6 +2242,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
             Map<String, String> accessDetails = vmTO.getDetails();
 
+            HostVO host = _hostDao.findById(dest.getHost().getId());
             loadExternalHostAccessDetails(host, accessDetails);
             loadExternalInstanceDetails(vmProfile.getId(), accessDetails);
             PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
