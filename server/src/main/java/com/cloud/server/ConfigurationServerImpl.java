@@ -1239,7 +1239,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultNatProviderNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNatProviderNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatProviderNetworkOffering);
 
-        
         Map<Service, Provider> serviceProviderMap = getServicesAndProvidersForProviderNetwork(networkMode, forVpc, provider);
         for (Map.Entry<Network.Service, Network.Provider> service : serviceProviderMap.entrySet()) {
             NetworkOfferingServiceMapVO offService =
