@@ -131,7 +131,7 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2
+    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
     name="datadisk"
   done
   sync
@@ -151,7 +151,7 @@ delete_backup() {
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) | tee -a "$logFile"
   if [ $? -eq 0 ]; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
