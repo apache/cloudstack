@@ -278,7 +278,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].server.type=typevalue")
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].server.type=typevalue", since = "4.21.0")
     protected Map externalDetails;
 
     /////////////////////////////////////////////////////

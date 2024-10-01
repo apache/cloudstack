@@ -78,10 +78,10 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
-    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external")
+    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
     private String provisioner;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
     protected Map externalDetails;
 
     /////////////////////////////////////////////////////
