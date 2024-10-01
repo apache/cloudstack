@@ -31,6 +31,16 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+logFile="/var/log/cloudstack/agent/agent.log"
+
+log() {
+  [[ "$verb" -eq 1 ]] && builtin echo "$@"
+  if [[ "$1" == "-ne"  || "$1" == "-e" || "$1" == "-n" ]]; then
+    builtin echo -e "$(date '+%Y-%m-%d %H-%M-%S>')" "${@: 2}" >> "$logFile"
+  else
+    builtin echo "$(date '+%Y-%m-%d %H-%M-%S>')" "$@" >> "$logFile"
+  fi
+}
 
 vercomp() {
   local IFS=.
@@ -43,7 +53,7 @@ vercomp() {
       fi
 
       if ((10#${ver1[i]} > 10#${ver2[i]})); then
-          return 1  # Version 1 is greater
+          return  0 # Version 1 is greater
       elif ((10#${ver1[i]} < 10#${ver2[i]})); then
           return 2  # Version 2 is greater
       fi
@@ -64,14 +74,14 @@ sanity_checks() {
   vercomp "$libvVersion" ">=" "7.2.0"
   libvStatus=$?
 
-  if [[ ($hvStatus -eq 0 || $hvStatus -eq 1) && ($libvStatus -eq 0 || $libvStatus -eq 1) ]]; then
-    echo "Success... [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
+  if [[ $hvStatus -eq 0 && $libvStatus -eq 0 ]]; then
+    log -ne "Success... [ QEMU: $hvVersion Libvirt: $libvVersion apiVersion: $apiVersion ]"
   else
     echo "Failure... Your QEMU version $hvVersion or libvirt version $libvVersion is unsupported. Consider upgrading to the required minimum version of QEMU: 4.2.0 and Libvirt: 7.2.0"
     exit 1
   fi
 
-  echo "Environment Sanity Checks successfully passed"
+  log -ne "Environment Sanity Checks successfully passed"
 }
 
 ### Operation methods ###
@@ -143,7 +153,7 @@ mount_operation() {
   dest="$mount_point/${BACKUP_DIR}"
   mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS})
   if [ $? -eq 0 ]; then
-      echo "Successfully mounted ${NAS_TYPE} store"
+      log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
       exit 1
