@@ -54,6 +54,7 @@
 "label.action": "Action",
 "label.action.attach.disk": "Attach disk",
 "label.action.attach.iso": "Attach ISO",
+"label.action.attach.to.instance": "Attach to Instance",
 "label.action.bulk.delete.egress.firewall.rules": "Bulk delete egress firewall rules",
 "label.action.bulk.delete.firewall.rules": "Bulk delete firewall rules",
 "label.action.bulk.delete.ip.v6.firewall.rules": "Bulk remove IPv6 firewall rules",
