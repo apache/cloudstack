@@ -1286,16 +1286,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         Long newDiskOfferingId = newDiskOffering != null ? newDiskOffering.getId() : diskOffering.getId();
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOfferingId, currentSize, newMinIops, newMaxIops, true, false);
-        List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         boolean volumeMigrateRequired = false;
+        List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = null;
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         if (!storageMgr.storagePoolHasEnoughSpaceForResize(storagePool, currentSize, newSize)) {
-            volumeMigrateRequired = true;
             if (!autoMigrateVolume) {
-                throw new CloudRuntimeException(String.format("Failed to resize volume %s since the storage pool does not have enough space to resize volume %s, automigrate is set to false but volume needs to migrated.", volume.getUuid(), volume.getName()));
+                throw new CloudRuntimeException(String.format("Failed to resize volume %s since the storage pool does not have enough space to accommodate new size for the volume %s, try with automigrate set to true in order to check in the other suitable pools for the new size and then migrate & resize volume there.", volume.getUuid(), volume.getName()));
             }
+            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForSystemMigrationOfVolume(volume.getId(), newDiskOfferingId, currentSize, newMinIops, newMaxIops, true, false);
+            List<? extends StoragePool> suitableStoragePools = poolsPair.second();
+            if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) found for migrating to support new disk offering or new size", volume.getUuid()));
+            }
+            final Long newSizeFinal = newSize;
+            suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize failed for volume ID: %s as no suitable pool(s) with enough space found.", volume.getUuid()));
+            }
+            Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
+            volumeMigrateRequired = true;
         }
 
         boolean volumeResizeRequired = false;
@@ -1311,24 +1321,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volumeMigrateRequired) {
-            if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize operation failed for volume ID: %s as no suitable pool(s) found for migrating to support new disk offering or new size", volume.getUuid()));
-            }
-            final Long newSizeFinal = newSize;
-            List<? extends StoragePool> suitableStoragePoolsWithEnoughSpace = suitableStoragePools.stream().filter(pool -> storageMgr.storagePoolHasEnoughSpaceForResize(pool, 0L, newSizeFinal)).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(suitableStoragePoolsWithEnoughSpace)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Volume resize operation failed for volume ID: %s as no suitable pool(s) with enough space found for volume migration.", volume.getUuid()));
-            }
-            Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
             MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOfferingId, true);
             try {
                 Volume result = migrateVolume(migrateVolumeCmd);
                 volume = (result != null) ? _volsDao.findById(result.getId()) : null;
                 if (volume == null) {
-                    throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s migration failed to storage pool %s", volume.getUuid(), suitableStoragePools.get(0).getId()));
+                    throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
                 }
             } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s migration failed to storage pool %s due to %s", volume.getUuid(), suitableStoragePools.get(0).getId(), e.getMessage()));
+                throw new CloudRuntimeException(String.format("Volume resize operation failed for volume ID: %s as migration failed to storage pool %s accommodating new size", volume.getUuid(), suitableStoragePoolsWithEnoughSpace.get(0).getId()));
             }
         }
 

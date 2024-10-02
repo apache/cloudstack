@@ -3206,7 +3206,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 return false;
             }
             if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getDataCenterId())) {
-                s_logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
+                logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
                 return false;
             }
 
