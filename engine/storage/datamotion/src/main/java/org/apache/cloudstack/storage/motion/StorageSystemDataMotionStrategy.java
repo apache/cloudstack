@@ -1957,25 +1957,26 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * - Full clones (no backing file): Take snapshot of the VM prior disk creation
      * Return this information
      */
-    protected void setVolumeMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
-                                             VirtualMachineTO vmTO, Host srcHost, StoragePoolVO destStoragePool) {
-        if (!destStoragePool.isManaged()) {
-            String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
-
-            String srcPoolUuid = srcVolumeInfo.getDataStore().getUuid();
-            StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-            Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
-
-            MigrationOptions migrationOptions;
-            if (StringUtils.isNotBlank(srcVolumeBackingFile)) {
-                migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo,
-                        srcVolumeBackingFile, srcPoolUuid, srcPoolType);
-            } else {
-                migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
-            }
-            migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
-            destVolumeInfo.setMigrationOptions(migrationOptions);
+    protected void setVolumeMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, VirtualMachineTO vmTO, Host srcHost, StoragePoolVO destStoragePool,
+                                             MigrationOptions.Type migrationType) {
+        if (destStoragePool.isManaged()) {
+            return;
         }
+
+        String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
+
+        String srcPoolUuid = srcVolumeInfo.getDataStore().getUuid();
+        StoragePoolVO srcPool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+        Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
+
+        MigrationOptions migrationOptions;
+        if (MigrationOptions.Type.LinkedClone.equals(migrationType)) {
+            migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo, srcVolumeBackingFile, srcPoolUuid, srcPoolType);
+        } else {
+            migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
+        }
+        migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
+        destVolumeInfo.setMigrationOptions(migrationOptions);
     }
 
     /**
@@ -2006,6 +2007,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
 
             boolean managedStorageDestination = false;
+            boolean migrateNonSharedInc = false;
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
                 DataStore destDataStore = entry.getValue();
@@ -2023,15 +2025,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
-                if (srcVolumeInfo.getTemplateId() != null &&
-                        Objects.nonNull(vmTemplate) &&
-                        !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
-                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
-                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
-                } else {
-                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
-                }
+                MigrationOptions.Type migrationType = decideMigrationTypeAndCopyTemplateIfNeeded(destHost, vmInstance, srcVolumeInfo, sourceStoragePool, destStoragePool, destDataStore);
+                migrateNonSharedInc = migrateNonSharedInc || MigrationOptions.Type.LinkedClone.equals(migrationType);
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -2043,7 +2038,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 // move the volume from Ready to Migrating
                 destVolumeInfo.processEvent(Event.MigrationRequested);
 
-                setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool);
+                setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool, migrationType);
 
                 // create a volume on the destination storage
                 destDataStore.getDriver().createAsync(destDataStore, destVolumeInfo, null);
@@ -2058,7 +2053,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 _volumeDao.update(destVolume.getId(), destVolume);
 
-                postVolumeCreationActions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost);
+                postVolumeCreationActions(srcVolumeInfo, destVolumeInfo);
 
                 destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
 
@@ -2109,8 +2104,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             VMInstanceVO vm = _vmDao.findById(vmTO.getId());
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-            boolean migrateNonSharedInc = isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
-
             MigrateCommand migrateCommand = new MigrateCommand(vmTO.getName(), destHost.getPrivateIpAddress(), isWindows, vmTO, true);
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
             migrateCommand.setMigrateStorage(migrateStorage);
@@ -2158,6 +2151,22 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    private MigrationOptions.Type decideMigrationTypeAndCopyTemplateIfNeeded(Host destHost, VMInstanceVO vmInstance, VolumeInfo srcVolumeInfo, StoragePoolVO sourceStoragePool, StoragePoolVO destStoragePool, DataStore destDataStore) {
+        VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
+        String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
+        if (StringUtils.isNotBlank(srcVolumeBackingFile) && supportStoragePoolType(destStoragePool.getPoolType(), StoragePoolType.Filesystem) &&
+                srcVolumeInfo.getTemplateId() != null &&
+                Objects.nonNull(vmTemplate) &&
+                !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
+            LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+            copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
+            return MigrationOptions.Type.LinkedClone;
+        }
+        LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
+                "template or we are doing full clone migration.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+        return MigrationOptions.Type.FullClone;
     }
 
     protected String formatMigrationElementsAsJsonToDisplayOnLog(String objectName, Object object, Object from, Object to){
@@ -2421,7 +2430,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     /**
      * Handle post destination volume creation actions depending on the migrating volume type: full clone or linked clone
      */
-    protected void postVolumeCreationActions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, VirtualMachineTO vmTO, Host srcHost) {
+    protected void postVolumeCreationActions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo) {
         MigrationOptions migrationOptions = destVolumeInfo.getMigrationOptions();
         if (migrationOptions != null) {
             if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
