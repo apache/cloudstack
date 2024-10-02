@@ -267,6 +267,14 @@ export default {
       if (this.loading) return
       let variableKey = ''
       let variableValue = ''
+      let operation = ''
+      if (this.selectedOperation === this.$t('label.add')) {
+        operation = 'add'
+      } else if (this.selectedOperation === this.$t('label.remove')) {
+        operation = 'remove'
+      } else {
+        operation = 'reset'
+      }
       if (this.selectedShareWith === this.$t('label.account')) {
         variableKey = 'accounts'
         if (this.showAccountSelect) {
@@ -287,7 +295,7 @@ export default {
         ispublic: this.resource.isPublic,
         isextractable: this.resource.isExtractable,
         featured: this.resource.featured,
-        op: this.selectedOperation.toLowerCase()
+        op: operation
       }).then(response => {
         this.$notification.success({
           message: `${this.$t('label.success.updated')} ${resourceType} ${this.$t('label.permissions')}`
