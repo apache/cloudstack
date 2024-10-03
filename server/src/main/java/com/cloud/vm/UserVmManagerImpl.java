@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality;
 import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
@@ -4546,7 +4547,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!hypervisorType.isFunctionalitySupported(HypervisorType.Functionality.RootDiskSizeOverride)) {
+        if (!hypervisorType.isFunctionalitySupported(Functionality.RootDiskSizeOverride)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -6589,15 +6590,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         HypervisorType hypervisorType = vm.getHypervisorType();
-        if (vm.getType() != VirtualMachine.Type.User &&
-                (!hypervisorType.isFunctionalitySupported(HypervisorType.Functionality.VmStorageMigration)
-                        || hypervisorType.equals(HypervisorType.XenServer))) {
-
-            List<HypervisorType> supportedHypervisors = HypervisorType.getListOfHypervisorsSupportingFunctionality(HypervisorType.Functionality.VmStorageMigration)
-                    .stream().filter(hypervisor -> !hypervisor.equals(HypervisorType.XenServer)).collect(Collectors.toList());
+        List<HypervisorType> supportedHypervisorsForNonUserVMStorageMigration = HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)
+                .stream().filter(hypervisor -> !hypervisor.equals(HypervisorType.XenServer)).collect(Collectors.toList());
+        if (vm.getType() != VirtualMachine.Type.User && !supportedHypervisorsForNonUserVMStorageMigration.contains(hypervisorType)) {
             throw new InvalidParameterValueException(String.format(
                     "Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following hypervisors: [%s].",
-                    hypervisorType, supportedHypervisors));
+                    hypervisorType, supportedHypervisorsForNonUserVMStorageMigration));
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -7307,11 +7305,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (!vm.getHypervisorType().isFunctionalitySupported(HypervisorType.Functionality.VmStorageMigration)) {
+        if (!vm.getHypervisorType().isFunctionalitySupported(Functionality.VmStorageMigration)) {
             throw new InvalidParameterValueException(
                     String.format("Unsupported hypervisor: %s for VM migration, we support [%s] only",
                             vm.getHypervisorType(),
-                            HypervisorType.getListOfHypervisorsSupportingFunctionality(HypervisorType.Functionality.VmStorageMigration)));
+                            HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)));
         }
 
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
