@@ -4859,7 +4859,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -4872,7 +4872,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (keyword != null) {
-            sc.setParameters("name",  "%" + keyword + "%");
+            sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
         final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
