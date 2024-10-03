@@ -462,7 +462,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public boolean takeBackup(VirtualMachine vm) {
+    public BackupVO takeBackup(VirtualMachine vm) {
         String networkerServer;
         String clusterName;
 
@@ -514,11 +514,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             backupDao.persist(backup);
-            return true;
+            return backup;
         } else {
             LOG.error("Could not register backup for vm " + vm.getName() + " with saveset Time: " + saveTime);
             // We need to handle this rare situation where backup is successful but can't be registered properly.
-            return false;
+            return null;
         }
     }
 

@@ -1317,6 +1317,14 @@ public enum Config {
             "20",
             "The default maximum number of snapshots that can be created for an account",
             null),
+    DefaultMaxAccountBackups(
+            "Account Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.account.backups",
+            "20",
+            "The default maximum number of backups that can be created for an account",
+            null),
     DefaultMaxAccountVolumes(
             "Account Defaults",
             ManagementServer.class,
@@ -1415,6 +1423,7 @@ DefaultMaxAccountProjects(
     DefaultMaxDomainPublicIPs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.public.ips", "40", "The default maximum number of public IPs that can be consumed by a domain", null),
     DefaultMaxDomainTemplates("Domain Defaults", ManagementServer.class, Long.class, "max.domain.templates", "40", "The default maximum number of templates that can be deployed for a domain", null),
     DefaultMaxDomainSnapshots("Domain Defaults", ManagementServer.class, Long.class, "max.domain.snapshots", "40", "The default maximum number of snapshots that can be created for a domain", null),
+    DefaultMaxDomainBackups("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backups", "40", "The default maximum number of backups that can be created for a domain", null),
     DefaultMaxDomainVolumes("Domain Defaults", ManagementServer.class, Long.class, "max.domain.volumes", "40", "The default maximum number of volumes that can be created for a domain", null),
     DefaultMaxDomainNetworks("Domain Defaults", ManagementServer.class, Long.class, "max.domain.networks", "40", "The default maximum number of networks that can be created for a domain", null),
     DefaultMaxDomainVpcs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.vpcs", "40", "The default maximum number of vpcs that can be created for a domain", null),
@@ -1455,6 +1464,14 @@ DefaultMaxAccountProjects(
             "max.project.snapshots",
             "20",
             "The default maximum number of snapshots that can be created for a project",
+            null),
+    DefaultMaxProjectBackups(
+            "Project Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.project.backups",
+            "20",
+            "The default maximum number of backups that can be created for a project",
             null),
     DefaultMaxProjectVolumes(
             "Project Defaults",

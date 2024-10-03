@@ -237,6 +237,14 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+
+        long backupLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupLimit(), account.getId(), ResourceType.backup);
+        String backupLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(snapshotLimit);
+        long backupTotal = (account.getBackupTotal() == null) ? 0 : account.getBackupTotal();
+        String backupAvail = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
+        response.setBackupLimit(backupLimitDisplay);
+        response.setBackupTotal(backupTotal);
+        response.setBackupAvailable(backupAvail);
     }
 
     @Override

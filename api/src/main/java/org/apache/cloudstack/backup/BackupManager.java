@@ -19,9 +19,11 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -111,17 +113,18 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Deletes VM backup schedule for a VM
-     * @param vmId
+     * @param cmd
      * @return
      */
-    boolean deleteBackupSchedule(Long vmId);
+    boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd);
 
     /**
      * Creates backup of a VM
      * @param vmId Virtual Machine ID
+     * @param scheduleId Virtual Machine Backup Schedule ID
      * @return returns operation success
      */
-    boolean createBackup(final Long vmId);
+    boolean createBackup(final Long vmId, final Long scheduleId) throws ResourceAllocationException;
 
     /**
      * List existing backups for a VM

@@ -36,6 +36,8 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import java.util.Objects;
+
 @APICommand(name = "createBackupSchedule",
         description = "Creates a user-defined VM backup schedule",
         responseObject = BackupResponse.class, since = "4.14.0",
@@ -75,6 +77,9 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
     private String timezone;
 
+    @Parameter(name = ApiConstants.MAX_BACKUPS, type = CommandType.INTEGER, required = true, description = "maximum number of backups to retain", since = "4.20.1")
+    private Integer maxBackups;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -94,6 +99,8 @@ public class CreateBackupScheduleCmd extends BaseCmd {
     public String getTimezone() {
         return timezone;
     }
+
+    public Integer getMaxBackups() { return Objects.nonNull(maxBackups) ? maxBackups : 0; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -84,6 +84,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setSnapshotAvailable(String snapshotAvailable);
 
+    public void setBackupLimit(String backupLimit);
+
+    public void setBackupTotal(Long backupTotal);
+
+    public void setBackupAvailable(String backupAvailable);
+
     public void setTemplateLimit(String templateLimit);
 
     public void setTemplateTotal(Long templateTotal);

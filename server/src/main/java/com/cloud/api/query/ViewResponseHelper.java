@@ -453,6 +453,7 @@ public class ViewResponseHelper {
         resourceLimitMap.put(Resource.ResourceType.primary_storage, domainJoinVO.getPrimaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.secondary_storage, domainJoinVO.getSecondaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.project, domainJoinVO.getProjectLimit());
+        resourceLimitMap.put(Resource.ResourceType.backup, domainJoinVO.getBackupLimit());
     }
 
     private static void copyResourceLimitsFromMap(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO){
@@ -468,6 +469,7 @@ public class ViewResponseHelper {
         domainJoinVO.setPrimaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.primary_storage));
         domainJoinVO.setSecondaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.secondary_storage));
         domainJoinVO.setProjectLimit(resourceLimitMap.get(Resource.ResourceType.project));
+        domainJoinVO.setBackupLimit(resourceLimitMap.get(Resource.ResourceType.backup));
     }
 
     private static void setParentResourceLimitIfNeeded(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO, List<DomainJoinVO> domainsCopy) {
@@ -486,6 +488,7 @@ public class ViewResponseHelper {
             Long primaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.primary_storage);
             Long secondaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.secondary_storage);
             Long projectLimit = resourceLimitMap.get(Resource.ResourceType.project);
+            Long backupLimit = resourceLimitMap.get(Resource.ResourceType.backup);
 
             if (vmLimit == null) {
                 vmLimit = parentDomainJoinVO.getVmLimit();
@@ -534,6 +537,10 @@ public class ViewResponseHelper {
             if (projectLimit == null) {
                 projectLimit = parentDomainJoinVO.getProjectLimit();
                 resourceLimitMap.put(Resource.ResourceType.project, projectLimit);
+            }
+            if (backupLimit == null) {
+                backupLimit = parentDomainJoinVO.getBackupLimit();
+                resourceLimitMap.put(Resource.ResourceType.backup, backupLimit);
             }
             //-- try till parent present
             if (parentDomainJoinVO.getParent() != null && parentDomainJoinVO.getParent() != Domain.ROOT_DOMAIN) {

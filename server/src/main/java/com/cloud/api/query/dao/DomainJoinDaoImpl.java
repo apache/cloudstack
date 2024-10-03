@@ -212,6 +212,14 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+
+        long backupLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupLimit(), ResourceType.backup, domain.getId());
+        String backupLimitDisplay = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
+        long backupTotal = (domain.getBackupTotal() == null) ? 0 : domain.getBackupTotal();
+        String backupAvail = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
+        response.setBackupLimit(backupLimitDisplay);
+        response.setBackupTotal(backupTotal);
+        response.setBackupAvailable(backupAvail);
     }
 
     @Override
