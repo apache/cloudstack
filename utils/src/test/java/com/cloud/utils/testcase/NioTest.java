@@ -98,7 +98,7 @@ public class NioTest {
         testBytes = new byte[1000000];
         randomGenerator.nextBytes(testBytes);
 
-        server = new NioServer("NioTestServer", 0, 10, 1, 1, new NioTestServer(), null,  null);
+        server = new NioServer("NioTestServer", 0, 10, 1, 2 * totalTestCount, new NioTestServer(), null,  null);
         try {
             server.start();
         } catch (final NioConnectionException e) {

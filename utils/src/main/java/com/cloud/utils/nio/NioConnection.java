@@ -79,13 +79,10 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
     protected Integer sslHandshakeTimeout = null;
+    private int sslHandshakeMaxWorkers;
     private final AtomicInteger activeAcceptConnections = new AtomicInteger(0);
     private final BlockingQueue<Runnable> workerQueue;
     private final BlockingQueue<Runnable> sslHandshakeQueue;
-
-    public String getConnectionName() {
-        return String.format("%s:: ", _name);
-    }
 
     public NioConnection(final String name, final int port, final int workers, final int sslHandshakeMinWorkers,
              final int sslHandshakeMaxWorkers, final HandlerFactory factory) {
@@ -94,10 +91,11 @@ public abstract class NioConnection implements Callable<Boolean> {
         _selector = null;
         _port = port;
         _factory = factory;
+        this.sslHandshakeMaxWorkers = sslHandshakeMaxWorkers;
         workerQueue = new LinkedBlockingQueue<>(5 * workers);
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
                 workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
-        sslHandshakeQueue = new LinkedBlockingQueue<>(2 * sslHandshakeMaxWorkers);
+        sslHandshakeQueue = new SynchronousQueue<>();
         _sslHandshakeExecutor = new ThreadPoolExecutor(sslHandshakeMinWorkers, sslHandshakeMaxWorkers, 30,
                 TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-Handler"),
                 new ThreadPoolExecutor.AbortPolicy());
@@ -113,13 +111,13 @@ public abstract class NioConnection implements Callable<Boolean> {
         try {
             init();
         } catch (final ConnectException e) {
-            s_logger.warn(getConnectionName() + "Unable to connect to remote: is there a server running on port" + _port);
+            s_logger.warn("Unable to connect to remote: is there a server running on port" + _port);
             return;
         } catch (final IOException e) {
-            s_logger.error(getConnectionName() + "Unable to initialize the threads.", e);
+            s_logger.error("Unable to initialize the threads.", e);
             throw new NioConnectionException(e.getMessage(), e);
         } catch (final Exception e) {
-            s_logger.error(getConnectionName() + "Unable to initialize the threads due to unknown exception.", e);
+            s_logger.error("Unable to initialize the threads due to unknown exception.", e);
             throw new NioConnectionException(e.getMessage(), e);
         }
         _isStartup = true;
@@ -209,28 +207,32 @@ public abstract class NioConnection implements Callable<Boolean> {
     abstract void unregisterLink(InetSocketAddress saddr);
 
     protected void accept(final SelectionKey key) throws IOException {
-        s_logger.info(String.format("%s------------------active accept c0nnections: %d, queue: %d, worker-queue: %d",
-                getConnectionName(), activeAcceptConnections.get(), sslHandshakeQueue.size(), workerQueue.size()));
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();
+        if (activeAcceptConnections.get() >= sslHandshakeMaxWorkers) {
+            // Reject new connection if the server is busy
+            s_logger.warn("Server is busy. Rejecting new connection.");
+            if (socketChannel != null) {
+                socketChannel.close();
+            }
+            _selector.wakeup();
+            return;
+        }
         socketChannel.configureBlocking(false);
 
         final Socket socket = socketChannel.socket();
         socket.setKeepAlive(true);
 
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(getConnectionName() + "Connection accepted for " + socket);
+            s_logger.trace("Connection accepted for " + socket);
         }
 
         try {
             final NioConnection nioConnection = this;
             _sslHandshakeExecutor.submit(() -> {
-                final InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
-                int connections = activeAcceptConnections.incrementAndGet();
-                Long startTime = System.currentTimeMillis();
-                s_logger.info(String.format("%s-start-----------------active accept c0nnections: %d, " +
-                                "accept-queue: %d, worker-queue: %d",
-                        saddr, connections, sslHandshakeQueue.size(), workerQueue.size()));
+                final InetSocketAddress socketAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
+                activeAcceptConnections.incrementAndGet();
+                long startTime = System.currentTimeMillis();
                 _selector.wakeup();
                 try {
                     final SSLEngine sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
@@ -238,16 +240,16 @@ public abstract class NioConnection implements Callable<Boolean> {
                     sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
                     sslEngine.beginHandshake();
                     if (!Link.doHandshake(socketChannel, sslEngine, getSslHandshakeTimeout())) {
-                        throw new IOException("SSL handshake timed out with " + saddr);
+                        throw new IOException("SSL handshake timed out with " + socketAddress);
                     }
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("SSL: Handshake done");
                     }
-                    final Link link = new Link(saddr, nioConnection);
+                    final Link link = new Link(socketAddress, nioConnection);
                     link.setSSLEngine(sslEngine);
                     link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
                     final Task task = _factory.create(Task.Type.CONNECT, link, null);
-                    registerLink(saddr, link);
+                    registerLink(socketAddress, link);
                     _executor.submit(task);
                 } catch (final GeneralSecurityException | IOException e) {
                     if (s_logger.isTraceEnabled()) {
@@ -256,16 +258,17 @@ public abstract class NioConnection implements Callable<Boolean> {
                     closeAutoCloseable(socket, "accepting socket");
                     closeAutoCloseable(socketChannel, "accepting socketChannel");
                 } finally {
-                    connections = activeAcceptConnections.decrementAndGet();
-                    s_logger.info(String.format("%s-end----active accept c0nnections: %d, accept-queue: %d," +
-                                    "worker-queue: %d, time taken: %d",
-                            saddr, connections, sslHandshakeQueue.size(), workerQueue.size(),
-                            (System.currentTimeMillis() - startTime)));
+                    int connections = activeAcceptConnections.decrementAndGet();
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format("Accept task complete for %s - time taken: %d, " +
+                                        "active accept connections: %d",
+                                socketAddress, (System.currentTimeMillis() - startTime), connections));
+                    }
                     _selector.wakeup();
                 }
             });
         } catch (final RejectedExecutionException e) {
-            if (s_logger.isInfoEnabled()) {
+            if (s_logger.isTraceEnabled()) {
                 s_logger.trace(socket.getRemoteSocketAddress()+ " Accept Task rejected: " + e.getMessage());
             }
             closeAutoCloseable(socket, "Rejecting connection - accepting socket");
@@ -286,7 +289,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
-                s_logger.warn(getConnectionName() + "Exception occurred when submitting the task", e);
+                s_logger.warn("Exception occurred when submitting the task", e);
             }
         }
     }
@@ -310,7 +313,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
-                s_logger.warn(getConnectionName() + "Exception occurred when submitting the task", e);
+                s_logger.warn("Exception occurred when submitting the task", e);
             }
         } catch (final Exception e) {
             logDebug(e, key, 1);
@@ -342,7 +345,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                 }
             }
 
-            s_logger.debug(getConnectionName() + "Location " + loc + ": Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
+            s_logger.debug("Location " + loc + ": Socket " + socket + " closed on read.  Probably -1 returned: " + e.getMessage());
         }
     }
 
