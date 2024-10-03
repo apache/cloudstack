@@ -62,6 +62,7 @@
 
         <module>backup/dummy</module>
         <module>backup/networker</module>
+        <module>backup/nas</module>
 
         <module>ca/root-ca</module>
 
@@ -79,6 +80,7 @@
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
 
         <module>ha-planners/skip-heurestics</module>
 
@@ -111,7 +113,6 @@
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
-        <module>network-elements/tungsten</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
@@ -119,6 +120,7 @@
 
         <module>shutdown</module>
 
+        <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>
         <module>storage/image/s3</module>
         <module>storage/image/sample</module>
@@ -136,6 +138,7 @@
         <module>storage/volume/flasharray</module>
         <module>storage/volume/primera</module>
         <module>storage/object/minio</module>
+        <module>storage/object/ceph</module>
         <module>storage/object/simulator</module>
 
 
@@ -231,6 +234,7 @@
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
                 <module>network-elements/juniper-contrail</module>
+                <module>network-elements/tungsten</module>
             </modules>
         </profile>
         <profile>

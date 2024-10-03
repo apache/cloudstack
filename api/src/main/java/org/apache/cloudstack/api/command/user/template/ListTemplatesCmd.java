@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -106,8 +108,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     @Parameter(name = ApiConstants.FOR_CKS, type = CommandType.BOOLEAN,
             description = "list templates that can be used to deploy CKS clusters",
-            since = "4.20.0")
+            since = "4.21.0")
     private Boolean forCks;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -197,6 +204,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     public Boolean getForCks() { return forCks; }
+
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
+    }
 
     @Override
     public String getCommandName() {

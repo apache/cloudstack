@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.HandleCksIsoCommand;
+import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.network.router.VirtualRouter;
@@ -147,6 +148,10 @@ public class VirtualRoutingResource {
 
             if (cmd instanceof HandleCksIsoCommand) {
                 return execute((HandleCksIsoCommand) cmd);
+            }
+
+            if (cmd instanceof ManageServiceCommand) {
+                return execute((ManageServiceCommand) cmd);
             }
 
             if (_vrAggregateCommandsSet.containsKey(routerName)) {
@@ -281,6 +286,20 @@ public class VirtualRoutingResource {
             return new Answer(cmd, true, null);
         }
         return new Answer(cmd, new CloudRuntimeException("Failed to update interface mtu"));
+    }
+
+    private Answer execute(ManageServiceCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = cmd.getAction() + " " + cmd.getServiceName();
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.MANAGE_SERVICE, args);
+        if (result.isSuccess()) {
+            return new Answer(cmd, true,
+                    String.format("Successfully executed action: %s on service: %s. Details: %s",
+                            cmd.getAction(), cmd.getServiceName(), result.getDetails()));
+        } else {
+            return new Answer(cmd, false, String.format("Failed to execute action: %s on service: %s. Details: %s",
+                    cmd.getAction(), cmd.getServiceName(), result.getDetails()));
+        }
     }
 
     private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c) {

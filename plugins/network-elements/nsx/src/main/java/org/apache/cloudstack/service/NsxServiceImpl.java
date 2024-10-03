@@ -138,14 +138,13 @@ public class NsxServiceImpl implements NsxService, Configurable {
         return result.getResult();
     }
 
-    public boolean createPortForwardRule(NsxNetworkRule netRule) {
+    public NsxAnswer createPortForwardRule(NsxNetworkRule netRule) {
         // TODO: if port doesn't exist in default list of services, create a service entry
         CreateNsxPortForwardRuleCommand createPortForwardCmd = new CreateNsxPortForwardRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
                 netRule.getNetworkResourceName(), netRule.isVpcResource(), netRule.getVmId(), netRule.getRuleId(),
                 netRule.getPublicIp(), netRule.getVmIp(), netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getProtocol());
-        NsxAnswer result = nsxControllerUtils.sendNsxCommand(createPortForwardCmd, netRule.getZoneId());
-        return result.getResult();
+        return nsxControllerUtils.sendNsxCommand(createPortForwardCmd, netRule.getZoneId());
     }
 
     public boolean deletePortForwardRule(NsxNetworkRule netRule) {

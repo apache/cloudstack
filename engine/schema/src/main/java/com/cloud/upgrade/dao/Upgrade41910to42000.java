@@ -31,6 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41910to42000 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
+    private static final int MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4 = 191;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -61,6 +62,7 @@ public class Upgrade41910to42000 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         updateKubernetesClusterNodeVersions(conn);
+        checkAndUpdateAffinityGroupNameCharSetToUtf8mb4(conn);
     }
 
     @Override
@@ -175,6 +177,34 @@ public class Upgrade41910to42000 extends DbUpgradeAbstractImpl implements DbUpgr
             String errMsg = "Failed to update kubernetes cluster nodes version";
             logger.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
+        }
+    }
+
+    private void checkAndUpdateAffinityGroupNameCharSetToUtf8mb4(Connection conn) {
+        logger.debug("Check and update char set for affinity group name to utf8mb4");
+        try {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT MAX(LENGTH(name)) FROM `cloud`.`affinity_group`");
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                long maxLengthOfName = rs.getLong(1);
+                if (maxLengthOfName <= MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4) {
+                    pstmt = conn.prepareStatement(String.format("ALTER TABLE `cloud`.`affinity_group` MODIFY `name` VARCHAR(%d) CHARACTER SET utf8mb4 NOT NULL", MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4));
+                    pstmt.executeUpdate();
+                    logger.debug("Successfully updated char set for affinity group name to utf8mb4");
+                } else {
+                    logger.warn("Unable to update char set for affinity group name, as there are some names with more than " + MAX_INDEXED_CHARS_IN_CHAR_SET_UTF8MB4 +
+                            " chars (max supported chars for index)");
+                }
+            }
+
+            if (rs != null && !rs.isClosed())  {
+                rs.close();
+            }
+            if (pstmt != null && !pstmt.isClosed())  {
+                pstmt.close();
+            }
+        } catch (final SQLException e) {
+            logger.warn("Exception while updating char set for affinity group name to utf8mb4: " + e.getMessage());
         }
     }
 }

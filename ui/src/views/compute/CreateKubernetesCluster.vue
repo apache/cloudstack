@@ -489,8 +489,9 @@ export default {
       this.zoneLoading = true
       params.showicon = true
       api('listZones', params).then(json => {
-        const listZones = json.listzonesresponse.zone
+        var listZones = json.listzonesresponse.zone
         if (listZones) {
+          listZones = listZones.filter(x => x.allocationstate === 'Enabled')
           this.zones = this.zones.concat(listZones)
         }
       }).finally(() => {

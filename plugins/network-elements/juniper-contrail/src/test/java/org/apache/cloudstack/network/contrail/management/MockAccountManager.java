@@ -514,4 +514,14 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public ConfigKey<?>[] getConfigKeys() {
         return null;
     }
+
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
+                                               String currentPassword,
+                                               boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
+    }
 }

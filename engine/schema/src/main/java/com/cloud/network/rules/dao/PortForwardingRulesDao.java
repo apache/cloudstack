@@ -49,4 +49,5 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
     List<PortForwardingRuleVO> listByNetworkAndDestIpAddr(String ip4Address, long networkId);
 
     PortForwardingRuleVO findByNetworkAndPorts(long networkId, int startPort, int endPort);
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 }

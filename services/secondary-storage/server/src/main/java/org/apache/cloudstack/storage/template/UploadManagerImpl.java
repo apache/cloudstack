@@ -266,6 +266,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         // Create the directory structure so that its visible under apache server root
         String extractDir = "/var/www/html/userdata/";
+        extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
@@ -288,11 +289,11 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
 
         // Create a random file under the directory for security reasons.
-        String uuid = cmd.getExtractLinkUUID();
+        String filename = cmd.getFilenameInExtractURL();
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
+        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;

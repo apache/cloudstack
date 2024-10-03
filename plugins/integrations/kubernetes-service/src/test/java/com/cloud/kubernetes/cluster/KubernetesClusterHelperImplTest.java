@@ -32,9 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterHelperImplTest {
@@ -55,7 +55,7 @@ public class KubernetesClusterHelperImplTest {
     private static final Long controlOfferingId = 2L;
     private static final Long etcdOfferingId = 3L;
 
-    private final KubernetesClusterHelperImpl helper = new KubernetesClusterHelperImpl();
+    private final KubernetesServiceHelperImpl helper = new KubernetesServiceHelperImpl();
 
     @Before
     public void setUp() {
@@ -81,11 +81,11 @@ public class KubernetesClusterHelperImplTest {
 
     @Test
     public void testIsValidNodeTypeValidNodeTypeLowercase() {
-        String nodeType = KubernetesClusterHelper.KubernetesClusterNodeType.WORKER.name().toLowerCase();
+        String nodeType = KubernetesServiceHelper.KubernetesClusterNodeType.WORKER.name().toLowerCase();
         Assert.assertTrue(helper.isValidNodeType(nodeType));
     }
 
-    private Map<String, String> createMapEntry(KubernetesClusterHelper.KubernetesClusterNodeType nodeType,
+    private Map<String, String> createMapEntry(KubernetesServiceHelper.KubernetesClusterNodeType nodeType,
                                                String nodeTypeOfferingUuid) {
         Map<String, String> map = new HashMap<>();
         map.put(VmDetailConstants.CKS_NODE_TYPE, nodeType.name().toLowerCase());

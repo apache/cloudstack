@@ -38,7 +38,7 @@ import javax.inject.Inject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
@@ -61,10 +61,12 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.codec.binary.Base64;
@@ -92,7 +94,6 @@ import com.cloud.kubernetes.version.dao.KubernetesSupportedVersionDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.IPAddressDao;
@@ -121,7 +122,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -182,8 +182,6 @@ public class KubernetesClusterActionWorker {
     protected UserVmManager userVmManager;
     @Inject
     protected VlanDao vlanDao;
-    @Inject
-    protected VirtualMachineManager itMgr;
     @Inject
     protected LaunchPermissionDao launchPermissionDao;
     @Inject
@@ -421,7 +419,7 @@ public class KubernetesClusterActionWorker {
             return null;
         }
         IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
-        if (address == null || network.getVpcId() != address.getVpcId()) {
+        if (address == null || !Objects.equals(network.getVpcId(), address.getVpcId())) {
             logger.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
             return null;
         }
@@ -517,13 +515,14 @@ public class KubernetesClusterActionWorker {
             logger.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
+        if (manager.isDirectAccess(network)) {
+            return getKubernetesClusterServerIpSshPortForSharedNetwork(controlVm);
+        }
         if (network.getVpcId() != null) {
             return getKubernetesClusterServerIpSshPortForVpcTier(network, acquireNewPublicIpForVpcTierIfNeeded);
         }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
             return getKubernetesClusterServerIpSshPortForIsolatedNetwork(network);
-        } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
-            return getKubernetesClusterServerIpSshPortForSharedNetwork(controlVm);
         }
         logger.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
@@ -563,6 +562,8 @@ public class KubernetesClusterActionWorker {
         }
 
         for (UserVm vm : clusterVMs) {
+            CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+            vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
             try {
                 templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (logger.isInfoEnabled()) {
@@ -570,6 +571,8 @@ public class KubernetesClusterActionWorker {
                 }
             } catch (CloudRuntimeException ex) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
+            } finally {
+                CallContext.unregister();
             }
         }
     }
@@ -581,10 +584,14 @@ public class KubernetesClusterActionWorker {
     protected void detachIsoKubernetesVMs(List<UserVm> clusterVMs) {
         for (UserVm vm : clusterVMs) {
             boolean result = false;
+            CallContext vmContext  = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
+            vmContext.putContextParameter(VirtualMachine.class, vm.getUuid());
             try {
                 result = templateService.detachIso(vm.getId(), null, true);
             } catch (CloudRuntimeException ex) {
                 logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
+            } finally {
+                CallContext.unregister();
             }
             if (result) {
                 if (logger.isInfoEnabled()) {
@@ -737,7 +744,7 @@ public class KubernetesClusterActionWorker {
     protected boolean deployProvider() {
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
-        if (network.getGuestType() != GuestType.Isolated) {
+        if (manager.isDirectAccess(network)) {
             logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
                 kubernetesCluster.getName()), null);
             return true;
@@ -923,6 +930,7 @@ public class KubernetesClusterActionWorker {
 
     public Map<Long, Integer> addFirewallRulesForNodes(IpAddress publicIp, int size) throws ManagementServerException {
         Map<Long, Integer> vmIdPortMap = new HashMap<>();
+        CallContext.register(CallContext.current(), null);
         try {
             List<KubernetesClusterVmMapVO> clusterVmList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
             List<KubernetesClusterVmMapVO> externalNodes = clusterVmList.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
@@ -946,6 +954,8 @@ public class KubernetesClusterActionWorker {
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        } finally {
+            CallContext.unregister();
         }
         return vmIdPortMap;
     }

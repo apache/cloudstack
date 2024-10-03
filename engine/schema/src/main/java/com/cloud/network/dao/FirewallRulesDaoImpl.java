@@ -51,6 +51,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected SearchBuilder<FirewallRuleVO> FirewallByPortsAndNetwork;
     protected final SearchBuilder<FirewallRuleVO> SystemRuleSearch;
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
+    protected final SearchBuilder<FirewallRuleVO> RoutingFirewallRulesSearch;
 
     @Inject
     protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
@@ -111,6 +112,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FirewallByPortsAndNetwork.and("sourcePortStart", FirewallByPortsAndNetwork.entity().getSourcePortStart(), Op.EQ);
         FirewallByPortsAndNetwork.and("sourcePortEnd", FirewallByPortsAndNetwork.entity().getSourcePortEnd(), Op.EQ);
         FirewallByPortsAndNetwork.done();
+
+        RoutingFirewallRulesSearch = createSearchBuilder();
+        RoutingFirewallRulesSearch.and("networkId", RoutingFirewallRulesSearch.entity().getNetworkId(), Op.EQ);
+        RoutingFirewallRulesSearch.and("purpose", RoutingFirewallRulesSearch.entity().getPurpose(), Op.EQ);
+        RoutingFirewallRulesSearch.and("trafficType", RoutingFirewallRulesSearch.entity().getTrafficType(), Op.EQ);
+        RoutingFirewallRulesSearch.and("ipId", RoutingFirewallRulesSearch.entity().getSourceIpAddressId(), Op.NULL);
+        RoutingFirewallRulesSearch.done();
     }
 
     @Override
@@ -403,4 +411,12 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         return findOneBy(sc);
     }
 
+    @Override
+    public List<FirewallRuleVO> listRoutingIngressFirewallRules(long networkId) {
+        SearchCriteria<FirewallRuleVO> sc = RoutingFirewallRulesSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("purpose", Purpose.Firewall);
+        sc.setParameters("trafficType", TrafficType.Ingress);
+        return listBy(sc);
+    }
 }

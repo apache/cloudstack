@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -189,6 +190,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserData;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -207,6 +209,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -298,7 +301,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
 
-    private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
 
     ExecutorService _preloadExecutor;
@@ -539,7 +541,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        if (!_accountMgr.isRootAdmin(caller.getId()) && _disableExtraction) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
 
@@ -1112,10 +1114,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
-        String disableExtraction = _configDao.getValue(Config.DisableExtraction.toString());
-        _disableExtraction = (disableExtraction == null) ? false : Boolean.parseBoolean(disableExtraction);
-
         _preloadExecutor = Executors.newFixedThreadPool(TemplatePreloaderPoolSize.value(), new NamedThreadFactory("Template-Preloader"));
 
         return true;
@@ -1199,6 +1197,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else {
                 throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
             }
+        }
+        if (vm instanceof UserVm && UserVmManager.SHAREDFSVM.equals(((UserVm) vm).getUserVmType())) {
+            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);
@@ -1457,6 +1458,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Input validation
         final Long id = cmd.getId();
         final Account caller = CallContext.current().getCallingAccount();
+        final User user = CallContext.current().getCallingUser();
         List<String> accountNames = cmd.getAccountNames();
         List<Long> projectIds = cmd.getProjectIds();
         Boolean isFeatured = cmd.isFeatured();
@@ -1526,9 +1528,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (owner.getType() == Account.Type.PROJECT) {
-            // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
-            throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
-                    ". Project owned templates cannot be shared outside template.");
+            // if it is a project owned template/iso, the user must at least have access to be allowed to share it.
+            _accountMgr.checkAccess(user, template);
         }
 
         // check configuration parameter(allow.public.user.templates) value for
@@ -1929,9 +1930,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String description = cmd.getDisplayText();
         boolean isExtractable = false;
         Long sourceTemplateId = null;
+        CPU.CPUArch arch = CPU.CPUArch.amd64;
         if (volume != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+            if (template != null) {
+                arch = template.getArch();
+            }
             if (volume.getIsoId() != null && volume.getIsoId() != 0) {
                 sourceTemplateId = volume.getIsoId();
             } else if (volume.getTemplateId() != null) {
@@ -1946,7 +1951,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
 
         if (sourceTemplateId != null) {
             if (logger.isDebugEnabled()) {
@@ -2125,6 +2130,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
         boolean forCks = cmd instanceof UpdateTemplateCmd && ((UpdateTemplateCmd) cmd).getForCks();
+        CPU.CPUArch arch = cmd.getCPUArch();
 
         // verify that template exists
         VMTemplateVO template = _tmpltDao.findById(id);
@@ -2173,6 +2179,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
+                  arch == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
@@ -2245,6 +2252,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (isDynamicallyScalable != null) {
             template.setDynamicallyScalable(isDynamicallyScalable);
+        }
+
+        if (arch != null) {
+            template.setArch(arch);
         }
 
         if (isRoutingTemplate != null) {
@@ -2366,7 +2377,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize};
+        return new ConfigKey<?>[] {AllowPublicUserTemplates, TemplatePreloaderPoolSize, ValidateUrlIsResolvableBeforeRegisteringTemplate};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {

@@ -18,10 +18,13 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import java.util.Map;
+
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -88,6 +91,22 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
 
     /**
      * intended for managed storage
+     * returns true if the storage can provide its custom stats
+     */
+    default boolean poolProvidesCustomStorageStats() {
+        return false;
+    }
+
+    /**
+     * intended for managed storage
+     * returns the custom stats if the storage can provide them
+     */
+    default Map<String, String> getCustomStorageStats(StoragePool pool) {
+        return null;
+    }
+
+    /**
+     * intended for managed storage
      * returns the total capacity and used size in bytes
      */
     Pair<Long, Long> getStorageStats(StoragePool storagePool);
@@ -109,6 +128,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      * returns true if the host can access the storage pool
      */
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    /**
+     * intended for managed storage
+     * returns true if the host can prepare storage client to provide access the storage pool
+     */
+    default boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool) {
+        return false;
+    }
 
     /**
      * Used by storage pools which want to keep VMs' information
@@ -173,4 +200,9 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
         return volumeSize;
     }
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
 }

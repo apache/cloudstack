@@ -97,21 +97,10 @@ export default {
     },
     {
       api: 'updateImageStore',
-      icon: 'stop-outlined',
-      label: 'label.action.image.store.read.only',
-      message: 'message.action.secondary.storage.read.only',
+      icon: 'edit-outlined',
+      label: 'label.edit',
       dataView: true,
-      defaultArgs: { readonly: true },
-      show: (record) => { return record.readonly === false }
-    },
-    {
-      api: 'updateImageStore',
-      icon: 'check-circle-outlined',
-      label: 'label.action.image.store.read.write',
-      message: 'message.action.secondary.storage.read.write',
-      dataView: true,
-      defaultArgs: { readonly: false },
-      show: (record) => { return record.readonly === true }
+      args: ['name', 'readonly', 'capacitybytes']
     },
     {
       api: 'deleteImageStore',

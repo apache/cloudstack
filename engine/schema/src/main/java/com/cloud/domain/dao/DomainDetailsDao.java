@@ -31,4 +31,6 @@ public interface DomainDetailsDao extends GenericDao<DomainDetailVO, Long> {
     void deleteDetails(long domainId);
 
     void update(long domainId, Map<String, String> details);
+
+    String getActualValue(DomainDetailVO domainDetailVO);
 }

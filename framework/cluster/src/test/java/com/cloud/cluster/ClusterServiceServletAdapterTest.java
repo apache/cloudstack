@@ -50,7 +50,7 @@ public class ClusterServiceServletAdapterTest {
     @Test
     public void testRunLevel() {
         int runLevel = clusterServiceServletAdapter.getRunLevel();
-        assertTrue(runLevel == ComponentLifecycle.RUN_LEVEL_FRAMEWORK);
+        assertTrue(runLevel == ComponentLifecycle.RUN_LEVEL_COMPONENT);
         assertTrue(runLevel == clusterManagerImpl.getRunLevel());
     }
 }

@@ -18,15 +18,23 @@ package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -46,11 +54,14 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createKubernetesCluster",
@@ -67,7 +78,15 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Inject
     public KubernetesClusterService kubernetesClusterService;
     @Inject
-    protected KubernetesClusterHelper kubernetesClusterHelper;
+    protected KubernetesServiceHelper kubernetesClusterHelper;
+    @Inject
+    private ConfigurationDao configurationDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private ASNumberDao asNumberDao;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -174,6 +193,9 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which the CKS cluster is to be deployed. This is required if the zone in which the CKS cluster is being deployed has clusters with different hypervisor types.")
     private String hypervisor;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
+    private Long asNumber;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -259,7 +281,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public Long getNodeRootDiskSize() {
         if (nodeRootDiskSize != null) {
             if (nodeRootDiskSize < DEFAULT_NODE_ROOT_DISK_SIZE) {
-                throw new InvalidParameterException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
+                throw new InvalidParameterValueException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
             }
             return nodeRootDiskSize;
         } else {
@@ -284,6 +306,47 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     public Hypervisor.HypervisorType getHypervisorType() {
         return hypervisor == null ? null : Hypervisor.HypervisorType.getType(hypervisor);
+    }
+
+    private Pair<NetworkOfferingVO,NetworkVO> getKubernetesNetworkOffering(Long networkId) {
+        if (Objects.isNull(networkId)) {
+            ConfigurationVO configurationVO = configurationDao.findByName(KubernetesClusterService.KubernetesClusterNetworkOffering.key());
+            String offeringName = configurationVO.getValue();
+            return new Pair<>(networkOfferingDao.findByUniqueName(offeringName), null);
+        } else {
+            NetworkVO networkVO = networkDao.findById(getNetworkId());
+            if (networkVO == null) {
+                throw new InvalidParameterException(String.format("Failed to find network with id: %s", getNetworkId()));
+            }
+            NetworkOfferingVO offeringVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+            return new Pair<>(offeringVO, networkVO);
+        }
+    }
+
+    public Long getAsNumber() {
+        Pair<NetworkOfferingVO, NetworkVO> offeringAndNetwork = getKubernetesNetworkOffering(getNetworkId());
+        NetworkOfferingVO offering = offeringAndNetwork.first();
+        NetworkVO networkVO = offeringAndNetwork.second();
+
+        if (offering == null) {
+            throw new CloudRuntimeException("Failed to find kubernetes network offering");
+        }
+        ASNumberVO asNumberVO = null;
+        if (Objects.isNull(getNetworkId()) && !offering.isForVpc()) {
+            if (Boolean.TRUE.equals(NetworkOffering.RoutingMode.Dynamic.equals(offering.getRoutingMode()) && offering.isSpecifyAsNumber()) && asNumber == null) {
+                throw new InvalidParameterException("AsNumber must be specified as network offering has specifyasnumber set");
+            }
+        } else if (Objects.nonNull(networkVO)) {
+            if (offering.isForVpc()) {
+                asNumberVO = asNumberDao.findByZoneAndVpcId(getZoneId(), networkVO.getVpcId());
+            } else {
+                asNumberVO = asNumberDao.findByZoneAndNetworkId(getZoneId(), getNetworkId());
+            }
+        }
+        if (Objects.nonNull(asNumberVO)) {
+            return asNumberVO.getAsNumber();
+        }
+        return asNumber;
     }
 
     /////////////////////////////////////////////////////
@@ -316,26 +379,23 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCreateEventDescription() {
-        return "creating Kubernetes cluster";
+        return "Creating Kubernetes cluster";
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating Kubernetes cluster. Cluster Id: " + getEntityId();
+        return "Creating Kubernetes cluster Id: " + getEntityId();
     }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.VirtualMachine;
+        return ApiCommandResourceType.KubernetesCluster;
     }
 
     @Override
     public void execute() {
         try {
-            if (KubernetesCluster.ClusterType.valueOf(getClusterType()) == KubernetesCluster.ClusterType.CloudManaged
-                    && !kubernetesClusterService.startKubernetesCluster(getEntityId(), getDomainId(), getAccountName(), true)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
-            }
+            kubernetesClusterService.startKubernetesCluster(this);
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());
             response.setResponseName(getCommandName());
             setResponseObject(response);

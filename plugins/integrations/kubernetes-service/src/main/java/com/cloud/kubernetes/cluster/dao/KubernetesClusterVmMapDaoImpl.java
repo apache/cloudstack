@@ -18,7 +18,7 @@ package com.cloud.kubernetes.cluster.dao;
 
 import java.util.List;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import org.springframework.stereotype.Component;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
@@ -27,8 +27,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
 
 
 @Component
@@ -89,7 +89,7 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
     }
 
     @Override
-    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmType(long clusterId, KubernetesClusterHelper.KubernetesClusterNodeType nodeType) {
+    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmType(long clusterId, KubernetesServiceHelper.KubernetesClusterNodeType nodeType) {
         SearchCriteria<KubernetesClusterVmMapVO> sc = clusterIdSearch.create();
         sc.setParameters("clusterId", clusterId);
         if (CONTROL == nodeType) {
@@ -103,5 +103,15 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
             sc.setParameters("etcdNode", false);
         }
         return listBy(sc);
+    }
+
+    @Override
+    public KubernetesClusterVmMapVO findByVmId(long vmId) {
+        SearchBuilder<KubernetesClusterVmMapVO> sb = createSearchBuilder();
+        sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<KubernetesClusterVmMapVO> sc = sb.create();
+        sc.setParameters("vmId", vmId);
+        return findOneBy(sc);
     }
 }

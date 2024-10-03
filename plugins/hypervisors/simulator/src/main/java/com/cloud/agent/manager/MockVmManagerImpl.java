@@ -135,57 +135,36 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         }
 
         if (vm == null) {
-            final int vncPort = 0;
-            if (vncPort < 0) {
-                return "Unable to allocate VNC port";
-            }
             vm = new MockVMVO();
-            vm.setCpu(cpuHz);
-            vm.setMemory(ramSize);
-            vm.setPowerState(PowerState.PowerOn);
-            vm.setName(vmName);
-            vm.setVncPort(vncPort);
-            vm.setHostId(host.getId());
-            vm.setBootargs(bootArgs);
-            if (vmName.startsWith("s-")) {
-                vm.setType("SecondaryStorageVm");
-            } else if (vmName.startsWith("v-")) {
-                vm.setType("ConsoleProxy");
-            } else if (vmName.startsWith("r-")) {
-                vm.setType("DomainRouter");
-            } else if (vmName.startsWith("i-")) {
-                vm.setType("User");
-            }
-            txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-            try {
-                txn.start();
-                vm = _mockVmDao.persist((MockVMVO)vm);
-                txn.commit();
-            } catch (final Exception ex) {
-                txn.rollback();
-                throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
-            } finally {
-                txn.close();
-                txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-                txn.close();
-            }
-        } else {
-            if (vm.getPowerState() == PowerState.PowerOff) {
-                vm.setPowerState(PowerState.PowerOn);
-                txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
-                try {
-                    txn.start();
-                    _mockVmDao.update(vm.getId(), (MockVMVO)vm);
-                    txn.commit();
-                } catch (final Exception ex) {
-                    txn.rollback();
-                    throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
-                } finally {
-                    txn.close();
-                    txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-                    txn.close();
-                }
-            }
+        }
+        vm.setCpu(cpuHz);
+        vm.setMemory(ramSize);
+        vm.setPowerState(PowerState.PowerOn);
+        vm.setName(vmName);
+        vm.setVncPort(0);
+        vm.setHostId(host.getId());
+        vm.setBootargs(bootArgs);
+        if (vmName.startsWith("s-")) {
+            vm.setType("SecondaryStorageVm");
+        } else if (vmName.startsWith("v-")) {
+            vm.setType("ConsoleProxy");
+        } else if (vmName.startsWith("r-")) {
+            vm.setType("DomainRouter");
+        } else if (vmName.startsWith("i-")) {
+            vm.setType("User");
+        }
+        txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            vm = _mockVmDao.persist((MockVMVO)vm);
+            txn.commit();
+        } catch (final Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
         }
 
         if (vm.getPowerState() == PowerState.PowerOn && vmName.startsWith("s-")) {

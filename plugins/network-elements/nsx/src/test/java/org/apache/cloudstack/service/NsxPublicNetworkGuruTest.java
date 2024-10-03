@@ -165,7 +165,7 @@ public class NsxPublicNetworkGuruTest {
         when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
         when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
         when(vpcOfferingDao.findById(anyLong())).thenReturn(vpcOffering);
-        when(vpcOffering.getNsxMode()).thenReturn(NetworkOffering.NsxMode.NATTED.name());
+        when(vpcOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
         when(nsxControllerUtils.sendNsxCommand(any(CreateOrUpdateNsxTier1NatRuleCommand.class),
                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
 

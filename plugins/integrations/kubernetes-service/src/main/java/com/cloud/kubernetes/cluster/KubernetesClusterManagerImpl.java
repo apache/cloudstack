@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.CONTROL;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.ETCD;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.WORKER;
-import static com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType.DEFAULT;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static com.cloud.vm.UserVmManager.AllowUserExpungeRecoverVm;
 
@@ -52,7 +52,7 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.kubernetes.cluster.KubernetesClusterHelper.KubernetesClusterNodeType;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -72,6 +72,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -102,6 +103,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -123,6 +125,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
+import com.cloud.event.ActionEvent;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -311,6 +314,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private TemplateApiService templateService;
     @Inject
     private PortForwardingRulesDao pfRuleDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -492,15 +497,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support userdata that is required for Kubernetes cluster", network.getUuid()));
         }
+        if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
+            throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
+        }
+        if (routedIpv4Manager.isRoutedNetwork(network)) {
+            logger.debug("No need to add firewall and port forwarding rules for ROUTED network. Assume the VMs are reachable.");
+            return;
+        }
         Long vpcId = network.getVpcId();
         if (vpcId == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support firewall that is required for Kubernetes cluster", network.getUuid()));
         }
         if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.PortForwarding)) {
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support port forwarding that is required for Kubernetes cluster", network.getUuid()));
-        }
-        if (!networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)) {
-            throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
         }
         if (network.getVpcId() != null) {
             validateVpcTier(network);
@@ -609,9 +618,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     logger.debug(String.format("Checking host ID: %s for capacity already reserved %d", hostVO.getUuid(), reserved));
                 }
                 if (capacityManager.checkIfHostHasCapacity(hostVO.getId(), cpu_requested * reserved, ram_requested * reserved, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(String.format("Found host ID: %s for with enough capacity, CPU=%d RAM=%s", hostVO.getUuid(), cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved)));
-                    }
+                    logger.debug("Found host ID == '{}' to have enough capacity, CPU={} RAM={}", hostVO.getUuid(), cpu_requested * reserved, toHumanReadableSize(ram_requested * reserved));
                     hostEntry.setValue(new Pair<HostVO, Integer>(hostVO, reserved));
                     suitable_host_found = true;
                     suitableHost = hostVO;
@@ -716,6 +723,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Domain domain = ApiDBUtils.findDomainById(kubernetesCluster.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
         response.setKeypair(kubernetesCluster.getKeyPair());
         response.setState(kubernetesCluster.getState().toString());
         response.setCores(String.valueOf(kubernetesCluster.getCores()));
@@ -725,7 +733,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (ntwk != null) {
             response.setNetworkId(ntwk.getUuid());
             response.setAssociatedNetworkName(ntwk.getName());
-            if (ntwk.getGuestType() == Network.GuestType.Isolated) {
+            if (!isDirectAccess(ntwk)) {
                 List<IPAddressVO> ipAddresses = ipAddressDao.listByAssociatedNetwork(ntwk.getId(), true);
                 if (ipAddresses != null && ipAddresses.size() == 1) {
                     response.setIpAddress(ipAddresses.get(0).getAddress().addr());
@@ -987,8 +995,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (network == null) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s parameter", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, ApiConstants.NETWORK_ID));
             }
-            if (Network.GuestType.Shared.equals(network.getGuestType())) {
-                throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s type of network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared.toString()));
+            if (!Network.GuestType.Shared.equals(network.getGuestType()) || routedIpv4Manager.isRoutedNetwork(network)) {
+                throw new InvalidParameterValueException(String.format("%s parameter must be specified when network type is not %s or is %s network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared, NetworkOffering.NetworkMode.ROUTED));
             }
         }
 
@@ -1040,7 +1048,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 } else {
                     throw new InvalidParameterValueException(String.format("Network ID: %s is already under use by another Kubernetes cluster", network.getUuid()));
                 }
-            } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
+            }
+            if (isDirectAccess(network)) {
                 if (controlNodesCount > 1 && StringUtils.isEmpty(externalLoadBalancerIpAddress)) {
                     throw new InvalidParameterValueException(String.format("Multi-control nodes, HA Kubernetes cluster with %s network ID: %s needs an external load balancer IP address. %s parameter can be used",
                             network.getGuestType().toString(), network.getUuid(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS));
@@ -1056,13 +1065,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 logger.info(String.format("Creating network for account ID: %s from the network offering ID: %s as part of Kubernetes cluster: %s deployment process", owner.getUuid(), networkOffering.getUuid(), clusterName));
             }
 
+            CallContext networkContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Network);
             try {
-                network = networkMgr.createGuestNetwork(networkOffering.getId(), clusterName + "-network", owner.getAccountName() + "-network",
-                        null, null, null, false, null, owner, null, physicalNetwork, zone.getId(),
-                        ControlledEntity.ACLType.Account, null, null, null, null, true, null,
-                        null, null, null, null, null, null, null, null, null);
+                network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
+                        owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
+                        ControlledEntity.ACLType.Account);
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));
+            } finally {
+                CallContext.unregister();
             }
         }
         return network;
@@ -1080,7 +1091,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 List<KubernetesClusterDetailsVO> details = new ArrayList<>();
                 long kubernetesClusterId = kubernetesCluster.getId();
 
-                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+                if ((network != null && isDirectAccess(network)) || kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
                     addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, externalLoadBalancerIpAddress, true);
                 }
 
@@ -1350,6 +1361,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "creating Kubernetes cluster", create = true)
     public KubernetesCluster createUnmanagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1397,10 +1410,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Kubernetes cluster with name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
+        CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "creating Kubernetes cluster", create = true)
     public KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1483,6 +1499,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (logger.isInfoEnabled()) {
             logger.info(String.format("Kubernetes cluster name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
+        CallContext.current().putContextParameter(KubernetesCluster.class, cluster.getUuid());
         return cluster;
     }
 
@@ -1562,6 +1579,48 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return securityGroup;
     }
 
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_CREATE,
+            eventDescription = "creating Kubernetes cluster", async = true)
+    public void startKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
+        final Long id = cmd.getEntityId();
+        if (KubernetesCluster.ClusterType.valueOf(cmd.getClusterType()) != KubernetesCluster.ClusterType.CloudManaged) {
+            return;
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(id);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
+        }
+        Account account = accountService.getAccount(kubernetesCluster.getAccountId());
+        if (!startKubernetesCluster(kubernetesCluster.getId(), kubernetesCluster.getDomainId(), account.getAccountName(), cmd.getAsNumber(), true)) {
+            throw new CloudRuntimeException(String.format("Failed to start created Kubernetes cluster: %s",
+                    kubernetesCluster.getName()));
+        }
+    }
+
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_START,
+            eventDescription = "starting Kubernetes cluster", async = true)
+    public void startKubernetesCluster(StartKubernetesClusterCmd cmd) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
+        final Long id = cmd.getId();
+        if (id == null || id < 1L) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID provided");
+        }
+        final KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(id);
+        if (kubernetesCluster == null) {
+            throw new InvalidParameterValueException("Given Kubernetes cluster was not found");
+        }
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
+            throw new InvalidParameterValueException(String.format("Start kubernetes cluster is not supported for " +
+                    "an externally managed cluster (%s)", kubernetesCluster.getName()));
+        }
+        Account account = accountService.getAccount(kubernetesCluster.getAccountId());
+        if (!startKubernetesCluster(kubernetesCluster.getId(), kubernetesCluster.getDomainId(), account.getAccountName(), null, false)) {
+            throw new CloudRuntimeException(String.format("Failed to start Kubernetes cluster: %s",
+                    kubernetesCluster.getName()));
+        }
+    }
+
     /**
      * Start operation can be performed at two different life stages of Kubernetes cluster. First when a freshly created cluster
      * in which case there are no resources provisioned for the Kubernetes cluster. So during start all the resources
@@ -1576,10 +1635,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
      * @return
      * @throws CloudRuntimeException
      */
-
-    @Override
-    public boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, boolean onCreate)
-            throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
+    protected boolean startKubernetesCluster(long kubernetesClusterId, Long domainId, String accountName, Long asNumber, boolean onCreate) throws CloudRuntimeException, ManagementServerException, ResourceUnavailableException, InsufficientCapacityException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1588,7 +1644,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (kubernetesCluster.getRemoved() != null) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted",
+                    kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (kubernetesCluster.getState().equals(KubernetesCluster.State.Running)) {
@@ -1621,7 +1678,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             // Start for Kubernetes cluster in 'Created' state
             String[] keys = getServiceUserKeys(kubernetesCluster);
             startWorker.setKeys(keys);
-            return startWorker.startKubernetesClusterOnCreate(domainId, accountId);
+            return startWorker.startKubernetesClusterOnCreate(domainId, accountId, asNumber);
         } else {
             // Start for Kubernetes cluster in 'Stopped' state. Resources are already provisioned, just need to be started
             return startWorker.startStoppedKubernetesCluster(domainId, accountId);
@@ -1653,6 +1710,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_STOP,
+            eventDescription = "stopping Kubernetes cluster", async = true)
     public boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException {
         long kubernetesClusterId = cmd.getId();
         if (!KubernetesServiceEnabled.value()) {
@@ -1687,6 +1746,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE,
+            eventDescription = "deleting Kubernetes cluster", async = true)
     public boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1789,13 +1850,13 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (clusterType != null) {
             sc.setParameters("cluster_type", clusterType);
         }
-        List<KubernetesClusterVO> kubernetesClusters = kubernetesClusterDao.search(sc, searchFilter);
-        for (KubernetesClusterVO cluster : kubernetesClusters) {
+        Pair<List<KubernetesClusterVO>, Integer> kubernetesClustersAndCount = kubernetesClusterDao.searchAndCount(sc, searchFilter);
+        for (KubernetesClusterVO cluster : kubernetesClustersAndCount.first()) {
             KubernetesClusterResponse clusterResponse = createKubernetesClusterResponse(cluster.getId());
             responsesList.add(clusterResponse);
         }
-        ListResponse<KubernetesClusterResponse> response = new ListResponse<KubernetesClusterResponse>();
-        response.setResponses(responsesList);
+        ListResponse<KubernetesClusterResponse> response = new ListResponse<>();
+        response.setResponses(responsesList, kubernetesClustersAndCount.second());
         return response;
     }
 
@@ -1829,6 +1890,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_SCALE,
+            eventDescription = "scaling Kubernetes cluster", async = true)
     public boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1876,6 +1939,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_UPGRADE,
+            eventDescription = "upgrading Kubernetes cluster", async = true)
     public boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
@@ -1894,8 +1959,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
-        kubernetesCluster.setNodeCount(nodeList.size());
-        kubernetesCluster.setNodeCount(nodeList.size());
+        kubernetesCluster.setNodeCount(nodeList.size() - kubernetesCluster.getControlNodeCount());
         kubernetesClusterDao.persist(kubernetesCluster);
     }
 
@@ -2340,7 +2404,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         false, false, false, true, true, false,
                         forVpc, true, false, false);
         if (forNsx) {
-            defaultKubernetesServiceNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
+            defaultKubernetesServiceNetworkOffering.setNetworkMode(NetworkOffering.NetworkMode.NATTED);
             defaultKubernetesServiceNetworkOffering.setForNsx(true);
         }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
@@ -2354,6 +2418,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             networkOfferingServiceMapDao.persist(offService);
             logger.trace("Added service for the network offering: " + offService);
         }
+    }
+
+    @Override
+    public boolean isDirectAccess(Network network) {
+        return Network.GuestType.Shared.equals(network.getGuestType()) || routedIpv4Manager.isRoutedNetwork(network);
     }
 
     @Override

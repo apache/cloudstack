@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype === 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -114,8 +114,15 @@
               <status :text="text ? text : ''" displayText />
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
-              <span v-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)"> {{ cksSshStartingPort + index }} </span>
-              <span v-else> {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) }} </span>
+              <div v-if="network.type === 'Shared' || network.ip4routing">
+                {{ cksSshPortSharedNetwork }}
+              </div>
+              <div v-else-if="record.isexternalnode || (!record.isexternalnode && !record.isetcdnode)">
+                {{ cksSshStartingPort + index }}
+              </div>
+              <div v-else>
+                {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) }}
+              </div>
             </template>
             <template v-if="column.key === 'kubernetesnodeversion'">
               <span> {{ text ? text : '' }} </span>
@@ -153,6 +160,9 @@
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="resource" resourceType="KubernetesCluster" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="resource"
@@ -173,6 +183,7 @@ import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import EventsTab from '@/components/view/EventsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -182,7 +193,8 @@ export default {
     PortForwarding,
     LoadBalancing,
     Status,
-    AnnotationsTab
+    AnnotationsTab,
+    EventsTab
   },
   mixins: [mixinDevice],
   inject: ['parentFetchData'],
@@ -214,6 +226,7 @@ export default {
       currentTab: 'details',
       cksSshStartingPort: 2222,
       etcdSshPort: 50000,
+      cksSshPortSharedNetwork: 22,
       annotations: []
     }
   },
@@ -283,7 +296,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),
@@ -411,13 +424,14 @@ export default {
           if (this.arrayHasItems(networks)) {
             this.network = networks[0]
           }
+          resolve(this.network)
         })
         this.networkLoading = false
       })
     },
     async fetchPublicIpAddress () {
       await this.fetchNetwork()
-      if (this.network && this.network.type === 'Shared') {
+      if (this.network && (this.network.type === 'Shared' || this.network.ip4routing)) {
         this.publicIpAddress = null
         return
       }

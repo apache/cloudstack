@@ -234,7 +234,7 @@ public class KubernetesClusterAddWorker extends KubernetesClusterActionWorker {
             }
 
             userVmManager.updateVirtualMachine(nodeId, null, null, null, null,
-                    null, base64UserData, null, null, null,
+                    null, null, base64UserData, null, null, null,
                     BaseCmd.HTTPMethod.POST, null, null, null, null, null);
 
             RebootVMCmd rebootVMCmd = new RebootVMCmd();

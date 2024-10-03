@@ -17,10 +17,12 @@
 
 package org.apache.cloudstack.api;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -42,18 +44,21 @@ import org.apache.cloudstack.response.VmMetricsResponse;
  *     although most of it is not suitable/useful for the API purpose.</li>
  * </ul>
  */
-@APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
+@APICommand(name = "listVirtualMachinesMetrics", description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Restricted,
         since = "4.9.3", authorized = {RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMsMetricsCmd extends ListVMsCmd implements UserCmd {
-    public static final String APINAME = "listVirtualMachinesMetrics";
 
     @Inject
     private MetricsService metricsService;
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    public EnumSet<ApiConstants.VMDetails> getDetails() throws InvalidParameterValueException {
+        if (isViewDetailsEmpty()) {
+            return EnumSet.of(ApiConstants.VMDetails.all);
+        }
+
+        return super.getDetails();
     }
 
     @Override

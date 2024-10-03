@@ -55,6 +55,13 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -95,8 +102,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -104,7 +110,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -132,10 +140,9 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.dispatch.DispatchChainFactory;
@@ -159,13 +166,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.VolumeApiService;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
@@ -184,6 +184,8 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 @Component
 public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiServerService, Configurable {
 
@@ -197,25 +199,27 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final String CONTROL_CHARACTERS = "[\000-\011\013-\014\016-\037\177]";
 
     @Inject
+    private AccountManager accountMgr;
+    @Inject
+    private APIAuthenticationManager authManager;
+    @Inject
     private ApiDispatcher dispatcher;
     @Inject
-    private DispatchChainFactory dispatchChainFactory;
+    private AsyncJobManager asyncMgr;
     @Inject
-    private AccountManager accountMgr;
+    private DispatchChainFactory dispatchChainFactory;
     @Inject
     private DomainManager domainMgr;
     @Inject
     private DomainDao domainDao;
     @Inject
-    private UUIDManager uuidMgr;
-    @Inject
-    private AsyncJobManager asyncMgr;
-    @Inject
     private EntityManager entityMgr;
     @Inject
-    private APIAuthenticationManager authManager;
-    @Inject
     private ProjectDao projectDao;
+    @Inject
+    private UUIDManager uuidMgr;
+    @Inject
+    private UserPasswordResetManager userPasswordResetManager;
 
     private List<PluggableService> pluggableServices;
 
@@ -224,6 +228,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private ApiAsyncJobDispatcher asyncDispatcher;
 
+    private EventDistributor eventDistributor = null;
     private static int s_workerCount = 0;
     private static Map<String, List<Class<?>>> s_apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
@@ -311,6 +316,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return true;
     }
 
+    public void setEventDistributor(EventDistributor eventDistributor) {
+        this.eventDistributor = eventDistributor;
+    }
+
     @MessageHandler(topic = AsyncJob.Topics.JOB_EVENT_PUBLISH)
     public void handleAsyncJobPublishEvent(String subject, String senderAddress, Object args) {
         assert (args != null);
@@ -322,12 +331,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         if (logger.isTraceEnabled())
             logger.trace("Handle asyjob publish event " + jobEvent);
-
-        EventBus eventBus = null;
-        try {
-            eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+        if (eventDistributor == null) {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
         }
 
         if (!job.getDispatcher().equalsIgnoreCase("ApiAsyncJobDispatcher")) {
@@ -340,7 +345,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // Get the event type from the cmdInfo json string
         String info = job.getCmdInfo();
         String cmdEventType = "unknown";
-        Map<String, Object> cmdInfoObj = new HashMap<String, Object>();
+        Map<String, Object> cmdInfoObj = new HashMap<>();
         if (info != null) {
             Type type = new TypeToken<Map<String, String>>(){}.getType();
             Map<String, String> cmdInfo = ApiGsonHelper.getBuilder().create().fromJson(info, type);
@@ -368,7 +373,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.ASYNC_JOB_CHANGE_EVENT.getName(),
                 jobEvent, instanceType, instanceUuid);
 
-        Map<String, Object> eventDescription = new HashMap<String, Object>();
+        Map<String, Object> eventDescription = new HashMap<>();
         eventDescription.put("command", job.getCmd());
         eventDescription.put("user", userJobOwner.getUuid());
         eventDescription.put("account", jobOwner.getUuid());
@@ -389,13 +394,18 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             eventDescription.put("domainname", domain.getName());
         }
         event.setDescription(eventDescription);
+        eventDistributor.publish(event);
+    }
 
-        try {
-            eventBus.publish(event);
-        } catch (EventBusException evx) {
-            String errMsg = "Failed to publish async job event on the event bus.";
-            logger.warn(errMsg, evx);
+    protected void setupIntegrationPortListener(Integer apiPort) {
+        if (apiPort == null || apiPort <= 0) {
+            logger.trace(String.format("Skipping setting up listener for integration port as %s is set to %d",
+                    IntegrationAPIPort.key(), apiPort));
+            return;
         }
+        logger.debug(String.format("Setting up integration API service listener on port: %d", apiPort));
+        final ListenerThread listenerThread = new ListenerThread(this, apiPort);
+        listenerThread.start();
     }
 
     @Override
@@ -443,10 +453,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         setEncodeApiResponse(EncodeApiResponse.value());
 
-        if (apiPort != null) {
-            final ListenerThread listenerThread = new ListenerThread(this, apiPort);
-            listenerThread.start();
-        }
+        setupIntegrationPortListener(apiPort);
 
         return true;
     }
@@ -1220,6 +1227,57 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean forgotPassword(UserAccount userAccount, Domain domain) {
+        if (!UserPasswordResetEnabled.value()) {
+            String errorMessage = String.format("%s is false. Password reset for the user is not allowed.",
+                    UserPasswordResetEnabled.key());
+            logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
+        }
+        if (StringUtils.isBlank(userAccount.getEmail())) {
+            logger.error(String.format(
+                    "Email is not set. username: %s account id: %d domain id: %d",
+                    userAccount.getUsername(), userAccount.getAccountId(), userAccount.getDomainId()));
+            throw new CloudRuntimeException("Email is not set for the user.");
+        }
+
+        if (!EnumUtils.getEnumIgnoreCase(Account.State.class, userAccount.getState()).equals(Account.State.ENABLED)) {
+            logger.error(String.format(
+                    "User is not enabled. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("User is not enabled.");
+        }
+
+        if (!EnumUtils.getEnumIgnoreCase(Account.State.class, userAccount.getAccountState()).equals(Account.State.ENABLED)) {
+            logger.error(String.format(
+                    "Account is not enabled. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("Account is not enabled.");
+        }
+
+        if (!domain.getState().equals(Domain.State.Active)) {
+            logger.error(String.format(
+                    "Domain is not active. username: %s account id: %d domain id: %s",
+                    userAccount.getUsername(), userAccount.getAccountId(), domain.getUuid()));
+            throw new CloudRuntimeException("Domain is not active.");
+        }
+
+        userPasswordResetManager.setResetTokenAndSend(userAccount);
+        return true;
+    }
+
+    @Override
+    public boolean resetPassword(UserAccount userAccount, String token, String password) {
+        if (!UserPasswordResetEnabled.value()) {
+            String errorMessage = String.format("%s is false. Password reset for the user is not allowed.",
+                    UserPasswordResetEnabled.key());
+            logger.error(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
+        }
+        return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
