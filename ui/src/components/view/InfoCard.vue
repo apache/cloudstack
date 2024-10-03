@@ -544,7 +544,6 @@
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
         </div>
-<<<<<<< HEAD
         <div class="resource-detail-item" v-if="resource.controlofferingname && resource.controlofferingid">
           <div class="resource-detail-item__label">{{ $t('label.service.offering.controlnodes') }}</div>
           <div class="resource-detail-item__details">
