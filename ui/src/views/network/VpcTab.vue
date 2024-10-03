@@ -800,12 +800,12 @@ export default {
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-
-        api('createVpnConnection', {
-          s2svpngatewayid: this.vpnGateways[0].id,
+        const params = {
+          s2svpngatewayid: this.vpnGateways[0] ? this.vpnGateways[0].id : null,
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
-        }).then(response => {
+        }
+        api('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),

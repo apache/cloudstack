@@ -3126,11 +3126,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Network defaultNetwork = null;
             try {
                 DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-
                 if (zone.getNetworkType() == NetworkType.Basic) {
                     // Get default guest network in Basic zone
                     defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (_networkModel.checkSecurityGroupSupportForNetwork(zone, Collections.emptyList(), securityGroupIdList)) {
+                } else if (_networkModel.checkSecurityGroupSupportForNetwork(_accountMgr.getActiveAccountById(vm.getAccountId()), zone, Collections.emptyList(), securityGroupIdList)) {
                     NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNic != null) {
                         defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
@@ -3759,7 +3758,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getUuid());
             }
@@ -6205,7 +6204,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
-            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+            if (_networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                     cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
@@ -7629,7 +7628,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
             Map<Long, String> requestedIPv4ForNics = new HashMap<>();
             Map<Long, String> requestedIPv6ForNics = new HashMap<>();
-            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
+            if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
                 // cleanup the old security groups
                 _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
@@ -8859,7 +8858,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private Network getNetworkForOvfNetworkMapping(DataCenter zone, Account owner) throws InsufficientCapacityException, ResourceAllocationException {
         Network network = null;
         if (zone.isSecurityGroupEnabled() || _networkModel.isSecurityGroupSupportedForZone(zone.getId())) {
-            network = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
+            network = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (network == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone ID: " + zone.getUuid());
             }
