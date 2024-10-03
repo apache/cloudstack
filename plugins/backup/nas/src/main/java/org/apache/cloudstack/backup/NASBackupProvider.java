@@ -46,6 +46,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.opensaml.xml.signature.P;
+
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -141,7 +143,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean takeBackup(final VirtualMachine vm) {
+    public BackupVO takeBackup(final VirtualMachine vm) {
         final Host host = getVMHypervisorHost(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
@@ -179,12 +181,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            return backupDao.update(backupVO.getId(), backupVO);
+            if (backupDao.update(backupVO.getId(), backupVO)) {
+                return backupVO;
+            } else {
+                throw new CloudRuntimeException("Failed to update backup");
+            }
         } else {
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.remove(backupVO.getId());
+            return null;
         }
-        return Objects.nonNull(answer) && answer.getResult();
     }
 
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {

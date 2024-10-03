@@ -127,6 +127,18 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total number of snapshots available for this account")
     private String snapshotAvailable;
 
+    @SerializedName("backuplimit")
+    @Param(description = "the total number of backups which can be stored by this account")
+    private String backupLimit;
+
+    @SerializedName("backuptotal")
+    @Param(description = "the total number of backups stored by this account")
+    private Long backupTotal;
+
+    @SerializedName("backupvailable")
+    @Param(description = "the total number of backups available for this account")
+    private String backupAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "the total number of templates which can be created by this account")
     private String templateLimit;
@@ -380,6 +392,21 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
     }
 
     @Override

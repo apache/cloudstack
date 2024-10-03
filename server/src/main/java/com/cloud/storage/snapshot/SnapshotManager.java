@@ -48,6 +48,16 @@ public interface SnapshotManager extends Configurable {
             "Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> SnapshotMonthlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.monthly", "Snapshots", "8",
             "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
+
+    static final ConfigKey<Integer> BackupHourlyMax = new ConfigKey<Integer>(Integer.class, "backup.max.hourly", "Advanced", "8",
+            "Maximum recurring hourly backups to be retained for an instance. If the limit is reached, early backups from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring hourly backups can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> BackupDailyMax = new ConfigKey<Integer>(Integer.class, "backup.max.daily", "Advanced", "8",
+            "Maximum recurring daily backups to be retained for an instance. If the limit is reached, backups from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring daily backups can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> BackupWeeklyMax = new ConfigKey<Integer>(Integer.class, "backup.max.weekly", "Advanced", "8",
+            "Maximum recurring weekly backups to be retained for an instance. If the limit is reached, backups from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring weekly backups can not be scheduled.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> BackupMonthlyMax = new ConfigKey<Integer>(Integer.class, "backup.max.monthly", "Advanced", "8",
+            "Maximum recurring monthly backups to be retained for an instance. If the limit is reached, backups from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring monthly backups can not be scheduled.", false, ConfigKey.Scope.Global, null);
+
     static final ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
             "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ", false);
     public static final ConfigKey<Integer> BackupRetryAttempts = new ConfigKey<Integer>(Integer.class, "backup.retry", "Advanced", "3",

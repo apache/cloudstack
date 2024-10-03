@@ -57,6 +57,9 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "async_job_id")
     Long asyncJobId;
 
+    @Column(name = "max_backups")
+    int maxBackups = 0;
+
     public BackupScheduleVO() {
     }
 
@@ -120,5 +123,13 @@ public class BackupScheduleVO implements BackupSchedule {
 
     public void setAsyncJobId(Long asyncJobId) {
         this.asyncJobId = asyncJobId;
+    }
+
+    public int getMaxBackups() {
+        return maxBackups;
+    }
+
+    public void setMaxBackups(int maxBackups) {
+        this.maxBackups = maxBackups;
     }
 }

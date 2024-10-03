@@ -320,6 +320,7 @@ public class ApiConstants {
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
+    public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
@@ -426,6 +427,7 @@ public class ApiConstants {
     public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
+    public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
