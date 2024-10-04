@@ -154,14 +154,6 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     private String _keystoreSetupPath;
     private String _keystoreCertImportPath;
 
-    protected String getConnectionName() {
-        return "Agent-" + _resource.getName();
-    }
-
-    protected String getConnectionNameLog() {
-        return String.format("%s:: ", getConnectionName());
-    }
-
     // for simulator use only
     public Agent(final IAgentShell shell) {
         _shell = shell;
@@ -203,7 +195,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
 
         final String host = _shell.getNextHost();
-        _connection = new NioClient(getConnectionName(), host, _shell.getPort(), _shell.getWorkers(), this);
+        _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
 
         // ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
 
@@ -544,7 +536,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         _resource.disconnected();
 
-        s_logger.info(getConnectionNameLog() + "Lost connection to host: " + _shell.getConnectedHost() + ". Attempting reconnection while we still have " + _inProgress.get() + " commands in progress.");
+        s_logger.info("Lost connection to host: " + _shell.getConnectedHost() + ". Attempting reconnection while we still have " + _inProgress.get() + " commands in progress.");
 
         _connection.stop();
 
@@ -561,7 +553,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         do {
             final String host = _shell.getNextHost();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
-            s_logger.info(getConnectionNameLog() + "Reconnecting to host:" + host);
+            s_logger.info("Reconnecting to host:" + host);
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
