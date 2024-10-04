@@ -576,9 +576,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (backup == null) {
                 throw new CloudRuntimeException("Failed to create VM backup");
             }
-            BackupVO vmBackup = backupDao.findById(backup.getId());
-            vmBackup.setBackupIntervalType((short)type.ordinal());
-            backupDao.update(vmBackup.getId(), vmBackup);
+            if (!"veeam".equals(backupProvider.getName())) {
+                BackupVO vmBackup = backupDao.findById(backup.getId());
+                vmBackup.setBackupIntervalType((short) type.ordinal());
+                backupDao.update(vmBackup.getId(), vmBackup);
+            }
             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
             return true;
         }
