@@ -65,7 +65,7 @@ public class CloudianHyperStoreUtil {
     public static final String KEY_IAM_SECRET_KEY     = "hs_IAMSecretKey";
 
     public static final int DEFAULT_ADMIN_PORT = 19443;
-    public static final int DEFAULT_ADMIN_TIMEOUT = 10;
+    public static final int DEFAULT_ADMIN_TIMEOUT_SECONDS = 10;
 
     public static final String IAM_USER_USERNAME = "CloudStack";
     public static final String IAM_USER_POLICY_NAME = "CloudStackPolicy";
@@ -98,6 +98,15 @@ public class CloudianHyperStoreUtil {
     }
 
     /**
+     * This method is solely for test purposes so that we can mock the timeout.
+     *
+     * @returns the timeout in seconds
+     */
+    protected static int getAdminTimeoutSeconds() {
+        return DEFAULT_ADMIN_TIMEOUT_SECONDS;
+    }
+
+    /**
      * Get a connection to the Cloudian HyperStore ADMIN API Service.
      * @param url the url of the ADMIN API service
      * @param user the admin username to connect as
@@ -115,7 +124,7 @@ public class CloudianHyperStoreUtil {
             if (port == -1) {
                 port = DEFAULT_ADMIN_PORT;
             }
-            return new CloudianClient(host, port, scheme, user, pass, validateSSL, DEFAULT_ADMIN_PORT);
+            return new CloudianClient(host, port, scheme, user, pass, validateSSL, getAdminTimeoutSeconds());
         } catch (MalformedURLException e) {
             throw new CloudRuntimeException(e);
         } catch (KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
@@ -194,8 +203,8 @@ public class CloudianHyperStoreUtil {
      * Test the IAMUrl to confirm it behaves like an IAM Service.
      *
      * The method uses bad credentials and looks for the particular error from IAM
-     * that says InvalidAccessKeyId was used. The method quietly returns if
-     * we connect and get the expected error back.
+     * that says InvalidAccessKeyId or InvalidClientTokenId was used. The method quietly
+     * returns if we connect and get the expected error back.
      *
      * @param iamUrl the url to check
      *
@@ -206,7 +215,7 @@ public class CloudianHyperStoreUtil {
             AmazonIdentityManagement iamClient = CloudianHyperStoreUtil.getIAMClient(iamUrl, "unknown", "unknown");
             iamClient.listAccessKeys();
         } catch (AmazonServiceException e) {
-            if (StringUtils.compareIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId") != 0) {
+            if (! StringUtils.equalsAnyIgnoreCase(e.getErrorCode(), "InvalidAccessKeyId", "InvalidClientTokenId")) {
                 throw new CloudRuntimeException("Unexpected response from IAM Endpoint.", e);
             }
         }
