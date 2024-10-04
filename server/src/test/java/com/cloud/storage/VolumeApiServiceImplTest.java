@@ -1911,4 +1911,21 @@ public class VolumeApiServiceImplTest {
             verify(volumeServiceMock).resize(any(VolumeInfo.class));
         }
     }
+
+    @Test
+    public void testResizeVolumeInAllocateState() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+
+        when(volumeVoMock.getState()).thenReturn(Volume.State.Allocated);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            volumeApiServiceImpl.resizeVolume(cmd);
+
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+        }
+    }
 }
