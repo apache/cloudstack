@@ -51,7 +51,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private List<PluggableService> services;
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
 
-    final private LazyCache<Long, Pair<Role, List<RolePermission>>> accountRolePermissionsCache;
+    final private LazyCache<Long, Account> accountCache;
     final private LazyCache<Long, Pair<Role, List<RolePermission>>> rolePermissionsCache;
 
     private static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
@@ -61,8 +61,8 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         for (RoleType roleType : RoleType.values()) {
             annotationRoleBasedApisMap.put(roleType, new HashSet<String>());
         }
-        accountRolePermissionsCache = new LazyCache<>(32, 60,
-                this::getAccountRolePermissions);
+        accountCache = new LazyCache<>(32, 60,
+                this::getAccountFromId);
         rolePermissionsCache = new LazyCache<>(32, 60,
                 this::getRolePermissions);
     }
@@ -110,22 +110,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
                 annotationRoleBasedApisMap.get(role.getRoleType()).contains(apiName);
     }
 
-    protected Pair<Role, List<RolePermission>> getAccountRolePermissions(long accountId) {
-        LOGGER.debug("RolePermissions not available in cache for-----------------------------" + accountId);
-        Account account = accountService.getAccount(accountId);
-        if (account == null) {
-            return null;
-        }
-        final Role accountRole = roleService.findRole(account.getRoleId());
-        if (accountRole == null || accountRole.getId() < 1L) {
-            return new Pair<>(null, null);
-        }
-
-        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
-            return new Pair<>(accountRole, null);
-        }
-
-        return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
+    protected Account getAccountFromId(long accountId) {
+        LOGGER.debug("Account not available in cache for-----------------------------" + accountId);
+        return accountService.getAccount(accountId);
     }
 
     protected Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
@@ -147,19 +134,20 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         if (!isEnabled()) {
             return true;
         }
-        Pair<Role, List<RolePermission>> accountRoleAndPermissions = accountRolePermissionsCache.get(user.getAccountId());
-        if (accountRoleAndPermissions == null) {
+        Account account = accountCache.get(user.getAccountId());
+        if (account == null) {
             throw new PermissionDeniedException(String.format("Account for user id [%s] cannot be found", user.getUuid()));
         }
-        final Role accountRole = accountRoleAndPermissions.first();
-        if (accountRoleAndPermissions.first() == null) {
+        Pair<Role, List<RolePermission>> roleAndPermissions = rolePermissionsCache.get(account.getRoleId());
+        final Role accountRole = roleAndPermissions.first();
+        if (accountRole == null) {
             throw new PermissionDeniedException(String.format("Account role for user id [%s] cannot be found.", user.getUuid()));
         }
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
             LOGGER.info(String.format("Account for user id [%s] is Root Admin or Domain Admin, all APIs are allowed.", user.getUuid()));
             return true;
         }
-        List<RolePermission> allPermissions = accountRoleAndPermissions.second();
+        List<RolePermission> allPermissions = roleAndPermissions.second();
         if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }
