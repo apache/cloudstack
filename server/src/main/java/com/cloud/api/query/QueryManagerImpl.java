@@ -1466,7 +1466,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
             userVmSearchBuilder.join("nicSearch", nicSearch, JoinBuilder.JoinType.LEFT,
                     JoinBuilder.JoinCondition.AND,
-                    nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId());
+                    nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(),
+                    nicSearch.entity().getRemoved(), userVmSearchBuilder.entity().setLong(null));
 
             userVmSearchBuilder.or("ipAddressSearch", "keywordPublicIpAddress", ipAddressSearch.entity().getAddress(), Op.LIKE);
 
@@ -1565,12 +1566,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             String keywordMatch = "%" + keyword + "%";
             userVmSearchCriteria.setParameters("keywordDisplayName", keywordMatch);
             userVmSearchCriteria.setParameters("keywordName", keywordMatch);
-            userVmSearchCriteria.setParameters("keywordState", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordState", keyword);
             userVmSearchCriteria.setParameters("keywordIpAddress", keywordMatch);
             userVmSearchCriteria.setParameters("keywordPublicIpAddress", keywordMatch);
             userVmSearchCriteria.setParameters("keywordIp6Address", keywordMatch);
             if (isRootAdmin) {
-                userVmSearchCriteria.setParameters("keyword", "keywordInstanceName", keywordMatch);
+                userVmSearchCriteria.setParameters("keywordInstanceName", keywordMatch);
             }
         }
 
