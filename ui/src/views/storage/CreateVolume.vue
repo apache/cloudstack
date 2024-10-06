@@ -393,7 +393,7 @@ export default {
           values.snapshotid = this.resource.id
         }
         if (this.attachVolume) {
-          this.vmidtoattacch = values.virtualmachineid
+          this.vmidtoattach = values.virtualmachineid
           values.virtualmachineid = null
         }
         values.domainid = this.owner.domainid
