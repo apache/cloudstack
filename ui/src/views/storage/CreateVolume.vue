@@ -393,11 +393,7 @@ export default {
           values.snapshotid = this.resource.id
         }
         if (this.attachVolume) {
-<<<<<<< HEAD
           this.vmidtoattach = values.virtualmachineid
-=======
-          this.vmidtoattacch = values.virtualmachineid
->>>>>>> fb467854bc (UI: Option to attach volume to an instance during create volume)
           values.virtualmachineid = null
         }
         values.domainid = this.owner.domainid
