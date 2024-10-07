@@ -21,7 +21,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
@@ -146,7 +145,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      */
     List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
 
-    List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Set<Long> excludingIds, State... states);
+    List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Collection<Long> excludingIds, State... states);
 
     List<VMInstanceVO> findByHostInStates(Long hostId, State... states);
 
@@ -154,7 +153,12 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     boolean updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState, Date wisdomEra);
 
+    Map<Long, VirtualMachine.PowerState> updatePowerState(Map<Long, VirtualMachine.PowerState> instancePowerStates,
+              long powerHostId, Date wisdomEra);
+
     void resetVmPowerStateTracking(long instanceId);
+
+    void resetVmPowerStateTracking(List<Long> instanceId);
 
     void resetHostPowerStateTracking(long hostId);
 
@@ -162,7 +166,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId);
 
-    boolean isPowerStateUpToDate(long instanceId);
+    boolean isPowerStateUpToDate(VMInstanceVO instance);
 
     List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId);
 

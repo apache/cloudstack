@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -103,6 +102,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
     protected SearchBuilder<VMInstanceVO> BackupSearch;
     protected SearchBuilder<VMInstanceVO> LastHostAndStatesSearch;
+    protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -321,6 +321,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LastHostAndStatesSearch.and("lastHost", LastHostAndStatesSearch.entity().getLastHostId(), Op.EQ);
         LastHostAndStatesSearch.and("states", LastHostAndStatesSearch.entity().getState(), Op.IN);
         LastHostAndStatesSearch.done();
+
+        IdsPowerStateSelectSearch = createSearchBuilder();
+        IdsPowerStateSelectSearch.and("id", IdsPowerStateSelectSearch.entity().getId(), Op.IN);
+        IdsPowerStateSelectSearch.selectFields(IdsPowerStateSelectSearch.entity().getId(),
+                IdsPowerStateSelectSearch.entity().getPowerHostId(),
+                IdsPowerStateSelectSearch.entity().getPowerState(),
+                IdsPowerStateSelectSearch.entity().getPowerStateUpdateCount(),
+                IdsPowerStateSelectSearch.entity().getPowerStateUpdateTime());
+        IdsPowerStateSelectSearch.done();
 
     }
 
@@ -896,7 +905,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Set<Long> excludingIds, State... states) {
+    public List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Collection<Long> excludingIds, State... states) {
         SearchCriteria<VMInstanceVO> sc = HostAndStateSearch.create();
         sc.setParameters("host", hostId);
         if (excludingIds != null && !excludingIds.isEmpty()) {
@@ -919,6 +928,28 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = StartingWithNoHostSearch.create();
         sc.setParameters("state", State.Starting);
         return listBy(sc);
+    }
+
+    protected List<VMInstanceVO> listSelectPowerStateByIds(final List<Long> ids) {
+        SearchCriteria<VMInstanceVO> sc = IdsPowerStateSelectSearch.create();
+        sc.setParameters("id", ids.toArray());
+        return customSearch(sc, null);
+    }
+
+    protected Integer getPowerUpdateCount(final VMInstanceVO instance, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
+        if (instance.getPowerStateUpdateTime() == null || instance.getPowerStateUpdateTime().before(wisdomEra)) {
+            Long savedPowerHostId = instance.getPowerHostId();
+            boolean isStateMismatch = instance.getPowerState() != powerState
+                    || savedPowerHostId == null
+                    || !savedPowerHostId.equals(powerHostId)
+                    || !isPowerStateInSyncWithInstanceState(powerState, powerHostId, instance);
+            if (isStateMismatch) {
+                return 1;
+            } else if (instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT) {
+                return instance.getPowerStateUpdateCount() + 1;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -954,6 +985,49 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         });
     }
 
+    @Override
+    public Map<Long, VirtualMachine.PowerState> updatePowerState(Map<Long, VirtualMachine.PowerState> instancePowerStates, long powerHostId, Date wisdomEra) {
+        Map<Long, VirtualMachine.PowerState> notUpdated = new HashMap<>();
+        List<VMInstanceVO> instances = listSelectPowerStateByIds(new ArrayList<>(instancePowerStates.keySet()));
+        Map<Long, Integer> updateCounts = new HashMap<>();
+        for (VMInstanceVO instance : instances) {
+            VirtualMachine.PowerState powerState = instancePowerStates.get(instance.getId());
+            Integer count = getPowerUpdateCount(instance, powerHostId, powerState, wisdomEra);
+            if (count != null) {
+                updateCounts.put(instance.getId(), count);
+            } else {
+                notUpdated.put(instance.getId(), powerState);
+            }
+        }
+        if (updateCounts.isEmpty()) {
+            return notUpdated;
+        }
+        StringBuilder sql = new StringBuilder("UPDATE vm_instance SET " +
+                "power_host = ?, power_state_update_time = now(), power_state = CASE ");
+        updateCounts.keySet().forEach(key -> {
+            sql.append("WHEN id = ").append(key).append(" THEN '").append(instancePowerStates.get(key)).append("' ");
+        });
+        sql.append("END, power_state_update_count = CASE ");
+        StringBuilder idList = new StringBuilder();
+        updateCounts.forEach((key, value) -> {
+            sql.append("WHEN id = ").append(key).append(" THEN ").append(value).append(" ");
+            idList.append(key).append(",");
+        });
+        idList.setLength(idList.length() - 1);
+        sql.append("END WHERE id IN (").append(idList).append(")");
+        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
+            try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
+                pstmt.setLong(1, powerHostId);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                s_logger.error(String.format("Unable to execute update power states SQL from VMs %s due to: %s",
+                        idList, e.getMessage()), e);
+                return instancePowerStates;
+            }
+        }
+        return notUpdated;
+    }
+
     private boolean isPowerStateInSyncWithInstanceState(final VirtualMachine.PowerState powerState, final long powerHostId, final VMInstanceVO instance) {
         State instanceState = instance.getState();
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
@@ -966,11 +1040,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean isPowerStateUpToDate(final long instanceId) {
-        VMInstanceVO instance = findById(instanceId);
-        if(instance == null) {
-            throw new CloudRuntimeException("checking power state update count on non existing instance " + instanceId);
-        }
+    public boolean isPowerStateUpToDate(final VMInstanceVO instance) {
         return instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
     }
 
@@ -985,6 +1055,22 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                     instance.setPowerStateUpdateTime(DateUtil.currentGMTTime());
                     update(instanceId, instance);
                 }
+            }
+        });
+    }
+
+    @Override
+    public void resetVmPowerStateTracking(List<Long> instanceIds) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                SearchCriteria<VMInstanceVO> sc = IdsPowerStateSelectSearch.create();
+                sc.setParameters("id", instanceIds.toArray());
+                VMInstanceVO vm = createForUpdate();
+                vm.setPowerStateUpdateCount(0);
+                vm.setPowerStateUpdateTime(DateUtil.currentGMTTime());
+                UpdateBuilder ub = getUpdateBuilder(vm);
+                update(ub, sc, null);
             }
         });
     }
