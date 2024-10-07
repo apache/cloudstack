@@ -24,6 +24,7 @@ public class BackrollArchiveResponse {
     @JsonProperty("archive")
     public String archive;
 
+    // TODO Merged typo ?
     @JsonProperty("barchive")
     public String barchive;
 

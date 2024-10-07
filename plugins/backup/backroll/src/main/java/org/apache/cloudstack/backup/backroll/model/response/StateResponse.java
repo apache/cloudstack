@@ -14,27 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachineBackups;
+package org.apache.cloudstack.backup.backroll.model.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BackupInfos {
-    @JsonProperty("archive")
-    public String archive;
-
-    // TODO Merged typo ?
-    @JsonProperty("barchive")
-    public String barchive;
-
-    @JsonProperty("id")
-    public String id;
-
-    @JsonProperty("name")
-    public String name;
-
-    @JsonProperty("start")
-    public String start;
-
-    @JsonProperty("time")
-    public String time;
+public class StateResponse {
+    @JsonProperty("state")
+    public String state;
 }
