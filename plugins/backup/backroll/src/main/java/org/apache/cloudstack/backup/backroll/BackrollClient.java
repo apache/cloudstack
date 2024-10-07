@@ -39,7 +39,8 @@ import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
 import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.response.BackrollTaskRequestResponse;
-import org.apache.cloudstack.backup.backroll.model.response.StateResponse;
+import org.apache.cloudstack.backup.backroll.model.response.TaskState;
+import org.apache.cloudstack.backup.backroll.model.response.TaskStateResponse;
 import org.apache.cloudstack.backup.backroll.model.response.api.LoginApiResponse;
 import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollArchiveResponse;
 import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollBackupsFromVMResponse;
@@ -206,9 +207,9 @@ public class BackrollClient {
                             post(String.format("/tasks/restore/%s", vmId), jsonBody))).location
                     .replace("/api/v1", "");
 
-            StateResponse response = waitGet(urlToRequest);
+            TaskStateResponse response = waitGet(urlToRequest);
             LOG.debug("RESTORE {}", response.state);
-            return response.state.equals("SUCCESS");
+            return response.state.equals(TaskState.SUCCESS);
         } catch (final NotOkBodyException e) {
             return false;
         } catch (final IOException | InterruptedException e) {
@@ -227,7 +228,7 @@ public class BackrollClient {
 
             String body = okBody(get("/status/" + taskId));
 
-            if (body.contains("FAILURE") || body.contains("PENDING")) {
+            if (body.contains(TaskState.FAILURE) || body.contains(TaskState.PENDING)) {
                 BackrollBackupStatusResponse backupStatusRequestResponse = parse(body);
                 status.setState(backupStatusRequestResponse.state);
             } else {
@@ -261,7 +262,7 @@ public class BackrollClient {
 
             BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = waitGet(urlToRequest);
             LOG.debug(backrollBackupsFromVMResponse.state);
-            return backrollBackupsFromVMResponse.state.equals("SUCCESS");
+            return backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS);
         } catch (final NotOkBodyException e) {
             return false;
         } catch (final Exception e) {
@@ -286,7 +287,7 @@ public class BackrollClient {
             BackrollVmMetricsResponse vmMetricsResponse = waitGet(urlToRequest);
 
             if (vmMetricsResponse != null) {
-                if (vmMetricsResponse.state.equals("SUCCESS")) {
+                if (vmMetricsResponse.state.equals(TaskState.SUCCESS)) {
                     LOG.debug("SUCCESS ok");
                     if (vmMetricsResponse.infos != null) {
                         if (vmMetricsResponse.infos.cache != null) {
@@ -345,7 +346,7 @@ public class BackrollClient {
 
             VirtualMachineBackupsResponse response = waitGet(urlToRequest);
 
-            if (response.state.equals("SUCCESS")) {
+            if (response.state.equals(TaskState.SUCCESS)) {
                 if (response.info.archives.size() > 0) {
                     for (BackupInfos infos : response.info.archives) {
                         var dateStart = new DateTime(infos.start);
@@ -445,7 +446,7 @@ public class BackrollClient {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 String body = okBody(get(url));
-                if (!body.contains("PENDING")) {
+                if (!body.contains(TaskState.PENDING)) {
                     return parse(body);
                 }
             } catch (final NotOkBodyException e) {

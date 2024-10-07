@@ -18,7 +18,7 @@ package org.apache.cloudstack.backup.backroll.model.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class StateResponse {
+public class TaskStateResponse {
     @JsonProperty("state")
     public String state;
 }
