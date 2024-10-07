@@ -20,10 +20,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -893,7 +896,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, List<Long> excludingIds, State... states) {
+    public List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Set<Long> excludingIds, State... states) {
         SearchCriteria<VMInstanceVO> sc = HostAndStateSearch.create();
         sc.setParameters("host", hostId);
         if (excludingIds != null && !excludingIds.isEmpty()) {
@@ -1083,5 +1086,29 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Stopped);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public Map<String, Long> getNameIdMapForVmInstanceNames(Collection<String> names) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("name", sb.entity().getInstanceName(), Op.IN);
+        sb.selectFields(sb.entity().getId(), sb.entity().getInstanceName());
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("name", names.toArray());
+        List<VMInstanceVO> vms = customSearch(sc, null);
+        return vms.stream()
+                .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
+    }
+
+    @Override
+    public Map<String, Long> getNameIdMapForVmIds(Collection<Long> ids) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), Op.IN);
+        sb.selectFields(sb.entity().getId(), sb.entity().getInstanceName());
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        sc.setParameters("id", ids.toArray());
+        List<VMInstanceVO> vms = customSearch(sc, null);
+        return vms.stream()
+                .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
     }
 }

@@ -5981,29 +5981,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) {
+    public HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, List<Long> vmIds) {
         HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<>();
         if (CollectionUtils.isEmpty(vmIds)) {
             return vmStatsById;
         }
-        Map<Long, VMInstanceVO> vmMap = new HashMap<>();
-        for (Long vmId : vmIds) {
-            vmMap.put(vmId, _vmDao.findById(vmId));
-        }
-        return getVirtualMachineStatistics(hostId, hostName, vmMap);
+        Map<String, Long> vmMap = _vmDao.getNameIdMapForVmIds(vmIds);
+        return getVirtualMachineStatistics(host, vmMap);
     }
 
     @Override
-    public HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap) {
+    public HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, Map<String, Long> vmInstanceNameIdMap) {
         HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<>();
-        if (MapUtils.isEmpty(vmMap)) {
+        if (MapUtils.isEmpty(vmInstanceNameIdMap)) {
             return vmStatsById;
         }
-        Map<String, Long> vmNames = new HashMap<>();
-        for (Map.Entry<Long, ? extends VirtualMachine> vmEntry : vmMap.entrySet()) {
-            vmNames.put(vmEntry.getValue().getInstanceName(), vmEntry.getKey());
-        }
-        Answer answer = _agentMgr.easySend(hostId, new GetVmStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
+        Answer answer = _agentMgr.easySend(host.getId(), new GetVmStatsCommand(
+                new ArrayList<>(vmInstanceNameIdMap.keySet()), host.getGuid(), host.getName()));
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to obtain VM statistics.");
             return vmStatsById;
@@ -6014,23 +6008,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return vmStatsById;
             }
             for (Map.Entry<String, VmStatsEntry> entry : vmStatsByName.entrySet()) {
-                vmStatsById.put(vmNames.get(entry.getKey()), entry.getValue());
+                vmStatsById.put(vmInstanceNameIdMap.get(entry.getKey()), entry.getValue());
             }
         }
         return vmStatsById;
     }
 
     @Override
-    public HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap) {
+    public HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(Host host, Map<String, Long> vmInstanceNameIdMap) {
         HashMap<Long, List<? extends  VmDiskStats>> vmDiskStatsById = new HashMap<>();
-        if (MapUtils.isEmpty(vmMap)) {
+        if (MapUtils.isEmpty(vmInstanceNameIdMap)) {
             return vmDiskStatsById;
         }
-        Map<String, Long> vmNames = new HashMap<>();
-        for (Map.Entry<Long, ? extends VirtualMachine> vmEntry : vmMap.entrySet()) {
-            vmNames.put(vmEntry.getValue().getInstanceName(), vmEntry.getKey());
-        }
-        Answer answer = _agentMgr.easySend(hostId, new GetVmDiskStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
+        Answer answer = _agentMgr.easySend(host.getId(), new GetVmDiskStatsCommand(
+                new ArrayList<>(vmInstanceNameIdMap.keySet()), host.getGuid(), host.getName()));
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to obtain VM disk statistics.");
             return vmDiskStatsById;
@@ -6041,23 +6032,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return vmDiskStatsById;
             }
             for (Map.Entry<String, List<VmDiskStatsEntry>> entry: vmDiskStatsByName.entrySet()) {
-                vmDiskStatsById.put(vmNames.get(entry.getKey()), entry.getValue());
+                vmDiskStatsById.put(vmInstanceNameIdMap.get(entry.getKey()), entry.getValue());
             }
         }
         return vmDiskStatsById;
     }
 
     @Override
-    public HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap) {
+    public HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(Host host, Map<String, Long> vmInstanceNameIdMap) {
         HashMap<Long, List<? extends VmNetworkStats>> vmNetworkStatsById = new HashMap<>();
-        if (MapUtils.isEmpty(vmMap)) {
+        if (MapUtils.isEmpty(vmInstanceNameIdMap)) {
             return vmNetworkStatsById;
         }
-        Map<String, Long> vmNames = new HashMap<>();
-        for (Map.Entry<Long, ? extends VirtualMachine> vmEntry : vmMap.entrySet()) {
-            vmNames.put(vmEntry.getValue().getInstanceName(), vmEntry.getKey());
-        }
-        Answer answer = _agentMgr.easySend(hostId, new GetVmNetworkStatsCommand(new ArrayList<>(vmNames.keySet()), _hostDao.findById(hostId).getGuid(), hostName));
+        Answer answer = _agentMgr.easySend(host.getId(), new GetVmNetworkStatsCommand(
+                new ArrayList<>(vmInstanceNameIdMap.keySet()), host.getGuid(), host.getName()));
         if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to obtain VM network statistics.");
             return vmNetworkStatsById;
@@ -6068,7 +6056,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return vmNetworkStatsById;
             }
             for (Map.Entry<String, List<VmNetworkStatsEntry>> entry: vmNetworkStatsByName.entrySet()) {
-                vmNetworkStatsById.put(vmNames.get(entry.getKey()), entry.getValue());
+                vmNetworkStatsById.put(vmInstanceNameIdMap.get(entry.getKey()), entry.getValue());
             }
         }
         return vmNetworkStatsById;

@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
@@ -144,7 +146,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
      */
     List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types);
 
-    List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, List<Long> excludingIds, State... states);
+    List<VMInstanceVO> findByHostInStatesExcluding(Long hostId, Set<Long> excludingIds, State... states);
 
     List<VMInstanceVO> findByHostInStates(Long hostId, State... states);
 
@@ -175,5 +177,9 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listIdServiceOfferingForVmsMigratingFromHost(Long hostId);
 
     List<VMInstanceVO> listIdServiceOfferingForVmsByLastHostId(Long hostId);
+
+    Map<String, Long> getNameIdMapForVmInstanceNames(Collection<String> names);
+
+    Map<String, Long> getNameIdMapForVmIds(Collection<Long> ids);
 
 }
