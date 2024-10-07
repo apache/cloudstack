@@ -146,12 +146,12 @@ public interface CapacityManager {
 
     /**
      * Check if specified host has capability to support cpu cores and speed freq
-     * @param hostId the host to be checked
+     * @param host the host to be checked
      * @param cpuNum cpu number to check
      * @param cpuSpeed cpu Speed to check
      * @return true if the count of host's running VMs >= hypervisor limit
      */
-    boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed);
+    boolean checkIfHostHasCpuCapability(Host host, Integer cpuNum, Integer cpuSpeed);
 
     /**
      * Check if cluster will cross threshold if the cpu/memory requested are accommodated

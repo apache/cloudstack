@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -143,6 +144,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -443,14 +445,14 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     if (checkVmProfileAndHost(vmProfile, host)) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
-                                "cpuOvercommitRatio");
+                                VmDetailConstants.CPU_OVER_COMMIT_RATIO);
                         ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id,
-                                "memoryOvercommitRatio");
+                                VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
                         Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                         Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                         boolean hostHasCpuCapability, hostHasCapacity = false;
-                        hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+                        hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host, offering.getCpu(), offering.getSpeed());
 
                         if (hostHasCpuCapability) {
                             // first check from reserved capacity
@@ -1063,11 +1065,13 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private void checkHostReservations() {
         List<PlannerHostReservationVO> reservedHosts = _plannerHostReserveDao.listAllReservedHosts();
-
-        for (PlannerHostReservationVO hostReservation : reservedHosts) {
-            HostVO host = _hostDao.findById(hostReservation.getHostId());
+        List<HostVO> hosts = _hostDao.listByIds(reservedHosts
+                .stream()
+                .map(PlannerHostReservationVO::getHostId)
+                .collect(Collectors.toList()));
+        for (HostVO host : hosts) {
             if (host != null && host.getManagementServerId() != null && host.getManagementServerId() == _nodeId) {
-                checkHostReservationRelease(hostReservation.getHostId());
+                checkHostReservationRelease(host.getId());
             }
         }
 
@@ -1254,7 +1258,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools, avoid,
                                 resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts(), vmProfile.getVirtualMachine());
                         if (potentialResources != null) {
-                            Host host = _hostDao.findById(potentialResources.first().getId());
+                            Host host = potentialResources.first();
                             Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                             // remove the reused vol<->pool from destination, since
                             // we don't have to prepare this volume.

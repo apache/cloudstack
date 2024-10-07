@@ -138,7 +138,7 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public HostVO findHostByName(String name);
 
-    HostStats getHostStatistics(long hostId);
+    HostStats getHostStatistics(Host host);
 
     Long getGuestOSCategoryId(long hostId);
 

@@ -864,7 +864,7 @@ public class DeploymentPlanningManagerImplTest {
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
 
         Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host)).thenReturn(false);
-        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.anyLong(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.any(Host.class), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
         Mockito.when(capacityMgr.checkIfHostHasCapacity(
             ArgumentMatchers.anyLong(),
             ArgumentMatchers.anyInt(),

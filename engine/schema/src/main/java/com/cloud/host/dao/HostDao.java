@@ -177,4 +177,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllIds();
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
+
+    List<HostVO> listByIds(final List<Long> ids);
 }

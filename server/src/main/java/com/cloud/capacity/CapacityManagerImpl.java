@@ -227,8 +227,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     long reservedMem = capacityMemory.getReservedCapacity();
                     long reservedCpuCore = capacityCpuCore.getReservedCapacity();
                     long actualTotalCpu = capacityCpu.getTotalCapacity();
-                    float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, "cpuOvercommitRatio").getValue());
-                    float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, "memoryOvercommitRatio").getValue());
+                    float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, VmDetailConstants.CPU_OVER_COMMIT_RATIO).getValue());
+                    float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterIdFinal, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO).getValue());
                     int vmCPU = svo.getCpu() * svo.getSpeed();
                     int vmCPUCore = svo.getCpu();
                     long vmMem = svo.getRamSize() * 1024L * 1024L;
@@ -302,8 +302,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         final long hostId = vm.getHostId();
         final HostVO host = _hostDao.findById(hostId);
         final long clusterId = host.getClusterId();
-        final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
-        final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
+        final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO).getValue());
+        final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO).getValue());
 
         final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
 
@@ -389,13 +389,13 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         ",alloc_from_last:" + fromLastHost);
 
                     long cluster_id = host.getClusterId();
-                    ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
-                    ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
+                    ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+                    ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
                     Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                     Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                     boolean hostHasCpuCapability, hostHasCapacity = false;
-                    hostHasCpuCapability = checkIfHostHasCpuCapability(host.getId(), cpucore, cpuspeed);
+                    hostHasCpuCapability = checkIfHostHasCpuCapability(host, cpucore, cpuspeed);
 
                     if (hostHasCpuCapability) {
                         // first check from reserved capacity
@@ -425,22 +425,20 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed) {
-
+    public boolean checkIfHostHasCpuCapability(Host host, Integer cpuNum, Integer cpuSpeed) {
         // Check host can support the Cpu Number and Speed.
-        Host host = _hostDao.findById(hostId);
         boolean isCpuNumGood = host.getCpus().intValue() >= cpuNum;
         boolean isCpuSpeedGood = host.getSpeed().intValue() >= cpuSpeed;
         if (isCpuNumGood && isCpuSpeedGood) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host: " + hostId + " has cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
-                    ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+                s_logger.debug("Host: " + host.getId() + " has cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
+                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
             }
             return true;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host: " + hostId + " doesn't have cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
-                    ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+                s_logger.debug("Host: " + host.getId() + " doesn't have cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
+                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
             }
             return false;
         }
@@ -655,8 +653,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     protected Pair<ClusterDetailsVO, ClusterDetailsVO> getClusterValues(long clusterId) {
-        return new Pair<>(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio"),
-                _clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio"));
+        return new Pair<>(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO),
+                _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO));
     }
 
 
@@ -1077,8 +1075,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             capacityCPU.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
             capacityCPU.addAnd("capacityType", SearchCriteria.Op.EQ, Capacity.CAPACITY_TYPE_CPU);
             List<CapacityVO> capacityVOCpus = _capacityDao.search(capacitySC, null);
-            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "cpuOvercommitRatio").getValue());
-            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), "memoryOvercommitRatio").getValue());
+            Float cpuovercommitratio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO).getValue());
+            Float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(server.getClusterId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO).getValue());
 
             if (capacityVOCpus != null && !capacityVOCpus.isEmpty()) {
                 CapacityVO CapacityVOCpu = capacityVOCpus.get(0);
@@ -1135,9 +1133,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         String capacityOverProvisioningName = "";
         if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
-            capacityOverProvisioningName = "cpuOvercommitRatio";
+            capacityOverProvisioningName = VmDetailConstants.CPU_OVER_COMMIT_RATIO;
         } else if (capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
-            capacityOverProvisioningName = "memoryOvercommitRatio";
+            capacityOverProvisioningName = VmDetailConstants.MEMORY_OVER_COMMIT_RATIO;
         } else {
             throw new CloudRuntimeException("Invalid capacityType - " + capacityType);
         }
@@ -1179,12 +1177,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
         Cluster cluster = _clusterDao.findById(host.getClusterId());
-        ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
-        ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
+        ClusterDetailsVO clusterDetailsCpuOvercommit = _clusterDetailsDao.findDetail(cluster.getId(), VmDetailConstants.CPU_OVER_COMMIT_RATIO);
+        ClusterDetailsVO clusterDetailsRamOvercommmt = _clusterDetailsDao.findDetail(cluster.getId(), VmDetailConstants.MEMORY_OVER_COMMIT_RATIO);
         Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
         Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
 
-        boolean hostHasCpuCapability = checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+        boolean hostHasCpuCapability = checkIfHostHasCpuCapability(host, offering.getCpu(), offering.getSpeed());
         boolean hostHasCapacity = checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
                 considerReservedCapacity);
 

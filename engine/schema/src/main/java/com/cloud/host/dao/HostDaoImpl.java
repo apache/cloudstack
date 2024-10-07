@@ -98,6 +98,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
+    protected SearchBuilder<HostVO> IdsSearch;
     protected SearchBuilder<HostVO> IdStatusSearch;
     protected SearchBuilder<HostVO> TypeDcSearch;
     protected SearchBuilder<HostVO> TypeDcStatusSearch;
@@ -245,6 +246,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeClusterStatusSearch.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("id", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
 
         IdStatusSearch = createSearchBuilder();
         IdStatusSearch.and("id", IdStatusSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -1604,5 +1609,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         sc.setParameters("type", Type.Routing);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<HostVO> listByIds(List<Long> ids) {
+        SearchCriteria<HostVO> sc = IdsSearch.create();
+        sc.setParameters("id", ids.toArray());
+        return search(sc, null);
     }
 }

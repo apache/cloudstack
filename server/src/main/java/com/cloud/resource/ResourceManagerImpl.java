@@ -547,8 +547,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 details.put("ovm3pool", allParams.get("ovm3pool"));
                 details.put("ovm3cluster", allParams.get("ovm3cluster"));
             }
-            details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
-            details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
+            details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
+            details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
             return result;
         }
@@ -558,8 +558,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("url", url);
         details.put("username", StringUtils.defaultString(username));
         details.put("password", StringUtils.defaultString(password));
-        details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
-        details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
+        details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
+        details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
         _clusterDetailsDao.persist(cluster.getId(), details);
 
         boolean success = false;
@@ -778,9 +778,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
             clusterId = cluster.getId();
-            if (_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio") == null) {
-                final ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", "1");
-                final ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", "1");
+            if (_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null) {
+                final ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO, "1");
+                final ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, "1");
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
@@ -3287,15 +3287,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public HostStats getHostStatistics(final long hostId) {
-        final Answer answer = _agentMgr.easySend(hostId, new GetHostStatsCommand(_hostDao.findById(hostId).getGuid(), _hostDao.findById(hostId).getName(), hostId));
+    public HostStats getHostStatistics(final Host host) {
+        final Answer answer = _agentMgr.easySend(host.getId(), new GetHostStatsCommand(host.getGuid(), host.getName(), host.getId()));
 
         if (answer != null && answer instanceof UnsupportedAnswer) {
             return null;
         }
 
         if (answer == null || !answer.getResult()) {
-            final String msg = "Unable to obtain host " + hostId + " statistics. ";
+            final String msg = "Unable to obtain host " + host.getId() + " statistics. ";
             s_logger.warn(msg);
             return null;
         } else {
