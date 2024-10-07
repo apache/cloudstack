@@ -286,18 +286,16 @@ public class BackrollClient {
 
             BackrollVmMetricsResponse vmMetricsResponse = waitGet(urlToRequest);
 
-            if (vmMetricsResponse != null) {
-                if (vmMetricsResponse.state.equals(TaskState.SUCCESS)) {
-                    LOG.debug("SUCCESS ok");
-                    if (vmMetricsResponse.infos != null) {
-                        if (vmMetricsResponse.infos.cache != null) {
-                            if (vmMetricsResponse.infos.cache.stats != null) {
-                                CacheStats stats = vmMetricsResponse.infos.cache.stats;
-                                long size = Long.parseLong(stats.totalSize);
-                                return new Metric(size, size);
-                            }
-                        }
-                    }
+            if (vmMetricsResponse != null && vmMetricsResponse.state.equals(TaskState.SUCCESS)) {
+                LOG.debug("SUCCESS ok");
+                CacheStats stats = null;
+                try {
+                    stats = vmMetricsResponse.infos.cache.stats;
+                } catch (NullPointerException e) {
+                }
+                if (stats != null) {
+                    long size = Long.parseLong(stats.totalSize);
+                    return new Metric(size, size);
                 }
             }
         } catch (final Exception e) {
