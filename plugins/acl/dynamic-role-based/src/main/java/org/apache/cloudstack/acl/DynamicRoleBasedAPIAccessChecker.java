@@ -111,12 +111,10 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     protected Account getAccountFromId(long accountId) {
-        LOGGER.debug("Account not available in cache for-----------------------------" + accountId);
         return accountService.getAccount(accountId);
     }
 
     protected Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
-        LOGGER.debug("RolePermissions not available in cache for role-----------------------------" + roleId);
         final Role accountRole = roleService.findRole(roleId);
         if (accountRole == null || accountRole.getId() < 1L) {
             return new Pair<>(null, null);
