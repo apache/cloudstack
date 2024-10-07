@@ -1341,8 +1341,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append("?");
                     joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
-                    if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null ||
-                    join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null) {
+                    if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                            (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
                         onClause.append(joinedTableNames.getOrDefault(join.getSecondAttribute()[i].table, join.getFirstAttributes()[i].table))
                                 .append(".");
                         if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) {
@@ -1357,8 +1357,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                                 .append(join.getFirstAttributes()[i].columnName);
                     }
                 }
-                if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null ||
-                join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null) {
+                if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                        (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
                     onClause.append(" IS NULL");
                 } else {
                     onClause.append("=");
