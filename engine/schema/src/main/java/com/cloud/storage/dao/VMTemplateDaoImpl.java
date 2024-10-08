@@ -672,13 +672,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public List<VMTemplateVO> listByTemplateTag(String tag) {
-        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+    public List<Long> listIdsByTemplateTag(String tag) {
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
         sb.and("tag", sb.entity().getTemplateTag(), SearchCriteria.Op.EQ);
         sb.done();
-        SearchCriteria<VMTemplateVO> sc = sb.create();
+        SearchCriteria<Long> sc = sb.create();
         sc.setParameters("tag", tag);
-        return listIncludingRemovedBy(sc);
+        return customSearchIncludingRemoved(sc, null);
     }
 
     @Override

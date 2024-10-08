@@ -58,10 +58,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -614,8 +612,8 @@ public class ResourceLimitManagerImplTest {
     @Test
     public void testGetVmsWithAccountAndTagNegative() {
         String tag = hostTags.get(0);
-        Mockito.when(serviceOfferingDao.listByHostTag(tag)).thenReturn(null);
-        Mockito.when(vmTemplateDao.listByTemplateTag(tag)).thenReturn(null);
+        Mockito.when(serviceOfferingDao.listIdsByHostTag(tag)).thenReturn(null);
+        Mockito.when(vmTemplateDao.listIdsByTemplateTag(tag)).thenReturn(null);
         List<UserVmJoinVO> result = resourceLimitManager.getVmsWithAccountAndTag(1L, hostTags.get(0));
         Assert.assertTrue(CollectionUtils.isEmpty(result));
     }
@@ -624,12 +622,8 @@ public class ResourceLimitManagerImplTest {
     public void testGetVmsWithAccountAndTag() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(VirtualMachineManager.ResourceCountRunningVMsonly, "_defaultValue", "true");
         String tag = hostTags.get(0);
-        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(serviceOfferingVO.getId()).thenReturn(1L);
-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
-        Mockito.when(templateVO.getId()).thenReturn(1L);
-        Mockito.when(serviceOfferingDao.listByHostTag(tag)).thenReturn(List.of(serviceOfferingVO));
-        Mockito.when(vmTemplateDao.listByTemplateTag(tag)).thenReturn(List.of(templateVO));
+        Mockito.when(serviceOfferingDao.listIdsByHostTag(tag)).thenReturn(List.of(1L));
+        Mockito.when(vmTemplateDao.listIdsByTemplateTag(tag)).thenReturn(List.of(1L));
         List<UserVmJoinVO> vmList = List.of(Mockito.mock(UserVmJoinVO.class));
         Mockito.when(userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList(), Mockito.anyList())).thenReturn(vmList);
         List<UserVmJoinVO> result = resourceLimitManager.getVmsWithAccountAndTag(1L, tag);

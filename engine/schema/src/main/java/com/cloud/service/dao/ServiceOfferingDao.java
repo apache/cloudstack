@@ -56,5 +56,5 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
 
     ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(long diskOfferingId);
 
-    List<ServiceOfferingVO> listByHostTag(String tag);
+    List<Long> listIdsByHostTag(String tag);
 }

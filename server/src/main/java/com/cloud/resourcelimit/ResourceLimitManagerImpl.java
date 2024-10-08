@@ -94,7 +94,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
@@ -1294,16 +1293,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (StringUtils.isEmpty(tag)) {
             return _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states, null, null);
         }
-        List<ServiceOfferingVO> offerings = serviceOfferingDao.listByHostTag(tag);
-        List<VMTemplateVO> templates = _vmTemplateDao.listByTemplateTag(tag);
+        List<Long> offerings = serviceOfferingDao.listIdsByHostTag(tag);
+        List<Long> templates = _vmTemplateDao.listIdsByTemplateTag(tag);
         if (CollectionUtils.isEmpty(offerings) && CollectionUtils.isEmpty(templates)) {
             return new ArrayList<>();
         }
 
         return  _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states,
-                offerings.stream().map(ServiceOfferingVO::getId).collect(Collectors.toList()),
-                templates.stream().map(VMTemplateVO::getId).collect(Collectors.toList())
-        );
+                offerings, templates);
     }
 
     protected List<UserVmJoinVO> getVmsWithAccount(long accountId) {
@@ -1321,7 +1318,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 vrIds);
     }
 
-    private long calculateReservedResources(List<UserVmJoinVO> vms,long accountId, ResourceType type, String tag) {
+    private long calculateReservedResources(List<UserVmJoinVO> vms, long accountId, ResourceType type, String tag) {
         Set<Long> vmIds = vms.stream().map(UserVmJoinVO::getId).collect(Collectors.toSet());
         List<ReservationVO> reservations = reservationDao.getReservationsForAccount(accountId, type, tag);
         long reserved = 0;
