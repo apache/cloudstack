@@ -1790,7 +1790,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (vpcId != null && VpcManager.VpcTierNamePrepend.value()) {
             final String connector = VpcManager.VpcTierNamePrependDelimiter.value();
-            Vpc vpc  = _vpcDao.findById(vpcId);
+            Vpc vpc = _vpcDao.findById(vpcId);
             if (vpc == null) {
                 throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
             }
