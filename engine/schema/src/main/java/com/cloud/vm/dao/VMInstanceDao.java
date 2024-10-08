@@ -82,7 +82,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listByHostAndState(long hostId, State... states);
 
-    List<VMInstanceVO> listByTypes(VirtualMachine.Type... types);
+    int countByTypes(VirtualMachine.Type... types);
 
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
 

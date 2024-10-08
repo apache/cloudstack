@@ -466,10 +466,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByTypes(Type... types) {
+    public int countByTypes(Type... types) {
         SearchCriteria<VMInstanceVO> sc = TypesSearch.create();
         sc.setParameters("types", (Object[])types);
-        return listBy(sc);
+        return getCount(sc);
     }
 
     @Override
