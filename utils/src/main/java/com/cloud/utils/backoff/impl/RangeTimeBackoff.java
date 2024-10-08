@@ -36,7 +36,7 @@ import com.cloud.utils.component.AdapterBase;
  *
  **/
 public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
-    private static final int DEFAULT_MIN_TIME = 5;
+    protected static final int DEFAULT_MIN_TIME = 5;
     private int minTime = DEFAULT_MIN_TIME;
     private int maxTime = 3 * DEFAULT_MIN_TIME;
     private final Map<String, Thread> asleep = new ConcurrentHashMap<>();
@@ -44,11 +44,12 @@ public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
 
     @Override
     public void waitBeforeRetry() {
+        long time = minTime * 1000L;
         Thread current = Thread.currentThread();
         try {
             asleep.put(current.getName(), current);
-            long time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
-            LOG.info("Waiting " + current.getName() + " for " + time);
+            time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
+            LOG.debug("Waiting " + current.getName() + " for " + time);
             Thread.sleep(time);
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
@@ -57,7 +58,6 @@ public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
         } finally {
             asleep.remove(current.getName());
         }
-        return;
     }
 
     @Override

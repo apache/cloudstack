@@ -56,7 +56,6 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
         } finally {
             _asleep.remove(current.getName());
         }
-        return;
     }
 
     @Override
