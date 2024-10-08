@@ -221,6 +221,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setVolumePaths(getVolumePaths(volumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
@@ -289,6 +290,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vmNameAndState.first());
         restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(volumeUuid);
