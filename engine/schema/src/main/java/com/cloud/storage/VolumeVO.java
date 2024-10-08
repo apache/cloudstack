@@ -48,8 +48,8 @@ public class VolumeVO implements Volume {
     @Column(name = "id")
     long id;
 
-    @Column(name = "previous_id")
-    private long previousId;
+    @Column(name = "last_id")
+    private long lastId;
 
     @Column(name = "name")
     String name;
@@ -681,11 +681,11 @@ public class VolumeVO implements Volume {
 
     public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
 
-    public long getPreviousId() {
-        return previousId;
+    public long getLastId() {
+        return lastId;
     }
 
-    public void setPreviousId(long previousId) {
-        this.previousId = previousId;
+    public void setLastId(long lastId) {
+        this.lastId = lastId;
     }
 }

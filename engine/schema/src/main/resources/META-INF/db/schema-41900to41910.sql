@@ -71,4 +71,4 @@ UPDATE `cloud`.`configuration` SET
     `options` = 'FirstFitRouting,RandomAllocator,TestingAllocator,FirstFitAllocator,RecreateHostAllocator'
 WHERE `name` = 'host.allocators.order';
 
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('volumes','previous_id', 'bigint(20) unsigned DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('volumes','last_id', 'bigint(20) unsigned DEFAULT NULL');
