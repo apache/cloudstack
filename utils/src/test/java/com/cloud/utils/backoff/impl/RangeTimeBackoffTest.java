@@ -31,8 +31,8 @@ public class RangeTimeBackoffTest {
     public void testWaitValidValue() {
         RangeTimeBackoff backoff = new RangeTimeBackoff();
         Map<String, Object> map = new HashMap<>();
-        int min = 5;
-        int max = 10;
+        int min = 1;
+        int max = 3;
         map.put("minSeconds", String.valueOf(min));
         map.put("maxSeconds", String.valueOf(max));
         backoff.configure("RangeTimeBackoff", map);
@@ -67,4 +67,18 @@ public class RangeTimeBackoffTest {
         Assert.assertTrue(timeTaken >= RangeTimeBackoff.DEFAULT_MIN_TIME * 1000L);
     }
 
+    @Test
+    public void testWaitVMinHigherThanMax() {
+        RangeTimeBackoff backoff = new RangeTimeBackoff();
+        Map<String, Object> map = new HashMap<>();
+        int min = 3;
+        int max = 2;
+        map.put("minSeconds", String.valueOf(min));
+        map.put("maxSeconds", String.valueOf(max));
+        backoff.configure("RangeTimeBackoff", map);
+        long startTime = System.currentTimeMillis();
+        backoff.waitBeforeRetry();
+        long timeTaken = System.currentTimeMillis() - startTime;
+        Assert.assertTrue(timeTaken >= min * 1000L);
+    }
 }

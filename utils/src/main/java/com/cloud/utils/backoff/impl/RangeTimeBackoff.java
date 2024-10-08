@@ -44,12 +44,16 @@ public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
 
     @Override
     public void waitBeforeRetry() {
-        long time = minTime * 1000L;
+        long time = Math.max(minTime, 0) * 1000L;
         Thread current = Thread.currentThread();
         try {
             asleep.put(current.getName(), current);
-            time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
-            LOG.debug("Waiting " + current.getName() + " for " + time);
+            if (maxTime > minTime) {
+                time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Waiting %s for %d milliseconds", current.getName(), time));
+            }
             Thread.sleep(time);
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
