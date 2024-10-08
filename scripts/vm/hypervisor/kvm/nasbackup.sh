@@ -151,6 +151,9 @@ delete_backup() {
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
+  if [ ${NAS_TYPE} == "cifs" ]; then
+    MOUNT_OPTS="${MOUNT_OPTS},nobrl"
+  fi
   mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) | tee -a "$logFile"
   if [ $? -eq 0 ]; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
