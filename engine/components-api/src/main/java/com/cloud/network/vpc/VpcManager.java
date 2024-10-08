@@ -42,7 +42,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 public interface VpcManager {
     ConfigKey<Boolean> VpcTierNamePrepend = new ConfigKey<>(Boolean.class,
             "vpc.tier.name.prepend",
-            "Advanced",
+            ConfigKey.CATEGORY_NETWORK,
             "false",
             "Whether to prepend the VPC name to the VPC tier network name",
             true,
@@ -50,7 +50,7 @@ public interface VpcManager {
             null);
     ConfigKey<String> VpcTierNamePrependDelimiter = new ConfigKey<>(String.class,
             "vpc.tier.name.prepend.delimiter",
-            "Advanced",
+            ConfigKey.CATEGORY_NETWORK,
             " ",
             "Delimiter string to use between the VPC and the VPC tier name",
             true,

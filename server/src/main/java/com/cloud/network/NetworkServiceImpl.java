@@ -1789,12 +1789,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         if (vpcId != null && VpcManager.VpcTierNamePrepend.value()) {
-            final String connector = VpcManager.VpcTierNamePrependDelimiter.value();
+            final String delimiter = VpcManager.VpcTierNamePrependDelimiter.value();
             Vpc vpc = _vpcDao.findById(vpcId);
-            if (vpc == null) {
-                throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
+            if (vpc != null) {
+                name = vpc.getName() + delimiter + name;
             }
-            name = vpc.getName() + connector + name;
         }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
