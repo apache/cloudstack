@@ -180,7 +180,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected ExecutorService _executor;
     protected ThreadPoolExecutor _connectExecutor;
-    protected ScheduledExecutorService _directAgentExecutor;
+    protected ThreadPoolExecutor _directAgentExecutor;
     protected ScheduledExecutorService _cronJobExecutor;
     protected ScheduledExecutorService _monitorExecutor;
 
@@ -222,8 +222,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         s_logger.info("Ping Timeout is " + mgmtServiceConf.getPingTimeout());
 
-        final int threads = DirectAgentLoadSize.value();
-
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
 
@@ -234,7 +232,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         registerForHostEvents(new SetHostParamsListener(), true, true, false);
 
-        _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        final int agentTaskThreads = DirectAgentLoadSize.value();
+        _executor = new ThreadPoolExecutor(Math.max(agentTaskThreads/10, 1), agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
         // allow core threads to time out even when there are no items in the queue
@@ -246,7 +245,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         // executes all agent commands other than cron and ping
-        _directAgentExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgent"));
+        _directAgentExecutor = new ThreadPoolExecutor(Math.max(agentTaskThreads/10, 1), DirectAgentPoolSize.value(), 120L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("DirectAgent"));
         // executes cron and ping agent commands
         _cronJobExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgentCronJob"));
         s_logger.debug("Created DirectAgentAttache pool with size: " + DirectAgentPoolSize.value());
@@ -1678,7 +1677,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
-    public ScheduledExecutorService getDirectAgentPool() {
+    public ThreadPoolExecutor getDirectAgentPool() {
         return _directAgentExecutor;
     }
 
