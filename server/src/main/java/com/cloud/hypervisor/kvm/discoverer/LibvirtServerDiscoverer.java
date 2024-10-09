@@ -435,7 +435,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
-        clusterExistingHostCache = new LazyCache<>(32, 15,
+        clusterExistingHostCache = new LazyCache<>(32, 30,
                 this::getExistingHostForCluster);
 
         agentMgr.registerForHostEvents(this, true, false, false);
