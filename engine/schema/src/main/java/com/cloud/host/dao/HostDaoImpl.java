@@ -1613,6 +1613,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
         SearchCriteria<HostVO> sc = IdsSearch.create();
         sc.setParameters("id", ids.toArray());
         return search(sc, null);

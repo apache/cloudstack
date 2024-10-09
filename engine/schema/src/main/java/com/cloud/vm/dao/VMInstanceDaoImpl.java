@@ -931,6 +931,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     protected List<VMInstanceVO> listSelectPowerStateByIds(final List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
         SearchCriteria<VMInstanceVO> sc = IdsPowerStateSelectSearch.create();
         sc.setParameters("id", ids.toArray());
         return customSearch(sc, null);
