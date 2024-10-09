@@ -1476,6 +1476,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    private String getVpcPrependedNetworkName(String networkName, Vpc vpc) {
+        final String delimiter = VpcManager.VpcTierNamePrependDelimiter.value();
+        return vpc.getName() + delimiter + networkName;
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
@@ -1789,10 +1794,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         if (vpcId != null && VpcManager.VpcTierNamePrepend.value()) {
-            final String delimiter = VpcManager.VpcTierNamePrependDelimiter.value();
             Vpc vpc = _vpcDao.findById(vpcId);
             if (vpc != null) {
-                name = vpc.getName() + delimiter + name;
+                name = getVpcPrependedNetworkName(name, vpc);
             }
         }
 
