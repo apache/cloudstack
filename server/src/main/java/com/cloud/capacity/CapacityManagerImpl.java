@@ -148,7 +148,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     MessageBus _messageBus;
 
-    private LazyCache<Long, Pair<ClusterDetailsVO, ClusterDetailsVO>> clusterValuesCache;
+    private LazyCache<Long, Pair<String, String>> clusterValuesCache;
     private SingleCache<Map<Long, ServiceOfferingVO>> serviceOfferingsCache;
     private QueuedExecutor<Host> hostCapacityUpdateExecutor;
 
@@ -170,7 +170,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public boolean start() {
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_PREPARE_MAINTENANCE_AFTER, this);
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, this);
-        clusterValuesCache = new LazyCache<>(16, 60, this::getClusterValues);
+        clusterValuesCache = new LazyCache<>(128, 60, this::getClusterValues);
         serviceOfferingsCache = new SingleCache<>(60, this::getServiceOfferingsMap);
         hostCapacityUpdateExecutor.startProcessing();
         return true;
@@ -652,9 +652,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         hostCapacityUpdateExecutor.queueRequest(host);
     }
 
-    protected Pair<ClusterDetailsVO, ClusterDetailsVO> getClusterValues(long clusterId) {
-        return new Pair<>(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO),
-                _clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO));
+    protected Pair<String, String> getClusterValues(long clusterId) {
+        Map<String, String> map = _clusterDetailsDao.findDetails(clusterId,
+                List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO, VmDetailConstants.CPU_OVER_COMMIT_RATIO));
+        return new Pair<>(map.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO),
+                map.get(VmDetailConstants.CPU_OVER_COMMIT_RATIO));
     }
 
 
@@ -712,12 +714,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
         vms.addAll(vosMigrating);
 
-        Pair<ClusterDetailsVO, ClusterDetailsVO> clusterValues =
+        Pair<String, String> clusterValues =
                 clusterValuesCache.get(host.getClusterId());
-        ClusterDetailsVO clusterDetailCpu = clusterValues.first();
-        ClusterDetailsVO clusterDetailRam = clusterValues.second();
-        Float clusterCpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
-        Float clusterRamOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
+        Float clusterCpuOvercommitRatio = Float.parseFloat(clusterValues.first());
+        Float clusterRamOvercommitRatio = Float.parseFloat(clusterValues.second());
         for (VMInstanceVO vm : vms) {
             Float cpuOvercommitRatio = 1.0f;
             Float ramOvercommitRatio = 1.0f;
