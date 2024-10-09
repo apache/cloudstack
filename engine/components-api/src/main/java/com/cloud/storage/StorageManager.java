@@ -206,6 +206,11 @@ public interface StorageManager extends StorageService {
             "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
             true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> AllowVolumeReSizeBeyondAllocation = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
+            "Determines whether volume size can exceed the pool capacity allocation disable threshold (pool.storage.allocated.capacity.disablethreshold) " +
+                    "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
+            true, ConfigKey.Scope.Zone);
+
     /**
      * should we execute in sequence not involving any storages?
      * @return tru if commands should execute in sequence
