@@ -459,6 +459,11 @@ public class AgentShell implements IAgentShell, Daemon {
         agent.start();
     }
 
+    @Override
+    public Integer getSslHandshakeTimeout() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SSL_HANDSHAKE_TIMEOUT);
+    }
+
     public synchronized int getNextAgentId() {
         return _nextAgentId++;
     }
