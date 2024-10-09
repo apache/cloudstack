@@ -22,13 +22,14 @@
 # The default 'modifyvxlan.sh' script from CloudStack uses Multicast instead of EVPN for VXLAN
 # In order to use this script and thus utilize BGP+EVPN, symlink this file:
 #
-# ln -s /usr/share/modifyvxlan.sh /usr/share/cloudstack-common/scripts/vm/network/vnet/modifyvxlan-evpn.sh
+# cd /usr/share
+# ln -s cloudstack-common/scripts/vm/network/vnet/modifyvxlan-evpn.sh modifyvxlan.sh
 #
 #
 # CloudStack will not handle the BGP configuration nor communication, the operator of the hypervisor will
 # need to configure the properly.
 #
-# Frrouting is recommend to be used on the hypervisor to establish BGP sessions with upstream routers and 
+# Frrouting is recommend to be used on the hypervisor to establish BGP sessions with upstream routers and
 # exchange BGP+EVPN information.
 #
 # More information about BGP and EVPN with FRR: https://vincent.bernat.ch/en/blog/2017-vxlan-bgp-evpn
