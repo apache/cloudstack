@@ -1087,7 +1087,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _vmDao.loadDetails(userVm);
             userVm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKeys);
             userVm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, keypairnames);
-            _vmDao.saveDetails(userVm);
+            userVmDetailsDao.saveDetails(userVm);
 
             if (vmInstance.getState() == State.Stopped) {
                 logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
@@ -2910,7 +2910,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 verifyVmLimits(vmInstance, details);
                 vmInstance.setDetails(details);
-                _vmDao.saveDetails(vmInstance);
+                userVmDetailsDao.saveDetails(vmInstance);
             }
             if (StringUtils.isNotBlank(extraConfig)) {
                 if (EnableAdditionalVmConfig.valueIn(accountId)) {
@@ -4710,7 +4710,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.containsKey(VmDetailConstants.NAME_ON_HYPERVISOR)) {
             hiddenDetails.add(VmDetailConstants.NAME_ON_HYPERVISOR);
         }
-        _vmDao.saveDetails(vm, hiddenDetails);
+        userVmDetailsDao.saveDetails(vm, hiddenDetails);
         if (!isImport) {
             logger.debug("Allocating in the DB for vm");
             DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
@@ -8510,7 +8510,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             vm.setDetail(VmDetailConstants.ENCRYPTED_PASSWORD, encryptedPasswd);
-            _vmDao.saveDetails(vm);
+            userVmDetailsDao.saveDetails(vm);
         }
     }
 
@@ -8519,7 +8519,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String existingVmRootDiskController = vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER);
         if (StringUtils.isEmpty(existingVmRootDiskController) && StringUtils.isNotEmpty(rootDiskController)) {
             vm.setDetail(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
-            _vmDao.saveDetails(vm);
+            userVmDetailsDao.saveDetails(vm);
             if (logger.isDebugEnabled()) {
                 logger.debug("Persisted device bus information rootDiskController=" + rootDiskController + " for vm: " + vm.getDisplayName());
             }

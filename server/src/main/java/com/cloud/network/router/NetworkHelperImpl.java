@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.validation.ChecksumUtil;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -176,6 +177,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -531,6 +534,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                     continue;
                 }
 
+                _templateDao.loadDetails(template);
+
                 final boolean offerHA = routerOffering.isOfferHA();
 
                 // routerDeploymentDefinition.getVpc().getId() ==> do not use
@@ -553,6 +558,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router.setLimitCpuUse(routerOffering.getLimitCpuUse());
                 router = _routerDao.persist(router);
+
+                router.setDetails(template.getDetails());
+                userVmDetailsDao.saveDetails(router);
 
                 reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
                 router = _routerDao.findById(router.getId());
