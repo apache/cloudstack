@@ -403,9 +403,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                     nic = null;
                 }
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-                }
+                logger.trace("nic, '{}', goes on net, '{}'", nic, networkUuid);
                 if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -795,12 +793,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+                logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
                 logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("VM {} already created, load UserVm from DB", getEntityUuid());
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
