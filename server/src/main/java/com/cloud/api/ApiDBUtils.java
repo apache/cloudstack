@@ -227,6 +227,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkRuleConfigDao;
@@ -431,6 +432,7 @@ public class ApiDBUtils {
     static DomainDetailsDao s_domainDetailsDao;
     static AccountDetailsDao s_accountDetailsDao;
     static NetworkDomainDao s_networkDomainDao;
+    static NetworkDetailsDao s_networkDetailsDao;
     static HighAvailabilityManager s_haMgr;
     static VpcManager s_vpcMgr;
     static TaggedResourceService s_taggedResourceService;
@@ -632,6 +634,8 @@ public class ApiDBUtils {
     private AccountDetailsDao accountDetailsDao;
     @Inject
     private NetworkDomainDao networkDomainDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
     @Inject
     private HighAvailabilityManager haMgr;
     @Inject
@@ -835,6 +839,7 @@ public class ApiDBUtils {
         s_domainDetailsDao = domainDetailsDao;
         s_accountDetailsDao = accountDetailsDao;
         s_networkDomainDao = networkDomainDao;
+        s_networkDetailsDao = networkDetailsDao;
         s_haMgr = haMgr;
         s_vpcMgr = vpcMgr;
         s_taggedResourceService = taggedResourceService;
@@ -1517,6 +1522,11 @@ public class ApiDBUtils {
 
     public static Map<String, String> getAccountDetails(long accountId) {
         Map<String, String> details = s_accountDetailsDao.findDetails(accountId);
+        return details.isEmpty() ? null : details;
+    }
+
+    public static Map<String, String> getNetworkDetails(long networkId) {
+        Map<String, String> details = s_networkDetailsDao.listDetailsKeyPairs(networkId);
         return details.isEmpty() ? null : details;
     }
 
