@@ -105,6 +105,15 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("snapshotavailable") @Param(description="the total number of snapshots available for this domain")
     private String snapshotAvailable;
 
+    @SerializedName("backuplimit") @Param(description="the total number of backups which can be stored by this domain")
+    private String backupLimit;
+
+    @SerializedName("backuptotal") @Param(description="the total number of backups stored by this domain")
+    private Long backupTotal;
+
+    @SerializedName("backupavailable") @Param(description="the total number of backups available for this domain")
+    private String backupAvailable;
+
     @SerializedName("templatelimit") @Param(description="the total number of templates which can be created by this domain")
     private String templateLimit;
 
@@ -311,6 +320,21 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
     }
 
     @Override
