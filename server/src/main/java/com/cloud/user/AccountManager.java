@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
@@ -35,7 +36,6 @@ import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -85,7 +85,7 @@ public interface AccountManager extends AccountService, Configurable {
      *            that was created for a particular user
      * @return the user/account pair if one exact match was found, null otherwise
      */
-    Pair<User, Account> findUserByApiKey(String apiKey);
+    Ternary<User, Account, ApiKeyPair> findUserByApiKey(String apiKey);
 
     boolean enableAccount(long accountId);
 

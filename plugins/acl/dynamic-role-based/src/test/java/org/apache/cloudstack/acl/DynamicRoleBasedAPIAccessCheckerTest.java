@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -195,4 +197,69 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         List<String> apisReceived = apiAccessCheckerSpy.getApisAllowedToUser(getTestRole(), getTestUser(), apiNames);
         Assert.assertEquals(0, apisReceived.size());
     }
+
+    @Test(expected = UnavailableCommandException.class)
+    public void checkAccessTestInvalidApiKeyPairPermission() {
+        final String api = "someDeniedApi";
+        final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, api, Permission.DENY, null);
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+    }
+
+    @Test(expected = UnavailableCommandException.class)
+    public void checkAccessTestUnrelatedApiKeyPairPermission() {
+        final String api = "someDeniedApi";
+        final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, "apiName", Permission.ALLOW, null);
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+    }
+
+    @Test
+    public void checkAccessTestValidApiKeyPairPermission() {
+        final String api = "someAllowedApi";
+        final ApiKeyPairPermission permission = new ApiKeyPairPermissionVO(1L, api, Permission.ALLOW, null);
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permission));
+    }
+
+    @Test
+    public void checkAccessTestValidMultipleApiKeyPermissions() {
+        final String api = "someAllowedApi";
+        final ApiKeyPairPermission[] permissions = new ApiKeyPairPermission[]{
+                new ApiKeyPairPermissionVO(1L, "someDeniedApi", Permission.DENY, null),
+                new ApiKeyPairPermissionVO(1L, api, Permission.ALLOW, null)
+        };
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permissions));
+    }
+
+    @Test(expected = UnavailableCommandException.class)
+    public void checkAccessTestInvalidMultipleApiKeyPermissions() {
+        final String api = "someDeniedApi";
+        final ApiKeyPairPermission[] permissions = new ApiKeyPairPermission[]{
+                new ApiKeyPairPermissionVO(1L, "someAllowedApi", Permission.ALLOW, null),
+                new ApiKeyPairPermissionVO(1L, api, Permission.DENY, null)
+        };
+        assertFalse(apiAccessCheckerSpy.checkAccess(getTestUser(), api, permissions));
+    }
+
+
+    @Test
+    public void checkAccessTestValidApiKeyPairPermissionWithNullOverride() {
+        final String api = "someAllowedApi";
+        final ApiKeyPairPermission[] emptyPermissionArray = List.of().toArray(new ApiKeyPairPermission[0]);
+        final RolePermission permission = new RolePermissionVO(1L, api, Permission.ALLOW, null);
+        Mockito.doReturn(Collections.singletonList(permission)).when(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
+
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, emptyPermissionArray));
+        Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
+    }
+
+    @Test(expected = UnavailableCommandException.class)
+    public void checkAccessTestInvalidApiKeyPairPermissionWithNullOverride() {
+        final String api = "someDeniedApi";
+        final ApiKeyPairPermission[] emptyPermissionArray = List.of().toArray(new ApiKeyPairPermission[0]);
+        final RolePermission permission = new RolePermissionVO(1L, api, Permission.DENY, null);
+        Mockito.doReturn(Collections.singletonList(permission)).when(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
+
+        assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, emptyPermissionArray));
+        Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
+    }
+
 }

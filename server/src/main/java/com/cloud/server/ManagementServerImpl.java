@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -276,14 +277,17 @@ import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.user.CreateUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
@@ -3616,7 +3620,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
         cmdList.add(MoveUserCmd.class);
-        cmdList.add(RegisterCmd.class);
+        cmdList.add(RegisterUserKeysCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(UpdateVlanIpRangeCmd.class);
@@ -4034,6 +4038,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
+        cmdList.add(ListUserKeysCmd.class);
+        cmdList.add(ListUserKeyRulesCmd.class);
+        cmdList.add(DeleteUserKeysCmd.class);
         cmdList.add(CreateConsoleEndpointCmd.class);
 
         //user data APIs
@@ -4422,7 +4429,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         try {
             // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
-            final String secretKey = user.getSecretKey();
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+            final String secretKey = latestKeypair.getSecretKey();
             final String input = cloudIdentifier;
             signature = signRequest(input, secretKey);
         } catch (final Exception e) {
