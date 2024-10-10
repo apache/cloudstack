@@ -309,6 +309,7 @@ import com.googlecode.ipv6.IPv6Network;
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -953,6 +954,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = _configDepot.get(name).category();
         } else {
             category = config.getCategory();
+        }
+
+        if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
+            logger.warn("Only Root Admin is allowed to edit the configuration " + name);
+            throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
         }
 
         if (value == null) {

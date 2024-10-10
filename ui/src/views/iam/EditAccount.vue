@@ -21,64 +21,40 @@
       <a-form
         :ref="formRef"
         :model="form"
-        :rules="rules"
         :loading="loading"
         layout="vertical"
         @finish="handleSubmit">
-        <a-form-item name="username" ref="username">
+        <a-form-item ref="newname" name="newname">
           <template #label>
-            <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+            <tooltip-label :title="$t('label.newname')" :tooltip="apiParams.newname.description"/>
           </template>
           <a-input
-            v-model:value="form.username"
-            :placeholder="apiParams.username.description"
-            v-focus="true" />
+            v-model:value="form.newname"
+            :placeholder="apiParams.newname.description" />
         </a-form-item>
-        <a-form-item name="email" ref="email">
+        <a-form-item ref="networkdomain" name="networkdomain">
           <template #label>
-            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+            <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
           </template>
           <a-input
-            v-model:value="form.email"
-            :placeholder="apiParams.email.description" />
+            v-model:value="form.networkdomain"
+            :placeholder="apiParams.networkdomain.description" />
         </a-form-item>
-        <a-row :gutter="12">
-          <a-col :md="24" :lg="12">
-            <a-form-item name="firstname" ref="firstname">
-              <template #label>
-                <tooltip-label :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
-              </template>
-              <a-input
-                v-model:value="form.firstname"
-                :placeholder="apiParams.firstname.description" />
-            </a-form-item>
-          </a-col>
-          <a-col :md="24" :lg="12">
-            <a-form-item name="lastname" ref="lastname">
-              <template #label>
-                <tooltip-label :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
-              </template>
-              <a-input
-                v-model:value="form.lastname"
-                :placeholder="apiParams.lastname.description" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item name="timezone" ref="timezone">
+        <a-form-item ref="roleid" name="roleid">
           <template #label>
-            <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+            <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
           </template>
           <a-select
-            v-model:value="form.timezone"
-            :loading="timeZoneLoading"
+            v-model:value="form.roleid"
+            :loading="roleLoading"
+            :placeholder="apiParams.roleid.description"
+            v-focus="true"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
-              {{ opt.name || opt.description }}
-            </a-select-option>
+            }">
+            <a-select-option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item v-if="isRootAdmin" ref="apikeyaccess" name="apikeyaccess">
@@ -104,16 +80,13 @@
     </a-spin>
   </div>
 </template>
-
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import { timeZone } from '@/utils/timezone'
-import debounce from 'lodash/debounce'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'EditUser',
+  name: 'EditAccount',
   components: {
     TooltipLabel
   },
@@ -121,23 +94,17 @@ export default {
     resource: {
       type: Object,
       required: true
-    },
-    currentAction: {
-      type: Object,
-      required: true
     }
   },
   data () {
-    this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       loading: false,
-      timeZoneLoading: false,
-      timeZoneMap: [],
-      userId: null
+      roleLoading: false,
+      roles: []
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('updateUser')
+    this.apiParams = this.$getApiParams('updateAccount')
   },
   created () {
     this.initForm()
@@ -152,73 +119,51 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
-      this.rules = reactive({
-        username: [{ required: true, message: this.$t('message.error.required.input') }],
-        email: [{ required: true, message: this.$t('message.error.required.input') }],
-        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
-        lastname: [{ required: true, message: this.$t('message.error.required.input') }]
-      })
     },
     fetchData () {
-      this.userId = this.$route.params.id || null
-      this.fetchTimeZone()
-      this.fillEditFormFieldValues()
-    },
-    fetchTimeZone (value) {
-      this.timeZoneMap = []
-      this.timeZoneLoading = true
-
-      timeZone(value).then(json => {
-        this.timeZoneMap = json
-        this.timeZoneLoading = false
-      })
-    },
-    fillEditFormFieldValues () {
-      const form = this.form
-      this.loading = true
-      Object.keys(this.apiParams).forEach(item => {
-        const field = this.apiParams[item]
-        let fieldValue = null
-        let fieldName = null
-
-        if (field.type === 'list' || field.name === 'account') {
-          fieldName = field.name.replace('ids', 'name').replace('id', 'name')
-        } else {
-          fieldName = field.name
-        }
-        fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
-        if (fieldValue) {
-          form[field.name] = fieldValue
-        }
-      })
-      this.loading = false
+      this.account = this.resource.name
+      this.domainId = this.resource.domainid
+      this.form.apikeyaccess = this.resource.apikeyaccess
+      this.fetchRoles()
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
+    },
+    fetchRoles () {
+      this.roleLoading = true
+      const params = {}
+      params.state = 'enabled'
+      api('listRoles', params).then(response => {
+        this.roles = response.listrolesresponse.role || []
+        this.form.roleid = this.resource.roleid
+      }).finally(() => {
+        this.roleLoading = false
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+
         this.loading = true
         const params = {
-          id: this.userId,
-          username: values.username,
-          email: values.email,
-          firstname: values.firstname,
-          lastname: values.lastname,
-          apikeyaccess: values.apikeyaccess
+          newname: values.newname,
+          networkdomain: values.networkdomain,
+          roleid: values.roleid,
+          apikeyaccess: values.apikeyaccess,
+          account: this.account,
+          domainid: this.domainId
         }
-        if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
-          params.timezone = values.timezone
+        if (this.isValidValueForKey(values, 'networkdomain') && values.networkdomain.length > 0) {
+          params.networkdomain = values.networkdomain
         }
 
-        api('updateUser', params).then(response => {
+        api('updateAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
-            message: this.$t('label.edit.user'),
-            description: `${this.$t('message.success.update.user')} ${params.username}`
+            message: this.$t('label.edit.account'),
+            description: `${this.$t('message.success.update.account')} ${params.account}`
           })
           this.closeAction()
         }).catch(error => {
@@ -240,12 +185,11 @@ export default {
   }
 }
 </script>
-
 <style scoped lang="less">
-.form-layout {
-  width: 80vw;
-  @media (min-width: 600px) {
-    width: 450px;
+  .form-layout {
+    width: 80vw;
+    @media (min-width: 600px) {
+      width: 450px;
+    }
   }
-}
 </style>
