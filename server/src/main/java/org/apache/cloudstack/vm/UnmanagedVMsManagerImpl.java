@@ -1000,7 +1000,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 if (vm.getState().equals(VirtualMachine.State.Running)) {
                     volume = volumeManager.liveMigrateVolume(volumeVO, storagePool);
                 } else {
-                    volume = volumeManager.migrateVolume(volumeVO, storagePool);
+                    volume = volumeManager.migrateVolume(volumeVO, storagePool, dOffering);
                 }
                 if (volume == null) {
                     String msg = "";
