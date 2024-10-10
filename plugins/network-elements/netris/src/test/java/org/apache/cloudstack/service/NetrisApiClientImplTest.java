@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import io.netris.model.GetSiteBody;
+import io.netris.model.VPCListing;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,5 +40,11 @@ public class NetrisApiClientImplTest {
     public void testListSites() {
         List<GetSiteBody> sites = client.listSites();
         Assert.assertTrue(sites.size() > 0);
+    }
+
+    @Test
+    public void testListVpcs() {
+        List<VPCListing> vpcs = client.listVPCs();
+        Assert.assertTrue(vpcs.size() > 0);
     }
 }

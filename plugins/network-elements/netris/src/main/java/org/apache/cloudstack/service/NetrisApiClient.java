@@ -17,10 +17,13 @@
 package org.apache.cloudstack.service;
 
 import io.netris.model.GetSiteBody;
+import io.netris.model.VPCListing;
 
 import java.util.List;
 
 public interface NetrisApiClient {
     boolean isSessionAlive();
     List<GetSiteBody> listSites();
+    List<VPCListing> listVPCs();
+
 }
