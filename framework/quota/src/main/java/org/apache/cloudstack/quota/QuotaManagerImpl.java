@@ -34,6 +34,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
@@ -465,6 +466,11 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         if (project != null) {
             jsInterpreter.injectVariable("project", project.toString());
 
+        }
+
+        Configuration configuration = presetVariables.getConfiguration();
+        if (configuration != null) {
+            jsInterpreter.injectVariable("configuration", configuration.toString());
         }
 
         jsInterpreter.injectStringVariable("resourceType", presetVariables.getResourceType());
