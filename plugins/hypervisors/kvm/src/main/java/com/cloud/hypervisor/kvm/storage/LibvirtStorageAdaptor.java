@@ -72,6 +72,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -80,6 +81,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
+    private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private static final int RBD_FEATURE_LAYERING = 1;
@@ -637,6 +639,39 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * adjust refcount
+     */
+    private int adjustStoragePoolRefCount(String uuid, int adjustment) {
+        synchronized (uuid) {
+            // some access on the storagePoolRefCounts.key(uuid) element
+            int refCount = storagePoolRefCounts.computeIfAbsent(uuid, k -> 0);
+            refCount += adjustment;
+            storagePoolRefCounts.put(uuid, refCount);
+            if (refCount < 1) {
+                storagePoolRefCounts.remove(uuid);
+            } else {
+                storagePoolRefCounts.put(uuid, refCount);
+            }
+            return refCount;
+        }
+    }
+    /**
+     * Thread-safe increment storage pool usage refcount
+     * @param uuid UUID of the storage pool to increment the count
+     */
+    private void incStoragePoolRefCount(String uuid) {
+        adjustStoragePoolRefCount(uuid, 1);
+    }
+    /**
+     * Thread-safe decrement storage pool usage refcount for the given uuid and return if storage pool still in use.
+     * @param uuid UUID of the storage pool to decrement the count
+     * @return true if the storage pool is still used, else false.
+     */
+    private boolean decStoragePoolRefCount(String uuid) {
+        return adjustStoragePoolRefCount(uuid, -1) > 0;
+    }
+
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details) {
         s_logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
@@ -744,6 +779,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
+            incStoragePoolRefCount(name);
             if (sp.isActive() == 0) {
                 s_logger.debug("Attempting to activate pool " + name);
                 sp.create(0);
@@ -755,6 +791,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             return getStoragePool(name);
         } catch (LibvirtException e) {
+            decStoragePoolRefCount(name);
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
                 throw new CloudRuntimeException("A pool matching this location already exists in libvirt, " +
@@ -805,6 +842,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean deleteStoragePool(String uuid) {
         s_logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
+
+        // decrement and check if storage pool still in use
+        if (decStoragePoolRefCount(uuid)) {
+            s_logger.info(String.format("deleteStoragePool: Storage pool %s still in use", uuid));
+            return true;
+        }
+
         Connect conn;
         try {
             conn = LibvirtConnection.getConnection();
