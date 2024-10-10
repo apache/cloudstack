@@ -19,15 +19,17 @@
 
 package org.apache.cloudstack.snapshot;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
+import com.cloud.api.query.dao.SnapshotJoinDao;
+import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -45,18 +47,18 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SnapshotHelper {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -82,6 +84,9 @@ public class SnapshotHelper {
     @Inject
     protected PrimaryDataStoreDao primaryDataStoreDao;
 
+    @Inject
+    protected SnapshotJoinDao snapshotJoinDao;
+
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     protected final Set<StoragePoolType> storagePoolTypesToValidateWithBackupSnapshotAfterTakingSnapshot = new HashSet<>(Arrays.asList(StoragePoolType.RBD,
@@ -92,7 +97,16 @@ public class SnapshotHelper {
      * @param snapInfo the snapshot info to delete.
      */
     public void expungeTemporarySnapshot(boolean kvmSnapshotOnlyInPrimaryStorage, SnapshotInfo snapInfo) {
-        if (!kvmSnapshotOnlyInPrimaryStorage) {
+        long storeId = snapInfo.getDataStore().getId();
+        long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
+
+        if (isStorPoolStorage(snapInfo)) {
+            logger.debug("The primary storage does not delete the snapshots even if there is a backup on secondary");
+            return;
+        }
+
+        List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapInfo.getSnapshotId());
+        if (kvmSnapshotOnlyInPrimaryStorage || snapshots.size() <= 1) {
             if (snapInfo != null) {
                 logger.trace(String.format("Snapshot [%s] is not a temporary backup to create a volume from snapshot. Not expunging it.", snapInfo.getId()));
             }
@@ -119,15 +133,20 @@ public class SnapshotHelper {
             }
         }
 
-        long storeId = snapInfo.getDataStore().getId();
         if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
-            long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
             SnapshotInfo imageStoreSnapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapInfo.getId(), DataStoreRole.Image, zoneId);
             storeId = imageStoreSnapInfo.getDataStore().getId();
         }
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
     }
 
+    public boolean isStorPoolStorage(SnapshotInfo snapInfo) {
+        if (DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
+            StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapInfo.getDataStore().getId());
+            return storagePoolVO != null && StoragePoolType.StorPool.equals(storagePoolVO.getPoolType());
+        }
+        return false;
+    }
     /**
      * Backup the snapshot to secondary storage if it should be backed up and was not yet or it is a temporary backup to create a volume.
      * @return The parameter snapInfo if the snapshot is not backupable, else backs up the snapshot to secondary storage and returns its info.
@@ -182,8 +201,11 @@ public class SnapshotHelper {
      * @return true if hypervisor is {@link  HypervisorType#KVM} and data store role is {@link  DataStoreRole#Primary} and global setting "snapshot.backup.to.secondary" is false,
      * else false.
      */
-    public boolean isKvmSnapshotOnlyInPrimaryStorage(Snapshot snapshot, DataStoreRole dataStoreRole){
-        return snapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM && dataStoreRole == DataStoreRole.Primary && !backupSnapshotAfterTakingSnapshot;
+    public boolean isKvmSnapshotOnlyInPrimaryStorage(Snapshot snapshot, DataStoreRole dataStoreRole, Long zoneId){
+        List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getSnapshotId());
+        boolean isKvmSnapshotOnlyInPrimaryStorage = snapshots.stream().filter(s -> s.getStoreRole().equals(DataStoreRole.Image)).count() == 0;
+
+        return snapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM && dataStoreRole == DataStoreRole.Primary && isKvmSnapshotOnlyInPrimaryStorage;
     }
 
     public DataStoreRole getDataStoreRole(Snapshot snapshot) {
@@ -216,10 +238,21 @@ public class SnapshotHelper {
         return DataStoreRole.Image;
     }
 
-    /**
-     * Verifies if it is a KVM volume that has snapshots only in primary storage.
-     * @throws CloudRuntimeException If it is a KVM volume and has at least one snapshot only in primary storage.
-     */
+    public DataStoreRole getDataStoreRole(Snapshot snapshot, Long zoneId) {
+        if (zoneId == null) {
+            getDataStoreRole(snapshot);
+        }
+        List<SnapshotJoinVO> snapshots = snapshotJoinDao.listBySnapshotIdAndZoneId(zoneId, snapshot.getId());
+        boolean snapshotOnPrimary = snapshots.stream().anyMatch(s -> s.getStoreRole().equals(DataStoreRole.Primary));
+        if (snapshotOnPrimary) {
+            return DataStoreRole.Primary;
+        }
+        return DataStoreRole.Image;
+    }
+        /**
+         * Verifies if it is a KVM volume that has snapshots only in primary storage.
+         * @throws CloudRuntimeException If it is a KVM volume and has at least one snapshot only in primary storage.
+         */
     public void checkKvmVolumeSnapshotsOnlyInPrimaryStorage(VolumeVO volumeVo, HypervisorType hypervisorType) throws CloudRuntimeException {
         if (HypervisorType.KVM != hypervisorType) {
             logger.trace(String.format("The %s hypervisor [%s] is not KVM, therefore we will not check if the snapshots are only in primary storage.", volumeVo, hypervisorType));
@@ -269,5 +302,19 @@ public class SnapshotHelper {
         }
 
         return snapshotIdsOnlyInPrimaryStorage;
+    }
+
+    public void checkIfThereAreMoreThanOnePoolInTheZone(List<Long> poolIds) {
+        List<Long> poolsInOneZone = new ArrayList<>();
+        for (Long poolId : poolIds) {
+            StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
+            if (pool != null) {
+                poolsInOneZone.add(pool.getDataCenterId());
+            }
+        }
+        boolean moreThanOnePoolForZone = poolsInOneZone.stream().filter(itr -> Collections.frequency(poolsInOneZone, itr) > 1).count() > 1;
+        if (moreThanOnePoolForZone) {
+            throw new CloudRuntimeException("Cannot copy the snapshot on multiple storage pools in one zone");
+        }
     }
 }
