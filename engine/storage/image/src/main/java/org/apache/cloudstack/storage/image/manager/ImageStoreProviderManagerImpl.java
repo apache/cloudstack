@@ -20,7 +20,6 @@ package org.apache.cloudstack.storage.image.manager;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,28 +179,14 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
     @Override
     public DataStore getImageStoreWithFreeCapacity(List<DataStore> imageStores) {
-        if (imageStores.size() > 1) {
-            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
-                @Override
-                public int compare(DataStore store1, DataStore store2) {
-                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
-                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
-                }
-            });
-            for (DataStore imageStore : imageStores) {
-                // Return image store if used percentage is less then threshold value i.e. 90%.
-                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    return imageStore;
-                }
-            }
-        } else if (imageStores.size() == 1) {
-            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
-                return imageStores.get(0);
+        imageStores.sort((store1, store2) -> Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store2),
+                _statsCollector.imageStoreCurrentFreeCapacity(store1)));
+        for (DataStore imageStore : imageStores) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                return imageStore;
             }
         }
-
-        // No store with space found
-        logger.error(String.format("Can't find an image storage in zone with less than %d usage",
+        logger.error(String.format("Could not find an image storage in zone with less than %d usage",
                 Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         return null;
     }
@@ -209,23 +194,11 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores) {
         List<DataStore> stores = new ArrayList<>();
-        if (imageStores.size() > 1) {
-            imageStores.sort(new Comparator<DataStore>() { // Sort data stores based on free capacity
-                @Override
-                public int compare(DataStore store1, DataStore store2) {
-                    return Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store1),
-                            _statsCollector.imageStoreCurrentFreeCapacity(store2));
-                }
-            });
-            for (DataStore imageStore : imageStores) {
-                // Return image store if used percentage is less then threshold value i.e. 90%.
-                if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    stores.add(imageStore);
-                }
-            }
-        } else if (imageStores.size() == 1) {
-            if (_statsCollector.imageStoreHasEnoughCapacity(imageStores.get(0))) {
-                stores.add(imageStores.get(0));
+        imageStores.sort((store1, store2) -> Long.compare(_statsCollector.imageStoreCurrentFreeCapacity(store2),
+                _statsCollector.imageStoreCurrentFreeCapacity(store1)));
+        for (DataStore imageStore : imageStores) {
+            if (_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                stores.add(imageStore);
             }
         }
         return stores;
