@@ -47,6 +47,10 @@ public class Client {
         NONE, VNC, RDP, HYPERV
     }
 
+    private static final String VNC = "vnc";
+    private static final String RDP = "rdp";
+    private static final String HYPERV = "hyperv";
+
     // Common options
     private final Option help = new Option() {
         {
@@ -299,21 +303,25 @@ public class Client {
 
     private Protocol parseOptions(String[] args) {
         String protocolName = (args.length > 0) ? args[0] : "";
-        Protocol protocol = Protocol.NONE;
+        Protocol protocol;
 
         Option[] options;
-        if (protocolName.equals("vnc")) {
-            protocol = Protocol.VNC;
-            options = join(commonOptions, vncOptions);
-        } else if (protocolName.equals("rdp")) {
-            protocol = Protocol.RDP;
-            options = join(commonOptions, rdpOptions);
-        } else if (protocolName.equals("hyperv")) {
-            protocol = Protocol.HYPERV;
-            options = join(commonOptions, hyperVOptions);
-        } else {
-            help();
-            return Protocol.NONE;
+        switch (protocolName) {
+            case VNC:
+                protocol = Protocol.VNC;
+                options = join(commonOptions, vncOptions);
+                break;
+            case RDP:
+                protocol = Protocol.RDP;
+                options = join(commonOptions, rdpOptions);
+                break;
+            case HYPERV:
+                protocol = Protocol.HYPERV;
+                options = join(commonOptions, hyperVOptions);
+                break;
+            default:
+                help();
+                return Protocol.NONE;
         }
 
         // Parse all options for given protocol
