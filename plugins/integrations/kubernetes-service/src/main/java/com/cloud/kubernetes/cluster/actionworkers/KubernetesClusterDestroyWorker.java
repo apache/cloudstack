@@ -157,7 +157,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for API access can't be removed", null);
         }
-        firewallRule = removeSshFirewallRule(publicIp);
+        firewallRule = removeSshFirewallRule(publicIp, network.getId());
         if (firewallRule == null) {
             logMessage(Level.WARN, "Firewall rule for SSH access can't be removed", null);
         }
@@ -252,6 +252,12 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
         if (cleanupNetwork) { // if network has additional VM, cannot proceed with cluster destroy
             NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+            List<KubernetesClusterVmMapVO> externalNodes = clusterVMs.stream().filter(KubernetesClusterVmMapVO::isExternalNode).collect(Collectors.toList());
+            if (!externalNodes.isEmpty()) {
+                String errMsg = String.format("Failed to delete kubernetes cluster %s as there are %s external node(s) present. Please remove the external node(s) from the cluster (and network) or delete them before deleting the cluster.", kubernetesCluster.getName(), externalNodes.size());
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
             if (network != null) {
                 List<VMInstanceVO> networkVMs = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.User);
                 if (networkVMs.size() > clusterVMs.size()) {

@@ -1123,6 +1123,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public boolean handleCksIsoOnNetworkVirtualRouter(Long virtualRouterId, boolean mount) {
+        return false;
+    }
+
+    @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
     }
 }
