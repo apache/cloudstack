@@ -878,27 +878,27 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     protected boolean verifyApiKeyAccessAllowed(User user, Account account) {
         Boolean apiKeyAccessEnabled = user.getApiKeyAccess();
         if (apiKeyAccessEnabled != null) {
-            if (apiKeyAccessEnabled == true) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
                 return true;
             } else {
-                logger.info("Api-Key access is disabled for the User");
+                logger.info("Api-Key access is disabled for the User " + user.toString());
                 return false;
             }
         }
         apiKeyAccessEnabled = account.getApiKeyAccess();
         if (apiKeyAccessEnabled != null) {
-            if (apiKeyAccessEnabled == true) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
                 return true;
             } else {
-                logger.info("Api-Key access is disabled for the Account");
+                logger.info("Api-Key access is disabled for the Account " + account.toString());
                 return false;
             }
         }
         apiKeyAccessEnabled = apiKeyAccess.valueIn(account.getDomainId());
-        if (apiKeyAccessEnabled == true) {
+        if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
                 return true;
         } else {
-            logger.info("Api-Key access is disabled by the Domain level setting");
+            logger.info("Api-Key access is disabled by the Domain level setting api.key.access");
         }
         return false;
     }
