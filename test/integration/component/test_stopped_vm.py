@@ -1444,7 +1444,7 @@ class TestVMAccountLimit(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             startvm=False
         )
-
+        self.cleanup.append(virtual_machine)
         # Verify VM state
         self.assertEqual(
             virtual_machine.state,

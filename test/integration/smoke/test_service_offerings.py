@@ -365,21 +365,16 @@ class TestServiceOfferings(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestServiceOfferings, self).tearDown()
 
     @classmethod
     def setUpClass(cls):
+        cls._cleanup = []
         testClient = super(TestServiceOfferings, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
@@ -389,10 +384,12 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering_1)
         cls.service_offering_2 = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering_2)
         cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
@@ -412,16 +409,20 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.services["account"],
             domainid=domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.small_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.small_offering)
 
         cls.medium_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["medium"]
         )
+        cls._cleanup.append(cls.medium_offering)
+
         cls.medium_virtual_machine = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
@@ -430,25 +431,12 @@ class TestServiceOfferings(cloudstackTestCase):
             serviceofferingid=cls.medium_offering.id,
             mode=cls.services["mode"]
         )
-        cls._cleanup = [
-            cls.small_offering,
-            cls.medium_offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.medium_virtual_machine)
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestServiceOfferings,
-                cls).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestServiceOfferings, cls).tearDownClass()
 
     @attr(
         tags=[
@@ -793,7 +781,19 @@ class TestServiceOfferings(cloudstackTestCase):
             self.apiclient,
             offering_data,
         )
-        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
+        self.cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse)
+
+        self.disk_offering2 = DiskOffering.create(
+                                            self.apiclient,
+                                            self.services["disk_offering"],
+                                            )
+        self.cleanup.append(self.disk_offering2)
+
+        self.serviceOfferingWithDiskOfferingStrictnessFalse2 = ServiceOffering.create(
+                    self.apiclient,
+                    offering_data,
+                )
+        self.cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
 
         self.virtual_machine_with_diskoffering_strictness_false = VirtualMachine.create(
             self.apiclient,
@@ -803,6 +803,7 @@ class TestServiceOfferings(cloudstackTestCase):
             serviceofferingid=self.serviceOfferingWithDiskOfferingStrictnessFalse.id,
             mode=self.services["mode"]
         )
+        self.cleanup.append(self.virtual_machine_with_diskoffering_strictness_false)
 
         try:
             self.virtual_machine_with_diskoffering_strictness_false.stop(self.apiclient)
@@ -832,11 +833,6 @@ class TestServiceOfferings(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
-        self.disk_offering2 = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"],
-                                    )
-        self._cleanup.append(self.disk_offering2)
         offering_data = {
             'displaytext': 'TestDiskOfferingStrictnessFalse2',
             'cpuspeed': 1000,
@@ -847,11 +843,6 @@ class TestServiceOfferings(cloudstackTestCase):
             'diskofferingid': self.disk_offering2.id
         }
 
-        self.serviceOfferingWithDiskOfferingStrictnessFalse2 = ServiceOffering.create(
-            self.apiclient,
-            offering_data,
-        )
-        self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
         cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_false.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessFalse2.id
@@ -967,12 +958,14 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         cls.services["small"]["template"] = template.id
         cls.services["small"]["hypervisor"] = cls.hypervisor
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        cls._cleanup = []
 
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=domain.id
         )
+        cls._cleanup.append(cls.account)
 
         offering_data = {
             'displaytext': 'TestOffering',
@@ -987,6 +980,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             offering_data,
             limitcpuuse=True
         )
+        cls._cleanup.append(cls.offering)
 
         def getHost(self, hostId=None):
             response = list_hosts(
@@ -1013,23 +1007,11 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             hostid=cls.host.id
 
         )
-        cls._cleanup = [
-            cls.offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.vm)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(
-                TestCpuCapServiceOfferings,
-                cls).getClsTestClient().getApiClient()
-            # Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCpuCapServiceOfferings, cls).tearDownClass()
 
     @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")

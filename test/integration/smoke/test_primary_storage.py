@@ -60,13 +60,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPrimaryStorageServices, self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_primary_storage_nfs(self):
@@ -319,6 +313,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     self.services["account"],
                     domainid=self.domain.id
                 )
+                self.cleanup.append(account)
 
                 service_offering = ServiceOffering.create(
                     self.apiclient,
@@ -336,7 +331,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     serviceofferingid=service_offering.id
                 )
                 self.cleanup.append(self.virtual_machine)
-                self.cleanup.append(account)
             finally:
                 # cancel maintenance
                 for pool in storage_pool_list:
