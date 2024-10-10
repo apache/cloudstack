@@ -666,7 +666,7 @@ public enum Config {
             String.class,
             "hypervisor.list",
             HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3 + "," + HypervisorType.External,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
             ConfigKey.Kind.CSV,

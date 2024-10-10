@@ -37,6 +37,9 @@ public class StopCommand extends RebootCommand {
     boolean forceStop = false;
     private Map<String, DpdkTO> dpdkInterfaceMapping;
     Map<String, Boolean> vlanToPersistenceMap;
+    boolean expungeVM = false;
+
+    private Map<String, String> _details;
 
     public Map<String, DpdkTO> getDpdkInterfaceMapping() {
         return dpdkInterfaceMapping;
@@ -137,5 +140,21 @@ public class StopCommand extends RebootCommand {
 
     public void setVlanToPersistenceMap(Map<String, Boolean> vlanToPersistenceMap) {
         this.vlanToPersistenceMap = vlanToPersistenceMap;
+    }
+
+    public boolean isExpungeVM() {
+        return expungeVM;
+    }
+
+    public void setExpungeVM(boolean expungeVM) {
+        this.expungeVM = expungeVM;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        _details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return _details;
     }
 }

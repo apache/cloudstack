@@ -183,6 +183,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 return true;
             }
 
+            if (HypervisorType.External.equals(host.getHypervisorType())) {
+                return true;
+            }
             clusterId = host.getClusterId();
         }
         if (capacityCpu == null || capacityMemory == null || svo == null || capacityCpuCore == null) {
@@ -283,6 +286,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         final long vmId = vm.getId();
         final long hostId = vm.getHostId();
         final HostVO host = _hostDao.findById(hostId);
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
         final long clusterId = host.getClusterId();
         final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio").getValue());
         final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio").getValue());
@@ -633,6 +639,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public void updateCapacityForHost(final Host host) {
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
         // prepare the service offerings
         List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
@@ -645,6 +654,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public void updateCapacityForHost(final Host host, final Map<Long, ServiceOfferingVO> offeringsMap) {
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -1105,6 +1117,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return new Pair<>(true, true);
+        }
+
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
         Cluster cluster = _clusterDao.findById(host.getClusterId());

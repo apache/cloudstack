@@ -691,7 +691,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.XenServer,
             HypervisorType.VMware,
             HypervisorType.Simulator,
-            HypervisorType.Custom
+            HypervisorType.Custom,
+            HypervisorType.External
     );
 
     private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
@@ -4276,7 +4277,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (hypervisorType != HypervisorType.BareMetal) {
+            if (hypervisorType != HypervisorType.BareMetal && hypervisorType != HypervisorType.External) {
                 // check if we have available pools for vm deployment
                 long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
                 if (availablePools < 1) {
@@ -7969,6 +7970,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             } else if (diskOffering != null && diskOffering.getDiskSize() < templateSize) {
                 throw new InvalidParameterValueException(String.format("Disk size for selected offering [%s] is less than the template's size [%s]", diskOffering.getDiskSize(), templateSize));
             }
+        }
+
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Restore VM instance operation is not allowed for External hypervisor type");
         }
 
         //check if there are any active snapshots on volumes associated with the VM
