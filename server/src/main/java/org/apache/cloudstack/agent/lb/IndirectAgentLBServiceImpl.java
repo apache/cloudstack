@@ -71,6 +71,14 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     @Inject
     private AgentManager agentManager;
 
+    private static final List<ResourceState> agentValidResourceStates = List.of(
+            ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
+            ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance);
+    private static final List<Host.Type> agentValidHostTypes = List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
+            Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+    private static final List<Hypervisor.HypervisorType> agentValidHypervisorTypes = List.of(
+            Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.LXC);
+
     //////////////////////////////////////////////////////
     /////////////// Agent MSLB Methods ///////////////////
     //////////////////////////////////////////////////////
@@ -134,11 +142,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
         return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
-                List.of(ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
-                        ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance),
-                List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
-                        Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM),
-                List.of(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.KVM));
+                agentValidResourceStates, agentValidHostTypes, agentValidHypervisorTypes);
     }
 
     private org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm getAgentMSLBAlgorithm() {
