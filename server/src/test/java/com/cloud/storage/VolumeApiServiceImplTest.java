@@ -85,7 +85,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
@@ -1318,10 +1317,8 @@ public class VolumeApiServiceImplTest {
 
         when(volume.getTemplateId()).thenReturn(1l);
         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
-
-        ServiceOfferingJoinVO serviceOfferingJoinVO = Mockito.mock(ServiceOfferingJoinVO.class);
-        when(serviceOfferingJoinVO.getRootDiskSize()).thenReturn(rootDisk);
-        when(serviceOfferingJoinDao.findById(Mockito.anyLong())).thenReturn(serviceOfferingJoinVO);
+        when(diskOffering.isComputeOnly()).thenReturn(true);
+        when(diskOffering.getDiskSize()).thenReturn(rootDisk);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(imageFormat);
