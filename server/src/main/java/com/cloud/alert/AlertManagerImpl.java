@@ -75,8 +75,6 @@ import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -119,8 +117,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private ConfigurationManager _configMgr;
     @Inject
     protected ConfigDepot _configDepot;
-    @Inject
-    ServiceOfferingDao _offeringsDao;
     @Inject
     Ipv6Service ipv6Service;
 
@@ -276,14 +272,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             //     get all hosts...even if they are not in 'UP' state
             List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
             if (hosts != null) {
-                // prepare the service offerings
-                List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-                Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-                for (ServiceOfferingVO offering : offerings) {
-                    offeringsMap.put(offering.getId(), offering);
-                }
                 for (HostVO host : hosts) {
-                    _capacityMgr.updateCapacityForHost(host, offeringsMap);
+                    _capacityMgr.updateCapacityForHost(host);
                 }
             }
             if (logger.isDebugEnabled()) {

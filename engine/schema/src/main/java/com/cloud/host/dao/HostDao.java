@@ -81,32 +81,35 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    HostVO findAnyStateHypervisorHostInCluster(long clusterId);
+
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
 
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 
     List<HostVO> findByDataCenterId(Long zoneId);
 
+    List<Long> listIdsByDataCenterId(Long zoneId);
+
     List<HostVO> findByPodId(Long podId);
 
+    List<Long> listIdsByPodId(Long podId);
+
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<Long> listIdsByClusterId(Long clusterId);
 
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
      * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
-    List<HostVO> listByDataCenterId(long id);
-
-    /**
-     * Returns hosts that are from the given Data Center/Zone and at a given state (e.g. Creating, Enabled, Disabled, etc).
-     */
-    List<HostVO> listByDataCenterIdAndState(long id, ResourceState state);
+    List<Long> listEnabledIdsByDataCenterId(long id);
 
     /**
      * Returns hosts that are 'Up' and 'Disabled' from the given Data Center/Zone
      */
-    List<HostVO> listDisabledByDataCenterId(long id);
+    List<Long> listDisabledIdsByDataCenterId(long id);
 
     List<HostVO> listByDataCenterIdAndHypervisorType(long zoneId, Hypervisor.HypervisorType hypervisorType);
 
@@ -165,4 +168,15 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return ordered list of hypervisor versions
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
+
+    boolean isHostUp(long hostId);
+
+    List<Long> findHostIdsByZoneClusterResourceStateAndType(final Long zoneId, final Long clusterId,
+            final List<ResourceState> resourceStates, final List<Type> types);
+
+    List<Long> listAllIds();
+
+    List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
+
+    List<HostVO> listByIds(final List<Long> ids);
 }

@@ -91,5 +91,5 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId);
 
-    List<VMTemplateVO> listByTemplateTag(String tag);
+    List<Long> listIdsByTemplateTag(String tag);
 }

@@ -100,6 +100,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
@@ -2279,13 +2280,13 @@ public class AutoScaleManagerImplTest {
     public void getVmStatsByIdFromHost() {
         List<Long> vmIds = Mockito.mock(ArrayList.class);
         Map<Long, VmStatsEntry> vmStatsById = Mockito.mock(HashMap.class);
-        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
 
         Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(-1L, vmIds);
 
         Assert.assertEquals(0, result.size());
 
-        Mockito.verify(virtualMachineManager, never()).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+        Mockito.verify(virtualMachineManager, never()).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
     }
 
     @Test
@@ -2297,13 +2298,13 @@ public class AutoScaleManagerImplTest {
         when(hostDao.findById(hostId)).thenReturn(hostMock);
         when(hostMock.getId()).thenReturn(hostId);
         when(hostMock.getName()).thenReturn(hostName);
-        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
 
         Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(hostId, vmIds);
 
         Assert.assertEquals(vmStatsById, result);
 
-        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
     }
 
     @Test

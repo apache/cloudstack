@@ -103,7 +103,7 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
             dv = EnumSet.of(DomainDetails.all);
         } else {
             try {
-                ArrayList<DomainDetails> dc = new ArrayList<DomainDetails>();
+                ArrayList<DomainDetails> dc = new ArrayList<>();
                 for (String detail : viewDetails) {
                     dc.add(DomainDetails.valueOf(detail));
                 }
@@ -145,7 +145,10 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
         if (CollectionUtils.isEmpty(response)) {
             return;
         }
-        _resourceLimitService.updateTaggedResourceLimitsAndCountsForDomains(response, getTag());
+        EnumSet<DomainDetails> details = getDetails();
+        if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
+            _resourceLimitService.updateTaggedResourceLimitsAndCountsForDomains(response, getTag());
+        }
         if (!getShowIcon()) {
             return;
         }

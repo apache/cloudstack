@@ -16,6 +16,20 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -32,18 +46,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -283,7 +285,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<Long> listAllClusters(Long zoneId) {
+    public List<Long> listAllClusterIds(Long zoneId) {
         SearchCriteria<Long> sc = ClusterIdSearch.create();
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
@@ -308,5 +310,13 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
 
         return false;
+    }
+
+    @Override
+    public List<Long> listAllIds() {
+        GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.done();
+        return customSearch(sb.create(), null);
     }
 }

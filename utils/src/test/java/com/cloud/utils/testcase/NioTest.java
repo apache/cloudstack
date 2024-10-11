@@ -98,7 +98,7 @@ public class NioTest {
         testBytes = new byte[1000000];
         randomGenerator.nextBytes(testBytes);
 
-        server = new NioServer("NioTestServer", 0, 1, new NioTestServer(), null);
+        server = new NioServer("NioTestServer", 0, 1, 1, 2 * totalTestCount, new NioTestServer(), null,  null);
         try {
             server.start();
         } catch (final NioConnectionException e) {
@@ -110,7 +110,7 @@ public class NioTest {
             maliciousClients.add(maliciousClient);
             maliciousExecutor.submit(new ThreadedNioClient(maliciousClient));
 
-            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, new NioTestClient());
+            final NioClient client = new NioClient("NioTestClient-" + i, "127.0.0.1", server.getPort(), 1, null, new NioTestClient());
             clients.add(client);
             clientExecutor.submit(new ThreadedNioClient(client));
         }
@@ -179,7 +179,7 @@ public class NioTest {
     public class NioMaliciousClient extends NioClient {
 
         public NioMaliciousClient(String name, String host, int port, int workers, HandlerFactory factory) {
-            super(name, host, port, workers, factory);
+            super(name, host, port, workers, null, factory);
         }
 
         @Override

@@ -38,9 +38,12 @@ public class NioServer extends NioConnection {
 
     protected WeakHashMap<InetSocketAddress, Link> _links;
 
-    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory, final CAService caService) {
-        super(name, port, workers, factory);
+    public NioServer(final String name, final int port, final int workers, final int sslHandshakeMinWorkers,
+             final int sslHandshakeMaxWorkers, final HandlerFactory factory, final CAService caService,
+             final Integer sslHandShakeTimeout) {
+        super(name, port, workers, sslHandshakeMinWorkers, sslHandshakeMaxWorkers, factory);
         setCAService(caService);
+        setSslHandshakeTimeout(sslHandShakeTimeout);
         _localAddr = null;
         _links = new WeakHashMap<InetSocketAddress, Link>(1024);
     }

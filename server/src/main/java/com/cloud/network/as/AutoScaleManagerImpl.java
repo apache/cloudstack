@@ -2707,7 +2707,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             return vmStatsById;
         }
         try {
-            vmStatsById = virtualMachineManager.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+            vmStatsById = virtualMachineManager.getVirtualMachineStatistics(host, vmIds);
             if (MapUtils.isEmpty(vmStatsById)) {
                 s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
             }

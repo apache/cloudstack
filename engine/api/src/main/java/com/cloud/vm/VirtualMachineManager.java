@@ -87,6 +87,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "false",
+            "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }
@@ -272,24 +275,22 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * Obtains statistics for a list of VMs; CPU and network utilization
-     * @param hostId ID of the host
-     * @param hostName name of the host
+     * @param host host
      * @param vmIds list of VM IDs
      * @return map of VM ID and stats entry for the VM
      */
-    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, List<Long> vmIds);
     /**
      * Obtains statistics for a list of VMs; CPU and network utilization
-     * @param hostId ID of the host
-     * @param hostName name of the host
-     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @param host host
+     * @param vmMap map of VM instanceName and its ID
      * @return map of VM ID and stats entry for the VM
      */
-    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(Host host, Map<String, Long> vmMap);
 
-    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(Host host, Map<String, Long> vmInstanceNameIdMap);
 
-    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(Host host, Map<String, Long> vmInstanceNameIdMap);
 
     Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
 

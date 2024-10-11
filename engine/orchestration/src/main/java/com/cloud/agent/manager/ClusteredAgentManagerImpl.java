@@ -250,14 +250,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return new ClusteredAgentHandler(type, link, data);
     }
 
-    protected AgentAttache createAttache(final long id) {
-        s_logger.debug("create forwarding ClusteredAgentAttache for " + id);
-        final HostVO host = _hostDao.findById(id);
-        final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getName());
+    protected AgentAttache createAttache(final Host host) {
+        s_logger.debug("create forwarding ClusteredAgentAttache for " + host.getId());
+        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getName());
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.get(host.getId());
+            _agents.put(host.getId(), attache);
         }
         if (old != null) {
             if (s_logger.isDebugEnabled()) {
@@ -567,12 +566,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Host " + hostId + " has switched to another management server, need to update agent map with a forwarding agent attache");
                 }
-                agent = createAttache(hostId);
+                agent = createAttache(host);
             }
         }
         if (agent == null) {
             final AgentUnavailableException ex = new AgentUnavailableException("Host with specified id is not in the right state: " + host.getStatus(), hostId);
-            ex.addProxyObject(_entityMgr.findById(Host.class, hostId).getUuid());
+            ex.addProxyObject(host.getUuid());
             throw ex;
         }
 
@@ -1169,7 +1168,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             final ClusteredDirectAgentAttache attache = (ClusteredDirectAgentAttache)_agents.get(hostId);
             if (attache != null && attache.getQueueSize() == 0 && attache.getNonRecurringListenersSize() == 0) {
                 handleDisconnectWithoutInvestigation(attache, Event.StartAgentRebalance, true, true);
-                final ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)createAttache(hostId);
+                final ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)createAttache(host);
                 if (forwardAttache == null) {
                     s_logger.warn("Unable to create a forward attache for the host " + hostId + " as a part of rebalance process");
                     return false;

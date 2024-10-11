@@ -16,28 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import com.cloud.agent.Agent.ExitStatus;
-import com.cloud.agent.dao.StorageComponent;
-import com.cloud.agent.dao.impl.PropertiesStorage;
-import com.cloud.agent.properties.AgentProperties;
-import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.ProcessUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-
-import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -51,6 +29,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+
+import com.cloud.agent.Agent.ExitStatus;
+import com.cloud.agent.dao.StorageComponent;
+import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.ProcessUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
@@ -405,7 +407,9 @@ public class AgentShell implements IAgentShell, Daemon {
 
         s_logger.info("Defaulting to the constant time backoff algorithm");
         _backoff = new ConstantTimeBackoff();
-        _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
+        Map<String, Object> map = new HashMap<>();
+        map.put("seconds", _properties.getProperty("backoff.seconds"));
+        _backoff.configure("ConstantTimeBackoff", map);
     }
 
     private void launchAgent() throws ConfigurationException {
@@ -452,6 +456,11 @@ public class AgentShell implements IAgentShell, Daemon {
         Agent agent = new Agent(this, getNextAgentId(), resource);
         _agents.add(agent);
         agent.start();
+    }
+
+    @Override
+    public Integer getSslHandshakeTimeout() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SSL_HANDSHAKE_TIMEOUT);
     }
 
     public synchronized int getNextAgentId() {

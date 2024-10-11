@@ -465,7 +465,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
-    public HostStats getHostStatistics(final long hostId) {
+    public HostStats getHostStatistics(final Host host) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -32,17 +32,22 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLEngine;
 
@@ -73,15 +78,27 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected ExecutorService _executor;
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
+    protected Integer sslHandshakeTimeout = null;
+    private int sslHandshakeMaxWorkers;
+    private final AtomicInteger activeAcceptConnections = new AtomicInteger(0);
+    private final BlockingQueue<Runnable> workerQueue;
+    private final BlockingQueue<Runnable> sslHandshakeQueue;
 
-    public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
+    public NioConnection(final String name, final int port, final int workers, final int sslHandshakeMinWorkers,
+             final int sslHandshakeMaxWorkers, final HandlerFactory factory) {
         _name = name;
         _isRunning = false;
         _selector = null;
         _port = port;
         _factory = factory;
-        _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(name + "-Handler"));
-        _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(name + "-SSLHandshakeHandler"));
+        this.sslHandshakeMaxWorkers = sslHandshakeMaxWorkers;
+        workerQueue = new LinkedBlockingQueue<>(5 * workers);
+        _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
+                workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
+        sslHandshakeQueue = new SynchronousQueue<>();
+        _sslHandshakeExecutor = new ThreadPoolExecutor(sslHandshakeMinWorkers, sslHandshakeMaxWorkers, 30,
+                TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-Handler"),
+                new ThreadPoolExecutor.AbortPolicy());
     }
 
     public void setCAService(final CAService caService) {
@@ -94,7 +111,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         try {
             init();
         } catch (final ConnectException e) {
-            s_logger.warn("Unable to connect to remote: is there a server running on port " + _port);
+            s_logger.warn("Unable to connect to remote: is there a server running on port" + _port);
             return;
         } catch (final IOException e) {
             s_logger.error("Unable to initialize the threads.", e);
@@ -192,6 +209,15 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected void accept(final SelectionKey key) throws IOException {
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();
+        if (activeAcceptConnections.get() >= sslHandshakeMaxWorkers) {
+            // Reject new connection if the server is busy
+            s_logger.warn("Server is busy. Rejecting new connection.");
+            if (socketChannel != null) {
+                socketChannel.close();
+            }
+            _selector.wakeup();
+            return;
+        }
         socketChannel.configureBlocking(false);
 
         final Socket socket = socketChannel.socket();
@@ -201,48 +227,52 @@ public abstract class NioConnection implements Callable<Boolean> {
             s_logger.trace("Connection accepted for " + socket);
         }
 
-        final SSLEngine sslEngine;
         try {
-            sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
-            sslEngine.setUseClientMode(false);
-            sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             final NioConnection nioConnection = this;
-            _sslHandshakeExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    _selector.wakeup();
-                    try {
-                        sslEngine.beginHandshake();
-                        if (!Link.doHandshake(socketChannel, sslEngine)) {
-                            throw new IOException("SSL handshake timed out with " + socketChannel.getRemoteAddress());
-                        }
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("SSL: Handshake done");
-                        }
-                        final InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
-                        final Link link = new Link(saddr, nioConnection);
-                        link.setSSLEngine(sslEngine);
-                        link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
-                        final Task task = _factory.create(Task.Type.CONNECT, link, null);
-                        registerLink(saddr, link);
-                        _executor.submit(task);
-                    } catch (IOException e) {
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Connection closed due to failure: " + e.getMessage());
-                        }
-                        closeAutoCloseable(socket, "accepting socket");
-                        closeAutoCloseable(socketChannel, "accepting socketChannel");
-                    } finally {
-                        _selector.wakeup();
+            _sslHandshakeExecutor.submit(() -> {
+                final InetSocketAddress socketAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
+                activeAcceptConnections.incrementAndGet();
+                long startTime = System.currentTimeMillis();
+                _selector.wakeup();
+                try {
+                    final SSLEngine sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
+                    sslEngine.setUseClientMode(false);
+                    sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
+                    sslEngine.beginHandshake();
+                    if (!Link.doHandshake(socketChannel, sslEngine, getSslHandshakeTimeout())) {
+                        throw new IOException("SSL handshake timed out with " + socketAddress);
                     }
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace("SSL: Handshake done");
+                    }
+                    final Link link = new Link(socketAddress, nioConnection);
+                    link.setSSLEngine(sslEngine);
+                    link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
+                    final Task task = _factory.create(Task.Type.CONNECT, link, null);
+                    registerLink(socketAddress, link);
+                    _executor.submit(task);
+                } catch (final GeneralSecurityException | IOException e) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(socket.getRemoteSocketAddress()+ "Connection closed due to failure: " + e.getMessage());
+                    }
+                    closeAutoCloseable(socket, "accepting socket");
+                    closeAutoCloseable(socketChannel, "accepting socketChannel");
+                } finally {
+                    int connections = activeAcceptConnections.decrementAndGet();
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format("Accept task complete for %s - time taken: %d, " +
+                                        "active accept connections: %d",
+                                socketAddress, (System.currentTimeMillis() - startTime), connections));
+                    }
+                    _selector.wakeup();
                 }
             });
-        } catch (final Exception e) {
+        } catch (final RejectedExecutionException e) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Connection closed due to failure: " + e.getMessage());
+                s_logger.trace(socket.getRemoteSocketAddress()+ " Accept Task rejected: " + e.getMessage());
             }
-            closeAutoCloseable(socket, "accepting socket");
-            closeAutoCloseable(socketChannel, "accepting socketChannel");
+            closeAutoCloseable(socket, "Rejecting connection - accepting socket");
+            closeAutoCloseable(socketChannel, "Rejecting connection - accepting socketChannel");
         } finally {
             _selector.wakeup();
         }
@@ -412,7 +442,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
-                s_logger.warn("Exception occurred when submitting the task", e);
+                s_logger.warn(String.format("Exception occurred when submitting the task for connect: %s", socket), e);
             }
         } catch (final IOException e) {
             logTrace(e, key, 2);
@@ -511,5 +541,13 @@ public abstract class NioConnection implements Callable<Boolean> {
             this.ops = ops;
             this.att = att;
         }
+    }
+
+    public Integer getSslHandshakeTimeout() {
+        return sslHandshakeTimeout;
+    }
+
+    public void setSslHandshakeTimeout(Integer sslHandshakeTimeout) {
+        this.sslHandshakeTimeout = sslHandshakeTimeout;
     }
 }

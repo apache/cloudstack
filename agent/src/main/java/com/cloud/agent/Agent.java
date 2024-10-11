@@ -159,7 +159,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         _shell = shell;
         _link = null;
 
-        _connection = new NioClient("Agent", _shell.getNextHost(), _shell.getPort(), _shell.getWorkers(), this);
+        _connection = new NioClient("Agent", _shell.getNextHost(), _shell.getPort(), _shell.getWorkers(), _shell.getSslHandshakeTimeout(), this);
 
         Runtime.getRuntime().addShutdownHook(_shutdownThread);
 
@@ -195,7 +195,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
 
         final String host = _shell.getNextHost();
-        _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+        _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), _shell.getSslHandshakeTimeout(), this);
 
         // ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
 
@@ -291,7 +291,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         while (!_connection.isStartup()) {
             final String host = _shell.getNextHost();
             _shell.getBackoffAlgorithm().waitBeforeRetry();
-            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), _shell.getSslHandshakeTimeout(), this);
             s_logger.info("Connecting to host:" + host);
             try {
                 _connection.start();
@@ -552,7 +552,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         do {
             final String host = _shell.getNextHost();
-            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), _shell.getSslHandshakeTimeout(), this);
             s_logger.info("Reconnecting to host:" + host);
             try {
                 _connection.start();

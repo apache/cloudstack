@@ -19,42 +19,48 @@
 
 package com.cloud.utils.backoff.impl;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.log4j.Logger;
 
 /**
- * An implementation of BackoffAlgorithm that waits for some seconds.
+ * An implementation of BackoffAlgorithm that waits for some random seconds
+ * within a given range.
  * After the time the client can try to perform the operation again.
  *
- * @config
- * {@table
- *    || Param Name | Description | Values | Default ||
- *    || seconds    | seconds to sleep | integer | 5 ||
- *  }
  **/
-public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
-    long _time;
-    private final Map<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
-    private static final Logger LOG = Logger.getLogger(ConstantTimeBackoff.class.getName());
+public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
+    protected static final int DEFAULT_MIN_TIME = 5;
+    private int minTime = DEFAULT_MIN_TIME;
+    private int maxTime = DEFAULT_MIN_TIME;
+    private final Map<String, Thread> asleep = new ConcurrentHashMap<>();
+    private static final Logger LOG = Logger.getLogger(RangeTimeBackoff.class.getName());
 
     @Override
     public void waitBeforeRetry() {
+        long time = Math.max(minTime, 0) * 1000L;
         Thread current = Thread.currentThread();
         try {
-            _asleep.put(current.getName(), current);
-            Thread.sleep(_time);
+            asleep.put(current.getName(), current);
+            if (maxTime > minTime) {
+                time = ThreadLocalRandom.current().nextInt(minTime, maxTime) * 1000L;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Waiting %s for %d milliseconds", current.getName(), time));
+            }
+            Thread.sleep(time);
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
             // anyway, no exception to log as this is not an error
             LOG.info("Thread " + current.getName() + " interrupted while waiting for retry");
         } finally {
-            _asleep.remove(current.getName());
+            asleep.remove(current.getName());
         }
     }
 
@@ -64,33 +70,8 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        _time = NumbersUtil.parseLong((String)params.get("seconds"), 5) * 1000;
+        minTime = NumbersUtil.parseInt((String)params.get("minSeconds"), DEFAULT_MIN_TIME);
+        maxTime = NumbersUtil.parseInt((String)params.get("maxSeconds"), minTime);
         return true;
-    }
-
-    @Override
-    public Collection<String> getWaiters() {
-        return _asleep.keySet();
-    }
-
-    @Override
-    public boolean wakeup(String threadName) {
-        Thread th = _asleep.get(threadName);
-        if (th != null) {
-            th.interrupt();
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public long getTimeToWait() {
-        return _time;
-    }
-
-    @Override
-    public void setTimeToWait(long seconds) {
-        _time = seconds * 1000;
     }
 }

@@ -38,8 +38,8 @@ public class NioClient extends NioConnection {
     protected String _host;
     protected SocketChannel _clientConnection;
 
-    public NioClient(final String name, final String host, final int port, final int workers, final HandlerFactory factory) {
-        super(name, port, workers, factory);
+    public NioClient(final String name, final String host, final int port, final int workers, final Integer sslHandshakeTimeout, final HandlerFactory factory) {
+        super(name, port, workers, 1, 2, factory);
         _host = host;
     }
 
@@ -61,7 +61,7 @@ public class NioClient extends NioConnection {
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             sslEngine.beginHandshake();
-            if (!Link.doHandshake(_clientConnection, sslEngine)) {
+            if (!Link.doHandshake(_clientConnection, sslEngine, getSslHandshakeTimeout())) {
                 s_logger.error("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
                 _selector.close();
                 throw new IOException("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
@@ -81,6 +81,7 @@ public class NioClient extends NioConnection {
             _selector.close();
             throw new IOException("Failed to initialise security", e);
         } catch (final IOException e) {
+            s_logger.error("IOException", e);
             _selector.close();
             throw e;
         }
