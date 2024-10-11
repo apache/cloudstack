@@ -87,7 +87,7 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 
-    ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "false",
+    ConfigKey<Boolean> VmSyncPowerStateTransitioning = new ConfigKey<>("Advanced", Boolean.class, "vm.sync.power.state.transitioning", "true",
             "Whether to sync power states of the transitioning and stalled VMs while processing VM power reports.", false);
 
     interface Topics {
