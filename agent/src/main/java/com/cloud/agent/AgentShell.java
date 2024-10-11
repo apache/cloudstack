@@ -51,7 +51,7 @@ import com.cloud.utils.LogUtils;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.RangeTimeBackoff;
+import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
@@ -405,12 +405,11 @@ public class AgentShell implements IAgentShell, Daemon {
             _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
-        s_logger.info("Defaulting to the range time backoff algorithm");
-        _backoff = new RangeTimeBackoff();
+        s_logger.info("Defaulting to the constant time backoff algorithm");
+        _backoff = new ConstantTimeBackoff();
         Map<String, Object> map = new HashMap<>();
-        map.put("minSeconds", _properties.getProperty("backoff.min.seconds"));
-        map.put("maxSeconds", _properties.getProperty("backoff.max.seconds"));
-        _backoff.configure("RangeTimeBackoff", map);
+        map.put("seconds", _properties.getProperty("backoff.seconds"));
+        _backoff.configure("ConstantTimeBackoff", map);
     }
 
     private void launchAgent() throws ConfigurationException {
