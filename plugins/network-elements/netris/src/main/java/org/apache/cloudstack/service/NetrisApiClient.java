@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import io.netris.ApiException;
 import io.netris.model.GetSiteBody;
 import io.netris.model.VPCListing;
+import io.netris.model.response.TenantResponse;
 
 import java.util.List;
 
@@ -25,5 +27,5 @@ public interface NetrisApiClient {
     boolean isSessionAlive();
     List<GetSiteBody> listSites();
     List<VPCListing> listVPCs();
-
+    List<TenantResponse> listTenants() throws ApiException;
 }
