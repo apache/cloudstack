@@ -71,22 +71,22 @@ public class CloudianHyperStoreObjectStoreLifeCycleImpl implements ObjectStoreLi
         objectStoreParameters.put(CloudianHyperStoreUtil.STORE_KEY_URL, url);
         objectStoreParameters.put(CloudianHyperStoreUtil.STORE_KEY_PROVIDER_NAME, providerName);
 
-        // Build the details map
+        // Pull out the details map
         @SuppressWarnings("unchecked")
-        Map<String, String> details_from_gui = (Map<String, String>) dsInfos.get(CloudianHyperStoreUtil.STORE_KEY_DETAILS);
-        if (details_from_gui == null) {
+        Map<String, String> details = (Map<String, String>) dsInfos.get(CloudianHyperStoreUtil.STORE_KEY_DETAILS);
+        if (details == null) {
             String msg = String.format("Unexpected null receiving Object Store initialization \"%s\"", CloudianHyperStoreUtil.STORE_KEY_DETAILS);
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
-        // The Admin Username/Password are available respectively  as accesskey/secretkey
-        String adminUsername = details_from_gui.get(CloudianHyperStoreUtil.GUI_DETAILS_KEY_ACCESSKEY);
-        String adminPassword = details_from_gui.get(CloudianHyperStoreUtil.GUI_DETAILS_KEY_SECRETKEY);
-        String validateSSL = details_from_gui.get(CloudianHyperStoreUtil.GUI_DETAILS_KEY_VALIDATE_SSL);
+        // Note: The Admin Username/Password are available respectively as accesskey/secretkey
+        String adminUsername = details.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_USER_NAME);
+        String adminPassword = details.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_PASSWORD);
+        String validateSSL = details.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_VALIDATE_SSL);
         boolean adminValidateSSL = Boolean.parseBoolean(validateSSL);
-        String s3Url = details_from_gui.get(CloudianHyperStoreUtil.GUI_DETAILS_KEY_S3_URL);
-        String iamUrl = details_from_gui.get(CloudianHyperStoreUtil.GUI_DETAILS_KEY_IAM_URL);
+        String s3Url = details.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL);
+        String iamUrl = details.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_IAM_URL);
 
         if (StringUtils.isAnyBlank(adminUsername, adminPassword, validateSSL, s3Url, iamUrl)) {
             final String asteriskPassword = (adminPassword == null) ? null : "*".repeat(adminPassword.length());
@@ -94,22 +94,17 @@ public class CloudianHyperStoreObjectStoreLifeCycleImpl implements ObjectStoreLi
                 adminUsername, asteriskPassword, validateSSL, s3Url, iamUrl);
             throw new CloudRuntimeException("Required Cloudian HyperStore configuration parameters are missing/empty.");
         }
-        Map<String, String> details = new HashMap<String, String>();
-        details.put(CloudianHyperStoreUtil.KEY_ADMIN_USER, adminUsername);
-        details.put(CloudianHyperStoreUtil.KEY_ADMIN_PASS, adminPassword);
-        details.put(CloudianHyperStoreUtil.KEY_ADMIN_VALIDATE_SSL, Boolean.toString(adminValidateSSL));
-        details.put(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL, s3Url);
-        details.put(CloudianHyperStoreUtil.KEY_IAM_ENDPOINT_URL, iamUrl);
 
         // Validate the ADMIN API Service Information
         logger.info("Confirming connection to the HyperStore Admin Service at: {}", url);
         CloudianClient client = CloudianHyperStoreUtil.getCloudianClient(url, adminUsername, adminPassword, adminValidateSSL);
         String version = client.getServerVersion();
-        logger.info("Successfully connected to HyperStore: {}", version);
 
         // Validate S3 and IAM Service URLs.
         CloudianHyperStoreUtil.validateS3Url(s3Url);
         CloudianHyperStoreUtil.validateIAMUrl(iamUrl);
+
+        logger.info("Successfully connected to HyperStore: {}", version);
 
         ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);
         return objectStoreMgr.getObjectStore(objectStore.getId());

@@ -160,11 +160,11 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
 
         // The StoreDetailMap has Endpoint info and Admin Credentials
         StoreDetailsMap = new HashMap<String, String>();
-        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_USER, TEST_ADMIN_USER_NAME);
-        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_PASS, TEST_ADMIN_PASSWORD);
-        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_ADMIN_VALIDATE_SSL, TEST_ADMIN_VALIDATE_SSL);
-        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL, TEST_S3_URL);
-        StoreDetailsMap.put(CloudianHyperStoreUtil.KEY_IAM_ENDPOINT_URL, TEST_IAM_URL);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.STORE_DETAILS_KEY_USER_NAME, TEST_ADMIN_USER_NAME);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.STORE_DETAILS_KEY_PASSWORD, TEST_ADMIN_PASSWORD);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.STORE_DETAILS_KEY_VALIDATE_SSL, TEST_ADMIN_VALIDATE_SSL);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL, TEST_S3_URL);
+        StoreDetailsMap.put(CloudianHyperStoreUtil.STORE_DETAILS_KEY_IAM_URL, TEST_IAM_URL);
         when(objectStoreDetailsDao.getDetails(TEST_STORE_ID)).thenReturn(StoreDetailsMap);
 
         // The AccountDetailsMap has credentials for operating on the account.

@@ -166,11 +166,11 @@ public class CloudianHyperStoreObjectStoreLifeCycleImplTest {
         assertEquals(TEST_PROVIDER_NAME, updatedParams.get(CloudianHyperStoreUtil.STORE_KEY_PROVIDER_NAME));
         Map<String, String> updatedDetails = detailsArg.getValue();
         assertEquals(5, updatedDetails.size());
-        assertEquals(TEST_ADMIN_USERNAME, updatedDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_USER));
-        assertEquals(TEST_ADMIN_PASSWORD, updatedDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_PASS));
-        assertEquals(TEST_VALIDATE_SSL, updatedDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_VALIDATE_SSL));
-        assertEquals(TEST_S3_URL, updatedDetails.get(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL));
-        assertEquals(TEST_IAM_URL, updatedDetails.get(CloudianHyperStoreUtil.KEY_IAM_ENDPOINT_URL));
+        assertEquals(TEST_ADMIN_USERNAME, updatedDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_USER_NAME));
+        assertEquals(TEST_ADMIN_PASSWORD, updatedDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_PASSWORD));
+        assertEquals(TEST_VALIDATE_SSL, updatedDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_VALIDATE_SSL));
+        assertEquals(TEST_S3_URL, updatedDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL));
+        assertEquals(TEST_IAM_URL, updatedDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_IAM_URL));
     }
 
     @Test

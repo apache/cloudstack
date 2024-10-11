@@ -46,21 +46,16 @@ public class CloudianHyperStoreUtil {
     public static final String STORE_KEY_NAME          = "name";
     public static final String STORE_KEY_DETAILS       = "details";
 
-    // GUI Object Store Details map key names
-    public static final String GUI_DETAILS_KEY_ACCESSKEY    = "accesskey";
-    public static final String GUI_DETAILS_KEY_SECRETKEY    = "secretkey";
-    public static final String GUI_DETAILS_KEY_VALIDATE_SSL = "validateSSL";
-    public static final String GUI_DETAILS_KEY_S3_URL       = "s3Url";
-    public static final String GUI_DETAILS_KEY_IAM_URL      = "iamUrl";
+    // Store Details Map key names - managed outside of plugin
+    public static final String STORE_DETAILS_KEY_USER_NAME    = "accesskey";   // admin user name
+    public static final String STORE_DETAILS_KEY_PASSWORD     = "secretkey";   // admin password
+    public static final String STORE_DETAILS_KEY_VALIDATE_SSL = "validateSSL";
+    public static final String STORE_DETAILS_KEY_S3_URL       = "s3Url";
+    public static final String STORE_DETAILS_KEY_IAM_URL      = "iamUrl";
 
-    // detail map key names
-    public static final String KEY_ADMIN_USER         = "hs_AdminUser";
-    public static final String KEY_ADMIN_PASS         = "hs_AdminPass";
-    public static final String KEY_ADMIN_VALIDATE_SSL = "hs_AdminValidateSSL";
-    public static final String KEY_S3_ENDPOINT_URL    = "hs_S3EndpointURL";
+    // Account Detail Map key names
     public static final String KEY_ROOT_ACCESS_KEY    = "hs_AccessKey";
     public static final String KEY_ROOT_SECRET_KEY    = "hs_SecretKey";
-    public static final String KEY_IAM_ENDPOINT_URL   = "hs_IAMEndpointURL";
     public static final String KEY_IAM_ACCESS_KEY     = "hs_IAMAccessKey";
     public static final String KEY_IAM_SECRET_KEY     = "hs_IAMSecretKey";
 

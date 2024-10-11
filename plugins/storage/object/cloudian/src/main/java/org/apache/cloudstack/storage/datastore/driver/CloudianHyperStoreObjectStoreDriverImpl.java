@@ -425,7 +425,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
         // get an s3client using Account Root User Credentials
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        String s3url = storeDetails.get(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL);
+        String s3url = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL);
         Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
         String accessKey = accountDetails.get(CloudianHyperStoreUtil.KEY_ROOT_ACCESS_KEY);
         String secretKey = accountDetails.get(CloudianHyperStoreUtil.KEY_ROOT_SECRET_KEY);
@@ -807,9 +807,9 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         ObjectStoreVO store = _storeDao.findById(storeId);
         String url = store.getUrl();
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        String adminUsername = storeDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_USER);
-        String adminPassword = storeDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_PASS);
-        String strValidateSSL = storeDetails.get(CloudianHyperStoreUtil.KEY_ADMIN_VALIDATE_SSL);
+        String adminUsername = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_USER_NAME);
+        String adminPassword = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_PASSWORD);
+        String strValidateSSL = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_VALIDATE_SSL);
         boolean validateSSL = Boolean.parseBoolean(strValidateSSL);
 
         return CloudianHyperStoreUtil.getCloudianClient(url, adminUsername, adminPassword, validateSSL);
@@ -831,7 +831,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             if (bvo.getName().equals(bucket.getName())) {
                 long accountId = bvo.getAccountId();
                 Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-                String s3url = storeDetails.get(CloudianHyperStoreUtil.KEY_S3_ENDPOINT_URL);
+                String s3url = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL);
                 String accessKey = _accountDetailsDao.findDetail(accountId, CloudianHyperStoreUtil.KEY_ROOT_ACCESS_KEY).getValue();
                 String secretKey = _accountDetailsDao.findDetail(accountId, CloudianHyperStoreUtil.KEY_ROOT_SECRET_KEY).getValue();
                 logger.debug("Creating S3 connection to {} for {} ", s3url, accessKey);
@@ -868,7 +868,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
      */
     protected AmazonIdentityManagement getIAMClientByStoreId(long storeId, CloudianCredential credential) {
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
-        String iamUrl = storeDetails.get(CloudianHyperStoreUtil.KEY_IAM_ENDPOINT_URL);
+        String iamUrl = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_IAM_URL);
         logger.debug("Creating a new IAM connection to {} for {}", iamUrl, credential.getAccessKey());
 
         return CloudianHyperStoreUtil.getIAMClient(iamUrl, credential.getAccessKey(), credential.getSecretKey());
