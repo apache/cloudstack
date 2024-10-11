@@ -24,11 +24,10 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO.Step;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
@@ -43,7 +42,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.VirtualMachine;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
-    private static final Logger s_logger = Logger.getLogger(VmWorkJobDaoImpl.class);
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
@@ -159,8 +157,8 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
         sc.setParameters("dispatcher", "VmWorkJobDispatcher");
         List<VmWorkJobVO> expungeList = listBy(sc);
         for (VmWorkJobVO job : expungeList) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Expunge completed work job-" + job.getId());
+            if (logger.isDebugEnabled())
+                logger.debug("Expunge completed work job-" + job.getId());
             expunge(job.getId());
             _baseJobDao.expunge(job.getId());
         }
@@ -190,10 +188,10 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 
                     pstmt.execute();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "SQL failed to delete vm work job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "caught an error during delete vm work job: " + e.getLocalizedMessage());
                 }
 
@@ -205,13 +203,25 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 
                     pstmt.execute();
                 } catch (SQLException e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "SQL failed to delete async job: " + e.getLocalizedMessage());
                 } catch (Throwable e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "caught an error during delete async job: " + e.getLocalizedMessage());
                 }
             }
         });
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<VmWorkJobVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<VmWorkJobVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

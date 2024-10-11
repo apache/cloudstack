@@ -52,6 +52,7 @@
       "path": "/test-router-1",
       "meta": {
         "name": "vm",
+        "resourceType": "UserVm",
         "icon": "play-circle-outlined"
       },
       "component": {}
@@ -61,6 +62,7 @@
       "path": "/test-router-2",
       "meta": {
         "name": "vm",
+        "resourceType": "UserVm",
         "icon": "play-circle-outlined"
       },
       "component": {}
@@ -70,6 +72,7 @@
       "path": "/test-router-3",
       "meta": {
         "name": "test-router-3",
+        "resourceType": "SystemVm",
         "icon": "play-circle-outlined"
       },
       "component": {}
@@ -79,6 +82,7 @@
       "path": "/test-router-4",
       "meta": {
         "name": "vm",
+        "resourceType": "UserVm",
         "icon": "play-circle-outlined"
       },
       "component": {}
@@ -88,6 +92,7 @@
       "path": "/test-router-5",
       "meta": {
         "name": "vm",
+        "resourceType": "UserVm",
         "icon": "play-circle-outlined"
       },
       "component": {}
@@ -97,6 +102,7 @@
       "path": "/test-router-6",
       "meta": {
         "name": "vm",
+        "resourceType": "UserVm",
         "icon": "play-circle-outlined"
       },
       "component": {}

@@ -18,15 +18,17 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> {
 
-    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host);
+    StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO host, boolean customStats);
 
     StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO host);
 
@@ -37,5 +39,7 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
     List<StoragePoolJoinVO> newStoragePoolView(StoragePool group);
 
     List<StoragePoolJoinVO> searchByIds(Long... spIds);
+
+    List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags);
 
 }

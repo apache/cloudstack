@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -77,7 +76,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class DiagnosticsServiceImpl extends ManagerBase implements PluggableService, DiagnosticsService, Configurable {
-    private static final Logger LOGGER = Logger.getLogger(DiagnosticsServiceImpl.class);
 
     @Inject
     private AgentManager agentManager;
@@ -106,7 +104,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             "Enable the garbage collector background task to delete old files from secondary storage.", false);
     private static final ConfigKey<Integer> GarbageCollectionInterval = new ConfigKey<>("Advanced", Integer.class,
             "diagnostics.data.gc.interval", "86400",
-            "The interval at which the garbage collector background tasks in seconds", false);
+            "The interval at which the garbage collector background tasks in seconds", false, EnableGarbageCollector.key());
 
     // These are easily computed properties and need not need a restart of the management server
     private static final ConfigKey<Long> DataRetrievalTimeout = new ConfigKey<>("Advanced", Long.class,
@@ -114,7 +112,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             "Overall system VM script execution time out in seconds.", true);
     private static final ConfigKey<Long> MaximumFileAgeforGarbageCollection = new ConfigKey<>("Advanced", Long.class,
             "diagnostics.data.max.file.age", "86400",
-            "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true);
+            "Sets the maximum time in seconds a file can stay in secondary storage before it is deleted.", true, EnableGarbageCollector.key());
     private static final ConfigKey<Double> DiskQuotaPercentageThreshold = new ConfigKey<>("Advanced", Double.class,
             "diagnostics.data.disable.threshold", "0.9",
             "Sets the secondary storage disk utilisation percentage for file retrieval. " +
@@ -284,10 +282,10 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         configureNetworkElementCommand(cmd, vmInstance);
         final Answer fileCleanupAnswer = agentManager.easySend(vmInstance.getHostId(), cmd);
         if (fileCleanupAnswer == null) {
-            LOGGER.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
+            logger.error(String.format("Failed to cleanup diagnostics zip file on vm: %s", vmInstance.getUuid()));
         } else {
             if (!fileCleanupAnswer.getResult()) {
-                LOGGER.error(String.format("Zip file cleanup for vm %s has failed with: %s", vmInstance.getUuid(), fileCleanupAnswer.getDetails()));
+                logger.error(String.format("Zip file cleanup for vm %s has failed with: %s", vmInstance.getUuid(), fileCleanupAnswer.getDetails()));
             }
         }
 
@@ -326,11 +324,11 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     }
 
     private Pair<Boolean, String> copyToSecondaryStorageVMware(final DataStore store, final String vmSshIp, String diagnosticsFile) {
-        LOGGER.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
+        logger.info(String.format("Copying %s from %s to secondary store %s", diagnosticsFile, vmSshIp, store.getUri()));
         boolean success = false;
         String mountPoint = mountManager.getMountPoint(store.getUri(), imageStoreDetailsUtil.getNfsVersion(store.getId()));
         if (StringUtils.isBlank(mountPoint)) {
-            LOGGER.error("Failed to generate mount point for copying to secondary storage for " + store.getName());
+            logger.error("Failed to generate mount point for copying to secondary storage for " + store.getName());
             return new Pair<>(false, "Failed to mount secondary storage:" + store.getName());
         }
 
@@ -351,7 +349,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             success = fileInSecondaryStore.exists();
         } catch (Exception e) {
             String msg = String.format("Exception caught during scp from %s to secondary store %s: ", vmSshIp, dataDirectoryInSecondaryStore);
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             return new Pair<>(false, msg);
         }
 
@@ -405,7 +403,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
                 VirtualMachine.Type.DomainRouter, VirtualMachine.Type.SecondaryStorageVm);
         if (vmInstance == null) {
             String msg = String.format("Unable to find vm instance with id: %s", vmId);
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException("Diagnostics command execution failed, " + msg);
         }
 
@@ -446,15 +444,15 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
             this.serviceImpl = serviceImpl;
         }
 
-        private static void deleteOldDiagnosticsFiles(File directory, String storeName) {
+        private void deleteOldDiagnosticsFiles(File directory, String storeName) {
             final File[] fileList = directory.listFiles();
             if (fileList != null) {
                 String msg = String.format("Found %s diagnostics files in store %s for garbage collection", fileList.length, storeName);
-                LOGGER.info(msg);
+                logger.info(msg);
                 for (File file : fileList) {
                     if (file.isFile() && MaximumFileAgeforGarbageCollection.value() <= getTimeDifference(file)) {
                         boolean success = file.delete();
-                        LOGGER.info(file.getName() + " delete status: " + success);
+                        logger.info(file.getName() + " delete status: " + success);
                     }
                 }
             }
@@ -480,7 +478,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(),
+                    serviceImpl.imageStoreDetailsUtil.getNfsVersion(store.getId()));
             if (StringUtils.isNotBlank(mountPoint)) {
                 File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
                 if (directory.isDirectory()) {

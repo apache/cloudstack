@@ -54,6 +54,8 @@ public enum Config {
             "alert.email.addresses",
             null,
             "Comma separated list of email addresses which are going to receive alert emails.",
+            null,
+            ConfigKey.Kind.CSV,
             null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
@@ -76,7 +78,6 @@ public enum Config {
             "30000",
             "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
             null),
-    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -229,7 +230,9 @@ public enum Config {
             "network.loadbalancer.haproxy.stats.visibility",
             "global",
             "Load Balancer(haproxy) stats visibility, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
-            null),
+            null,
+            ConfigKey.Kind.Select,
+            "global,guest-network,link-local,disabled,all,default"),
     NetworkLBHaproxyStatsUri(
             "Network",
             ManagementServer.class,
@@ -354,6 +357,8 @@ public enum Config {
             "network.dhcp.nondefaultnetwork.setgateway.guestos",
             "Windows",
             "The guest OS's name start with this fields would result in DHCP server response gateway information even when the network it's on is not default network. Names are separated by comma.",
+            null,
+            ConfigKey.Kind.CSV,
             null),
 
     //VPN
@@ -425,8 +430,22 @@ public enum Config {
             "8001",
             "Console proxy command port that is used to communicate with management server",
             null),
-    ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
-    ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "", "Console proxy url domain", "domainName", "privateip"),
+    ConsoleProxyRestart(
+        "Console Proxy",
+        AgentManager.class,
+        Boolean.class,
+        "consoleproxy.restart",
+        "true",
+        "Console proxy restart flag, defaulted to true",
+        null),
+    ConsoleProxyUrlDomain(
+        "Console Proxy",
+        AgentManager.class,
+        String.class,
+        "consoleproxy.url.domain",
+        "",
+        "Console proxy url domain",
+        "domainName,privateip"),
     ConsoleProxySessionMax(
             "Console Proxy",
             AgentManager.class,
@@ -538,7 +557,7 @@ public enum Config {
             Boolean.class,
             "disable.extraction",
             "false",
-            "Flag for disabling extraction of template, isos and volumes",
+            "Flag for disabling extraction of templates, isos, snapshots and volumes",
             null),
     ExtractURLExpirationInterval(
             "Advanced",
@@ -649,7 +668,9 @@ public enum Config {
             HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
                     HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
                     "The list of hypervisors that this deployment will use.",
-            "hypervisorList"),
+            "hypervisorList",
+            ConfigKey.Kind.CSV,
+            null),
     ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
     EventPurgeDelay(
             "Advanced",
@@ -822,7 +843,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in miliseconds) to report volume statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in milliseconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -896,14 +917,6 @@ public enum Config {
             "1",
             "Weight for user dispersion heuristic (as a value between 0 and 1) applied to resource allocation during vm deployment. Weight for capacity heuristic will be (1 - weight of user dispersion)",
             null),
-    VmAllocationAlgorithm(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "vm.allocation.algorithm",
-            "random",
-            "'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', 'firstfitleastconsumed' : Order in which hosts within a cluster will be considered for VM/volume allocation.",
-            null),
     VmDeploymentPlanner(
             "Advanced",
             ManagementServer.class,
@@ -911,7 +924,9 @@ public enum Config {
             "vm.deployment.planner",
             "FirstFitPlanner",
             "'FirstFitPlanner', 'UserDispersingPlanner', 'UserConcentratedPodPlanner': DeploymentPlanner heuristic that will be used for VM deployment.",
-            null),
+            null,
+            ConfigKey.Kind.Select,
+            "FirstFitPlanner,UserDispersingPlanner,UserConcentratedPodPlanner"),
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,
@@ -933,7 +948,7 @@ public enum Config {
             ManagementServer.class,
             Integer.class,
             "network.loadbalancer.basiczone.elb.vm.ram.size",
-            "128",
+            "512",
             "Memory in MB for the elastic load balancer vm",
             null),
     ElasticLoadBalancerVmCpuMhz(
@@ -1061,6 +1076,8 @@ public enum Config {
             "xenserver.pvdriver.version",
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
+            "xenserver56,xenserver61",
+            ConfigKey.Kind.Select,
             "xenserver56,xenserver61"),
     XenServerHotFix("Advanced",
             ManagementServer.class,
@@ -1127,7 +1144,9 @@ public enum Config {
             "vmware.root.disk.controller",
             "ide",
             "Specify the default disk controller for root volumes, valid values are scsi, ide, osdefault. Please check documentation for more details on each of these values.",
-            null),
+            null,
+            ConfigKey.Kind.Select,
+            "scsi,ide,osdefault"),
     VmwareSystemVmNicDeviceType(
             "Advanced",
             ManagementServer.class,
@@ -1135,7 +1154,9 @@ public enum Config {
             "vmware.systemvm.nic.device.type",
             "E1000",
             "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
-            null),
+            null,
+            ConfigKey.Kind.Select,
+            "E1000,PCNet32,Vmxnet2,Vmxnet3"),
     VmwareRecycleHungWorker(
             "Advanced",
             ManagementServer.class,
@@ -1217,7 +1238,7 @@ public enum Config {
     TrafficSentinelIncludeZones(
             "Usage",
             ManagementServer.class,
-            Integer.class,
+            String.class,
             "traffic.sentinel.include.zones",
             "EXTERNAL",
             "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty",
@@ -1225,7 +1246,7 @@ public enum Config {
     TrafficSentinelExcludeZones(
             "Usage",
             ManagementServer.class,
-            Integer.class,
+            String.class,
             "traffic.sentinel.exclude.zones",
             "",
             "Traffic going into specified list of zones is not metered.",
@@ -1259,7 +1280,7 @@ public enum Config {
             "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.",
             null),
     //NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "256", "Default RAM for router VM (in MB).", null),
+    RouterRamSize("Hidden", NetworkOrchestrationService.class, Integer.class, "router.ram.size", "512", "Default RAM for router VM (in MB).", null),
 
     DefaultPageSize("Advanced", ManagementServer.class, Long.class, "default.page.size", "500", "Default page size for API list* commands", null),
 
@@ -1344,6 +1365,14 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
+DefaultMaxAccountProjects(
+                "Account Defaults",
+                ManagementServer.class,
+                Long.class,
+                "max.account.projects",
+                "10",
+                "The default maximum number of projects that can be created for an account",
+                null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1361,6 +1390,8 @@ public enum Config {
             "network.dns.basiczone.updates",
             "all",
             "This parameter can take 2 values: all (default) and pod. It defines if DHCP/DNS requests have to be send to all dhcp servers in cloudstack, or only to the one in the same pod",
+            "all,pod",
+            ConfigKey.Kind.Select,
             "all,pod"),
 
     ClusterMessageTimeOutSeconds(
@@ -1391,6 +1422,7 @@ public enum Config {
     DefaultMaxDomainMemory("Domain Defaults", ManagementServer.class, Long.class, "max.domain.memory", "81920", "The default maximum memory (in MB) that can be used for a domain", null),
     DefaultMaxDomainPrimaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.primary.storage", "400", "The default maximum primary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainSecondaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.secondary.storage", "800", "The default maximum secondary storage space (in GiB) that can be used for a domain", null),
+    DefaultMaxDomainProjects("Domain Defaults",ManagementServer.class,Long.class,"max.domain.projects","50","The default maximum number of projects that can be created for a domain",null),
 
     DefaultMaxProjectUserVms(
             "Project Defaults",
@@ -1523,14 +1555,6 @@ public enum Config {
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth(
-            "Project Defaults",
-            ManagementServer.class,
-            String.class,
-            "project.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails",
-            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,
@@ -1587,7 +1611,7 @@ public enum Config {
             String.class,
             "implicit.host.tags",
             "GPU",
-            "Tag hosts at the time of host disovery based on the host properties/capabilities",
+            "Tag hosts at the time of host discovery based on the host properties/capabilities",
             null),
     VpcCleanupInterval(
             "Advanced",
@@ -1695,7 +1719,7 @@ public enum Config {
             String.class,
             "baremetal.ipmi.fail.retry",
             "5",
-            "ipmi interface will be temporary out of order after power opertions(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
+            "ipmi interface will be temporary out of order after power operations(e.g. cycle, on), it leads following commands fail immediately. The value specifies retry times before accounting it as real failure",
             null),
 
     ApiLimitEnabled("Advanced", ManagementServer.class, Boolean.class, "api.throttling.enabled", "false", "Enable/disable Api rate limit", null),
@@ -1783,8 +1807,10 @@ public enum Config {
     private final String _name;
     private final String _defaultValue;
     private final String _description;
-    private final String[] _range;
+    private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
+    private final ConfigKey.Kind _kind;
+    private final String _options;
 
     private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
     static {
@@ -1833,7 +1859,11 @@ public enum Config {
         }
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String... range) {
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range) {
+        this(category, componentClass, type, name, defaultValue, description, range, null, null);
+    }
+
+    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, ConfigKey.Kind kind, String options) {
         _category = category;
         _componentClass = componentClass;
         _type = type;
@@ -1842,6 +1872,8 @@ public enum Config {
         _description = description;
         _range = range;
         _scope = ConfigKey.Scope.Global.toString();
+        _kind = kind;
+        _options = options;
     }
 
     public String getCategory() {
@@ -1866,6 +1898,17 @@ public enum Config {
 
     public String getScope() {
         return _scope;
+    }
+
+    public String getKind() {
+        if (_kind == null) {
+                return null;
+        }
+        return _kind.toString();
+    }
+
+    public String getOptions() {
+        return _options;
     }
 
     public String getComponent() {
@@ -1896,7 +1939,7 @@ public enum Config {
         }
     }
 
-    public String[] getRange() {
+    public String getRange() {
         return _range;
     }
 

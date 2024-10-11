@@ -123,7 +123,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the physical size of the template")
     private Long physicalSize;
 
-    @SerializedName(ApiConstants.TEMPLATETYPE)
+    @SerializedName(ApiConstants.TEMPLATE_TYPE)
     @Param(description = "the type of the template")
     private String templateType;
 
@@ -134,6 +134,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the template belongs to", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain to which the template belongs")
@@ -178,6 +182,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
     @Param(description = "Lists the download progress of a template across all secondary storages")
     private List<Map<String, String>> downloadDetails;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the template", since = "4.20")
+    private String arch;
 
     @SerializedName(ApiConstants.BITS)
     @Param(description = "the processor bit size", since = "4.10")
@@ -355,6 +363,11 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     }
 
     @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
@@ -510,5 +523,9 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setUserDataParams(String userDataParams) {
         this.userDataParams = userDataParams;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

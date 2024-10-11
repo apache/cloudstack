@@ -17,15 +17,6 @@
 
 package com.cloud.network;
 
-import static org.mockito.Mockito.mock;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,6 +31,15 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+
+import static org.mockito.Mockito.mock;
 
 public class Ipv6AddressManagerTest {
 
@@ -63,9 +63,16 @@ public class Ipv6AddressManagerTest {
 
     private Network network = mockNetwork();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

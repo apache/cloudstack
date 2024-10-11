@@ -15,16 +15,16 @@
 
 package org.apache.cloudstack.server.auth;
 
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.security.NoSuchAlgorithmException;

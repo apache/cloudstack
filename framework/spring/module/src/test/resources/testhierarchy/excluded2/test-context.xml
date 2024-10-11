@@ -26,7 +26,7 @@
     <bean id="name" class="java.lang.String" >
         <constructor-arg value="excluded2" />
     </bean>
-    
+
     <bean id="excluded" class="java.lang.String" >
         <constructor-arg value="excluded2" />
     </bean>

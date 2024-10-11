@@ -25,7 +25,8 @@ CentOS based built-in user VM template.
 
 # Setting up Tools and Environment
 
-- Install packer and latest KVM, qemu on a Linux machine
+- Install packer (v1.8.x, v1.9.x tested) and latest KVM, qemu on a Linux x86
+  machine (Ubuntu 20.04 tested)
 - Install tools for exporting appliances: qemu-img, ovftool, faketime, sharutils
 - Build and install `vhd-util` as described in build.sh or use pre-built
   binaries at:
@@ -33,11 +34,18 @@ CentOS based built-in user VM template.
       http://packages.shapeblue.com/systemvmtemplate/vhd-util
       http://packages.shapeblue.com/systemvmtemplate/libvhd.so.1.0
 
+- For building ARM64 systemvm template on amd64 systems, please also install:
+  qemu-utils qemu-system-arm qemu-efi-aarch64
+
 # How to build appliances
 
 Just run build.sh, it will export archived appliances for KVM, XenServer,
 VMWare and HyperV in `dist` directory:
 
-    bash build.sh systemvmtemplate
-    bash build.sh builtin
+    bash build.sh <name> <version> <arch>
+    bash build.sh systemvmtemplate 4.19.1.0 x86_64
+    bash build.sh systemvmtemplate 4.19.1.0 aarch64
 
+For building builtin x86_64 template run:
+
+    bash build.sh builtin

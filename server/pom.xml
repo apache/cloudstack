@@ -24,12 +24,13 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
     </parent>
+
     <dependencies>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -93,6 +94,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>${cs.commons-math3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${cs.mustache.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -159,6 +165,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-storage-configdrive</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -206,7 +217,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>@{argLine} -Xmx2048m -XX:MaxPermSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
+                    <argLine>@{argLine} -Xmx2048m -XX:MaxMetaspaceSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
                     <excludes>
                         <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
                         <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>

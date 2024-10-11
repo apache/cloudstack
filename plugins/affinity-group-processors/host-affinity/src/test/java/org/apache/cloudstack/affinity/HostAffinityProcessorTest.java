@@ -25,6 +25,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,14 +37,15 @@ import org.mockito.Spy;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,9 +100,11 @@ public class HostAffinityProcessorTest {
     @Mock
     VirtualMachineProfile profile;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         when(groupVM1.getHostId()).thenReturn(HOST_ID);
         when(groupVM2.getHostId()).thenReturn(HOST_ID);
@@ -123,6 +127,11 @@ public class HostAffinityProcessorTest {
         when(affinityGroupVMMapDao.findByVmIdType(eq(VM_ID), any())).thenReturn(new ArrayList<>(Arrays.asList(mapVO)));
     }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testProcessAffinityGroupMultipleVMs() {
         processor.processAffinityGroup(mapVO, plan, vm);
@@ -139,7 +148,7 @@ public class HostAffinityProcessorTest {
     @Test
     public void testGetPreferredHostsFromGroupVMIdsMultipleVMs() {
         List<Long> list = new ArrayList<>(Arrays.asList(GROUP_VM_1_ID, GROUP_VM_2_ID));
-        List<Long> preferredHosts = processor.getPreferredHostsFromGroupVMIds(list);
+        List<Long> preferredHosts = processor.getPreferredHostsFromGroupVMIds(list, Collections.emptyList());
         assertNotNull(preferredHosts);
         assertEquals(1, preferredHosts.size());
         assertEquals(HOST_ID, preferredHosts.get(0));
@@ -148,7 +157,7 @@ public class HostAffinityProcessorTest {
     @Test
     public void testGetPreferredHostsFromGroupVMIdsEmptyVMsList() {
         List<Long> list = new ArrayList<>();
-        List<Long> preferredHosts = processor.getPreferredHostsFromGroupVMIds(list);
+        List<Long> preferredHosts = processor.getPreferredHostsFromGroupVMIds(list, Collections.emptyList());
         assertNotNull(preferredHosts);
         assertTrue(preferredHosts.isEmpty());
     }

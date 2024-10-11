@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -44,13 +45,19 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
-    public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
+    @Inject
+    private ConfigurationDao configDao;
     private final SearchBuilder<AccountJoinVO> acctIdSearch;
+    private final SearchBuilder<AccountJoinVO> domainSearch;
     @Inject
     AccountManager _acctMgr;
 
     protected AccountJoinDaoImpl() {
+
+        domainSearch = createSearchBuilder();
+        domainSearch.and("idIN", domainSearch.entity().getId(), SearchCriteria.Op.IN);
+        domainSearch.done();
 
         acctIdSearch = createSearchBuilder();
         acctIdSearch.and("id", acctIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -230,6 +237,50 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+    }
+
+    @Override
+    public List<AccountJoinVO> searchByIds(Long... accountIds) {
+        // set detail batch query size
+        int DETAILS_BATCH_SIZE = 2000;
+        String batchCfg = configDao.getValue("detail.batch.query.size");
+        if (batchCfg != null) {
+            DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
+        }
+
+        List<AccountJoinVO> uvList = new ArrayList<>();
+        // query details by batches
+        int curr_index = 0;
+        if (accountIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= accountIds.length) {
+                Long[] ids = new Long[DETAILS_BATCH_SIZE];
+                for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
+                    ids[k] = accountIds[j];
+                }
+                SearchCriteria<AccountJoinVO> sc = domainSearch.create();
+                sc.setParameters("idIN", ids);
+                List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
+                }
+                curr_index += DETAILS_BATCH_SIZE;
+            }
+        }
+        if (curr_index < accountIds.length) {
+            int batch_size = (accountIds.length - curr_index);
+            // set the ids value
+            Long[] ids = new Long[batch_size];
+            for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
+                ids[k] = accountIds[j];
+            }
+            SearchCriteria<AccountJoinVO> sc = domainSearch.create();
+            sc.setParameters("idIN", ids);
+            List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+            if (accounts != null) {
+                uvList.addAll(accounts);
+            }
+        }
+        return uvList;
     }
 
     @Override

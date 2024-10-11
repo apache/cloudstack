@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -32,6 +33,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.util.StoragePoolTypeConverter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.storage.Storage.ProvisioningType;
@@ -114,7 +116,7 @@ public class VolumeVO implements Volume {
     Type volumeType = Volume.Type.UNKNOWN;
 
     @Column(name = "pool_type")
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     StoragePoolType poolType;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
@@ -179,6 +181,10 @@ public class VolumeVO implements Volume {
 
     @Column(name = "encrypt_format")
     private String encryptFormat;
+
+    @Column(name = "delete_protection")
+    private boolean deleteProtection;
+
 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
@@ -331,9 +337,7 @@ public class VolumeVO implements Volume {
         this.poolType = poolType;
     }
 
-    public StoragePoolType getPoolType() {
-        return poolType;
-    }
+    public StoragePoolType getPoolType() { return poolType; }
 
     @Override
     public long getDomainId() {
@@ -677,4 +681,13 @@ public class VolumeVO implements Volume {
     public String getEncryptFormat() { return encryptFormat; }
 
     public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
+
+    @Override
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
+    }
 }

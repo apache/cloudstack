@@ -16,14 +16,15 @@
 // under the License.
 package streamer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Link to transfer data in bounds of single thread (synchronized transfer).
  * Must not be used to send data to elements served in different threads.
  */
 public class SyncLink implements Link {
-    private static final Logger s_logger = Logger.getLogger(SyncLink.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     /**
      * When null packet is pulled from source element, then make slight delay to
@@ -115,7 +116,7 @@ public class SyncLink implements Link {
     @Override
     public void pushBack(ByteBuffer buf) {
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Buffer pushed back: " + buf + ".");
+            logger.debug("[" + this + "] INFO: Buffer pushed back: " + buf + ".");
 
         if (cacheBuffer != null) {
             ByteBuffer tmp = cacheBuffer.join(buf);
@@ -154,7 +155,7 @@ public class SyncLink implements Link {
             throw new RuntimeException("[" + this + "] ERROR: link is not in push mode.");
 
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Incoming buffer: " + buf + ".");
+            logger.debug("[" + this + "] INFO: Incoming buffer: " + buf + ".");
 
         if (buf == null && cacheBuffer == null)
             return;
@@ -175,7 +176,7 @@ public class SyncLink implements Link {
         while (cacheBuffer != null) {
             if (paused || hold) {
                 if (verbose)
-                    s_logger.debug("[" + this + "] INFO: Transfer is paused. Data in cache buffer: " + cacheBuffer + ".");
+                    logger.debug("[" + this + "] INFO: Transfer is paused. Data in cache buffer: " + cacheBuffer + ".");
 
                 // Wait until rest of packet will be read
                 return;
@@ -183,7 +184,7 @@ public class SyncLink implements Link {
 
             if (expectedPacketSize > 0 && cacheBuffer.length < expectedPacketSize) {
                 if (verbose)
-                    s_logger.debug("[" + this + "] INFO: Transfer is suspended because available data is less than expected packet size. Expected packet size: "
+                    logger.debug("[" + this + "] INFO: Transfer is suspended because available data is less than expected packet size. Expected packet size: "
                             + expectedPacketSize + ", data in cache buffer: " + cacheBuffer + ".");
 
                 // Wait until rest of packet will be read
@@ -210,7 +211,7 @@ public class SyncLink implements Link {
     public void sendEvent(Event event, Direction direction) {
 
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Event " + event + " is received.");
+            logger.debug("[" + this + "] INFO: Event " + event + " is received.");
 
         // Shutdown main loop (if any) when STREAM_CLOSE event is received.
         switch (event) {
@@ -257,14 +258,14 @@ public class SyncLink implements Link {
 
         if (paused) {
             if (verbose)
-                s_logger.debug("[" + this + "] INFO: Cannot pull, link is paused.");
+                logger.debug("[" + this + "] INFO: Cannot pull, link is paused.");
 
             // Make slight delay in such case, to avoid consuming 100% of CPU
             if (block) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    s_logger.info("[ignored] interrupted during pull", e);
+                    logger.info("[ignored] interrupted during pull", e);
                 }
             }
 
@@ -275,7 +276,7 @@ public class SyncLink implements Link {
         // then return it instead of asking for more data from source
         if (cacheBuffer != null && (expectedPacketSize == 0 || (expectedPacketSize > 0 && cacheBuffer.length >= expectedPacketSize))) {
             if (verbose)
-                s_logger.debug("[" + this + "] INFO: Data pulled from cache buffer: " + cacheBuffer + ".");
+                logger.debug("[" + this + "] INFO: Data pulled from cache buffer: " + cacheBuffer + ".");
 
             ByteBuffer tmp = cacheBuffer;
             cacheBuffer = null;
@@ -294,7 +295,7 @@ public class SyncLink implements Link {
         // Can return something only when data was stored in buffer
         if (cacheBuffer != null && (expectedPacketSize == 0 || (expectedPacketSize > 0 && cacheBuffer.length >= expectedPacketSize))) {
             if (verbose)
-                s_logger.debug("[" + this + "] INFO: Data pulled from source: " + cacheBuffer + ".");
+                logger.debug("[" + this + "] INFO: Data pulled from source: " + cacheBuffer + ".");
 
             ByteBuffer tmp = cacheBuffer;
             cacheBuffer = null;
@@ -370,7 +371,7 @@ public class SyncLink implements Link {
         sendEvent(Event.LINK_SWITCH_TO_PULL_MODE, Direction.IN);
 
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Starting pull loop.");
+            logger.debug("[" + this + "] INFO: Starting pull loop.");
 
         // Pull source in loop
         while (!shutdown) {
@@ -386,7 +387,7 @@ public class SyncLink implements Link {
         }
 
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Pull loop finished.");
+            logger.debug("[" + this + "] INFO: Pull loop finished.");
 
     }
 
@@ -401,7 +402,7 @@ public class SyncLink implements Link {
     @Override
     public void setPullMode() {
         if (verbose)
-            s_logger.debug("[" + this + "] INFO: Switching to PULL mode.");
+            logger.debug("[" + this + "] INFO: Switching to PULL mode.");
 
         pullMode = true;
     }

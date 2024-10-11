@@ -51,7 +51,7 @@ doUploadL10NLangs()
                         grep -v "^\s*//" ${DIRECTORY_RESOURCES}/${CODELANG}.js | sed -e 's/var dictionary = //' -e "\$s/;$//" > ${WORKDIR}/${CODELANG}.json
                         tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/${CODELANG}.json
                         tx push -t -r ${ARGUMENTS} -l ${CODELANG}
-                else   
+                else
                         echo "Warning: the resource file for language ${CODELANG} doesn't exist."
                 fi
         done
@@ -64,7 +64,7 @@ doDownloadL10NLangs()
                 if [ -f "${DIRECTORY_RESOURCES}/${CODELANG}.js" ]; then
                         grep -v "^\s*//" ${DIRECTORY_RESOURCES}/${CODELANG}.js | sed -e 's/var dictionary = //' -e "\$s/;$//" > ${WORKDIR}/${CODELANG}.json
                         tx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/${CODELANG}.json
-                else   
+                else
                         echo "\nWarning: the resource file for language ${CODELANG} doesn't exist."
                         echo "Run this command to force get this language from transifex:"
                         echo "\ntx set -r ${ARGUMENTS} -l ${CODELANG} ${WORKDIR}/${CODELANG}.json\n"
@@ -83,7 +83,7 @@ doDownloadL10NLangs()
                                 -e '$s/\}$/\n\};/' \
                                 -e "1s~^~${AL2_STRING}~" \
                                 ${WORKDIR}/${CODELANG}.json > ${DIRECTORY_RESOURCES}/${CODELANG}.js
-                else   
+                else
                         echo "Warning: the resource file for language ${CODELANG} doesn't exist on transifex"
                 fi
         done
@@ -95,7 +95,7 @@ doUploadSourceLang()
         if [ -f ${DIRECTORY_RESOURCES}/${SRCLANG}.js ]; then
                 grep -v "^\s*//" ${DIRECTORY_RESOURCES}/${SRCLANG}.js | sed -e 's/var dictionary = //' -e "\$s/;$//" > ${WORKDIR}/${SRCLANG}.json
                 tx set --source -r ${ARGUMENTS} -l ${SRCLANG} ${WORKDIR}/${SRCLANG}.json
-                tx push -s -r ${ARGUMENTS} 
+                tx push -s -r ${ARGUMENTS}
         else
                 echo "Warning: the source language doesn't exist!"
         fi
@@ -104,7 +104,7 @@ doUploadSourceLang()
 doDownloadSourceLang()
 {
         # get all resource files from transifex
-        tx pull -s -r ${ARGUMENTS} 
+        tx pull -s -r ${ARGUMENTS}
         # Source language
         if [ -f "${WORKDIR}/${SRCLANG}.json" ]; then
                 sed -e 's/":"/": "/' \
@@ -159,4 +159,3 @@ case "$COMMAND" in
                 exit 1
                 ;;
 esac
-

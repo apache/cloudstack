@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -41,7 +42,7 @@ import javax.script.ScriptEngine;
  * A class to execute JavaScript scripts, with the possibility to inject context to the scripts.
  */
 public class JsInterpreter implements Closeable {
-    protected Logger logger = Logger.getLogger(JsInterpreter.class);
+    protected Logger logger = LogManager.getLogger(JsInterpreter.class);
 
     protected ScriptEngine interpreter;
     protected String interpreterName;
@@ -51,6 +52,12 @@ public class JsInterpreter implements Closeable {
     private long timeout;
     private String timeoutDefaultMessage;
     protected Map<String, String> variables = new LinkedHashMap<>();
+
+    /**
+     * Constructor created exclusively for unit testing.
+     */
+    protected JsInterpreter() {
+    }
 
     public JsInterpreter(long timeout) {
         this.timeout = timeout;
@@ -78,11 +85,26 @@ public class JsInterpreter implements Closeable {
     }
 
     /**
-     * Adds the parameters to a Map that will be converted to JS variables right before executing the scripts..
+     * Adds the parameters to a Map that will be converted to JS variables right before executing the script.
      * @param key The name of the variable.
      * @param value The value of the variable.
      */
     public void injectVariable(String key, String value) {
+        logger.trace(String.format(injectingLogMessage, key, value));
+        variables.put(key, value);
+    }
+
+    /**
+     * Adds the parameter, surrounded by double quotes, to a Map that will be converted to a JS variable right before executing the script.
+     * @param key The name of the variable.
+     * @param value The value of the variable.
+     */
+    public void injectStringVariable(String key, String value) {
+        if (value == null) {
+            logger.trace(String.format("Not injecting [%s] because its value is null.", key));
+            return;
+        }
+        value = String.format("\"%s\"", value);
         logger.trace(String.format(injectingLogMessage, key, value));
         variables.put(key, value);
     }

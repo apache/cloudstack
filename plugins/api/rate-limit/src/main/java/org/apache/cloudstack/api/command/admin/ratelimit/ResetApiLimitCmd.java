@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.admin.ratelimit;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +38,6 @@ import com.cloud.user.Account;
 @APICommand(name = "resetApiLimit", responseObject = SuccessResponse.class, description = "Reset api count",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResetApiLimitCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 
 
     @Inject
@@ -53,7 +51,7 @@ public class ResetApiLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the acount whose limit to be reset")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the account whose limit to be reset")
     private Long accountId;
 
     /////////////////////////////////////////////////////

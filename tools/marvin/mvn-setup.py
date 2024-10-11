@@ -34,6 +34,8 @@ def replaceVersion(fname, version):
     with open(fname, 'r') as f:
         content = f.read()
     needle = '\nVERSION\s*=\s*[\'"][^\'"]*[\'"]'
+    # Ensure the version is PEP440 compliant
+    version = version.replace('-', '+', 1)
     replacement = '\nVERSION = "%s"' % version
     content = re.sub(needle, replacement, content, 1)
     with open(fname, 'w') as f:
@@ -48,7 +50,7 @@ def runSetupScript(args):
 
 
 if __name__ == "__main__":
-    version = sys.argv[1]
+    version = sys.argv[1].replace("-SNAPSHOT", "")
     remainingArgs = sys.argv[2:]
     replaceVersion(setupScript, version)
     runSetupScript(remainingArgs)

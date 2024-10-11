@@ -18,58 +18,86 @@
  */
 package org.apache.cloudstack.storage.resource;
 
-import static org.mockito.Matchers.any;
+import org.apache.logging.log4j.Logger;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Level;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.mockito.Mockito.times;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.test.TestAppender;
+import com.cloud.agent.api.to.DataStoreTO;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({ "javax.xml.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class NfsSecondaryStorageResourceTest {
 
+    @Spy
     private NfsSecondaryStorageResource resource;
 
-    @Before
-    public void setUp() {
-        resource = new NfsSecondaryStorageResource();
-    }
+    private static final String HOSTNAME = "hostname";
+
+    private static final String UUID = "uuid";
+
+    private static final String METADATA = "metadata";
+
+    private static final String TIMEOUT = "timeout";
+
+    private static final String PSK = "6HyGMx9Vat7rZw1pMZrM4OlD4FFwLUPznTsFqVFSOIvk0mAWMRCVZ6UCq42gZvhp";
+
+    private static final String PROTOCOL = NetUtils.HTTP_PROTO;
+
+    private static final String EXPECTED_SIGNATURE = "expectedSignature";
+
+    private static final String COMPUTED_SIGNATURE = "computedSignature";
+
+    @Mock
+    private Logger loggerMock;
 
     @Test
-    @PrepareForTest(NfsSecondaryStorageResource.class)
     public void testSwiftWriteMetadataFile() throws Exception {
-        String filename = "testfile";
+        String metaFileName = "test_metadata_file";
         try {
-            String expected = "uniquename=test\nfilename=" + filename + "\nsize=100\nvirtualsize=1000";
+            String uniqueName = "test_unique_name";
+            String filename = "test_filename";
+            long size = 1024L;
+            long virtualSize = 2048L;
 
-            StringWriter stringWriter = new StringWriter();
-            BufferedWriter bufferWriter = new BufferedWriter(stringWriter);
-            PowerMockito.whenNew(BufferedWriter.class).withArguments(any(FileWriter.class)).thenReturn(bufferWriter);
+            File metaFile = resource.swiftWriteMetadataFile(metaFileName, uniqueName, filename, size, virtualSize);
 
-            resource.swiftWriteMetadataFile(filename, "test", filename, 100, 1000);
+            Assert.assertTrue(metaFile.exists());
+            Assert.assertEquals(metaFileName, metaFile.getName());
 
-            Assert.assertEquals(expected, stringWriter.toString());
+            String expectedContent = "uniquename=" + uniqueName + "\n" +
+                    "filename=" + filename + "\n" +
+                    "size=" + size + "\n" +
+                    "virtualsize=" + virtualSize;
+
+            String actualContent = new String(java.nio.file.Files.readAllBytes(metaFile.toPath()));
+            Assert.assertEquals(expectedContent, actualContent);
         } finally {
-            File remnance = new File(filename);
-            remnance.delete();
+            File metaFile = new File(metaFileName);
+            metaFile.delete();
         }
     }
 
@@ -77,18 +105,141 @@ public class NfsSecondaryStorageResourceTest {
     public void testCleanupStagingNfs() throws Exception{
 
         NfsSecondaryStorageResource spyResource = spy(resource);
+        spyResource.logger = loggerMock;
         RuntimeException exception = new RuntimeException();
         doThrow(exception).when(spyResource).execute(any(DeleteCommand.class));
         TemplateObjectTO mockTemplate = Mockito.mock(TemplateObjectTO.class);
 
-        TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
-        appenderBuilder.addExpectedPattern(Level.DEBUG, "Failed to clean up staging area:");
-        TestAppender testLogAppender = appenderBuilder.build();
-        TestAppender.safeAddAppender(NfsSecondaryStorageResource.s_logger, testLogAppender);
-
         spyResource.cleanupStagingNfs(mockTemplate);
 
-        testLogAppender.assertMessagesLogged();
+        Mockito.verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
 
+    }
+
+    private void performGetSnapshotFilepathForDeleteTest(String expected, String path, String name) {
+        Assert.assertEquals("Incorrect resultant snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
+    }
+
+    @Test
+    public void testGetSnapshotFilepathForDelete() {
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/somename",
+                "/snapshots/2/10/somename",
+                "somename");
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/diffName/*diffname*",
+                "/snapshots/2/10/diffName",
+                "diffname");
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/*somename*",
+                "/snapshots/2/10",
+                "somename");
+    }
+
+    @Test
+    public void testExecuteQuerySnapshotZoneCopyCommand() {
+        final String dir = "/snapshots/2/10/abc";
+        final String fileName = "abc";
+        DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        SnapshotObjectTO object = Mockito.mock(SnapshotObjectTO.class);
+        Mockito.when(object.getDataStore()).thenReturn(store);
+        Mockito.when(object.getPath()).thenReturn(dir + File.separator + fileName);
+        QuerySnapshotZoneCopyCommand cmd = Mockito.mock(QuerySnapshotZoneCopyCommand.class);
+        Mockito.when(cmd.getSnapshot()).thenReturn(object);
+        Path p1 = Mockito.mock(Path.class);
+        Mockito.when(p1.getFileName()).thenReturn(p1);
+        Mockito.when(p1.toString()).thenReturn(fileName + ".vmdk");
+        Path p2 = Mockito.mock(Path.class);
+        Mockito.when(p2.getFileName()).thenReturn(p2);
+        Mockito.when(p2.toString()).thenReturn(fileName + ".ovf");
+        Stream<Path> paths = Stream.of(p1, p2);
+        try (MockedStatic<Files> files = Mockito.mockStatic(Files.class)) {
+            files.when(() -> Files.list(Mockito.any(Path.class))).thenReturn(paths);
+            files.when(() -> Files.isDirectory(Mockito.any(Path.class))).thenReturn(false);
+            QuerySnapshotZoneCopyAnswer answer = (QuerySnapshotZoneCopyAnswer)(resource.execute(cmd));
+            List<String> result = answer.getFiles();
+            Assert.assertEquals(2, result.size());
+            Assert.assertEquals(dir + File.separator + fileName + ".vmdk", result.get(0));
+            Assert.assertEquals(dir + File.separator + fileName + ".ovf", result.get(1));
+        }
+    }
+
+    private void prepareForValidatePostUploadRequestSignatureTests(MockedStatic<EncryptionUtil> encryptionUtilMock) {
+        Mockito.doReturn(PROTOCOL).when(resource).getUploadProtocol();
+        Mockito.doReturn(PSK).when(resource).getPostUploadPSK();
+        encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(Mockito.anyString(), Mockito.anyString())).thenReturn(COMPUTED_SIGNATURE);
+        String fullUrl = String.format("%s://%s/upload/%s", PROTOCOL, HOSTNAME, UUID);
+        String data = String.format("%s%s%s", METADATA, fullUrl, TIMEOUT);
+        encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(data, PSK)).thenReturn(EXPECTED_SIGNATURE);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenProtocolDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+            Mockito.doReturn(NetUtils.HTTPS_PROTO).when(resource).getUploadProtocol();
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenHostnameDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, "test", UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenUuidDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, "test", METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenMetadataDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, "test", TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenTimeoutDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, "test");
+        }
+    }
+
+    @Test
+    public void validatePostUploadRequestSignatureTestSuccessWhenDataIsTheSame() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test
+    public void getUploadProtocolTestReturnHttpsWhenUseHttpsToUploadIsTrue() {
+        Mockito.doReturn(true).when(resource).useHttpsToUpload();
+
+        String result = resource.getUploadProtocol();
+
+        Assert.assertEquals(NetUtils.HTTPS_PROTO, result);
+    }
+
+    @Test
+    public void getUploadProtocolTestReturnHttpWhenUseHttpsToUploadIsFalse() {
+        Mockito.doReturn(false).when(resource).useHttpsToUpload();
+
+        String result = resource.getUploadProtocol();
+
+        Assert.assertEquals(NetUtils.HTTP_PROTO, result);
     }
 }

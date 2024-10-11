@@ -79,7 +79,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
         # Enable Network offering
         cls.network_offering_nouserdata.update(cls.api_client, state='Enabled')
 
-        # Create Network Offering with all the serices
+        # Create Network Offering with all the services
         cls.network_offering_all = NetworkOffering.create(
             cls.api_client,
             cls.test_data["isolated_network_offering"]
@@ -126,7 +126,7 @@ class TestDeployVmWithUserDataMultiNic(cloudstackTestCase):
         """Test userdata update when non default nic is without userdata for deploy and update
         """
 
-        self.userdata = base64.encodestring(self.userdata.encode()).decode()
+        self.userdata = base64.encodebytes(self.userdata.encode()).decode()
 
         network1 = Network.create(
             self.apiclient,

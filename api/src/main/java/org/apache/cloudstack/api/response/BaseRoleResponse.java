@@ -36,6 +36,11 @@ public class BaseRoleResponse extends BaseResponse {
     @Param(description = "the description of the role")
     private String roleDescription;
 
+    @SerializedName(ApiConstants.IS_PUBLIC)
+    @Param(description = "Indicates whether the role will be visible to all users (public) or only to root admins (private)." +
+            " If this parameter is not specified during the creation of the role its value will be defaulted to true (public).")
+    private boolean publicRole = true;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -46,5 +51,9 @@ public class BaseRoleResponse extends BaseResponse {
 
     public void setDescription(String description) {
         this.roleDescription = description;
+    }
+
+    public void setPublicRole(boolean publicRole) {
+        this.publicRole = publicRole;
     }
 }

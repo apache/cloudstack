@@ -29,6 +29,7 @@ import org.apache.cloudstack.quota.activationrule.presetvariables.Domain;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Tariff;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
@@ -142,7 +143,9 @@ public class QuotaManagerImplTest {
     public void getUsageValueAccordingToUsageUnitTypeTestAllTypes() {
         Mockito.doReturn(10.0).when(usageVoMock).getRawUsage();
         Mockito.doReturn(ByteScaleUtils.GiB).when(usageVoMock).getSize();
+        Mockito.doReturn(new Date(0, 8, 10)).when(usageVoMock).getStartDate();
         BigDecimal aggregatedQuotaTariffsValue = new BigDecimal(400);
+
 
         Arrays.asList(UsageUnitTypes.values()).forEach(type -> {
            BigDecimal result = quotaManagerImplSpy.getUsageValueAccordingToUsageUnitType(usageVoMock, aggregatedQuotaTariffsValue, type.toString());
@@ -164,6 +167,12 @@ public class QuotaManagerImplTest {
                case GB_MONTH:
                    //The value 5.5555556 is referent to the calculation (( usage size / gib ) * raw usage * ( tariffs values / hours in month )).
                    expected = 5.5555556;
+                   break;
+
+               case BYTES:
+               case IOPS:
+                   //The value 4000.0 is referent to the calculation ( raw usage * tariffs values ).
+                   expected = 4000.0;
                    break;
 
                default:
@@ -261,7 +270,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
@@ -282,7 +291,7 @@ public class QuotaManagerImplTest {
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("project"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectStringVariable(Mockito.eq("resourceType"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
@@ -387,7 +396,7 @@ public class QuotaManagerImplTest {
         Mockito.doReturn(null).when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(BigDecimal.ONE).when(quotaTariffVoMock).getCurrencyValue();
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, null, null);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, null, null, null);
 
         Assert.assertEquals(BigDecimal.ONE, result);
     }
@@ -397,7 +406,7 @@ public class QuotaManagerImplTest {
         Mockito.doReturn("").when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(BigDecimal.TEN).when(quotaTariffVoMock).getCurrencyValue();
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, null, null);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, null, null, null);
 
         Assert.assertEquals(BigDecimal.TEN, result);
     }
@@ -405,13 +414,15 @@ public class QuotaManagerImplTest {
     @Test
     public void getQuotaTariffValueToBeAppliedTestScriptResultIsNumberReturnIt() {
         BigDecimal expected = new BigDecimal(50.1);
+        List<Tariff> lastTariffs = createLastAppliedTariffsPresetVariableList(0);
+
 
         Mockito.doReturn(" ").when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(BigDecimal.TEN).when(quotaTariffVoMock).getCurrencyValue();
         Mockito.doNothing().when(quotaManagerImplSpy).injectPresetVariablesIntoJsInterpreter(Mockito.any(), Mockito.any());
         Mockito.doReturn(expected).when(jsInterpreterMock).executeScript(Mockito.anyString());
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock, lastTariffs);
 
         Assert.assertEquals(expected, result);
     }
@@ -419,37 +430,42 @@ public class QuotaManagerImplTest {
     @Test
     public void getQuotaTariffValueToBeAppliedTestScriptResultIsTrueReturnTariffValue() {
         BigDecimal expected = new BigDecimal(236.84);
+        List<Tariff> lastTariffs = createLastAppliedTariffsPresetVariableList(0);
 
         Mockito.doReturn(" ").when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(expected).when(quotaTariffVoMock).getCurrencyValue();
         Mockito.doNothing().when(quotaManagerImplSpy).injectPresetVariablesIntoJsInterpreter(Mockito.any(), Mockito.any());
         Mockito.doReturn(true).when(jsInterpreterMock).executeScript(Mockito.anyString());
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock, lastTariffs);
 
         Assert.assertEquals(expected, result);
     }
 
     @Test
     public void getQuotaTariffValueToBeAppliedTestScriptResultIsFalseReturnZero() {
+        List<Tariff> lastTariffs = createLastAppliedTariffsPresetVariableList(0);
+
         Mockito.doReturn(" ").when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(BigDecimal.TEN).when(quotaTariffVoMock).getCurrencyValue();
         Mockito.doNothing().when(quotaManagerImplSpy).injectPresetVariablesIntoJsInterpreter(Mockito.any(), Mockito.any());
         Mockito.doReturn(false).when(jsInterpreterMock).executeScript(Mockito.anyString());
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock, lastTariffs);
 
         Assert.assertEquals(BigDecimal.ZERO, result);
     }
 
     @Test
     public void getQuotaTariffValueToBeAppliedTestScriptResultIsNotBooleanNorNumericReturnZero() {
+        List<Tariff> lastTariffs = createLastAppliedTariffsPresetVariableList(0);
+
         Mockito.doReturn(" ").when(quotaTariffVoMock).getActivationRule();
         Mockito.doReturn(BigDecimal.TEN).when(quotaTariffVoMock).getCurrencyValue();
         Mockito.doNothing().when(quotaManagerImplSpy).injectPresetVariablesIntoJsInterpreter(Mockito.any(), Mockito.any());
         Mockito.doReturn("test").when(jsInterpreterMock).executeScript(Mockito.anyString());
 
-        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock);
+        BigDecimal result = quotaManagerImplSpy.getQuotaTariffValueToBeApplied(quotaTariffVoMock, jsInterpreterMock, presetVariablesMock, lastTariffs);
 
         Assert.assertEquals(BigDecimal.ZERO, result);
     }
@@ -469,10 +485,7 @@ public class QuotaManagerImplTest {
 
     @Test
     public void aggregateQuotaTariffsValuesTestTariffsWereNotInPeriodToBeAppliedReturnZero() {
-        List<QuotaTariffVO> tariffs = new ArrayList<>();
-        tariffs.add(new QuotaTariffVO());
-        tariffs.add(new QuotaTariffVO());
-        tariffs.add(new QuotaTariffVO());
+        List<QuotaTariffVO> tariffs = createTariffList();
 
         Mockito.doReturn(false).when(quotaManagerImplSpy).isQuotaTariffInPeriodToBeApplied(Mockito.any(), Mockito.any(), Mockito.anyString());
         BigDecimal result = quotaManagerImplSpy.aggregateQuotaTariffsValues(usageVoMock, tariffs, false, jsInterpreterMock, "");
@@ -489,13 +502,10 @@ public class QuotaManagerImplTest {
 
     @Test
     public void aggregateQuotaTariffsValuesTestTariffsAreInPeriodToBeAppliedReturnAggregation() {
-        List<QuotaTariffVO> tariffs = new ArrayList<>();
-        tariffs.add(new QuotaTariffVO());
-        tariffs.add(new QuotaTariffVO());
-        tariffs.add(new QuotaTariffVO());
+        List<QuotaTariffVO> tariffs = createTariffList();
 
         Mockito.doReturn(true, false, true).when(quotaManagerImplSpy).isQuotaTariffInPeriodToBeApplied(Mockito.any(), Mockito.any(), Mockito.anyString());
-        Mockito.doReturn(BigDecimal.TEN).when(quotaManagerImplSpy).getQuotaTariffValueToBeApplied(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(BigDecimal.TEN).when(quotaManagerImplSpy).getQuotaTariffValueToBeApplied(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         BigDecimal result = quotaManagerImplSpy.aggregateQuotaTariffsValues(usageVoMock, tariffs, false, jsInterpreterMock, "");
 
         Assert.assertEquals(BigDecimal.TEN.multiply(new BigDecimal(2)), result);
@@ -520,4 +530,25 @@ public class QuotaManagerImplTest {
         Assert.assertEquals(quotaUsageVoMock1, result.get(0));
         Assert.assertEquals(quotaUsageVoMock2, result.get(1));
     }
+
+    private static List<QuotaTariffVO> createTariffList() {
+        List<QuotaTariffVO> tariffs = new ArrayList<>();
+        tariffs.add(new QuotaTariffVO());
+        tariffs.add(new QuotaTariffVO());
+        tariffs.add(new QuotaTariffVO());
+        tariffs.forEach(quotaTariffVO -> quotaTariffVO.setPosition(1));
+        return tariffs;
+    }
+
+    private static List<Tariff> createLastAppliedTariffsPresetVariableList(int numberOfTariffs) {
+        List<Tariff> lastTariffs = new ArrayList<>();
+        for (int i = 0; i < numberOfTariffs; i++) {
+            Tariff tariff = new Tariff();
+            tariff.setId(String.valueOf(i));
+            tariff.setValue(BigDecimal.valueOf(i));
+            lastTariffs.add(tariff);
+        }
+        return lastTariffs;
+    }
+
 }

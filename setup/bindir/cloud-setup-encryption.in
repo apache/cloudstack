@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -63,7 +63,7 @@ class DBDeployer(object):
     dbDotProperties = {}
     dbDotPropertiesIndex = 0
     encryptionKeyFile = '@MSCONF@/key'
-    encryptionJarPath = '@COMMONLIBDIR@/lib/jasypt-1.9.3.jar'
+    encryptionJarPath = '@COMMONLIBDIR@/lib/cloudstack-utils.jar'
     success = False
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
 
@@ -71,12 +71,12 @@ class DBDeployer(object):
         def backUpDbDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
             copyPath = os.path.join(self.dbConfPath, 'db.properties.origin')
-            
+
             if os.path.isfile(dbpPath):
                 shutil.copy2(dbpPath, copyPath)
-        
+
         backUpDbDotProperties()
-    
+
     def postRun(self):
         def cleanOrRecoverDbDotProperties():
             dbpPath = os.path.join(self.dbConfPath, 'db.properties')
@@ -85,22 +85,22 @@ class DBDeployer(object):
                 if not self.success:
                     shutil.copy2(copyPath, dbpPath)
                 os.remove(copyPath)
-        
+
         cleanOrRecoverDbDotProperties()
-                
-        
+
+
     def info(self, msg, result=None):
         output = ""
         if msg is not None:
             output = "%-80s"%msg
-            
+
         if result is True:
             output += "[ \033[92m%-2s\033[0m ]\n"%"OK"
         elif result is False:
             output += "[ \033[91m%-6s\033[0m ]\n"%"FAILED"
         sys.stdout.write(output)
         sys.stdout.flush()
-    
+
     def debug(self, msg):
         msg = "DEBUG:%s"%msg
         sys.stdout.write(msg)
@@ -113,19 +113,19 @@ class DBDeployer(object):
         else:
             self.dbDotProperties[key] = (value, self.dbDotPropertiesIndex)
             self.dbDotPropertiesIndex += 1
-    
+
     def getDbProperty(self, key):
         if key not in self.dbDotProperties:
             return None
         (value, index) = self.dbDotProperties[key]
         return value
-        
+
     def errorAndExit(self, msg):
         self.postRun()
         err = '''\n\nWe apologize for below error:
-***************************************************************      
+***************************************************************
 %s
-*************************************************************** 
+***************************************************************
 Please run:
 
     cloud-setup-encryption -h
@@ -147,7 +147,7 @@ for full help
                 line = line.strip()
                 if line.startswith("#"): key = line; value = ''; passed = True
                 if line == '' or line == '\n': key = self.magicString + str(emptyLine); value = ''; emptyLine += 1; passed = True
-                
+
                 try:
                     if not passed:
                         (key, value) = line.split('=', 1)
@@ -161,9 +161,9 @@ for example:
                     self.errorAndExit(err)
                 self.putDbProperty(key, value)
             self.info("Preparing %s"%dbpPath, True)
-        
-        prepareDBDotProperties()    
-    
+
+        prepareDBDotProperties()
+
     def finalize(self):
         def finalizeDbProperties():
             entries = []
@@ -176,62 +176,62 @@ for example:
                 else:
                     entries.insert(index, "%s=%s"%(key, value))
             file(os.path.join(self.dbConfPath, 'db.properties'), 'w').write('\n'.join(entries))
-        
+
         self.info("Finalizing setup ...", None)
         finalizeDbProperties()
         self.info(None, True)
         self.success = True # At here, we have done successfully and nothing more after this flag is set
-                        
+
     def processEncryptionStuff(self):
-        def encrypt(input):
-            cmd = ['java','-classpath',self.encryptionJarPath,'org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI', 'encrypt.sh', 'input=\'%s\''%input, 'password=%s'%self.mgmtsecretkey,'verbose=false']
+        def encrypt(value):
+            cmd = ['java','-classpath','"' + self.encryptionJarPath + '"','com.cloud.utils.crypt.EncryptionCLI','-i','"' + value + '"', '-p', '"' + self.mgmtsecretkey + '"']
             return runCmd(cmd).strip('\n')
-        
+
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':
                 file(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
-                
+
         def formatEncryptResult(value):
             return 'ENC(%s)'%value
-        
+
         def encryptDBSecretKey():
             self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
 
         def encryptDBPassword():
-            dbPassword = self.getDbProperty('db.cloud.password')       
+            dbPassword = self.getDbProperty('db.cloud.password')
             if dbPassword == '': return # Don't encrypt empty password
             if dbPassword == None: self.errorAndExit('Cannot find db.cloud.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.cloud.password', formatEncryptResult(encrypt(dbPassword)))
-            
+
             usagePassword = self.getDbProperty('db.usage.password')
             if usagePassword == '': return # Don't encrypt empty password
             if usagePassword == None: self.errorAndExit('Cannot find db.usage.password in %s'%os.path.join(self.dbConfPath, 'db.properties'))
             self.putDbProperty('db.usage.password', formatEncryptResult(encrypt(usagePassword)))
-        
+
         self.info("Processing encryption ...", None)
         self.putDbProperty("db.cloud.encryption.type", self.encryptiontype)
         saveMgmtServerSecretKey()
         encryptDBSecretKey()
         encryptDBPassword()
         self.info(None, True)
-        
+
     def parseOptions(self):
-        def parseOtherOptions():                     
+        def parseOtherOptions():
             self.encryptiontype = self.options.encryptiontype
             self.mgmtsecretkey = self.options.mgmtsecretkey
             self.dbsecretkey = self.options.dbsecretkey
             self.isDebug = self.options.debug
-            
-            
+
+
         def validateParameters():
             if self.encryptiontype != 'file' and self.encryptiontype != 'web':
                 self.errorAndExit('Wrong encryption type %s, --encrypt-type can only be "file" or "web'%self.encryptiontype)
-            
+
     #---------------------- option parsing and command line checks ------------------------
         usage = """%prog [-e ENCRYPTIONTYPE] [-m MGMTSECRETKEY] [-k DBSECRETKEY] [--debug]
-    
-    This command sets up the CloudStack Encryption.    
-    
+
+    This command sets up the CloudStack Encryption.
+
     """
         self.parser = OptionParser(usage=usage)
         self.parser.add_option("-v", "--debug", action="store_true", dest="debug", default=False,
@@ -246,17 +246,17 @@ for example:
         (self.options, self.args) = self.parser.parse_args()
         parseOtherOptions()
         validateParameters()
-    
+
     def run(self):
         try:
             self.preRun()
             self.parseOptions()
-            self.prepareDBFiles()            
+            self.prepareDBFiles()
             self.processEncryptionStuff()
             self.finalize()
         finally:
             self.postRun()
-        
+
         print('')
         print("CloudStack has successfully setup Encryption")
         print('')
@@ -264,4 +264,3 @@ for example:
 if __name__ == "__main__":
    o = DBDeployer()
    o.run()
-        

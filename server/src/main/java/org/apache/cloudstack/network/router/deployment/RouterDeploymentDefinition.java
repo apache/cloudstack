@@ -19,14 +19,20 @@ package org.apache.cloudstack.network.router.deployment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -79,13 +85,14 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class RouterDeploymentDefinition {
-    private static final Logger logger = Logger.getLogger(RouterDeploymentDefinition.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected static final int LIMIT_NUMBER_OF_ROUTERS = 5;
     protected static final int MAX_NUMBER_OF_ROUTERS = 2;
 
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
+    protected NsxProviderDao nsxProviderDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
     protected NetworkModel networkModel;
     protected VirtualRouterProviderDao vrProviderDao;
@@ -346,7 +353,7 @@ public class RouterDeploymentDefinition {
         setupAccountOwner();
 
         // Check if public network has to be set on VR
-        isPublicNetwork = networkModel.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter);
+        isPublicNetwork = networkModel.isAnyServiceSupportedInNetwork(guestNetwork.getId(), Provider.VirtualRouter, Service.SourceNat, Service.Gateway);
 
         boolean canProceed = true;
         if (isRedundant() && !isPublicNetwork) {
@@ -383,8 +390,19 @@ public class RouterDeploymentDefinition {
 
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
+        DataCenter zone = dest.getDataCenter();
+        Long zoneId = null;
+        if (Objects.nonNull(zone)) {
+            zoneId = zone.getId();
+        }
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
         if (isPublicNetwork) {
-            sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+            if (Objects.isNull(nsxProvider)) {
+                sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+            } else {
+                sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            }
         }
     }
 
@@ -407,7 +425,7 @@ public class RouterDeploymentDefinition {
     private void verifyServiceOfferingByUuid(String offeringUuid) {
         logger.debug("Verifying router service offering with uuid : " + offeringUuid);
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
-        if (serviceOffering != null && serviceOffering.isSystemUse()) {
+        if (serviceOffering != null && serviceOffering.isSystemUse() && ServiceOffering.State.Active.equals(serviceOffering.getState())) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
             if (isLocalStorage == diskOffering.isUseLocalStorage()) {

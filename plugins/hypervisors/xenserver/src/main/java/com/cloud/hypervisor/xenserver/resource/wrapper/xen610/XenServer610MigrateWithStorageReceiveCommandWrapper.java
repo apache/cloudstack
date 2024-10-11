@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
@@ -48,7 +47,6 @@ import com.xensource.xenapi.SR;
 @ResourceWrapper(handles =  MigrateWithStorageReceiveCommand.class)
 public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends CommandWrapper<MigrateWithStorageReceiveCommand, Answer, XenServer610Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageReceiveCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateWithStorageReceiveCommand command, final XenServer610Resource xenServer610Resource) {
@@ -94,10 +92,10 @@ public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends C
 
             return new MigrateWithStorageReceiveAnswer(command, volumeToSr, nicToNetwork, token);
         } catch (final CloudRuntimeException e) {
-            s_logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
+            logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
             return new MigrateWithStorageReceiveAnswer(command, e);
         } catch (final Exception e) {
-            s_logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
+            logger.error("Migration of vm " + vmSpec.getName() + " with storage failed due to " + e.toString(), e);
             return new MigrateWithStorageReceiveAnswer(command, e);
         }
     }

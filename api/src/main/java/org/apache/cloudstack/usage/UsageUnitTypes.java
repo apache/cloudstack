@@ -22,7 +22,9 @@ public enum UsageUnitTypes {
     IP_MONTH ("IP*Month"),
     GB ("GB"),
     GB_MONTH ("GB*Month"),
-    POLICY_MONTH ("Policy*Month");
+    POLICY_MONTH ("Policy*Month"),
+    IOPS ("IOPS"),
+    BYTES ("Bytes");
 
     private final String description;
 

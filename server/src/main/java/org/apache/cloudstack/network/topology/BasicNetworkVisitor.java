@@ -22,7 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.network.rules.BgpPeersRules;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -74,7 +74,6 @@ import com.cloud.vm.dao.NicIpAliasVO;
 @Component
 public class BasicNetworkVisitor extends NetworkTopologyVisitor {
 
-    private static final Logger s_logger = Logger.getLogger(BasicNetworkVisitor.class);
 
     @Autowired
     @Qualifier("networkHelper")
@@ -157,7 +156,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
             return _networkGeneralHelper.sendCommandsToRouter(router, cmds);
 
         }
-        s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+        logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
 
         return false;
     }
@@ -254,7 +253,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = userdata.getNicVo();
 
         final Commands commands = new Commands(Command.OnError.Stop);
-        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, null, commands);
+        _commandSetupHelper.createVmDataCommand(router, userVM, nicVo, userVM.getDetail("SSH.PublicKey"), commands);
 
         return _networkGeneralHelper.sendCommandsToRouter(router, commands);
     }
@@ -324,5 +323,10 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
     @Override
     public boolean visit(final AdvancedVpnRules vpnRules) throws ResourceUnavailableException {
         throw new CloudRuntimeException("AdvancedVpnRules not implemented in Basic Network Topology.");
+    }
+
+    @Override
+    public boolean visit(final BgpPeersRules bgpPeersRules) throws ResourceUnavailableException {
+        throw new CloudRuntimeException("BgpPeersRules not implemented in Basic Network Topology.");
     }
 }

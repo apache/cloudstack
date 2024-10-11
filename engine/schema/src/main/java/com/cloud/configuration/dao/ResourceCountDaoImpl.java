@@ -20,13 +20,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
@@ -36,8 +41,8 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -50,24 +55,49 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Component
 public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> implements ResourceCountDao {
     private final SearchBuilder<ResourceCountVO> TypeSearch;
-
+    private final SearchBuilder<ResourceCountVO> TypeNullTagSearch;
+    private final SearchBuilder<ResourceCountVO> NonMatchingTagsSearch;
     private final SearchBuilder<ResourceCountVO> AccountSearch;
     private final SearchBuilder<ResourceCountVO> DomainSearch;
+    private final SearchBuilder<ResourceCountVO> IdsSearch;
 
     @Inject
     private DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
 
+    protected static final String INCREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` + ? WHERE `id` IN (?)";
+    protected static final String DECREMENT_COUNT_BY_IDS_SQL = "UPDATE `cloud`.`resource_count` SET `count` = `count` - ? WHERE `id` IN (?)";
+
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
         TypeSearch.and("type", TypeSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        TypeSearch.and("accountId", TypeSearch.entity().getAccountId(), SearchCriteria.Op.IN);
+        TypeSearch.and("domainId", TypeSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        TypeSearch.and("tag", TypeSearch.entity().getTag(), SearchCriteria.Op.EQ);
         TypeSearch.done();
+
+        TypeNullTagSearch = createSearchBuilder();
+        TypeNullTagSearch.and("type", TypeNullTagSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeNullTagSearch.and("accountId", TypeNullTagSearch.entity().getAccountId(), SearchCriteria.Op.IN);
+        TypeNullTagSearch.and("domainId", TypeNullTagSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        TypeNullTagSearch.and("tag", TypeNullTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
+        TypeNullTagSearch.done();
+
+        NonMatchingTagsSearch = createSearchBuilder();
+        NonMatchingTagsSearch.and("accountId", NonMatchingTagsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("domainId", NonMatchingTagsSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        NonMatchingTagsSearch.and("types", NonMatchingTagsSearch.entity().getType(), SearchCriteria.Op.IN);
+        NonMatchingTagsSearch.and("tagNotNull", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NNULL);
+        NonMatchingTagsSearch.and("tags", NonMatchingTagsSearch.entity().getTag(), SearchCriteria.Op.NIN);
+        NonMatchingTagsSearch.done();
 
         AccountSearch = createSearchBuilder();
         DomainSearch = createSearchBuilder();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("id", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
     }
 
     @PostConstruct
@@ -86,24 +116,40 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    public ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
-        SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
-        sc.setParameters("type", type);
-
-        if (ownerType == ResourceOwnerType.Account) {
-            sc.setParameters("accountId", ownerId);
-            return findOneIncludingRemovedBy(sc);
-        } else if (ownerType == ResourceOwnerType.Domain) {
-            sc.setParameters("domainId", ownerId);
-            return findOneIncludingRemovedBy(sc);
+    public ResourceCountVO findByOwnerAndTypeAndTag(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag) {
+        List<ResourceCountVO> resourceCounts = findByOwnersAndTypeAndTag(List.of(ownerId), ownerType, type, tag);
+        if (CollectionUtils.isNotEmpty(resourceCounts)) {
+            return resourceCounts.get(0);
         } else {
             return null;
         }
     }
 
     @Override
-    public long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
-        ResourceCountVO vo = findByOwnerAndType(ownerId, ownerType, type);
+    public List<ResourceCountVO> findByOwnersAndTypeAndTag(List<Long> ownerIdList, ResourceOwnerType ownerType, ResourceType type, String tag) {
+        if (CollectionUtils.isEmpty(ownerIdList)) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<ResourceCountVO> sc = tag != null ? TypeSearch.create() : TypeNullTagSearch.create();
+        sc.setParameters("type", type);
+        if (tag != null) {
+            sc.setParameters("tag", tag);
+        }
+
+        if (ownerType == ResourceOwnerType.Account) {
+            sc.setParameters("accountId", ownerIdList.toArray());
+            return listIncludingRemovedBy(sc);
+        } else if (ownerType == ResourceOwnerType.Domain) {
+            sc.setParameters("domainId", ownerIdList.toArray());
+            return listIncludingRemovedBy(sc);
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public long getResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag) {
+        ResourceCountVO vo = findByOwnerAndTypeAndTag(ownerId, ownerType, type, tag);
         if (vo != null) {
             return vo.getCount();
         } else {
@@ -112,8 +158,8 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count) {
-        ResourceCountVO resourceCountVO = findByOwnerAndType(ownerId, ownerType, type);
+    public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag, long count) {
+        ResourceCountVO resourceCountVO = findByOwnerAndTypeAndTag(ownerId, ownerType, type, tag);
         if (resourceCountVO != null && count != resourceCountVO.getCount()) {
             resourceCountVO.setCount(count);
             update(resourceCountVO.getId(), resourceCountVO);
@@ -130,36 +176,77 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type) {
+    public boolean updateCountByDeltaForIds(List<Long> ids, boolean increment, long delta) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return false;
+        }
+        String updateSql = increment ? INCREMENT_COUNT_BY_IDS_SQL : DECREMENT_COUNT_BY_IDS_SQL;
+
+        String poolIdsInStr = ids.stream().map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
+        String sql = updateSql.replace("(?)", poolIdsInStr);
+
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+            pstmt.setLong(1, delta);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    @Override
+    public Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type, String tag) {
         Set<Long> rowIds = new HashSet<Long>();
         Set<Long> domainIdsToUpdate = _domainDao.getDomainParentIds(domainId);
         for (Long domainIdToUpdate : domainIdsToUpdate) {
-            ResourceCountVO domainCountRecord = findByOwnerAndType(domainIdToUpdate, ResourceOwnerType.Domain, type);
+            ResourceCountVO domainCountRecord = findByOwnerAndTypeAndTag(domainIdToUpdate, ResourceOwnerType.Domain, type, tag);
             if (domainCountRecord != null) {
                 rowIds.add(domainCountRecord.getId());
+            } else {
+                if (StringUtils.isNotEmpty(tag)) {
+                    ResourceCountVO resourceCountVO = createTaggedResourceCount(domainIdToUpdate, ResourceOwnerType.Domain, type, tag);
+                    rowIds.add(resourceCountVO.getId());
+                }
             }
         }
         return rowIds;
     }
 
     @Override
-    public Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
+    public Set<Long> listAllRowsToUpdate(long ownerId, ResourceOwnerType ownerType, ResourceType type, String tag) {
         Set<Long> rowIds = new HashSet<Long>();
 
         if (ownerType == ResourceOwnerType.Account) {
             //get records for account
-            ResourceCountVO accountCountRecord = findByOwnerAndType(ownerId, ResourceOwnerType.Account, type);
+            ResourceCountVO accountCountRecord = findByOwnerAndTypeAndTag(ownerId, ResourceOwnerType.Account, type, tag);
             if (accountCountRecord != null) {
                 rowIds.add(accountCountRecord.getId());
+            } else {
+                if (StringUtils.isNotEmpty(tag)) {
+                    ResourceCountVO resourceCountVO = createTaggedResourceCount(ownerId, ownerType, type, tag);
+                    rowIds.add(resourceCountVO.getId());
+                }
             }
 
             //get records for account's domain and all its parent domains
-            rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(), type));
+            rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(), type, tag));
         } else if (ownerType == ResourceOwnerType.Domain) {
-            return listRowsToUpdateForDomain(ownerId, type);
+            rowIds = listRowsToUpdateForDomain(ownerId, type, tag);
         }
 
         return rowIds;
+    }
+
+    protected ResourceCountVO createTaggedResourceCount(long ownerId, ResourceLimit.ResourceOwnerType ownerType, ResourceType resourceType, String tag) {
+        ResourceCountVO taggedResourceCountVO = new ResourceCountVO(resourceType, 0, ownerId, ownerType, tag);
+        return persist(taggedResourceCountVO);
+    }
+
+    protected void createTaggedResourceCounts(long ownerId, ResourceLimit.ResourceOwnerType ownerType, ResourceType resourceType, List<String> tags) {
+        for (String tag : tags) {
+            createTaggedResourceCount(ownerId, ownerType, resourceType, tag);
+        }
     }
 
     @Override
@@ -170,12 +257,23 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         txn.start();
 
         ResourceType[] resourceTypes = Resource.ResourceType.values();
+        List<String> hostTags = new ArrayList<>();
+        if (StringUtils.isNotEmpty(ResourceLimitService.ResourceLimitHostTags.value())) {
+            hostTags = Arrays.asList(ResourceLimitService.ResourceLimitHostTags.value().split(","));
+        }
+        List<String> storageTags = new ArrayList<>();
+        if (StringUtils.isNotEmpty(ResourceLimitService.ResourceLimitStorageTags.value())) {
+            storageTags = Arrays.asList(ResourceLimitService.ResourceLimitStorageTags.value().split(","));
+        }
         for (ResourceType resourceType : resourceTypes) {
-            if (!resourceType.supportsOwner(ownerType)) {
-                continue;
-            }
             ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, ownerId, ownerType);
             persist(resourceCountVO);
+            if (ResourceLimitService.HostTagsSupportingTypes.contains(resourceType)) {
+                createTaggedResourceCounts(ownerId, ownerType, resourceType, hostTags);
+            }
+            if (ResourceLimitService.StorageTagsSupportingTypes.contains(resourceType)) {
+                createTaggedResourceCounts(ownerId, ownerType, resourceType, storageTags);
+            }
         }
 
         txn.commit();
@@ -215,17 +313,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         } else {
             return new ArrayList<ResourceCountVO>();
         }
-    }
-
-    @Override
-    public ResourceCountVO persist(ResourceCountVO resourceCountVO) {
-        ResourceOwnerType ownerType = resourceCountVO.getResourceOwnerType();
-        ResourceType resourceType = resourceCountVO.getType();
-        if (!resourceType.supportsOwner(ownerType)) {
-            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported for owner of type " + ownerType.getName());
-        }
-
-        return super.persist(resourceCountVO);
     }
 
     @Override
@@ -281,4 +368,32 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         }
     }
 
+    @Override
+    public void removeResourceCountsForNonMatchingTags(Long ownerId, ResourceOwnerType ownerType, List<ResourceType> types, List<String> tags) {
+        SearchCriteria<ResourceCountVO> sc = NonMatchingTagsSearch.create();
+        if (ObjectUtils.allNotNull(ownerId, ownerType)) {
+            if (ResourceOwnerType.Account.equals(ownerType)) {
+                sc.setParameters("accountId", ownerId);
+            } else {
+                sc.setParameters("domainId", ownerId);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.stream().map(ResourceType::getName).toArray());
+        }
+        if (CollectionUtils.isNotEmpty(tags)) {
+            sc.setParameters("tags", tags.toArray());
+        }
+        remove(sc);
+    }
+
+    @Override
+    public List<ResourceCountVO> lockRows(Set<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<ResourceCountVO> sc = IdsSearch.create();
+        sc.setParameters("id", ids.toArray());
+        return lockRows(sc, null, true);
+    }
 }

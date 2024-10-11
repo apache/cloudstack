@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import re
+import os
 import tempfile
 import shutil
 from .utilities import bash
@@ -59,39 +60,42 @@ class configFileOps:
             return ""
 
     def save(self):
-        fp = open(self.fileName, "r")
         newLines = []
-        for line  in fp.readlines():
-            matched = False
-            for entry in self.entries:
-                if entry.op == "add":
-                    if entry.separator == "=":
-                        matchString = "^\ *" + entry.name + ".*"
-                    elif entry.separator == " ":
-                        matchString = "^\ *" + entry.name + "\ *" + entry.value
-                else:
-                    if entry.separator == "=":
-                        matchString = "^\ *" + entry.name + "\ *=\ *" + entry.value
+        if os.path.exists(self.fileName) and os.path.isfile(self.fileName):
+            fp = open(self.fileName, "r")
+            for line in fp.readlines():
+                matched = False
+                for entry in self.entries:
+                    if entry.op == "add":
+                        if entry.separator == "=":
+                            matchString = "^\ *" + entry.name + ".*"
+                        elif entry.separator == " ":
+                            matchString = "^\ *" + entry.name + "\ *" + entry.value
                     else:
-                        matchString = "^\ *" + entry.name + "\ *" + entry.value
+                        if entry.separator == "=":
+                            matchString = "^\ *" + entry.name + "\ *=\ *" + entry.value
+                        else:
+                            matchString = "^\ *" + entry.name + "\ *" + entry.value
 
-                match = re.match(matchString, line)
-                if match is not None:
-                    if entry.op == "add" and entry.separator == "=":
-                        newline = "\n" + entry.name + "=" + entry.value + "\n"
-                        entry.setState("set")
-                        newLines.append(newline)
-                        self.backups.append([line, newline])
-                        matched = True
-                        break
-                    elif entry.op == "rm":
-                        entry.setState("set")
-                        self.backups.append([line, None])
-                        matched = True
-                        break
+                    match = re.match(matchString, line)
+                    if match is not None:
+                        if entry.op == "add" and entry.separator == "=":
+                            newline = "\n" + entry.name + "=" + entry.value + "\n"
+                            entry.setState("set")
+                            newLines.append(newline)
+                            self.backups.append([line, newline])
+                            matched = True
+                            break
+                        elif entry.op == "rm":
+                            entry.setState("set")
+                            self.backups.append([line, None])
+                            matched = True
+                            break
 
-            if not matched:
-                newLines.append(line)
+                if not matched:
+                    newLines.append(line)
+
+            fp.close()
 
         for entry in self.entries:
             if entry.getState() != "set":
@@ -100,8 +104,6 @@ class configFileOps:
                     newLines.append(newline)
                     self.backups.append([None, newline])
                     entry.setState("set")
-
-        fp.close()
 
         open(self.fileName, "w").writelines(newLines)
 

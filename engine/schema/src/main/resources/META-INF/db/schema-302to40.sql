@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -59,7 +59,7 @@ CREATE TABLE  `cloud`.`volume_host_ref` (
   `local_path` varchar(255),
   `install_path` varchar(255),
   `url` varchar(255),
-  `format` varchar(32) NOT NULL COMMENT 'format for the volume', 
+  `format` varchar(32) NOT NULL COMMENT 'format for the volume',
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume_host entry was destroyed by the user or not',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_volume_host_ref__host_id` FOREIGN KEY `fk_volume_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
@@ -227,7 +227,7 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
 
 -- rrq 5839
 -- Remove the unique constraint on physical_network_id, provider_name from physical_network_service_providers
--- Because the name of this contraint is not set we need this roundabout way
+-- Because the name of this constraint is not set we need this roundabout way
 -- The key is also used by the foreign key constraint so drop and recreate that one
 ALTER TABLE `cloud`.`physical_network_service_providers` DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
 
@@ -236,9 +236,9 @@ from information_schema.key_column_usage A
 JOIN information_schema.key_column_usage B ON B.table_name = 'physical_network_service_providers' AND B.COLUMN_NAME = 'provider_name' AND A.COLUMN_NAME ='physical_network_id' AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME
 where A.table_name = 'physical_network_service_providers' LIMIT 1);
 
-PREPARE stmt1 FROM @constraintname; 
-EXECUTE stmt1; 
-DEALLOCATE PREPARE stmt1; 
+PREPARE stmt1 FROM @constraintname;
+EXECUTE stmt1;
+DEALLOCATE PREPARE stmt1;
 
 AlTER TABLE `cloud`.`physical_network_service_providers` ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
@@ -299,7 +299,7 @@ CREATE TABLE `cloud`.`vpc` (
   PRIMARY KEY  (`id`),
   INDEX `i_vpc__removed`(`removed`),
   CONSTRAINT `fk_vpc__zone_id` FOREIGN KEY `fk_vpc__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`), 
+  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`),
   CONSTRAINT `fk_vpc__account_id` FOREIGN KEY `fk_vpc__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vpc__domain_id` FOREIGN KEY `fk_vpc__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -360,7 +360,7 @@ CREATE TABLE `cloud`.`static_routes` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
-  `cidr` varchar(18) COMMENT 'cidr for the static route', 
+  `cidr` varchar(18) COMMENT 'cidr for the static route',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
   `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
@@ -468,7 +468,7 @@ UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs in
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
 
-INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL); 
+INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL);
 ALTER TABLE `cloud`.`user` ADD COLUMN `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT '0';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'incorrect.login.attempts.allowed', '5', 'Incorrect login attempts allowed before the user is disabled');
 UPDATE `cloud`.`configuration` set description ='Uuid of the service offering used by console proxy; if NULL - system offering will be used' where name ='consoleproxy.service.offering';

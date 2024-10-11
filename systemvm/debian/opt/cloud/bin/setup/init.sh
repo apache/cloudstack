@@ -112,6 +112,8 @@ config_guest() {
           fi
           ;;
      vmware)
+          # explicitly update the module dependencies
+          depmod -a
           # system time sync'd with host via vmware tools
           systemctl stop ntpd
           systemctl disable ntpd
@@ -149,7 +151,7 @@ config_guest() {
 
 setup_interface_sshd() {
 
-  if [ "$TYPE" != "cksnode" ]; then
+  if [ "$TYPE" != "cksnode" ] && [ "$TYPE" != "sharedfsvm" ]; then
     log_it "Applying iptables rules"
     if [ "$TYPE" != "dhcpsrvr" ]; then
       cp /etc/iptables/iptables-$TYPE /etc/iptables/rules.v4
@@ -204,13 +206,16 @@ setup_interface_sshd() {
     else
       setup_sshd $ETH1_IP "eth1"
     fi
+
   elif [ "$TYPE" == "cksnode" ]; then
+    setup_common eth0
+
+  elif [ "$TYPE" == "sharedfsvm" ]; then
     setup_common eth0
   fi
 
   systemctl restart systemd-journald
-  # Patch known systemd/sshd memory leak - https://github.com/systemd/systemd/issues/8015#issuecomment-476160981
-  echo '@include null' >> /etc/pam.d/systemd-user
+
   # Enable and Start SSH
   systemctl enable --now --no-block ssh
 }

@@ -23,14 +23,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    if: github.repository == 'apache/cloudstack'
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -50,6 +55,7 @@ jobs:
                   smoke/test_deploy_vm_with_userdata
                   smoke/test_deploy_vms_in_parallel
                   smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_restore_vm
                   smoke/test_diagnostics
                   smoke/test_direct_download
                   smoke/test_disk_offerings
@@ -58,7 +64,8 @@ jobs:
                   smoke/test_domain_network_offerings
                   smoke/test_domain_service_offerings
                   smoke/test_domain_vpc_offerings",
-                "smoke/test_dynamicroles
+                "smoke/test_cluster_drs
+                  smoke/test_dynamicroles
                   smoke/test_enable_account_settings_for_domain
                   smoke/test_enable_role_based_users_in_projects
                   smoke/test_events_resource
@@ -75,10 +82,14 @@ jobs:
                   smoke/test_list_ids_parameter
                   smoke/test_loadbalance
                   smoke/test_login
+                  smoke/test_2fa
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization",
+                  smoke/test_nested_virtualization
+                  smoke/test_set_sourcenat
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -86,6 +97,7 @@ jobs:
                   smoke/test_nic
                   smoke/test_nic_adapter_type
                   smoke/test_non_contigiousvlan
+                  smoke/test_object_stores
                   smoke/test_outofbandmanagement
                   smoke/test_outofbandmanagement_nestedplugin
                   smoke/test_over_provisioning
@@ -104,7 +116,8 @@ jobs:
                   smoke/test_reset_configuration_settings
                   smoke/test_reset_vm_on_reboot
                   smoke/test_resource_accounting
-                  smoke/test_resource_detail",
+                  smoke/test_resource_detail
+                  smoke/test_global_acls",
                 "smoke/test_router_dhcphosts
                   smoke/test_router_dns
                   smoke/test_router_dnsservice
@@ -122,6 +135,8 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
+                  smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
@@ -169,7 +184,8 @@ jobs:
                 "component/test_project_usage
                   component/test_protocol_number_security_group
                   component/test_public_ip
-                  component/test_resource_limits",
+                  component/test_resource_limits
+                  component/test_resource_limit_tags",
                 "component/test_regions_accounts
                   component/test_routers
                   component/test_snapshots
@@ -184,14 +200,23 @@ jobs:
                   component/test_vpc_network
                   component/test_vpc_offerings
                   component/test_vpc_routers
-                  component/test_vpn_users",
-                "component/test_vpc_network_lbrules" ]
+                  component/test_vpn_users
+                  component/test_vpc_network_lbrules",
+                "smoke/test_list_accounts
+                  smoke/test_list_disk_offerings
+                  smoke/test_list_domains
+                  smoke/test_list_hosts
+                  smoke/test_list_service_offerings
+                  smoke/test_list_storage_pools
+                  smoke/test_list_volumes"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'adopt'
@@ -199,9 +224,9 @@ jobs:
           cache: maven
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
 
       - name: Install Build Dependencies
@@ -212,6 +237,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+
+      - name: Install jacoco dependencies
+        run: |
+          wget https://github.com/jacoco/jacoco/releases/download/v0.8.10/jacoco-0.8.10.zip
+          unzip jacoco-0.8.10.zip -d jacoco
 
       - name: Env details
         run: |
@@ -236,7 +266,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
+          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
 
       - name: Setup Simulator Prerequisites
         run: |
@@ -245,16 +275,23 @@ jobs:
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 
+      - name: Generate jacoco-coverage.sh
+        run: |
+          echo "java -jar jacoco/lib/jacococli.jar report jacoco-it.exec \\" > jacoco-report.sh
+          find . | grep "target/classes" | sed 's/\/classes\//\/classes /g' | awk '{print "--classfiles", $1, "\\"}' | sort |uniq >> jacoco-report.sh
+          find . | grep "src/main/java" | sed 's/\/java\//\/java /g' | awk '{print "--sourcefiles", $1, "\\"}' | sort | uniq >> jacoco-report.sh
+          echo "--xml jacoco-coverage.xml" >> jacoco-report.sh
+
       - name: Start CloudStack Management Server with Simulator
         run: |
-          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom"
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED"
           echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
           while ! nc -vzw 5 localhost 8096 2>&1 > /dev/null; do grep Exception /tmp/jetty-log; sleep 10; done
           set -e
           echo -e "\nStarting Advanced Zone DataCenter deployment"
-          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advanced.cfg 2>&1 || true
+          python3 tools/marvin/marvin/deployDataCenter.py -i setup/dev/advdualzone.cfg 2>&1 || true
 
       - name: Run Integration Tests with Simulator
         run: |
@@ -267,10 +304,12 @@ jobs:
           TESTS=($(echo $TESTS | tr -d '\n' | tr -s ' '))
           for suite in "${TESTS[@]}" ; do
             echo -e "Currently running test: $suite\n"
-            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
+            time nosetests-3.4 --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advdualzone.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=zim1 --hypervisor=simulator || true ;
           done
 
           echo -e "Stopping Simulator, integration tests run completed\n"
+          java -jar jacoco/lib/jacococli.jar dump --address localhost --port 36320 --destfile jacoco-it.exec
+          bash jacoco-report.sh
           mvn -Dsimulator -pl client jetty:stop 2>&1
           find /tmp//MarvinLogs -type f -exec echo -e "Printing marvin logs {} :\n" \; -exec cat {} \;
 
@@ -278,3 +317,12 @@ jobs:
         run: |
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
+
+      - uses: codecov/codecov-action@v4
+        with:
+          files: jacoco-coverage.xml
+          fail_ci_if_error: true
+          flags: simulator-marvin-tests
+          verbose: true
+          name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}

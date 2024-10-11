@@ -18,13 +18,21 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
+import org.libvirt.TypedParameter;
+import org.libvirt.TypedStringParameter;
+import org.libvirt.TypedUlongParameter;
 
 public class MigrateKVMAsync implements Callable<Domain> {
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final LibvirtComputingResource libvirtComputingResource;
 
@@ -36,6 +44,8 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private boolean migrateStorage;
     private boolean migrateNonSharedInc;
     private boolean autoConvergence;
+
+    protected Set<String> migrateDiskLabels;
 
     // Libvirt Migrate Flags reference:
     // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainMigrateFlags
@@ -87,7 +97,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private static final int LIBVIRT_VERSION_SUPPORTS_AUTO_CONVERGE = 1002003;
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
-            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp) {
+            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp, Set<String> migrateDiskLabels) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
@@ -98,6 +108,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
+        this.migrateDiskLabels = migrateDiskLabels;
     }
 
     @Override
@@ -112,8 +123,10 @@ public class MigrateKVMAsync implements Callable<Domain> {
             if (migrateNonSharedInc) {
                 flags |= VIR_MIGRATE_PERSIST_DEST;
                 flags |= VIR_MIGRATE_NON_SHARED_INC;
+                logger.debug("Setting VIR_MIGRATE_NON_SHARED_INC for linked clone migration.");
             } else {
                 flags |= VIR_MIGRATE_NON_SHARED_DISK;
+                logger.debug("Setting VIR_MIGRATE_NON_SHARED_DISK for full clone migration.");
             }
         }
 
@@ -121,6 +134,37 @@ public class MigrateKVMAsync implements Callable<Domain> {
             flags |= VIR_MIGRATE_AUTO_CONVERGE;
         }
 
-        return dm.migrate(dconn, flags, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
+        TypedParameter [] parameters = createTypedParameterList();
+
+        logger.debug(String.format("Migrating [%s] with flags [%s], destination [%s] and speed [%s]. The disks with the following labels will be migrated [%s].", vmName, flags,
+                destIp, libvirtComputingResource.getMigrateSpeed(), migrateDiskLabels));
+
+        return dm.migrate(dconn, parameters, flags);
+
     }
+
+    protected TypedParameter[] createTypedParameterList() {
+        int sizeOfMigrateDiskLabels = 0;
+        if (migrateDiskLabels != null) {
+            sizeOfMigrateDiskLabels = migrateDiskLabels.size();
+        }
+
+        TypedParameter[] parameters = new TypedParameter[4 + sizeOfMigrateDiskLabels];
+        parameters[0] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_NAME, vmName);
+        parameters[1] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_XML, dxml);
+        parameters[2] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_URI, "tcp:" + destIp);
+        parameters[3] = new TypedUlongParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_BANDWIDTH, libvirtComputingResource.getMigrateSpeed());
+
+        if (sizeOfMigrateDiskLabels == 0) {
+            return parameters;
+        }
+
+        Iterator<String> iterator = migrateDiskLabels.iterator();
+        for (int i = 0; i < sizeOfMigrateDiskLabels; i++) {
+            parameters[4 + i] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_MIGRATE_DISKS, iterator.next());
+        }
+
+        return parameters;
+    }
+
 }

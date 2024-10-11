@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-tools</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -59,7 +59,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
+                <version>${cs.exec-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>generate-sources</id>
@@ -113,7 +113,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>generate-sources</id>
@@ -177,9 +177,16 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.gmaven</groupId>
-                        <artifactId>gmaven-plugin</artifactId>
-                        <version>1.5</version>
+                        <groupId>org.codehaus.gmavenplus</groupId>
+                        <artifactId>gmavenplus-plugin</artifactId>
+                        <version>${cs.gmavenplus.version}</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.groovy</groupId>
+                                <artifactId>groovy-all</artifactId>
+                                <version>${cs.groovy.version}</version>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <id>setproperty</id>
@@ -188,10 +195,12 @@
                                     <goal>execute</goal>
                                 </goals>
                                 <configuration>
-                                    <source>
-                                        pom.properties['resolved.basedir']=project.basedir.absolutePath.replace('\','/').replace('D:','/cyg/d');
-                                        pom.properties['resolved.userdir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
-                                    </source>
+                                    <scripts>
+                                        <script><![CDATA[
+                                            project.properties['resolved.basedir']=project.basedir.absolutePath.replace('\','/').replace('D:','/cyg/d');
+                                            project.properties['resolved.userdir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                                        ]]></script>
+                                    </scripts>
                                 </configuration>
                             </execution>
                         </executions>
@@ -199,7 +208,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>pre-integration-test</id>
@@ -234,9 +243,16 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.gmaven</groupId>
-                        <artifactId>gmaven-plugin</artifactId>
-                        <version>1.5</version>
+                        <groupId>org.codehaus.gmavenplus</groupId>
+                        <artifactId>gmavenplus-plugin</artifactId>
+                        <version>${cs.gmavenplus.version}</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.groovy</groupId>
+                                <artifactId>groovy-all</artifactId>
+                                <version>${cs.groovy.version}</version>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <id>setproperty</id>
@@ -249,10 +265,12 @@
                                         <resolved.user.dir>${user.dir}</resolved.user.dir>
                                         <resolved.marvin.config>${marvin.config}</resolved.marvin.config>
                                     </properties>
-                                    <source>
-                                        project.properties['resolved.user.dir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
-                                        project.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
-                                    </source>
+                                    <scripts>
+                                        <script><![CDATA[
+                                            project.properties['resolved.user.dir']='${user.dir}'.replace('\','/').replace('D:','/cyg/d');
+                                            project.properties['resolved.marvin.config']='${marvin.config}'.replace('\','/').replace('D:','/cyg/d');
+                                    ]]></script>
+                                    </scripts>
                                 </configuration>
                             </execution>
                         </executions>
@@ -260,7 +278,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>${cs.exec-maven-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>integration-test</id>

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class QuotaTypes extends UsageTypes {
     private final Integer quotaType;
@@ -47,14 +48,17 @@ public class QuotaTypes extends UsageTypes {
         quotaTypeList.put(PORT_FORWARDING_RULE, new QuotaTypes(PORT_FORWARDING_RULE, "PORT_FORWARDING_RULE", UsageUnitTypes.POLICY_MONTH.toString(), "Port Forwarding Usage"));
         quotaTypeList.put(NETWORK_OFFERING, new QuotaTypes(NETWORK_OFFERING, "NETWORK_OFFERING", UsageUnitTypes.POLICY_MONTH.toString(), "Network Offering Usage"));
         quotaTypeList.put(VPN_USERS, new QuotaTypes(VPN_USERS, "VPN_USERS", UsageUnitTypes.POLICY_MONTH.toString(), "VPN users usage"));
-        quotaTypeList.put(VM_DISK_IO_READ, new QuotaTypes(VM_DISK_IO_READ, "VM_DISK_IO_READ", UsageUnitTypes.GB.toString(), "VM Disk usage(I/O Read)"));
-        quotaTypeList.put(VM_DISK_IO_WRITE, new QuotaTypes(VM_DISK_IO_WRITE, "VM_DISK_IO_WRITE", UsageUnitTypes.GB.toString(), "VM Disk usage(I/O Write)"));
-        quotaTypeList.put(VM_DISK_BYTES_READ, new QuotaTypes(VM_DISK_BYTES_READ, "VM_DISK_BYTES_READ", UsageUnitTypes.GB.toString(), "VM Disk usage(Bytes Read)"));
-        quotaTypeList.put(VM_DISK_BYTES_WRITE, new QuotaTypes(VM_DISK_BYTES_WRITE, "VM_DISK_BYTES_WRITE", UsageUnitTypes.GB.toString(), "VM Disk usage(Bytes Write)"));
+        quotaTypeList.put(VM_DISK_IO_READ, new QuotaTypes(VM_DISK_IO_READ, "VM_DISK_IO_READ", UsageUnitTypes.IOPS.toString(), "VM Disk usage(I/O Read)"));
+        quotaTypeList.put(VM_DISK_IO_WRITE, new QuotaTypes(VM_DISK_IO_WRITE, "VM_DISK_IO_WRITE", UsageUnitTypes.IOPS.toString(), "VM Disk usage(I/O Write)"));
+        quotaTypeList.put(VM_DISK_BYTES_READ, new QuotaTypes(VM_DISK_BYTES_READ, "VM_DISK_BYTES_READ", UsageUnitTypes.BYTES.toString(), "VM Disk usage(Bytes Read)"));
+        quotaTypeList.put(VM_DISK_BYTES_WRITE, new QuotaTypes(VM_DISK_BYTES_WRITE, "VM_DISK_BYTES_WRITE", UsageUnitTypes.BYTES.toString(), "VM Disk usage(Bytes Write)"));
         quotaTypeList.put(VM_SNAPSHOT, new QuotaTypes(VM_SNAPSHOT, "VM_SNAPSHOT", UsageUnitTypes.GB_MONTH.toString(), "VM Snapshot storage usage"));
         quotaTypeList.put(VOLUME_SECONDARY, new QuotaTypes(VOLUME_SECONDARY, "VOLUME_SECONDARY", UsageUnitTypes.GB_MONTH.toString(), "Volume secondary storage usage"));
         quotaTypeList.put(VM_SNAPSHOT_ON_PRIMARY, new QuotaTypes(VM_SNAPSHOT_ON_PRIMARY, "VM_SNAPSHOT_ON_PRIMARY", UsageUnitTypes.GB_MONTH.toString(), "VM Snapshot primary storage usage"));
         quotaTypeList.put(BACKUP, new QuotaTypes(BACKUP, "BACKUP", UsageUnitTypes.GB_MONTH.toString(), "Backup storage usage"));
+        quotaTypeList.put(BUCKET, new QuotaTypes(BUCKET, "BUCKET", UsageUnitTypes.GB_MONTH.toString(), "Object Store bucket usage"));
+        quotaTypeList.put(NETWORK, new QuotaTypes(NETWORK, "NETWORK", UsageUnitTypes.COMPUTE_MONTH.toString(), "Network usage"));
+        quotaTypeList.put(VPC, new QuotaTypes(VPC, "VPC", UsageUnitTypes.COMPUTE_MONTH.toString(), "VPC usage"));
         quotaTypeMap = Collections.unmodifiableMap(quotaTypeList);
     }
 
@@ -96,5 +100,14 @@ public class QuotaTypes extends UsageTypes {
             return t.getDescription();
         }
         return null;
+    }
+
+    static public QuotaTypes getQuotaType(int quotaType) {
+        return quotaTypeMap.get(quotaType);
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "quotaType", "quotaName");
     }
 }

@@ -29,86 +29,7 @@
         </template>
       </a-alert>
 
-      <div class="form__item">
-        <p class="form__label">{{ $t('label.accounttype') }}</p>
-        <a-select
-          v-model:value="selectedAccountType"
-          v-focus="true"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }">
-          <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
-          <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
-        </a-select>
-      </div>
-
-      <div class="form__item">
-        <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
-        <a-select
-          @change="changeDomain"
-          v-model:value="selectedDomain"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
-            <span>
-              <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <block-outlined v-else style="margin-right: 5px" />
-              {{ domain.path || domain.name || domain.description }}
-            </span>
-          </a-select-option>
-        </a-select>
-      </div>
-
-      <template v-if="selectedAccountType === $t('label.account')">
-        <div class="form__item">
-          <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
-          <a-select
-            @change="changeAccount"
-            v-model:value="selectedAccount"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
-              <span>
-                <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <team-outlined v-else style="margin-right: 5px" />
-                {{ account.name }}
-              </span>
-            </a-select-option>
-          </a-select>
-          <span v-if="accountError" class="required">{{ $t('label.required') }}</span>
-        </div>
-      </template>
-
-      <template v-else>
-        <div class="form__item">
-          <p class="form__label"><span class="required">*</span>{{ $t('label.project') }}</p>
-          <a-select
-            @change="changeProject"
-            v-model:value="selectedProject"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
-              <span>
-                <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <project-outlined v-else style="margin-right: 5px" />
-                {{ project.name }}
-              </span>
-            </a-select-option>
-          </a-select>
-          <span v-if="projectError" class="required">{{ $t('label.required') }}</span>
-        </div>
-      </template>
+      <ownership-selection @fetch-owner="fetchOwnerOptions"/>
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.network') }}</p>
@@ -146,6 +67,7 @@
 <script>
 import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 
 export default {
   name: 'AssignInstance',
@@ -156,7 +78,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    OwnershipSelection
   },
   inject: ['parentFetchData'],
   data () {
@@ -175,60 +98,13 @@ export default {
       loading: false
     }
   },
-  created () {
-    this.fetchData()
-  },
   methods: {
-    fetchData () {
-      this.loading = true
-      api('listDomains', {
-        response: 'json',
-        listAll: true,
-        showicon: true,
-        details: 'min'
-      }).then(response => {
-        this.domains = response.listdomainsresponse.domain || []
-        this.selectedDomain = this.domains[0].id
-        this.fetchAccounts()
-        this.fetchProjects()
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchAccounts () {
-      this.loading = true
-      api('listAccounts', {
-        response: 'json',
-        domainId: this.selectedDomain,
-        showicon: true,
-        state: 'Enabled',
-        isrecursive: false
-      }).then(response => {
-        this.accounts = response.listaccountsresponse.account || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchProjects () {
-      this.loading = true
-      api('listProjects', {
-        response: 'json',
-        domainId: this.selectedDomain,
-        state: 'Active',
-        showicon: true,
-        details: 'min',
-        isrecursive: false
-      }).then(response => {
-        this.projects = response.listprojectsresponse.project || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
-      })
+    fetchOwnerOptions (selectedOptions) {
+      this.selectedAccountType = selectedOptions.selectedAccountType
+      this.selectedAccount = selectedOptions.selectedAccount
+      this.selectedDomain = selectedOptions.selectedDomain
+      this.selectedProject = selectedOptions.selectedProject
+      this.fetchNetworks()
     },
     fetchNetworks () {
       this.loading = true
@@ -251,23 +127,6 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-    },
-    changeDomain () {
-      this.selectedAccount = null
-      this.selectedProject = null
-      this.selectedNetwork = null
-      this.fetchAccounts()
-      this.fetchProjects()
-    },
-    changeAccount () {
-      this.selectedProject = null
-      this.selectedNetwork = null
-      this.fetchNetworks()
-    },
-    changeProject () {
-      this.selectedAccount = null
-      this.selectedNetwork = null
-      this.fetchNetworks()
     },
     closeAction () {
       this.$emit('close-action')
@@ -306,7 +165,11 @@ export default {
           message: this.$t('label.loadbalancerinstance')
         })
         this.$emit('close-action')
-        this.parentFetchData()
+        if (this.$store.getters.project?.id) {
+          this.$router.push({ path: '/vm' })
+        } else {
+          this.parentFetchData()
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -350,12 +213,6 @@ export default {
     button {
       margin-left: 10px;
     }
-  }
-
-  .required {
-    margin-right: 2px;
-    color: red;
-    font-size: 0.7rem;
   }
 
   .loading {

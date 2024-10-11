@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.iso;
 
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -42,7 +43,6 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "registerIso", responseObject = TemplateResponse.class, description = "Registers an existing ISO into the CloudStack Cloud.", responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterIsoCmd extends BaseCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
     private static final String s_name = "registerisoresponse";
 
@@ -55,8 +55,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               required = true,
-               description = "the display text of the ISO. This is usually used for display purposes.",
+               description = "the display text of the ISO, defaults to the 'name'",
                length = 4096)
     private String displayText;
 
@@ -120,6 +119,11 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
             description = "true if password reset feature is supported; default is false")
     private Boolean passwordEnabled;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -133,7 +137,7 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? isoName : displayText;
     }
 
     public void setDisplayText(String displayText) {
@@ -177,6 +181,9 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     }
 
     public Long getZoneId() {
+        if (zoneId == null || zoneId == -1) {
+            return null;
+        }
         return zoneId;
     }
 
@@ -220,8 +227,20 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         return directDownload == null ? false : directDownload;
     }
 
+    public void setDirectDownload(Boolean directDownload) {
+        this.directDownload = directDownload;
+    }
+
     public boolean isPasswordEnabled() {
         return passwordEnabled == null ? false : passwordEnabled;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

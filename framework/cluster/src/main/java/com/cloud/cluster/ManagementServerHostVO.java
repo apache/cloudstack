@@ -125,6 +125,11 @@ public class ManagementServerHostVO implements ManagementServerHost {
     }
 
     @Override
+    public Class<?> getEntityType() {
+        return ManagementServerHost.class;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -195,5 +200,15 @@ public class ManagementServerHostVO implements ManagementServerHost {
     @Override
     public String toString() {
         return new StringBuilder("ManagementServer[").append("-").append(id).append("-").append(msid).append("-").append(state).append("]").toString();
+    }
+
+    @Override
+    public long getDomainId() {
+        return 1L;
+    }
+
+    @Override
+    public long getAccountId() {
+        return 1L;
     }
 }

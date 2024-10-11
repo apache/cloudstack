@@ -25,38 +25,31 @@ import java.io.InputStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
-@PrepareForTest({ Thread.class, SshHelper.class })
-@PowerMockIgnore({ "javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*",
-        "org.xml.*", "org.w3c.dom.*", "com.sun.org.apache.xalan.*", "javax.activation.*" })
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class SshHelperTest {
 
     @Test
     public void canEndTheSshConnectionTest() throws Exception {
-        PowerMockito.spy(SshHelper.class);
+        MockedStatic<SshHelper> sshHelperMocked = Mockito.mockStatic(SshHelper.class, Mockito.CALLS_REAL_METHODS);
         Session mockedSession = Mockito.mock(Session.class);
 
-        PowerMockito.doReturn(true).when(SshHelper.class, "isChannelConditionEof", Mockito.anyInt());
-        Mockito.when(mockedSession.waitForCondition(ChannelCondition.EXIT_STATUS, 1l)).thenReturn(0);
-        PowerMockito.doNothing().when(SshHelper.class, "throwSshExceptionIfConditionsTimeout", Mockito.anyInt());
+        Mockito.when(SshHelper.isChannelConditionEof(Mockito.anyInt())).thenReturn(true);
+        Mockito.when(mockedSession.waitForCondition(ChannelCondition.EXIT_STATUS, 1L)).thenReturn(0);
 
         SshHelper.canEndTheSshConnection(1, mockedSession, 0);
-
-        PowerMockito.verifyStatic(SshHelper.class);
-        SshHelper.isChannelConditionEof(Mockito.anyInt());
-        SshHelper.throwSshExceptionIfConditionsTimeout(Mockito.anyInt());
+        sshHelperMocked.verify(() -> SshHelper.isChannelConditionEof(Mockito.anyInt()), Mockito.times(1));
+        sshHelperMocked.verify(() -> SshHelper.throwSshExceptionIfConditionsTimeout(Mockito.anyInt()));
 
         Mockito.verify(mockedSession).waitForCondition(ChannelCondition.EXIT_STATUS, 1l);
+        sshHelperMocked.close();
     }
 
     @Test(expected = SshException.class)
@@ -143,7 +136,6 @@ public class SshHelperTest {
     @Test
     public void openConnectionSessionTest() throws IOException, InterruptedException {
         Connection conn = Mockito.mock(Connection.class);
-        PowerMockito.mockStatic(Thread.class);
         SshHelper.openConnectionSession(conn);
 
         Mockito.verify(conn).openSession();

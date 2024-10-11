@@ -16,9 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -26,7 +27,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -44,7 +45,8 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -54,10 +56,8 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
+public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
-    private static final String s_name = "listvirtualmachinesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -95,9 +95,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of host details requested, "
-                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp]."
-                   + " If no parameter is passed in, the details will be defaulted to all")
+               description = "comma separated list of vm details requested, "
+                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]."
+                   + " When no parameters are passed, all the details are returned if list.vm.default.details.stats is true (default),"
+                   + " otherwise when list.vm.default.details.stats is false the API response will exclude the stats details.")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")
@@ -148,7 +149,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -189,6 +189,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return zoneId;
     }
 
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "flag to list vms created from VNF templates (as known as VNF appliances) or not; true if need to list VNF appliances, false otherwise.",
+            since = "4.19.0")
+    private Boolean isVnf;
 
     public Long getNetworkId() {
         return networkId;
@@ -235,47 +239,54 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return autoScaleVmGroupId;
     }
 
+    protected boolean isViewDetailsEmpty() {
+        return CollectionUtils.isEmpty(viewDetails);
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
-        EnumSet<VMDetails> dv;
-        if (viewDetails == null || viewDetails.size() <= 0) {
-            dv = EnumSet.of(VMDetails.all);
-        } else {
-            try {
-                ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
-                for (String detail : viewDetails) {
-                    dc.add(VMDetails.valueOf(detail));
-                }
-                dv = EnumSet.copyOf(dc);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+        if (isViewDetailsEmpty()) {
+            if (_queryService.ReturnVmStatsOnVmList.value()) {
+                return EnumSet.of(VMDetails.all);
             }
+
+            Set<VMDetails> allDetails = new HashSet<>(Set.of(VMDetails.values()));
+            allDetails.remove(VMDetails.stats);
+            allDetails.remove(VMDetails.all);
+            return EnumSet.copyOf(allDetails);
         }
-        return dv;
+
+        try {
+            Set<VMDetails> dc = new HashSet<>();
+            for (String detail : viewDetails) {
+                dc.add(VMDetails.valueOf(detail));
+            }
+
+            return EnumSet.copyOf(dc);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+        }
     }
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     public Boolean getShowIcon() {
-        return showIcon != null ? showIcon : false;
+        return BooleanUtils.toBooleanDefaultIfNull(showIcon, false);
     }
 
     public Boolean getAccumulate() {
         return accumulate;
     }
 
+    public Boolean getVnf() {
+        return isVnf;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {

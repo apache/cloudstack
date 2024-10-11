@@ -1,10 +1,10 @@
 /*
- * Websock: high-performance binary WebSockets
+ * Websock: high-performance buffering wrapper
  * Copyright (C) 2019 The noVNC Authors
  * Licensed under MPL 2.0 (see LICENSE.txt)
  *
- * Websock is similar to the standard WebSocket object but with extra
- * buffer handling.
+ * Websock is similar to the standard WebSocket / RTCDataChannel object
+ * but with extra buffer handling.
  *
  * Websock has built-in receive queue buffering; the message event
  * does not contain actual data but is simply a notification that
@@ -17,14 +17,39 @@ import * as Log from './util/logging.js';
 // this has performance issues in some versions Chromium, and
 // doesn't gain a tremendous amount of performance increase in Firefox
 // at the moment.  It may be valuable to turn it on in the future.
-// Also copyWithin() for TypedArrays is not supported in IE 11 or
-// Safari 13 (at the moment we want to support Safari 11).
-const ENABLE_COPYWITHIN = false;
 const MAX_RQ_GROW_SIZE = 40 * 1024 * 1024;  // 40 MiB
+
+// Constants pulled from RTCDataChannelState enum
+// https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel/readyState#RTCDataChannelState_enum
+const DataChannel = {
+    CONNECTING: "connecting",
+    OPEN: "open",
+    CLOSING: "closing",
+    CLOSED: "closed"
+};
+
+const ReadyStates = {
+    CONNECTING: [WebSocket.CONNECTING, DataChannel.CONNECTING],
+    OPEN: [WebSocket.OPEN, DataChannel.OPEN],
+    CLOSING: [WebSocket.CLOSING, DataChannel.CLOSING],
+    CLOSED: [WebSocket.CLOSED, DataChannel.CLOSED],
+};
+
+// Properties a raw channel must have, WebSocket and RTCDataChannel are two examples
+const rawChannelProps = [
+    "send",
+    "close",
+    "binaryType",
+    "onerror",
+    "onmessage",
+    "onopen",
+    "protocol",
+    "readyState",
+];
 
 export default class Websock {
     constructor() {
-        this._websocket = null;  // WebSocket object
+        this._websocket = null;  // WebSocket or RTCDataChannel object
 
         this._rQi = 0;           // Receive queue index
         this._rQlen = 0;         // Next write position in the receive queue
@@ -46,6 +71,29 @@ export default class Websock {
     }
 
     // Getters and Setters
+
+    get readyState() {
+        let subState;
+
+        if (this._websocket === null) {
+            return "unused";
+        }
+
+        subState = this._websocket.readyState;
+
+        if (ReadyStates.CONNECTING.includes(subState)) {
+            return "connecting";
+        } else if (ReadyStates.OPEN.includes(subState)) {
+            return "open";
+        } else if (ReadyStates.CLOSING.includes(subState)) {
+            return "closing";
+        } else if (ReadyStates.CLOSED.includes(subState)) {
+            return "closed";
+        }
+
+        return "unknown";
+    }
+
     get sQ() {
         return this._sQ;
     }
@@ -143,7 +191,7 @@ export default class Websock {
     // Send Queue
 
     flush() {
-        if (this._sQlen > 0 && this._websocket.readyState === WebSocket.OPEN) {
+        if (this._sQlen > 0 && this.readyState === 'open') {
             this._websocket.send(this._encodeMessage());
             this._sQlen = 0;
         }
@@ -180,12 +228,25 @@ export default class Websock {
     }
 
     open(uri, protocols) {
+        this.attach(new WebSocket(uri, protocols));
+    }
+
+    attach(rawChannel) {
         this.init();
 
-        this._websocket = new WebSocket(uri, protocols);
-        this._websocket.binaryType = 'arraybuffer';
+        // Must get object and class methods to be compatible with the tests.
+        const channelProps = [...Object.keys(rawChannel), ...Object.getOwnPropertyNames(Object.getPrototypeOf(rawChannel))];
+        for (let i = 0; i < rawChannelProps.length; i++) {
+            const prop = rawChannelProps[i];
+            if (channelProps.indexOf(prop) < 0) {
+                throw new Error('Raw channel missing property: ' + prop);
+            }
+        }
 
+        this._websocket = rawChannel;
+        this._websocket.binaryType = "arraybuffer";
         this._websocket.onmessage = this._recvMessage.bind(this);
+
         this._websocket.onopen = () => {
             Log.Debug('>> WebSock.onopen');
             if (this._websocket.protocol) {
@@ -195,11 +256,13 @@ export default class Websock {
             this._eventHandlers.open();
             Log.Debug("<< WebSock.onopen");
         };
+
         this._websocket.onclose = (e) => {
             Log.Debug(">> WebSock.onclose");
             this._eventHandlers.close(e);
             Log.Debug("<< WebSock.onclose");
         };
+
         this._websocket.onerror = (e) => {
             Log.Debug(">> WebSock.onerror: " + e);
             this._eventHandlers.error(e);
@@ -209,8 +272,8 @@ export default class Websock {
 
     close() {
         if (this._websocket) {
-            if ((this._websocket.readyState === WebSocket.OPEN) ||
-                    (this._websocket.readyState === WebSocket.CONNECTING)) {
+            if (this.readyState === 'connecting' ||
+                this.readyState === 'open') {
                 Log.Info("Closing WebSocket connection");
                 this._websocket.close();
             }
@@ -256,11 +319,7 @@ export default class Websock {
             this._rQ = new Uint8Array(this._rQbufferSize);
             this._rQ.set(new Uint8Array(oldRQbuffer, this._rQi, this._rQlen - this._rQi));
         } else {
-            if (ENABLE_COPYWITHIN) {
-                this._rQ.copyWithin(0, this._rQi, this._rQlen);
-            } else {
-                this._rQ.set(new Uint8Array(this._rQ.buffer, this._rQi, this._rQlen - this._rQi));
-            }
+            this._rQ.copyWithin(0, this._rQi, this._rQlen);
         }
 
         this._rQlen = this._rQlen - this._rQi;

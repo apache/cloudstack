@@ -16,29 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.DatastoreFile;
-import com.cloud.utils.ActionDelegate;
-import com.cloud.utils.StringUtils;
-import com.vmware.pbm.PbmPortType;
-import com.vmware.pbm.PbmServiceInstanceContent;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.ObjectSpec;
-import com.vmware.vim25.PropertyFilterSpec;
-import com.vmware.vim25.PropertySpec;
-import com.vmware.vim25.ServiceContent;
-import com.vmware.vim25.TaskInfo;
-import com.vmware.vim25.TraversalSpec;
-import com.vmware.vim25.VimPortType;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import javax.xml.ws.soap.SOAPFaultException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -58,9 +35,36 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import javax.xml.ws.soap.SOAPFaultException;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.DatastoreFile;
+import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.StringUtils;
+import com.vmware.pbm.PbmPortType;
+import com.vmware.pbm.PbmServiceInstanceContent;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.ObjectSpec;
+import com.vmware.vim25.PropertyFilterSpec;
+import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.ServiceContent;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VimPortType;
 
 public class VmwareContext {
-    private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
+    protected static Logger LOGGER = LogManager.getLogger(VmwareContext.class);
 
     private static final int MAX_CONNECT_RETRY = 5;
     private static final int CONNECT_RETRY_INTERVAL = 1000;
@@ -94,7 +98,7 @@ public class VmwareContext {
             };
             HttpsURLConnection.setDefaultHostnameVerifier(hv);
         } catch (Exception e) {
-            s_logger.error("Unexpected exception ", e);
+            LOGGER.error("Unexpected exception ", e);
         }
     }
 
@@ -105,8 +109,8 @@ public class VmwareContext {
         _serverAddress = address;
 
         registerOutstandingContext();
-        if (s_logger.isInfoEnabled())
-            s_logger.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
+        if (LOGGER.isInfoEnabled())
+            LOGGER.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
     }
 
     public boolean validate() {
@@ -262,7 +266,7 @@ public class VmwareContext {
                 oSpec.getSelectSet().add(clusterHostTraversal);
 
             } else {
-                s_logger.error("Invalid inventory path, path element can only be datacenter and folder");
+                LOGGER.error("Invalid inventory path, path element can only be datacenter and folder");
                 return null;
             }
 
@@ -286,11 +290,11 @@ public class VmwareContext {
                     }
                 }
                 if (!found) {
-                    s_logger.error("Path element points to an un-existing inventory entity");
+                    LOGGER.error("Path element points to an un-existing inventory entity");
                     return null;
                 }
             } else {
-                s_logger.error("Path element points to an un-existing inventory entity");
+                LOGGER.error("Path element points to an un-existing inventory entity");
                 return null;
             }
         }
@@ -308,13 +312,13 @@ public class VmwareContext {
             tokens = inventoryPath.split("/");
 
         if (tokens == null || tokens.length != 2) {
-            s_logger.error("Invalid datastore inventory path. path: " + inventoryPath);
+            LOGGER.error("Invalid datastore inventory path. path: " + inventoryPath);
             return null;
         }
 
         DatacenterMO dcMo = new DatacenterMO(this, tokens[0]);
         if (dcMo.getMor() == null) {
-            s_logger.error("Unable to locate the datacenter specified in path: " + inventoryPath);
+            LOGGER.error("Unable to locate the datacenter specified in path: " + inventoryPath);
             return null;
         }
 
@@ -332,7 +336,7 @@ public class VmwareContext {
             tokens = inventoryPath.split("/");
 
         if (tokens == null || tokens.length != 2) {
-            s_logger.error("Invalid datastore inventory path. path: " + inventoryPath);
+            LOGGER.error("Invalid datastore inventory path. path: " + inventoryPath);
             return null;
         }
 
@@ -377,8 +381,8 @@ public class VmwareContext {
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
         String contentType = "application/octet-stream";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
         OutputStream out = null;
         InputStream in = null;
@@ -412,7 +416,7 @@ public class VmwareContext {
         try {
             charset = Charset.forName(charsetName);
         } catch (IllegalArgumentException e) {
-            s_logger.warn("Illegal/unsupported/null charset name from connection. charsetname from connection is " + charsetName);
+            LOGGER.warn("Illegal/unsupported/null charset name from connection. charsetname from connection is " + charsetName);
             charset = StringUtils.getPreferredCharset();
         }
         return charset;
@@ -434,8 +438,8 @@ public class VmwareContext {
         String contentType = urlString.endsWith(".iso") ?
                 "application/octet-stream" :
                 "application/x-vnd.vmware-streamVmdk";
-        conn.setRequestProperty("Content-Type", contentType);
-        conn.setRequestProperty("Content-Length", Long.toString(new File(localFileName).length()));
+        conn.setRequestProperty("content-type", contentType);
+        conn.setRequestProperty("content-length", Long.toString(new File(localFileName).length()));
         connectWithRetry(conn);
 
         BufferedOutputStream bos = null;
@@ -467,12 +471,12 @@ public class VmwareContext {
         }
     }
 
-    public long downloadVmdkFile(String urlString, String localFileName, long totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
+    public long downloadVmdkFile(String urlString, String localFileName, AtomicLong totalBytesDownloaded, ActionDelegate<Long> progressUpdater) throws Exception {
         HttpURLConnection conn = getRawHTTPConnection(urlString);
 
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            s_logger.error("No cookie is found in vwware web service request context!");
+            LOGGER.error("No cookie is found in vwware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
         }
         conn.addRequestProperty("Cookie", cookie);
@@ -493,10 +497,10 @@ public class VmwareContext {
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
                 bytesWritten += len;
-                totalBytesDownloaded += len;
+                totalBytesDownloaded.addAndGet(len);
 
                 if (progressUpdater != null)
-                    progressUpdater.action(new Long(totalBytesDownloaded));
+                    progressUpdater.action(new Long(totalBytesDownloaded.get()));
             }
         } finally {
             if (in != null)
@@ -535,8 +539,8 @@ public class VmwareContext {
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharSetFromConnection(conn)));
         String line;
         while ((in.ready()) && (line = in.readLine()) != null) {
-            if (s_logger.isTraceEnabled())
-                s_logger.trace("Upload " + urlString + " response: " + line);
+            if (LOGGER.isTraceEnabled())
+                LOGGER.trace("Upload " + urlString + " response: " + line);
         }
         out.close();
         in.close();
@@ -548,7 +552,7 @@ public class VmwareContext {
      * Url for the query
      *     https://vsphere-1.lab.vmops.com/folder/Fedora-clone-test?dcPath=cupertino&dsName=NFS+datastore
      *
-     * Returned conent from vSphere
+     * Returned content from vSphere
      *
         <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
         <html>
@@ -631,12 +635,12 @@ public class VmwareContext {
         sb.append("https://");
         sb.append(_serverAddress);
         sb.append("/folder/");
-        sb.append(relativePath);
         try {
+            sb.append(URLEncoder.encode(relativePath, "UTF-8"));
             sb.append("?dcPath=").append(URLEncoder.encode(dcName, "UTF-8"));
             sb.append("&dsName=").append(URLEncoder.encode(datastoreName, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("Unable to encode URL. dcPath : " + dcName + ", dsName :" + datastoreName, e);
+            LOGGER.error(String.format("Unable to encode URL. relativePath : %s, dcPath : %s, dsName : %s", relativePath, dcName, datastoreName), e);
         }
         return sb.toString();
     }
@@ -648,7 +652,7 @@ public class VmwareContext {
     public HttpURLConnection getHTTPConnection(String urlString, String httpMethod) throws Exception {
         String cookie = _vimClient.getServiceCookie();
         if (cookie == null) {
-            s_logger.error("No cookie is found in vmware web service request context!");
+            LOGGER.error("No cookie is found in vmware web service request context!");
             throw new Exception("No cookie is found in vmware web service request context!");
         }
         URL url = new URL(urlString);
@@ -674,14 +678,14 @@ public class VmwareContext {
             try {
                 conn.connect();
                 connected = true;
-                s_logger.info("Connected, conn: " + conn.toString() + ", retry: " + i);
+                LOGGER.info("Connected, conn: " + conn.toString() + ", retry: " + i);
             } catch (Exception e) {
-                s_logger.warn("Unable to connect, conn: " + conn.toString() + ", message: " + e.toString() + ", retry: " + i);
+                LOGGER.warn("Unable to connect, conn: " + conn.toString() + ", message: " + e.toString() + ", retry: " + i);
 
                 try {
                     Thread.sleep(CONNECT_RETRY_INTERVAL);
                 } catch (InterruptedException ex) {
-                    s_logger.debug("[ignored] interrupted while connecting.");
+                    LOGGER.debug("[ignored] interrupted while connecting.");
                 }
             }
         }
@@ -693,12 +697,12 @@ public class VmwareContext {
     public void close() {
         clearStockObjects();
         try {
-            s_logger.info("Disconnecting VMware session");
+            LOGGER.info("Disconnecting VMware session");
             _vimClient.disconnect();
         } catch(SOAPFaultException sfe) {
-            s_logger.debug("Tried to disconnect a session that is no longer valid");
+            LOGGER.debug("Tried to disconnect a session that is no longer valid");
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception: ", e);
+            LOGGER.warn("Unexpected exception: ", e);
         } finally {
             if (_pool != null) {
                 _pool.unregisterContext(this);

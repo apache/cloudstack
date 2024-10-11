@@ -18,6 +18,8 @@ package org.apache.cloudstack.framework.config;
 
 import java.util.List;
 
+import com.cloud.utils.Pair;
+
 /**
  * Administrative interface to ConfigDepot
  *
@@ -35,4 +37,6 @@ public interface ConfigDepotAdmin {
     void populateConfiguration(Configurable configurable);
 
     List<String> getComponentsInDepot();
+
+    Pair<Long, Long> getConfigurationGroupAndSubGroupByName(String configName);
 }

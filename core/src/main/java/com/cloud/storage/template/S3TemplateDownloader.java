@@ -34,16 +34,17 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.List;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static java.util.Arrays.asList;
@@ -56,7 +57,6 @@ import static java.util.Arrays.asList;
  * Execution of the instance is started when runInContext() is called.
  */
 public class S3TemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    private static final Logger LOGGER = Logger.getLogger(S3TemplateDownloader.class.getName());
 
     private final String downloadUrl;
     private final String s3Key;
@@ -72,8 +72,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     private long downloadTime;
     private long totalBytes;
     private long maxTemplateSizeInByte;
-
     private boolean resume = false;
+    private boolean followRedirects = false;
 
     public S3TemplateDownloader(S3TO s3TO, String downloadUrl, String installPath, DownloadCompleteCallback downloadCompleteCallback,
             long maxTemplateSizeInBytes, String username, String password, Proxy proxy, ResourceType resourceType) {
@@ -91,7 +91,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         this.getMethod.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, HTTPUtils.getHttpMethodRetryHandler(5));
 
         // Follow redirects
-        this.getMethod.setFollowRedirects(true);
+        this.getMethod.setFollowRedirects(followRedirects);
 
         // Set file extension.
         this.fileExtension = StringUtils.substringAfterLast(StringUtils.substringAfterLast(downloadUrl, "/"), ".");
@@ -110,7 +110,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     public long download(boolean resume, DownloadCompleteCallback callback) {
         if (!status.equals(Status.NOT_STARTED)) {
             // Only start downloading if we haven't started yet.
-            LOGGER.debug("Template download is already started, not starting again. Template: " + downloadUrl);
+            logger.debug("Template download is already started, not starting again. Template: " + downloadUrl);
 
             return 0;
         }
@@ -118,28 +118,29 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         int responseCode;
         if ((responseCode = HTTPUtils.executeMethod(httpClient, getMethod)) == -1) {
             errorString = "Exception while executing HttpMethod " + getMethod.getName() + " on URL " + downloadUrl;
-            LOGGER.warn(errorString);
+            logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
 
-        if (!HTTPUtils.verifyResponseCode(responseCode)) {
+        boolean failedDueToRedirection = List.of(HttpStatus.SC_MOVED_PERMANENTLY,
+                HttpStatus.SC_MOVED_TEMPORARILY).contains(responseCode) && !followRedirects;
+        if (!HTTPUtils.verifyResponseCode(responseCode) || failedDueToRedirection) {
             errorString = "Response code for GetMethod of " + downloadUrl + " is incorrect, responseCode: " + responseCode;
-            LOGGER.warn(errorString);
-
+            logger.warn(errorString);
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
 
         // Headers
-        Header contentLengthHeader = getMethod.getResponseHeader("Content-Length");
-        Header contentTypeHeader = getMethod.getResponseHeader("Content-Type");
+        Header contentLengthHeader = getMethod.getResponseHeader("content-length");
+        Header contentTypeHeader = getMethod.getResponseHeader("content-type");
 
         // Check the contentLengthHeader and transferEncodingHeader.
         if (contentLengthHeader == null) {
             errorString = "The ContentLengthHeader of " + downloadUrl + " isn't supplied";
-            LOGGER.warn(errorString);
+            logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
@@ -150,7 +151,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
         if (remoteSize > maxTemplateSizeInByte) {
             errorString = "Remote size is too large for template " + downloadUrl + " remote size is " + remoteSize + " max allowed is " + maxTemplateSizeInByte;
-            LOGGER.warn(errorString);
+            logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
@@ -162,13 +163,13 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             inputStream = new BufferedInputStream(getMethod.getResponseBodyAsStream());
         } catch (IOException e) {
             errorString = "Exception occurred while opening InputStream for template " + downloadUrl;
-            LOGGER.warn(errorString);
+            logger.warn(errorString);
 
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
 
-        LOGGER.info("Starting download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " and size " + toHumanReadableSize(remoteSize) + " bytes");
+        logger.info("Starting download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " and size " + toHumanReadableSize(remoteSize) + " bytes");
 
         // Time the upload starts.
         final Date start = new Date();
@@ -197,7 +198,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 // Record the amount of bytes transferred.
                 totalBytes += progressEvent.getBytesTransferred();
 
-                LOGGER.trace("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + ((new Date().getTime() - start.getTime()) / 1000) + " seconds");
+                logger.trace("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + ((new Date().getTime() - start.getTime()) / 1000) + " seconds");
 
                 if (progressEvent.getEventType() == ProgressEventType.TRANSFER_STARTED_EVENT) {
                     status = Status.IN_PROGRESS;
@@ -216,15 +217,15 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             upload.waitForCompletion();
         } catch (InterruptedException e) {
             // Interruption while waiting for the upload to complete.
-            LOGGER.warn("Interruption occurred while waiting for upload of " + downloadUrl + " to complete");
+            logger.warn("Interruption occurred while waiting for upload of " + downloadUrl + " to complete");
         }
 
         downloadTime = new Date().getTime() - start.getTime();
 
         if (status == Status.DOWNLOAD_FINISHED) {
-             LOGGER.info("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed successfully!");
+             logger.info("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed successfully!");
         } else {
-             LOGGER.warn("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed with status " + status.toString());
+             logger.warn("Template download from " + downloadUrl + " to S3 bucket " + s3TO.getBucketName() + " transferred  " + toHumanReadableSize(totalBytes) + " in " + (downloadTime / 1000) + " seconds, completed with status " + status.toString());
         }
 
         // Close input stream
@@ -278,7 +279,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     }
 
     public void cleanupAfterError() {
-        LOGGER.warn("Cleanup after error, trying to remove object: " + s3Key);
+        logger.warn("Cleanup after error, trying to remove object: " + s3Key);
 
         S3Utils.deleteObject(s3TO, s3TO.getBucketName(), s3Key);
     }
@@ -372,5 +373,13 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
 
     public String getFileExtension() {
         return fileExtension;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        if (this.getMethod != null) {
+            this.getMethod.setFollowRedirects(followRedirects);
+        }
     }
 }

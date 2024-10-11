@@ -23,10 +23,11 @@ import javax.net.ssl.SSLServerSocket;
 
 import com.sun.net.httpserver.HttpServer;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFactory {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyBaseServerFactoryImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public void init(byte[] ksBits, String ksPassword) {
@@ -34,15 +35,15 @@ public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFact
 
     @Override
     public HttpServer createHttpServerInstance(int port) throws IOException {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("create HTTP server instance at port: " + port);
+        if (logger.isInfoEnabled())
+            logger.info("create HTTP server instance at port: " + port);
         return HttpServer.create(new InetSocketAddress(port), 5);
     }
 
     @Override
     public SSLServerSocket createSSLServerSocket(int port) throws IOException {
-        if (s_logger.isInfoEnabled())
-            s_logger.info("SSL server socket is not supported in ConsoleProxyBaseServerFactoryImpl");
+        if (logger.isInfoEnabled())
+            logger.info("SSL server socket is not supported in ConsoleProxyBaseServerFactoryImpl");
 
         return null;
     }

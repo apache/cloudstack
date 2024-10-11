@@ -18,7 +18,14 @@
 <template>
   <a-spin :spinning="loading">
     <div class="form-layout" v-ctrl-enter="handleSubmit">
-      <div class="form">
+      <div v-if="isNsxEnabled">
+        <a-alert type="warning">
+          <template #message>
+            <span v-html="$t('message.l2.network.unsupported.for.nsx')" />
+          </template>
+        </a-alert>
+      </div>
+      <div v-else class="form">
         <a-form
           :ref="formRef"
           :model="form"
@@ -66,29 +73,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="isAdminOrDomainAdmin()" name="domainid" ref="domainid">
-            <template #label>
-              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-            </template>
-            <a-select
-              v-model:value="form.domainid"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="domainLoading"
-              :placeholder="apiParams.domainid.description"
-              @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
-                <span>
-                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <block-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
-                  {{ opt.path || opt.name || opt.description }}
-                </span>
-              </a-select-option>
-            </a-select>
-          </a-form-item>
+          <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -98,12 +83,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -164,14 +149,6 @@
               v-model:value="form.isolatedpvlan"
               :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="name">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-input
-              v-model:value="form.account"
-              :placeholder="apiParams.account.description"/>
-          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -199,11 +176,13 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'CreateL2NetworkForm',
   mixins: [mixinForm],
   components: {
+    OwnershipSelection,
     TooltipLabel,
     ResourceIcon
   },
@@ -224,17 +203,16 @@ export default {
   data () {
     return {
       actionLoading: false,
-      domains: [],
-      domainLoading: false,
-      selectedDomain: {},
+      owner: {},
+      accountVisible: isAdminOrDomainAdmin(),
       zones: [],
       zoneLoading: false,
       selectedZone: {},
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {},
-      accountVisible: isAdminOrDomainAdmin(),
-      isolatePvlanType: 'none'
+      isolatePvlanType: 'none',
+      isNsxEnabled: false
     }
   },
   watch: {
@@ -249,12 +227,6 @@ export default {
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
-    this.domains = [
-      {
-        id: '-1',
-        name: ' '
-      }
-    ]
     this.initForm()
     this.fetchData()
   },
@@ -266,14 +238,12 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ required: true, message: this.$t('message.error.select') }],
         vlanid: [{ required: true, message: this.$t('message.please.enter.value') }]
       })
     },
     fetchData () {
-      this.fetchDomainData()
       this.fetchZoneData()
     },
     isAdminOrDomainAdmin () {
@@ -315,26 +285,30 @@ export default {
     },
     handleZoneChange (zone) {
       this.selectedZone = zone
+      this.isNsxEnabled = zone?.isnsxenabled || false
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
-    fetchDomainData () {
-      const params = {}
-      params.listAll = true
-      params.showicon = true
-      params.details = 'min'
-      this.domainLoading = true
-      api('listDomains', params).then(json => {
-        const listDomains = json.listdomainsresponse.domain
-        this.domains = this.domains.concat(listDomains)
-      }).finally(() => {
-        this.domainLoading = false
-        this.form.domainid = 0
-        this.handleDomainChange(this.domains[0])
-      })
-    },
-    handleDomainChange (domain) {
-      this.selectedDomain = domain
-      this.accountVisible = domain.id !== '-1'
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
       if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
       }
@@ -367,8 +341,8 @@ export default {
         guestiptype: 'L2',
         state: 'Enabled'
       }
-      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
-        params.domainid = this.selectedDomain.id
+      if (isAdminOrDomainAdmin() && this.owner.domainid !== '-1') { // domain is visible only for admins
+        params.domainid = this.owner.domainid
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
@@ -409,12 +383,15 @@ export default {
         if (this.isValidValueForKey(values, 'bypassvlanoverlapcheck')) {
           params.bypassvlanoverlapcheck = values.bypassvlanoverlapcheck
         }
-        if ('domainid' in values && values.domainid > 0) {
-          params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account')) {
-            params.account = values.account
-          }
+
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
         }
+
         if (this.isValidValueForKey(values, 'isolatedpvlantype') && values.isolatedpvlantype !== 'none') {
           params.isolatedpvlantype = values.isolatedpvlantype
           if (this.isValidValueForKey(values, 'isolatedpvlan')) {

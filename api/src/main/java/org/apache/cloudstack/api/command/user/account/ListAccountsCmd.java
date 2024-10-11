@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Restricted, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
 
     /////////////////////////////////////////////////////
@@ -74,6 +73,9 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for accounts")
     private Boolean showIcon;
+
+    @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for resource type to return usage", since = "4.20.0")
+    private String tag;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -118,8 +120,12 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         return dv;
     }
 
-    public Boolean getShowIcon() {
+    public boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
+    }
+
+    public String getTag() {
+        return tag;
     }
 
     /////////////////////////////////////////////////////
@@ -136,12 +142,17 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         ListResponse<AccountResponse> response = _queryService.searchForAccounts(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
-            updateAccountResponse(response.getResponses());
-        }
+        updateAccountResponse(response.getResponses());
     }
 
-    private void updateAccountResponse(List<AccountResponse> response) {
+    protected void updateAccountResponse(List<AccountResponse> response) {
+        if (CollectionUtils.isEmpty(response)) {
+            return;
+        }
+        _resourceLimitService.updateTaggedResourceLimitsAndCountsForAccounts(response, getTag());
+        if (!getShowIcon()) {
+            return;
+        }
         for (AccountResponse accountResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Account, accountResponse.getObjectId());
             if (resourceIcon == null) {

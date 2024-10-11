@@ -17,15 +17,20 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.libvirt.StoragePool;
 import org.mockito.Mockito;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
 import junit.framework.TestCase;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtStoragePoolTest extends TestCase {
 
+    @Test
     public void testAttributes() {
         String uuid = "4c4fb08b-373e-4f30-a120-3aa3a43f31da";
         String name = "myfirstpool";
@@ -52,6 +57,7 @@ public class LibvirtStoragePoolTest extends TestCase {
         assertEquals(pool.getAvailable(), 1023);
     }
 
+    @Test
     public void testDefaultFormats() {
         String uuid = "f40cbf53-1f37-4c62-8912-801edf398f47";
         String name = "myfirstpool";
@@ -72,6 +78,7 @@ public class LibvirtStoragePoolTest extends TestCase {
         assertEquals(clvmPool.getStoragePoolType(), StoragePoolType.CLVM);
     }
 
+    @Test
     public void testExternalSnapshot() {
         String uuid = "60b46738-c5d0-40a9-a79e-9a4fe6295db7";
         String name = "myfirstpool";
@@ -80,6 +87,9 @@ public class LibvirtStoragePoolTest extends TestCase {
         StoragePool storage = Mockito.mock(StoragePool.class);
 
         LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage);
+        if (nfsPool.getType() != StoragePoolType.NetworkFilesystem) {
+            System.out.println("tested");
+        }
         assertFalse(nfsPool.isExternalSnapshot());
 
         LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage);

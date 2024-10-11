@@ -15,13 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'event',
   title: 'label.events',
   icon: 'ScheduleOutlined',
   docHelp: 'adminguide/events.html',
   permission: ['listEvents'],
-  columns: ['level', 'type', 'state', 'description', 'resource', 'username', 'account', 'domain', 'created'],
+  columns: () => {
+    var fields = ['level', 'type', 'state', 'description', 'resource', 'username', 'account']
+    if (store.getters.listAllProjects) {
+      fields.push('project')
+    }
+    fields.push(...['domain', 'created'])
+    return fields
+  },
   details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'state', 'level', 'type', 'account', 'domain', 'created'],
   searchFilters: ['level', 'domainid', 'account', 'keyword', 'resourcetype'],
   related: [{
@@ -29,6 +38,9 @@ export default {
     title: 'label.event.timeline',
     param: 'startid'
   }],
+  filters: () => {
+    return ['active', 'archived']
+  },
   actions: [
     {
       api: 'archiveEvents',
@@ -45,6 +57,12 @@ export default {
         ids: {
           value: (record) => { return record.id }
         }
+      },
+      show: (record) => {
+        return !(record.archived)
+      },
+      groupShow: (selectedItems) => {
+        return selectedItems.filter(x => { return !(x.archived) }).length > 0
       }
     },
     {

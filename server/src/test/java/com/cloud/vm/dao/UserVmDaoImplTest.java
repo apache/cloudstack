@@ -16,16 +16,14 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import javax.inject.Inject;
-
-import junit.framework.TestCase;
-
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Test;
-
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import junit.framework.TestCase;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Test;
+
+import javax.inject.Inject;
 
 public class UserVmDaoImplTest extends TestCase {
     @Inject

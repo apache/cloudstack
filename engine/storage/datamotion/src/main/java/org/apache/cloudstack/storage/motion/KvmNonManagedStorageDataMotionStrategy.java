@@ -36,7 +36,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
@@ -74,7 +73,6 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Inject
     private VirtualMachineManager virtualMachineManager;
 
-    private static final Logger LOGGER = Logger.getLogger(KvmNonManagedStorageDataMotionStrategy.class);
 
     /**
      * Uses the canHandle from the Super class {@link StorageSystemDataMotionStrategy}. If the storage pool is of file and the internalCanHandle from {@link StorageSystemDataMotionStrategy} CANT_HANDLE, returns the StrategyPriority.HYPERVISOR strategy priority. otherwise returns CANT_HANDLE.
@@ -149,9 +147,9 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Configures a {@link MigrateDiskInfo} object configured for migrating a File System volume and calls rootImageProvisioning.
      */
     @Override
-    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath) {
-        return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(), MigrateCommand.MigrateDiskInfo.DiskType.FILE, MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
-                MigrateCommand.MigrateDiskInfo.Source.FILE, destPath);
+    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath, String backingPath) {
+            return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(), MigrateCommand.MigrateDiskInfo.DiskType.FILE, MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                    MigrateCommand.MigrateDiskInfo.Source.FILE, destPath, backingPath);
     }
 
     /**
@@ -161,6 +159,15 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
         return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
+    }
+
+    @Override
+    protected String generateBackingPath(StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        String templateInstallPath = getVolumeBackingFile(destVolumeInfo);
+        if (templateInstallPath == null) {
+            return null;
+        }
+        return new File(destStoragePool.getPath(), templateInstallPath).getAbsolutePath();
     }
 
     /**
@@ -201,6 +208,12 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             return;
         }
 
+        TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
+        if (directDownloadTemplateInfo != null) {
+            logger.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
+            return;
+        }
+
         VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
         if (sourceVolumeTemplateStoragePoolVO == null && (isStoragePoolTypeInList(destStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.SharedMountPoint))) {
             DataStore sourceTemplateDataStore = dataStoreManagerImpl.getRandomImageStore(srcVolumeInfo.getDataCenterId());
@@ -208,7 +221,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
                 TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
 
-                LOGGER.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
+                logger.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
                         srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
 
                 TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
@@ -221,7 +234,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 return;
             }
         }
-        LOGGER.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
+        logger.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
     }
 
     /**
@@ -267,7 +280,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             if (copyCommandAnswer.getDetails() != null) {
                 failureDetails = " Details: " + copyCommandAnswer.getDetails();
             }
-            LOGGER.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
+            logger.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
         }
     }
 

@@ -18,20 +18,20 @@ package org.apache.cloudstack.storage.resource;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import io.netty.handler.codec.DecoderException;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -41,6 +41,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -63,7 +64,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.CharsetUtil;
 
 public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private static final Logger logger = Logger.getLogger(HttpUploadServerHandler.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final HttpDataFactory factory = new DefaultHttpDataFactory(true);
 
@@ -79,15 +80,45 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private boolean requestProcessed = false;
 
-    private static final String HEADER_SIGNATURE = "X-signature";
+    enum UploadHeader {
+        SIGNATURE("x-signature"),
+        METADATA("x-metadata"),
+        EXPIRES("x-expires"),
+        HOST("x-forwarded-host"),
+        CONTENT_LENGTH("content-length");
 
-    private static final String HEADER_METADATA = "X-metadata";
-
-    private static final String HEADER_EXPIRES = "X-expires";
-
-    private static final String HEADER_HOST = "X-Forwarded-Host";
+        private final String name;
+        UploadHeader(String name) {
+            this.name = name;
+        }
+        public String getName() {
+            return this.name;
+        }
+        public static UploadHeader fromName(String name) {
+            for (UploadHeader type : values()) {
+                if (type.getName().equalsIgnoreCase(name)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+    }
 
     private static long processTimeout;
+
+    protected Map<UploadHeader, String> getUploadRequestUsefulHeaders(HttpHeaders headers) {
+        Map<UploadHeader, String> headerMap = new HashMap<>();
+        for (Entry<String, String> entry : headers) {
+            UploadHeader headerType = UploadHeader.fromName(entry.getKey());
+            if (headerType != null) {
+                headerMap.put(headerType, entry.getValue());
+            }
+        }
+        for (UploadHeader type : UploadHeader.values()) {
+            logger.info(String.format("HEADER: %s=%s", type, headerMap.get(type)));
+        }
+        return headerMap;
+    }
 
     public HttpUploadServerHandler(NfsSecondaryStorageResource storageResource) {
         this.storageResource = storageResource;
@@ -123,36 +154,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
                 URI uri = new URI(request.getUri());
 
-                String signature = null;
-                String expires = null;
-                String metadata = null;
-                String hostname = null;
-                long contentLength = 0;
-
-                for (Entry<String, String> entry : request.headers()) {
-                    switch (entry.getKey()) {
-                        case HEADER_SIGNATURE:
-                            signature = entry.getValue();
-                            break;
-                        case HEADER_METADATA:
-                            metadata = entry.getValue();
-                            break;
-                        case HEADER_EXPIRES:
-                            expires = entry.getValue();
-                            break;
-                        case HEADER_HOST:
-                            hostname = entry.getValue();
-                            break;
-                        case HttpHeaders.Names.CONTENT_LENGTH:
-                            contentLength = Long.parseLong(entry.getValue());
-                            break;
-                    }
-                }
-                logger.info("HEADER: signature=" + signature);
-                logger.info("HEADER: metadata=" + metadata);
-                logger.info("HEADER: expires=" + expires);
-                logger.info("HEADER: hostname=" + hostname);
-                logger.info("HEADER: Content-Length=" + contentLength);
+                Map<UploadHeader, String> headers = getUploadRequestUsefulHeaders(request.headers());
+                long contentLength = headers.get(UploadHeader.CONTENT_LENGTH) != null ? Long.parseLong(headers.get(UploadHeader.CONTENT_LENGTH)) : 0;
                 QueryStringDecoder decoderQuery = new QueryStringDecoder(uri);
                 Map<String, List<String>> uriAttributes = decoderQuery.parameters();
                 uuid = uriAttributes.get("uuid").get(0);
@@ -160,9 +163,10 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 UploadEntity uploadEntity = null;
                 try {
                     // Validate the request here
-                    storageResource.validatePostUploadRequest(signature, metadata, expires, hostname, contentLength, uuid);
+                    storageResource.validatePostUploadRequest(headers.get(UploadHeader.SIGNATURE), headers.get(UploadHeader.METADATA),
+                            headers.get(UploadHeader.EXPIRES), headers.get(UploadHeader.HOST), contentLength, uuid);
                     //create an upload entity. This will fail if entity already exists.
-                    uploadEntity = storageResource.createUploadEntity(uuid, metadata, contentLength);
+                    uploadEntity = storageResource.createUploadEntity(uuid, headers.get(UploadHeader.METADATA), contentLength);
                 } catch (InvalidParameterValueException ex) {
                     logger.error("post request validation failed", ex);
                     responseContent.append(ex.getMessage());
@@ -279,8 +283,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, statusCode, buf);
         response.headers().set(CONTENT_TYPE, "text/plain; charset=UTF-8");
         if (!close) {
-            // There's no need to add 'Content-Length' header if this is the last response.
-            response.headers().set(CONTENT_LENGTH, buf.readableBytes());
+            // There's no need to add 'content-length' header if this is the last response.
+            response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, buf.readableBytes());
         }
         // Write the response.
         ChannelFuture future = channel.writeAndFlush(response);
@@ -292,7 +296,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        logger.warn(responseContent.toString(), cause);
+        logger.warn(String.format("%s. Exception occurred: %s", responseContent.toString(), cause.getMessage()));
+        logger.debug("Exception caught by HTTP upload handler, caused due to: ", cause);
         responseContent.append("\r\nException occurred: ").append(cause.getMessage());
         writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
         ctx.channel().close();

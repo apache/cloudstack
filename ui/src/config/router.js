@@ -19,8 +19,9 @@
 import { UserLayout, BasicLayout, RouteView } from '@/layouts'
 import AutogenView from '@/views/AutogenView.vue'
 import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
+import ApiDocsPlugin from '@/views/plugins/ApiDocsPlugin.vue'
 
-import { shallowRef, defineAsyncComponent } from 'vue'
+import { shallowRef } from 'vue'
 import { vueProps } from '@/vue-app'
 
 import compute from '@/config/section/compute'
@@ -34,6 +35,7 @@ import account from '@/config/section/account'
 import domain from '@/config/section/domain'
 import role from '@/config/section/role'
 import infra from '@/config/section/infra'
+import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
 import tools from '@/config/section/tools'
@@ -44,20 +46,19 @@ function generateRouterMap (section) {
   var map = {
     name: section.name,
     path: '/' + section.name,
-    hidden: section.hidden,
+    hidden: 'show' in section ? !section.show() : section.hidden,
     meta: {
       title: section.title,
       icon: section.icon,
       docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
       searchFilters: section.searchFilters,
-      related: section.related
+      related: section.related,
+      section: true
     },
     component: shallowRef(RouteView)
   }
 
   if (section.children && section.children.length > 0) {
-    map.redirect = '/' + section.children[0].name
-    map.meta.permission = section.children[0].permission
     map.children = []
     for (const child of section.children) {
       if ('show' in child && !child.show()) {
@@ -74,6 +75,7 @@ function generateRouterMap (section) {
           icon: child.icon,
           docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
+          getApiToCall: child.getApiToCall,
           resourceType: child.resourceType,
           filters: child.filters,
           params: child.params ? child.params : {},
@@ -82,7 +84,8 @@ function generateRouterMap (section) {
           searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
-          tabs: child.tabs
+          tabs: child.tabs,
+          customParamHandler: child.customParamHandler
         },
         component: component,
         hideChildrenInMenu: true,
@@ -200,26 +203,7 @@ export function asyncRouterMap () {
         name: 'dashboard',
         meta: {
           title: 'label.dashboard',
-          icon: 'DashboardOutlined',
-          tabs: [
-            {
-              name: 'dashboard',
-              component: shallowRef(defineAsyncComponent(() => import('@/views/dashboard/UsageDashboardChart')))
-            },
-            {
-              name: 'accounts',
-              show: (record, route, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
-              component: shallowRef(defineAsyncComponent(() => import('@/views/project/AccountsTab')))
-            },
-            {
-              name: 'limits',
-              params: {
-                projectid: 'id'
-              },
-              show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-              component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
-            }
-          ]
+          icon: 'DashboardOutlined'
         },
         component: () => import('@/views/dashboard/Dashboard')
       },
@@ -235,12 +219,12 @@ export function asyncRouterMap () {
       generateRouterMap(account),
       generateRouterMap(domain),
       generateRouterMap(infra),
+      generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
-
       {
         path: '/exception',
         name: 'exception',
@@ -292,6 +276,16 @@ export function asyncRouterMap () {
     })
   }
 
+  const apidocs = vueProps.$config.apidocs
+  if (apidocs !== false) {
+    routerMap[0].children.push({
+      path: '/apidocs/',
+      name: 'apidocs',
+      component: shallowRef(ApiDocsPlugin),
+      meta: { title: 'label.api.docs', icon: 'read-outlined' }
+    })
+  }
+
   return routerMap
 }
 
@@ -306,8 +300,45 @@ export const constantRouterMap = [
         path: 'login',
         name: 'login',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/Login')
+      },
+      {
+        path: 'forgotPassword',
+        name: 'forgotPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ForgotPassword')
+      },
+      {
+        path: 'resetPassword',
+        name: 'resetPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
       }
     ]
+  },
+  {
+    path: '/verify2FA',
+    name: 'VerifyTwoFa',
+    meta: {
+      title: 'label.two.factor.authentication',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/VerifyTwoFa')
+  },
+  {
+    path: '/verifyOauth',
+    name: 'VerifyOauth',
+    meta: {
+      title: 'label.oauth.verification',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/VerifyOauth')
+  },
+  {
+    path: '/setup2FA',
+    name: 'SetupTwoFaAtLogin',
+    meta: {
+      title: 'label.two.factor.authentication',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/SetupTwoFaAtLogin')
   },
   {
     path: '/403',

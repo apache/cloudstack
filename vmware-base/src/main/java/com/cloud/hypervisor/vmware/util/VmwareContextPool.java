@@ -18,7 +18,8 @@ package com.cloud.hypervisor.vmware.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.Duration;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 public class VmwareContextPool {
-    private static final Logger s_logger = Logger.getLogger(VmwareContextPool.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final Duration DEFAULT_CHECK_INTERVAL = Duration.millis(10000L);
     private static final int DEFAULT_IDLE_QUEUE_LENGTH = 128;
@@ -68,8 +69,8 @@ public class VmwareContextPool {
                 if (context != null) {
                     context.setPoolInfo(this, poolKey);
                 }
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + ctxList.size() + ", outstanding count: " +
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + ctxList.size() + ", outstanding count: " +
                             VmwareContext.getOutstandingContextCount());
                 }
                 return context;
@@ -97,15 +98,15 @@ public class VmwareContextPool {
                     try {
                         oldestContext.close();
                     } catch (Throwable t) {
-                        s_logger.error("Unexpected exception caught while trying to purge oldest VmwareContext", t);
+                        logger.error("Unexpected exception caught while trying to purge oldest VmwareContext", t);
                     }
                 }
             }
             context.clearStockObjects();
             ctxQueue.add(context);
 
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " + ctxQueue.size() + ", outstanding count: "
+            if (logger.isTraceEnabled()) {
+                logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " + ctxQueue.size() + ", outstanding count: "
                         + VmwareContext.getOutstandingContextCount());
             }
         }
@@ -129,7 +130,7 @@ public class VmwareContextPool {
                 try {
                     doKeepAlive();
                 } catch (Throwable e) {
-                    s_logger.error("Unexpected exception", e);
+                    logger.error("Unexpected exception", e);
                 }
             }
         };
@@ -147,7 +148,7 @@ public class VmwareContextPool {
                 try {
                     context.idleCheck();
                 } catch (Throwable e) {
-                    s_logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
+                    logger.warn("Exception caught during VmwareContext idle check, close and discard the context", e);
                     closableCtxList.add(context);
                     iterator.remove();
                 }

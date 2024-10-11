@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.api.command.admin.autoscale;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createCounter", description = "Adds metric counter for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateCounterCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateCounterCmd.class.getName());
     private static final String s_name = "counterresponse";
 
     // ///////////////////////////////////////////////////

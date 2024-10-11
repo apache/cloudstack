@@ -17,115 +17,89 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+<Configuration monitorInterval="60">
+    <Appenders>
 
-    <!-- ================================= -->
-    <!-- Preserve messages in a local file -->
-    <!-- ================================= -->
+        <!-- ================================= -->
+        <!-- Preserve messages in a local file -->
+        <!-- ================================= -->
+        <RollingFile name="cloudLog" fileName="/var/log/cloud.log" filePattern="/var/log/cloud.%i.log">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10000KB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="4"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+        </RollingFile>
 
-    <appender name="cloudLog" class="org.apache.log4j.RollingFileAppender">
-      <param name="File" value="/var/log/cloud.log"/>
-      <param name="MaxFileSize" value="10000KB"/>
-      <param name="MaxBackupIndex" value="4"/>
+        <RollingFile name="cloudOut" append="true" fileName="/var/log/cloud/cloud.out" filePattern="/var/log/cloud/cloud.%i.out">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10000KB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="4"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+        </RollingFile>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-    </appender>
+        <RollingFile name="cloudSystemvmLog" append="true" fileName="/usr/local/cloud/systemvm/cloud.log" filePattern="/usr/local/cloud/systemvm/cloud.%i.log">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10000KB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="4"/>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
+        </RollingFile>
 
-    <appender name="cloudOut" class="org.apache.log4j.RollingFileAppender">
-       <param name="File" value="/var/log/cloud/cloud.out"/>
-       <param name="Append" value="true"/>
-       <param name="MaxFileSize" value="10000KB"/>
-       <param name="MaxBackupIndex" value="4"/>
+        <RollingFile name="APISERVER" append="true" fileName="/var/log/cloud/api-server.log" filePattern="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <PatternLayout pattern="%d{ISO8601}{GMT} %m%ex%n"/>
+        </RollingFile>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-    </appender>
 
-    <appender name="cloudSystemvmLog" class="org.apache.log4j.rolling.RollingFileAppender">
-       <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
-       <param name="Append" value="true"/>
-       <param name="MaxFileSize" value="10000KB"/>
-       <param name="MaxBackupIndex" value="4"/>
+        <!-- ============================== -->
+        <!-- Append messages to the console -->
+        <!-- ============================== -->
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-    </appender>
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
+        </Console>
+    </Appenders>
 
-    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz"/>
-        <param name="ActiveFileName" value="/var/log/cloud/api-server.log"/>
-      </rollingPolicy>
+    <Loggers>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>
-      </layout>
-    </appender>
+        <!-- ================ -->
+        <!-- Limit categories -->
+        <!-- ================ -->
+        <Logger name="com.cloud" level="INFO"/>
 
-    <!-- ============================== -->
-    <!-- Append messages to the console -->
-    <!-- ============================== -->
+        <Logger name="org.apache.cloudstack" level="INFO"/>
 
-    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
+        <Logger name="org.apache" level="INFO"/>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
-      </layout>
-    </appender>
+        <Logger name="org" level="INFO"/>
 
-    <!-- ================ -->
-    <!-- Limit categories -->
-    <!-- ================ -->
+        <Logger name="net" level="INFO"/>
 
-    <category name="com.cloud">
-      <priority value="INFO"/>
-    </category>
+        <Logger name="apiserver.com.cloud" level="DEBUG"/>
 
-    <category name="org.apache.cloudstack">
-      <priority value="INFO"/>
-    </category>
+        <Logger name="apiserver.com.cloud" level="DEBUG" additivity="false">
+            <AppenderRef ref="APISERVER"/>
+        </Logger>
 
-    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-    <category name="org.apache">
-      <priority value="INFO"/>
-    </category>
+        <!-- ======================= -->
+        <!-- Setup the Root category -->
+        <!-- ======================= -->
 
-    <category name="org">
-      <priority value="INFO"/>
-    </category>
+        <Root level="INFO">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="cloudLog"/>
+            <AppenderRef ref="cloudOut"/>
+            <AppenderRef ref="cloudSystemvmLog"/>
+        </Root>
 
-    <category name="net">
-      <priority value="INFO"/>
-    </category>
-
-    <category name="apiserver.com.cloud">
-      <priority value="DEBUG"/>
-    </category>
-
-    <logger name="apiserver.com.cloud" additivity="false">
-      <level value="DEBUG"/>
-      <appender-ref ref="APISERVER"/>
-    </logger>
-
-    <!-- ======================= -->
-    <!-- Setup the Root category -->
-    <!-- ======================= -->
-
-    <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="cloudLog"/>
-      <appender-ref ref="cloudOut"/>
-      <appender-ref ref="cloudSystemvmLog"/>
-    </root>
-
-</log4j:configuration>
+    </Loggers>
+</Configuration>

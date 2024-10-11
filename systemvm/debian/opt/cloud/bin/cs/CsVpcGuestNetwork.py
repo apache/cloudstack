@@ -17,13 +17,14 @@
 import logging
 import os.path
 from cs.CsDatabag import CsDataBag
-from CsFile import CsFile
-import CsHelper
+from .CsFile import CsFile
+from . import CsHelper
 
 VPC_PUBLIC_INTERFACE = "eth1"
 
 RADVD_CONF = "/etc/radvd.conf"
 RADVD_CONF_NEW = "/etc/radvd.conf.new"
+
 
 class CsVpcGuestNetwork(CsDataBag):
     """ Manage Vpc Guest Networks """
@@ -53,13 +54,13 @@ class CsVpcGuestNetwork(CsDataBag):
         CsHelper.execute("sysctl net.ipv6.conf." + device + ".use_tempaddr=0")
 
     def add_address_route(self, entry):
-        if 'router_guest_ip6' in entry.keys() and entry['router_guest_ip6']:
+        if 'router_guest_ip6' in list(entry.keys()) and entry['router_guest_ip6']:
             self.enable_ipv6(entry['device'])
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
             if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (entry['device'], full_addr)):
                 CsHelper.execute("ip -6 addr add %s dev %s" % (full_addr, entry['device']))
-            if 'router_ip6' in entry.keys() and entry['router_ip6']:
+            if 'router_ip6' in list(entry.keys()) and entry['router_ip6']:
                 self.__disable_dad(VPC_PUBLIC_INTERFACE)
                 full_public_addr = entry['router_ip6'] + "/" + cidr_size
                 if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (VPC_PUBLIC_INTERFACE, full_public_addr)):
@@ -70,11 +71,11 @@ class CsVpcGuestNetwork(CsDataBag):
             return
 
     def remove_address_route(self, entry):
-        if 'router_guest_ip6' in entry.keys() and entry['router_guest_ip6']:
+        if 'router_guest_ip6' in list(entry.keys()) and entry['router_guest_ip6']:
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
             CsHelper.execute("ip -6 addr del %s dev %s" % (full_addr, entry['device']))
-            if 'router_ip6' in entry.keys() and entry['router_ip6']:
+            if 'router_ip6' in list(entry.keys()) and entry['router_ip6']:
                 full_public_addr = entry['router_ip6'] + "/" + cidr_size
                 CsHelper.execute("ip -6 addr del %s dev %s" % (full_public_addr, VPC_PUBLIC_INTERFACE))
         else:
@@ -94,7 +95,7 @@ class CsVpcGuestNetwork(CsDataBag):
         self.__disable_dad(device)
 
     def add_radvd_conf(self, entry):
-        if 'router_guest_ip6' in entry.keys() and entry['router_guest_ip6']:
+        if 'router_guest_ip6' in list(entry.keys()) and entry['router_guest_ip6']:
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
             self.conf.append("interface %s" % entry['device'])
@@ -107,7 +108,7 @@ class CsVpcGuestNetwork(CsDataBag):
             self.conf.append("        AdvOnLink on;")
             self.conf.append("        AdvAutonomous on;")
             self.conf.append("    };")
-            if 'dns6' in entry.keys() and entry['dns6']:
+            if 'dns6' in list(entry.keys()) and entry['dns6']:
                 for dns in entry['dns6'].split(","):
                     self.conf.append("    RDNSS %s" % dns)
                     self.conf.append("    {")

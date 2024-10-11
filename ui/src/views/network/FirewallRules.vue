@@ -32,11 +32,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ $t('label.icmp') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -49,11 +49,32 @@
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model:value="newRule.icmptype"></a-input>
+          <a-select
+            v-model:value="newRule.icmptype"
+            @change="val => { updateIcmpCodes(val) }"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpTypes" :key="opt.index" :label="opt.description">
+              {{ opt.index + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model:value="newRule.icmpcode"></a-input>
+          <a-select
+            v-model:value="newRule.icmpcode"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt) in icmpCodes" :key="opt.code" :label="opt.description">
+              {{ opt.code + ' - ' + opt.description }}
+            </a-select-option>
+          </a-select>
         </div>
         <div class="form__item" style="margin-left: auto;">
           <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
@@ -80,27 +101,29 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #startport="{ record }">
-        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
-      </template>
-      <template #endport="{ record }">
-        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
-      </template>
-      <template #actions="{ record }">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
-          <tooltip-button
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            buttonClass="rule-action"
-            :disabled="!('deleteFirewallRule' in $store.getters.apis)"
-            @onClick="deleteRule(record)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'startport'">
+          {{ record.icmptype >= 0 ? String(record.icmptype): record.startport >= 0 ? String(record.startport): 'All' }}
+        </template>
+        <template v-if="column.key === 'endport'">
+          {{ record.icmpcode >= 0 ? String(record.icmpcode): record.endport >= 0 ? String(record.endport): 'All' }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              buttonClass="rule-action"
+              :disabled="!('deleteFirewallRule' in $store.getters.apis)"
+              @onClick="deleteRule(record)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -218,7 +241,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['State', 'Action'],
+      filterColumns: ['State', 'Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.firewall.rules'),
@@ -236,6 +259,9 @@ export default {
         startport: null,
         endport: null
       },
+      protocolNumbers: [],
+      icmpTypes: [],
+      icmpCodes: [],
       tagsModalVisible: false,
       selectedRule: null,
       tags: [],
@@ -248,24 +274,24 @@ export default {
           dataIndex: 'cidrlist'
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
-          title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`,
-          slots: { customRender: 'startport' }
+          key: 'startport',
+          title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`
         },
         {
-          title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`,
-          slots: { customRender: 'endport' }
+          key: 'endport',
+          title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }
@@ -277,6 +303,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchNetworkProtocols()
     this.fetchData()
   },
   watch: {
@@ -298,6 +325,34 @@ export default {
         key: [{ required: true, message: this.$t('message.specify.tag.key') }],
         value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
+    },
+    fetchNetworkProtocols () {
+      api('listNetworkProtocols', {
+        option: 'protocolnumber'
+      }).then(json => {
+        this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
+      })
+      api('listNetworkProtocols', {
+        option: 'icmptype'
+      }).then(json => {
+        this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
+        const results = json.listnetworkprotocolsresponse?.networkprotocol || []
+        for (const result of results) {
+          this.icmpTypes.push(result)
+        }
+      })
+    },
+    updateIcmpCodes (val) {
+      this.newRule.icmpcode = -1
+      this.icmpCodes = []
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+      const icmpType = this.icmpTypes.find(icmpType => icmpType.index === val)
+      if (icmpType && icmpType.details) {
+        const icmpTypeDetails = icmpType.details
+        for (const k of Object.keys(icmpTypeDetails)) {
+          this.icmpCodes.push({ code: parseInt(k), description: icmpTypeDetails[k] })
+        }
+      }
     },
     fetchData () {
       this.loading = true
@@ -346,9 +401,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -618,7 +673,7 @@ export default {
     &__item {
       display: flex;
       flex-direction: column;
-      /*flex: 1;*/
+      flex: 1;
       padding-right: 20px;
       margin-bottom: 20px;
 

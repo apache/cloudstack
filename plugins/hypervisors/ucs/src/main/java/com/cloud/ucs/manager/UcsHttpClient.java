@@ -40,7 +40,7 @@ public class UcsHttpClient {
     public String call(String xml) {
         PostMethod post = new PostMethod(url);
         post.setRequestEntity(new StringRequestEntity(xml));
-        post.setRequestHeader("Content-type", "text/xml");
+        post.setRequestHeader("content-type", "text/xml");
         //post.setFollowRedirects(true);
         try {
             int result = client.executeMethod(post);

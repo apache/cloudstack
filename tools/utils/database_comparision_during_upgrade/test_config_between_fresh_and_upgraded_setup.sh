@@ -34,7 +34,7 @@ mysql -u $dbuser -p$dbpwd -h $dbhost --skip-column-names  -e "select  name, desc
 mysql -u $dbuser -p$dbpwd -h $dbhost --skip-column-names  -e "select  name, scope  from cloud.configuration" > $path2/scope_configuration_upgrade
 
 
-IFS=$'\n' 
+IFS=$'\n'
 
 
 #to find difference between upgraded configuration and fresh install configuration
@@ -58,16 +58,16 @@ do
 		if [ ! -s t ]
                 then
                         echo $row >> ./only_in_upgraded
-                else		
+                else
 			fname=`awk '{print $1}' t`
 	                fvalue=`awk '{print $2}' t`
                 	fdefault=`awk '{print $3}' t`
 			#echo $fname $fvalue $fdefault
-			if [ $default !=  $value  ] 
+			if [ $default !=  $value  ]
 			then
 				if [ $default == $fdefault ] && [ $value == $fvalue ]
 				then
-					echo 	
+					echo
 				else
 					first="$name	$value"
 					second="$fname    $fvalue"
@@ -78,7 +78,7 @@ do
 				fi
 			fi
 		fi
-		
+
 	fi
 done
 
@@ -103,7 +103,7 @@ do
 			grep '^'$word'[^\.]\w*' $path2/configuration_upgrade >> ./final_diff4
 		        count1=`wc -l <./final_diff4`
 			count1=`expr $count1 - 1`
-				
+
 			if [ $count == $count1 ]
 			then
 				echo $row >> ./only_in_fresh
@@ -154,16 +154,3 @@ uniq -u ./description.sort > description.uniq
 rm -rf $path2 *.sort category description scope component temp temp1 $a
 rm -rf mismatch_config_between_before_and_after_upgrade  config_difference_before_and_after_upgrade.sort t
 #rm -rf $path2
-
-
-
-
-
-
-
-
-
-
-
-
-

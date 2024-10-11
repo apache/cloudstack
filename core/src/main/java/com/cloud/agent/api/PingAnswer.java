@@ -22,15 +22,26 @@ package com.cloud.agent.api;
 public class PingAnswer extends Answer {
     private PingCommand _command = null;
 
+    private boolean sendStartup = false;
+
     protected PingAnswer() {
     }
 
-    public PingAnswer(PingCommand cmd) {
+    public PingAnswer(PingCommand cmd, boolean sendStartup) {
         super(cmd);
         _command = cmd;
+        this.sendStartup = sendStartup;
     }
 
     public PingCommand getCommand() {
         return _command;
+    }
+
+    public boolean isSendStartup() {
+        return sendStartup;
+    }
+
+    public void setSendStartup(boolean sendStartup) {
+        this.sendStartup = sendStartup;
     }
 }

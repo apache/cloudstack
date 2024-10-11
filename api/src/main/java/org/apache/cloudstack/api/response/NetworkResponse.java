@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,6 +136,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "The vlan of the network. This parameter is visible to ROOT admins only")
     private String vlan;
 
+    @SerializedName(ApiConstants.AS_NUMBER_ID)
+    @Param(description = "UUID of AS NUMBER", since = "4.20.0")
+    private String asNumberId;
+
+    @SerializedName(ApiConstants.AS_NUMBER)
+    @Param(description = "AS NUMBER", since = "4.20.0")
+    private Long asNumber;
+
     @SerializedName(ApiConstants.ACL_TYPE)
     @Param(description = "acl type - access type to the network")
     private String aclType;
@@ -162,6 +171,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the network owner")
     private String domain;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the network belongs to", since = "4.19.0.0")
+    private String domainPath;
 
     @SerializedName("isdefault")
     @Param(description = "true if network is default, false otherwise")
@@ -202,6 +215,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
     @Param(description = "the name of the Network associated with this network")
     private String associatedNetworkName;
+
+    @SerializedName(ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID)
+    @Param(description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
@@ -284,7 +301,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String internetProtocol;
 
     @SerializedName(ApiConstants.IPV6_ROUTING)
-    @Param(description = "The routing mode of network offering", since = "4.17.0")
+    @Param(description = "The Ipv6 routing type of network offering", since = "4.17.0")
     private String ipv6Routing;
 
     @SerializedName(ApiConstants.IPV6_ROUTES)
@@ -306,6 +323,18 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @SerializedName(ApiConstants.IP6_DNS2)
     @Param(description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ipv6Dns2;
+
+    @SerializedName(ApiConstants.IPV4_ROUTING)
+    @Param(description = "The IPv4 routing type of network", since = "4.20.0")
+    private String ipv4Routing;
+
+    @SerializedName(ApiConstants.IPV4_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.20.0")
+    private Set<Ipv4RouteResponse> ipv4Routes;
+
+    @SerializedName(ApiConstants.BGP_PEERS)
+    @Param(description = "The BGP peers for the network", since = "4.20.0")
+    private Set<BgpPeerResponse> bgpPeers;
 
     public NetworkResponse() {}
 
@@ -407,6 +436,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.vlan = vlan;
     }
 
+    public void setAsNumber(long asNumber) {
+        this.asNumber = asNumber;
+    }
+
+    public void setAsNumberId(String asNumberId) {
+        this.asNumberId = asNumberId;
+    }
+
     public void setIsSystem(Boolean isSystem) {
         this.isSystem = isSystem;
     }
@@ -414,6 +451,11 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Override
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setNetworkOfferingAvailability(String networkOfferingAvailability) {
@@ -546,12 +588,20 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.redundantRouter = redundantRouter;
     }
 
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
+    }
+
     public Boolean getSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
     }
 
     public void setSupportsVmAutoScaling(Boolean supportsVmAutoScaling) {
         this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    public void setTungstenVirtualRouterUuid(String tungstenVirtualRouterUuid) {
+        this.tungstenVirtualRouterUuid = tungstenVirtualRouterUuid;
     }
 
     public String getVpcName() {
@@ -603,6 +653,18 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
         this.internetProtocol = internetProtocol;
     }
 
+    public void setIpv4Routing(String ipv4Routing) {
+        this.ipv4Routing = ipv4Routing;
+    }
+
+    public void setIpv4Routes(Set<Ipv4RouteResponse> ipv4Routes) {
+        this.ipv4Routes = ipv4Routes;
+    }
+
+    public void addIpv4Route(Ipv4RouteResponse ipv4Route) {
+        this.ipv4Routes.add(ipv4Route);
+    }
+
     public void setIpv6Routing(String ipv6Routing) {
         this.ipv6Routing = ipv6Routing;
     }
@@ -613,6 +675,17 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
+    }
+
+    public void setBgpPeers(Set<BgpPeerResponse> bgpPeers) {
+        this.bgpPeers = bgpPeers;
+    }
+
+    public void addBgpPeer(BgpPeerResponse bgpPeer) {
+        if (this.bgpPeers == null) {
+            this.setBgpPeers(new LinkedHashSet<>());
+        }
+        this.bgpPeers.add(bgpPeer);
     }
 
     public Integer getPublicMtu() {

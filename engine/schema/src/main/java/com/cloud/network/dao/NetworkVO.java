@@ -39,7 +39,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -48,7 +47,6 @@ import org.apache.log4j.Logger;
 @Entity
 @Table(name = "networks")
 public class NetworkVO implements Network {
-    static final Logger s_logger = Logger.getLogger(NetworkVO.class);
     @Id
     @TableGenerator(name = "networks_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "networks_seq", allocationSize = 1)
     @Column(name = "id")
@@ -204,6 +202,9 @@ public class NetworkVO implements Network {
 
     @Column(name = "private_mtu")
     Integer privateMtu;
+
+    @Transient
+    Integer networkCidrSize;
 
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
@@ -369,6 +370,10 @@ public class NetworkVO implements Network {
         return mode;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     @Override
     public long getAccountId() {
         return accountId;
@@ -442,6 +447,7 @@ public class NetworkVO implements Network {
         return gateway;
     }
 
+    @Override
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
@@ -455,6 +461,7 @@ public class NetworkVO implements Network {
         return cidr;
     }
 
+    @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
@@ -756,5 +763,14 @@ public class NetworkVO implements Network {
 
     public void setPrivateMtu(Integer privateMtu) {
         this.privateMtu = privateMtu;
+    }
+
+    @Override
+    public Integer getNetworkCidrSize() {
+        return networkCidrSize;
+    }
+
+    public void setNetworkCidrSize(Integer networkCidrSize) {
+        this.networkCidrSize = networkCidrSize;
     }
 }

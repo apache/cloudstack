@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -49,27 +49,28 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.ini4j</groupId>
             <artifactId>ini4j</artifactId>
             <version>${cs.ini.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${cs.junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>gmaven-plugin</artifactId>
-                <version>1.5</version>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>${cs.gmavenplus.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>${cs.groovy.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>setproperty</id>
@@ -78,12 +79,14 @@
                             <goal>execute</goal>
                         </goals>
                         <configuration>
-                            <source>
-                                def projectVersion = project.properties['project.systemvm.template.version']
-                                String[] versionParts =  projectVersion.tokenize('.')
-                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
-                                pom.properties['patch.version'] = versionParts[2]
-                            </source>
+                            <scripts>
+                                <script><![CDATA[
+                                    def projectVersion = project.properties.getProperty('project.systemvm.template.version')
+                                    String[] versionParts = projectVersion.tokenize('.')
+                                    project.properties.setProperty('cs.version', versionParts[0] + "." + versionParts[1])
+                                    project.properties.setProperty('patch.version', versionParts[2])
+                                ]]></script>
+                            </scripts>
                         </configuration>
                     </execution>
                     <execution>
@@ -93,25 +96,29 @@
                             <goal>execute</goal>
                         </goals>
                         <configuration>
-                            <source>
-                                def csVersion = pom.properties['cs.version']
-                                def patch = pom.properties['patch.version']
-                                def templateList = []
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-kvm")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-vmware")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-xen")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-ovm")
-                                templateList.add("systemvmtemplate-${csVersion}.${patch}-hyperv")
-                                File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
-                                def lines = file.readLines()
-                                for (template in templateList) {
-                                    def data = lines.findAll { it.contains(template) }
-                                    if (data != null) {
-                                        def hypervisor =  template.tokenize('-')[-1]
-                                        pom.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                            <scripts>
+                                <script><![CDATA[
+                                    def csVersion = project.properties.getProperty('cs.version')
+                                    def patch = project.properties.getProperty('patch.version')
+                                    def templateList = []
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-kvm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-vmware")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-xen")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-ovm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-hyperv")
+                                    File file = new File("./engine/schema/dist/systemvm-templates/md5sum.txt")
+                                    def lines = file.readLines()
+                                    for (template in templateList) {
+                                        def data = lines.findAll { it.contains(template) }
+                                        if (data != null) {
+                                            if (data.size() > 0) {
+                                                def hypervisor =  template.tokenize('-')[-1]
+                                                project.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                            }
+                                        }
                                     }
-                                }
-                            </source>
+                                ]]></script>
+                            </scripts>
                         </configuration>
                     </execution>
                 </executions>
@@ -128,7 +135,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
+                            <url>${project.systemvm.template.location}/${cs.version}/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                             <skipCache>true</skipCache>
                             <overwrite>true</overwrite>
@@ -139,7 +146,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
+                <version>${cs.exec-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>systemvm-template-metadata</id>
@@ -187,7 +194,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
@@ -223,7 +230,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${vmware.checksum}</md5>
                                 </configuration>
@@ -259,7 +266,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${xen.checksum}</md5>
                                 </configuration>
@@ -295,7 +302,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-ovm.raw.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-ovm.raw.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${ovm.checksum}</md5>
                                 </configuration>
@@ -331,7 +338,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-hyperv.vhd.zip</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-hyperv.vhd.zip</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${hyperv.checksum}</md5>
                                 </configuration>

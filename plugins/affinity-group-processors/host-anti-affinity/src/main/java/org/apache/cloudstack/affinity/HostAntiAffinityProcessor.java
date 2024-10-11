@@ -19,11 +19,12 @@ package org.apache.cloudstack.affinity;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -38,6 +39,10 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -46,7 +51,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class HostAntiAffinityProcessor extends AffinityProcessorBase implements AffinityGroupProcessor {
 
-    private static final Logger s_logger = Logger.getLogger(HostAntiAffinityProcessor.class);
     @Inject
     protected UserVmDao _vmDao;
     @Inject
@@ -63,44 +67,60 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
     protected VMReservationDao _reservationDao;
 
     @Override
-    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
-        for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-            if (vmGroupMapping != null) {
-                AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        if (CollectionUtils.isEmpty(vmGroupMappings)) {
+            return;
+        }
+        List<Long> affinityGroupIds = vmGroupMappings.stream().map(AffinityGroupVMMapVO::getAffinityGroupId).collect(Collectors.toList());
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
                 }
+                for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+                    processAffinityGroup(vmGroupMapping, avoid, vm);
+                }
+            }
+        });
 
-                List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
-                groupVMIds.remove(vm.getId());
+    }
 
-                for (Long groupVMId : groupVMIds) {
-                    VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-                    if (groupVM != null && !groupVM.isRemoved()) {
-                        if (groupVM.getHostId() != null) {
-                            avoid.addHost(groupVM.getHostId());
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM " + groupVM.getId() + " is present on the host");
-                            }
-                        } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
-                            long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
-                            if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                                avoid.addHost(groupVM.getLastHostId());
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM " + groupVM.getId() +
-                                        " is present on the host, in Stopped state but has reserved capacity");
-                                }
-                            }
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, ExcludeList avoid, VirtualMachine vm) {
+        if (vmGroupMapping != null) {
+            AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+            }
+
+            List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
+            groupVMIds.remove(vm.getId());
+
+            for (Long groupVMId : groupVMIds) {
+                VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
+                if (groupVM != null && !groupVM.isRemoved()) {
+                    if (groupVM.getHostId() != null) {
+                        avoid.addHost(groupVM.getHostId());
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM " + groupVM.getId() + " is present on the host");
+                        }
+                    }
+                } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
+                    long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
+                    if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
+                        avoid.addHost(groupVM.getLastHostId());
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM " + groupVM.getId() +
+                                    " is present on the host, in Stopped state but has reserved capacity");
                         }
                     }
                 }
             }
         }
-
     }
 
     @Override
@@ -121,6 +141,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         VirtualMachine vm = vmProfile.getVirtualMachine();
 
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
+        if (CollectionUtils.isEmpty(vmGroupMappings)) {
+            return true;
+        }
 
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             // if more than 1 VM's are present in the group then check for
@@ -131,15 +154,42 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
             for (Long groupVMId : groupVMIds) {
                 VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
                 if (vmReservation != null && vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() +
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() +
                             " reserved on the same host " + plannedHostId);
                     }
                     return false;
                 }
             }
         }
-        return true;
+
+        List<Long> affinityGroupIds = vmGroupMappings.stream().map(AffinityGroupVMMapVO::getAffinityGroupId).collect(Collectors.toList());
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
+                }
+                for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+                    // if more than 1 VM's are present in the group then check for
+                    // conflict due to parallel deployment
+                    List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(vmGroupMapping.getAffinityGroupId());
+                    groupVMIds.remove(vm.getId());
+
+                    for (Long groupVMId : groupVMIds) {
+                        VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
+                        if (vmReservation != null && vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() +
+                                        " reserved on the same host " + plannedHostId);
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        });
     }
 
 }

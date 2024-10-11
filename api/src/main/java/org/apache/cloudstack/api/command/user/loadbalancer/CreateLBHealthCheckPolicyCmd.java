@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -44,7 +43,6 @@ import com.cloud.user.Account;
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateLBHealthCheckPolicyCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -181,7 +179,7 @@ public class CreateLBHealthCheckPolicyCmd extends BaseAsyncCreateCmd {
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (InvalidParameterValueException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, e.getMessage());
         }
     }

@@ -34,22 +34,31 @@
       :pagination="defaultPagination"
       @change="handleTableChange"
       @handle-search-filter="handleTableChange" >
+      <template #bodyCell="{ column, text, record }">
+        <div
+          v-for="(col, index) in Object.keys(routerlinks({}))"
+          :key="index">
+          <template v-if="column.key === col">
+            <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[col] }" >{{ text }}</router-link>
+          </template>
 
-      <template
-        v-for="(column, index) in Object.keys(routerlinks({}))"
-        :key="index"
-        #[column]="{ text, record }" >
-        <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
+          <template v-else-if="['state', 'status'].includes(column.key)">
+            <status :text="text ? text : ''" />{{ text }}
+          </template>
+
+          <template v-else-if="column.key === 'created'">
+            {{ $toLocaleDate(text) }}
+          </template>
+
+          <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
+            {{ bytesToHumanReadableSize(text) }}
+          </template>
+
+          <template v-else>
+            {{ text }}
+          </template>
+        </div>
       </template>
-
-      <template #state="{text}">
-        <status :text="text ? text : ''" />{{ text }}
-      </template>
-
-      <template #status="{text}">
-        <status :text="text ? text : ''" />{{ text }}
-      </template>
-
     </a-table>
 
     <div v-if="!defaultPagination" style="display: block; text-align: right; margin-top: 10px;">
@@ -197,9 +206,9 @@ export default {
       var columns = []
       for (const col of this.columns) {
         columns.push({
+          key: col,
           dataIndex: col,
-          title: this.$t('label.' + col),
-          slots: { customRender: col }
+          title: this.$t('label.' + col)
         })
       }
       return columns

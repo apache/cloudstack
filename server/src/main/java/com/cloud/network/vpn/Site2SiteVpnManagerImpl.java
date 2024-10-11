@@ -23,11 +23,11 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
@@ -46,7 +46,6 @@ import com.cloud.configuration.Config;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -84,7 +83,6 @@ import com.cloud.vm.DomainRouterVO;
 
 @Component
 public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager {
-    private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
     List<Site2SiteVpnServiceProvider> _s2sProviders;
     @Inject
@@ -108,7 +106,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Inject
     private AnnotationDao annotationDao;
 
-    String _name;
     int _connLimit;
     int _subnetsLimit;
 
@@ -255,7 +252,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_CREATE, eventDescription = "creating s2s vpn connection", create = true)
-    public Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException {
+    public Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
@@ -263,27 +260,15 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         _accountMgr.checkAccess(caller, null, false, owner);
 
         Long customerGatewayId = cmd.getCustomerGatewayId();
-        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
-        if (customerGateway == null) {
-            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN customer gateway " + customerGatewayId + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        Site2SiteCustomerGateway customerGateway = getAndValidateSite2SiteCustomerGateway(customerGatewayId, caller);
 
         Long vpnGatewayId = cmd.getVpnGatewayId();
-        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
-        if (vpnGateway == null) {
-            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        Site2SiteVpnGateway vpnGateway = getAndValidateSite2SiteVpnGateway(vpnGatewayId, caller);
 
-        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
-            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
-        }
+        validateVpnConnectionOfTheRightAccount(customerGateway, vpnGateway);
+        validateVpnConnectionDoesntExist(vpnGatewayId, customerGatewayId);
+        validatePrerequisiteVpnGateway(vpnGateway);
 
-        if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
-            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " and vpn gateway id " + vpnGatewayId +
-                " already existed!");
-        }
         String[] cidrList = customerGateway.getGuestCidrList().split(",");
 
         // Remote sub nets cannot overlap VPC's sub net
@@ -326,13 +311,51 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return conn;
     }
 
+    private Site2SiteCustomerGateway getAndValidateSite2SiteCustomerGateway(Long customerGatewayId, Account caller) {
+        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
+        if (customerGateway == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find specified Site to Site VPN customer gateway %s !", customerGatewayId));
+        }
+        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        return customerGateway;
+    }
+
+    private Site2SiteVpnGateway getAndValidateSite2SiteVpnGateway(Long vpnGatewayId, Account caller) {
+        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
+        if (vpnGateway == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find specified Site to Site VPN gateway %s !", vpnGatewayId));
+        }
+        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        return vpnGateway;
+    }
+
+    private void validateVpnConnectionOfTheRightAccount(Site2SiteCustomerGateway customerGateway, Site2SiteVpnGateway vpnGateway) {
+        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
+            throw new InvalidParameterValueException("VPN connection can only be established between same account's VPN gateway and customer gateway!");
+        }
+    }
+
+    private void validateVpnConnectionDoesntExist(Long vpnGatewayId, Long customerGatewayId) {
+        if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
+            throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " and vpn gateway id " + vpnGatewayId +
+                " already existed!");
+        }
+    }
+
+    private void validatePrerequisiteVpnGateway(Site2SiteVpnGateway vpnGateway) {
+        // check if gateway has been defined on the VPC
+        if (_vpnGatewayDao.findByVpcId(vpnGateway.getVpcId()) == null) {
+            throw new InvalidParameterValueException("we can not create a VPN connection for a VPC that does not have a VPN gateway defined");
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_CREATE, eventDescription = "starting s2s vpn connection", async = true)
     public Site2SiteVpnConnection startVpnConnection(long id) throws ResourceUnavailableException {
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.acquireInLockTable(id);
         if (conn == null) {
-            throw new CloudRuntimeException("Unable to acquire lock on " + conn);
+            throw new CloudRuntimeException("Unable to acquire lock for starting of VPN connection with ID " + id);
         }
         try {
             if (conn.getState() != State.Pending && conn.getState() != State.Disconnected) {
@@ -382,11 +405,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
-        Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(id);
-        if (customerGateway == null) {
-            throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
-        }
-        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        Site2SiteCustomerGateway customerGateway = getAndValidateSite2SiteCustomerGateway(id, caller);
 
         return doDeleteCustomerGateway(customerGateway);
     }
@@ -394,7 +413,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     protected boolean doDeleteCustomerGateway(Site2SiteCustomerGateway gw) {
         long id = gw.getId();
         List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
-        if (vpnConnections != null && vpnConnections.size() != 0) {
+        if (!CollectionUtils.isEmpty(vpnConnections)) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(), gw.getUuid());
@@ -404,7 +423,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     protected void doDeleteVpnGateway(Site2SiteVpnGateway gw) {
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(gw.getId());
-        if (conns != null && conns.size() != 0) {
+        if (!CollectionUtils.isEmpty(conns)) {
             throw new InvalidParameterValueException("Unable to delete VPN gateway " + gw.getId() + " because there is still related VPN connections!");
         }
         _vpnGatewayDao.remove(gw.getId());
@@ -417,12 +436,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Account caller = CallContext.current().getCallingAccount();
 
         Long id = cmd.getId();
-        Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
-        if (vpnGateway == null) {
-            throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
-        }
-
-        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        Site2SiteVpnGateway vpnGateway = getAndValidateSite2SiteVpnGateway(id, caller);
 
         doDeleteVpnGateway(vpnGateway);
         return true;
@@ -532,7 +546,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 } catch (PermissionDeniedException e) {
                     // Just don't restart this connection, as the user has no rights to it
                     // Maybe should issue a notification to the system?
-                    s_logger.info("Site2SiteVpnManager:updateCustomerGateway() Not resetting VPN connection " + conn.getId() + " as user lacks permission");
+                    logger.info("Site2SiteVpnManager:updateCustomerGateway() Not resetting VPN connection " + conn.getId() + " as user lacks permission");
                     continue;
                 }
 
@@ -547,7 +561,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     startVpnConnection(conn.getId());
                 } catch (ResourceUnavailableException e) {
                     // Should never get here, as we are looping on the actual connections, but we must handle it regardless
-                    s_logger.warn("Failed to update VPN connection");
+                    logger.warn("Failed to update VPN connection");
                 }
             }
         }
@@ -578,7 +592,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     private void stopVpnConnection(Long id) throws ResourceUnavailableException {
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.acquireInLockTable(id);
         if (conn == null) {
-            throw new CloudRuntimeException("Unable to acquire lock on " + conn);
+            throw new CloudRuntimeException("Unable to acquire lock for stopping of VPN connection with ID " + id);
         }
         try {
             if (conn.getState() == State.Pending) {
@@ -639,10 +653,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         String keyword = cmd.getKeyword();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -667,7 +680,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Pair<List<Site2SiteCustomerGatewayVO>, Integer> result = _customerGatewayDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends Site2SiteCustomerGateway>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -684,10 +697,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         long pageSizeVal = cmd.getPageSizeVal();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -717,7 +729,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Pair<List<Site2SiteVpnGatewayVO>, Integer> result = _vpnGatewayDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends Site2SiteVpnGateway>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -734,10 +746,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         long pageSizeVal = cmd.getPageSizeVal();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -771,7 +782,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
 
         Pair<List<Site2SiteVpnConnectionVO>, Integer> result = _vpnConnectionDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends Site2SiteVpnConnection>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -818,7 +829,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
     @Override
     public List<Site2SiteVpnConnectionVO> getConnectionsForRouter(DomainRouterVO router) {
-        List<Site2SiteVpnConnectionVO> conns = new ArrayList<Site2SiteVpnConnectionVO>();
+        List<Site2SiteVpnConnectionVO> conns = new ArrayList<>();
         // One router for one VPC
         Long vpcId = router.getVpcId();
         if (router.getVpcId() == null) {
@@ -831,7 +842,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     public boolean deleteCustomerGatewayByAccount(long accountId) {
         boolean result = true;
-        ;
         List<Site2SiteCustomerGatewayVO> gws = _customerGatewayDao.listByAccountId(accountId);
         for (Site2SiteCustomerGatewayVO gw : gws) {
             result = result & doDeleteCustomerGateway(gw);
@@ -851,7 +861,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     startVpnConnection(conn.getId());
                 } catch (ResourceUnavailableException e) {
                     Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(conn.getCustomerGatewayId());
-                    s_logger.warn("Site2SiteVpnManager: Fail to re-initiate VPN connection " + conn.getId() + " which connect to " + gw.getName());
+                    logger.warn("Site2SiteVpnManager: Fail to re-initiate VPN connection " + conn.getId() + " which connect to " + gw.getName());
                 }
             }
         }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.lb;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,9 +48,9 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -177,7 +176,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements LoadBalancingRulesManager, LoadBalancingRulesService {
-    private static final Logger s_logger = Logger.getLogger(LoadBalancingRulesManagerImpl.class);
 
     @Inject
     NetworkOrchestrationService _networkMgr;
@@ -327,7 +325,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         DataCenter zone = _entityMgr.findById(DataCenter.class, vmGroup.getZoneId());
         if (zone == null) {
             // This should never happen, but still a cautious check
-            s_logger.warn("Unable to find zone while packaging AutoScale Vm Group, zoneid: " + vmGroup.getZoneId());
+            logger.warn("Unable to find zone while packaging AutoScale Vm Group, zoneid: " + vmGroup.getZoneId());
             throw new InvalidParameterValueException("Unable to find zone");
         } else {
             if (zone.getNetworkType() == NetworkType.Advanced) {
@@ -442,7 +440,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
         if (!applyLbRules(new ArrayList<>(rules), false)) {
-            s_logger.debug("LB rules' autoscale config are not completely applied");
+            logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
 
@@ -479,16 +477,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavailable:", e);
+            logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
+                logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
             }
             throw e;
         } finally {
             if (!success) {
-                s_logger.warn("Failed to configure LB Auto Scale Vm Group with Id:" + vmGroupid);
+                logger.warn("Failed to configure LB Auto Scale Vm Group with Id:" + vmGroupid);
             }
         }
 
@@ -498,15 +496,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         loadBalancer.setState(FirewallRule.State.Active);
-                        s_logger.debug("LB rule " + loadBalancer.getId() + " state is set to Active");
+                        logger.debug("LB rule " + loadBalancer.getId() + " state is set to Active");
                         _lbDao.persist(loadBalancer);
                         vmGroup.setState(AutoScaleVmGroup.State.ENABLED);
                         _autoScaleVmGroupDao.persist(vmGroup);
-                        s_logger.debug("LB Auto Scale Vm Group with Id: " + vmGroupid + " is set to Enabled state.");
+                        logger.debug("LB Auto Scale Vm Group with Id: " + vmGroupid + " is set to Enabled state.");
                     }
                 });
             }
-            s_logger.info("Successfully configured LB Autoscale Vm Group with Id: " + vmGroupid);
+            logger.info("Successfully configured LB Autoscale Vm Group with Id: " + vmGroupid);
         }
         return success;
     }
@@ -713,7 +711,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Network network = _networkDao.findById(lbRule.getNetworkId());
         Purpose purpose = lbRule.getPurpose();
         if (purpose != Purpose.LoadBalancing) {
-            s_logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
+            logger.debug("Unable to validate network rules for purpose: " + purpose.toString());
             return false;
         }
         for (LoadBalancingServiceProvider ne : _lbProviders) {
@@ -734,7 +732,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(cmd.getLbRuleId());
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
+            throw new InvalidParameterValueException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
@@ -754,12 +752,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
+            logger.warn("Unable to apply Stickiness policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
                 deleteLBStickinessPolicy(cmd.getEntityId(), false);
-                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating sticky policy");
+                logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating sticky policy");
             } else {
                 deleteLBStickinessPolicy(cmd.getEntityId(), false);
                 if (oldStickinessPolicyId != 0) {
@@ -770,7 +768,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         if (backupState.equals(FirewallRule.State.Active))
                             applyLoadBalancerConfig(cmd.getLbRuleId());
                     } catch (ResourceUnavailableException e1) {
-                        s_logger.info("[ignored] applying load balancer config.", e1);
+                        logger.info("[ignored] applying load balancer config.", e1);
                     } finally {
                         loadBalancer.setState(backupState);
                         _lbDao.persist(loadBalancer);
@@ -791,7 +789,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(cmd.getLbRuleId());
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer Id:" + cmd.getLbRuleId());
+            throw new InvalidParameterValueException("Invalid Load balancer Id:" + cmd.getLbRuleId());
         }
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
         FirewallRule.State backupState = loadBalancer.getState();
@@ -800,11 +798,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         try {
             applyLoadBalancerConfig(cmd.getLbRuleId());
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
+            logger.warn("Unable to apply healthcheck policy to the lb rule: " + cmd.getLbRuleId() + " because resource is unavailable:", e);
             if (isRollBackAllowedForProvider(loadBalancer)) {
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating healthcheck policy");
+                logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating healthcheck policy");
             }
             deleteLBHealthCheckPolicy(cmd.getEntityId(), false);
             success = false;
@@ -821,11 +819,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LBStickinessPolicyVO stickinessPolicy = _lb2stickinesspoliciesDao.findById(stickinessPolicyId);
 
         if (stickinessPolicy == null) {
-            throw new InvalidParameterException("Invalid Stickiness policy id value: " + stickinessPolicyId);
+            throw new InvalidParameterValueException("Invalid Stickiness policy id value: " + stickinessPolicyId);
         }
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(stickinessPolicy.getLoadBalancerId()));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer : " + stickinessPolicy.getLoadBalancerId() + " for Stickiness policy id: " + stickinessPolicyId);
+            throw new InvalidParameterValueException("Invalid Load balancer : " + stickinessPolicy.getLoadBalancerId() + " for Stickiness policy id: " + stickinessPolicyId);
         }
         long loadBalancerId = loadBalancer.getId();
         FirewallRule.State backupState = loadBalancer.getState();
@@ -840,11 +838,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             boolean backupStickyState = stickinessPolicy.isRevoke();
             stickinessPolicy.setRevoke(true);
             _lb2stickinesspoliciesDao.persist(stickinessPolicy);
-            s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", stickinesspolicyID " + stickinessPolicyId);
+            logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", stickinesspolicyID " + stickinessPolicyId);
 
             try {
                 if (!applyLoadBalancerConfig(loadBalancerId)) {
-                    s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for stickinesspolicyID " + stickinessPolicyId);
+                    logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for stickinesspolicyID " + stickinessPolicyId);
                     throw new CloudRuntimeException("Failed to remove load balancer rule id " + loadBalancerId + " for stickinesspolicyID " + stickinessPolicyId);
                 }
             } catch (ResourceUnavailableException e) {
@@ -853,9 +851,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lb2stickinesspoliciesDao.persist(stickinessPolicy);
                     loadBalancer.setState(backupState);
                     _lbDao.persist(loadBalancer);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting sticky policy: " + stickinessPolicyId);
+                    logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting sticky policy: " + stickinessPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+                logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -874,11 +872,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LBHealthCheckPolicyVO healthCheckPolicy = _lb2healthcheckDao.findById(healthCheckPolicyId);
 
         if (healthCheckPolicy == null) {
-            throw new InvalidParameterException("Invalid HealthCheck policy id value: " + healthCheckPolicyId);
+            throw new InvalidParameterValueException("Invalid HealthCheck policy id value: " + healthCheckPolicyId);
         }
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(healthCheckPolicy.getLoadBalancerId()));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer : " + healthCheckPolicy.getLoadBalancerId() + " for HealthCheck policy id: " + healthCheckPolicyId);
+            throw new InvalidParameterValueException("Invalid Load balancer : " + healthCheckPolicy.getLoadBalancerId() + " for HealthCheck policy id: " + healthCheckPolicyId);
         }
         final long loadBalancerId = loadBalancer.getId();
         FirewallRule.State backupState = loadBalancer.getState();
@@ -893,7 +891,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             boolean backupStickyState = healthCheckPolicy.isRevoke();
             healthCheckPolicy.setRevoke(true);
             _lb2healthcheckDao.persist(healthCheckPolicy);
-            s_logger.debug("Set health check policy to revoke for loadbalancing rule id : " + loadBalancerId + ", healthCheckpolicyID " + healthCheckPolicyId);
+            logger.debug("Set health check policy to revoke for loadbalancing rule id : " + loadBalancerId + ", healthCheckpolicyID " + healthCheckPolicyId);
 
             // removing the state of services set by the monitor.
             final List<LoadBalancerVMMapVO> maps = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
@@ -901,7 +899,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        s_logger.debug("Resetting health state policy for services in loadbalancing rule id : " + loadBalancerId);
+                        logger.debug("Resetting health state policy for services in loadbalancing rule id : " + loadBalancerId);
                         for (LoadBalancerVMMapVO map : maps) {
                             map.setState(null);
                             _lb2VmMapDao.persist(map);
@@ -912,7 +910,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             try {
                 if (!applyLoadBalancerConfig(loadBalancerId)) {
-                    s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for healthCheckpolicyID " + healthCheckPolicyId);
+                    logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for healthCheckpolicyID " + healthCheckPolicyId);
                     throw new CloudRuntimeException("Failed to remove load balancer rule id " + loadBalancerId + " for healthCheckpolicyID " + healthCheckPolicyId);
                 }
             } catch (ResourceUnavailableException e) {
@@ -921,9 +919,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lb2healthcheckDao.persist(healthCheckPolicy);
                     loadBalancer.setState(backupState);
                     _lbDao.persist(loadBalancer);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting healthcheck policy: " + healthCheckPolicyId);
+                    logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while deleting healthcheck policy: " + healthCheckPolicyId);
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+                logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         } else {
@@ -947,7 +945,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             if (capability != null && capability.equalsIgnoreCase("true")) {
                 /*
-                 * s_logger.debug(
+                 * logger.debug(
                  * "HealthCheck Manager :: LB Provider in the Network has the Healthcheck policy capability :: "
                  * + provider.get(0).getName());
                  */
@@ -980,7 +978,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                                             if (dstIp.equalsIgnoreCase(lbto.getDestinations()[i].getDestIp())) {
                                                 lbVmMap.setState(des.getMonitorState());
                                                 _lb2VmMapDao.persist(lbVmMap);
-                                                s_logger.debug("Updating the LB VM Map table with the service state");
+                                                logger.debug("Updating the LB VM Map table with the service state");
                                             }
                                         }
                                     }
@@ -994,7 +992,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     }
                 }
             } else {
-                // s_logger.debug("HealthCheck Manager :: LB Provider in the Network DNOT the Healthcheck policy capability ");
+                // logger.debug("HealthCheck Manager :: LB Provider in the Network DNOT the Healthcheck policy capability ");
             }
         }
     }
@@ -1159,8 +1157,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             vmIdIpMap.put(instanceId, vmIpsList);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Adding " + vm + " to the load balancer pool");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Adding " + vm + " to the load balancer pool");
             }
             vmsToAdd.add(vm);
         }
@@ -1199,7 +1197,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             applyLoadBalancerConfig(loadBalancerId);
             success = true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+            logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             success = false;
         } finally {
             if (!success) {
@@ -1214,7 +1212,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 });
                 if (!vmInstanceIds.isEmpty()) {
                     _lb2VmMapDao.remove(loadBalancer.getId(), vmInstanceIds, null);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while attaching VM: " + vmInstanceIds);
+                    logger.debug("LB Rollback rule id: " + loadBalancer.getId() + "  while attaching VM: " + vmInstanceIds);
                 }
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
@@ -1233,7 +1231,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     public boolean assignSSLCertToLoadBalancerRule(Long lbId, String certName, String publicCert, String privateKey) {
-        s_logger.error("Calling the manager for LB");
+        logger.error("Calling the manager for LB");
         LoadBalancerVO loadBalancer = _lbDao.findById(lbId);
 
         return false;  //TODO
@@ -1254,7 +1252,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         SslCertVO certVO = _entityMgr.findById(SslCertVO.class, lbCertMap.getCertId());
         if (certVO == null) {
-            s_logger.warn("Cert rule with cert ID " + lbCertMap.getCertId() + " but Cert is not found");
+            logger.warn("Cert rule with cert ID " + lbCertMap.getCertId() + " but Cert is not found");
             return null;
         }
 
@@ -1269,12 +1267,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(lbRuleId));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid load balancer id: " + lbRuleId);
+            throw new InvalidParameterValueException("Invalid load balancer id: " + lbRuleId);
         }
 
         SslCertVO certVO = _entityMgr.findById(SslCertVO.class, certId);
         if (certVO == null) {
-            throw new InvalidParameterException("Invalid certificate id: " + certId);
+            throw new InvalidParameterValueException("Invalid certificate id: " + certId);
         }
 
         _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
@@ -1316,9 +1314,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbDao.persist(loadBalancer);
                 LoadBalancerCertMapVO certMap = _lbCertMapDao.findByLbRuleId(lbRuleId);
                 _lbCertMapDao.remove(certMap.getId());
-                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " while adding cert");
+                logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " while adding cert");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+            logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         return success;
     }
@@ -1333,11 +1331,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerCertMapVO lbCertMap = _lbCertMapDao.findByLbRuleId(lbRuleId);
 
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid load balancer value: " + lbRuleId);
+            throw new InvalidParameterValueException("Invalid load balancer value: " + lbRuleId);
         }
 
         if (lbCertMap == null) {
-            throw new InvalidParameterException("No certificate is bound to lb with id: " + lbRuleId);
+            throw new InvalidParameterValueException("No certificate is bound to lb with id: " + lbRuleId);
         }
 
         _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
@@ -1352,7 +1350,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             _lbCertMapDao.persist(lbCertMap);
 
             if (!applyLoadBalancerConfig(lbRuleId)) {
-                s_logger.warn("Failed to remove cert from load balancer rule id " + lbRuleId);
+                logger.warn("Failed to remove cert from load balancer rule id " + lbRuleId);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove certificate load balancer rule id " + lbRuleId);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 throw ex;
@@ -1364,9 +1362,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 _lbCertMapDao.persist(lbCertMap);
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                s_logger.debug("Rolled back certificate removal lb id " + lbRuleId);
+                logger.debug("Rolled back certificate removal lb id " + lbRuleId);
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+            logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
             if (!success) {
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove certificate from load balancer rule id " + lbRuleId);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
@@ -1381,7 +1379,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
+            throw new InvalidParameterValueException("Invalid load balancer value: " + loadBalancerId);
         }
 
         _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
@@ -1437,7 +1435,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         lbvm.setRevoke(true);
                         _lb2VmMapDao.persist(lbvm);
                     }
-                    s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
+                    logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
 
                 } else {
                     for (String vmIp: lbVmIps) {
@@ -1448,14 +1446,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         }
                         map.setRevoke(true);
                         _lb2VmMapDao.persist(map);
-                        s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " +
+                        logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " +
                                 instanceId + ", vmip " + vmIp);
                     }
                 }
             }
 
             if (!applyLoadBalancerConfig(loadBalancerId)) {
-                s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
+                logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + instanceIds);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 throw ex;
@@ -1480,13 +1478,13 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
                         map.setRevoke(false);
                         _lb2VmMapDao.persist(map);
-                        s_logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " + instanceId);
+                        logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " + instanceId);
                     }else {
                         for (String vmIp: lbVmIps) {
                             LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmIdVmIp (loadBalancerId, instanceId, vmIp);
                             map.setRevoke(true);
                             _lb2VmMapDao.persist(map);
-                            s_logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " +
+                            logger.debug("LB Rollback rule id: " + loadBalancerId + ",while removing vmId " +
                                     instanceId + ", vmip " + vmIp);
                         }
                     }
@@ -1494,9 +1492,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                 loadBalancer.setState(backupState);
                 _lbDao.persist(loadBalancer);
-                s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while removing vm instances");
+                logger.debug("LB Rollback rule id: " + loadBalancerId + " while removing vm instances");
             }
-            s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+            logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
         }
         if (!success) {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + vmIds);
@@ -1528,7 +1526,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             map.setRevoke(true);
             _lb2VmMapDao.persist(map);
-            s_logger.debug("Set load balancer rule for revoke: rule id " + map.getLoadBalancerId() + ", vmId " + instanceId);
+            logger.debug("Set load balancer rule for revoke: rule id " + map.getLoadBalancerId() + ", vmId " + instanceId);
         }
 
         // Reapply all lbs that had the vm assigned
@@ -1587,8 +1585,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 boolean generateUsageEvent = false;
 
                 if (lb.getState() == FirewallRule.State.Staged) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found a rule that is still in stage state so just removing it: " + lb);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found a rule that is still in stage state so just removing it: " + lb);
                     }
                     generateUsageEvent = true;
                 } else if (lb.getState() == FirewallRule.State.Add || lb.getState() == FirewallRule.State.Active) {
@@ -1602,7 +1600,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     for (LoadBalancerVMMapVO map : maps) {
                         map.setRevoke(true);
                         _lb2VmMapDao.persist(map);
-                        s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + map.getInstanceId());
+                        logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + map.getInstanceId());
                     }
                 }
 
@@ -1634,7 +1632,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (apply) {
             try {
                 if (!applyLoadBalancerConfig(loadBalancerId)) {
-                    s_logger.warn("Unable to apply the load balancer config");
+                    logger.warn("Unable to apply the load balancer config");
                     return false;
                 }
             } catch (ResourceUnavailableException e) {
@@ -1642,14 +1640,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (backupMaps != null) {
                         for (LoadBalancerVMMapVO map : backupMaps) {
                             _lb2VmMapDao.persist(map);
-                            s_logger.debug("LB Rollback rule id: " + loadBalancerId + ", vmId " + map.getInstanceId());
+                            logger.debug("LB Rollback rule id: " + loadBalancerId + ", vmId " + map.getInstanceId());
                         }
                     }
                     lb.setState(backupState);
                     _lbDao.persist(lb);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancerId + " while deleting LB rule.");
+                    logger.debug("LB Rollback rule id: " + loadBalancerId + " while deleting LB rule.");
                 } else {
-                    s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+                    logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 }
                 return false;
             }
@@ -1657,7 +1655,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(lb.getId());
         if (relatedRule != null) {
-            s_logger.warn("Unable to remove firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() +
+            logger.warn("Unable to remove firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() +
                 "; leaving it in Revoke state");
             return false;
         } else {
@@ -1669,7 +1667,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // Bug CS-15411 opened to document this
         // _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
 
-        s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
+        logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
 
         return true;
     }
@@ -1742,7 +1740,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     // set networkId just for verification purposes
                     _networkModel.checkIpForService(ipVO, Service.Lb, networkId);
 
-                    s_logger.debug("The ip is not associated with the VPC network id=" + networkId + " so assigning");
+                    logger.debug("The ip is not associated with the VPC network id=" + networkId + " so assigning");
                     ipVO = _ipAddrMgr.associateIPToGuestNetwork(ipAddrId, networkId, false);
                     performedIpAssoc = true;
                 }
@@ -1757,7 +1755,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
                     lbProtocol, forDisplay, cidrString);
         } catch (Exception ex) {
-            s_logger.warn("Failed to create load balancer due to ", ex);
+            logger.warn("Failed to create load balancer due to ", ex);
             if (ex instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException)ex;
             }
@@ -1768,7 +1766,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         } finally {
             if (result == null && systemIp != null) {
-                s_logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");
+                logger.debug("Releasing system IP address " + systemIp + " as corresponding lb rule failed to create");
                 _ipAddrMgr.handleSystemIpRelease(systemIp);
             }
             // release ip address if ipassoc was perfored
@@ -1790,7 +1788,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
    */
     protected String generateCidrString(List<String> cidrList) {
         if (cidrList == null) {
-            s_logger.trace("The given CIDR list is null, therefore we will return null.");
+            logger.trace("The given CIDR list is null, therefore we will return null.");
             return null;
         }
         String cidrString;
@@ -1800,7 +1798,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             sb.append(cidr).append(' ');
         }
         cidrString = sb.toString();
-        s_logger.trace(String.format("From the cidrList [%s] we generated the following CIDR String [%s].", cidrList, cidrString));
+        logger.trace(String.format("From the cidrList [%s] we generated the following CIDR String [%s].", cidrList, cidrString));
         return StringUtils.trim(cidrString);
     }
 
@@ -1813,13 +1811,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         return cidr;
     }
+
     @DB
     @Override
-    public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
- final long sourceIpId,
-            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay, String cidrList)
-            throws NetworkRuleConflictException {
-
+    public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort, final long sourceIpId,
+                                                 final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol,
+                                                 final Boolean forDisplay, String cidrList) throws NetworkRuleConflictException {
         if (!NetUtils.isValidPort(destPort)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
         }
@@ -1828,55 +1825,41 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Invalid algorithm: " + algorithm);
         }
 
-        final IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
-        // make sure ip address exists
-        if (ipAddr == null || !ipAddr.readyToUse()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
-            if (ipAddr == null) {
-                ex.addProxyObject(String.valueOf(sourceIpId), "sourceIpId");
-            } else {
+        try {
+            final IPAddressVO ipAddr = _ipAddressDao.acquireInLockTable(sourceIpId);
+
+            // make sure ip address exists
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
+                if (ipAddr == null) {
+                    ex.addProxyObject(String.valueOf(sourceIpId), "sourceIpId");
+                } else {
+                    ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                }
+                throw ex;
+            } else if (ipAddr.isOneToOneNat()) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled");
                 ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                throw ex;
             }
-            throw ex;
-        } else if (ipAddr.isOneToOneNat()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled");
-            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
-            throw ex;
-        }
 
-        _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
+            _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
-        final Long networkId = ipAddr.getAssociatedWithNetworkId();
-        if (networkId == null) {
-            InvalidParameterValueException ex =
-                new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
-            ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
-            throw ex;
-        }
+            final Long networkId = ipAddr.getAssociatedWithNetworkId();
+            if (networkId == null) {
+                InvalidParameterValueException ex =
+                        new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
+                ex.addProxyObject(ipAddr.getUuid(), "sourceIpId");
+                throw ex;
+            }
 
-        // verify that lb service is supported by the network
-        isLbServiceSupportedInNetwork(networkId, Scheme.Public);
+            // verify that lb service is supported by the network
+            isLbServiceSupportedInNetwork(networkId, Scheme.Public);
 
-        _firewallMgr.validateFirewallRule(caller.getCallingAccount(), ipAddr, srcPort, srcPort, protocol, Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
+            _firewallMgr.validateFirewallRule(caller.getCallingAccount(), ipAddr, srcPort, srcPort, protocol, Purpose.LoadBalancing, FirewallRuleType.User, networkId, null);
 
-        LoadBalancerVO newRule =
-            new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
-
-        // verify rule is supported by Lb provider of the network
-        Ip sourceIp = getSourceIp(newRule);
-        LoadBalancingRule loadBalancing =
-            new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp, null,
-                lbProtocol);
-        if (!validateLbRule(loadBalancing)) {
-            throw new InvalidParameterValueException("LB service provider cannot support this rule");
-        }
-
-        return Transaction.execute(new TransactionCallbackWithException<LoadBalancerVO, NetworkRuleConflictException>() {
-            @Override
-            public LoadBalancerVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
-                LoadBalancerVO newRule =
-                    new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
+            return Transaction.execute((TransactionCallbackWithException<LoadBalancerVO, NetworkRuleConflictException>) status -> {
+                LoadBalancerVO newRule = new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
                         ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
                 if (forDisplay != null) {
@@ -1885,9 +1868,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                 // verify rule is supported by Lb provider of the network
                 Ip sourceIp = getSourceIp(newRule);
-                LoadBalancingRule loadBalancing =
-                    new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIp,
-                        null, lbProtocol);
+                LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), sourceIp, null, lbProtocol);
                 if (!validateLbRule(loadBalancing)) {
                     throw new InvalidParameterValueException("LB service provider cannot support this rule");
                 }
@@ -1906,11 +1887,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (!_firewallDao.setStateToAdd(newRule)) {
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
-                    s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port " + srcPort + ", private port " + destPort +
-                        " is added successfully.");
+                    logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" + sourceIpId + ", public port " + srcPort + ", private port " + destPort +
+                            " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
-                        null, LoadBalancingRule.class.getName(), newRule.getUuid());
+                            null, LoadBalancingRule.class.getName(), newRule.getUuid());
 
                     return newRule;
                 } catch (Exception e) {
@@ -1925,9 +1906,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         removeLBRule(newRule);
                     }
                 }
-            }
-        });
-
+            });
+        } finally {
+            _ipAddressDao.releaseFromLockTable(sourceIpId);
+        }
     }
 
     @Override
@@ -1964,8 +1946,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public boolean revokeLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Revoking " + lbs.size() + " " + scheme + " load balancing rules for network id=" + networkId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Revoking " + lbs.size() + " " + scheme + " load balancing rules for network id=" + networkId);
         }
         if (lbs != null) {
             for (LoadBalancerVO lb : lbs) { // called during restart, not persisting state in db
@@ -1973,7 +1955,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
             return applyLoadBalancerRules(lbs, false); // called during restart, not persisting state in db
         } else {
-            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to revoke");
+            logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to revoke");
             return true;
         }
     }
@@ -1982,10 +1964,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException {
         List<LoadBalancerVO> lbs = _lbDao.listByNetworkIdAndScheme(networkId, scheme);
         if (lbs != null) {
-            s_logger.debug("Applying load balancer rules of scheme " + scheme + " in network id=" + networkId);
+            logger.debug("Applying load balancer rules of scheme " + scheme + " in network id=" + networkId);
             return applyLoadBalancerRules(lbs, true);
         } else {
-            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules of scheme " + scheme + ", nothing to apply");
+            logger.info("Network id=" + networkId + " doesn't have load balancer rules of scheme " + scheme + ", nothing to apply");
             return true;
         }
     }
@@ -2035,7 +2017,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (!applyLbRules(rules, false)) {
-            s_logger.debug("LB rules are not completely applied");
+            logger.debug("LB rules are not completely applied");
             return false;
         }
 
@@ -2048,11 +2030,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
                         if (lb.getState() == FirewallRule.State.Revoke) {
                             removeLBRule(lb);
-                            s_logger.debug("LB " + lb.getId() + " is successfully removed");
+                            logger.debug("LB " + lb.getId() + " is successfully removed");
                             checkForReleaseElasticIp = true;
                         } else if (lb.getState() == FirewallRule.State.Add) {
                             lb.setState(FirewallRule.State.Active);
-                            s_logger.debug("LB rule " + lb.getId() + " state is set to Active");
+                            logger.debug("LB rule " + lb.getId() + " state is set to Active");
                             _lbDao.persist(lb);
                         }
 
@@ -2063,7 +2045,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
                             instanceIds.add(lbVmMap.getInstanceId());
                             _lb2VmMapDao.remove(lb.getId(), lbVmMap.getInstanceId(), lbVmMap.getInstanceIp(), null);
-                            s_logger.debug("Load balancer rule id " + lb.getId() + " is removed for vm " +
+                            logger.debug("Load balancer rule id " + lb.getId() + " is removed for vm " +
                                     lbVmMap.getInstanceId() + " instance ip " + lbVmMap.getInstanceIp());
                         }
 
@@ -2071,14 +2053,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         if (_lb2VmMapDao.listByLoadBalancerId(lb.getId()).isEmpty()) {
                             lb.setState(FirewallRule.State.Add);
                             _lbDao.persist(lb);
-                            s_logger.debug("LB rule " + lb.getId() + " state is set to Add as there are no more active LB-VM mappings");
+                            logger.debug("LB rule " + lb.getId() + " state is set to Add as there are no more active LB-VM mappings");
                         }
 
                         // remove LB-Stickiness policy mapping that were state to revoke
                         List<LBStickinessPolicyVO> stickinesspolicies = _lb2stickinesspoliciesDao.listByLoadBalancerId(lb.getId(), true);
                         if (!stickinesspolicies.isEmpty()) {
                             _lb2stickinesspoliciesDao.remove(lb.getId(), true);
-                            s_logger.debug("Load balancer rule id " + lb.getId() + " is removed stickiness policies");
+                            logger.debug("Load balancer rule id " + lb.getId() + " is removed stickiness policies");
                         }
 
                         // remove LB-HealthCheck policy mapping that were state to
@@ -2086,13 +2068,13 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         List<LBHealthCheckPolicyVO> healthCheckpolicies = _lb2healthcheckDao.listByLoadBalancerId(lb.getId(), true);
                         if (!healthCheckpolicies.isEmpty()) {
                             _lb2healthcheckDao.remove(lb.getId(), true);
-                            s_logger.debug("Load balancer rule id " + lb.getId() + " is removed health check monitors policies");
+                            logger.debug("Load balancer rule id " + lb.getId() + " is removed health check monitors policies");
                         }
 
                         LoadBalancerCertMapVO lbCertMap = _lbCertMapDao.findByLbRuleId(lb.getId());
                         if (lbCertMap != null && lbCertMap.isRevoke()) {
                             _lbCertMapDao.remove(lbCertMap.getId());
-                            s_logger.debug("Load balancer rule id " + lb.getId() + " removed certificate mapping");
+                            logger.debug("Load balancer rule id " + lb.getId() + " removed certificate mapping");
                         }
 
                         return checkForReleaseElasticIp;
@@ -2106,11 +2088,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         try {
                             success = handleSystemLBIpRelease(lb);
                         } catch (Exception ex) {
-                            s_logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion due to exception ", ex);
+                            logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion due to exception ", ex);
                             success = false;
                         } finally {
                             if (!success) {
-                                s_logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion");
+                                logger.warn("Failed to release system ip as a part of lb rule " + lb + " deletion");
                             }
                         }
                     }
@@ -2131,12 +2113,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
         boolean success = true;
         if (ip.getSystem()) {
-            s_logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+            logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
             if (!_ipAddrMgr.disassociatePublicIpAddress(lb.getSourceIpAddressId(), CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount())) {
-                s_logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+                logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
                 success = false;
             } else {
-                s_logger.warn("Successfully released system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
+                logger.warn("Successfully released system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
             }
         }
         return success;
@@ -2149,11 +2131,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.LoadBalancing);
 
         if (rules != null) {
-            s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found " + rules.size() + " lb rules to cleanup");
             for (FirewallRule rule : rules) {
                 boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
                 if (result == false) {
-                    s_logger.warn("Unable to remove load balancer rule " + rule.getId());
+                    logger.warn("Unable to remove load balancer rule " + rule.getId());
                     return false;
                 }
             }
@@ -2165,11 +2147,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean removeAllLoadBalanacersForNetwork(long networkId, Account caller, long callerUserId) {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.LoadBalancing);
         if (rules != null) {
-            s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
+            logger.debug("Found " + rules.size() + " lb rules to cleanup");
             for (FirewallRule rule : rules) {
                 boolean result = deleteLoadBalancerRule(rule.getId(), true, caller, callerUserId, false);
                 if (result == false) {
-                    s_logger.warn("Unable to remove load balancer rule " + rule.getId());
+                    logger.warn("Unable to remove load balancer rule " + rule.getId());
                     return false;
                 }
             }
@@ -2301,9 +2283,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
 
-                    s_logger.debug("LB Rollback rule id: " + lbRuleId + " while updating LB rule.");
+                    logger.debug("LB Rollback rule id: " + lbRuleId + " while updating LB rule.");
                 }
-                s_logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
+                logger.warn("Unable to apply the load balancer config because resource is unavailable.", e);
                 success = false;
             }
         }
@@ -2322,36 +2304,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Boolean applied = cmd.isApplied();
 
         if (applied == null) {
+            logger.info(String.format("The [%s] parameter was not passed. Using the default value [%s].", ApiConstants.APPLIED, Boolean.TRUE));
             applied = Boolean.TRUE;
         }
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
-            return null;
+            String msg = String.format("Unable to find the load balancer with ID [%s].", cmd.getId());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
         }
+
+        String loadBalancerAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(loadBalancer, "uuid", "name");
 
         _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
-        List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
-        List<String> serviceStates = new ArrayList<String>();
-        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
-        vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
-        if(vmLoadBalancerMappings == null) {
-            String msg = "no VM Loadbalancer Mapping found";
-            s_logger.error(msg);
+        List<UserVmVO> loadBalancerInstances = new ArrayList<>();
+        List<String> serviceStates = new ArrayList<>();
+        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
+
+        if (vmLoadBalancerMappings == null) {
+            String msg = String.format("Unable to find map of VMs related to load balancer [%s].", loadBalancerAsString);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        Map<Long, String> vmServiceState = new HashMap<Long, String>(vmLoadBalancerMappings.size());
-        List<Long> appliedInstanceIdList = new ArrayList<Long>();
 
-        if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
-            for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
-                appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
-                vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
-            }
+        Map<Long, String> vmServiceState = new HashMap<>(vmLoadBalancerMappings.size());
+        List<Long> appliedInstanceIdList = new ArrayList<>();
+
+        for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
+            appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
+            vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
         }
 
-        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndNetwork(loadBalancer.getAccountId(), loadBalancer.getNetworkId());
+        List<UserVmVO> userVms = _vmDao.listByIds(appliedInstanceIdList);
 
         for (UserVmVO userVm : userVms) {
             // if the VM is destroyed, being expunged, in an error state, or in
@@ -2364,13 +2350,25 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 continue;
             }
 
+            String userVmAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(userVm, "uuid", "name");
+
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
-            if ((isApplied && applied) || (!isApplied && !applied)) {
-                loadBalancerInstances.add(userVm);
-                serviceStates.add(vmServiceState.get(userVm.getId()));
+            String isAppliedMsg = isApplied ? "is applied" : "is not applied";
+            logger.debug(String.format("The user VM [%s] %s to a rule of the load balancer [%s].", userVmAsString, isAppliedMsg, loadBalancerAsString));
+
+            if (isApplied != applied) {
+                logger.debug(String.format("Skipping adding service state from the user VM [%s] to the service state list. This happens because the VM %s to the load "
+                        + "balancer rule and the [%s] parameter was passed as [%s].", userVmAsString, isAppliedMsg, ApiConstants.APPLIED, applied));
+                continue;
             }
+
+            loadBalancerInstances.add(userVm);
+            String serviceState = vmServiceState.get(userVm.getId());
+            logger.debug(String.format("Adding the service state [%s] from the user VM [%s] to the service state list.", serviceState, userVmAsString));
+            serviceStates.add(serviceState);
         }
-        return new Pair<List<? extends UserVm>, List<String>>(loadBalancerInstances, serviceStates);
+
+        return new Pair<>(loadBalancerInstances, serviceStates);
     }
 
     @Override
@@ -2580,7 +2578,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     public boolean applyLbRules(List<LoadBalancingRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules == null || rules.size() == 0) {
-            s_logger.debug("There are no Load Balancing Rules to forward to the network elements");
+            logger.debug("There are no Load Balancing Rules to forward to the network elements");
             return true;
         }
 
@@ -2609,7 +2607,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (!continueOnError) {
                 throw e;
             }
-            s_logger.warn("Problems with applying load balancing rules but pushing on", e);
+            logger.warn("Problems with applying load balancing rules but pushing on", e);
             success = false;
         }
 
@@ -2693,7 +2691,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(policy.getLoadBalancerId()));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
+            throw new InvalidParameterValueException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
         }
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);
@@ -2720,7 +2718,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(policy.getLoadBalancerId()));
         if (loadBalancer == null) {
-            throw new InvalidParameterException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
+            throw new InvalidParameterValueException("Invalid Load balancer : " + policy.getLoadBalancerId() + " for Stickiness policy id: " + id);
         }
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, loadBalancer);

@@ -26,14 +26,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade450to451 implements DbUpgrade {
-        final static Logger s_logger = Logger.getLogger(Upgrade450to451.class);
+public class Upgrade450to451 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -98,7 +95,7 @@ public class Upgrade450to451 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while encrypting key column in keystore table", e);
         }
-        s_logger.debug("Done encrypting keystore's key column");
+        logger.debug("Done encrypting keystore's key column");
     }
 
     private void encryptIpSecPresharedKeysOfRemoteAccessVpn(Connection conn) {
@@ -111,8 +108,8 @@ public class Upgrade450to451 implements DbUpgrade {
                 String preSharedKey = resultSet.getString(2);
                 try {
                     preSharedKey = DBEncryptionUtil.decrypt(preSharedKey);
-                } catch (EncryptionOperationNotPossibleException ignored) {
-                    s_logger.debug("The ipsec_psk preshared key id=" + rowId + "in remote_access_vpn is not encrypted, encrypting it.");
+                } catch (CloudRuntimeException ignored) {
+                    logger.debug("The ipsec_psk preshared key id=" + rowId + "in remote_access_vpn is not encrypted, encrypting it.");
                 }
                 try (PreparedStatement updateStatement = conn.prepareStatement("UPDATE `cloud`.`remote_access_vpn` SET ipsec_psk=? WHERE id=?");) {
                     updateStatement.setString(1, DBEncryptionUtil.encrypt(preSharedKey));
@@ -123,7 +120,7 @@ public class Upgrade450to451 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update the remote_access_vpn's preshared key ipsec_psk column", e);
         }
-        s_logger.debug("Done encrypting remote_access_vpn's ipsec_psk column");
+        logger.debug("Done encrypting remote_access_vpn's ipsec_psk column");
     }
 
     private void encryptStoragePoolUserInfo(Connection conn) {
@@ -152,7 +149,7 @@ public class Upgrade450to451 implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt storage pool user info ", e);
         }
-        s_logger.debug("Done encrypting storage_pool's user_info column");
+        logger.debug("Done encrypting storage_pool's user_info column");
     }
 
     private void updateUserVmDetailsWithNicAdapterType(Connection conn) {
@@ -161,13 +158,13 @@ public class Upgrade450to451 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to update user_vm_details table with nicAdapter entries by copying from vm_template_detail table", e);
         }
-        s_logger.debug("Done. Updated user_vm_details table with nicAdapter entries by copying from vm_template_detail table. This affects only VM/templates with hypervisor_type as VMware.");
+        logger.debug("Done. Updated user_vm_details table with nicAdapter entries by copying from vm_template_detail table. This affects only VM/templates with hypervisor_type as VMware.");
     }
 
     private void upgradeVMWareLocalStorage(Connection conn) {
         try (PreparedStatement updatePstmt = conn.prepareStatement("UPDATE storage_pool SET pool_type='VMFS',host_address=@newaddress WHERE (@newaddress:=concat('VMFS datastore: ', path)) IS NOT NULL AND scope = 'HOST' AND pool_type = 'LVM' AND id IN (SELECT * FROM (SELECT storage_pool.id FROM storage_pool,cluster WHERE storage_pool.cluster_id = cluster.id AND cluster.hypervisor_type='VMware') AS t);");) {
             updatePstmt.executeUpdate();
-            s_logger.debug("Done, upgraded VMWare local storage pool type to VMFS and host_address to the VMFS format");
+            logger.debug("Done, upgraded VMWare local storage pool type to VMFS and host_address to the VMFS format");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade VMWare local storage pool type", e);
         }

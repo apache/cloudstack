@@ -17,12 +17,14 @@
 package com.cloud.template;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.storage.upload.params.IsoUploadParams;
 import com.cloud.storage.upload.params.TemplateUploadParams;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplat
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -82,9 +83,9 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class TemplateAdapterBase extends AdapterBase implements TemplateAdapter {
-    private final static Logger s_logger = Logger.getLogger(TemplateAdapterBase.class);
     protected @Inject
     DomainDao _domainDao;
     protected @Inject
@@ -130,18 +131,18 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
-        Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
-        return prepare(isIso, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
+    public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+                                   Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
+                                   Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+        return prepare(isIso, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneId,
             hypervisorType, chksum, bootable, null, null, details, false, null, false, TemplateType.USER, directDownload, deployAsIs);
     }
 
     @Override
-    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
-        Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
-        Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-        TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
+    public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
+                                   Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneIdList, HypervisorType hypervisorType, String chksum,
+                                   Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshkeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
+                                   TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException {
         //Long accountId = null;
         // parameters verification
 
@@ -171,7 +172,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 requiresHVM = true;
             }
             if (deployAsIs) {
-                s_logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
+                logger.info("Setting default guest OS for deploy-as-is template while the template registration is not completed");
                 guestOSId = getDefaultDeployAsIsGuestOsId();
             }
         }
@@ -214,7 +215,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         try {
             imgfmt = ImageFormat.valueOf(format.toUpperCase());
         } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
+            logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
             throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
         }
 
@@ -262,7 +263,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         CallContext.current().setEventDetails("Id: " + id + " name: " + name);
-        return new TemplateProfile(id, userId, name, displayText, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
+        return new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs);
 
@@ -275,7 +276,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+        TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
+                CollectionUtils.isEmpty(cmd.getZoneIds()));
 
         List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store
@@ -286,26 +288,28 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         if(hypervisorType == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
-                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+            throw new InvalidParameterValueException(String.format(
+                    "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
+                    cmd.getHypervisor(),
+                    StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
         Map details = cmd.getDetails();
         if (cmd.isDeployAsIs()) {
             if (MapUtils.isNotEmpty(details)) {
                 if (details.containsKey(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
-                    s_logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the rootDiskController detail provided, as we honour what is defined in the template");
                     details.remove(VmDetailConstants.ROOT_DISK_CONTROLLER);
                 }
                 if (details.containsKey(VmDetailConstants.NIC_ADAPTER)) {
-                    s_logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
+                    logger.info("Ignoring the nicAdapter detail provided, as we honour what is defined in the template");
                     details.remove(VmDetailConstants.NIC_ADAPTER);
                 }
             }
         }
-        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
+        return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
-                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER,
+                cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,
                 cmd.isDirectDownload(), cmd.isDeployAsIs());
 
     }
@@ -328,11 +332,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         if(!params.isIso() && params.getHypervisorType() == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + params.getHypervisorType() + " is invalid. Supported Hypervisor types are "
-                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+            throw new InvalidParameterValueException(String.format(
+                    "Hypervisor Type: %s is invalid. Supported Hypervisor types are: %s",
+                    params.getHypervisorType(),
+                    StringUtils.join(Arrays.stream(HypervisorType.values()).filter(h -> h != HypervisorType.None).map(HypervisorType::name).toArray(), ", ")));
         }
 
-        return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getBits(),
+        return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getArch(), params.getBits(),
                 params.isPasswordEnabled(), params.requiresHVM(), params.getUrl(), params.isPublic(), params.isFeatured(),
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
@@ -349,11 +355,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         Long osTypeId = cmd.getOsTypeId();
         if (osTypeId == null) {
-            s_logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
+            logger.info("Setting the default guest OS for deploy-as-is templates while the template upload is not completed");
             osTypeId = getDefaultDeployAsIsGuestOsId();
         }
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
-                cmd.getDisplayText(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
+                cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
                 BooleanUtils.toBoolean(cmd.getRequiresHvm()), BooleanUtils.toBoolean(cmd.isPublic()),
                 BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), osTypeId,
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
@@ -387,7 +393,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneList.add(zoneId);
         }
 
-        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, cmd.isPasswordEnabled(), true, cmd.getUrl(), cmd.isPublic(),
+        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), cmd.getArch(), 64, cmd.isPasswordEnabled(), true, cmd.getUrl(), cmd.isPublic(),
             cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneList, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
             owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload(), false);
     }
@@ -398,7 +404,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             new VMTemplateVO(profile.getTemplateId(), profile.getName(), profile.getFormat(), profile.isPublic(), profile.isFeatured(), profile.isExtractable(),
                 profile.getTemplateType(), profile.getUrl(), profile.isRequiresHVM(), profile.getBits(), profile.getAccountId(), profile.getCheckSum(),
                 profile.getDisplayText(), profile.isPasswordEnabled(), profile.getGuestOsId(), profile.isBootable(), profile.getHypervisorType(),
-                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs());
+                profile.getTemplateTag(), profile.getDetails(), profile.isSshKeyEnabled(), profile.IsDynamicallyScalable(), profile.isDirectDownload(), profile.isDeployAsIs(), profile.getArch());
         template.setState(initialState);
 
         if (profile.isDirectDownload()) {

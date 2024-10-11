@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -60,7 +61,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 
 public class Ovm3VmSupport {
-    private final Logger LOGGER = Logger.getLogger(Ovm3VmSupport.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private OvmObject ovmObject = new OvmObject();
     private ResourceManager resourceMgr;
     private Connection c;
@@ -89,7 +90,7 @@ public class Ovm3VmSupport {
             NicTO[] nics = spec.getNics();
             return createVifs(vm, nics);
         } else {
-            LOGGER.info("No nics for vm " + spec.getName());
+            logger.info("No nics for vm " + spec.getName());
             return false;
         }
     }
@@ -110,18 +111,18 @@ public class Ovm3VmSupport {
         try {
             String net = network.getNetwork(nic);
             if (net != null) {
-                LOGGER.debug("Adding vif " + nic.getDeviceId() + " "
+                logger.debug("Adding vif " + nic.getDeviceId() + " "
                         + nic.getMac() + " " + net + " to " + vm.getVmName());
                 vm.addVif(nic.getDeviceId(), net, nic.getMac());
             } else {
-                LOGGER.debug("Unable to add vif " + nic.getDeviceId()
+                logger.debug("Unable to add vif " + nic.getDeviceId()
                         + " no network for " + vm.getVmName());
                 return false;
             }
         } catch (Exception e) {
             String msg = "Unable to add vif " + nic.getType() + " for "
                     + vm.getVmName() + " " + e.getMessage();
-            LOGGER.debug(msg);
+            logger.debug(msg);
             throw new Ovm3ResourceException(msg);
         }
         return true;
@@ -134,18 +135,18 @@ public class Ovm3VmSupport {
         try {
             String net = network.getNetwork(nic);
             if (net != null) {
-                LOGGER.debug("Removing vif " + nic.getDeviceId() + " " + " "
+                logger.debug("Removing vif " + nic.getDeviceId() + " " + " "
                         + nic.getMac() + " " + net + " from " + vm.getVmName());
                 vm.removeVif(net, nic.getMac());
             } else {
-                LOGGER.debug("Unable to remove vif " + nic.getDeviceId()
+                logger.debug("Unable to remove vif " + nic.getDeviceId()
                         + " no network for " + vm.getVmName());
                 return false;
             }
         } catch (Exception e) {
             String msg = "Unable to remove vif " + nic.getType() + " for "
                     + vm.getVmName() + " " + e.getMessage();
-            LOGGER.debug(msg);
+            logger.debug(msg);
             throw new Ovm3ResourceException(msg);
         }
         return true;
@@ -154,8 +155,8 @@ public class Ovm3VmSupport {
     /* Migration should make sure both HVs are the same ? */
     public PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         VirtualMachineTO vm = cmd.getVirtualMachine();
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Preparing host for migrating " + vm.getName());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preparing host for migrating " + vm.getName());
         }
         NicTO[] nics = vm.getNics();
         try {
@@ -163,10 +164,10 @@ public class Ovm3VmSupport {
                 network.getNetwork(nic);
             }
             hypervisor.setVmState(vm.getName(), State.Migrating);
-            LOGGER.debug("VM " + vm.getName() + " is in Migrating state");
+            logger.debug("VM " + vm.getName() + " is in Migrating state");
             return new PrepareForMigrationAnswer(cmd);
         } catch (Ovm3ResourceException e) {
-            LOGGER.error("Catch Exception " + e.getClass().getName()
+            logger.error("Catch Exception " + e.getClass().getName()
                     + " prepare for migration failed due to: " + e.getMessage());
             return new PrepareForMigrationAnswer(cmd, e);
         }
@@ -184,7 +185,7 @@ public class Ovm3VmSupport {
          * stop the VM.
          */
         String msg = "Migrating " + vmName + " to " + destIp;
-        LOGGER.info(msg);
+        logger.info(msg);
         if (!config.getAgentInOvm3Cluster() && !config.getAgentInOvm3Pool()) {
             try {
                 Xen xen = new Xen(c);
@@ -193,7 +194,7 @@ public class Ovm3VmSupport {
                 if (destHost == null) {
                     msg = "Unable to find migration target host in DB "
                             + destUuid + " with ip " + destIp;
-                    LOGGER.info(msg);
+                    logger.info(msg);
                     return new MigrateAnswer(cmd, false, msg, null);
                 }
                 xen.stopVm(ovmObject.deDash(vm.getVmRootDiskPoolId()),
@@ -204,7 +205,7 @@ public class Ovm3VmSupport {
             } catch (Ovm3ResourceException e) {
                 msg = "Unpooled VM Migrate of " + vmName + " to " + destUuid
                         + " failed due to: " + e.getMessage();
-                LOGGER.debug(msg, e);
+                logger.debug(msg, e);
                 return new MigrateAnswer(cmd, false, msg, null);
             } finally {
                 /* shouldn't we just reinitialize completely as a last resort ? */
@@ -228,7 +229,7 @@ public class Ovm3VmSupport {
             } catch (Ovm3ResourceException e) {
                 msg = "Pooled VM Migrate" + ": Migration of " + vmName + " to "
                         + destIp + " failed due to " + e.getMessage();
-                LOGGER.debug(msg, e);
+                logger.debug(msg, e);
                 return new MigrateAnswer(cmd, false, msg, null);
             } finally {
                 hypervisor.setVmState(vmName, state);
@@ -243,10 +244,10 @@ public class Ovm3VmSupport {
             Xen host = new Xen(c);
             Xen.Vm vm = host.getRunningVmConfig(cmd.getName());
             Integer vncPort = vm.getVncPort();
-            LOGGER.debug("get vnc port for " + cmd.getName() + ": " + vncPort);
+            logger.debug("get vnc port for " + cmd.getName() + ": " + vncPort);
             return new GetVncPortAnswer(cmd, c.getIp(), vncPort);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("get vnc port for " + cmd.getName() + " failed", e);
+            logger.debug("get vnc port for " + cmd.getName() + " failed", e);
             return new GetVncPortAnswer(cmd, e.getMessage());
         }
     }
@@ -263,11 +264,11 @@ public class Ovm3VmSupport {
             }
             newVmStats = cSp.ovsDomUStats(vmName);
         } catch (Ovm3ResourceException e) {
-            LOGGER.info("Unable to retrieve stats from " + vmName, e);
+            logger.info("Unable to retrieve stats from " + vmName, e);
             return stats;
         }
         if (oldVmStats == null) {
-            LOGGER.debug("No old stats retrieved stats from " + vmName);
+            logger.debug("No old stats retrieved stats from " + vmName);
             stats.setNumCPUs(1);
             stats.setNetworkReadKBs(0);
             stats.setNetworkWriteKBs(0);
@@ -278,7 +279,7 @@ public class Ovm3VmSupport {
             stats.setCPUUtilization(0);
             stats.setEntityType("vm");
         } else {
-            LOGGER.debug("Retrieved new stats from " + vmName);
+            logger.debug("Retrieved new stats from " + vmName);
             int cpus = Integer.parseInt(newVmStats.get("vcpus"));
             stats.setNumCPUs(cpus);
             stats.setNetworkReadKBs(doubleMin(newVmStats.get("rx_bytes"), oldVmStats.get("rx_bytes")));
@@ -322,14 +323,14 @@ public class Ovm3VmSupport {
         Xen host = new Xen(c);
         try {
             if (host.getRunningVmConfig(vmId) == null) {
-                LOGGER.error("Create VM " + vmId + " first on " + c.getIp());
+                logger.error("Create VM " + vmId + " first on " + c.getIp());
                 return false;
             } else {
-                LOGGER.info("VM " + vmId + " exists on " + c.getIp());
+                logger.info("VM " + vmId + " exists on " + c.getIp());
             }
             host.startVm(repoId, vmId);
         } catch (Exception e) {
-            LOGGER.error("Failed to start VM " + vmId + " on " + c.getIp()
+            logger.error("Failed to start VM " + vmId + " on " + c.getIp()
                     + " " + e.getMessage());
             return false;
         }
@@ -349,7 +350,7 @@ public class Ovm3VmSupport {
         try {
             cleanupNetwork(vm.getVmVifs());
         } catch (XmlRpcException e) {
-            LOGGER.info("Clean up network for " + vm.getVmName() + " failed", e);
+            logger.info("Clean up network for " + vm.getVmName() + " failed", e);
         }
         String vmName = vm.getVmName();
         /* should become a single entity */
@@ -361,7 +362,7 @@ public class Ovm3VmSupport {
      */
     public Boolean createVbds(Xen.Vm vm, VirtualMachineTO spec) {
         if (spec.getDisks() == null) {
-            LOGGER.info("No disks defined for " + vm.getVmName());
+            logger.info("No disks defined for " + vm.getVmName());
             return false;
         }
         for (DiskTO disk : spec.getDisks()) {
@@ -371,7 +372,7 @@ public class Ovm3VmSupport {
                     String diskFile = processor.getVirtualDiskPath(vol.getUuid(),  vol.getDataStore().getUuid());
                     vm.addRootDisk(diskFile);
                     vm.setPrimaryPoolUuid(vol.getDataStore().getUuid());
-                    LOGGER.debug("Adding root disk: " + diskFile);
+                    logger.debug("Adding root disk: " + diskFile);
                 } else if (disk.getType() == Volume.Type.ISO) {
                     DataTO isoTO = disk.getData();
                     if (isoTO.getPath() != null) {
@@ -389,20 +390,20 @@ public class Ovm3VmSupport {
                                 + template.getPath();
                         vm.addIso(isoPath);
                         /* check if secondary storage is mounted */
-                        LOGGER.debug("Adding ISO: " + isoPath);
+                        logger.debug("Adding ISO: " + isoPath);
                     }
                 } else if (disk.getType() == Volume.Type.DATADISK) {
                     VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
                     String diskFile = processor.getVirtualDiskPath(vol.getUuid(),  vol.getDataStore().getUuid());
                     vm.addDataDisk(diskFile);
-                    LOGGER.debug("Adding data disk: "
+                    logger.debug("Adding data disk: "
                             + diskFile);
                 } else {
                     throw new CloudRuntimeException("Unknown disk type: "
                             + disk.getType());
                 }
             } catch (Exception e) {
-                LOGGER.debug("CreateVbds failed", e);
+                logger.debug("CreateVbds failed", e);
                 throw new CloudRuntimeException("Exception" + e.getMessage(), e);
             }
         }
@@ -439,7 +440,7 @@ public class Ovm3VmSupport {
                     vm.getVmUuid());
         } catch (Ovm3ResourceException e) {
             String msg = "Unable to execute command due to " + e.toString();
-            LOGGER.debug(msg);
+            logger.debug(msg);
             return new Answer(null, false, msg);
         }
         return new Answer(null, true, "success");

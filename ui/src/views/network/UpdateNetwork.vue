@@ -32,7 +32,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
@@ -41,7 +41,7 @@
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <div v-if="setMTU">
           <a-row :gutter="12" v-if="resource.type !== 'L2'">
@@ -80,6 +80,24 @@
             </a-col>
           </a-row>
         </div>
+        <a-form-item name="sourcenatipaddress" ref="sourcenatipaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
+          </template>
+          <span v-if="sourcenatchange">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="$t('message.sourcenatip.change.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-input
+            v-model:value="form.sourcenatipaddress"
+            :placeholder="apiParams.sourcenatipaddress.description"
+            v-focus="true"
+            @change="sourcenatchange = form.sourcenatipaddress.length > 0"/>
+        </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -98,12 +116,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkOfferingLoading"
             :placeholder="apiParams.networkofferingid.description"
             @change="val => { networkOffering = networkOfferings[val] }">
-            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name">
               {{ opt.displaytext || opt.name }}
             </a-select-option>
           </a-select>
@@ -123,14 +141,14 @@
           </template>
           <a-switch v-model:checked="form.changecidr" />
         </a-form-item>
-        <a-form-item name="networkdomain" ref="networkdomain" v-if="isUpdatingIsolatedNetwork">
+        <a-form-item name="networkdomain" ref="networkdomain" v-if="hasNetworkDomain">
           <template #label>
             <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.guestvmcidr.description"/>
           </template>
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="updateinsequence" ref="updateinsequence" v-if="resource.redundantrouter">
           <template #label>
@@ -238,7 +256,8 @@ export default {
       minMTU: 68,
       errorPrivateMtu: '',
       errorPublicMtu: '',
-      setMTU: false
+      setMTU: false,
+      sourcenatchange: false
     }
   },
   beforeCreate () {
@@ -255,7 +274,7 @@ export default {
       ip6dns1: this.resource.ip6dns1,
       ip6dns2: this.resource.ip6dns2
     }
-    if (this.isUpdatingIsolatedNetwork) {
+    if (this.hasNetworkDomain) {
       this.resourceValues.networkdomain = this.resource.networkdomain
     }
     for (var field in this.resourceValues) {
@@ -269,6 +288,12 @@ export default {
   computed: {
     isUpdatingIsolatedNetwork () {
       return this.resource && this.resource.type === 'Isolated'
+    },
+    isUpdatingSharedNetwork () {
+      return this.resource && this.resource.type === 'Shared'
+    },
+    hasNetworkDomain () {
+      return this.isUpdatingIsolatedNetwork || this.isUpdatingSharedNetwork
     },
     selectedNetworkOfferingSupportsDns () {
       if (this.networkOffering) {

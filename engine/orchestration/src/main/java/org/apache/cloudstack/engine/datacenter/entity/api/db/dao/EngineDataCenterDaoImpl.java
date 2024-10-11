@@ -23,9 +23,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
@@ -39,10 +37,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * @config
@@ -53,7 +49,6 @@ import com.cloud.utils.net.NetUtils;
  **/
 @Component(value = "EngineDataCenterDao")
 public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, Long> implements EngineDataCenterDao {
-    private static final Logger s_logger = Logger.getLogger(EngineDataCenterDaoImpl.class);
 
     protected SearchBuilder<EngineDataCenterVO> NameSearch;
     protected SearchBuilder<EngineDataCenterVO> ListZonesByDomainIdSearch;
@@ -66,7 +61,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
-    protected TableGenerator _tgMacAddress;
 
     @Inject
     protected DcDetailsDao _detailsDao;
@@ -140,25 +134,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
     }
 
     @Override
-    public String[] getNextAvailableMacAddressPair(long id) {
-        return getNextAvailableMacAddressPair(id, 0);
-    }
-
-    @Override
-    public String[] getNextAvailableMacAddressPair(long id, long mask) {
-        SequenceFetcher fetch = SequenceFetcher.getInstance();
-
-        long seq = fetch.getNextSequence(Long.class, _tgMacAddress, id);
-        seq = seq | _prefix | ((id & 0x7f) << 32);
-        seq |= mask;
-        seq |= ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
-        String[] pair = new String[2];
-        pair[0] = NetUtils.long2Mac(seq);
-        pair[1] = NetUtils.long2Mac(seq | 0x1l << 39);
-        return pair;
-    }
-
-    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (!super.configure(name, params)) {
             return false;
@@ -204,9 +179,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         UUIDSearch = createSearchBuilder();
         UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         UUIDSearch.done();
-
-        _tgMacAddress = _tgs.get("macAddress");
-        assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
     @Override
@@ -268,7 +240,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
                     Long dcId = Long.parseLong(tokenOrIdOrName);
                     return findById(dcId);
                 } catch (NumberFormatException nfe) {
-                    s_logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
+                    logger.debug("Cannot parse " + tokenOrIdOrName + " into long. " + nfe);
                 }
             }
         }
@@ -306,7 +278,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
 
         int rows = update(vo, sc);
 
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             EngineDataCenterVO dbDC = findByIdIncludingRemoved(vo.getId());
             if (dbDC != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
@@ -328,7 +300,7 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
+                logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
             }
         }
         return rows > 0;

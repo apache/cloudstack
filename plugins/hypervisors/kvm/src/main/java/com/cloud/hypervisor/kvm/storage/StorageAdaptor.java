@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,8 +24,12 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 public interface StorageAdaptor {
+
+    StoragePoolType getStoragePoolType();
 
     public KVMStoragePool getStoragePool(String uuid);
 
@@ -39,6 +44,11 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
+    public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+                                                      PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
+    }
+
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
@@ -50,8 +60,17 @@ public interface StorageAdaptor {
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect);
 
-    // given local path to file/device (per Libvirt XML), 1) check that device is
-    // handled by your adaptor, return false if not. 2) clean up device, return true
+    /**
+     * Given local path to file/device (per Libvirt XML),
+     * 1) Make sure to check that device is handled by your adaptor, return false if not.
+     * 2) clean up device, return true
+     * 3) if clean up fails, then return false
+     *
+     * If the method wrongly returns true, then there are chances that disconnect will not reach the right storage adapter
+     *
+     * @param localPath path for the file/device from the disk definition per Libvirt XML.
+     * @return true if the operation is successful; false if the operation fails or the adapter fails to handle the path.
+     */
     public boolean disconnectPhysicalDiskByPath(String localPath);
 
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format);
@@ -91,4 +110,32 @@ public interface StorageAdaptor {
      * @param timeout
      */
     KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout);
+
+    /**
+     * Returns true if storage adaptor supports physical disk copy functionality.
+     */
+    default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return StoragePoolType.PowerFlex == type;
+    }
+
+    /**
+     * Prepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client preparation
+     * @return status, client details, & message in case failed
+     */
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        return new Ternary<>(true, new HashMap<>(), "");
+    }
+
+    /**
+     * Unprepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @return status, & message in case failed
+     */
+    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+        return new Pair<>(true, "");
+    }
 }

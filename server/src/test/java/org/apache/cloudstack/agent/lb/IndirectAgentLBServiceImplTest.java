@@ -16,17 +16,17 @@
 // under the License.
 package org.apache.cloudstack.agent.lb;
 
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,13 +35,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceState;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import static org.mockito.Mockito.when;
 
 public class IndirectAgentLBServiceImplTest {
 
@@ -70,6 +70,7 @@ public class IndirectAgentLBServiceImplTest {
 
     private static final long DC_1_ID = 1L;
     private static final long DC_2_ID = 2L;
+    private AutoCloseable closeable;
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
         final Field f = ConfigKey.class.getDeclaredField(name);
@@ -102,10 +103,15 @@ public class IndirectAgentLBServiceImplTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         configureMocks();
         agentMSLB.configure("someName", null);
         overrideDefaultConfigValue(ApiServiceConfiguration.ManagementServerAddresses, "_defaultValue", msCSVList);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

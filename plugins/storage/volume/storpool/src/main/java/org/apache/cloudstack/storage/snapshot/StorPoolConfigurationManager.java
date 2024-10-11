@@ -34,6 +34,26 @@ public class StorPoolConfigurationManager implements Configurable {
     public static final ConfigKey<String> AlternativeEndpoint = new ConfigKey<String>(String.class, "sp.alternative.endpoint", "Advanced", "",
             "Used for StorPool primary storage for an alternative endpoint. Structure of the endpoint is - SP_API_HTTP=address:port;SP_AUTH_TOKEN=token;SP_TEMPLATE=template_name", true, ConfigKey.Scope.StoragePool, null);
 
+    public static final ConfigKey<Integer> VolumesStatsInterval = new ConfigKey<>("Advanced", Integer.class,
+            "storpool.volumes.stats.interval", "3600",
+            "The interval in seconds to get StorPool volumes statistics",
+            false);
+
+    public static final ConfigKey<Integer> StorageStatsInterval = new ConfigKey<>("Advanced", Integer.class,
+            "storpool.storage.stats.interval", "3600",
+            "The interval in seconds to get StorPool template statistics",
+            false);
+
+    public static final ConfigKey<Integer> DeleteAfterInterval = new ConfigKey<>("Advanced", Integer.class,
+            "storpool.delete.after.interval", "0",
+            "The interval (in seconds) after the StorPool snapshot will be deleted",
+            false, ConfigKey.Scope.StoragePool);
+
+    public static final ConfigKey<Integer> ListSnapshotsWithDeleteAfterInterval = new ConfigKey<>("Advanced", Integer.class,
+            "storpool.list.snapshots.delete.after.interval", "360",
+            "The interval (in seconds) to fetch the StorPool snapshots with deleteAfter flag",
+            false);
+
     @Override
     public String getConfigComponentName() {
         return StorPoolConfigurationManager.class.getSimpleName();
@@ -41,6 +61,6 @@ public class StorPoolConfigurationManager implements Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId, AlternativeEndPointEnabled, AlternativeEndpoint };
+        return new ConfigKey<?>[] { BypassSecondaryStorage, StorPoolClusterId, AlternativeEndPointEnabled, AlternativeEndpoint, VolumesStatsInterval, StorageStatsInterval, DeleteAfterInterval, ListSnapshotsWithDeleteAfterInterval };
     }
 }

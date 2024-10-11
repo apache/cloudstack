@@ -24,8 +24,9 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 public class NfsDirectDownloadCommand extends DirectDownloadCommand {
 
-    public NfsDirectDownloadCommand(final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
-        super(url, templateId, destPool, checksum, headers, null, null, null);
+    public NfsDirectDownloadCommand(final String url, final Long templateId, final PrimaryDataStoreTO destPool,
+                final String checksum, final Map<String, String> headers) {
+        super(url, templateId, destPool, checksum, headers, null, null, null, false);
     }
 
 }

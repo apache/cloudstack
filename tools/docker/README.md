@@ -11,8 +11,18 @@ Dockerfiles used to build CloudStack images are available on Docker hub.
 CloudStack Simulator is an all in one CloudStack Build including the simulator that mimic Hypervisor. This is useful to test CloudStack API behavior without having to deploy real hypervisor nodes. CloudStack Simulator is used for tests and CI.
 
 ```
-docker pull cloudstack/simulator
-docker run --name simulator -p 8080:5050 -d cloudstack/simulator
+docker pull apache/cloudstack-simulator
+
+or pull it with a particular build tag
+
+docker pull apache/cloudstack-simulator:4.17.2.0
+
+docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator
+
+or
+
+docker run --name simulator -p 8080:5050 -d apache/cloudstack-simulator:4.17.2.0
+
 ```
 
 Access CloudStack UI
@@ -38,7 +48,7 @@ Log into the simulator:
 docker exec -it simulator bash
 ```
 
-### CloudStack Management-server 
+### CloudStack Management-server
 
 ```
 docker pull mysql:5.5

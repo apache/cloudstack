@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -37,7 +36,6 @@ import com.cloud.user.UserAccount;
 @APICommand(name = "updateUser", description = "Updates a user account", responseObject = UserResponse.class,
 requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -68,7 +66,7 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CURRENT_PASSWORD, type = CommandType.STRING, description = "Current password that was being used by the user. You must inform the current password when updating the password.", acceptedOnAdminPort = false)
     private String currentPassword;
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
+    @Parameter(name = ApiConstants.USER_SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -78,6 +76,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "Unique username")
     private String username;
+
+    @Parameter(name = ApiConstants.MANDATE_2FA, type = CommandType.BOOLEAN, description = "Provide true to mandate the user to use two factor authentication has to be enabled." +
+            "This parameter is only used to mandate 2FA, not to disable 2FA", since = "4.18.0.0")
+    private Boolean mandate2FA;
 
     @Inject
     private RegionService _regionService;
@@ -124,6 +126,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getUsername() {
         return username;
+    }
+
+    public Boolean getMandate2FA() {
+        return mandate2FA;
     }
 
     /////////////////////////////////////////////////////

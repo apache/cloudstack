@@ -28,7 +28,10 @@ from marvin.lib.base import (Account,
                              SecurityGroup,
                              Router,
                              Host,
-                             Network)
+                             Network,
+                             PhysicalNetwork,
+                             TrafficType,
+                             NetworkServiceProvider)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
@@ -73,6 +76,26 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        if cls.zone.securitygroupsenabled is False:
+            physical_networks = PhysicalNetwork.list(cls.api_client, zoneid=cls.zone.id)
+            selected_physical_network = None
+            for net in physical_networks:
+                traffic_types = TrafficType.list(cls.api_client, physicalnetworkid=net.id)
+                for traffic_type in traffic_types:
+                    if traffic_type.traffictype == 'Guest':
+                        selected_physical_network = net
+                        break
+                if selected_physical_network is not None:
+                    break
+            if selected_physical_network is None:
+                raise Exception("No physical network found with guest traffic type")
+
+            # Enable security group provider for physical network
+            nsps = NetworkServiceProvider.list(cls.api_client, physicalnetworkid=selected_physical_network.id, name='SecurityGroupProvider')
+            if len(nsps) == 0:
+                raise Exception("No security group provider found for physical network")
+            NetworkServiceProvider.update(cls.api_client, nsps[0].id, state='Enabled')
+
         cls.testdata['mode'] = cls.zone.networktype
 
         template = get_template(
@@ -115,7 +138,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
@@ -193,7 +216,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
@@ -228,7 +251,7 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["sg", "basic", "eip", "advancedsg"])
+    @attr(tags=["sg", "basic", "eip", "advancedsg", "advanced"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
@@ -314,7 +337,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.virtual_machine.ssh_port,
                 self.virtual_machine.username,
-                self.virtual_machine.password
+                self.virtual_machine.password,
+                retries=5
             )
         return
 
@@ -453,7 +477,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -604,7 +628,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # Should be able to SSH VM
         try:
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -937,7 +961,7 @@ class TestdeployVMWithUserData(cloudstackTestCase):
                 % self.virtual_machine.ssh_ip
             )
 
-            ssh = self.virtual_machine.get_ssh_client()
+            ssh = self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" %
                       (self.virtual_machine.ipaddress, e)
@@ -1348,7 +1372,7 @@ class TestIngressRule(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.testdata["ingress_rule"]["endport"]
             ))
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
 
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s, %s"
@@ -1476,7 +1500,7 @@ class TestIngressRule(cloudstackTestCase):
                 self.virtual_machine.ssh_ip,
                 self.testdata["ingress_rule"]["endport"]
             ))
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
 
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s, %s"
@@ -1623,7 +1647,7 @@ class TestIngressRule(cloudstackTestCase):
             self.debug(
                 "Trying to SSH into VM %s" %
                 self.virtual_machine.ssh_ip)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s"
                       % ingress_rule["id"]
@@ -1642,7 +1666,7 @@ class TestIngressRule(cloudstackTestCase):
             self.debug(
                 "Trying to SSH into VM %s" %
                 self.virtual_machine.ssh_ip)
-            self.virtual_machine.get_ssh_client()
+            self.virtual_machine.get_ssh_client(retries=5)
         except Exception as e:
             self.fail("SSH access failed for ingress rule ID: %s"
                       % ingress_rule["id"]

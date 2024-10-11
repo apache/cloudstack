@@ -23,12 +23,18 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
 
 public abstract class VifDriverBase implements VifDriver {
+
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected LibvirtComputingResource _libvirtComputingResource;
     protected Map<String, String> _pifs;
@@ -39,6 +45,11 @@ public abstract class VifDriverBase implements VifDriver {
         _libvirtComputingResource = (LibvirtComputingResource)params.get("libvirt.computing.resource");
         _bridges = (Map<String, String>)params.get("libvirt.host.bridges");
         _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
+    }
+
+    protected String getControlCidr(String defaultValue) {
+        String controlCidr = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONTROL_CIDR);
+        return controlCidr;
     }
 
     @Override

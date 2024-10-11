@@ -42,21 +42,36 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
+        <a-form-item name="passwordenabled" ref="passwordenabled">
+          <template #label>
+            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.passwordenabled" />
+        </a-form-item>
 
         <a-form-item name="ostypeid" ref="ostypeid" :label="$t('label.ostypeid')">
           <a-select
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="form.ostypeid"
             :loading="osTypes.loading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+            <a-select-option
+              v-for="opt in osTypes.opts"
+              :key="opt.id"
+              :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
+          <template #label>
+            <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+          </template>
+          <a-switch v-model:checked="form.isdynamicallyscalable" />
         </a-form-item>
 
         <a-row :gutter="12">
@@ -69,12 +84,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 v-model:value="userdataid"
                 :placeholder="linkUserDataParams.userdataid.description"
                 :loading="userdata.loading">
-                <a-select-option v-for="opt in userdata.opts" :key="opt.id">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -86,19 +101,43 @@
                 <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
               </template>
               <a-select
+                showSearch
                 v-model:value="userdatapolicy"
                 :placeholder="linkUserDataParams.userdatapolicy.description"
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id">
+                <a-select-option
+                  v-for="opt in userdatapolicylist.opts"
+                  :key="opt.id"
+                  :label="opt.name || opt.description">
                   {{ opt.id || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
+
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -132,7 +171,8 @@ export default {
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
-      userdatapolicylist: {}
+      userdatapolicylist: {},
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -155,7 +195,7 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'ostypeid', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'isdynamicallyscalable', 'ostypeid', 'userdataid', 'userdatapolicy']
 
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
@@ -176,6 +216,7 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
+      this.fetchArchitectureTypes()
       this.fetchUserdata()
       this.fetchUserdataPolicy()
     },
@@ -193,6 +234,19 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
     },
     fetchUserdataPolicy () {
       const userdataPolicy = []

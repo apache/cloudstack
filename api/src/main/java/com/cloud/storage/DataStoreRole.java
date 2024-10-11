@@ -20,8 +20,9 @@ package com.cloud.storage;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
+
 public enum DataStoreRole {
-    Primary("primary"), Image("image"), ImageCache("imagecache"), Backup("backup");
+    Primary("primary"), Image("image"), ImageCache("imagecache"), Backup("backup"), Object("object");
 
     public boolean isImageStore() {
         return (role.equalsIgnoreCase("image") || role.equalsIgnoreCase("imagecache")) ? true : false;
@@ -45,6 +46,8 @@ public enum DataStoreRole {
             return ImageCache;
         } else if (role.equalsIgnoreCase("backup")) {
             return Backup;
+        } else if (role.equalsIgnoreCase("object")) {
+            return Object;
         } else {
             throw new CloudRuntimeException("can't identify the role");
         }

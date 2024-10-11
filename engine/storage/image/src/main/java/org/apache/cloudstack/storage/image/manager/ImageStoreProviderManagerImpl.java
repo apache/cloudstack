@@ -42,7 +42,8 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.StatsCollector;
@@ -51,7 +52,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
 public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     @Inject
     ImageStoreDao dataStoreDao;
     @Inject
@@ -65,8 +66,8 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
     Map<String, ImageStoreDriver> driverMaps;
 
-    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<String>("Advanced", String.class, "image.store.allocation.algorithm", "firstfitleastconsumed",
-            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation", true, ConfigKey.Scope.Global );
+    static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey<>(String.class, "image.store.allocation.algorithm", "Advanced", "firstfitleastconsumed",
+            "firstfitleastconsumed','random' : Order in which hosts within a cluster will be considered for VM/volume allocation", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "firstfitleastconsumed,random" );
 
     @PostConstruct
     public void config() {
@@ -94,7 +95,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ImageStoreEntity getImageStore(String uuid) {
         ImageStoreVO dataStore = dataStoreDao.findByUuid(uuid);
-        return getImageStore(dataStore.getId());
+        return dataStore == null ? null : getImageStore(dataStore.getId());
     }
 
     @Override
@@ -158,7 +159,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public List<DataStore> listImageCacheStores(Scope scope) {
         if (scope.getScopeType() != ScopeType.ZONE) {
-            s_logger.debug("only support zone wide image cache stores");
+            logger.debug("only support zone wide image cache stores");
             return null;
         }
         List<ImageStoreVO> stores = dataStoreDao.findImageCacheByScope(new ZoneScope(scope.getScopeId()));
@@ -200,8 +201,8 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
         }
 
         // No store with space found
-        s_logger.error(String.format("Can't find an image storage in zone with less than %d usage",
-                Math.round(_statsCollector.getImageStoreCapacityThreshold()*100)));
+        logger.error(String.format("Can't find an image storage in zone with less than %d usage",
+                Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         return null;
     }
 
@@ -242,10 +243,20 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
 
         // No store with space found
         if (stores.isEmpty()) {
-            s_logger.error(String.format("Can't find image storage in zone with less than %d usage",
+            logger.error(String.format("Can't find image storage in zone with less than %d usage",
                     Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         }
         return stores;
+    }
+
+    @Override
+    public List<DataStore> listImageStoresFilteringByZoneIds(Long... zoneIds) {
+        List<ImageStoreVO> stores = dataStoreDao.listImageStoresByZoneIds(zoneIds);
+        List<DataStore> imageStores = new ArrayList<>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
     }
 
     @Override
@@ -256,5 +267,11 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
+    }
+
+    @Override
+    public long getImageStoreZoneId(long dataStoreId) {
+        ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        return dataStore.getDataCenterId();
     }
 }

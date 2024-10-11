@@ -25,6 +25,8 @@ import org.apache.cloudstack.backup.Backup;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
+
 @EntityReference(value = Backup.class)
 public class BackupResponse extends BaseResponse {
 
@@ -50,7 +52,7 @@ public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "backup date")
-    private String date;
+    private Date date;
 
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "backup size in bytes")
@@ -140,11 +142,11 @@ public class BackupResponse extends BaseResponse {
         this.type = type;
     }
 
-    public String getDate() {
-        return date;
+    public Date getDate() {
+        return this.date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 

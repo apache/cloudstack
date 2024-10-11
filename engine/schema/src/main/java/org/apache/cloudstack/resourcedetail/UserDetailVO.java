@@ -45,6 +45,10 @@ public class UserDetailVO implements ResourceDetail {
     @Column(name = "display")
     private boolean display = true;
 
+    public static final String Setup2FADetail = "2FASetupStatus";
+    public static final String PasswordResetToken = "PasswordResetToken";
+    public static final String PasswordResetTokenExpiryDate = "PasswordResetTokenExpiryDate";
+
     public UserDetailVO() {
     }
 
@@ -67,6 +71,10 @@ public class UserDetailVO implements ResourceDetail {
     @Override
     public String getValue() {
         return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     @Override

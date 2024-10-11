@@ -24,6 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -34,7 +35,6 @@ import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -43,7 +43,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "scaleKubernetesCluster",
-        description = "Scales a created, running or stopped Kubernetes cluster",
+        description = "Scales a created, running or stopped CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -51,7 +51,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(ScaleKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -144,6 +143,11 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
     }
 
     /////////////////////////////////////////////////////

@@ -26,8 +26,6 @@ ALTER TABLE cloud.remote_access_vpn MODIFY ipsec_psk text NOT NULL;
 -- PR#5832 Fix 'endpointe.url' global settings configuration typo.
 UPDATE `cloud`.`configuration` SET name='endpoint.url' WHERE name='endpointe.url';
 
-
-
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `uuid` varchar(40) UNIQUE DEFAULT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `name` varchar(255) NOT NULL;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `display_text` varchar(4096) DEFAULT NULL ;
@@ -220,21 +218,6 @@ CREATE VIEW `cloud`.`service_offering_view` AS
     GROUP BY
         `service_offering`.`id`;
 
-
---;
--- Stored procedure to do idempotent column add;
--- This is copied from schema-41000to41100.sql
---;
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200),
-    IN in_column_name VARCHAR(200),
-    IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes','external_uuid', 'VARCHAR(40) DEFAULT null ');
 
@@ -592,7 +575,7 @@ CREATE TABLE `cloud`.`vm_stats` (
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- PR#5984 Update name for global configuration vm.stats.increment.metrics
-Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+UPDATE `cloud`.`configuration` SET name = 'vm.stats.increment.metrics' WHERE name = 'vm.stats.increment.metrics.in.memory';
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `software_version` varchar(100) COMMENT 'Software version';
 
@@ -938,36 +921,6 @@ INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hype
 
 -- Copy XenServer 8.2.0 hypervisor guest OS mappings to XenServer 8.2.1
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.2.1', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.2.0';
-
-DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
-CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
-    IN guest_os_category_id bigint(20) unsigned,
-    IN guest_os_display_name VARCHAR(255),
-    IN guest_os_hypervisor_hypervisor_type VARCHAR(32),
-    IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
-    IN guest_os_hypervisor_guest_os_name VARCHAR(255)
-        )
-BEGIN
-INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created)
-SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
-FROM    DUAL
-WHERE 	not exists( SELECT  1
-                     FROM    cloud.guest_os
-                     WHERE   cloud.guest_os.category_id = guest_os_category_id
-                       AND     cloud.guest_os.display_name = guest_os_display_name)
-
-;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created)
-     SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
-     FROM 	cloud.guest_os
-     WHERE 	guest_os.category_id = guest_os_category_id
-       AND 	guest_os.display_name = guest_os_display_name
-       AND	NOT EXISTS (SELECT  1
-                          FROM    cloud.guest_os_hypervisor as hypervisor
-                          WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type
-                            AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
-                            AND     hypervisor.guest_os_id = guest_os.id
-                            AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)
-;END;
 
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (64-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (32-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -97,4 +97,3 @@ else
     ovs-ofctl del-flows --strict $br priority=50,dl_vlan=0xffff,dl_src=$vm_mac
     ovs-ofctl del-flows --strict $br priority=60,dl_vlan=$sec_iso_vlan,dl_src=$vm_mac
 fi
-

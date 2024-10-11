@@ -20,15 +20,12 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.jobs.JobInfo.Status;
 
 import com.cloud.utils.component.AdapterBase;
 
 public class AsyncJobTestDispatcher extends AdapterBase implements AsyncJobDispatcher {
-    private static final Logger s_logger =
-            Logger.getLogger(AsyncJobTestDispatcher.class);
 
     @Inject
     private AsyncJobManager _asyncJobMgr;
@@ -45,14 +42,14 @@ public class AsyncJobTestDispatcher extends AdapterBase implements AsyncJobDispa
     public void runJob(final AsyncJob job) {
         _testDashboard.increaseConcurrency();
 
-        s_logger.info("Execute job " + job.getId() + ", current concurrency " + _testDashboard.getConcurrencyCount());
+        logger.info("Execute job " + job.getId() + ", current concurrency " + _testDashboard.getConcurrencyCount());
 
         int interval = 3000;
 
         try {
             Thread.sleep(interval);
         } catch (InterruptedException e) {
-            s_logger.debug("[ignored] .");
+            logger.debug("[ignored] .");
         }
 
         _asyncJobMgr.completeAsyncJob(job.getId(), Status.SUCCEEDED, 0, null);

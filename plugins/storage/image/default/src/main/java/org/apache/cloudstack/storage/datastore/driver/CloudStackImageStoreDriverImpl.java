@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.Upload;
-import org.apache.log4j.Logger;
+import com.cloud.utils.StringUtils;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -45,7 +45,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(CloudStackImageStoreDriverImpl.class);
 
     @Inject
     ConfigurationDao _configDao;
@@ -64,33 +63,61 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         return nfsTO;
     }
 
+    private String createObjectNameForExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
+        String objectNameInUrl = dataObject.getName();
+        try {
+            objectNameInUrl = cleanObjectName(objectNameInUrl);
+        } catch (Exception e) {
+            objectNameInUrl = UUID.randomUUID().toString();
+        }
+
+        if (format != null) {
+            objectNameInUrl = objectNameInUrl + "." + format.getFileExtension();
+        } else if (installPath.lastIndexOf(".") != -1) {
+            objectNameInUrl = objectNameInUrl + "." + installPath.substring(installPath.lastIndexOf(".") + 1);
+        }
+
+        return objectNameInUrl;
+    }
+
+    private String cleanObjectName(String objectName) {
+        if (StringUtils.isEmpty(objectName)) {
+            throw new IllegalArgumentException("Object name is empty or null");
+        }
+        return objectName.trim()
+                .replaceAll("[^a-zA-Z0-9]+", "-")
+                .replaceAll("-{2,}", "-")
+                .replaceAll("^-|-$", "");
+    }
+
     @Override
     public String createEntityExtractUrl(DataStore store, String installPath, ImageFormat format, DataObject dataObject) {
         // find an endpoint to send command
         EndPoint ep = _epSelector.select(store);
         // Create Symlink at ssvm
         String path = installPath;
-        String uuid = UUID.randomUUID().toString() + "." + format.getFileExtension();
+        String objectNameInUrl = createObjectNameForExtractUrl(path, format, dataObject);
+        String objectPathInUrl = UUID.randomUUID().toString();
         CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(),
-                                                                path, uuid, dataObject == null ? null: dataObject.getTO());
+                                                                path, objectNameInUrl, objectPathInUrl, dataObject == null ? null: dataObject.getTO());
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             ans = new Answer(cmd, false, errMsg);
         } else {
             ans = ep.sendMessage(cmd);
         }
         if (ans == null || !ans.getResult()) {
-            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm," + ans.getDetails();
-            s_logger.error(errorString);
+            String errorString = "Unable to create a link for entity at " + installPath + " on ssvm, " + ans.getDetails();
+            logger.error(errorString);
             throw new CloudRuntimeException(errorString);
         }
         // Construct actual URL locally now that the symlink exists at SSVM
-        return generateCopyUrl(ep.getPublicAddr(), uuid);
+        return generateCopyUrl(ep.getPublicAddr(), objectNameInUrl, objectPathInUrl);
     }
 
-    private String generateCopyUrl(String ipAddress, String uuid) {
+    private String generateCopyUrl(String ipAddress, String fileName, String filePath) {
 
         String hostname = ipAddress;
         String scheme = "http";
@@ -101,7 +128,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
-            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;
         }
         if (_sslCopy) {
@@ -113,7 +140,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
             }
             scheme = "https";
         }
-        return scheme + "://" + hostname + "/userdata/" + uuid;
+        return scheme + "://" + hostname + "/userdata/" + filePath + "/" + fileName;
     }
 
     @Override
@@ -127,14 +154,14 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         Answer ans = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             ans = new Answer(cmd, false, errMsg);
         } else {
             ans = ep.sendMessage(cmd);
         }
         if (ans == null || !ans.getResult()) {
             String errorString = "Unable to delete the url " + downloadUrl + " for path " + installPath + " on ssvm, " + ans.getDetails();
-            s_logger.error(errorString);
+            logger.error(errorString);
             throw new CloudRuntimeException(errorString);
         }
 

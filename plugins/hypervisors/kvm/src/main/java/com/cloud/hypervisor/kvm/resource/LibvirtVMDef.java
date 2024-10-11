@@ -22,16 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class LibvirtVMDef {
-    private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
+    protected static Logger LOGGER = LogManager.getLogger(LibvirtVMDef.class);
 
     private String _hvsType;
     private static long s_libvirtVersion;
@@ -41,6 +43,7 @@ public class LibvirtVMDef {
     private String _desc;
     private String _platformEmulator;
     private final Map<String, Object> components = new HashMap<String, Object>();
+    private static final int NUMBER_OF_IOTHREADS = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IOTHREADS);
 
     public static class GuestDef {
         enum GuestType {
@@ -92,6 +95,8 @@ public class LibvirtVMDef {
         }
 
         private GuestType _type;
+        private String manufacturer;
+        private String product;
         private BootType _boottype;
         private BootMode _bootmode;
         private String _arch;
@@ -105,6 +110,7 @@ public class LibvirtVMDef {
         private String _machine;
         private String _nvram;
         private String _nvramTemplate;
+        private boolean iothreads;
 
         public static final String GUEST_LOADER_SECURE = "guest.loader.secure";
         public static final String GUEST_LOADER_LEGACY = "guest.loader.legacy";
@@ -118,6 +124,28 @@ public class LibvirtVMDef {
 
         public GuestType getGuestType() {
             return _type;
+        }
+
+        public String getManufacturer() {
+            if (StringUtils.isEmpty(manufacturer)) {
+                return "Apache Software Foundation";
+            }
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
+        }
+
+        public String getProduct() {
+            if (StringUtils.isEmpty(product)) {
+                return "CloudStack KVM Hypervisor";
+            }
+            return product;
+        }
+
+        public void setProduct(String product) {
+            this.product = product;
         }
 
         public void setNvram(String nvram) { _nvram = nvram; }
@@ -167,6 +195,10 @@ public class LibvirtVMDef {
             this._bootmode = bootmode;
         }
 
+        public void setIothreads(boolean iothreads) {
+            this.iothreads = iothreads;
+        }
+
         @Override
         public String toString() {
             if (_type == GuestType.KVM) {
@@ -174,9 +206,10 @@ public class LibvirtVMDef {
 
                 guestDef.append("<sysinfo type='smbios'>\n");
                 guestDef.append("<system>\n");
-                guestDef.append("<entry name='manufacturer'>Apache Software Foundation</entry>\n");
-                guestDef.append("<entry name='product'>CloudStack " + _type.toString() + " Hypervisor</entry>\n");
+                guestDef.append("<entry name='manufacturer'>" + getManufacturer() +"</entry>\n");
+                guestDef.append("<entry name='product'>" + getProduct() + "</entry>\n");
                 guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
+                guestDef.append("<entry name='serial'>" + _uuid + "</entry>\n");
                 guestDef.append("</system>\n");
                 guestDef.append("</sysinfo>\n");
 
@@ -215,10 +248,11 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || !_arch.equals("aarch64")) {
-                    guestDef.append("<smbios mode='sysinfo'/>\n");
-                }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
+                if (iothreads) {
+                    guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
+                }
                 return guestDef.toString();
             } else if (_type == GuestType.LXC) {
                 StringBuilder guestDef = new StringBuilder();
@@ -571,6 +605,7 @@ public class LibvirtVMDef {
     }
 
     public static class DiskDef {
+
         public static class LibvirtDiskEncryptDetails {
             String passphraseUuid;
             QemuObject.EncryptFormat encryptFormat;
@@ -582,6 +617,22 @@ public class LibvirtVMDef {
 
             public String getPassphraseUuid() { return this.passphraseUuid; }
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
+        }
+
+        public static class DiskGeometry {
+            int cylinders;
+            int heads;
+            int sectors;
+
+            public DiskGeometry(int cylinders, int heads, int sectors) {
+                this.cylinders = cylinders;
+                this.heads = heads;
+                this.sectors = sectors;
+            }
+
+            public String toXml() {
+                return String.format("<geometry cyls='%d' heads='%d' secs='%d'/>\n", this.cylinders, this.heads, this.sectors);
+            }
         }
 
         public enum DeviceType {
@@ -598,7 +649,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum DiskType {
+        public enum DiskType {
             FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
             String _diskType;
 
@@ -688,23 +739,15 @@ public class LibvirtVMDef {
 
         }
 
-        /**
-         * This enum specifies IO Drivers, each option controls specific policies on I/O.
-         * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
-         */
-        public enum IoDriver {
-            NATIVE("native"),
-            THREADS("threads"),
-            IOURING("io_uring");
-            String ioDriver;
+        public enum BlockIOSize {
+            SIZE_512("512"), SIZE_4K("4096");
+            final String blockSize;
 
-            IoDriver(String driver) {
-                ioDriver = driver;
-            }
+            BlockIOSize(String size) { this.blockSize = size; }
 
             @Override
             public String toString() {
-                return ioDriver;
+                return blockSize;
             }
         }
 
@@ -738,8 +781,12 @@ public class LibvirtVMDef {
         private String _serial;
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
-        private IoDriver ioDriver;
+        private IoDriverPolicy ioDriver;
         private LibvirtDiskEncryptDetails encryptDetails;
+        private boolean isIothreadsEnabled;
+        private BlockIOSize logicalBlockIOSize = null;
+        private BlockIOSize physicalBlockIOSize = null;
+        private DiskGeometry geometry = null;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -749,17 +796,25 @@ public class LibvirtVMDef {
             this._discard = discard;
         }
 
-        public DiskDef.IoDriver getIoDriver() {
+        public IoDriverPolicy getIoDriver() {
             return ioDriver;
         }
 
-        public void setIoDriver(IoDriver ioDriver) {
+        public void setIoDriver(IoDriverPolicy ioDriver) {
             this.ioDriver = ioDriver;
         }
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
         }
+
+        public void isIothreadsEnabled(boolean isIothreadsEnabled) {
+            this.isIothreadsEnabled = isIothreadsEnabled;
+        }
+
+        public void setPhysicalBlockIOSize(BlockIOSize size) { this.physicalBlockIOSize = size; }
+
+        public void setLogicalBlockIOSize(BlockIOSize size) { this.logicalBlockIOSize = size; }
 
         public void defFileBasedDisk(String filePath, String diskLabel, DiskBus bus, DiskFmtType diskFmtType) {
             _diskType = DiskType.FILE;
@@ -865,7 +920,7 @@ public class LibvirtVMDef {
 
         public void defISODisk(String volPath, Integer devId, String diskLabel) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
-                s_logger.debug(String.format("No ID or label informed for volume [%s].", volPath));
+                LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
                 defISODisk(volPath);
                 return;
             }
@@ -875,11 +930,11 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
 
             if (StringUtils.isNotBlank(diskLabel)) {
-                s_logger.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
+                LOGGER.debug(String.format("Using informed label [%s] for volume [%s].", diskLabel, volPath));
                 _diskLabel = diskLabel;
             } else {
                 _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
-                s_logger.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
+                LOGGER.debug(String.format("Using device ID [%s] to define the label [%s] for volume [%s].", devId, _diskLabel, volPath));
             }
 
             _diskFmtType = DiskFmtType.RAW;
@@ -978,6 +1033,10 @@ public class LibvirtVMDef {
             return _diskLabel;
         }
 
+        public void setDiskLabel(String label) {
+            _diskLabel = label;
+        }
+
         public DiskType getDiskType() {
             return _diskType;
         }
@@ -988,6 +1047,10 @@ public class LibvirtVMDef {
 
         public void setDiskPath(String volPath) {
             _sourcePath = volPath;
+        }
+
+        public DiskProtocol getDiskProtocol() {
+            return _diskProtocol;
         }
 
         public DiskBus getBusType() {
@@ -1068,9 +1131,32 @@ public class LibvirtVMDef {
             this._serial = serial;
         }
 
-        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
+        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details)
+        {
+            this.encryptDetails = details;
+        }
 
-        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails()
+        {
+            return this.encryptDetails;
+        }
+
+        public void setGeometry(DiskGeometry geometry)
+        {
+            this.geometry = geometry;
+        }
+
+        public String getSourceHost() {
+            return _sourceHost;
+        }
+
+        public int getSourceHostPort() {
+            return _sourcePort;
+        }
+
+        public String getSourcePath() {
+            return _sourcePath;
+        }
 
         @Override
         public String toString() {
@@ -1093,9 +1179,12 @@ public class LibvirtVMDef {
                 }
 
                 if(ioDriver != null) {
-                    diskBuilder.append(String.format("io='%s'", ioDriver));
+                    diskBuilder.append(String.format("io='%s' ", ioDriver));
                 }
 
+                if (isIothreadsEnabled && _bus == DiskBus.VIRTIO) {
+                    diskBuilder.append(String.format("iothread='%s' ", NUMBER_OF_IOTHREADS));
+                }
                 diskBuilder.append("/>\n");
             }
 
@@ -1139,6 +1228,21 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (geometry != null) {
+                diskBuilder.append(geometry.toXml());
+            }
+
+            if (logicalBlockIOSize != null || physicalBlockIOSize != null) {
+                diskBuilder.append("<blockio ");
+                if (logicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("logical_block_size='%s' ", logicalBlockIOSize));
+                }
+                if (physicalBlockIOSize != null) {
+                    diskBuilder.append(String.format("physical_block_size='%s' ", physicalBlockIOSize));
+                }
+                diskBuilder.append("/>\n");
+            }
 
             if (_serial != null && !_serial.isEmpty() && _deviceType != DeviceType.LUN) {
                 diskBuilder.append("<serial>" + _serial + "</serial>\n");
@@ -1277,6 +1381,8 @@ public class LibvirtVMDef {
             DIRECT_ATTACHED_WITHOUT_DHCP, DIRECT_ATTACHED_WITH_DHCP, VNET, VLAN;
         }
 
+        public static final int MULTI_QUEUE_NUMBER_MEANS_CPU_CORES = -1;
+
         private GuestNetType _netType; /*
          * bridge, ethernet, network, user,
          * internal, vhostuser
@@ -1302,6 +1408,8 @@ public class LibvirtVMDef {
         private String _interfaceMode;
         private String _userIp4Network;
         private Integer _userIp4Prefix;
+        private Integer _multiQueueNumber;
+        private Boolean _packedVirtQueues;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -1490,6 +1598,14 @@ public class LibvirtVMDef {
             _interfaceMode = mode;
         }
 
+        public void setMultiQueueNumber(Integer multiQueueNumber) {
+            this._multiQueueNumber = multiQueueNumber;
+        }
+
+        public void setPackedVirtQueues(Boolean packedVirtQueues) {
+            this._packedVirtQueues = packedVirtQueues;
+        }
+
         public String getContent() {
             StringBuilder netBuilder = new StringBuilder();
             if (_netType == GuestNetType.BRIDGE) {
@@ -1511,6 +1627,21 @@ public class LibvirtVMDef {
             }
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
+            }
+            if (NicModel.VIRTIO.equals(_model)) {
+                boolean isMultiQueueNumberSpecified = _multiQueueNumber != null;
+                boolean isPackedVirtQueuesEnabled = _packedVirtQueues != null && _packedVirtQueues
+                        && s_qemuVersion >= 4200000 && s_libvirtVersion >= 6300000;
+                if (isMultiQueueNumberSpecified || isPackedVirtQueuesEnabled) {
+                    netBuilder.append("<driver");
+                    if (isMultiQueueNumberSpecified) {
+                        netBuilder.append(" queues='" + _multiQueueNumber + "'");
+                    }
+                    if (isPackedVirtQueuesEnabled) {
+                        netBuilder.append(" packed='on'");
+                    }
+                    netBuilder.append("/>\n");
+                }
             }
             if ((s_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
                 netBuilder.append("<bandwidth>\n");
@@ -1652,6 +1783,7 @@ public class LibvirtVMDef {
         private String _model;
         private List<String> _features;
         private int _coresPerSocket = -1;
+        private int _threadsPerCore = -1;
         private int _sockets = -1;
 
         public void setMode(String mode) {
@@ -1668,8 +1800,9 @@ public class LibvirtVMDef {
             _model = model;
         }
 
-        public void setTopology(int coresPerSocket, int sockets) {
+        public void setTopology(int coresPerSocket, int threadsPerCore, int sockets) {
             _coresPerSocket = coresPerSocket;
+            _threadsPerCore = threadsPerCore;
             _sockets = sockets;
         }
 
@@ -1698,15 +1831,21 @@ public class LibvirtVMDef {
                 }
             }
 
-            // add topology
-            if (_sockets > 0 && _coresPerSocket > 0) {
-                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+            // add topology. Note we require sockets, cores, and threads defined
+            if (_sockets > 0 && _coresPerSocket > 0 && _threadsPerCore > 0) {
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='"  + _threadsPerCore + "' />");
             }
 
             // close cpu def
             modeBuilder.append("</cpu>");
             return modeBuilder.toString();
         }
+
+        public int getCoresPerSocket() {
+            return _coresPerSocket;
+        }
+        public int getThreadsPerCore() { return _threadsPerCore; }
+        public int getSockets() { return _sockets; }
     }
 
     public static class SerialDef {
@@ -1763,7 +1902,7 @@ public class LibvirtVMDef {
 
     public final static class ChannelDef {
         enum ChannelType {
-            UNIX("unix"), SERIAL("serial");
+            UNIX("unix"), SERIAL("serial"), SPICEVMC("spicevmc");
             String type;
 
             ChannelType(String type) {
@@ -1903,6 +2042,7 @@ public class LibvirtVMDef {
         private int slot = 9;
         private int function = 0;
         private int queues = 0;
+        private boolean isIoThreadsEnabled;
 
         public SCSIDef(short index, int domain, int bus, int slot, int function, int queues) {
             this.index = index;
@@ -1911,6 +2051,16 @@ public class LibvirtVMDef {
             this.slot = slot;
             this.function = function;
             this.queues = queues;
+        }
+
+        public SCSIDef(short index, int domain, int bus, int slot, int function, int queues, boolean ioThreadsEnabled) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+            this.queues = queues;
+            this.isIoThreadsEnabled = ioThreadsEnabled;
         }
 
         public SCSIDef() {
@@ -1924,9 +2074,17 @@ public class LibvirtVMDef {
             scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
-            if (this.queues > 0) {
-                scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
+            if (this.queues > 0 || isIoThreadsEnabled) {
+                scsiBuilder.append("<driver");
+                if (queues > 0) {
+                    scsiBuilder.append(String.format(" queues='%s'", queues));
+                }
+                if (isIoThreadsEnabled) {
+                    scsiBuilder.append(String.format(" iothread='%s'", NUMBER_OF_IOTHREADS));
+                }
+                scsiBuilder.append("/>\n");
             }
+
             scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }
@@ -2004,7 +2162,7 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class MetadataDef {
+    public class MetadataDef {
         Map<String, Object> customNodes = new HashMap<>();
 
         public <T> T getMetadataNode(Class<T> fieldClass) {
@@ -2014,7 +2172,7 @@ public class LibvirtVMDef {
                     field = fieldClass.newInstance();
                     customNodes.put(field.getClass().getName(), field);
                 } catch (InstantiationException | IllegalAccessException e) {
-                    s_logger.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
+                    LOGGER.debug("No default constructor available in class " + fieldClass.getName() + ", ignoring exception", e);
                 }
             }
             return field;
@@ -2064,14 +2222,14 @@ public class LibvirtVMDef {
         private String path = "/dev/random";
         private RngModel rngModel = RngModel.VIRTIO;
         private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
-        private int rngRateBytes = 2048;
-        private int rngRatePeriod = 1000;
+        private Integer rngRateBytes = 2048;
+        private Integer rngRatePeriod = 1000;
 
         public RngDef(String path) {
             this.path = path;
         }
 
-        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngRateBytes = rngRateBytes;
             this.rngRatePeriod = rngRatePeriod;
@@ -2090,7 +2248,7 @@ public class LibvirtVMDef {
             this.rngBackendModel = rngBackendModel;
         }
 
-        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+        public RngDef(String path, RngBackendModel rngBackendModel, Integer rngRateBytes, Integer rngRatePeriod) {
             this.path = path;
             this.rngBackendModel = rngBackendModel;
             this.rngRateBytes = rngRateBytes;
@@ -2115,11 +2273,11 @@ public class LibvirtVMDef {
         }
 
         public int getRngRateBytes() {
-            return rngRateBytes;
+            return rngRateBytes != null ? rngRateBytes : 0;
         }
 
         public int getRngRatePeriod() {
-            return rngRatePeriod;
+            return rngRatePeriod != null ? rngRatePeriod : 0;
         }
 
         @Override
@@ -2135,7 +2293,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
             String model;
 
             WatchDogModel(String model) {
@@ -2149,7 +2307,7 @@ public class LibvirtVMDef {
         }
 
         enum WatchDogAction {
-            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump"), INJECT_NMI("inject-nmi");
             String action;
 
             WatchDogAction(String action) {

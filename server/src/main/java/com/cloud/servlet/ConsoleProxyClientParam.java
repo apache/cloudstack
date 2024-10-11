@@ -22,6 +22,7 @@ public class ConsoleProxyClientParam {
     private int clientHostPort;
     private String clientHostPassword;
     private String clientTag;
+    private String clientDisplayName;
     private String ticket;
     private String locale;
     private String clientTunnelUrl;
@@ -33,7 +34,16 @@ public class ConsoleProxyClientParam {
     private String username;
     private String password;
 
+    /**
+     * IP that has generated the console endpoint
+     */
     private String sourceIP;
+
+    /**
+     * IP of the client that has connected to the console
+     */
+    private String clientIp;
+
     private String websocketUrl;
 
     private String sessionUuid;
@@ -84,6 +94,10 @@ public class ConsoleProxyClientParam {
     public void setClientTag(String clientTag) {
         this.clientTag = clientTag;
     }
+
+    public String getClientDisplayName() { return this.clientDisplayName; }
+
+    public void setClientDisplayName(String clientDisplayName) { this.clientDisplayName = clientDisplayName; }
 
     public String getTicket() {
         return ticket;
@@ -195,5 +209,13 @@ public class ConsoleProxyClientParam {
 
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
     }
 }

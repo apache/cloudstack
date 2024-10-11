@@ -28,6 +28,9 @@
       <a-tab-pane :tab="$t('label.networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.bgp.peers')" key="bgppeers" v-if="resource.ip4routing === 'Dynamic'">
+        <BgpPeersTab :resource="resource" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.public.ips')" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
         <IpAddressesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
@@ -48,10 +51,12 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }">
-            <router-link :to="{ path: '/acllist/' + record.id }">
-              {{ text }}
-            </router-link>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <router-link :to="{ path: '/acllist/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -75,7 +80,7 @@
           :footer="null"
           :maskClosable="false"
           :closable="true"
-          @cancel="modals.networkAcl = fetchAclList">
+          @cancel="modals.networkAcl = false">
           <a-form
             layout="vertical"
             :ref="formRef"
@@ -117,11 +122,13 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #ipaddress="{ text, record }">
-            <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
-          </template>
-          <template #state="{ record }">
-            <status :text="record.state" displayText></status>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'ipaddress'">
+              <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="record.state" displayText></status>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -163,9 +170,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -286,13 +293,15 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <template #publicip="{text, record}">
-            <router-link :to="{ path: '/s2svpnconn/' + record.id }">
-              {{ text }}
-            </router-link>
-          </template>
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText />
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'publicip'">
+              <router-link :to="{ path: '/s2svpnconn/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -332,9 +341,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -353,6 +362,9 @@
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.vnf.appliances')" key="vnf" v-if="'deployVnfAppliance' in $store.getters.apis">
+        <VnfAppliancesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
         <events-tab :resource="resource" resourceType="Vpc" :loading="loading" />
@@ -376,19 +388,25 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import VnfAppliancesTab from './VnfAppliancesTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
 
 export default {
   name: 'VpcTab',
   components: {
+    BgpPeersTab,
     DetailsTab,
     Status,
     IpAddressesTab,
     RoutersTab,
     VpcTiersTab,
+    VnfAppliancesTab,
     EventsTab,
-    AnnotationsTab
+    AnnotationsTab,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   props: {
@@ -426,14 +444,14 @@ export default {
       vpncustomergateways: [],
       privateGatewaysColumns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -450,14 +468,14 @@ export default {
       ],
       vpnConnectionsColumns: [
         {
+          key: 'publicip',
           title: this.$t('label.ip'),
-          dataIndex: 'publicip',
-          slots: { customRender: 'publicip' }
+          dataIndex: 'publicip'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -470,9 +488,9 @@ export default {
       ],
       networkAclsColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.description'),
@@ -782,12 +800,12 @@ export default {
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-
-        api('createVpnConnection', {
-          s2svpngatewayid: this.vpnGateways[0].id,
+        const params = {
+          s2svpngatewayid: this.vpnGateways[0] ? this.vpnGateways[0].id : null,
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
-        }).then(response => {
+        }
+        api('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),

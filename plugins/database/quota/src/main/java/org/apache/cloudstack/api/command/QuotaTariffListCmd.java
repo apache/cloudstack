@@ -17,18 +17,20 @@
 package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -38,46 +40,54 @@ import java.util.List;
 
 @APICommand(name = "quotaTariffList", responseObject = QuotaTariffResponse.class, description = "Lists all quota tariff plans", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaTariffListCmd.class);
 
     @Inject
     QuotaResponseBuilder _responseBuilder;
 
-    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = false, description = "Usage type of the resource")
+    @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, description = "Usage type of the resource")
     private Integer usageType;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = false, description = "The start date of the quota tariff. Use yyyy-MM-dd as the date format, "
-            + "e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The start date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date effectiveDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = false, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g. "
-            + "endDate=2021-11-03.")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS, since = "4.18.0.0")
     private Date endDate;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "The name of the quota tariff.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the quota tariff.", since = "4.18.0.0")
     private String name;
 
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, required = false, description = "False will list only not removed quota tariffs. If set to True, we will "
-            + "list all, including the removed ones. The default is false.")
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False will list only not removed quota tariffs. If set to true, we will "
+            + "list all, including the removed ones. The default is false.", since = "4.18.0.0")
     private boolean listAll = false;
 
-    public QuotaTariffListCmd() {
-        super();
-    }
+    @Parameter(name = ApiConstants.LIST_ONLY_REMOVED, type = CommandType.BOOLEAN, description = "If set to true, we will list only the removed tariffs."
+            + " The default is false.")
+    private boolean listOnlyRemoved = false;
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, description = "The quota tariff's id.", validations = {ApiArgValidator.UuidString})
+    private String id;
 
     @Override
     public void execute() {
         final Pair<List<QuotaTariffVO>, Integer> result = _responseBuilder.listQuotaTariffPlans(this);
 
-        final List<QuotaTariffResponse> responses = new ArrayList<QuotaTariffResponse>();
-
-        s_logger.trace(String.format("Adding quota tariffs [%s] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses)));
-
-        for (final QuotaTariffVO resource : result.first()) {
-            responses.add(_responseBuilder.createQuotaTariffResponse(resource));
+        User user = CallContext.current().getCallingUser();
+        boolean returnActivationRules = _responseBuilder.isUserAllowedToSeeActivationRules(user);
+        if (!returnActivationRules) {
+            logger.debug("User [{}] does not have permission to create or update quota tariffs, therefore we will not return the activation rules.", user.getUuid());
         }
 
-        final ListResponse<QuotaTariffResponse> response = new ListResponse<QuotaTariffResponse>();
+        final List<QuotaTariffResponse> responses = new ArrayList<>();
+
+        logger.trace("Adding quota tariffs [{}] to response of API quotaTariffList.", ReflectionToStringBuilderUtils.reflectCollection(responses));
+
+        for (final QuotaTariffVO resource : result.first()) {
+            responses.add(_responseBuilder.createQuotaTariffResponse(resource, returnActivationRules));
+        }
+
+        final ListResponse<QuotaTariffResponse> response = new ListResponse<>();
         response.setResponses(responses, result.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
@@ -89,15 +99,11 @@ public class QuotaTariffListCmd extends BaseListCmd {
     }
 
     public Date getEffectiveDate() {
-        return effectiveDate ==null ? null : new Date(effectiveDate.getTime());
+        return effectiveDate;
     }
 
     public Integer getUsageType() {
         return usageType;
-    }
-
-    public void setUsageType(Integer usageType) {
-        this.usageType = usageType;
     }
 
     public Date getEndDate() {
@@ -112,4 +118,15 @@ public class QuotaTariffListCmd extends BaseListCmd {
         return listAll;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public boolean isListOnlyRemoved() {
+        return listOnlyRemoved;
+    }
 }

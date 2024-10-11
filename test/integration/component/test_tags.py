@@ -19,6 +19,7 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Tag,
                              Account,
@@ -1068,21 +1069,7 @@ class TestResourceTags(cloudstackTestCase):
         # 1. Create  a tag on ISO using createTags API
         # 2. Delete above created tag using deleteTags API
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1841,21 +1828,7 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(other_user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
-        self.debug("ISO created with ID: %s" % iso.id)
-
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
+        iso = self.create_iso()
 
         self.debug("Creating a tag for the ISO")
         tag = Tag.create(
@@ -1935,20 +1908,8 @@ class TestResourceTags(cloudstackTestCase):
         )
         self.cleanup.append(user_account)
 
-        iso = Iso.create(
-            self.apiclient,
-            self.services["iso"],
-            account=user_account.name,
-            domainid=user_account.domainid
-        )
+        iso = self.create_iso()
 
-        list_iso_response = Iso.list(self.apiclient,
-                                     id=iso.id)
-        self.assertEqual(
-            isinstance(list_iso_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
         Tag.create(self.apiclient,
                    resourceIds=iso.id,
                    resourceType='ISO',
@@ -2465,7 +2426,7 @@ class TestResourceTags(cloudstackTestCase):
         hosts.pop(0)
         host_ids = [host.id for host in hosts]
         for id in host_ids:
-            if not id in host_ids_for_migration:
+            if id not in host_ids_for_migration:
                 self.fail("Not all hosts are available for vm migration")
         return
 
@@ -3074,3 +3035,24 @@ class TestResourceTags(cloudstackTestCase):
             "List tags should return empty response"
         )
         return
+
+    def create_iso(self):
+        try:
+            iso = Iso.create(
+                self.apiclient,
+                self.services["iso"],
+                account=self.account.name,
+                domainid=self.account.domainid
+            )
+        except:
+            raise unittest.SkipTest("Cannot register ISO for tagging")
+        self.cleanup.append(iso)
+        self.debug("ISO created with ID: %s" % iso.id)
+
+        list_iso_response = Iso.list(self.apiclient,
+                                     id=iso.id)
+
+        if not isinstance(list_iso_response, list):
+            raise unittest.SkipTest("Registered ISO can not be found/listed for tagging")
+
+        return iso

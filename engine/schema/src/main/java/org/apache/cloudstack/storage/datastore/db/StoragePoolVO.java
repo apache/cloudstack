@@ -21,11 +21,14 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -57,7 +60,7 @@ public class StoragePoolVO implements StoragePool {
     private String uuid = null;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
@@ -116,7 +119,7 @@ public class StoragePoolVO implements StoragePool {
     private Long capacityIops;
 
     @Column(name = "hypervisor")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisor;
 
     @Column(name = "parent")
@@ -180,8 +183,8 @@ public class StoragePoolVO implements StoragePool {
         return poolType;
     }
 
-    public void setPoolType(StoragePoolType protocol) {
-        poolType = protocol;
+    public void setPoolType(StoragePoolType poolType) {
+        this.poolType = poolType;
     }
 
     @Override
@@ -273,7 +276,7 @@ public class StoragePoolVO implements StoragePool {
     @Override
     public String getPath() {
         String updatedPath = path;
-        if (poolType == StoragePoolType.SMB) {
+        if (poolType.equals(StoragePoolType.SMB)) {
             updatedPath = UriUtils.getUpdateUri(updatedPath, false);
             if (updatedPath.contains("password") && updatedPath.contains("?")) {
                 updatedPath = updatedPath.substring(0, updatedPath.indexOf('?'));

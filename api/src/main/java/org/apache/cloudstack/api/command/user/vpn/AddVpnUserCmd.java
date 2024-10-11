@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addVpnUser", description = "Adds vpn users", responseObject = VpnUsersResponse.class, entityType = {VpnUser.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddVpnUserCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -125,11 +123,15 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         vpnResponse.setId(vpnUser.getUuid());
         vpnResponse.setUserName(vpnUser.getUsername());
         vpnResponse.setAccountName(account.getAccountName());
+        // re-retrieve the vpnuser, as the call to `applyVpnUsers` might have changed the state
+        vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
+        vpnResponse.setState(vpnUser.getState().toString());
 
         Domain domain = _entityMgr.findById(Domain.class, account.getDomainId());
         if (domain != null) {
             vpnResponse.setDomainId(domain.getUuid());
             vpnResponse.setDomainName(domain.getName());
+            vpnResponse.setDomainPath(domain.getPath());
         }
 
         vpnResponse.setResponseName(getCommandName());

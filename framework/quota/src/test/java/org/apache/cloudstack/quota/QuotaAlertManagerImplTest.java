@@ -30,9 +30,12 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDaoImpl;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +43,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -71,49 +74,166 @@ public class QuotaAlertManagerImplTest extends TestCase {
     @Mock
     private ConfigurationDao configDao;
 
+    @Mock
+    private QuotaEmailConfigurationDaoImpl quotaEmailConfigurationDaoMock;
+
+    @Mock
+    private QuotaAccountVO quotaAccountVOMock;
+
+    @Mock
+    private List<QuotaAlertManagerImpl.DeferredQuotaEmail> deferredQuotaEmailListMock;
+
+    @Mock
+    private QuotaManagerImpl quotaManagerMock;
+
+    @Mock
+    private Date balanceDateMock;
+
+    @Mock
+    private AccountVO accountMock;
+
     @Spy
     @InjectMocks
     private QuotaAlertManagerImpl quotaAlertManager = new QuotaAlertManagerImpl();
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException, ConfigurationException {
-        TransactionLegacy.open("QuotaAlertManagerImplTest");
-    }
-
-    @Test
-    public void testCheckAndSendQuotaAlertEmails() {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
         accountVO.setType(Account.Type.NORMAL);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
 
-        QuotaAccountVO acc = new QuotaAccountVO(2L);
-        acc.setQuotaBalance(new BigDecimal(404));
-        acc.setQuotaMinBalance(new BigDecimal(100));
-        acc.setQuotaBalanceDate(new Date());
-        acc.setQuotaAlertDate(null);
-        acc.setQuotaEnforce(0);
-        List<QuotaAccountVO> accounts = new ArrayList<>();
-        accounts.add(acc);
-        Mockito.when(quotaAcc.listAllQuotaAccount()).thenReturn(accounts);
+        Mockito.doReturn(new BigDecimal(404)).when(quotaAccountVOMock).getQuotaBalance();
+        Mockito.doReturn(new BigDecimal(100)).when(quotaAccountVOMock).getQuotaMinBalance();
+        Mockito.doReturn(balanceDateMock).when(quotaAccountVOMock).getQuotaBalanceDate();
+        Mockito.doReturn(null).when(quotaAccountVOMock).getQuotaAlertDate();
+        Mockito.doReturn(0).when(quotaAccountVOMock).getQuotaEnforce();
 
-        // Don't test sendQuotaAlert yet
-        Mockito.doNothing().when(quotaAlertManager).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
-        Mockito.lenient().doReturn(true).when(quotaAlertManager).lockAccount(Mockito.anyLong());
+        TransactionLegacy.open("QuotaAlertManagerImplTest");
+    }
 
-        // call real method on send monthly statement
-        Mockito.doCallRealMethod().when(quotaAlertManager).checkAndSendQuotaAlertEmails();
+    @Test
+    public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsConfiguredReturnConfiguredValue() {
+        boolean expectedValue = !QuotaConfig.QuotaEnableEmails.value();
+        QuotaEmailConfigurationVO quotaEmailConfigurationVoMock = Mockito.mock(QuotaEmailConfigurationVO.class);
+        Mockito.when(quotaEmailConfigurationVoMock.isEnabled()).thenReturn(expectedValue);
+        Mockito.doReturn(quotaEmailConfigurationVoMock).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateType(Mockito.anyLong(), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
 
-        // Case1: valid balance, no email should be sent
-        quotaAlertManager.checkAndSendQuotaAlertEmails();
-        Mockito.verify(quotaAlertManager, Mockito.times(0)).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
+        boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
 
-        // Case2: low balance, email should be sent
-        accounts.get(0).setQuotaBalance(new BigDecimal(99));
-        //Mockito.when(quotaAcc.listAll()).thenReturn(accounts);
-        quotaAlertManager.checkAndSendQuotaAlertEmails();
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(QuotaAlertManagerImpl.DeferredQuotaEmail.class));
+        Assert.assertEquals(expectedValue, result);
+    }
+
+    @Test
+    public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsNotConfiguredReturnDefaultValue() {
+        boolean defaultValue = QuotaConfig.QuotaEnableEmails.value();
+
+        boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
+
+        Assert.assertEquals(defaultValue, result);
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestNullAccountBalance() {
+        Mockito.doReturn(null).when(quotaAccountVOMock).getQuotaBalance();
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(accountDao, Mockito.never()).findById(Mockito.any());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestNullAccount() {
+        Mockito.doReturn(new BigDecimal(1)).when(quotaAccountVOMock).getQuotaBalance();
+        Mockito.doReturn(null).when(accountDao).findById(Mockito.any());
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAccountVOMock, Mockito.never()).getQuotaBalanceDate();
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestEnoughBalance() {
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAlertManager, Mockito.never()).lockAccount(Mockito.anyLong());
+        Mockito.verify(deferredQuotaEmailListMock, Mockito.never()).add(Mockito.any());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndLockAccountEnforcementFalse() {
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+
+        quotaAlertManager._lockAccountEnforcement = false;
+        Mockito.doReturn(1).when(quotaAccountVOMock).getQuotaEnforce();
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAlertManager, Mockito.never()).lockAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndLockableFalse() {
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+
+        quotaAlertManager._lockAccountEnforcement = true;
+        Mockito.doReturn(1).when(quotaAccountVOMock).getQuotaEnforce();
+        Mockito.doReturn(false).when(quotaManagerMock).isLockable(Mockito.any());
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAlertManager, Mockito.never()).lockAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndIsLockableFalse() {
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+
+        quotaAlertManager._lockAccountEnforcement = true;
+        Mockito.doReturn(1).when(quotaAccountVOMock).getQuotaEnforce();
+        Mockito.doReturn(false).when(quotaManagerMock).isLockable(Mockito.any());
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAlertManager, Mockito.never()).lockAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndLockAccount() {
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+
+        quotaAlertManager._lockAccountEnforcement = true;
+        Mockito.doReturn(1).when(quotaAccountVOMock).getQuotaEnforce();
+        Mockito.doReturn(true).when(quotaManagerMock).isLockable(Mockito.any());
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(quotaAlertManager).lockAccount(Mockito.anyLong());
+    }
+
+    @Test
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndAlertDateNotNullAndBalanceDateNotAfter() {
+        Mockito.doReturn(new Date()).when(quotaAccountVOMock).getQuotaAlertDate();
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+        Mockito.doReturn(false).when(balanceDateMock).after(Mockito.any());
+
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(deferredQuotaEmailListMock, Mockito.never()).add(Mockito.any());
+    }
+
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndAlertDateNotNullAndGetDifferenceDaysSmallerThanOne() {
+        Mockito.doReturn(new Date()).when(quotaAccountVOMock).getQuotaAlertDate();
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+        Mockito.doReturn(true).when(balanceDateMock).after(Mockito.any());
+        Mockito.doReturn(0L).when(quotaAlertManager).getDifferenceDays(Mockito.any(), Mockito.any());
+
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(deferredQuotaEmailListMock, Mockito.never()).add(Mockito.any());
+    }
+
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndAlertDateNotNullAndBalanceAfterAndDifferenceBiggerThanOne() {
+        Mockito.doReturn(new Date()).when(quotaAccountVOMock).getQuotaAlertDate();
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+        Mockito.doReturn(true).when(balanceDateMock).after(Mockito.any());
+        Mockito.doReturn(2).when(quotaAlertManager).getDifferenceDays(Mockito.any(), Mockito.any());
+
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(deferredQuotaEmailListMock).add(Mockito.any());
+    }
+
+    public void checkQuotaAlertEmailForAccountTestBalanceLowerThanZeroAndAlertDateNull() {
+        Mockito.doReturn(new BigDecimal(-1)).when(quotaAccountVOMock).getQuotaBalance();
+
+        quotaAlertManager.checkQuotaAlertEmailForAccount(deferredQuotaEmailListMock, quotaAccountVOMock);
+        Mockito.verify(deferredQuotaEmailListMock).add(Mockito.any());
     }
 
     @Test
@@ -162,19 +282,31 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
 
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyString(), Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.any(), Mockito.anyList(), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
+    }
+
+    @Test
+    public void addHeaderAndFooterTestIfHeaderAndFootersAreAdded() {
+        String body = quotaAlertManager.addHeaderAndFooter("body", "Header", "Footer");
+        assertEquals("HeaderbodyFooter", body);
+    }
+
+    @Test
+    public void addHeaderAndFooterTestIfHeaderAndFootersAreNotAddedIfEmpty() {
+        String body = quotaAlertManager.addHeaderAndFooter("body", "", "");
+        assertEquals("body", body);
     }
 
     @Test
     public void testGetDifferenceDays() {
         Date now = new Date();
-        assertTrue(QuotaAlertManagerImpl.getDifferenceDays(now, now) == 0L);
+        assertTrue(quotaAlertManager.getDifferenceDays(now, now) == 0L);
         Calendar c = Calendar.getInstance();
         c.setTimeZone(TimeZone.getTimeZone("UTC"));
         Calendar c2 = (Calendar)c.clone();
         c2.add(Calendar.DATE, 1);
-        assertEquals(1L, QuotaAlertManagerImpl.getDifferenceDays(c.getTime(), c2.getTime()));
+        assertEquals(1L, quotaAlertManager.getDifferenceDays(c.getTime(), c2.getTime()));
     }
 
     @Test

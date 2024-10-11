@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,11 +30,11 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "updateCluster", description = "Updates an existing cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateClusterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
@@ -54,6 +54,11 @@ public class UpdateClusterCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
     private String managedState;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     public String getClusterName() {
         return clusterName;
@@ -108,6 +113,13 @@ public class UpdateClusterCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override

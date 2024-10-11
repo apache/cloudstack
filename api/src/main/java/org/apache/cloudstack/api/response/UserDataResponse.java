@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = UserData.class)
-public class UserDataResponse extends BaseResponseWithAnnotations {
+public class UserDataResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the ssh keypair")
@@ -40,11 +40,23 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the userdata")
     private String accountName;
 
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the userdata", since = "4.19.1")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the userdata", since = "4.19.1")
+    private String projectName;
+
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the userdata owner")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
     private String domain;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the userdata owner belongs", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.USER_DATA) @Param(description="base64 encoded userdata content")
     private String userData;
@@ -118,11 +130,26 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
         this.accountName = accountName;
     }
 
+    @Override
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
     public String getDomainName() {
         return domain;
     }
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 }

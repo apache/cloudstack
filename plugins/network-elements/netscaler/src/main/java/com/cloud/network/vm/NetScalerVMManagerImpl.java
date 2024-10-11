@@ -30,7 +30,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -95,7 +94,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMManager, VirtualMachineGuru {
-    private static final Logger s_logger = Logger.getLogger(NetScalerVMManagerImpl.class);
     static final private String NetScalerLbVmNamePrefix = "NS";
 
     @Inject
@@ -196,8 +194,8 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _itMgr.registerGuru(VirtualMachine.Type.NetScalerVm, this);
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info(getName() + " has been configured");
+        if (logger.isInfoEnabled()) {
+            logger.info(getName() + " has been configured");
         }
         return true;
     }
@@ -208,7 +206,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
     }
 
     protected VirtualRouter stopInternalLbVm(DomainRouterVO internalLbVm, boolean forced, Account caller, long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-        s_logger.debug("Stopping internal lb vm " + internalLbVm);
+        logger.debug("Stopping internal lb vm " + internalLbVm);
         try {
             _itMgr.advanceStop(internalLbVm.getUuid(), forced);
             return _internalLbVmDao.findById(internalLbVm.getId());
@@ -220,7 +218,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
     public VirtualRouterProvider addNetScalerLoadBalancerElement(long ntwkSvcProviderId) {
         VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(ntwkSvcProviderId, com.cloud.network.VirtualRouterProvider.Type.NetScalerVm);
         if (element != null) {
-            s_logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
+            logger.debug("There is already an " + getName() + " with service provider id " + ntwkSvcProviderId);
             return element;
         }
 
@@ -261,7 +259,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
         Account systemAcct = _accountMgr.getSystemAccount();
 
         if (template == null) {
-            s_logger.error(" Unable to find the NS VPX template");
+            logger.error(" Unable to find the NS VPX template");
             throw new CloudRuntimeException("Unable to find the Template" + templateId);
         }
         long dataCenterId = dest.getDataCenter().getId();
@@ -324,7 +322,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
         defaultNic2.setIPv4Address("");
         defaultNic2.setIPv4Gateway("");
         defaultNic2.setIPv4Netmask("");
-        String macAddress = _networkDao.getNextAvailableMacAddress(defaultPublicNetwork.getId(), null);
+        String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(defaultPublicNetwork.getId());
         defaultNic2.setMacAddress(macAddress);
 
         networks.put(_networkMgr.setupNetwork(_accountMgr.getSystemAccount(), _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPublicNetwork), plan, null, null, false).get(0),
@@ -384,7 +382,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
 
     protected void startNsVpx(VMInstanceVO nsVpx, Map<Param, Object> params) throws StorageUnavailableException,
     InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Starting NS Vpx " + nsVpx);
+        logger.debug("Starting NS Vpx " + nsVpx);
         _itMgr.start(nsVpx.getUuid(), params, null, null);
     }
 
@@ -409,7 +407,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
 
     protected VirtualRouter stopNetScalerVm(final long vmId, final boolean forced, final Account caller, final long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
         final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
-        s_logger.debug("Stopping NetScaler vm " + netscalerVm);
+        logger.debug("Stopping NetScaler vm " + netscalerVm);
 
         if (netscalerVm == null || netscalerVm.getRole() != Role.NETSCALER_VM) {
             throw new InvalidParameterValueException("Can't find NetScaler vm by id specified");
@@ -433,7 +431,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
     @Override
     public VirtualRouter stopNetScalerVm(Long vmId, boolean forced, Account caller, long callingUserId) {
         final DomainRouterVO netscalerVm = _routerDao.findById(vmId);
-        s_logger.debug("Stopping NetScaler vm " + netscalerVm);
+        logger.debug("Stopping NetScaler vm " + netscalerVm);
 
         if (netscalerVm == null || netscalerVm.getRole() != Role.NETSCALER_VM) {
             throw new InvalidParameterValueException("Can't find NetScaler vm by id specified");

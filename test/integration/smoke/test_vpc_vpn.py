@@ -49,165 +49,6 @@ from nose.plugins.attrib import attr
 import logging
 import time
 
-
-class Services:
-
-    """Test VPC VPN Services.
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                "password": "password",
-            },
-            "host1": None,
-            "host2": None,
-            "compute_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,
-                "memory": 128,
-            },
-            "network_offering": {
-                "name": 'VPC Network offering',
-                "displaytext": 'VPC Network',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,Lb,PortForwarding,UserData,StaticNat,NetworkACL',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "useVpc": 'on',
-                "serviceProviderList": {
-                    "Vpn": 'VpcVirtualRouter',
-                    "Dhcp": 'VpcVirtualRouter',
-                    "Dns": 'VpcVirtualRouter',
-                    "SourceNat": 'VpcVirtualRouter',
-                    "Lb": 'VpcVirtualRouter',
-                    "PortForwarding": 'VpcVirtualRouter',
-                    "UserData": 'VpcVirtualRouter',
-                    "StaticNat": 'VpcVirtualRouter',
-                    "NetworkACL": 'VpcVirtualRouter'
-                },
-            },
-            "network_offering_internal_lb": {
-                "name": 'VPC Network Internal Lb offering',
-                "displaytext": 'VPC Network internal lb',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL,Lb',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "useVpc": 'on',
-                "serviceCapabilityList": {
-                    "Lb": {
-                        "SupportedLbIsolation": 'dedicated',
-                        "lbSchemes": 'internal'
-                    }
-                },
-                "serviceProviderList": {
-                    "Dhcp": 'VpcVirtualRouter',
-                    "Dns": 'VpcVirtualRouter',
-                    "SourceNat": 'VpcVirtualRouter',
-                    "PortForwarding": 'VpcVirtualRouter',
-                    "UserData": 'VpcVirtualRouter',
-                    "StaticNat": 'VpcVirtualRouter',
-                    "NetworkACL": 'VpcVirtualRouter',
-                    "Lb": 'InternalLbVm'
-                },
-                "egress_policy": "true",
-            },
-            "vpc_offering": {
-                "name": 'VPC off',
-                "displaytext": 'VPC off',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-            },
-            "redundant_vpc_offering": {
-                "name": 'Redundant VPC off',
-                "displaytext": 'Redundant VPC off',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
-                "serviceProviderList": {
-                    "Vpn": 'VpcVirtualRouter',
-                    "Dhcp": 'VpcVirtualRouter',
-                    "Dns": 'VpcVirtualRouter',
-                    "SourceNat": 'VpcVirtualRouter',
-                    "PortForwarding": 'VpcVirtualRouter',
-                    "Lb": 'VpcVirtualRouter',
-                    "UserData": 'VpcVirtualRouter',
-                    "StaticNat": 'VpcVirtualRouter',
-                    "NetworkACL": 'VpcVirtualRouter'
-                },
-                "serviceCapabilityList": {
-                    "SourceNat": {
-                        "RedundantRouter": 'true'
-                    }
-                },
-            },
-            "vpc": {
-                "name": "TestVPC",
-                "displaytext": "TestVPC",
-                "cidr": '10.1.0.0/16'
-            },
-            "vpc1": {
-                "name": "TestVPC",
-                "displaytext": "VPC1",
-                "cidr": '10.1.0.0/16'
-            },
-            "vpc2": {
-                "name": "TestVPC",
-                "displaytext": "VPC2",
-                "cidr": '10.3.0.0/16'
-            },
-            "network_1": {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-                "netmask": '255.255.255.0',
-                "gateway": "10.1.1.1"
-            },
-            "network_2": {
-                "name": "Test Network",
-                "displaytext": "Test Network",
-                "netmask": '255.255.255.0',
-                "gateway": "10.3.1.1"
-            },
-            "vpn": {
-                "vpn_user": "root",
-                "vpn_pass": "Md1sdc",
-                "vpn_pass_fail": "abc!123",  # too short
-                "iprange": "10.3.2.1-10.3.2.10",
-                "fordisplay": "true"
-            },
-            "vpncustomergateway": {
-                "esppolicy": "3des-md5;modp1536",
-                "ikepolicy": "3des-md5;modp1536",
-                "ipsecpsk": "ipsecpsk"
-            },
-            "natrule": {
-                "protocol": "TCP",
-                "cidrlist": '0.0.0.0/0',
-            },
-            "http_rule": {
-                "privateport": 80,
-                "publicport": 80,
-                "startport": 80,
-                "endport": 80,
-                "cidrlist": '0.0.0.0/0',
-                "protocol": "TCP"
-            },
-            "virtual_machine": {
-                "displayname": "Test VM",
-                "username": "root",
-                "password": "password",
-                "ssh_port": 22,
-                "privateport": 22,
-                "publicport": 22,
-                "protocol": 'TCP',
-            }
-        }
-
-
 class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
     @classmethod
@@ -220,7 +61,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         testClient = super(TestVpcRemoteAccessVpn, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = Services().services
+        cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
@@ -229,11 +70,11 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["compute_offering"]
+            cls.services["vpc_vpn"]["compute_offering"]
         )
         cls._cleanup.append(cls.compute_offering)
         cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
+            cls.apiclient, services=cls.services["vpc_vpn"]["account"])
         cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -270,7 +111,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         try:
             vpc = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc"],
+                services=self.services["vpc_vpn"]["vpc"],
                 networkDomain="vpc.vpn",
                 vpcofferingid=vpcOffering[0].id,
                 zoneid=self.zone.id,
@@ -288,24 +129,24 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             # 2) Create network in VPC
             ntwk = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_1"],
+                services=self.services["vpc_vpn"]["network_1"],
                 accountid=self.account.name,
                 domainid=self.domain.id,
                 networkofferingid=networkOffering[0].id,
                 zoneid=self.zone.id,
                 vpcid=vpc.id
             )
+            self.cleanup.append(ntwk)
         except Exception as e:
             self.fail(e)
         finally:
             self.assertIsNotNone(ntwk, "Network failed to create")
-            self.cleanup.append(ntwk)
             self.logger.debug(
                 "Network %s created in VPC %s" % (ntwk.id, vpc.id))
 
         try:
             # 3) Deploy a vm
-            vm = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                        templateid=self.template.id,
                                        zoneid=self.zone.id,
                                        accountid=self.account.name,
@@ -314,13 +155,13 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                                        networkids=ntwk.id,
                                        hypervisor=self.hypervisor
                                        )
-            self.assertTrue(vm is not None, "VM failed to deploy")
             self.cleanup.append(vm)
-            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.debug("VM %s deployed in VPC %s" % (vm.id, vpc.id))
         except Exception as e:
             self.fail(e)
         finally:
+            self.assertTrue(vm is not None, "VM failed to deploy")
+            self.assertTrue(vm.state == 'Running', "VM is not running")
             self.logger.debug("Deployed virtual machine: OK")
 
         try:
@@ -345,8 +186,8 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
                              publicipid=ip.id,
                              account=self.account.name,
                              domainid=self.account.domainid,
-                             iprange=self.services["vpn"]["iprange"],
-                             fordisplay=self.services["vpn"]["fordisplay"]
+                             iprange=self.services["vpc_vpn"]["vpn"]["iprange"],
+                             fordisplay=self.services["vpc_vpn"]["vpn"]["fordisplay"]
                              )
         except Exception as e:
             self.fail(e)
@@ -360,8 +201,8 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
             vpnUser = VpnUser.create(self.apiclient,
                                      account=self.account.name,
                                      domainid=self.account.domainid,
-                                     username=self.services["vpn"]["vpn_user"],
-                                     password=self.services["vpn"]["vpn_pass"]
+                                     username=self.services["vpc_vpn"]["vpn"]["vpn_user"],
+                                     password=self.services["vpc_vpn"]["vpn"]["vpn_pass"]
                                      )
         except Exception as e:
             self.fail(e)
@@ -404,7 +245,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         testClient = super(TestVpcSite2SiteVpn, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = Services().services
+        cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
@@ -413,12 +254,12 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["compute_offering"]
+            cls.services["vpc_vpn"]["compute_offering"]
         )
         cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
+            cls.apiclient, services=cls.services["vpc_vpn"]["account"])
         cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -444,9 +285,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         try:
             ssh_client = SshClient(
                 virtual_machine.public_ip,
-                services["virtual_machine"]["ssh_port"],
-                services["virtual_machine"]["username"],
-                services["virtual_machine"]["password"],
+                services["vpc_vpn"]["virtual_machine"]["ssh_port"],
+                services["vpc_vpn"]["virtual_machine"]["username"],
+                services["vpc_vpn"]["virtual_machine"]["password"],
                 retries)
 
         except Exception as e:
@@ -460,11 +301,11 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     def _create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
         self.logger.debug("Creating NAT rule in network for vm with public IP")
         if not services:
-            self.services["natrule"]["privateport"] = private_port
-            self.services["natrule"]["publicport"] = public_port
-            self.services["natrule"]["startport"] = public_port
-            self.services["natrule"]["endport"] = public_port
-            services = self.services["natrule"]
+            self.services["vpc_vpn"]["natrule"]["privateport"] = private_port
+            self.services["vpc_vpn"]["natrule"]["publicport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["startport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["endport"] = public_port
+            services = self.services["vpc_vpn"]["natrule"]
 
         nat_rule = NATRule.create(
             apiclient=self.apiclient,
@@ -513,7 +354,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.logger.debug("Creating VPC offering: %s", offering_name)
             vpc_off = VpcOffering.create(
                 self.apiclient,
-                self.services[offering_name]
+                self.services["vpc_vpn"][offering_name]
             )
 
             self._validate_vpc_offering(vpc_off)
@@ -541,7 +382,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         try:
             vpc1 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc"],
+                services=self.services["vpc_vpn"]["vpc"],
                 networkDomain="vpc1.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
@@ -560,7 +401,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         try:
             vpc2 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc2"],
+                services=self.services["vpc_vpn"]["vpc2"],
                 networkDomain="vpc2.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
@@ -582,7 +423,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         try:
             ntwk1 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_1"],
+                services=self.services["vpc_vpn"]["network_1"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -602,7 +443,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         try:
             ntwk2 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_2"],
+                services=self.services["vpc_vpn"]["network_2"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -620,7 +461,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         vm1 = None
         # Deploy a vm in network 1
         try:
-            vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm1 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
@@ -640,7 +481,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         vm2 = None
         # Deploy a vm in network 2
         try:
-            vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm2 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
@@ -688,7 +529,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
         )
         ip2 = src_nat_list[0]
 
-        services = self.services["vpncustomergateway"]
+        services = self.services["vpc_vpn"]["vpncustomergateway"]
         customer1_response = VpnCustomerGateway.create(
             self.apiclient, services, "Peer VPC1", ip1.ipaddress, vpc1.cidr, self.account.name, self.domain.id)
         self.debug("VPN customer gateway added for VPC %s enabled" % vpc1.id)
@@ -751,7 +592,7 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             time.sleep(20)
 
         # setup ssh connection to vm2
-        ssh_client = self._get_ssh_client(vm2, self.services, 10)
+        ssh_client = self._get_ssh_client(vm2, self.services, 30)
 
         if ssh_client:
             # run ping test
@@ -780,7 +621,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         testClient = super(TestRVPCSite2SiteVpn, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = Services().services
+        cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
@@ -788,12 +629,12 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["compute_offering"]
+            cls.services["vpc_vpn"]["compute_offering"]
         )
         cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
+            cls.apiclient, services=cls.services["vpc_vpn"]["account"])
         cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -837,7 +678,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
             self.logger.debug("Creating VPC offering: %s", offering_name)
             vpc_off = VpcOffering.create(
                 self.apiclient,
-                self.services[offering_name]
+                self.services["vpc_vpn"][offering_name]
             )
 
             self._validate_vpc_offering(vpc_off)
@@ -852,9 +693,9 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         try:
             ssh_client = SshClient(
                 virtual_machine.public_ip,
-                services["virtual_machine"]["ssh_port"],
-                services["virtual_machine"]["username"],
-                services["virtual_machine"]["password"],
+                services["vpc_vpn"]["virtual_machine"]["ssh_port"],
+                services["vpc_vpn"]["virtual_machine"]["username"],
+                services["vpc_vpn"]["virtual_machine"]["password"],
                 retries)
 
         except Exception as e:
@@ -868,11 +709,11 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
     def _create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
         self.logger.debug("Creating NAT rule in network for vm with public IP")
         if not services:
-            self.services["natrule"]["privateport"] = private_port
-            self.services["natrule"]["publicport"] = public_port
-            self.services["natrule"]["startport"] = public_port
-            self.services["natrule"]["endport"] = public_port
-            services = self.services["natrule"]
+            self.services["vpc_vpn"]["natrule"]["privateport"] = private_port
+            self.services["vpc_vpn"]["natrule"]["publicport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["startport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["endport"] = public_port
+            services = self.services["vpc_vpn"]["natrule"]
 
         nat_rule = NATRule.create(
             apiclient=self.apiclient,
@@ -914,7 +755,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         try:
             vpc1 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc"],
+                services=self.services["vpc_vpn"]["vpc"],
                 networkDomain="vpc1.vpn",
                 vpcofferingid=redundant_vpc_offering.id,
                 zoneid=self.zone.id,
@@ -933,7 +774,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         try:
             vpc2 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc2"],
+                services=self.services["vpc_vpn"]["vpc2"],
                 networkDomain="vpc2.vpn",
                 vpcofferingid=redundant_vpc_offering.id,
                 zoneid=self.zone.id,
@@ -955,7 +796,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         try:
             ntwk1 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_1"],
+                services=self.services["vpc_vpn"]["network_1"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -975,7 +816,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         try:
             ntwk2 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_2"],
+                services=self.services["vpc_vpn"]["network_2"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -993,7 +834,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         # Deploy a vm in network 1
         vm1 = None
         try:
-            vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm1 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
@@ -1013,7 +854,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         # Deploy a vm in network 2
         vm2 = None
         try:
-            vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm2 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
@@ -1061,7 +902,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
         )
         ip2 = src_nat_list[0]
 
-        services = self.services["vpncustomergateway"]
+        services = self.services["vpc_vpn"]["vpncustomergateway"]
         customer1_response = VpnCustomerGateway.create(
             self.apiclient, services, "Peer VPC1", ip1.ipaddress, vpc1.cidr, self.account.name, self.domain.id)
         self.debug("VPN customer gateway added for VPC %s enabled" % vpc1.id)
@@ -1156,7 +997,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
         testClient = super(TestVPCSite2SiteVPNMultipleOptions, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = Services().services
+        cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
@@ -1165,12 +1006,12 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
         cls.compute_offering = ServiceOffering.create(
             cls.apiclient,
-            cls.services["compute_offering"]
+            cls.services["vpc_vpn"]["compute_offering"]
         )
         cls._cleanup.append(cls.compute_offering)
 
         cls.account = Account.create(
-            cls.apiclient, services=cls.services["account"])
+            cls.apiclient, services=cls.services["vpc_vpn"]["account"])
         cls._cleanup.append(cls.account)
 
         cls.hypervisor = testClient.getHypervisorInfo()
@@ -1196,9 +1037,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         try:
             ssh_client = SshClient(
                 virtual_machine.public_ip,
-                services["virtual_machine"]["ssh_port"],
-                services["virtual_machine"]["username"],
-                services["virtual_machine"]["password"],
+                services["vpc_vpn"]["virtual_machine"]["ssh_port"],
+                services["vpc_vpn"]["virtual_machine"]["username"],
+                services["vpc_vpn"]["virtual_machine"]["password"],
                 retries)
 
         except Exception as e:
@@ -1212,11 +1053,11 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
     def _create_natrule(self, vpc, vm, public_port, private_port, public_ip, network, services=None):
         self.logger.debug("Creating NAT rule in network for vm with public IP")
         if not services:
-            self.services["natrule"]["privateport"] = private_port
-            self.services["natrule"]["publicport"] = public_port
-            self.services["natrule"]["startport"] = public_port
-            self.services["natrule"]["endport"] = public_port
-            services = self.services["natrule"]
+            self.services["vpc_vpn"]["natrule"]["privateport"] = private_port
+            self.services["vpc_vpn"]["natrule"]["publicport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["startport"] = public_port
+            self.services["vpc_vpn"]["natrule"]["endport"] = public_port
+            services = self.services["vpc_vpn"]["natrule"]
 
         nat_rule = NATRule.create(
             apiclient=self.apiclient,
@@ -1265,7 +1106,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
             self.logger.debug("Creating VPC offering: %s", offering_name)
             vpc_off = VpcOffering.create(
                 self.apiclient,
-                self.services[offering_name]
+                self.services["vpc_vpn"][offering_name]
             )
 
             self._validate_vpc_offering(vpc_off)
@@ -1293,7 +1134,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         try:
             vpc1 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc"],
+                services=self.services["vpc_vpn"]["vpc"],
                 networkDomain="vpc1.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
@@ -1312,7 +1153,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         try:
             vpc2 = VPC.create(
                 apiclient=self.apiclient,
-                services=self.services["vpc2"],
+                services=self.services["vpc_vpn"]["vpc2"],
                 networkDomain="vpc2.vpn",
                 vpcofferingid=vpc_offering.id,
                 zoneid=self.zone.id,
@@ -1334,7 +1175,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         try:
             ntwk1 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_1"],
+                services=self.services["vpc_vpn"]["network_1"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -1354,7 +1195,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         try:
             ntwk2 = Network.create(
                 apiclient=self.apiclient,
-                services=self.services["network_2"],
+                services=self.services["vpc_vpn"]["network_2"],
                 accountid=self.account.name,
                 domainid=self.account.domainid,
                 networkofferingid=networkOffering[0].id,
@@ -1372,7 +1213,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         vm1 = None
         # Deploy a vm in network 1
         try:
-            vm1 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm1 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,
@@ -1392,7 +1233,7 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
         vm2 = None
         # Deploy a vm in network 2
         try:
-            vm2 = VirtualMachine.create(self.apiclient, services=self.services["virtual_machine"],
+            vm2 = VirtualMachine.create(self.apiclient, services=self.services["vpc_vpn"]["virtual_machine"],
                                         templateid=self.template.id,
                                         zoneid=self.zone.id,
                                         accountid=self.account.name,

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 # $Id: setup_iscsi.sh 9879 2010-06-24 02:41:46Z anthony $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xenserver/setup_iscsi.sh $
 
 #set -x
- 
+
 usage() {
   printf "Usage: %s [uuid of host script is running on]\n" $(basename $0) >&2
 }
@@ -50,4 +50,3 @@ then
   exit 1
 fi
 printf "=======> DONE <======\n"
-

@@ -24,14 +24,16 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddress.State;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
@@ -48,7 +50,6 @@ import com.cloud.utils.net.Ip;
 @Component
 @DB
 public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
-    private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected SearchBuilder<IPAddressVO> AllFieldsSearch;
     protected SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
@@ -59,6 +60,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
     protected SearchBuilder<IPAddressVO> DeleteAllExceptGivenIp;
     protected GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;
+    protected SearchBuilder<IPAddressVO> tungstenFloatingIpSearch;
     @Inject
     protected VlanDao _vlanDao;
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
@@ -67,6 +69,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     ResourceTagDao _tagsDao;
     @Inject
     UserIpAddressDetailsDao _detailsDao;
+
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     // make it public for JUnit test
     public IPAddressDaoImpl() {
@@ -151,6 +156,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         CountFreePublicIps.join("vlans", join, CountFreePublicIps.entity().getVlanId(), join.entity().getId(), JoinBuilder.JoinType.INNER);
         CountFreePublicIps.done();
 
+        tungstenFloatingIpSearch = createSearchBuilder();
+        tungstenFloatingIpSearch.and("dc", tungstenFloatingIpSearch.entity().getDataCenterId(), Op.EQ);
+        tungstenFloatingIpSearch.and("state", tungstenFloatingIpSearch.entity().getState(), Op.EQ);
+        tungstenFloatingIpSearch.and("network", tungstenFloatingIpSearch.entity().getAssociatedWithNetworkId(), Op.NNULL);
+        tungstenFloatingIpSearch.and("sourceNat", tungstenFloatingIpSearch.entity().isSourceNat(), Op.EQ);
+        tungstenFloatingIpSearch.done();
+
         DeleteAllExceptGivenIp = createSearchBuilder();
         DeleteAllExceptGivenIp.and("vlanDbId", DeleteAllExceptGivenIp.entity().getVlanId(), Op.EQ);
         DeleteAllExceptGivenIp.and("ip", DeleteAllExceptGivenIp.entity().getAddress(), Op.NEQ);
@@ -215,6 +227,15 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("sourcenetwork", networkId);
         sc.setParameters("ipAddress", ipAddress);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public IPAddressVO findByIpAndNetworkIdAndDcId(long networkId, long dcId, String ipAddress) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("dataCenterId", dcId);
         return findOneBy(sc);
     }
 
@@ -287,7 +308,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
 
     // for vm secondary ips case mapping is  IP1--> vmIp1, IP2-->vmIp2, etc
-    // Used when vm is mapped to muliple to public ips
+    // Used when vm is mapped to multiple to public ips
     @Override
     public List<IPAddressVO> findAllByAssociatedVmId(long vmId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
@@ -297,9 +318,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
-    public IPAddressVO findByVmIp(String vmIp) {
+    public IPAddressVO findByIp(String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("associatedVmIp", vmIp);
+        sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
 
@@ -352,7 +373,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
                 ipCount = rs.getInt(1);
             }
         } catch (Exception e) {
-            s_logger.warn("Exception counting IP addresses", e);
+            logger.warn("Exception counting IP addresses", e);
         }
 
         return ipCount;
@@ -502,10 +523,55 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
+    public List<IPAddressVO> listByDcIdAndAssociatedNetwork(final long dcId) {
+        SearchCriteria<IPAddressVO> sc = tungstenFloatingIpSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("sourceNat", false);
+        sc.setParameters("state", State.Allocated);
+        return listBy(sc);
+    }
+
+    @Override
     public List<IPAddressVO> listByNetworkId(long networkId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("state", State.Allocated);
         return listBy(sc);
+    }
+
+    @Override
+    public void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc) {
+        long accountId = CallContext.current().getCallingAccount().getAccountId();
+        SearchBuilder<PublicIpQuarantineVO> listAllIpsInQuarantine = publicIpQuarantineDao.createSearchBuilder();
+        listAllIpsInQuarantine.and("quarantineEndDate", listAllIpsInQuarantine.entity().getEndDate(), SearchCriteria.Op.GT);
+        listAllIpsInQuarantine.and("previousOwnerId", listAllIpsInQuarantine.entity().getPreviousOwnerId(), Op.NEQ);
+
+        SearchCriteria<PublicIpQuarantineVO> searchCriteria = listAllIpsInQuarantine.create();
+        searchCriteria.setParameters("quarantineEndDate", new Date());
+        searchCriteria.setParameters("previousOwnerId", accountId);
+        Object[] quarantinedIpsIdsAllowedToUser = publicIpQuarantineDao.search(searchCriteria, null).stream().map(PublicIpQuarantineVO::getPublicIpAddressId).toArray();
+
+        sc.setParametersIfNotNull("quarantinedPublicIpsIdsNIN", quarantinedIpsIdsAllowedToUser);
+    }
+
+    @Override
+    public IPAddressVO findBySourceNetworkIdAndDatacenterIdAndState(long sourceNetworkId, long dataCenterId, State state) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("sourcenetwork", sourceNetworkId);
+        sc.setParameters("dataCenterId", dataCenterId);
+        sc.setParameters("state", State.Free);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<IPAddressVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getAssociatedWithVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<IPAddressVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
     }
 }

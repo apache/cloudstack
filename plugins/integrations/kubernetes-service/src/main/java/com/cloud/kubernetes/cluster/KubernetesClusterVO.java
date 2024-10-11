@@ -52,16 +52,16 @@ public class KubernetesClusterVO implements KubernetesCluster {
     private long zoneId;
 
     @Column(name = "kubernetes_version_id")
-    private long kubernetesVersionId;
+    private Long kubernetesVersionId;
 
     @Column(name = "service_offering_id")
-    private long serviceOfferingId;
+    private Long serviceOfferingId;
 
     @Column(name = "template_id")
-    private long templateId;
+    private Long templateId;
 
     @Column(name = "network_id")
-    private long networkId;
+    private Long networkId;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -114,6 +114,9 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "security_group_id")
     private Long securityGroupId;
 
+    @Column(name = "cluster_type")
+    private ClusterType clusterType;
+
     @Override
     public long getId() {
         return id;
@@ -160,7 +163,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getKubernetesVersionId() {
+    public Long getKubernetesVersionId() {
         return kubernetesVersionId;
     }
 
@@ -169,7 +172,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getServiceOfferingId() {
+    public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
 
@@ -178,7 +181,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getTemplateId() {
+    public Long getTemplateId() {
         return templateId;
     }
 
@@ -187,7 +190,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
     }
 
     @Override
-    public long getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
     }
 
@@ -350,13 +353,21 @@ public class KubernetesClusterVO implements KubernetesCluster {
         return securityGroupId;
     }
 
+    public ClusterType getClusterType() {
+        return clusterType;
+    }
+
+    public void setClusterType(ClusterType clusterType) {
+        this.clusterType = clusterType;
+    }
+
     public KubernetesClusterVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
-                               long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
-                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint) {
+    public KubernetesClusterVO(String name, String description, long zoneId, Long kubernetesVersionId, Long serviceOfferingId, Long templateId,
+                               Long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
+                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -377,14 +388,15 @@ public class KubernetesClusterVO implements KubernetesCluster {
             this.nodeRootDiskSize = nodeRootDiskSize;
         }
         this.endpoint = endpoint;
+        this.clusterType = clusterType;
         this.checkForGc = false;
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
         long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state, String keyPair, long cores,
-        long memory, Long nodeRootDiskSize, String endpoint, boolean autoscalingEnabled, Long minSize, Long maxSize) {
+        long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType, boolean autoscalingEnabled, Long minSize, Long maxSize) {
         this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, controlNodeCount,
-            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint);
+            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint, clusterType);
         this.autoscalingEnabled = autoscalingEnabled;
         this.minSize = minSize;
         this.maxSize = maxSize;

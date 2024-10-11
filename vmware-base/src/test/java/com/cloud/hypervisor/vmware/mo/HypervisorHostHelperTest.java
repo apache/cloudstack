@@ -20,15 +20,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.vmware.util.VmwareClient;
+import com.cloud.network.Networks;
+import com.cloud.utils.Pair;
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.VimPortType;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -61,6 +71,10 @@ public class HypervisorHostHelperTest {
     @Mock
     VmwareContext context;
     @Mock
+    ManagedObjectReference mor;
+    @Mock
+    VmwareClient vmwareClient;
+    @Mock
     DVPortgroupConfigInfo currentDvPortgroupInfo;
     @Mock
     DVPortgroupConfigSpec dvPortgroupConfigSpec;
@@ -78,6 +92,12 @@ public class HypervisorHostHelperTest {
     private ClusterConfigInfoEx clusterConfigInfo;
     @Mock
     private DatacenterConfigInfo datacenterConfigInfo;
+    @Mock
+    HostMO hostMO;
+    @Mock
+    VimPortType vimService;
+    @Mock
+    ObjectContent ocs;
 
     String vSwitchName;
     Integer networkRateMbps;
@@ -85,9 +105,15 @@ public class HypervisorHostHelperTest {
     String prefix;
     String svlanId = null;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+        ObjectContent oc = new ObjectContent();
+        when(hostMO.getContext()).thenReturn(context);
+        when(context.getService()).thenReturn(vimService);
+        when(context.getVimClient()).thenReturn(vmwareClient);
         when(context.getServiceContent()).thenReturn(serviceContent);
         when(serviceContent.getAbout()).thenReturn(aboutInfo);
         when(clusterMO.getClusterConfigInfo()).thenReturn(clusterConfigInfo);
@@ -102,12 +128,9 @@ public class HypervisorHostHelperTest {
     public static void tearDownAfterClass() throws Exception {
     }
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -129,8 +152,8 @@ public class HypervisorHostHelperTest {
     @Test
     public void testGetVcenterApiVersionWithNullContextObject() throws Exception {
         assertNull(HypervisorHostHelper.getVcenterApiVersion(null));
-        verifyZeroInteractions(aboutInfo);
-        verifyZeroInteractions(serviceContent);
+        verifyNoInteractions(aboutInfo);
+        verifyNoInteractions(serviceContent);
     }
 
     @Test
@@ -947,5 +970,25 @@ public class HypervisorHostHelperTest {
         when(datacenterConfigInfo.getDefaultHardwareVersionKey()).thenReturn(null);
         HypervisorHostHelper.setVMHardwareVersion(vmSpec, clusterMO, datacenterMO);
         verify(vmSpec, never()).setVersion(any());
+    }
+
+    @Test
+    public void testPrepareNetwork() throws Exception {
+        String networkName = "D1-A2-Z2-V8-S3";
+        DynamicProperty property = new DynamicProperty();
+        property.setVal(networkName);
+
+        when(hostMO.getHyperHostDatacenter()).thenReturn(mor);
+        when(datacenterMO.getDvSwitchMor(any(String.class))).thenReturn(mor);
+        when(vmwareClient.getDecendentMoRef(nullable(ManagedObjectReference.class), any(String.class), any(String.class))).thenReturn(mor);
+        when(vimService.retrieveProperties(any(), anyList())).thenReturn(List.of(ocs));
+        when(ocs.getPropSet()).thenReturn(List.of(property));
+        when(ocs.getObj()).thenReturn(mor);
+
+        Pair<ManagedObjectReference, String> morNet = HypervisorHostHelper.prepareNetwork("NSX-VDS", "cloud.guest", hostMO, null, null,
+                200, null, 900000, VirtualSwitchType.VMwareDistributedVirtualSwitch, 1, null,
+        false, Networks.BroadcastDomainType.NSX, null,
+                null, networkName);
+        assertEquals(morNet.second(), networkName);
     }
 }

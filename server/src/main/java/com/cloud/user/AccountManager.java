@@ -20,11 +20,14 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -188,4 +191,16 @@ public interface AccountManager extends AccountService, Configurable {
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
     boolean moveUser(long id, Long domainId, Account newAccount);
+
+    UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(final Long domainId, final Long userAccountId);
+
+    void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId);
+
+    UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd);
+
+    List<String> getApiNameList();
+
+    void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation);
+
+  void checkApiAccess(Account caller, String command);
 }

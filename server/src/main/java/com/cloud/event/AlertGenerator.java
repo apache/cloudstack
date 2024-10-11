@@ -25,13 +25,12 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenterVO;
@@ -44,11 +43,11 @@ import com.cloud.utils.component.ComponentContext;
 @Component
 public class AlertGenerator {
 
-    private static final Logger s_logger = Logger.getLogger(AlertGenerator.class);
+    protected static Logger LOGGER = LogManager.getLogger(AlertGenerator.class);
     private static DataCenterDao s_dcDao;
     private static HostPodDao s_podDao;
-    protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
+    protected static EventDistributor eventDistributor;
 
     @Inject
     DataCenterDao dcDao;
@@ -75,9 +74,9 @@ public class AlertGenerator {
         if(!configValue)
             return;
         try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+            return; // no provider is configured to provide events distributor, so just return
         }
 
         org.apache.cloudstack.framework.events.Event event =
@@ -106,10 +105,6 @@ public class AlertGenerator {
 
         event.setDescription(eventDescription);
 
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException e) {
-            s_logger.warn("Failed to publish alert on the the event bus.");
-        }
+        eventDistributor.publish(event);
     }
 }

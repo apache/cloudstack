@@ -16,6 +16,21 @@
 // under the License.
 package com.cloud.storage;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.commons.lang3.EnumUtils;
+
 public enum StoragePoolStatus {
     Initial, Initialized, Creating, Attaching, Up, PrepareForMaintenance, ErrorInMaintenance, CancelMaintenance, Maintenance, Disabled, Removed;
+
+    public static StoragePoolStatus validateAndGetStatus(String value) {
+        if (value == null) {
+            return null;
+        } else {
+            StoragePoolStatus status = EnumUtils.getEnumIgnoreCase(StoragePoolStatus.class, value);
+            if (status == null) {
+                throw new InvalidParameterValueException("Invalid status: " + value);
+            }
+            return status;
+        }
+    }
 }

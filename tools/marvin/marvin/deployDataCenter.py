@@ -172,7 +172,7 @@ class DeployDataCenters(object):
     def addBaremetalRct(self, config):
         networktype= config.zones[0].networktype
         baremetalrcturl= config.zones[0].baremetalrcturl
-        if networktype is None or baremetalrcturl  is None:
+        if networktype is None or baremetalrcturl is None:
             return
         if networktype.lower()=="advanced":
 
@@ -315,6 +315,8 @@ class DeployDataCenters(object):
                                             podId, networkId)
                 self.createClusters(pod.clusters, zoneId, podId,
                                     vmwareDc=pod.vmwaredc)
+                if self.isTungstenZone:
+                    self.createTungstenManagementNetwork(podId)
         except Exception as e:
             print("Exception Occurred: %s" % GetDetailExceptionInfo(e))
             self.__tcRunLogger.\
@@ -752,11 +754,18 @@ class DeployDataCenters(object):
                             "====Zone: %s Creation Failed. So Exiting=====" %
                             str(zone.name))
                     self.__cleanAndExit()
+                self.isTungstenZone = False
                 for pnet in zone.physical_networks:
                     phynetwrk = self.createPhysicalNetwork(pnet, zoneId)
                     self.configureProviders(phynetwrk, pnet.providers)
                     self.updatePhysicalNetwork(phynetwrk.id, "Enabled",
                                                vlan=pnet.vlan)
+                    if "TF" in pnet.isolationmethods:
+                        self.isTungstenZone = True
+                        self.configureTungstenService(zoneId, phynetwrk.id, zone.tungstenprovider)
+                        if zone.securitygroupenabled:
+                            self.enableTungstenProvider(zoneId, phynetwrk.id)
+
                 if zone.networktype == "Basic":
                     listnetworkoffering =\
                         listNetworkOfferings.listNetworkOfferingsCmd()
@@ -788,6 +797,8 @@ class DeployDataCenters(object):
                     self.createPods(zone.pods, zoneId)
                     self.createVlanIpRanges(zone.networktype, zone.ipranges,
                                             zoneId)
+                    if self.isTungstenZone:
+                        self.createTungstenPublicNetwork(zoneId)
                 elif (zone.networktype == "Advanced"
                       and zone.securitygroupenabled == "true"):
                     listnetworkoffering =\
@@ -929,6 +940,51 @@ class DeployDataCenters(object):
             self.__cleanAndExit()
             return FAILED
 
+    def configureTungstenService(self, zoneId, physicalNetworkId, tungstenprovider):
+        try:
+            createTFProviderCmd = createTungstenFabricProvider.createTungstenFabricProviderCmd()
+            createTFProviderCmd.zoneid = zoneId
+            createTFProviderCmd.name = tungstenprovider.name
+            createTFProviderCmd.tungstenproviderhostname = tungstenprovider.hostname
+            createTFProviderCmd.tungstengateway = tungstenprovider.gateway
+            self.__apiClient.createTungstenFabricProvider(createTFProviderCmd)
+            configTFServiceCmd = configTungstenFabricService.configTungstenFabricServiceCmd()
+            configTFServiceCmd.zoneid = zoneId
+            configTFServiceCmd.physicalnetworkid = physicalNetworkId
+            self.__apiClient.configTungstenFabricService(configTFServiceCmd)
+        except Exception as e:
+            print("\nException Occurred when config tungsten fabric service :%s" % GetDetailExceptionInfo(e))
+            self.__tcRunLogger.exception("====Config Tungsten Fabric Service Failed===")
+            self.__cleanAndExit()
+
+    def enableTungstenProvider(self, zoneId, physicalNetworkId):
+        provider = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+        provider.name = "Tungsten"
+        provider.physicalnetworkid = physicalNetworkId
+        provider.state = "Disabled"
+        providerres = self.__apiClient.listNetworkServiceProviders(provider)
+        if providerres and len(providerres) == 1:
+            self.enableProvider(providerres[0].id)
+
+    def createTungstenManagementNetwork(self, podId):
+        try:
+            createTFManagementNetworkCmd = createTungstenFabricManagementNetwork.createTungstenFabricManagementNetworkCmd()
+            createTFManagementNetworkCmd.podid = podId
+            self.__apiClient.createTungstenFabricManagementNetwork(createTFManagementNetworkCmd)
+        except Exception as e:
+            print("\nException Occurred when create tungsten fabric management network :%s" % GetDetailExceptionInfo(e))
+            self.__tcRunLogger.exception("====Create Tungsten Fabric Management Failed===")
+            self.__cleanAndExit()
+
+    def createTungstenPublicNetwork(self, zoneId):
+        try:
+            createTFPublicNetworkCmd = createTungstenFabricPublicNetwork.createTungstenFabricPublicNetworkCmd()
+            createTFPublicNetworkCmd.zoneid = zoneId
+            self.__apiClient.createTungstenFabricPublicNetwork(createTFPublicNetworkCmd)
+        except Exception as e:
+            print("\nException Occurred when create tungsten fabric public network :%s" % GetDetailExceptionInfo(e))
+            self.__tcRunLogger.exception("====Create Tungsten Fabric Public Failed===")
+            self.__cleanAndExit()
 
 class DeleteDataCenters:
 
@@ -1077,7 +1133,7 @@ class DeleteDataCenters:
             print("\n====DeployDC: CleanUp Started====")
             ret = FAILED
             if self.__dcCfgFile:
-                file_to_read = open(self.__dcCfgFile, 'r')
+                file_to_read = open(self.__dcCfgFile, 'rb')
                 if file_to_read:
                     self.__dcCfg = pickle.load(file_to_read)
             if self.__dcCfg:

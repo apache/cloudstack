@@ -22,9 +22,11 @@ export default {
   name: 'zone',
   title: 'label.zones',
   icon: 'global-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-zones',
   permission: ['listZonesMetrics'],
+  searchFilters: ['name', 'domainid', 'tags'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'networktype', 'clusters']
+    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
     const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
@@ -32,15 +34,21 @@ export default {
     fields.push('order')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2'],
+  details: ['name', 'id', 'allocationstate', 'type', 'networktype', 'guestcidraddress', 'localstorageenabled', 'securitygroupsenabled', 'dns1', 'dns2', 'internaldns1', 'internaldns2', 'asnrange'],
   related: [{
     name: 'pod',
     title: 'label.pods',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'cluster',
     title: 'label.clusters',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }, {
     name: 'host',
     title: 'label.hosts',
@@ -52,7 +60,10 @@ export default {
   }, {
     name: 'imagestore',
     title: 'label.secondary.storage',
-    param: 'zoneid'
+    param: 'zoneid',
+    show: (record) => {
+      return record.type !== 'Edge'
+    }
   }],
   resourceType: 'Zone',
   tabs: [{
@@ -62,8 +73,18 @@ export default {
     name: 'physical.network',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/PhysicalNetworksTab.vue')))
   }, {
+    name: 'ipv4.subnets',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/Ipv4GuestSubnetsTab.vue')))
+  }, {
+    name: 'asnumber',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/AsNumbersTab.vue')))
+  }, {
+    name: 'bgp.peers',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue')))
+  }, {
     name: 'system.vms',
-    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue')))
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/SystemVmsTab.vue'))),
+    show: (record) => { return record.isEdge !== true }
   }, {
     name: 'resources',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))

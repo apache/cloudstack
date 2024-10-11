@@ -25,14 +25,14 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.commons.collections.MapUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -46,9 +46,10 @@ public class UsageEventUtils {
     private static UsageEventDao s_usageEventDao;
     private static AccountDao s_accountDao;
     private static DataCenterDao s_dcDao;
-    private static final Logger s_logger = Logger.getLogger(UsageEventUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(UsageEventUtils.class);
     protected static EventBus s_eventBus = null;
     protected static ConfigurationDao s_configDao;
+    private static EventDistributor eventDistributor;
 
     @Inject
     UsageEventDao usageEventDao;
@@ -206,9 +207,9 @@ public class UsageEventUtils {
         if( !configValue)
             return;
         try {
-            s_eventBus = ComponentContext.getComponent(EventBus.class);
+            eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {
-            return; // no provider is configured to provide events bus, so just return
+            return; // no provider is configured to provide events distributor, so just return
         }
 
         Account account = s_accountDao.findById(accountId);
@@ -237,11 +238,7 @@ public class UsageEventUtils {
 
         event.setDescription(eventDescription);
 
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException e) {
-            s_logger.warn("Failed to publish usage event on the the event bus.");
-        }
+        eventDistributor.publish(event);
     }
 
     static final String Name = "management-server";

@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,9 +46,9 @@ public class DirectDownloadManagerImplTest {
     @InjectMocks
     private DirectDownloadManagerImpl manager = new DirectDownloadManagerImpl();
 
-    private static final String HTTP_HEADER_1 = "Content-Type";
+    private static final String HTTP_HEADER_1 = "content-type";
     private static final String HTTP_VALUE_1 = "application/x-www-form-urlencoded";
-    private static final String HTTP_HEADER_2 = "Accept-Encoding";
+    private static final String HTTP_HEADER_2 = "accept-encoding";
     private static final String HTTP_VALUE_2 = "gzip";
 
     private static final String VALID_CERTIFICATE =

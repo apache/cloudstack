@@ -18,7 +18,7 @@ package org.apache.cloudstack.dedicated.manager;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -32,7 +32,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +73,6 @@ import junit.framework.Assert;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class DedicatedApiUnitTest {
-    public static final Logger s_logger = Logger.getLogger(DedicatedApiUnitTest.class);
     @Inject
     DedicatedResourceManagerImpl _dedicatedService = new DedicatedResourceManagerImpl();
 
@@ -162,7 +160,7 @@ public class DedicatedApiUnitTest {
                 List<DedicatedResourceVO> result = _dedicatedService.dedicateZone(10L, domainId, accountName);
                 Assert.assertNotNull(result);
             } catch (Exception e) {
-                s_logger.info("exception in testing dedication of zone "
+                logger.info("exception in testing dedication of zone "
                         + e.toString());
             }
         }
@@ -176,7 +174,7 @@ public class DedicatedApiUnitTest {
                 List<DedicatedResourceVO> result = _dedicatedService.dedicatePod(10L, domainId, accountName);
                 Assert.assertNotNull(result);
             } catch (Exception e) {
-                s_logger.info("exception in testing dedication of pod "
+                logger.info("exception in testing dedication of pod "
                         + e.toString());
             }
         }
@@ -189,7 +187,7 @@ public class DedicatedApiUnitTest {
                 List<DedicatedResourceVO> result = _dedicatedService.dedicateCluster(10L, domainId, accountName);
                 Assert.assertNotNull(result);
             } catch (Exception e) {
-                s_logger.info("exception in testing dedication of cluster "
+                logger.info("exception in testing dedication of cluster "
                         + e.toString());
             }
         }
@@ -205,7 +203,7 @@ public class DedicatedApiUnitTest {
                 List<DedicatedResourceVO> result = _dedicatedService.dedicateHost(10L, domainId, accountName);
                 Assert.assertNotNull(result);
             } catch (Exception e) {
-                s_logger.info("exception in testing dedication of host "
+                logger.info("exception in testing dedication of host "
                         + e.toString());
             }
         }

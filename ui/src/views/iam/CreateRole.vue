@@ -67,9 +67,9 @@
             v-model:value="form.type"
             :placeholder="apiParams.type.description"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
@@ -87,15 +87,23 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="role in roles"
               :value="role.id"
-              :key="role.id">
+              :key="role.id"
+              :label="role.name">
               {{ role.name }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+
+        <a-form-item name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
+          <a-switch v-model:checked="form.ispublic"/>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -149,7 +157,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        using: 'type'
+        using: 'type',
+        ispublic: true
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],

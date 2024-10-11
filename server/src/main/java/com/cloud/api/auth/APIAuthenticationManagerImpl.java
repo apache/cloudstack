@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
@@ -32,9 +31,10 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 
+import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
+
 @SuppressWarnings("unchecked")
 public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuthenticationManager {
-    public static final Logger s_logger = Logger.getLogger(APIAuthenticationManagerImpl.class.getName());
 
     private List<PluggableAPIAuthenticator> _apiAuthenticators;
 
@@ -77,12 +77,21 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(DefaultLoginAPIAuthenticatorCmd.class);
         cmdList.add(DefaultLogoutAPIAuthenticatorCmd.class);
+        if (UserPasswordResetEnabled.value()) {
+            cmdList.add(DefaultForgotPasswordAPIAuthenticatorCmd.class);
+            cmdList.add(DefaultResetPasswordAPIAuthenticatorCmd.class);
+        }
+
+        cmdList.add(ListUserTwoFactorAuthenticatorProvidersCmd.class);
+        cmdList.add(ValidateUserTwoFactorAuthenticationCodeCmd.class);
+        cmdList.add(SetupUserTwoFactorAuthenticationCmd.class);
+
         for (PluggableAPIAuthenticator apiAuthenticator: _apiAuthenticators) {
             List<Class<?>> commands = apiAuthenticator.getAuthCommands();
             if (commands != null) {
                 cmdList.addAll(commands);
             } else {
-                s_logger.warn("API Authenticator returned null api commands:" + apiAuthenticator.getName());
+                logger.warn("API Authenticator returned null api commands:" + apiAuthenticator.getName());
             }
         }
         return cmdList;
@@ -98,8 +107,8 @@ public class APIAuthenticationManagerImpl extends ManagerBase implements APIAuth
                 apiAuthenticator = ComponentContext.inject(apiAuthenticator);
                 apiAuthenticator.setAuthenticators(_apiAuthenticators);
             } catch (InstantiationException | IllegalAccessException e) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("APIAuthenticationManagerImpl::getAPIAuthenticator failed: " + e.getMessage());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("APIAuthenticationManagerImpl::getAPIAuthenticator failed: " + e.getMessage());
                 }
             }
         }

@@ -20,6 +20,7 @@ import com.cloud.user.Account;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -27,25 +28,24 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 import java.util.Date;
 
-@APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.17.0.0",
+@APICommand(name = "quotaTariffCreate", responseObject = QuotaTariffResponse.class, description = "Creates a quota tariff for a resource.", since = "4.18.0.0",
 requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class QuotaTariffCreateCmd extends BaseCmd {
-    protected Logger logger = Logger.getLogger(getClass());
 
     @Inject
     QuotaResponseBuilder responseBuilder;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 32)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Quota tariff's name", length = 65535)
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description.", length = 256)
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Quota tariff's description.", length = 65535)
     private String description;
 
     @Parameter(name = ApiConstants.USAGE_TYPE, type = CommandType.INTEGER, required = true, description = "Integer value for the usage type of the resource.")
@@ -54,31 +54,30 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     @Parameter(name = "value", type = CommandType.DOUBLE, required = true, description = "The quota tariff value of the resource as per the default unit.")
     private Double value;
 
-    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = "Quota tariff's activation rule.",
-            length = 65535)
+    @Parameter(name = ApiConstants.ACTIVATION_RULE, type = CommandType.STRING, description = ApiConstants.PARAMETER_DESCRIPTION_ACTIVATION_RULE, length = 65535)
     private String activationRule;
 
-    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Use yyyy-MM-dd as"
-            + " the date format, e.g. startDate=2009-06-03. Inform null to use the current date.")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "The effective start date on/after which the quota tariff is effective. Inform null to " +
+            "use the current date. " + ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
-    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. Use yyyy-MM-dd as the date format, e.g."
-            + " endDate=2009-06-03.")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, description = "The end date of the quota tariff. If not informed, the tariff will be valid indefinitely. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
-    public QuotaTariffCreateCmd() {
-        super();
-    }
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.20.0.0")
+    private Integer position;
 
     @Override
     public void execute() {
+        CallContext.current().setEventDetails(String.format("Tariff: %s, description: %s, value: %s", getName(), getDescription(), getValue()));
         QuotaTariffVO result = responseBuilder.createQuotaTariff(this);
 
         if (result == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create new quota tariff.");
         }
 
-        QuotaTariffResponse response = responseBuilder.createQuotaTariffResponse(result);
+        QuotaTariffResponse response = responseBuilder.createQuotaTariffResponse(result, true);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -108,10 +107,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
         return usageType;
     }
 
-    public void setUsageType(Integer usageType) {
-        this.usageType = usageType;
-    }
-
     public Double getValue() {
         return value;
     }
@@ -122,10 +117,6 @@ public class QuotaTariffCreateCmd extends BaseCmd {
 
     public String getActivationRule() {
         return activationRule;
-    }
-
-    public void setActivationRule(String activationRule) {
-        this.activationRule = activationRule;
     }
 
     public Date getStartDate() {
@@ -143,5 +134,18 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.QuotaTariff;
+    }
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
 
 }

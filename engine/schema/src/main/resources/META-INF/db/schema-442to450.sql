@@ -448,7 +448,7 @@ CREATE VIEW `cloud`.`template_view` AS
 
 UPDATE configuration SET value='KVM,XenServer,VMware,BareMetal,Ovm,LXC,Hyperv' WHERE name='hypervisor.list';
 UPDATE `cloud`.`configuration` SET description="If set to true, will set guest VM's name as it appears on the hypervisor, to its hostname. The flag is supported for VMware hypervisor only" WHERE name='vm.instancename.flag';
-INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 'implicit.host.tags', 'GPU', 'Tag hosts at the time of host disovery based on the host properties/capabilities ', 'GPU');
+INSERT IGNORE INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Advanced', 'DEFAULT', 'management-server', 'implicit.host.tags', 'GPU', 'Tag hosts at the time of host discovery based on the host properties/capabilities ', 'GPU');
 
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
@@ -671,7 +671,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         resource_tags.resource_id tag_resource_id,
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
-        resource_tags.customer tag_customer,        
+        resource_tags.customer tag_customer,
         async_job.id job_id,
         async_job.uuid job_uuid,
         async_job.job_status job_status,
@@ -752,7 +752,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`user_vm_details` `custom_speed`  ON (((`custom_speed`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_speed`.`name` = 'CpuSpeed')))
            left join
-        `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));        
+        `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (231, UUID(), 1, 'CentOS 5 (32-bit)', utc_timestamp());

@@ -21,10 +21,10 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:util="http://www.springframework.org/schema/util"
-       
+
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans.xsd
-                      http://www.springframework.org/schema/aop 
+                      http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd
@@ -44,20 +44,26 @@
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
         <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />
         <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
         <property name="services" value="#{apiCommandsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticationProviders" value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
     </bean>
 
     <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />
+    <bean id="passwordReset" class="org.apache.cloudstack.user.UserPasswordResetManagerImpl" />
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">
         <property name="lockControllerListener" ref="lockControllerListener" />
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticators"
+                  value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="hostAllocators" value="#{hostAllocatorsRegistry.registered}" />
@@ -75,6 +81,8 @@
         <property name="discoverers"
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
+
+    <bean id="resourceCleanupServiceImpl" class="org.apache.cloudstack.resource.ResourceCleanupServiceImpl" />
 
     <!-- the new background poll manager -->
     <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
@@ -101,8 +109,9 @@
 
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
 
-
-    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
+    <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl">
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
+    </bean>
 
     <bean id="consoleProxyManagerImpl" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
         <property name="consoleProxyAllocators"
@@ -124,7 +133,7 @@
 
     <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
 
-    <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >  
+    <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >
         <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
     </bean>
 
@@ -137,6 +146,10 @@
         <property name="networkAclElements" value="#{networkACLServiceProvidersRegistry.registered}" />
         <property name="pfElements" value="#{portForwardingServiceProvidersRegistry.registered}" />
         <property name="staticNatElements" value="#{staticNatServiceProvidersRegistry.registered}" />
+    </bean>
+
+    <bean id="eventDistributor" class="org.apache.cloudstack.framework.events.EventDistributorImpl" >
+        <property name="eventBuses" value="#{eventBusRegistry.registered}" />
     </bean>
 
     <bean id="hypervisorGuruManagerImpl" class="com.cloud.hypervisor.HypervisorGuruManagerImpl" >
@@ -159,6 +172,7 @@
 
     <bean id="networkServiceImpl" class="com.cloud.network.NetworkServiceImpl" >
         <property name="networkGurus" value="#{networkGurusRegistry.registered}" />
+        <property name="internalLoadBalancerElementServices" value="#{internalLoadBalancerElementServiceRegistry.registered}" />
     </bean>
 
     <bean id="networkUsageManagerImpl" class="com.cloud.network.NetworkUsageManagerImpl" />
@@ -206,45 +220,45 @@
 
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
-    
+
     <bean id="virtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
-        
+
     <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" >
         <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
     </bean>
-    
+
     <bean id="vpcTxCallable" class="com.cloud.network.vpc.VpcPrivateGatewayTransactionCallable" />
-    
+
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
-    
+
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
-    
+
     <bean id="topologyContext" class="org.apache.cloudstack.network.topology.NetworkTopologyContext" init-method="init" />
-    
+
     <bean id="basicNetworkTopology" class="org.apache.cloudstack.network.topology.BasicNetworkTopology" />
     <bean id="advancedNetworkTopology" class="org.apache.cloudstack.network.topology.AdvancedNetworkTopology" />
-    
+
     <bean id="basicNetworkVisitor" class="org.apache.cloudstack.network.topology.BasicNetworkVisitor" />
     <bean id="advancedNetworkVisitor" class="org.apache.cloudstack.network.topology.AdvancedNetworkVisitor" />
-    
+
     <bean id="commandSetupHelper"
         class="com.cloud.network.router.CommandSetupHelper" />
-    
+
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
-        
+
     <bean id="networkHelper"
         class="com.cloud.network.router.NetworkHelperImpl" />
-        
+
     <bean id="vpcNetworkHelper"
         class="com.cloud.network.router.VpcNetworkHelperImpl" />
-        
+
     <bean id="nicProfileHelper"
         class="com.cloud.network.router.NicProfileHelperImpl" />
-        
+
     <bean id="routerDeploymentDefinitionBuilder"
         class="org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder" />
 
@@ -252,6 +266,9 @@
         <property name="name" value="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="shutdownManager" class="org.apache.cloudstack.shutdown.ShutdownManagerImpl" >
+        <property name="name" value="shutdownManager" />
+    </bean>
 
     <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
 
@@ -260,14 +277,14 @@
     <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
 
     <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
-  
+
     <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
 
     <bean id="volumeApiServiceImpl" class="com.cloud.storage.VolumeApiServiceImpl">
         <property name="storagePoolAllocators"
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
-    
+
     <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
 
     <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
@@ -308,7 +325,7 @@
     </bean>
 
     <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl">
-        <property name="kubernetesClusterHelpers" value="#{kubernetesClusterHelperRegistry.registered}" />
+        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
     </bean>
 
     <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
@@ -322,6 +339,8 @@
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
+
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
@@ -329,14 +348,36 @@
         <constructor-arg name="timeout" value="10000" />
     </bean>
 
+    <bean id="storageStorageBrowserImpl" class="org.apache.cloudstack.storage.browser.StorageBrowserImpl" />
+
     <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
 
+    <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
+        <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
     <bean id="resourceManagerUtilImpl"
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
     <bean id="resourceIconManager" class="com.cloud.resourceicon.ResourceIconManagerImpl" />
+    <bean id="bucketApiServiceImpl" class="org.apache.cloudstack.storage.object.BucketApiServiceImpl" />
+    <bean id="routedIpv4ManagerImpl" class="org.apache.cloudstack.network.RoutedIpv4ManagerImpl" />
 
+    <bean id="VMScheduleManagerImpl" class="org.apache.cloudstack.vm.schedule.VMScheduleManagerImpl" />
+    <bean id="VMSchedulerImpl" class="org.apache.cloudstack.vm.schedule.VMSchedulerImpl">
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
+
+    <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
+
+    <bean id="volumeImportUnmanageManager" class="org.apache.cloudstack.storage.volume.VolumeImportUnmanageManagerImpl" />
+
+    <bean id="BGPServiceImpl" class="com.cloud.bgp.BGPServiceImpl" />
+
+    <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
+        <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
+    </bean>
 </beans>

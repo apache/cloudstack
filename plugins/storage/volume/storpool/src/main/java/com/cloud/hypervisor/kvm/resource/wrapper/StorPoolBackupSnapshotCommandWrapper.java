@@ -22,14 +22,23 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import static com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor.SP_LOG;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.StorPoolBackupSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -44,7 +53,6 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles = StorPoolBackupSnapshotCommand.class)
 public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<StorPoolBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(StorPoolBackupSnapshotCommandWrapper.class);
 
     @Override
     public CopyCmdAnswer execute(final StorPoolBackupSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
@@ -59,28 +67,24 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
             SP_LOG("StorpoolBackupSnapshotCommandWrapper.execute: src=" + src.getPath() + "dst=" + dst.getPath());
             StorPoolStorageAdaptor.attachOrDetachVolume("attach", "snapshot", src.getPath());
             srcPath = src.getPath();
-
-            final QemuImgFile srcFile = new QemuImgFile(srcPath, PhysicalDiskFormat.RAW);
-
+            long size = 0;
+            String srcKeyName = "sec0";
+            String destKeyName = "sec1";
+            List<QemuObject> qemuObjects = new ArrayList<>();
+            Map<String, String> options = new HashMap<>();
+            QemuImageOptions qemuImageOpts = new QemuImageOptions(srcPath);
+            final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
             final DataStoreTO dstDataStore = dst.getDataStore();
             if (!(dstDataStore instanceof NfsTO)) {
                 return new CopyCmdAnswer("Backup Storpool snapshot: Only NFS secondary supported at present!");
             }
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());
+            try (KeyFile srcKey = new KeyFile(src.getVolume().getPassphrase())) {
 
-            final String dstDir = secondaryPool.getLocalPath() + File.separator + dst.getPath();
-            FileUtils.forceMkdir(new File(dstDir));
-
-            final String dstPath = dstDir + File.separator + dst.getName();
-            final QemuImgFile dstFile = new QemuImgFile(dstPath, PhysicalDiskFormat.QCOW2);
-
-            final QemuImg qemu = new QemuImg(cmd.getWaitInMillSeconds());
-            qemu.convert(srcFile, dstFile);
-
-            SP_LOG("StorpoolBackupSnapshotCommandWrapper srcFileFormat=%s, dstFileFormat=%s", srcFile.getFormat(), dstFile.getFormat());
-            final File snapFile = new File(dstPath);
-            final long size = snapFile.exists() ? snapFile.length() : 0;
+                size = convertSnapshot(srcPath, secondaryPool, dst, srcKeyName, qemuObjects, options, qemuImageOpts,
+                        qemu, srcKey);
+            }
 
             final SnapshotObjectTO snapshot = new SnapshotObjectTO();
             snapshot.setPath(dst.getPath() + File.separator + dst.getName());
@@ -90,7 +94,7 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
         } catch (final Exception e) {
             final String error = String.format("Failed to backup snapshot with id [%s] with a pool %s, due to %s", cmd.getSourceTO().getId(), cmd.getSourceTO().getDataStore().getUuid(), e.getMessage());
             SP_LOG(error);
-            s_logger.debug(error);
+            logger.debug(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
             if (srcPath != null) {
@@ -101,9 +105,36 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
                 try {
                     secondaryPool.delete();
                 } catch (final Exception e) {
-                    s_logger.debug("Failed to delete secondary storage", e);
+                    logger.debug("Failed to delete secondary storage", e);
                 }
             }
         }
+    }
+
+    private long convertSnapshot(String srcPath, KVMStoragePool secondaryPool, final SnapshotObjectTO dst,
+            String srcKeyName, List<QemuObject> qemuObjects, Map<String, String> options,
+            QemuImageOptions qemuImageOpts, final QemuImg qemu, KeyFile srcKey) throws IOException, QemuImgException {
+        long size;
+        final QemuImgFile srcFile = new QemuImgFile(srcPath, PhysicalDiskFormat.RAW);
+
+        final String dstDir = secondaryPool.getLocalPath() + File.separator + dst.getPath();
+        FileUtils.forceMkdir(new File(dstDir));
+
+        final String dstPath = dstDir + File.separator + dst.getName();
+        final QemuImgFile dstFile = new QemuImgFile(dstPath, PhysicalDiskFormat.QCOW2);
+        if (srcKey.isSet()) {
+            qemuObjects.add(QemuObject.prepareSecretForQemuImg(PhysicalDiskFormat.RAW, EncryptFormat.LUKS,
+                    srcKey.toString(), srcKeyName, options));
+            qemuImageOpts = new QemuImageOptions(PhysicalDiskFormat.RAW, srcPath, srcKeyName);
+            dstFile.setFormat(PhysicalDiskFormat.LUKS);
+        }
+
+        qemuImageOpts.setImageOptsFlag(true);
+        qemu.convert(srcFile, dstFile, options, qemuObjects, qemuImageOpts, null, true);
+
+        SP_LOG("StorpoolBackupSnapshotCommandWrapper srcFileFormat=%s, dstFileFormat=%s", srcFile.getFormat(), dstFile.getFormat());
+        final File snapFile = new File(dstPath);
+        size =  snapFile.exists() ? snapFile.length() : 0;
+        return size;
     }
 }

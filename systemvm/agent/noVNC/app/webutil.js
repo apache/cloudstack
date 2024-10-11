@@ -20,10 +20,19 @@ export function initLogging(level) {
 }
 
 // Read a query string variable
+// A URL with a query parameter can look like this (But will most probably get logged on the http server):
+// https://www.example.com?myqueryparam=myvalue
+//
+// For privacy (Using a hastag #, the parameters will not be sent to the server)
+// the url can be requested in the following way:
+// https://www.example.com#myqueryparam=myvalue&password=secreatvalue
+//
+// Even Mixing public and non public parameters will work:
+// https://www.example.com?nonsecretparam=example.com#password=secreatvalue
 export function getQueryVar(name, defVal) {
     "use strict";
     const re = new RegExp('.*[?&]' + name + '=([^&#]*)'),
-        match = document.location.href.match(re);
+          match = ''.concat(document.location.href, window.location.hash).match(re);
     if (typeof defVal === 'undefined') { defVal = null; }
 
     if (match) {
@@ -37,7 +46,7 @@ export function getQueryVar(name, defVal) {
 export function getHashVar(name, defVal) {
     "use strict";
     const re = new RegExp('.*[&#]' + name + '=([^&]*)'),
-        match = document.location.hash.match(re);
+          match = document.location.hash.match(re);
     if (typeof defVal === 'undefined') { defVal = null; }
 
     if (match) {
@@ -155,66 +164,4 @@ export function eraseSetting(name) {
     // between this delete and the next read, it could lead to an unexpected
     // value change.
     delete settings[name];
-}
-
-export function injectParamIfMissing(path, param, value) {
-    // force pretend that we're dealing with a relative path
-    // (assume that we wanted an extra if we pass one in)
-    path = "/" + path;
-
-    const elem = document.createElement('a');
-    elem.href = path;
-
-    const paramEq = encodeURIComponent(param) + "=";
-    let query;
-    if (elem.search) {
-        query = elem.search.slice(1).split('&');
-    } else {
-        query = [];
-    }
-
-    if (!query.some(v => v.startsWith(paramEq))) {
-        query.push(paramEq + encodeURIComponent(value));
-        elem.search = "?" + query.join("&");
-    }
-
-    // some browsers (e.g. IE11) may occasionally omit the leading slash
-    // in the elem.pathname string. Handle that case gracefully.
-    if (elem.pathname.charAt(0) == "/") {
-        return elem.pathname.slice(1) + elem.search + elem.hash;
-    }
-
-    return elem.pathname + elem.search + elem.hash;
-}
-
-// sadly, we can't use the Fetch API until we decide to drop
-// IE11 support or polyfill promises and fetch in IE11.
-// resolve will receive an object on success, while reject
-// will receive either an event or an error on failure.
-export function fetchJSON(path) {
-    return new Promise((resolve, reject) => {
-        // NB: IE11 doesn't support JSON as a responseType
-        const req = new XMLHttpRequest();
-        req.open('GET', path);
-
-        req.onload = () => {
-            if (req.status === 200) {
-                let resObj;
-                try {
-                    resObj = JSON.parse(req.responseText);
-                } catch (err) {
-                    reject(err);
-                }
-                resolve(resObj);
-            } else {
-                reject(new Error("XHR got non-200 status while trying to load '" + path + "': " + req.status));
-            }
-        };
-
-        req.onerror = evt => reject(new Error("XHR encountered an error while trying to load '" + path + "': " + evt.message));
-
-        req.ontimeout = evt => reject(new Error("XHR timed out while trying to load '" + path + "'"));
-
-        req.send();
-    });
 }

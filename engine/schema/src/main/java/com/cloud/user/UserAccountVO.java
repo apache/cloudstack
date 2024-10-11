@@ -17,6 +17,8 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,6 +30,7 @@ import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -109,6 +112,21 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
     @Column(name = "external_entity", length = 65535)
     private String externalEntity = null;
 
+    @Column(name = "is_user_2fa_enabled")
+    private boolean user2faEnabled = false;
+
+    @Column(name = "user_2fa_provider")
+    private String user2faProvider;
+
+    @Column(name = "key_for_2fa")
+    private String keyFor2fa;
+
+    @Transient
+    Map<String, String> details;
+
+    public enum Setup2FAstatus {
+        ENABLED, VERIFIED
+    }
     public UserAccountVO() {
     }
 
@@ -310,5 +328,48 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     public void setExternalEntity(String externalEntity) {
         this.externalEntity = externalEntity;
+    }
+
+    @Override
+    public boolean isUser2faEnabled() {
+        return user2faEnabled;
+    }
+
+    @Override
+    public void setUser2faEnabled(boolean user2faEnabled) {
+        this.user2faEnabled = user2faEnabled;
+    }
+
+    @Override
+    public String getKeyFor2fa() {
+        return keyFor2fa;
+    }
+
+    @Override
+    public void setKeyFor2fa(String keyFor2fa) {
+        this.keyFor2fa = keyFor2fa;
+    }
+
+    @Override
+    public String getUser2faProvider() {
+        return user2faProvider;
+    }
+
+    @Override
+    public void setUser2faProvider(String user2faProvider) {
+        this.user2faProvider = user2faProvider;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+        return details;
+    }
+
+    @Override
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

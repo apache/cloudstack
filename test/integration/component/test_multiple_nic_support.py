@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" tests for supporting multiple NIC's in advanced zone with security groups in cloudstack 4.14.0.0
+"""tests for supporting multiple NIC's in advanced zone with security groups in cloudstack 4.14.0.0
 
 """
 # Import Local Modules
@@ -52,11 +52,11 @@ import logging
 import random
 import time
 
-class TestMulipleNicSupport(cloudstackTestCase):
+class TestMultipleNicSupport(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(
-            TestMulipleNicSupport,
+            TestMultipleNicSupport,
             cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
@@ -70,7 +70,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             cls.skip = True
             return
 
-        cls.logger = logging.getLogger("TestMulipleNicSupport")
+        cls.logger = logging.getLogger("TestMultipleNicSupport")
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
@@ -117,7 +117,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         cls.testdata["virtual_machine"]["template"] = cls.template.id
 
         if cls.zone.securitygroupsenabled:
-            # Enable networking for reaching to VM thorugh SSH
+            # Enable networking for reaching to VM through SSH
             security_group = SecurityGroup.create(
                 cls.apiclient,
                 cls.testdata["security_group"],
@@ -255,7 +255,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(self):
-        super(TestMulipleNicSupport, self).tearDownClass()
+        super(TestMultipleNicSupport, self).tearDownClass()
 
     def setUp(self):
         if self.skip:
@@ -265,7 +265,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         return
 
     def tearDown(self):
-        super(TestMulipleNicSupport, self).tearDown()
+        super(TestMultipleNicSupport, self).tearDown()
 
     def verify_network_rules(self, vm_id):
         virtual_machine = VirtualMachine.list(
@@ -302,9 +302,9 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
             Steps:
             # 1. Create more than 1 isolated or shared network
-            # 2. Create a vm and select more than 1 network while deploying
-            # 3. Vm is deployed successfully with 1 nic from each network
-            # 4. All the vm's should be pingable
+            # 2. Create a VM and select more than 1 network while deploying
+            # 3. VM is deployed successfully with 1 NIC from each network
+            # 4. All the VM's should be pingable
         :return:
         """
         virtual_machine = VirtualMachine.list(
@@ -330,8 +330,8 @@ class TestMulipleNicSupport(cloudstackTestCase):
             Steps:
             # 1. Create a VM by selecting one default NIC
             # 2. Create few more isolated or shared networks
-            # 3. Add extra NIC's to the vm from the newly created networks
-            # 4. The deployed VM should have extra nic's added in the above
+            # 3. Add extra NIC's to the VM from the newly created networks
+            # 4. The deployed VM should have extra NIC's added in the above
             #    step without any fail
             # 5. The IP's of the extra NIC's should be pingable
         :return:
@@ -355,8 +355,8 @@ class TestMulipleNicSupport(cloudstackTestCase):
             Steps:
             # 1. Create a VM with more than 1 NIC
             # 2) Navigate to Instances->NIC->Edit Secondary IP's
-            # ->Aquire new Secondary IP"
-            # 3) Add as many secondary Ip as possible to the VM
+            # ->Acquire new Secondary IP"
+            # 3) Add as many secondary IP as possible to the VM
             # 4) Configure the secondary IP's by referring to "Configure
             # the secondary IP's" in the "Action Item" section
         :return:
@@ -381,7 +381,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
             # 2)Navigate to Instances-NIC's->Edit Secondary IP's
             # ->Acquire new Secondary IP
             # 3) Add secondary IP to all the NIC's of the VM
-            # 4) Confiugre the secondary IP's by referring to "Configure the
+            # 4) Configure the secondary IP's by referring to "Configure the
             # secondary IP's" in the "Action Item" section
         :return:
         """
@@ -441,10 +441,10 @@ class TestMulipleNicSupport(cloudstackTestCase):
         """ Stop and Start a VM with Multple NIC
 
             Steps:
-            # 1) Create a Vm with multiple NIC's
+            # 1) Create a VM with multiple NIC's
             # 2) Configure secondary IP's on the VM
             # 3) Try to stop/start the VM
-            # 4) Ping the IP's of the vm
+            # 4) Ping the IP's of the VM
             # 5) Remove Secondary IP from one of the NIC
         :return:
         """
@@ -484,16 +484,16 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
     @attr(tags=["advancedsg"], required_hardware="false")
     def test_06_migrate_vm_with_multiple_nic(self):
-        """ Migrate a VM with Multple NIC
+        """ Migrate a VM with Multiple NIC
 
             Steps:
-            # 1) Create a Vm with multiple NIC's
+            # 1) Create a VM with multiple NIC's
             # 2) Configure secondary IP's on the VM
             # 3) Try to stop/start the VM
-            # 4) Ping the IP's of the vm
+            # 4) Ping the IP's of the VM
         :return:
         """
-        # Skipping adding Secondary IP to NIC since its already
+        # Skipping adding Secondary IP to NIC since it's already
         # done in the previous test cases
 
         virtual_machine = VirtualMachine.list(
@@ -543,7 +543,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         """ Remove secondary IP from any NIC
             Steps:
             # 1) Navigate to Instances
-            # 2) Select any vm
+            # 2) Select any VM
             # 3) NIC's ->Edit secondary IP's->Release IP
             # 4) The secondary IP should be successfully removed
         """
@@ -572,7 +572,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
     def test_08_remove_nic_from_vm(self):
         """ Remove NIC from VM
             Steps:
-            # 1) Navigate to Instances->select any vm->NIC's->NIC 2
+            # 1) Navigate to Instances->select any VM->NIC's->NIC 2
             # ->Click on "X" button to remove the second NIC
             # 2) Remove other NIC's as well from the VM
             # 3) All the NIC's should be successfully removed from the VM
@@ -599,16 +599,16 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
     @attr(tags=["advancedsg"], required_hardware="false")
     def test_09_reboot_vm_with_multiple_nic(self):
-        """ Reboot a VM with Multple NIC
+        """ Reboot a VM with Multiple NIC
 
             Steps:
-            # 1) Create a Vm with multiple NIC's
+            # 1) Create a VM with multiple NIC's
             # 2) Configure secondary IP's on the VM
             # 3) Try to reboot the VM
-            # 4) Ping the IP's of the vm
+            # 4) Ping the IP's of the VM
         :return:
         """
-        # Skipping adding Secondary IP to NIC since its already
+        # Skipping adding Secondary IP to NIC since it's already
         # done in the previous test cases
 
         virtual_machine = VirtualMachine.list(

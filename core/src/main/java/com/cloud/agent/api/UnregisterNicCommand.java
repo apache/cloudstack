@@ -23,7 +23,7 @@ import java.util.UUID;
 
 /**
  * This command will tell the hypervisor to cleanup any resources dedicated for
- * this particular nic. Orginally implemented to cleanup dedicated portgroups
+ * this particular nic. Originally implemented to cleanup dedicated portgroups
  * from a vmware standard switch
  *
  */

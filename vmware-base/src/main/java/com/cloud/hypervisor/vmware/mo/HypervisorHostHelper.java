@@ -23,12 +23,12 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,7 +43,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,12 +55,14 @@ import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.SAXException;
 
 import com.cloud.exception.CloudException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
@@ -146,7 +149,7 @@ import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
 public class HypervisorHostHelper {
-    private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(HypervisorHostHelper.class);
     private static final int DEFAULT_LOCK_TIMEOUT_SECONDS = 600;
     private static final String s_policyNamePrefix = "cloud.policy.";
 
@@ -300,7 +303,7 @@ public class HypervisorHostHelper {
         String msg;
         if (vsmCredentials == null || vsmCredentials.size() != 3) {
             msg = "Failed to retrieve required credentials of Nexus VSM from database.";
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
 
@@ -309,7 +312,7 @@ public class HypervisorHostHelper {
         String vsmPassword = vsmCredentials.containsKey("vsmpassword") ? vsmCredentials.get("vsmpassword") : null;
         if (vsmIp == null || vsmIp.isEmpty() || vsmUserName == null || vsmUserName.isEmpty() || vsmPassword == null || vsmPassword.isEmpty()) {
             msg = "Detected invalid credentials for Nexus 1000v.";
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
         return vsmCredentials;
@@ -325,12 +328,12 @@ public class HypervisorHostHelper {
 
         NetconfHelper netconfClient;
         try {
-            s_logger.info("Connecting to Nexus 1000v: " + vsmIp);
+            LOGGER.info("Connecting to Nexus 1000v: " + vsmIp);
             netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
-            s_logger.info("Successfully connected to Nexus 1000v : " + vsmIp);
+            LOGGER.info("Successfully connected to Nexus 1000v : " + vsmIp);
         } catch (CloudRuntimeException e) {
             msg = "Failed to connect to Nexus 1000v " + vsmIp + " with credentials of user " + vsmUserName + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -345,17 +348,17 @@ public class HypervisorHostHelper {
             // TODO(sateesh): Change the type of peakBandwidth & burstRate in
             // PolicyMap to long.
             if (averageBandwidth > 0) {
-                s_logger.debug("Adding policy map " + policyName);
+                LOGGER.debug("Adding policy map " + policyName);
                 netconfClient.addPolicyMap(policyName, averageBandwidth, (int)peakBandwidth, (int)burstSize);
             }
         } catch (CloudRuntimeException e) {
             msg =
                     "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
                     "burst size = " + burstSize + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             throw new CloudRuntimeException(msg);
         }
@@ -365,15 +368,15 @@ public class HypervisorHostHelper {
             // No need to update ethernet port profile for untagged vlans
             params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
             try {
-                s_logger.info("Updating Ethernet port profile " + ethPortProfileName + " with VLAN " + vlanId);
+                LOGGER.info("Updating Ethernet port profile " + ethPortProfileName + " with VLAN " + vlanId);
                 netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params);
-                s_logger.info("Added " + vlanId + " to Ethernet port profile " + ethPortProfileName);
+                LOGGER.info("Added " + vlanId + " to Ethernet port profile " + ethPortProfileName);
             } catch (CloudRuntimeException e) {
                 msg = "Failed to update Ethernet port profile " + ethPortProfileName + " with VLAN " + vlanId + ". Exception: " + e.toString();
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 if (netconfClient != null) {
                     netconfClient.disconnect();
-                    s_logger.debug("Disconnected Nexus 1000v session.");
+                    LOGGER.debug("Disconnected Nexus 1000v session.");
                 }
                 throw new CloudRuntimeException(msg);
             }
@@ -381,46 +384,46 @@ public class HypervisorHostHelper {
 
         try {
             if (vlanId == null) {
-                s_logger.info("Adding port profile configured over untagged VLAN.");
+                LOGGER.info("Adding port profile configured over untagged VLAN.");
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, 0);
             } else {
                 if (!configureVServiceInNexus) {
-                    s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
+                    LOGGER.info("Adding port profile configured over VLAN : " + vlanId.toString());
                     netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
                 } else {
                     String tenant = "vlan-" + vlanId.intValue();
                     String vdc = "root/" + tenant + "/VDC-" + tenant;
                     String esp = "ESP-" + tenant;
-                    s_logger.info("Adding vservice node in Nexus VSM for VLAN : " + vlanId.toString());
+                    LOGGER.info("Adding vservice node in Nexus VSM for VLAN : " + vlanId.toString());
                     netconfClient.addVServiceNode(vlanId.toString(), gateway);
-                    s_logger.info("Adding port profile with vservice details configured over VLAN : " + vlanId.toString());
+                    LOGGER.info("Adding port profile with vservice details configured over VLAN : " + vlanId.toString());
                     netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue(), vdc,
                             esp);
                 }
             }
         } catch (CloudRuntimeException e) {
             msg = "Failed to add vEthernet port profile " + networkName + "." + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             throw new CloudRuntimeException(msg);
         }
 
         try {
             if (averageBandwidth > 0) {
-                s_logger.info("Associating policy map " + policyName + " with port profile " + networkName + ".");
+                LOGGER.info("Associating policy map " + policyName + " with port profile " + networkName + ".");
                 netconfClient.attachServicePolicy(policyName, networkName);
             }
         } catch (CloudRuntimeException e) {
             msg = "Failed to associate policy map " + policyName + " with port profile " + networkName + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         } finally {
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
         }
     }
@@ -438,7 +441,7 @@ public class HypervisorHostHelper {
             netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
         } catch (CloudRuntimeException e) {
             msg = "Failed to connect to Nexus 1000v " + vsmIp + " with credentials of user " + vsmUserName + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -453,39 +456,39 @@ public class HypervisorHostHelper {
         if (averageBandwidth > 0) {
             PolicyMap policyMap = netconfClient.getPolicyMapByName(portProfile.inputPolicyMap);
             if (policyMap.committedRate == averageBandwidth && policyMap.peakRate == peakBandwidth && policyMap.burstRate == burstRate) {
-                s_logger.debug("Detected that policy map is already applied to port profile " + vethPortProfileName);
+                LOGGER.debug("Detected that policy map is already applied to port profile " + vethPortProfileName);
                 if (netconfClient != null) {
                     netconfClient.disconnect();
-                    s_logger.debug("Disconnected Nexus 1000v session.");
+                    LOGGER.debug("Disconnected Nexus 1000v session.");
                 }
                 return;
             } else {
                 try {
                     // TODO(sateesh): Change the type of peakBandwidth &
                     // burstRate in PolicyMap to long.
-                    s_logger.info("Adding policy map " + policyName);
+                    LOGGER.info("Adding policy map " + policyName);
                     netconfClient.addPolicyMap(policyName, averageBandwidth, (int)peakBandwidth, (int)burstRate);
                 } catch (CloudRuntimeException e) {
                     msg =
                             "Failed to add policy map of " + policyName + " with parameters " + "committed rate = " + averageBandwidth + "peak bandwidth = " + peakBandwidth +
                             "burst size = " + burstRate + ". Exception: " + e.toString();
-                    s_logger.error(msg);
+                    LOGGER.error(msg);
                     if (netconfClient != null) {
                         netconfClient.disconnect();
-                        s_logger.debug("Disconnected Nexus 1000v session.");
+                        LOGGER.debug("Disconnected Nexus 1000v session.");
                     }
                     throw new CloudRuntimeException(msg);
                 }
 
                 try {
-                    s_logger.info("Associating policy map " + policyName + " with port profile " + vethPortProfileName + ".");
+                    LOGGER.info("Associating policy map " + policyName + " with port profile " + vethPortProfileName + ".");
                     netconfClient.attachServicePolicy(policyName, vethPortProfileName);
                 } catch (CloudRuntimeException e) {
                     msg = "Failed to associate policy map " + policyName + " with port profile " + vethPortProfileName + ". Exception: " + e.toString();
-                    s_logger.error(msg);
+                    LOGGER.error(msg);
                     if (netconfClient != null) {
                         netconfClient.disconnect();
-                        s_logger.debug("Disconnected Nexus 1000v session.");
+                        LOGGER.debug("Disconnected Nexus 1000v session.");
                     }
                     throw new CloudRuntimeException(msg);
                 }
@@ -493,10 +496,10 @@ public class HypervisorHostHelper {
         }
 
         if (vlanId == null) {
-            s_logger.info("Skipping update operation over ethernet port profile " + ethPortProfileName + " for untagged VLAN.");
+            LOGGER.info("Skipping update operation over ethernet port profile " + ethPortProfileName + " for untagged VLAN.");
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             return;
         }
@@ -506,7 +509,7 @@ public class HypervisorHostHelper {
         if (currentVlan.equalsIgnoreCase(newVlan)) {
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             return;
         }
@@ -514,14 +517,14 @@ public class HypervisorHostHelper {
         List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
         params.add(new Pair<OperationType, String>(OperationType.addvlanid, newVlan));
         try {
-            s_logger.info("Updating vEthernet port profile with VLAN " + vlanId.toString());
+            LOGGER.info("Updating vEthernet port profile with VLAN " + vlanId.toString());
             netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params);
         } catch (CloudRuntimeException e) {
             msg = "Failed to update ethernet port profile " + ethPortProfileName + " with parameters " + params.toString() + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             throw new CloudRuntimeException(msg);
         }
@@ -530,10 +533,10 @@ public class HypervisorHostHelper {
             netconfClient.updatePortProfile(vethPortProfileName, SwitchPortMode.access, params);
         } catch (CloudRuntimeException e) {
             msg = "Failed to update vEthernet port profile " + vethPortProfileName + " with parameters " + params.toString() + ". Exception: " + e.toString();
-            s_logger.error(msg);
+            LOGGER.error(msg);
             if (netconfClient != null) {
                 netconfClient.disconnect();
-                s_logger.debug("Disconnected Nexus 1000v session.");
+                LOGGER.debug("Disconnected Nexus 1000v session.");
             }
             throw new CloudRuntimeException(msg);
         }
@@ -548,7 +551,8 @@ public class HypervisorHostHelper {
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
                                                                       Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
-                                                                      boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials, Map<NetworkOffering.Detail, String> details) throws Exception {
+                                                                      boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials,
+                                                                      Map<NetworkOffering.Detail, String> details, String netName) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -572,15 +576,15 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
             if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
-                throw new InvalidParameterException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
+                throw new InvalidParameterValueException("Nexus Distributed Virtualswitch is not supported with BroadcastDomainType " + broadcastDomainType);
             }
             /**
              * Nicira NVP requires all vms to be connected to a single port-group.
@@ -617,23 +621,26 @@ public class HypervisorHostHelper {
             // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
             // and switch types.
             if (dvSwitchName == null) {
-                s_logger.warn("Detected null dvSwitch. Defaulting to dvSwitch0");
+                LOGGER.warn("Detected null dvSwitch. Defaulting to dvSwitch0");
                 dvSwitchName = "dvSwitch0";
             }
             morDvSwitch = dataCenterMo.getDvSwitchMor(dvSwitchName);
             if (morDvSwitch == null) {
                 String msg = "Unable to find distributed vSwitch " + dvSwitchName;
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 throw new Exception(msg);
             }
             dvSwitchMo = new DistributedVirtualSwitchMO(context, morDvSwitch);
             String dvSwitchVersion = dvSwitchMo.getDVSProductVersion(morDvSwitch);
-            s_logger.debug(String.format("Found distributed vSwitch: %s with product version: %s", dvSwitchName, dvSwitchVersion));
+            LOGGER.debug(String.format("Found distributed vSwitch: %s with product version: %s", dvSwitchName, dvSwitchVersion));
 
             if (broadcastDomainType == BroadcastDomainType.Lswitch) {
                 if (!dataCenterMo.hasDvPortGroup(networkName)) {
-                    throw new InvalidParameterException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
+                    throw new InvalidParameterValueException("NVP integration port-group " + networkName + " does not exist on the DVS " + dvSwitchName);
                 }
+                bWaitPortGroupReady = false;
+            } else if (BroadcastDomainType.NSX == broadcastDomainType && Objects.nonNull(netName)){
+                networkName = netName;
                 bWaitPortGroupReady = false;
             } else {
                 boolean dvSwitchSupportNewPolicies = (isFeatureSupportedInVcenterApiVersion(vcApiVersion, MINIMUM_VCENTER_API_VERSION_WITH_DVS_NEW_POLICIES_SUPPORT)
@@ -663,16 +670,16 @@ public class HypervisorHostHelper {
             // TODO(sateesh): Remove this after ensuring proper default value for vSwitchName throughout traffic types
             // and switch types.
             if (ethPortProfileName == null) {
-                s_logger.warn("Detected null ethrenet port profile. Defaulting to epp0.");
+                LOGGER.warn("Detected null ethrenet port profile. Defaulting to epp0.");
                 ethPortProfileName = "epp0";
             }
             morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
             if (morEthernetPortProfile == null) {
                 String msg = "Unable to find Ethernet port profile " + ethPortProfileName;
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 throw new Exception(msg);
             } else {
-                s_logger.info("Found Ethernet port profile " + ethPortProfileName);
+                LOGGER.info("Found Ethernet port profile " + ethPortProfileName);
             }
             long averageBandwidth = 0L;
             if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
@@ -684,16 +691,16 @@ public class HypervisorHostHelper {
             // TODO(sateesh): Optionally let user specify the burst coefficient
             long burstSize = 5 * averageBandwidth / 8;
             if (vsmCredentials != null) {
-                s_logger.info("Stocking credentials of Nexus VSM");
+                LOGGER.info("Stocking credentials of Nexus VSM");
                 context.registerStockObject("vsmcredentials", vsmCredentials);
             }
 
             if (!dataCenterMo.hasDvPortGroup(networkName)) {
-                s_logger.info("Port profile " + networkName + " not found.");
+                LOGGER.info("Port profile " + networkName + " not found.");
                 createPortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize, gateway, configureVServiceInNexus);
                 bWaitPortGroupReady = true;
             } else {
-                s_logger.info("Port profile " + networkName + " found.");
+                LOGGER.info("Port profile " + networkName + " found.");
                 updatePortProfile(context, physicalNetwork, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
             }
         }
@@ -704,14 +711,14 @@ public class HypervisorHostHelper {
             morNetwork = dataCenterMo.getDvPortGroupMor(networkName);
         if (morNetwork == null) {
             String msg = "Failed to create guest network " + networkName;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
 
         if (createGCTag) {
             NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
             networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC_DVP, "true");
-            s_logger.debug("Added custom field : " + CustomFieldConstants.CLOUD_GC_DVP);
+            LOGGER.debug("Added custom field : " + CustomFieldConstants.CLOUD_GC_DVP);
         }
 
         return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
@@ -730,7 +737,7 @@ public class HypervisorHostHelper {
     }
 
     private static void setupPVlanPair(DistributedVirtualSwitchMO dvSwitchMo, ManagedObjectReference morDvSwitch, Integer vid, Integer spvlanid, String pvlanType) throws Exception {
-        s_logger.debug(String.format("Setting up PVLAN on dvSwitch %s with the following information: %s %s %s", dvSwitchMo.getName(), vid, spvlanid, pvlanType));
+        LOGGER.debug(String.format("Setting up PVLAN on dvSwitch %s with the following information: %s %s %s", dvSwitchMo.getName(), vid, spvlanid, pvlanType));
         Map<Integer, HypervisorHostHelper.PvlanType> vlanmap = dvSwitchMo.retrieveVlanPvlan(vid, spvlanid, morDvSwitch);
         if (!vlanmap.isEmpty()) {
             // Then either vid or pvlanid or both are already being used. Check how.
@@ -738,14 +745,14 @@ public class HypervisorHostHelper {
             if (vlanmap.containsKey(vid) && !vlanmap.get(vid).equals(HypervisorHostHelper.PvlanType.promiscuous)) {
                 // This VLAN ID is already setup as a non-promiscuous vlan id on the DVS. Throw an exception.
                 String msg = "Specified primary PVLAN ID " + vid + " is already in use as a " + vlanmap.get(vid).toString() + " VLAN on the DVSwitch";
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 throw new Exception(msg);
             }
             // Next the secondary pvlan id.
             if (spvlanid.equals(vid)) {
                 if (vlanmap.containsKey(spvlanid) && !vlanmap.get(spvlanid).equals(HypervisorHostHelper.PvlanType.promiscuous)) {
                     String msg = "Specified secondary PVLAN ID " + spvlanid + " is already in use as a " + vlanmap.get(spvlanid).toString() + " VLAN in the DVSwitch";
-                    s_logger.error(msg);
+                    LOGGER.error(msg);
                     throw new Exception(msg);
                 }
             }
@@ -776,11 +783,11 @@ public class HypervisorHostHelper {
             try {
                 dvSwitchMo.updateVMWareDVSwitchGetTask(morDvSwitch, dvsSpec);
             } catch (AlreadyExistsFaultMsg e) {
-                s_logger.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMWare DVSwitch");
+                LOGGER.info("Specified vlan id (" + vid + ") private vlan id (" + spvlanid + ") tuple already configured on VMWare DVSwitch");
                 // Do nothing, good if the tuple's already configured on the dvswitch.
             } catch (Exception e) {
                 // Rethrow the exception
-                s_logger.error("Failed to configure vlan/pvlan tuple on VMware DVSwitch: " + vid + "/" + spvlanid + ", failure message: ", e);
+                LOGGER.error("Failed to configure vlan/pvlan tuple on VMware DVSwitch: " + vid + "/" + spvlanid + ", failure message: ", e);
                 throw e;
             }
         }
@@ -821,7 +828,7 @@ public class HypervisorHostHelper {
         }
 
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
-            s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
+            LOGGER.info("Distributed Virtual Port group " + networkName + " not found.");
             // TODO(sateesh): Handle Exceptions
             try {
                 newDvPortGroupSpec.setNumPorts(numPorts);
@@ -832,10 +839,10 @@ public class HypervisorHostHelper {
                 throw new Exception(msg);
             }
         } else {
-            s_logger.info("Found Distributed Virtual Port group " + networkName);
+            LOGGER.info("Found Distributed Virtual Port group " + networkName);
             DVPortgroupConfigInfo currentDvPortgroupInfo = dataCenterMo.getDvPortGroupSpec(networkName);
             if (!isSpecMatch(currentDvPortgroupInfo, newDvPortGroupSpec, dvSwitchSupportNewPolicies)) {
-                s_logger.info("Updating Distributed Virtual Port group " + networkName);
+                LOGGER.info("Updating Distributed Virtual Port group " + networkName);
                 newDvPortGroupSpec.setDefaultPortConfig(dvsPortSetting);
                 newDvPortGroupSpec.setConfigVersion(currentDvPortgroupInfo.getConfigVersion());
                 ManagedObjectReference morDvPortGroup = dataCenterMo.getDvPortGroupMor(networkName);
@@ -909,12 +916,12 @@ public class HypervisorHostHelper {
             oldVlanId = oldVlanIdSpec.getVlanId();
             newVlanId = newVlanIdSpec.getVlanId();
         } else {
-            s_logger.debug(String.format("Old and new vlan spec type mismatch found for dvPortGroup: %s. Old spec type is: %s, and new spec type is: %s", dvPortGroupName, oldVlanSpec.getClass(), newVlanSpec.getClass()));
+            LOGGER.debug(String.format("Old and new vlan spec type mismatch found for dvPortGroup: %s. Old spec type is: %s, and new spec type is: %s", dvPortGroupName, oldVlanSpec.getClass(), newVlanSpec.getClass()));
             return false;
         }
 
         if (oldVlanId != newVlanId) {
-            s_logger.info(String.format("Detected that new VLAN [%d] is different from current VLAN [%d] of dvPortGroup: %s", newVlanId, oldVlanId, dvPortGroupName));
+            LOGGER.info(String.format("Detected that new VLAN [%d] is different from current VLAN [%d] of dvPortGroup: %s", newVlanId, oldVlanId, dvPortGroupName));
             return false;
         }
         return true;
@@ -922,7 +929,7 @@ public class HypervisorHostHelper {
 
     public static boolean isSpecMatch(DVPortgroupConfigInfo currentDvPortgroupInfo, DVPortgroupConfigSpec newDvPortGroupSpec, boolean dvSwitchSupportNewPolicies) {
         String dvPortGroupName = newDvPortGroupSpec.getName();
-        s_logger.debug("Checking if configuration of dvPortGroup [" + dvPortGroupName + "] has changed.");
+        LOGGER.debug("Checking if configuration of dvPortGroup [" + dvPortGroupName + "] has changed.");
         DVSTrafficShapingPolicy currentTrafficShapingPolicy;
         currentTrafficShapingPolicy = currentDvPortgroupInfo.getDefaultPortConfig().getInShapingPolicy();
 
@@ -973,19 +980,19 @@ public class HypervisorHostHelper {
         }
 
         if (!oldIsEnabled.equals(newIsEnabled)) {
-            s_logger.info("Detected change in state of shaping policy (enabled/disabled) [" + newIsEnabled + "]");
+            LOGGER.info("Detected change in state of shaping policy (enabled/disabled) [" + newIsEnabled + "]");
             return false;
         }
 
         if (oldIsEnabled || newIsEnabled) {
             if (oldAverageBandwidth != null && !oldAverageBandwidth.equals(newAverageBandwidth)) {
-                s_logger.info("Average bandwidth setting in new shaping policy doesn't match the existing setting.");
+                LOGGER.info("Average bandwidth setting in new shaping policy doesn't match the existing setting.");
                 return false;
             } else if (oldBurstSize != null && !oldBurstSize.equals(newBurstSize)) {
-                s_logger.info("Burst size setting in new shaping policy doesn't match the existing setting.");
+                LOGGER.info("Burst size setting in new shaping policy doesn't match the existing setting.");
                 return false;
             } else if (oldPeakBandwidth != null && !oldPeakBandwidth.equals(newPeakBandwidth)) {
-                s_logger.info("Peak bandwidth setting in new shaping policy doesn't match the existing setting.");
+                LOGGER.info("Peak bandwidth setting in new shaping policy doesn't match the existing setting.");
                 return false;
             }
         }
@@ -1000,11 +1007,11 @@ public class HypervisorHostHelper {
             int oldNumPorts = currentDvPortgroupInfo.getNumPorts();
             int newNumPorts = newDvPortGroupSpec.getNumPorts();
             if (oldNumPorts < newNumPorts) {
-                s_logger.info("Need to update the number of dvports for dvPortGroup :[" + dvPortGroupName +
+                LOGGER.info("Need to update the number of dvports for dvPortGroup :[" + dvPortGroupName +
                             "] from existing number of dvports " + oldNumPorts + " to " + newNumPorts);
                 return false;
             } else if (oldNumPorts > newNumPorts) {
-                s_logger.warn("Detected that new number of dvports [" + newNumPorts + "] in dvPortGroup [" + dvPortGroupName +
+                LOGGER.warn("Detected that new number of dvports [" + newNumPorts + "] in dvPortGroup [" + dvPortGroupName +
                         "] is less than existing number of dvports [" + oldNumPorts + "]. Attempt to update this dvPortGroup may fail!");
                 return false;
             }
@@ -1027,7 +1034,7 @@ public class HypervisorHostHelper {
                 break;
             }
 
-            s_logger.info("Waiting for dvPortGroup " + dvPortGroupName + " to be ready");
+            LOGGER.info("Waiting for dvPortGroup " + dvPortGroupName + " to be ready");
             Thread.sleep(1000);
         }
         return morDvPortGroup;
@@ -1049,18 +1056,18 @@ public class HypervisorHostHelper {
         }
 
         if (averageBandwidth != null && !averageBandwidth.equals(shapingPolicy.getAverageBandwidth())) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Average bandwidth setting in shaping policy doesn't match with existing setting.");
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Average bandwidth setting in shaping policy doesn't match with existing setting.");
             }
             return false;
         } else if (burstSize != null && !burstSize.equals(shapingPolicy.getBurstSize())) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Burst size setting in shaping policy doesn't match with existing setting.");
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Burst size setting in shaping policy doesn't match with existing setting.");
             }
             return false;
         } else if (peakBandwidth != null && !peakBandwidth.equals(shapingPolicy.getPeakBandwidth())) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Peak bandwidth setting in shaping policy doesn't match with existing setting.");
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Peak bandwidth setting in shaping policy doesn't match with existing setting.");
             }
             return false;
         }
@@ -1164,7 +1171,7 @@ public class HypervisorHostHelper {
             vlanRange = "0-4094";
         }
         if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
-            s_logger.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
+            LOGGER.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
             VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
             for (final String vlanRangePart : vlanRange.split(",")) {
                 if (vlanRangePart == null || vlanRange.isEmpty()) {
@@ -1191,7 +1198,7 @@ public class HypervisorHostHelper {
         }
         VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
         vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId);
-        s_logger.debug("Creating dvSwitch port vlan-id spec with id: " + vlanIdSpec.getVlanId());
+        LOGGER.debug("Creating dvSwitch port vlan-id spec with id: " + vlanIdSpec.getVlanId());
         return vlanIdSpec;
     }
 
@@ -1280,18 +1287,19 @@ public class HypervisorHostHelper {
     }
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix, HostMO hostMo, String vlanId, Integer networkRateMbps,
-                                                                      Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid, Map<NetworkOffering.Detail, String> nicDetails) throws Exception {
+                                                                      Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType,
+                                                                      String nicUuid, Map<NetworkOffering.Detail, String> nicDetails) throws Exception {
 
         HostVirtualSwitch vSwitch;
         if (vSwitchName == null) {
-            s_logger.info("Detected vswitch name as undefined. Defaulting to vSwitch0");
+            LOGGER.info("Detected vswitch name as undefined. Defaulting to vSwitch0");
             vSwitchName = "vSwitch0";
         }
         vSwitch = hostMo.getHostVirtualSwitchByName(vSwitchName);
 
         if (vSwitch == null) {
             String msg = "Unable to find vSwitch" + vSwitchName;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
 
@@ -1304,10 +1312,10 @@ public class HypervisorHostHelper {
          */
         BroadcastDomainType[] supportedBroadcastTypes =
                 new BroadcastDomainType[] {BroadcastDomainType.Lswitch, BroadcastDomainType.LinkLocal, BroadcastDomainType.Native, BroadcastDomainType.Pvlan,
-                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan};
+                BroadcastDomainType.Storage, BroadcastDomainType.UnDecided, BroadcastDomainType.Vlan, BroadcastDomainType.NSX};
 
         if (!Arrays.asList(supportedBroadcastTypes).contains(broadcastDomainType)) {
-            throw new InvalidParameterException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
+            throw new InvalidParameterValueException("BroadcastDomainType " + broadcastDomainType + " it not supported on a VMWare hypervisor at this time.");
         }
 
         if (broadcastDomainType == BroadcastDomainType.Lswitch) {
@@ -1385,7 +1393,7 @@ public class HypervisorHostHelper {
                 morNetwork = hostMo.getNetworkMor(networkName);
             if (morNetwork == null) {
                 String msg = "Failed to create guest network " + networkName;
-                s_logger.error(msg);
+                LOGGER.error(msg);
                 throw new Exception(msg);
             }
 
@@ -1409,12 +1417,12 @@ public class HypervisorHostHelper {
                                     if (!otherHost.getValue().equals(hostMo.getMor().getValue())) {
                                         HostMO otherHostMo = new HostMO(hostMo.getContext(), otherHost);
                                         try {
-                                            if (s_logger.isDebugEnabled())
-                                                s_logger.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
+                                            if (LOGGER.isDebugEnabled())
+                                                LOGGER.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                             prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false,
                                                     broadcastDomainType, nicUuid, nicDetails);
                                         } catch (Exception e) {
-                                            s_logger.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
+                                            LOGGER.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                         }
                                     }
                                 }
@@ -1423,7 +1431,7 @@ public class HypervisorHostHelper {
                             lock.unlock();
                         }
                     } else {
-                        s_logger.warn("Unable to lock cluster to prepare guest network, vlan: " + vlanId);
+                        LOGGER.warn("Unable to lock cluster to prepare guest network, vlan: " + vlanId);
                     }
                 } finally {
                     lock.releaseRef();
@@ -1431,7 +1439,7 @@ public class HypervisorHostHelper {
             }
         }
 
-        s_logger.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
+        LOGGER.info("Network " + networkName + " is ready on vSwitch " + vSwitchName);
         return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
     }
 
@@ -1517,7 +1525,7 @@ public class HypervisorHostHelper {
             }
         }
         if (nvpVlanId == 4095) {
-            throw new InvalidParameterException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
+            throw new InvalidParameterValueException("No free vlan numbers on " + vSwitchName + " to create a portgroup for nic " + networkName);
         }
 
         // Strict security policy
@@ -1543,7 +1551,7 @@ public class HypervisorHostHelper {
                 break;
             }
 
-            s_logger.info("Waiting for network " + networkName + " to be ready");
+            LOGGER.info("Waiting for network " + networkName + " to be ready");
             Thread.sleep(1000);
         }
 
@@ -1554,8 +1562,8 @@ public class HypervisorHostHelper {
                                         boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
                                         Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
 
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Create blank VM. cpuCount: " + cpuCount + ", cpuSpeed(MHz): " + cpuSpeedMHz + ", mem(Mb): " + memoryMB);
+        if (LOGGER.isInfoEnabled())
+            LOGGER.info("Create blank VM. cpuCount: " + cpuCount + ", cpuSpeed(MHz): " + cpuSpeedMHz + ", mem(Mb): " + memoryMB);
 
         VirtualDeviceConfigSpec controllerSpec = null;
         // VM config basics
@@ -1566,15 +1574,8 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        String newRootDiskController = controllerInfo.first();
-        String newDataDiskController = controllerInfo.second();
-        String recommendedController = null;
-        if (VmwareHelper.isControllerOsRecommended(newRootDiskController) || VmwareHelper.isControllerOsRecommended(newDataDiskController)) {
-            recommendedController = host.getRecommendedDiskController(guestOsIdentifier);
-        }
-
-        Pair<String, String> updatedControllerInfo = new Pair<String, String>(newRootDiskController, newDataDiskController);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(updatedControllerInfo, recommendedController);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, null, host, guestOsIdentifier);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         // If there is requirement for a SCSI controller, ensure to create those.
         if (scsiDiskController != null) {
         int busNum = 0;
@@ -1592,7 +1593,7 @@ public class HypervisorHostHelper {
         }
 
         if (guestOsIdentifier.startsWith("darwin")) { //Mac OS
-            s_logger.debug("Add USB Controller device for blank Mac OS VM " + vmName);
+            LOGGER.debug("Add USB Controller device for blank Mac OS VM " + vmName);
 
             //For Mac OS X systems, the EHCI+UHCI controller is enabled by default and is required for USB mouse and keyboard access.
             VirtualDevice usbControllerDevice = VmwareHelper.prepareUSBControllerDevice();
@@ -1622,6 +1623,7 @@ public class HypervisorHostHelper {
         DatacenterMO dataCenterMo = new DatacenterMO(host.getContext(), host.getHyperHostDatacenter());
         setVMHardwareVersion(vmConfig, clusterMo, dataCenterMo);
 
+        LOGGER.debug(LogUtils.logGsonWithoutException("Creating blank VM with configuration [%s].", vmConfig));
         if (host.createVm(vmConfig)) {
             // Here, when attempting to find the VM, we need to use the name
             // with which we created it. This is the only such place where
@@ -1641,7 +1643,7 @@ public class HypervisorHostHelper {
                 if (ideControllerKey >= 0)
                     break;
 
-                s_logger.info("Waiting for IDE controller be ready in VM: " + vmInternalCSName);
+                LOGGER.info("Waiting for IDE controller be ready in VM: " + vmInternalCSName);
                 Thread.sleep(1000);
             }
 
@@ -1674,13 +1676,13 @@ public class HypervisorHostHelper {
         ClusterConfigInfoEx clusterConfigInfo = clusterMO != null ? clusterMO.getClusterConfigInfo() : null;
         String clusterHardwareVersion = clusterConfigInfo != null ? clusterConfigInfo.getDefaultHardwareVersionKey() : null;
         if (StringUtils.isNotBlank(clusterHardwareVersion)) {
-            s_logger.debug("Cluster hardware version found: " + clusterHardwareVersion + ". Creating VM with this hardware version");
+            LOGGER.debug("Cluster hardware version found: " + clusterHardwareVersion + ". Creating VM with this hardware version");
             version = clusterHardwareVersion;
         } else {
             DatacenterConfigInfo datacenterConfigInfo = datacenterMO != null ? datacenterMO.getDatacenterConfigInfo() : null;
             String datacenterHardwareVersion = datacenterConfigInfo != null ? datacenterConfigInfo.getDefaultHardwareVersionKey() : null;
             if (StringUtils.isNotBlank(datacenterHardwareVersion)) {
-                s_logger.debug("Datacenter hardware version found: " + datacenterHardwareVersion + ". Creating VM with this hardware version");
+                LOGGER.debug("Datacenter hardware version found: " + datacenterHardwareVersion + ". Creating VM with this hardware version");
                 version = datacenterHardwareVersion;
             }
         }
@@ -1760,7 +1762,7 @@ public class HypervisorHostHelper {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interrupted while waiting to config vm.");
+                    LOGGER.debug("[ignored] interrupted while waiting to config vm.");
                 }
             }
         }
@@ -1772,19 +1774,19 @@ public class HypervisorHostHelper {
     }
 
     public static String resolveHostNameInUrl(DatacenterMO dcMo, String url) {
-        s_logger.info("Resolving host name in url through vCenter, url: " + url);
+        LOGGER.info("Resolving host name in url through vCenter, url: " + url);
 
         URI uri;
         try {
             uri = new URI(url);
         } catch (URISyntaxException e) {
-            s_logger.warn("URISyntaxException on url " + url);
+            LOGGER.warn("URISyntaxException on url " + url);
             return url;
         }
 
         String host = uri.getHost();
         if (NetUtils.isValidIp4(host)) {
-            s_logger.info("host name in url is already in IP address, url: " + url);
+            LOGGER.info("host name in url is already in IP address, url: " + url);
             return url;
         }
 
@@ -1800,7 +1802,7 @@ public class HypervisorHostHelper {
 
                 VmwareHypervisorHostNetworkSummary summary = hostMo.getHyperHostNetworkSummary(managementPortGroupName);
                 if (summary == null) {
-                    s_logger.warn("Unable to resolve host name in url through vSphere, url: " + url);
+                    LOGGER.warn("Unable to resolve host name in url through vSphere, url: " + url);
                     return url;
                 }
 
@@ -1809,7 +1811,7 @@ public class HypervisorHostHelper {
                 try {
                     URI resolvedUri = new URI(uri.getScheme(), uri.getUserInfo(), hostIp, uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 
-                    s_logger.info("url " + url + " is resolved to " + resolvedUri.toString() + " through vCenter");
+                    LOGGER.info("url " + url + " is resolved to " + resolvedUri.toString() + " through vCenter");
                     return resolvedUri.toString();
                 } catch (URISyntaxException e) {
                     assert (false);
@@ -1817,7 +1819,7 @@ public class HypervisorHostHelper {
                 }
             }
         } catch (Exception e) {
-            s_logger.warn("Unexpected exception ", e);
+            LOGGER.warn("Unexpected exception ", e);
         }
 
         return url;
@@ -1857,14 +1859,14 @@ public class HypervisorHostHelper {
             transformer.transform(domSource, result);
             return writer.toString();
         } catch (SAXException | IOException | ParserConfigurationException | TransformerException e) {
-            s_logger.warn("Unexpected exception caught while removing network elements from OVF:", e);
+            LOGGER.warn("Unexpected exception caught while removing network elements from OVF:", e);
         }
         return ovfString;
     }
 
     /**
      * deploys a new VM from a ovf spec. It ignores network, defaults locale to 'US'
-     * @throws Exception shoud be a VmwareResourceException
+     * @throws Exception should be a VmwareResourceException
      */
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
                                        ManagedObjectReference morHost, String configurationId) throws CloudRuntimeException, IOException {
@@ -1895,19 +1897,19 @@ public class HypervisorHostHelper {
         }
         if (ovfImportResult == null) {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
         if(!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
-                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+                LOGGER.error("createImportSpec error: " + fault.getLocalizedMessage());
             }
             throw new CloudRuntimeException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
         }
 
         if (!ovfImportResult.getWarning().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
-                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+                LOGGER.warn("createImportSpec warning: " + fault.getLocalizedMessage());
             }
         }
 
@@ -1938,7 +1940,7 @@ public class HypervisorHostHelper {
         }
         if (morLease == null) {
             String msg = "importVApp() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
         boolean importSuccess = true;
@@ -1970,7 +1972,7 @@ public class HypervisorHostHelper {
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
-                                s_logger.info("Uploading file: " + absoluteFile);
+                                LOGGER.info("Uploading file: " + absoluteFile);
                                 File f = new File(absoluteFile);
                                 if (f.exists()){
                                     String urlToPost = deviceUrl.getUrl();
@@ -1988,12 +1990,12 @@ public class HypervisorHostHelper {
                     }
                 } catch (Exception e) {
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
-                    s_logger.error(erroMsg);
+                    LOGGER.error(erroMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
                     throw new CloudRuntimeException(erroMsg, e);
                 } catch (Throwable th) {
                     String errorMsg = "throwable caught during file upload task: " + th.getMessage();
-                    s_logger.error(errorMsg);
+                    LOGGER.error(errorMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
                     throw new CloudRuntimeException(errorMsg, th);
                 } finally {
@@ -2015,13 +2017,13 @@ public class HypervisorHostHelper {
                 }
                 MethodFault fault = error.getFault();
                 String erroMsg = "Object creation on vCenter failed due to: Exception: " + fault.getClass().getName() + ", message: " + error.getLocalizedMessage();
-                s_logger.error(erroMsg);
+                LOGGER.error(erroMsg);
                 throw new CloudRuntimeException(erroMsg);
             }
         } finally {
             try {
                 if (!importSuccess) {
-                    s_logger.error("Aborting the lease on " + vmName + " after import operation failed.");
+                    LOGGER.error("Aborting the lease on " + vmName + " after import operation failed.");
                     leaseMo.abortLease();
                 } else {
                     leaseMo.completeLease();
@@ -2053,27 +2055,27 @@ public class HypervisorHostHelper {
 
         if (ovfImportResult == null) {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
 
         if (!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
-                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+                LOGGER.error("createImportSpec error: " + fault.getLocalizedMessage());
             }
             throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
         }
 
         if (!ovfImportResult.getWarning().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
-                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+                LOGGER.warn("createImportSpec warning: " + fault.getLocalizedMessage());
             }
         }
 
         VirtualMachineImportSpec importSpec = (VirtualMachineImportSpec)ovfImportResult.getImportSpec();
         if (importSpec == null) {
             String msg = "createImportSpec() failed to create import specification for OVF template at " + ovfFilePath;
-            s_logger.error(msg);
+            LOGGER.error(msg);
             throw new Exception(msg);
         }
 
@@ -2128,7 +2130,7 @@ public class HypervisorHostHelper {
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
             // Reconfigure worker VM with datadisk
-            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1, null);
             deviceConfigSpec.setDevice(device);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
             vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
@@ -2230,13 +2232,13 @@ public class HypervisorHostHelper {
 
         String[] tokens = guid.split("@");
         if (tokens == null || tokens.length != 2) {
-            s_logger.error("Invalid content in host guid");
+            LOGGER.error("Invalid content in host guid");
             return null;
         }
 
         String[] hostTokens = tokens[0].split(":");
         if (hostTokens == null || hostTokens.length != 2) {
-            s_logger.error("Invalid content in host guid");
+            LOGGER.error("Invalid content in host guid");
             return null;
         }
 
@@ -2247,19 +2249,11 @@ public class HypervisorHostHelper {
         return morHyperHost;
     }
 
-    public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
+    public static String getScsiController(Pair<String, String> controllerInfo) {
         String rootDiskController = controllerInfo.first();
         String dataDiskController = controllerInfo.second();
 
-        // If "osdefault" is specified as controller type, then translate to actual recommended controller.
-        if (VmwareHelper.isControllerOsRecommended(rootDiskController)) {
-            rootDiskController = recommendedController;
-        }
-        if (VmwareHelper.isControllerOsRecommended(dataDiskController)) {
-            dataDiskController = recommendedController;
-        }
-
-        String scsiDiskController = null; //If any of the controller provided is SCSI then return it's sub-type.
+        String scsiDiskController; //If any of the controller provided is SCSI then return it's sub-type.
         if (isIdeController(rootDiskController) && isIdeController(dataDiskController)) {
             //Default controllers would exist
             return null;
@@ -2303,7 +2297,7 @@ public class HypervisorHostHelper {
         String hiddenFolderPath = String.format("%s/%s", folderPath, VSPHERE_DATASTORE_HIDDEN_FOLDER);
 
         if (!dsMo.folderExists(dsPath, VSPHERE_DATASTORE_BASE_FOLDER)) {
-            s_logger.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
+            LOGGER.info(String.format("vSphere datastore base folder [%s] does not exist on datastore [%s]. We will create it.", VSPHERE_DATASTORE_BASE_FOLDER, dsMo.getName()));
             dsMo.makeDirectory(folderPath, mor);
             // Adding another directory so vCentre doesn't remove the fcd directory when it's empty
             dsMo.makeDirectory(hiddenFolderPath, mor);
@@ -2344,8 +2338,8 @@ public class HypervisorHostHelper {
     public static VirtualMachineMO findVmOnHypervisorHostOrPeer(VmwareHypervisorHost hypervisorHost, String vmName) throws Exception {
         VirtualMachineMO vmMo = hypervisorHost.findVmOnHyperHost(vmName);
         if (vmMo == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Unable to find the VM on host %s, try within datacenter", hypervisorHost.getHyperHostName()));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Unable to find the VM on host %s, try within datacenter", hypervisorHost.getHyperHostName()));
             }
             vmMo = hypervisorHost.findVmOnPeerHyperHost(vmName);
         }

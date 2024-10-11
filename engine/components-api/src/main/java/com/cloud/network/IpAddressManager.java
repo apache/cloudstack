@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
@@ -49,11 +50,16 @@ public interface IpAddressManager {
             "When true, ip address delete (ipassoc) failures are  ignored", true);
 
     ConfigKey<String> VrouterRedundantTiersPlacement = new ConfigKey<String>(
-            "Advanced", String.class,
+            String.class,
             "vrouter.redundant.tiers.placement",
+            "Advanced",
             "random",
             "Set placement of vrouter ips in redundant mode in vpc tiers, this can be 3 value: `first` to use first ips in tiers, `last` to use last ips in tiers and `random` to take random ips in tiers.",
-            true, ConfigKey.Scope.Account);
+            true, ConfigKey.Scope.Account, null, null, null, null, null, ConfigKey.Kind.Select, "first,last,random");
+
+    ConfigKey<Boolean> AllowUserListAvailableIpsOnSharedNetwork = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.list.available.ips.on.shared.network", "false",
+            "Determines whether users can list available IPs on shared networks",
+            true, ConfigKey.Scope.Global);
 
     /**
      * Assigns a new public ip address.
@@ -70,6 +76,9 @@ public interface IpAddressManager {
      */
     PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
             throws InsufficientAddressCapacityException;
+
+    PublicIp assignSourceNatPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
+        throws InsufficientAddressCapacityException;
 
     /**
      * Do all of the work of releasing public ip addresses. Note that if this method fails, there can be side effects.
@@ -226,5 +235,56 @@ public interface IpAddressManager {
                                              final boolean forSystemVms,
                                              final boolean lockOneRow)
             throws InsufficientAddressCapacityException;
-}
 
+    public static final String MESSAGE_ASSIGN_IPADDR_EVENT = "Message.AssignIpAddr.Event";
+    public static final String MESSAGE_RELEASE_IPADDR_EVENT = "Message.ReleaseIpAddr.Event";
+
+
+    /**
+     * Checks if the given public IP address is not in active quarantine.
+     * It returns `true` if:
+     *  <ul>
+     *   <li>The IP was never in quarantine;</li>
+     *   <li>The IP was in quarantine, but the quarantine expired;</li>
+     *   <li>The IP is still in quarantine; however, the new owner is the same as the previous owner, therefore, the IP can be allocated.</li>
+     * </ul>
+     *
+     * It returns `false` if:
+     * <ul>
+     *   <li>The IP is in active quarantine and the new owner is different from the previous owner.</li>
+     * </ul>
+     *
+     * @param ip used to check if it is in active quarantine.
+     * @param account used to identify the new owner of the public IP.
+     * @return true if the IP can be allocated, and false otherwise.
+     */
+    boolean canPublicIpAddressBeAllocated(IpAddress ip, Account account);
+
+    /**
+     * Adds the given public IP address to quarantine for the duration of the global configuration `public.ip.address.quarantine.duration` value.
+     *
+     * @param publicIpAddress to be quarantined.
+     * @param domainId used to retrieve the quarantine duration.
+     * @return the {@link PublicIpQuarantine} persisted in the database.
+     */
+    PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId);
+
+    /**
+     * Prematurely removes a public IP address from quarantine. It is required to provide a reason for removing it.
+     *
+     * @param quarantineProcessId the ID of the active quarantine process.
+     * @param removalReason       for prematurely removing the public IP address from quarantine.
+     */
+    void removePublicIpAddressFromQuarantine(Long quarantineProcessId, String removalReason);
+
+    /**
+     * Updates the end date of a public IP address in active quarantine. It can increase and decrease the duration of the quarantine.
+     *
+     * @param quarantineProcessId the ID of the quarantine process.
+     * @param endDate             the new end date for the quarantine.
+     * @return the updated quarantine object.
+     */
+    PublicIpQuarantine updatePublicIpAddressInQuarantine(Long quarantineProcessId, Date endDate);
+
+    void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception;
+}

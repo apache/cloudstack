@@ -25,8 +25,8 @@ export default {
   docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
-  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
-  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
+  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
+  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {
       name: 'details',
@@ -68,6 +68,7 @@ export default {
       api: 'registerUserKeys',
       icon: 'file-protect-outlined',
       label: 'label.action.generate.keys',
+      hoverLabel: 'label.action.generate.api.secret.keys',
       message: 'message.generate.keys',
       dataView: true
     },
@@ -80,7 +81,7 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'disabled'
+          ['disabled', 'locked'].includes(record.state)
       }
     },
     {
@@ -89,6 +90,20 @@ export default {
       label: 'label.action.disable.user',
       message: 'message.disable.user',
       dataView: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      }
+    },
+    {
+      api: 'lockUser',
+      icon: 'LockOutlined',
+      label: 'label.action.lock.user',
+      message: (record) => ['message.lock.user', { user: record.username }],
+      successMessage: (record) => ['message.lock.user.success', { user: record.username }],
+      dataView: true,
+      popup: true,
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
@@ -107,14 +122,45 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ConfigureSamlSsoAuth.vue')))
     },
     {
+      api: 'setupUserTwoFactorAuthentication',
+      icon: 'scan-outlined',
+      label: 'label.action.setup.2FA.user.auth',
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        return (record.is2faenabled === false && record.id === store.userInfo.id)
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SetupTwoFaAtUserProfile.vue')))
+    },
+    {
+      api: 'setupUserTwoFactorAuthentication',
+      icon: 'scan-outlined',
+      label: 'label.action.disable.2FA.user.auth',
+      message: (record) => { return record.is2famandated === true ? 'message.action.about.mandate.and.disable.2FA.user.auth' : 'message.action.disable.2FA.user.auth' },
+      dataView: true,
+      groupAction: true,
+      popup: true,
+      args: ['enable', 'userid'],
+      mapping: {
+        enable: {
+          value: (record) => { return false }
+        },
+        userid: {
+          value: (record) => { return record.id }
+        }
+      },
+      show: (record, store) => {
+        return (record.is2faenabled === true) && (record.id === store.userInfo.id || ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype))
+      }
+    },
+    {
       api: 'deleteUser',
       icon: 'delete-outlined',
       label: 'label.action.delete.user',
       message: 'message.delete.user',
       dataView: true,
-      show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return record.id !== 'undefined' && store.userInfo.id === record.id
       }
     }
   ]

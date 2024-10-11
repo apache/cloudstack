@@ -23,7 +23,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -32,7 +33,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class LibvirtStorageVolumeXMLParser {
-    private static final Logger s_logger = Logger.getLogger(LibvirtStorageVolumeXMLParser.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public LibvirtStorageVolumeDef parseStorageVolumeXML(String volXML) {
         DocumentBuilder builder;
@@ -51,11 +52,11 @@ public class LibvirtStorageVolumeXMLParser {
             Long capacity = Long.parseLong(getTagValue("capacity", rootElement));
             return new LibvirtStorageVolumeDef(VolName, capacity, LibvirtStorageVolumeDef.VolumeFormat.getFormat(format), null, null);
         } catch (ParserConfigurationException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (SAXException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         } catch (IOException e) {
-            s_logger.debug(e.toString());
+            logger.debug(e.toString());
         }
         return null;
     }

@@ -16,14 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import org.apache.cloudstack.api.APICommand;
@@ -41,11 +42,11 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
     private static final String s_name = "listtemplatesresponse";
 
@@ -95,6 +96,20 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             since = "4.15",
             description = "comma separated list of template details requested, value can be a list of [ all, min]")
     private List<String> viewDetails;
+
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+            description = "the type of the template", since = "4.19.0")
+    private String templateType;
+
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "flag to list VNF templates or not; true if need to list VNF templates, false otherwise.",
+            since = "4.19.0")
+    private Boolean isVnf;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -151,6 +166,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return parentTemplateId;
     }
 
+    public String getTemplateType() {
+        return templateType;
+    }
+
     public boolean listInReadyState() {
 
         Account account = CallContext.current().getCallingAccount();
@@ -173,6 +192,17 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public Boolean getShowIcon () {
         return  showIcon != null ? showIcon : false;
+    }
+
+    public Boolean getVnf() {
+        return isVnf;
+    }
+
+    public CPU.CPUArch getArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
     }
 
     @Override
@@ -207,6 +237,17 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     public List<Long> getIds() {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
         return ids;
+    }
+
+    public Long getImageStoreId() {
+        return null;
+    }
+
+    public Long getStoragePoolId() {
+        return null;
     }
 }

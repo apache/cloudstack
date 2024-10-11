@@ -624,4 +624,3 @@ Within the utils/src/main/java/org/apache/commons/httpclient/contrib/ssl directo
         from The Apache Software Foundation  http://www.apache.org/ 
             EasySSLProtocolSocketFactory.java 
             EasyX509TrustManager.java 
-

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -40,7 +39,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "stopRouter", description = "Stops a router.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopRouterCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -49,7 +47,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////

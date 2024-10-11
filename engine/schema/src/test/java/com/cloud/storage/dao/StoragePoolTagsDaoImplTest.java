@@ -21,11 +21,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.Filter;
@@ -43,7 +43,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Mock
@@ -72,7 +72,7 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
     public void setup() {
         when(_configDao.getValue(batchSizeConfigurationKey)).thenReturn(batchSizeValue);
         doReturn(storagePoolTagList).when(_storagePoolTagsDaoImpl).searchIncludingRemoved(
-                Matchers.any(SearchCriteria.class), Matchers.isNull(Filter.class), Matchers.isNull(Boolean.class), Matchers.eq(false));
+                ArgumentMatchers.any(SearchCriteria.class), ArgumentMatchers.isNull(Filter.class), ArgumentMatchers.isNull(Boolean.class), ArgumentMatchers.eq(false));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
         List<StoragePoolTagVO> storagePoolTags = new ArrayList<StoragePoolTagVO>();
 
         _storagePoolTagsDaoImpl.searchForStoragePoolIdsInternal(0, storageTagsIds.length, storageTagsIds, storagePoolTags);
-        verify(_storagePoolTagsDaoImpl).searchIncludingRemoved(Matchers.any(SearchCriteria.class), Matchers.isNull(Filter.class), Matchers.isNull(Boolean.class), Matchers.eq(false));
+        verify(_storagePoolTagsDaoImpl).searchIncludingRemoved(ArgumentMatchers.any(SearchCriteria.class), ArgumentMatchers.isNull(Filter.class), ArgumentMatchers.isNull(Boolean.class), ArgumentMatchers.eq(false));
         assertEquals(2, storagePoolTags.size());
     }
 
@@ -99,30 +99,30 @@ public class StoragePoolTagsDaoImplTest extends TestCase {
     public void testSearchForStoragePoolIdsInternalStorageTagsNullSearch() {
         List<StoragePoolTagVO> storagePoolTags = new ArrayList<StoragePoolTagVO>();
         doReturn(null).when(_storagePoolTagsDaoImpl).searchIncludingRemoved(
-                Matchers.any(SearchCriteria.class), Matchers.isNull(Filter.class), Matchers.isNull(Boolean.class), Matchers.eq(false));
+                ArgumentMatchers.any(SearchCriteria.class), ArgumentMatchers.isNull(Filter.class), ArgumentMatchers.isNull(Boolean.class), ArgumentMatchers.eq(false));
 
         _storagePoolTagsDaoImpl.searchForStoragePoolIdsInternal(0, storageTagsIds.length, storageTagsIds, storagePoolTags);
-        verify(_storagePoolTagsDaoImpl).searchIncludingRemoved(Matchers.any(SearchCriteria.class), Matchers.isNull(Filter.class), Matchers.isNull(Boolean.class), Matchers.eq(false));
+        verify(_storagePoolTagsDaoImpl).searchIncludingRemoved(ArgumentMatchers.any(SearchCriteria.class), ArgumentMatchers.isNull(Filter.class), ArgumentMatchers.isNull(Boolean.class), ArgumentMatchers.eq(false));
         assertEquals(0, storagePoolTags.size());
     }
 
     @Test
     public void testSearchByIdsStorageTagsIdsGreaterOrEqualThanBatchSize() {
         when(_configDao.getValue(batchSizeConfigurationKey)).thenReturn(batchSizeLow);
-        doNothing().when(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(Matchers.anyInt(), Matchers.anyInt(), Matchers.any(Long[].class), Matchers.anyList());
+        doNothing().when(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
         _storagePoolTagsDaoImpl.searchByIds(storageTagsIds);
 
         int batchSize = Integer.parseInt(batchSizeLow);
         int difference = storageTagsIds.length - 2 * batchSize;
-        verify(_storagePoolTagsDaoImpl, Mockito.times(2)).searchForStoragePoolIdsInternal(Matchers.anyInt(), Matchers.eq(batchSize), Matchers.any(Long[].class), Matchers.anyList());
-        verify(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(Matchers.eq(2 * batchSize), Matchers.eq(difference), Matchers.any(Long[].class), Matchers.anyList());
+        verify(_storagePoolTagsDaoImpl, Mockito.times(2)).searchForStoragePoolIdsInternal(ArgumentMatchers.anyInt(), ArgumentMatchers.eq(batchSize), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
+        verify(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(ArgumentMatchers.eq(2 * batchSize), ArgumentMatchers.eq(difference), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
     }
 
     @Test
     public void testSearchByIdsStorageTagsIdsLowerThanBatchSize() {
-        doNothing().when(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(Matchers.anyInt(), Matchers.anyInt(), Matchers.any(Long[].class), Matchers.anyList());
+        doNothing().when(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
         _storagePoolTagsDaoImpl.searchByIds(storageTagsIds);
 
-        verify(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(Matchers.eq(0), Matchers.eq(storageTagsIds.length), Matchers.any(Long[].class), Matchers.anyList());
+        verify(_storagePoolTagsDaoImpl).searchForStoragePoolIdsInternal(ArgumentMatchers.eq(0), ArgumentMatchers.eq(storageTagsIds.length), ArgumentMatchers.any(Long[].class), ArgumentMatchers.anyList());
     }
 }

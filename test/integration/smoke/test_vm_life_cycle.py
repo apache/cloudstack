@@ -31,6 +31,7 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
 from marvin.lib.utils import *
 
 from marvin.lib.base import (Account,
+                             Role,
                              ServiceOffering,
                              VirtualMachine,
                              Host,
@@ -94,17 +95,21 @@ class TestDeployVM(cloudstackTestCase):
 
         cls.services["iso1"]["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.debug(cls.account.id)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -115,17 +120,9 @@ class TestDeployVM(cloudstackTestCase):
             mode=cls.services['mode']
         )
 
-        cls.cleanup = [
-            cls.service_offering,
-            cls.account
-        ]
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVM, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -262,11 +259,7 @@ class TestDeployVM(cloudstackTestCase):
         )
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVM, self).tearDown()
 
 
 class TestVMLifeCycle(cloudstackTestCase):
@@ -279,7 +272,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
 
         # Get Zone, Domain and templates
-        domain = get_domain(cls.apiclient)
+        cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
@@ -309,7 +302,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
-            domainid=domain.id
+            domainid=cls.domain.id
         )
 
         cls.small_offering = ServiceOffering.create(
@@ -362,6 +355,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
+        # This should be a super call instead (like tearDownClass), which reverses cleanup order. Kept for now since fixing requires adjusting test 12.
         try:
             # Clean up, terminate the created ISOs
             cleanup_resources(self.apiclient, self.cleanup)
@@ -873,6 +867,202 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_12_start_vm_multiple_volumes_allocated(self):
+        """Test attaching multiple datadisks and start VM
+        """
+
+        # Validate the following
+        # 1. Deploys a VM without starting it and attaches multiple datadisks to it
+        # 2. Start VM successfully
+        # 3. Destroys the VM with DataDisks option
+
+        custom_disk_offering = DiskOffering.list(self.apiclient, name='Custom')[0]
+
+        # Create VM without starting it
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,
+            startvm=False
+        )
+        self.cleanup.append(vm)
+
+        hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor=self.hypervisor,
+            state='Up')
+
+        if self.hypervisor.lower() in ["simulator"] or not hosts[0].hypervisorversion:
+            hypervisor_version = "default"
+        else:
+            hypervisor_version = hosts[0].hypervisorversion
+
+        res = self.dbclient.execute("select max_data_volumes_limit from hypervisor_capabilities where "
+                                    "hypervisor_type='%s' and hypervisor_version='%s';" %
+                                    (self.hypervisor.lower(), hypervisor_version))
+        if isinstance(res, list) and len(res) > 0:
+            max_volumes = res[0][0]
+            if max_volumes > 14:
+                max_volumes = 14
+        else:
+            max_volumes = 6
+
+        # Create and attach volumes
+        self.services["custom_volume"]["customdisksize"] = 1
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        for i in range(max_volumes):
+            volume = Volume.create_custom_disk(
+                self.apiclient,
+                self.services["custom_volume"],
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=custom_disk_offering.id
+            )
+            self.cleanup.append(volume)    # Needs adjusting when changing tearDown to a super call, since it will try to delete an attached volume.
+            VirtualMachine.attach_volume(vm, self.apiclient, volume)
+
+        # Start the VM
+        self.debug("Starting VM - ID: %s" % vm.id)
+        vm.start(self.apiclient)
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_13_destroy_and_expunge_vm(self):
+        """Test destroy virtual machine with expunge parameter depending on whether the caller's role has expunge permission.
+        """
+        # Setup steps:
+        # 1. Create role with DENY expunge permission.
+        # 2. Create account with said role.
+        # 3. Create a VM of said account.
+        # 4. Create a VM of cls.account
+        # Validation steps:
+        # 1. Destroy the VM with the created account and verify it was not destroyed.
+        # 1. Destroy the other VM with cls.account and verify it was expunged.
+
+        role = Role.importRole(
+            self.apiclient,
+            {
+                "name": "MarvinFake Import Role ",
+                "type": "DomainAdmin",
+                "description": "Fake Import Domain Admin Role created by Marvin test",
+                "rules" : [{"rule":"list*", "permission":"allow","description":"Listing apis"},
+                           {"rule":"get*", "permission":"allow","description":"Get apis"},
+                           {"rule":"update*", "permission":"allow","description":"Update apis"},
+                           {"rule":"queryAsyncJobResult", "permission":"allow","description":"Query async job result"},
+                           {"rule":"deployVirtualMachine", "permission":"allow","description":"Deploy virtual machine"},
+                           {"rule":"destroyVirtualMachine", "permission":"allow","description":"Destroy virtual machine"},
+                           {"rule":"expungeVirtualMachine", "permission":"deny","description":"Expunge virtual machine"}]
+            },
+        )
+        self.cleanup.append(role)
+
+        domadm = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            roleid=role.id,
+            domainid=self.domain.id
+        )
+        self.cleanup[-1]=domadm    # Hacky way to reverse cleanup order to avoid deleting the role before account. Remove this line when tearDown is changed to call super().
+        self.cleanup.append(role)    # Should be self.cleanup.append(domadm) when tearDown is changed to call super().
+
+        domadm_apiclient = self.testClient.getUserApiClient(UserName=domadm.name, DomainName=self.domain.name, type=1)
+
+        vm1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,
+        )
+
+        vm2 = VirtualMachine.create(
+            domadm_apiclient,
+            self.services["small"],
+            accountid=domadm.name,
+            domainid=domadm.domainid,
+            serviceofferingid=self.small_offering.id,
+        )
+
+        self.debug("Expunge VM-ID: %s" % vm1.id)
+
+        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+        cmd.id = vm1.id
+        cmd.expunge = True
+        response = self.apiclient.destroyVirtualMachine(cmd)
+
+        self.debug("response: %s" % response)
+        self.debug("response: %s" % response.id)
+        self.assertEqual(
+            response.id,
+            None,
+            "Check if VM was expunged.",
+        )
+
+        self.debug("Expunge VM-ID: %s" % vm2.id)
+
+        cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
+        cmd.id = vm2.id
+        cmd.expunge = True
+        try:
+            domadm_apiclient.destroyVirtualMachine(cmd)
+            self.failed("Destroy VM with expunge should have raised an exception.")
+        except:
+            self.debug("Expected exception! Keep going.")
+
+        return
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_14_destroy_vm_delete_protection(self):
+        """Test destroy Virtual Machine with delete protection
+        """
+
+        # Validate the following
+        # 1. Should not be able to delete the VM when delete protection is enabled
+        # 2. Should be able to delete the VM after disabling delete protection
+
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            serviceofferingid=self.small_offering.id,
+            mode=self.services["mode"],
+            startvm=False
+        )
+
+        vm.update(self.apiclient, deleteprotection=True)
+        try:
+            vm.delete(self.apiclient)
+            self.fail("VM shouldn't get deleted with delete protection enabled")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        vm.update(self.apiclient, deleteprotection=False)
+        vm.delete(self.apiclient)
+
+        return
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
@@ -929,7 +1119,36 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if cls.hypervisor.lower() in ["kvm"]:
+            cls.ensure_all_hosts_are_up()
         super(TestSecuredVmMigration, cls).tearDownClass()
+
+    @classmethod
+    def ensure_all_hosts_are_up(cls):
+        hosts = Host.list(
+            cls.apiclient,
+            zoneid=cls.zone.id,
+            type='Routing',
+            hypervisor='KVM'
+        )
+        for host in hosts:
+            if host.state != "Up":
+                SshClient(host.ipaddress, port=22, user=cls.hostConfig["username"], passwd=cls.hostConfig["password"]) \
+                    .execute("service cloudstack-agent stop ; \
+                              sleep 10 ; \
+                              service cloudstack-agent start")
+                interval = 5
+                retries = 10
+                while retries > -1:
+                    time.sleep(interval)
+                    restarted_host = Host.list(
+                        cls.apiclient,
+                        id=host.id,
+                        type='Routing'
+                    )[0]
+                    if restarted_host.state == "Up":
+                        break
+                    retries = retries - 1
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -989,7 +1208,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             time.sleep(interval)
             host = Host.list(
                 self.apiclient,
-                hostid=hostId,
+                id=hostId,
                 type='Routing'
             )[0]
             if host.state != state:
@@ -1009,6 +1228,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
+                      sed -i 's/vnc_tls.*/vnc_tls=0/g' /etc/libvirt/qemu.conf && \
                       service libvirtd start ; \
                       service libvirt-bin start ; \
                       sleep 30 ; \
@@ -1048,7 +1268,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             host = Host.list(
                 self.apiclient,
                 zoneid=self.zone.id,
-                hostid=host.id,
+                id=host.id,
                 type='Routing'
             )[0]
             if host.details.secured != secured:
@@ -1473,7 +1693,7 @@ class TestKVMLiveMigration(cloudstackTestCase):
             self.skipTest("Requires at least two hosts for performing migration related tests")
 
         for host in self.hosts:
-            if host.details['Host.OS'] in ['CentOS']:
+            if host.details['Host.OS'] and host.details['Host.OS'].startswith('CentOS'):
                 self.skipTest("live migration is not stabily supported on CentOS")
 
     def tearDown(self):

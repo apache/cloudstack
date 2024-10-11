@@ -16,16 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
+import com.cloud.user.User;
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -40,6 +43,12 @@ public class QuotaTariffListCmdTest extends TestCase {
     @Mock
     QuotaResponseBuilder responseBuilder;
 
+    @Mock
+    User userMock;
+
+    @Mock
+    CallContext callContextMock;
+
     @Test
     public void testQuotaTariffListCmd() throws NoSuchFieldException, IllegalAccessException {
         QuotaTariffListCmd cmd = new QuotaTariffListCmd();
@@ -48,17 +57,24 @@ public class QuotaTariffListCmdTest extends TestCase {
         rbField.setAccessible(true);
         rbField.set(cmd, responseBuilder);
 
-        List<QuotaTariffVO> quotaTariffVOList = new ArrayList<QuotaTariffVO>();
+        List<QuotaTariffVO> quotaTariffVOList = new ArrayList<>();
         QuotaTariffVO tariff = new QuotaTariffVO();
         tariff.setEffectiveOn(new Date());
         tariff.setCurrencyValue(new BigDecimal(100));
         tariff.setUsageType(QuotaTypes.VOLUME);
 
         quotaTariffVOList.add(new QuotaTariffVO());
-        Mockito.when(responseBuilder.listQuotaTariffPlans(Mockito.eq(cmd))).thenReturn(new Pair<>(quotaTariffVOList, quotaTariffVOList.size()));
-        Mockito.when(responseBuilder.createQuotaTariffResponse(Mockito.any(QuotaTariffVO.class))).thenReturn(new QuotaTariffResponse());
 
-        cmd.execute();
-        Mockito.verify(responseBuilder, Mockito.times(1)).createQuotaTariffResponse(Mockito.any(QuotaTariffVO.class));
+        try (MockedStatic<CallContext> callContextStaticMock = Mockito.mockStatic(CallContext.class)) {
+            Mockito.when(responseBuilder.listQuotaTariffPlans(Mockito.eq(cmd))).thenReturn(new Pair<>(quotaTariffVOList, quotaTariffVOList.size()));
+            callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.when(callContextMock.getCallingUser()).thenReturn(userMock);
+            Mockito.when(responseBuilder.isUserAllowedToSeeActivationRules(userMock)).thenReturn(true);
+            Mockito.when(responseBuilder.createQuotaTariffResponse(Mockito.any(QuotaTariffVO.class), Mockito.eq(true))).thenReturn(new QuotaTariffResponse());
+
+            cmd.execute();
+        }
+
+        Mockito.verify(responseBuilder, Mockito.times(1)).createQuotaTariffResponse(Mockito.any(QuotaTariffVO.class), Mockito.eq(true));
     }
 }

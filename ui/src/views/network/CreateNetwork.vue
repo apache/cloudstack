@@ -26,7 +26,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.l2')" key="2">
+      <a-tab-pane :tab="$t('label.l2')" key="3">
         <CreateL2NetworkForm
           :loading="loading"
           :resource="resource"
@@ -34,7 +34,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.shared')" key="3">
+      <a-tab-pane :tab="$t('label.shared')" key="2">
         <CreateSharedNetworkForm
           :loading="loading"
           :resource="resource"
@@ -74,31 +74,42 @@ export default {
       actionZoneLoading: false
     }
   },
-  created () {
-    const promises = []
-    promises.push(this.fetchActionZoneData())
-    Promise.all(promises).then(() => {
-      this.isAdvancedZoneWithoutSGAvailable = false
-      this.defaultNetworkTypeTabKey = '2'
-
-      for (const i in this.actionZones) {
-        const zone = this.actionZones[i]
-        if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
-          this.isAdvancedZoneWithoutSGAvailable = true
-          this.defaultNetworkTypeTabKey = '1'
-          return
-        }
+  watch: {
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData()
       }
-    })
+    }
+  },
+  created () {
+    this.fetchData()
   },
   methods: {
+    fetchData () {
+      const promises = []
+      promises.push(this.fetchActionZoneData())
+      Promise.all(promises).then(() => {
+        this.isAdvancedZoneWithoutSGAvailable = false
+        this.defaultNetworkTypeTabKey = '2'
+
+        for (const i in this.actionZones) {
+          const zone = this.actionZones[i]
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+            this.isAdvancedZoneWithoutSGAvailable = true
+            this.defaultNetworkTypeTabKey = '1'
+            return
+          }
+        }
+      })
+    },
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource && this.resource.zoneid) {
+      if (this.$route.name === 'deployVirtualMachine' && this.resource.zoneid) {
         params.id = this.resource.zoneid
       }
-      this.actionZonesLoading = true
+      this.actionZoneLoading = true
       return api('listZones', params).then(json => {
         this.actionZones = json.listzonesresponse.zone
       }).finally(() => {

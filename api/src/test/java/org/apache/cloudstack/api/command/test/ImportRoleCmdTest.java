@@ -32,19 +32,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.cloud.exception.InvalidParameterValueException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
 public class ImportRoleCmdTest {
     private ImportRoleCmd importRoleCmd;
@@ -93,7 +87,8 @@ public class ImportRoleCmdTest {
         when(role.getDescription()).thenReturn("test user imported");
         when(role.getName()).thenReturn("Test User");
         when(role.getRoleType()).thenReturn(RoleType.User);
-        when(roleService.importRole(anyString(),any(), anyString(), any(), anyBoolean())).thenReturn(role);
+        when(role.getState()).thenReturn(Role.State.ENABLED);
+        when(roleService.importRole(anyString(), any(), anyString(), any(), anyBoolean(), anyBoolean())).thenReturn(role);
 
         importRoleCmd.execute();
         RoleResponse response = (RoleResponse) importRoleCmd.getResponseObject();

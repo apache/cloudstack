@@ -51,7 +51,7 @@ const err = (error) => {
       })
     }
     if (response.status === 401) {
-      if (response.config && response.config.params && ['listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
+      if (response.config && response.config.params && ['forgotPassword', 'listIdps', 'cloudianIsEnabled'].includes(response.config.params.command)) {
         return
       }
       const originalPath = router.currentRoute.value.fullPath
@@ -77,18 +77,34 @@ const err = (error) => {
       }
       countNotify++
       store.commit('SET_COUNT_NOTIFY', countNotify)
-      notification.error({
-        top: '65px',
-        message: i18n.global.t('label.unauthorized'),
-        description: i18n.global.t('message.authorization.failed'),
-        key: 'http-401',
-        duration: 0,
-        onClose: () => {
-          let countNotify = store.getters.countNotify
-          countNotify > 0 ? countNotify-- : countNotify = 0
-          store.commit('SET_COUNT_NOTIFY', countNotify)
-        }
-      })
+      if (originalPath === '/verify2FA' || originalPath === '/setup2FA') {
+        notification.error({
+          top: '65px',
+          message: i18n.global.t('label.2FA'),
+          description: i18n.global.t('message.error.verifying.2fa'),
+          key: 'http-401',
+          duration: 0,
+          onClose: () => {
+            let countNotify = store.getters.countNotify
+            countNotify > 0 ? countNotify-- : countNotify = 0
+            store.commit('SET_COUNT_NOTIFY', countNotify)
+          }
+        })
+      } else {
+        notification.error({
+          top: '65px',
+          message: i18n.global.t('label.unauthorized'),
+          description: i18n.global.t('message.authorization.failed'),
+          key: 'http-401',
+          duration: 0,
+          onClose: () => {
+            let countNotify = store.getters.countNotify
+            countNotify > 0 ? countNotify-- : countNotify = 0
+            store.commit('SET_COUNT_NOTIFY', countNotify)
+          }
+        })
+      }
+
       store.dispatch('Logout').then(() => {
         if (originalPath !== '/user/login') {
           router.push({ path: '/user/login', query: { redirect: originalPath } })
@@ -176,7 +192,12 @@ const sourceToken = {
   },
   cancel: () => {
     if (!source) sourceToken.init()
-    source.cancel()
+    if (source) {
+      source.cancel()
+      source = null
+    } else {
+      console.log('Source token failed to be cancelled')
+    }
   }
 }
 

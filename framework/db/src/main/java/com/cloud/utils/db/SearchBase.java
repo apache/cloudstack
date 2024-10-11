@@ -36,6 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * SearchBase contains the methods that are used to build up search
@@ -68,6 +69,14 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     SearchBase(final Class<T> entityType, final Class<K> resultType) {
         init(entityType, resultType);
+    }
+
+    public SearchBase<?, ?, ?> getJoinSB(String name) {
+        JoinBuilder<SearchBase<?, ?, ?>> jb = null;
+        if (_joins != null) {
+            jb = _joins.get(name);
+        }
+        return jb == null ? null : jb.getT();
     }
 
     protected void init(final Class<T> entityType, final Class<K> resultType) {
@@ -194,15 +203,45 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
      * @param joinType type of join
      * @return itself
      */
-    @SuppressWarnings("unchecked")
     public J join(final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
-        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
-        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
-        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+        if (_specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("You didn't select the attribute.");
+        if (builder._specifiedAttrs.size() != 1)
+            throw new CloudRuntimeException("You didn't select the attribute.");
 
-        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        return join(name, builder, joinType, null, joinField1, joinField2);
+    }
+
+
+    /**
+     * joins this search with another search with multiple conditions in the join clause
+     *
+     * @param name name given to the other search.  used for setJoinParameters.
+     * @param builder The other search
+     * @param joinType type of join
+     * @param condition condition to be used for multiple conditions in the join clause
+     * @param joinFields fields the first and second table used to perform the join.
+     *                   The fields should be in the order of the checks between the two tables.
+     *
+     * @return
+     */
+    public J join(final String name, final SearchBase<?, ?, ?> builder, final JoinBuilder.JoinType joinType, final
+            JoinBuilder.JoinCondition condition, final Object... joinFields) {
+        if (_entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (_specifiedAttrs.isEmpty())
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder._entity == null)
+            throw new CloudRuntimeException("SearchBuilder cannot be modified once it has been setup");
+        if (builder._specifiedAttrs.isEmpty())
+            throw new CloudRuntimeException("Attribute not specified.");
+        if (builder == this)
+            throw new CloudRuntimeException("Can't join with itself. Create a new SearchBuilder for the same entity and use that.");
+        if (_specifiedAttrs.size() != builder._specifiedAttrs.size())
+            throw new CloudRuntimeException("Number of attributes to join on must be the same.");
+
+        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<>(name, builder, _specifiedAttrs.toArray(new Attribute[0]),
+                builder._specifiedAttrs.toArray(new Attribute[0]), joinType, condition);
         if (_joins == null) {
             _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
         }
@@ -220,6 +259,16 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected void set(final String name) {
         final Attribute attr = _attrs.get(name);
         assert (attr != null) : "Searching for a field that's not there: " + name;
+        _specifiedAttrs.add(attr);
+    }
+
+    /*
+        Allows to set conditions in join where one entity is equivalent to a string or a long
+        e.g. join("vm", vmSearch, VmDetailVO.class, entity.getName(), "vm.id", SearchCriteria.Op.EQ);
+        will create a condition 'vm.name = "vm.id"'
+     */
+    protected void setAttr(final Object obj) {
+        final Attribute attr = new Attribute(obj);
         _specifiedAttrs.add(attr);
     }
 
@@ -242,16 +291,25 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return _specifiedAttrs;
     }
 
-    protected Condition constructCondition(final String conditionName, final String cond, final Attribute attr, final Op op) {
+    protected Condition constructCondition(final String joinName, final String conditionName, final String cond, final Attribute attr, final Op op) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert op != Op.SC : "Call join";
 
         final Condition condition = new Condition(conditionName, cond, attr, op);
+        if (StringUtils.isNotEmpty(joinName)) {
+            condition.setJoinName(joinName);
+        }
         _conditions.add(condition);
         _specifiedAttrs.clear();
         return condition;
     }
+
+
+    protected Condition constructCondition(final String conditionName, final String cond, final Attribute attr, final Op op) {
+        return constructCondition(null, conditionName, cond, attr, op);
+    }
+
 
     /**
      * creates the SearchCriteria so the actual values can be filled in.
@@ -364,6 +422,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected static class Condition {
         protected final String name;
         protected final String cond;
+        protected String joinName;
         protected final Op op;
         protected final Attribute attr;
         protected Object[] presets;
@@ -388,11 +447,15 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             this.presets = presets;
         }
 
+        public void setJoinName(final String joinName) {
+            this.joinName = joinName;
+        }
+
         public Object[] getPresets() {
             return presets;
         }
 
-        public void toSql(final StringBuilder sql, final Object[] params, final int count) {
+        public void toSql(final StringBuilder sql, String tableAlias, final Object[] params, final int count) {
             if (count > 0) {
                 sql.append(cond);
             }
@@ -414,7 +477,15 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                 sql.append(" FIND_IN_SET(?, ");
             }
 
-            sql.append(attr.table).append(".").append(attr.columnName).append(op.toString());
+            if (tableAlias == null) {
+                if (joinName != null) {
+                    tableAlias = joinName;
+                } else {
+                    tableAlias = attr.table;
+                }
+            }
+
+            sql.append(tableAlias).append(".").append(attr.columnName).append(op.toString());
             if (op == Op.IN && params.length == 1) {
                 sql.delete(sql.length() - op.toString().length(), sql.length());
                 sql.append("=?");
@@ -485,6 +556,8 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                     final String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
                     set(fieldName);
                     return null;
+                } else if (name.equals("setLong") || name.equals("setString")) {
+                    setAttr(args[0]);
                 } else {
                     final Column ann = method.getAnnotation(Column.class);
                     if (ann != null) {

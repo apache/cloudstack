@@ -21,7 +21,10 @@ package com.cloud.serializer;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.transport.HypervisorTypeAdaptor;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,10 +40,12 @@ import com.cloud.agent.transport.InterfaceTypeAdaptor;
 import com.cloud.agent.transport.LoggingExclusionStrategy;
 import com.cloud.agent.transport.Request.NwGroupsCommandTypeAdaptor;
 import com.cloud.agent.transport.Request.PortConfigListTypeAdaptor;
+import com.cloud.agent.transport.StoragePoolTypeAdaptor;
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 
 public class GsonHelper {
-    private static final Logger s_logger = Logger.getLogger(GsonHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(GsonHelper.class);
 
     protected static final Gson s_gson;
     protected static final Gson s_gogger;
@@ -48,11 +53,13 @@ public class GsonHelper {
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         s_gson = setDefaultGsonConfig(gsonBuilder);
-        GsonBuilder loggerBuilder = new GsonBuilder();
-        loggerBuilder.disableHtmlEscaping();
-        loggerBuilder.setExclusionStrategies(new LoggingExclusionStrategy(s_logger));
-        s_gogger = setDefaultGsonConfig(loggerBuilder);
-        s_logger.info("Default Builder inited.");
+        GsonBuilder LOGGERBuilder = new GsonBuilder();
+        LOGGERBuilder.disableHtmlEscaping();
+        LOGGERBuilder.setExclusionStrategies(new LoggingExclusionStrategy(LOGGER));
+        LOGGERBuilder.serializeSpecialFloatingPointValues();
+        // maybe add LOGGERBuilder.serializeNulls(); as well?
+        s_gogger = setDefaultGsonConfig(LOGGERBuilder);
+        LOGGER.info("Default Builder inited.");
     }
 
     static Gson setDefaultGsonConfig(GsonBuilder builder) {
@@ -69,6 +76,8 @@ public class GsonHelper {
         }.getType(), new PortConfigListTypeAdaptor());
         builder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {
         }.getType(), new NwGroupsCommandTypeAdaptor());
+        builder.registerTypeAdapter(Storage.StoragePoolType.class, new StoragePoolTypeAdaptor());
+        builder.registerTypeAdapter(Hypervisor.HypervisorType.class, new HypervisorTypeAdaptor());
         Gson gson = builder.create();
         dsAdaptor.initGson(gson);
         dtAdaptor.initGson(gson);
@@ -86,6 +95,6 @@ public class GsonHelper {
     }
 
     public final static Logger getLogger() {
-        return s_logger;
+        return LOGGER;
     }
 }

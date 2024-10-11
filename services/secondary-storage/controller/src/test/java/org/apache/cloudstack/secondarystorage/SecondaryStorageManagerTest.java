@@ -17,8 +17,20 @@
 
 package org.apache.cloudstack.secondarystorage;
 
-import java.util.Collections;
+import static org.mockito.AdditionalMatchers.not;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import com.cloud.network.NetworkModel;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,8 +39,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Networks.TrafficType;
@@ -37,16 +49,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.when;
-import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Mockito.eq;
 
 public class SecondaryStorageManagerTest {
     @Mock
@@ -55,12 +57,22 @@ public class SecondaryStorageManagerTest {
     @Mock
     NetworkDao _networkDao;
 
+    @Mock
+    NetworkModel _networkModel;
+
     @InjectMocks
     SecondaryStorageManagerImpl _ssMgr = new SecondaryStorageManagerImpl();
 
+    private AutoCloseable closeable;
+
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -68,6 +80,7 @@ public class SecondaryStorageManagerTest {
         DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.isSecurityGroupEnabled()).thenReturn(false);
+        when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(false);
 
         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
 
@@ -94,6 +107,7 @@ public class SecondaryStorageManagerTest {
         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.isSecurityGroupEnabled()).thenReturn(true);
+        when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(true);
 
         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
 
@@ -197,7 +211,7 @@ public class SecondaryStorageManagerTest {
     }
 
     @Test
-    public void validateVerifySshAccessOnManagementNicForSystemVm(){
+    public void validateVerifySshAccessOnManagementNicForSystemVm() {
         Hypervisor.HypervisorType[] hypervisorTypesArray = Hypervisor.HypervisorType.values();
         List<Hypervisor.HypervisorType> hypervisorTypesThatMustReturnManagementNic = new ArrayList<>(Arrays.asList(Hypervisor.HypervisorType.Hyperv));
 
@@ -217,5 +231,23 @@ public class SecondaryStorageManagerTest {
 
             Assert.assertEquals(expectedResult, result);
         }
+    }
+
+    private void verifyScannablePoolsZoneIds(List<Long> expected, Long[] result) {
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expected.size(), result.length);
+        for (int i = 0; i < expected.size(); ++i) {
+            Assert.assertEquals(expected.get(i), result[i]);
+        }
+    }
+
+    @Test
+    public void testGetScannablePools() {
+        List<Long> dbZoneIds = new ArrayList<>();
+        Mockito.when(_dcDao.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        verifyScannablePoolsZoneIds(dbZoneIds, _ssMgr.getScannablePools());
+        dbZoneIds = Arrays.asList(1L, 2L, 3L);
+        Mockito.when(_dcDao.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        verifyScannablePoolsZoneIds(dbZoneIds, _ssMgr.getScannablePools());
     }
 }

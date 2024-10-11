@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -141,14 +141,14 @@ ALTER TABLE `cloud`.`host` ADD COLUMN `cluster_id` bigint unsigned;
 
 --
 -- enforced in postporcess-20to21.sql
-ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `gateway` varchar(255);	-- need to migrage data with user input  
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `gateway` varchar(255);	-- need to migrage data with user input
 
-ALTER TABLE `cloud`.`service_offering` ADD COLUMN `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0; 
+ALTER TABLE `cloud`.`service_offering` ADD COLUMN `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0;
 ALTER TABLE `cloud`.`service_offering` ADD COLUMN `tags` varchar(255);
 
-ALTER TABLE `cloud`.`user_vm` MODIFY COLUMN `domain_router_id` bigint unsigned;	-- change from NOT NULL to NULL    
+ALTER TABLE `cloud`.`user_vm` MODIFY COLUMN `domain_router_id` bigint unsigned;	-- change from NOT NULL to NULL
 
-ALTER TABLE `cloud`.`event` ADD COLUMN `state` varchar(32) NOT NULL DEFAULT 'Completed';	
+ALTER TABLE `cloud`.`event` ADD COLUMN `state` varchar(32) NOT NULL DEFAULT 'Completed';
 ALTER TABLE `cloud`.`event` ADD COLUMN `start_id` bigint unsigned NOT NULL DEFAULT 0;
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `tags` varchar(4096);
@@ -198,4 +198,3 @@ CREATE TABLE `cloud`.`disk_offering_21` (
   `created` datetime COMMENT 'date the disk offering was created',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

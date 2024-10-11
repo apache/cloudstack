@@ -28,7 +28,7 @@ components
     .. hypervisor kickstarts
     .. adding new profiles
 . puppet
-. dnsmasq 
+. dnsmasq
 . ntpd
 . jenkins jnlp slave
 . scheduling
@@ -72,7 +72,7 @@ systems - these are virtual/physical infrastructure mapped to cobbler profiles b
 
 When a new image needs to be added we create a 'distro' in cobbler and associate that with a profile's kickstart. Any new systems to be hooked-up to be serviced by the profile can then be added easily by cmd line.
 
-b. Puppet master - Cobbler reimages machines on-demand but it is upto puppet recipes to do configuration management within them. The configuration management is required for kvm hypervisors (kvm agent for eg:) and for the cloudstack management server which needs mysql, cloudstack, etc. The puppetmasterd daemon on the driver-vm is responsible for 'kicking' nodes to initiate configuration management on themselves when they come alive. 
+b. Puppet master - Cobbler reimages machines on-demand but it is upto puppet recipes to do configuration management within them. The configuration management is required for kvm hypervisors (kvm agent for eg:) and for the cloudstack management server which needs mysql, cloudstack, etc. The puppetmasterd daemon on the driver-vm is responsible for 'kicking' nodes to initiate configuration management on themselves when they come alive.
 
 So the driver-vm is also the repository of all the puppet recipes for various modules that need to be configured for the test infrastructure to work. The modules are placed in /etc/puppet and bear the same structure as our GitHub repo. When we need to affect a configuration change on any of our systems we only change the GitHub repo and the systems in place are affected upon next run.
 
@@ -90,7 +90,7 @@ h. puppet - set puppetmaster to listen on 8140
 
 2. NFS storage - the nfs server is a single server serving as both primary and secondary storage. This is likely a limitation when compared to true production deployments but serves in good stead for a test setup. Where it becomes a limitation is in testing different storage backends. Object stores, local storage, clustered local storage etc are not addressed by this setup.
 
-3. Hypervisor hosts - There currently are 4 hosts in this environment. These are arranged at the moment in three pods so as to be capable of being deployed in a two zone environment. One zone with two pods and and a second zone with a single pod. This covers tests that depend on 
+3. Hypervisor hosts - There currently are 4 hosts in this environment. These are arranged at the moment in three pods so as to be capable of being deployed in a two zone environment. One zone with two pods and a second zone with a single pod. This covers tests that depend on
 a. single zone/pod/cluster
 b. multiple cluster
 c. inter-zone tests
@@ -107,7 +107,7 @@ Only the latest tests from git are run on the setup. This allows us to test in a
 control via github
 ==================
 
-there are two GitHub repositories controlling the test infrastructure. 
+there are two GitHub repositories controlling the test infrastructure.
 a. The puppet recipes at gh:acs-infra-test
 b. The gh:cloud-autodeploy repo that has the scripts to orchestrate the overall workflow
 
@@ -127,7 +127,7 @@ When jenkins triggers the job following sequence of actions occur on the test in
 5. based on the hypervisor chosen we choose a profile for cobbler to reimage the hosts in the infrastructure. if xen is chosen we bring up the profile of the latest xen kickstart available in cobbler. currently - this is at xen 6.0.2. if kvm is chosen we can pick between ubuntu and rhel based host OS  kickstarts.
 
 6. with this knowledge we kick off the driver script with the following cmd line arguments
-    $ python configure.py -v $hypervisor -d $distro -p $profile -l $LOG_LVL 
+    $ python configure.py -v $hypervisor -d $distro -p $profile -l $LOG_LVL
 
 The $distro argument chooses the hostOS of the mgmt server - this can be ubuntu / rhel. LOG_LVL can be set to INFO/DEBUG/WARN for troubleshooting and more verbose log output.
 
@@ -137,7 +137,7 @@ The $distro argument chooses the hostOS of the mgmt server - this can be ubuntu 
     c. starts up a new xenserver VM that will act as the mgmt server. we chose to keep things simple by launching the vm on a xenserver. one could employ jclouds via jenkins to deploy the mgmt server VM on a dogfooded cloudstack.
     d. in parallel the deployment config of marvin is parsed through to find the hypervisors that need to be cleaned up, pxe booted and prepared for the cloudstack deployment.
     e. all the hosts in the marvin config are pxe booted via ipmi and cobbler takes over to reimage them with the profile chosen by the jenkins job run.
-    f. while this is happening we also seed the secondary storage with the systemvm template reqd for the hypervisor. 
+    f. while this is happening we also seed the secondary storage with the systemvm template reqd for the hypervisor.
     g. all the primary stores in the marvin config are then cleaned for the next run.
 
 8. While cobbler is reimaging the hosts with the right profiles, the configure script waits until all hosts are reachable over ssh. It also checks for essential services (http, mysql) ports to come up. Cobbler once done with refreshing the machine hands over the reins to puppet.

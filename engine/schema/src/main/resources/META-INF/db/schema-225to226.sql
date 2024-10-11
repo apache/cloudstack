@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`keystore` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
   `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
-  `key` text NOT NULL COMMENT 'private key associated wih the certificate',
+  `key` text NOT NULL COMMENT 'private key associated with the certificate',
   `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
   PRIMARY KEY (`id`),
   UNIQUE(name)
@@ -49,4 +49,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`cmd_exec_log` (
   INDEX `i_cmd_exec_log__instance_id`(`instance_id`),
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

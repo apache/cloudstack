@@ -17,7 +17,9 @@
 package com.cloud.vm;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
@@ -61,5 +63,12 @@ public class VmWorkReboot extends VmWork {
                     entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        List<String> params = new ArrayList<>();
+        params.add(VirtualMachineProfile.Param.VmPassword.getName());
+        return super.toStringAfterRemoveParams("rawParams", params);
     }
 }

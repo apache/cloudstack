@@ -18,12 +18,13 @@
 package com.cloud.vm;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentPlan;
@@ -33,7 +34,6 @@ import com.cloud.utils.Journal;
 public class VmWorkStart extends VmWork {
     private static final long serialVersionUID = 9038937399817468894L;
 
-    private static final Logger s_logger = Logger.getLogger(VmWorkStart.class);
 
     long dcId;
     Long podId;
@@ -65,7 +65,7 @@ public class VmWorkStart extends VmWork {
             // this has to be refactored together with migrating legacy code into the new way
             ReservationContext context = null;
             if (reservationId != null) {
-                Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
+                Journal journal = new Journal.LogJournal("VmWorkStart", logger);
                 context = new ReservationContextImpl(reservationId, journal,
                         CallContext.current().getCallingUser(),
                         CallContext.current().getCallingAccount());
@@ -134,5 +134,12 @@ public class VmWorkStart extends VmWork {
                         entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        List<String> params = new ArrayList<>();
+        params.add(VirtualMachineProfile.Param.VmPassword.getName());
+        return super.toStringAfterRemoveParams("rawParams", params);
     }
 }

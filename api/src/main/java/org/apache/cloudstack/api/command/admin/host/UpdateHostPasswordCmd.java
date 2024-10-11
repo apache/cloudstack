@@ -23,14 +23,13 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.user.Account;
 
 @APICommand(name = "updateHostPassword", description = "Update password of a host/pool on management server.", responseObject = SuccessResponse.class,
 requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class UpdateHostPasswordCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateHostPasswordCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -66,7 +65,7 @@ public class UpdateHostPasswordCmd extends BaseCmd {
     }
 
     public Boolean getUpdatePasswdOnHost() {
-        return updatePasswdOnHost == null ? false : true;
+        return BooleanUtils.isTrue(updatePasswdOnHost);
     }
 
     public String getPassword() {

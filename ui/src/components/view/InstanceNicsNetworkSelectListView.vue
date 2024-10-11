@@ -25,23 +25,25 @@
       :dataSource="nics"
       :pagination="false"
       :rowKey="record => record.InstanceID">
-      <template #displaytext="{record}">
-        <span>{{ record.elementName + ' - ' + record.name }}
-          <a-tooltip :title="record.nicDescription" placement="top">
-            <info-circle-outlined class="table-tooltip-icon" />
-          </a-tooltip>
-        </span>
-      </template>
-      <template #size="{record}">
-        <span v-if="record.size">
-          {{ $bytesToHumanReadableSize(record.size) }}
-        </span>
-      </template>
-      <template #selectednetwork="{record}">
-        <span>{{ record.selectednetworkname || '' }}</span>
-      </template>
-      <template #select="{record}">
-        <div style="display: flex; justify-content: flex-end;"><a-button @click="openNicNetworkSelector(record)">{{ record.selectednetworkid ? $t('label.change') : $t('label.select') }}</a-button></div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'displaytext'">
+          <span>{{ record.elementName + ' - ' + record.name }}
+            <a-tooltip :title="record.nicDescription" placement="top">
+              <info-circle-outlined class="table-tooltip-icon" />
+            </a-tooltip>
+          </span>
+        </template>
+        <template v-if="column.key === 'size'">
+          <span v-if="record.size">
+            {{ $bytesToHumanReadableSize(record.size) }}
+          </span>
+        </template>
+        <template v-if="column.key === 'selectednetwork'">
+          <span>{{ record.selectednetworkname || '' }}</span>
+        </template>
+        <template v-if="column.key === 'select'">
+          <div style="display: flex; justify-content: flex-end;"><a-button @click="openNicNetworkSelector(record)">{{ record.selectednetworkid ? $t('label.change') : $t('label.select') }}</a-button></div>
+        </template>
       </template>
     </a-table>
 
@@ -87,16 +89,16 @@ export default {
     return {
       nicColumns: [
         {
-          title: this.$t('label.nic'),
-          slots: { customRender: 'displaytext' }
+          key: 'displaytext',
+          title: this.$t('label.nic')
         },
         {
-          title: this.$t('label.network'),
-          slots: { customRender: 'selectednetwork' }
+          key: 'selectednetwork',
+          title: this.$t('label.network')
         },
         {
-          title: '',
-          slots: { customRender: 'select' }
+          key: 'select',
+          title: ''
         }
       ],
       selectedNicForNetworkSelection: {}

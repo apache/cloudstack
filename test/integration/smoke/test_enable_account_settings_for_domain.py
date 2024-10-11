@@ -391,7 +391,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # (8) change domain setting (3) to original +30
         # (9) list domain settings with name=(3), value should be same as (8)
         # (10) list account settings with name=(3), value should be same as (9)=(8)
-        # (11) change acount setting (3) to original +50
+        # (11) change account setting (3) to original +50
         # (12) list account settings with name=(3), value should be same as (10)
         """
 
@@ -484,7 +484,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         account_value = int(configs[0].value)
         self.assertEqual(new_domain_value, account_value, "Account setting is not equal to new value of global setting")
 
-        # (11) change acount setting (3) to original +50
+        # (11) change account setting (3) to original +50
         new_account_value = account_value + 50
         Configurations.update(
             self.apiclient,

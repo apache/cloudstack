@@ -61,7 +61,7 @@ RewriteCond %{REQUEST_METHOD} =POST
 RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
 Header always set Access-Control-Allow-Origin "*"
 Header always set Access-Control-Allow-Methods "POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
 HTTPS
   else
     if [ -f /etc/apache2/https.conf ]; then
@@ -73,7 +73,7 @@ RewriteCond %{REQUEST_METHOD} =POST
 RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
 Header always set Access-Control-Allow-Origin "*"
 Header always set Access-Control-Allow-Methods "POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
 HTTP
   fi
 
@@ -87,3 +87,5 @@ HTTP
 }
 
 setup_secstorage
+# System VMs are patched during bootstrap
+. /opt/cloud/bin/setup/patch.sh && patch_system_vm

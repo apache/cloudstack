@@ -111,6 +111,7 @@ under the License.
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+            <adapter name="CustomHW Agent" class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer"/>
             <adapter name="Bare Metal Agent" class="com.cloud.baremetal.BareMetalDiscoverer"/>
 			<adapter name="Ovm Discover" class="com.cloud.ovm.hypervisor.OvmDiscoverer" />
         </adapters>
@@ -169,7 +170,7 @@ under the License.
              <param name="premium">true</param>
         </dao>
         <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" singleton="false"/>
-        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>         
+        <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl" singleton="false"/>
         <dao name="ServiceOffering configuration server" class="com.cloud.service.dao.ServiceOfferingDaoImpl" singleton="false"/>
         <dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl" singleton="false"/>
@@ -177,7 +178,7 @@ under the License.
         <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" singleton="false"/>
         <dao name="DataCenterDao" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/>
-        <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>     
+        <dao name="IpAddressDao" class="com.cloud.network.dao.IPAddressDaoImpl" singleton="false"/>
         <dao name="VlanDao" class="com.cloud.dc.dao.VlanDaoImpl" singleton="false"/>
         <dao name="ResourceCountDao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" singleton="false"/>
         <dao name="AccountDao" class="com.cloud.user.dao.AccountDaoImpl" singleton="false"/>

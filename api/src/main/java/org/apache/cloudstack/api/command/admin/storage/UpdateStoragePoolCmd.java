@@ -17,9 +17,9 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,11 +31,13 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
+@SuppressWarnings("rawtypes")
 @APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateStoragePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -60,6 +62,23 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
             " enable it back.")
     private Boolean enabled;
+
+    @Parameter(name = ApiConstants.DETAILS,
+                            type = CommandType.MAP,
+                            required = false,
+                            description = "the details for the storage pool",
+                            since = "4.19.0")
+    private Map details;
+
+    @Parameter(name = ApiConstants.URL,
+                            type = CommandType.STRING,
+                            required = false,
+                            description = "the URL of the storage pool",
+                            since = "4.19.0")
+    private String url;
+
+    @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,6 +108,10 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return enabled;
     }
 
+    public Boolean isTagARule() {
+        return isTagARule;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -108,9 +131,35 @@ public class UpdateStoragePoolCmd extends BaseCmd {
         return ApiCommandResourceType.StoragePool;
     }
 
+    public Map<String,String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String,String> details) {
+        this.details = details;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     @Override
     public void execute() {
-        StoragePool result = _storageService.updateStoragePool(this);
+        StoragePool result = null;
+        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
+                MapUtils.isNotEmpty(details)) {
+            result = _storageService.updateStoragePool(this);
+        }
+
+        if (enabled != null) {
+            result = enabled ? _storageService.enablePrimaryStoragePool(id)
+                    : _storageService.disablePrimaryStoragePool(id);
+        }
+
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

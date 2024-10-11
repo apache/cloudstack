@@ -22,10 +22,12 @@ export default {
   name: 'cluster',
   title: 'label.clusters',
   icon: 'cluster-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-clusters',
   permission: ['listClustersMetrics'],
+  searchFilters: ['name', 'zoneid', 'podid', 'hypervisor'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -33,13 +35,17 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
   related: [{
     name: 'host',
     title: 'label.hosts',
     param: 'clusterid'
   }],
   resourceType: 'Cluster',
+  filters: () => {
+    const filters = ['enabled', 'disabled']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -50,8 +56,17 @@ export default {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
+    name: 'drs',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRSTab.vue')))
+  }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+  },
+  {
+    name: 'events',
+    resourceType: 'Cluster',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }],
   actions: [
     {
@@ -68,7 +83,12 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername']
+      args: ['clustername', 'arch'],
+      mapping: {
+        arch: {
+          options: ['x86_64', 'aarch64']
+        }
+      }
     },
     {
       api: 'updateCluster',
@@ -106,6 +126,16 @@ export default {
       message: 'message.action.unmanage.cluster',
       dataView: true,
       defaultArgs: { managedstate: 'Unmanaged' },
+      show: (record) => { return record.managedstate === 'Managed' }
+    },
+    {
+      api: 'executeDRS',
+      icon: 'gold-outlined',
+      label: 'label.action.drs.cluster',
+      message: 'message.action.drs.cluster',
+      dataView: true,
+      defaultArgs: { iterations: null },
+      args: ['iterations'],
       show: (record) => { return record.managedstate === 'Managed' }
     },
     {

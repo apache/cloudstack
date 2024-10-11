@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
@@ -31,4 +32,8 @@ public interface ServiceOfferingJoinDao extends GenericDao<ServiceOfferingJoinVO
     ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering);
 
     ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering);
+
+    Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath);
+
+    List<ServiceOfferingJoinVO> searchByIds(Long... id);
 }

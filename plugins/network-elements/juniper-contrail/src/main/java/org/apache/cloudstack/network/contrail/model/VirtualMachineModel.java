@@ -30,7 +30,6 @@ import net.juniper.contrail.api.types.VirtualMachine;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
@@ -45,7 +44,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class VirtualMachineModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(VirtualMachineModel.class);
 
     private final String _uuid;
     private long _instanceId;
@@ -81,7 +79,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         setProperties(controller, instance);
         UserVm userVm = controller.getVmDao().findById(instance.getId());
         if (userVm != null && userVm.getUserData() != null) {
-            s_logger.debug("vm " + instance.getInstanceName() + " user data: " + userVm.getUserData());
+            logger.debug("vm " + instance.getInstanceName() + " user data: " + userVm.getUserData());
             final Gson json = new Gson();
             Map<String, String> kvmap = json.fromJson(userVm.getUserData(), new TypeToken<Map<String, String>>() {
             }.getType());
@@ -102,7 +100,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                     // Throw a CloudRuntimeException in case the UUID is not valid.
                     String message = "Invalid UUID ({0}) given for the service-instance for VM {1}.";
                     message = MessageFormat.format(message, instance.getId(), serviceUuid);
-                    s_logger.warn(message);
+                    logger.warn(message);
                     throw new CloudRuntimeException(message);
                 }
             }
@@ -124,7 +122,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         try {
             siObj = (ServiceInstance) api.findById(ServiceInstance.class, serviceUuid);
         } catch (IOException ex) {
-            s_logger.warn("service-instance read", ex);
+            logger.warn("service-instance read", ex);
             throw new CloudRuntimeException("Unable to read service-instance object", ex);
         }
 
@@ -166,7 +164,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         try {
             api.delete(VirtualMachine.class, _uuid);
         } catch (IOException ex) {
-            s_logger.warn("virtual-machine delete", ex);
+            logger.warn("virtual-machine delete", ex);
         }
 
         if (_serviceModel != null) {
@@ -235,7 +233,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                 return false;
 
             default:
-                s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
+                logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
         }
         return true;
     }
@@ -252,7 +250,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         try {
             _projectId = manager.getProjectId(instance.getDomainId(), instance.getAccountId());
         } catch (IOException ex) {
-            s_logger.warn("project read", ex);
+            logger.warn("project read", ex);
             throw new CloudRuntimeException(ex);
         }
         _initialized = true;
@@ -321,7 +319,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                     try {
                         project = (Project)api.findById(Project.class, _projectId);
                     } catch (IOException ex) {
-                        s_logger.debug("project read", ex);
+                        logger.debug("project read", ex);
                         throw new CloudRuntimeException("Failed to read project", ex);
                     }
                     vm.setParent(project);
@@ -339,7 +337,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             try {
                 api.create(vm);
             } catch (Exception ex) {
-                s_logger.debug("virtual-machine create", ex);
+                logger.debug("virtual-machine create", ex);
                 throw new CloudRuntimeException("Failed to create virtual-machine", ex);
             }
             _vm = vm;
@@ -347,7 +345,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             try {
                 api.update(vm);
             } catch (IOException ex) {
-                s_logger.warn("virtual-machine update", ex);
+                logger.warn("virtual-machine update", ex);
                 throw new CloudRuntimeException("Unable to update virtual-machine object", ex);
             }
         }
@@ -367,7 +365,7 @@ public class VirtualMachineModel extends ModelObjectBase {
     try {
         _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
     } catch (IOException e) {
-        s_logger.error("virtual-machine verify", e);
+        logger.error("virtual-machine verify", e);
     }
 
     if (_vm == null) {

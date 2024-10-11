@@ -22,7 +22,7 @@
 -- Added in CLOUDSTACK-9340: General DB optimization, 4 cases:
 
 ----- 1) Incorrect PRIMARY key
-ALTER TABLE `cloud`.`ovs_tunnel_network` 
+ALTER TABLE `cloud`.`ovs_tunnel_network`
 DROP PRIMARY KEY,
 ADD PRIMARY KEY (`id`),
 DROP INDEX `id` ,
@@ -268,4 +268,3 @@ CREATE VIEW `cloud`.`user_view` AS
         `cloud`.`async_job` ON async_job.instance_id = user.id
             and async_job.instance_type = 'User'
             and async_job.job_status = 0;
-

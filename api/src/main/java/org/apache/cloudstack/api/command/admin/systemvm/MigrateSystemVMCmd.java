@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -47,7 +46,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateSystemVMCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -171,16 +169,16 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate the system vm");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (ManagementServerException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (VirtualMachineMigrationException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

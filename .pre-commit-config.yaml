@@ -19,24 +19,79 @@ default_stages: [commit, push]
 default_language_version:
   # force all unspecified Python hooks to run python3
   python: python3
-minimum_pre_commit_version: "2.18.0"
+minimum_pre_commit_version: "2.17.0"
 repos:
   - repo: meta
     hooks:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.6.0
     hooks:
       #- id: check-added-large-files
-      #- id: check-case-conflict
+      - id: check-case-conflict
       #- id: check-executables-have-shebangs
-      #- id: check-merge-conflict
-      #- id: check-vcs-permalinks
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-vcs-permalinks
       #- id: check-yaml
-      #- id: detect-private-key
-      #- id: end-of-file-fixer
+      - id: destroyed-symlinks
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      - id: detect-private-key
+        exclude: >
+          (?x)
+          ^scripts/vm/systemvm/id_rsa\.cloud$|
+          ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
+          ^server/src/test/resources/certs/dsa_self_signed\.key$|
+          ^server/src/test/resources/certs/non_root\.key$|
+          ^server/src/test/resources/certs/root_chain\.key$|
+          ^server/src/test/resources/certs/rsa_ca_signed\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed_with_pwd\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed\.key$|
+          ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
+          ^systemvm/agent/certs/localhost\.key$|
+          ^systemvm/agent/certs/realhostip\.key$
+      - id: end-of-file-fixer
+        exclude: \.vhd$
       #- id: fix-byte-order-marker
+      - id: forbid-submodules
       - id: mixed-line-ending
-        files: \.(java|py)$
-      # - id: trailing-whitespace
+        exclude: \.(cs|xml)$
+      - id: trailing-whitespace
+        files: \.(header|in|java|md|properties|py|rb|sh|sql|txt|vue|xml|yaml|yml)$
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        name: run codespell
+        description: Check spelling with codespell
+        args: [--ignore-words=.github/linters/codespell.txt]
+        exclude: ^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+    - id: flake8
+      args: [--config, .github/linters/.flake8]
+      exclude: >
+        (?x)
+        ^agent/bindir/cloud-setup-agent\.in$|
+        ^client/bindir/cloud-update-xenserver-licenses\.in$|
+        ^cloud-cli/bindir/cloud-tool$|
+        ^python/bindir/cloud-grab-dependent-library-versions$|
+        ^python/bindir/cloud-setup-baremetal$|
+        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
+        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
+        ^setup/bindir/cloud-setup-encryption\.in$|
+        ^venv/.*$
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.40.0
+    hooks:
+      - id: markdownlint
+        name: run markdownlint
+        description: check Markdown files with markdownlint
+        args: [--config=.github/linters/.markdown-lint.yml]
+        types: [markdown]
+        files: \.(md|mdown|markdown)$

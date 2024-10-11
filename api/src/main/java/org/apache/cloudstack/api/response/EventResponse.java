@@ -69,6 +69,10 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Param(description = "the name of the account's domain")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the account's domain belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.RESOURCE_ID)
     @Param(description = "the id of the resource", since = "4.17.0")
     private String resourceId;
@@ -92,6 +96,10 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @SerializedName(ApiConstants.PARENT_ID)
     @Param(description = "whether the event is parented")
     private String parentId;
+
+    @SerializedName(ApiConstants.ARCHIVED)
+    @Param(description = "whether the event has been archived or not")
+    private Boolean archived;
 
     public void setId(String id) {
         this.id = id;
@@ -126,6 +134,11 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setResourceId(String resourceId) {
@@ -172,5 +185,9 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 }

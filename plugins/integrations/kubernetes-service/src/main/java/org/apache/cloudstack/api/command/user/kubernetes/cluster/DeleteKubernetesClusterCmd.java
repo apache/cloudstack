@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -28,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -42,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         entityType = {KubernetesCluster.class},
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(DeleteKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -58,12 +57,32 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
             description = "the ID of the Kubernetes cluster")
     private Long id;
 
+    @Parameter(name = ApiConstants.CLEANUP,
+            type = CommandType.BOOLEAN,
+            since = "4.19.0",
+            description = "Destroy attached instances of the ExternalManaged Cluster. Default: false")
+    private Boolean cleanup;
+
+    @Parameter(name = ApiConstants.EXPUNGE,
+            type = CommandType.BOOLEAN,
+            since = "4.19.0",
+            description = "Expunge attached instances of the ExternalManaged Cluster. If true, value of cleanup is ignored. Default: false")
+    private Boolean expunge;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public Boolean getCleanup() {
+        return cleanup != null && cleanup;
+    }
+
+    public Boolean getExpunge() {
+        return expunge != null && expunge;
     }
 
     /////////////////////////////////////////////////////
@@ -73,7 +92,7 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
-            if (!kubernetesClusterService.deleteKubernetesCluster(id)) {
+            if (!kubernetesClusterService.deleteKubernetesCluster(this)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to delete Kubernetes cluster ID: %d", getId()));
             }
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -92,6 +111,16 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_DELETE;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KubernetesCluster;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 
     @Override

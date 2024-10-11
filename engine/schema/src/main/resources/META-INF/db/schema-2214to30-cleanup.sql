@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,7 @@ ALTER TABLE `cloud_usage`.`usage_network` DROP COLUMN `current_bytes_sent`;
 
 ALTER TABLE `cloud`.`template_host_ref` DROP COLUMN `pool_id`;
 DELETE from `cloud`.`op_host_capacity` where capacity_type in (2,4,6);
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `private_netmask`; 
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `private_netmask`;
 
 ALTER TABLE `cloud`.`security_group_rule` drop foreign key `fk_security_ingress_rule___security_group_id`;
 ALTER TABLE `cloud`.`security_group_rule` drop foreign key `fk_security_ingress_rule___allowed_network_id`;
@@ -65,4 +65,3 @@ DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud_usage`.`event`;
 
 DELETE from `cloud`.`guest_os` where id=204 or id=205;
-

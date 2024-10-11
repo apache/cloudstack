@@ -22,20 +22,21 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.Id;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
+import javax.persistence.Transient;
+
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "service_offering")
@@ -193,9 +194,10 @@ public class ServiceOfferingVO implements ServiceOffering {
         limitCpuUse = offering.getLimitCpuUse();
         volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
-        vmType = offering.getSystemVmType();
+        vmType = offering.getVmType();
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
+        diskOfferingStrictness = offering.diskOfferingStrictness;
     }
 
     @Override
@@ -276,7 +278,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public String getSystemVmType() {
+    public String getVmType() {
         return vmType;
     }
 
@@ -328,7 +330,7 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     public boolean isCustomCpuSpeedSupported() {
-        return isCustomized() && getDetail("minCPU") != null;
+        return isCustomized() && speed == null;
     }
 
     @Override

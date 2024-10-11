@@ -23,14 +23,12 @@ import com.vmware.pbm.PbmProfile;
 import com.vmware.pbm.PbmProfileId;
 import com.vmware.vim25.ManagedObjectReference;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PbmPlacementSolverMO extends BaseMO {
 
-    private static final Logger LOGGER = Logger.getLogger(PbmPlacementSolverMO.class);
 
     public PbmPlacementSolverMO (VmwareContext context) {
         super(context, context.getPbmServiceContent().getPlacementSolver());

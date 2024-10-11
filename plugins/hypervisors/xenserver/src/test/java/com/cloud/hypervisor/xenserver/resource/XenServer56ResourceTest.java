@@ -47,7 +47,7 @@ public class XenServer56ResourceTest extends CitrixResourceBaseTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testGetFiles() {
-        testGetPathFilesExeption();
+        testGetPathFilesException();
     }
 
     @Test

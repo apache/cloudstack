@@ -53,13 +53,13 @@ public interface ResourceManager extends ResourceService, Configurable {
             "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
             false);
 
-    ConfigKey<String> HOST_MAINTENANCE_LOCAL_STRATEGY = new ConfigKey<>("Advanced", String.class,
-            "host.maintenance.local.storage.strategy", "Error",
+    ConfigKey<String> HOST_MAINTENANCE_LOCAL_STRATEGY = new ConfigKey<>(String.class,
+    "host.maintenance.local.storage.strategy", "Advanced","Error",
             "Defines the strategy towards VMs with volumes on local storage when putting a host in maintenance. "
                     + "The default strategy is 'Error', preventing maintenance in such a case. "
                     + "Choose 'Migration' strategy to migrate away VMs running on local storage. "
                     + "To force-stop VMs, choose 'ForceStop' strategy",
-            true, ConfigKey.Scope.Global);
+            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
     /**
      * Register a listener for different types of resource life cycle events.
@@ -126,11 +126,17 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
 
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(HypervisorType type, long dcId);
+
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(long dcId);
 
     public List<HostVO> listAllHostsInOneZoneByType(Host.Type type, long dcId);
 
     public List<HostVO> listAllHostsInAllZonesByType(Type type);
+
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(final HypervisorType type, long dcId, long clusterId);
+
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
 
     public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
 

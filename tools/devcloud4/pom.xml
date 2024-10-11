@@ -25,13 +25,13 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-tools</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -80,8 +80,8 @@
                         <dependencies>
                             <!-- specify the dependent jdbc driver here -->
                             <dependency>
-                                <groupId>mysql</groupId>
-                                <artifactId>mysql-connector-java</artifactId>
+                                <groupId>com.mysql</groupId>
+                                <artifactId>mysql-connector-j</artifactId>
                                 <version>${cs.mysql.version}</version>
                             </dependency>
                         </dependencies>

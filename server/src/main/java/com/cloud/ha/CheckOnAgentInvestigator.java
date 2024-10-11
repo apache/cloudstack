@@ -18,7 +18,6 @@ package com.cloud.ha;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -32,7 +31,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(CheckOnAgentInvestigator.class);
     @Inject
     AgentManager _agentMgr;
 
@@ -50,17 +48,17 @@ public class CheckOnAgentInvestigator extends AdapterBase implements Investigato
         try {
             CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
             if (!answer.getResult()) {
-                s_logger.debug("Unable to get vm state on " + vm.toString());
+                logger.debug("Unable to get vm state on " + vm.toString());
                 throw new UnknownVM();
             }
 
-            s_logger.debug("Agent responded with state " + answer.getState().toString());
+            logger.debug("Agent responded with state " + answer.getState().toString());
             return answer.getState() == PowerState.PowerOn;
         } catch (AgentUnavailableException e) {
-            s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
+            logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         } catch (OperationTimedoutException e) {
-            s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
+            logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
             throw new UnknownVM();
         }
     }

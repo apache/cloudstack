@@ -63,7 +63,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     void loadHostTags(HostVO host);
 
-    List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
+    List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, Long dcId, String hostTag);
 
     List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
@@ -85,6 +85,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByClusterId(Long clusterId);
 
+    List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
+
     /**
      * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
@@ -105,6 +107,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllHosts(long zoneId);
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
+
+    List<HostVO> listAllHostsThatHaveNoRuleTag(Host.Type type, Long clusterId, Long podId, Long dcId);
 
     List<HostVO> listAllHostsByType(Host.Type type);
 
@@ -137,9 +141,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
 
+    List<HostVO> listByClusterHypervisorTypeAndHostCapability(Long clusterId, HypervisorType hypervisorType, String hostCapabilty);
+
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 
     HostVO findByName(String name);
+
+    HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion);
 
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 
@@ -149,4 +157,18 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
      */
     int countByMs(long msid);
+
+    /**
+     * Retrieves the hypervisor versions of the hosts in the datacenter which are in Up state in ascending order
+     * @param datacenterId data center id
+     * @param hypervisorType hypervisor type of the hosts
+     * @return ordered list of hypervisor versions
+     */
+    List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
+
+    List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
+
+    List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
+
+    List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
 }

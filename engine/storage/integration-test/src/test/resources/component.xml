@@ -17,13 +17,13 @@
   under the License.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:context="http://www.springframework.org/schema/context"
-  xmlns:tx="http://www.springframework.org/schema/tx" 
+  xmlns:tx="http://www.springframework.org/schema/tx"
   xmlns:aop="http://www.springframework.org/schema/aop"
   xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans.xsd
-                      http://www.springframework.org/schema/tx 
+                      http://www.springframework.org/schema/tx
                       http://www.springframework.org/schema/tx/spring-tx.xsd
                       http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop.xsd
@@ -35,10 +35,10 @@
       Compose a CloudStack deployment with selected components here
   -->
   <bean id="databaseUpgradeChecker" class="com.cloud.upgrade.DatabaseUpgradeChecker" />
-  
+
   <bean id="management-server" class ="com.cloud.server.ManagementServerExtImpl" />
   <bean id="configuration-server" class="com.cloud.server.ConfigurationServerImpl" />
-   
+
   <bean id="clusterManagerImpl" class="com.cloud.cluster.ClusterManagerImpl" />
   <bean id="clusteredVirtualMachineManagerImpl" class="com.cloud.vm.ClusteredVirtualMachineManagerImpl" />
   <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl" />
@@ -47,15 +47,15 @@
   <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
   <bean id="premiumSecondaryStorageManagerImpl" class="com.cloud.secstorage.PremiumSecondaryStorageManagerImpl" />
   <bean id="randomlyIncreasingVMInstanceDaoImpl" class="com.cloud.vm.dao.RandomlyIncreasingVMInstanceDaoImpl" />
-    
-            
+
+
   <!--
      Adapters
   -->
   <bean id="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator">
     <property name="name" value="FirstFitRouting"/>
   </bean>
-  
+
   <!--
     Storage pool allocators
   -->
@@ -74,7 +74,7 @@
     <property name="name" value="Balance"/>
   </bean>
 
- 
+
   <bean id="ExternalIpAddressAllocator" class="com.cloud.network.ExternalIpAddressAllocator">
     <property name="name" value="Basic"/>
   </bean>
@@ -89,7 +89,7 @@
   <bean id="XenServerInvestigator" class="com.cloud.ha.XenServerInvestigator">
     <property name="name" value="XenServerInvestigator"/>
   </bean>
-  
+
   <bean id="UserVmDomRInvestigator" class="com.cloud.ha.UserVmDomRInvestigator">
     <property name="name" value="PingInvestigator"/>
   </bean>
@@ -121,6 +121,11 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
+  <bean id="CustomServerDiscoverer"
+        class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer">
+    <property name="name" value="CustomHW Agent" />
+  </bean>
+
   <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.BareMetalDiscoverer">
     <property name="name" value="Bare Metal Agent"/>
   </bean>
@@ -133,8 +138,8 @@
   <bean id="BareMetalPlanner" class="com.cloud.deploy.BareMetalPlanner">
     <property name="name" value="BareMetal Fit"/>
   </bean>
-    
-   
+
+
   <!--
     Network Gurus
   -->
@@ -174,11 +179,11 @@
   <bean id="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru">
     <property name="name" value="XenServerGuru"/>
   </bean>
-  
+
   <bean id="KVMGuru" class="com.cloud.hypervisor.KVMGuru">
     <property name="name" value="KVMGuru"/>
   </bean>
-  
+
   <bean id="BareMetalGuru" class="com.cloud.baremetal.BareMetalGuru">
     <property name="name" value="BareMetalGuru"/>
   </bean>
@@ -188,5 +193,9 @@
   -->
   <bean id="configurationDaoImpl" class="com.cloud.configuration.dao.ConfigurationDaoImpl">
   </bean>
-  
+  <bean id="configurationGroupDaoImpl" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl">
+  </bean>
+  <bean id="configurationSubGroupDaoImpl" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl">
+  </bean>
+
 </beans>

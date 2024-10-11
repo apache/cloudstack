@@ -17,6 +17,7 @@
 package com.cloud.network.as;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,18 +27,30 @@ import org.junit.Test;
 
 public class AutoScaleVmProfileVOTest {
 
+    static long zoneId = 1L;
+    static long domainId = 2L;
+    static long accountId = 3L;
+    static long serviceOfferingId = 4L;
+    static long templateId  = 5L;
+    static String userdata = "userdata";
+    static long userdataId = 6L;
+    static String userdataDetails = "userdataDetails";
+    static String userdataNew = "userdataNew";
+
+    static long autoScaleUserId = 7L;
+
     @Test
     public void testCounterParamsForUpdate() {
         AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO();
 
-        Map<String, HashMap<String, String>> counterParamList = new HashMap<>();
-        counterParamList.put("0", new HashMap<>() {{ put("name", "snmpcommunity"); put("value", "public"); }});
-        counterParamList.put("1", new HashMap<>() {{ put("name", "snmpport"); put("value", "161"); }});
+        Map<String, LinkedHashMap<String, String>> counterParamList = new LinkedHashMap<>();
+        counterParamList.put("0", new LinkedHashMap<>() {{ put("name", "snmpcommunity"); put("value", "public"); }});
+        counterParamList.put("1", new LinkedHashMap<>() {{ put("name", "snmpport"); put("value", "161"); }});
 
         profile.setCounterParamsForUpdate(counterParamList);
         Assert.assertEquals("snmpcommunity=public&snmpport=161", profile.getCounterParamsString());
+        List<Pair<String, String>> counterParams = profile.getCounterParams();
 
-        List<Pair<String, String>>  counterParams = profile.getCounterParams();
         Assert.assertEquals(2, counterParams.size());
         Assert.assertEquals("snmpcommunity", counterParams.get(0).first());
         Assert.assertEquals("public", counterParams.get(0).second());
@@ -57,9 +70,35 @@ public class AutoScaleVmProfileVOTest {
 
         List<Pair<String, String>> otherDeployParamsList = profile.getOtherDeployParamsList();
         Assert.assertEquals(2, otherDeployParamsList.size());
-        Assert.assertEquals("serviceofferingid", otherDeployParamsList.get(0).first());
-        Assert.assertEquals("a7fb50f6-01d9-11ed-8bc1-77f8f0228926", otherDeployParamsList.get(0).second());
-        Assert.assertEquals("rootdisksize", otherDeployParamsList.get(1).first());
-        Assert.assertEquals("10", otherDeployParamsList.get(1).second());
+        Assert.assertTrue(containsPair(otherDeployParamsList, "serviceofferingid", "a7fb50f6-01d9-11ed-8bc1-77f8f0228926"));
+        Assert.assertTrue(containsPair(otherDeployParamsList, "rootdisksize", "10"));
+    }
+
+    private boolean containsPair(List<Pair<String, String>> list, String key, String value) {
+        for (Pair<String, String> pair : list) {
+            if (key.equals(pair.first()) && value.equals(pair.second())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Test
+    public void testProperties() {
+        AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO(zoneId, domainId, accountId, serviceOfferingId, templateId, null, null, userdata, null, autoScaleUserId);
+        Assert.assertEquals(new Long(zoneId), profile.getZoneId());
+        Assert.assertEquals(domainId, profile.getDomainId());
+        Assert.assertEquals(accountId, profile.getAccountId());
+        Assert.assertEquals(new Long(serviceOfferingId), profile.getServiceOfferingId());
+        Assert.assertEquals(new Long(templateId), profile.getTemplateId());
+        Assert.assertEquals(userdata, profile.getUserData());
+        Assert.assertEquals(new Long(autoScaleUserId), profile.getAutoScaleUserId());
+
+        profile.setUserData(userdataNew);
+        profile.setUserDataId(userdataId);
+        profile.setUserDataDetails(userdataDetails);
+        Assert.assertEquals(userdataNew, profile.getUserData());
+        Assert.assertEquals(new Long(userdataId), profile.getUserDataId());
+        Assert.assertEquals(userdataDetails, profile.getUserDataDetails());
     }
 }

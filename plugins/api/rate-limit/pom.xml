@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <build>
@@ -34,7 +34,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <forkMode>always</forkMode>
-                    <argLine>@{argLine} -Xmx2048m -XX:MaxPermSize=1024m</argLine>
+                    <argLine>@{argLine} -Xmx2048m -XX:MaxMetaspaceSize=1024m</argLine>
                     <excludes>
                         <exclude>org/apache/cloudstack/ratelimit/integration/*</exclude>
                     </excludes>

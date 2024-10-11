@@ -39,6 +39,16 @@ import com.cloud.resource.ServerResource;
 public interface AgentManager {
     static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
+    ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
+                    "enable.kvm.host.auto.enable.disable",
+                    "Advanced",
+                    "false",
+                    "(KVM only) Enable Auto Disable/Enable KVM hosts in the cluster " +
+                            "according to the hosts health check results",
+                    true, ConfigKey.Scope.Cluster, null);
+
+    ConfigKey<Integer> ReadyCommandWait = new ConfigKey<Integer>("Advanced", Integer.class, "ready.command.wait",
+            "60", "Time in seconds to wait for Ready command to return", true);
 
     public enum TapAgentsAction {
         Add, Del, Contains,

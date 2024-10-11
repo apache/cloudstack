@@ -20,7 +20,6 @@ import java.util.List;
 
 
 import com.cloud.network.IpAddress;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.UserIpv6AddressVO;
@@ -33,7 +32,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
 public class UserIpv6AddressDaoImpl extends GenericDaoBase<UserIpv6AddressVO, Long> implements UserIpv6AddressDao {
-    private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected final SearchBuilder<UserIpv6AddressVO> AllFieldsSearch;
     protected GenericSearchBuilder<UserIpv6AddressVO, Long> CountFreePublicIps;

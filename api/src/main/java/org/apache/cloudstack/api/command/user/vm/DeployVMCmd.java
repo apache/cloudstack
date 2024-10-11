@@ -31,8 +31,10 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -53,7 +55,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
@@ -73,12 +76,10 @@ import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
-    public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
     private static final String s_name = "deployvirtualmachineresponse";
 
@@ -97,17 +98,21 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine", validations = {ApiArgValidator.RFCComplianceDomainName})
     private String name;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
     private String displayName;
 
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
+            since="4.19.0.0")
+    protected String password;
+
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. If account is NOT provided then virtual machine will be assigned to the caller account and domain.")
     private Long domainId;
 
     //Network information
@@ -150,7 +155,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
-            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
+            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+                    "This binary data must be base64 encoded before adding it to the request. " +
+                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
+                    "You also need to change vm.userdata.max.length value",
             length = 1048576)
     private String userData;
 
@@ -254,6 +263,21 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
     private Long overrideDiskOfferingId;
 
+    @Parameter(name = ApiConstants.IOTHREADS_ENABLED, type = CommandType.BOOLEAN, required = false,
+            description = "IOThreads are dedicated event loop threads for supported disk devices to perform block I/O requests in order to improve scalability especially on an SMP host/guest with many LUNs.")
+    private Boolean iothreadsEnabled;
+
+    @Parameter(name = ApiConstants.IO_DRIVER_POLICY, type = CommandType.STRING, description = "Controls specific policies on IO")
+    private String ioDriverPolicy;
+
+    @Parameter(name = ApiConstants.NIC_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "4.18",
+            description = "The number of queues for multiqueue NICs.")
+    private Integer nicMultiqueueNumber;
+
+    @Parameter(name = ApiConstants.NIC_PACKED_VIRTQUEUES_ENABLED, type = CommandType.BOOLEAN, since = "4.18",
+            description = "Enable packed virtqueues or not.")
+    private Boolean nicPackedVirtQueues;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -292,7 +316,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             } catch (IllegalArgumentException e) {
                 String errMesg = "Invalid bootType " + bootType + "Specified for vm " + getName()
                         + " Valid values are: " + Arrays.toString(ApiConstants.BootType.values());
-                s_logger.warn(errMesg);
+                logger.warn(errMesg);
                 throw new InvalidParameterValueException(errMesg);
             }
         }
@@ -300,23 +324,31 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (details != null && details.size() != 0) {
-            Collection parameterCollection = details.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    customparameterMap.put(entry.getKey(),entry.getValue());
-                }
-            }
-        }
+        Map<String, String> customparameterMap = convertDetailsToMap(details);
+
         if (getBootType() != null) {
             customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
-        if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
-            customparameterMap.put("rootdisksize", rootdisksize.toString());
+        if (rootdisksize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            customparameterMap.put(VmDetailConstants.ROOT_DISK_SIZE, rootdisksize.toString());
+        }
+
+        IoDriverPolicy ioPolicy = getIoDriverPolicy();
+        if (ioPolicy != null) {
+            customparameterMap.put(VmDetailConstants.IO_POLICY, ioPolicy.toString());
+        }
+
+        if (BooleanUtils.toBoolean(iothreadsEnabled)) {
+            customparameterMap.put(VmDetailConstants.IOTHREADS, BooleanUtils.toStringTrueFalse(iothreadsEnabled));
+        }
+
+        if (nicMultiqueueNumber != null) {
+            customparameterMap.put(VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber.toString());
+        }
+
+        if (BooleanUtils.toBoolean(nicPackedVirtQueues)) {
+            customparameterMap.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, BooleanUtils.toStringTrueFalse(nicPackedVirtQueues));
         }
 
         return customparameterMap;
@@ -331,14 +363,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             } catch (IllegalArgumentException e) {
                 String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
                         ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
         }
         if (ApiConstants.BootType.UEFI.equals(getBootType())) {
             String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
                     ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
-            s_logger.error(msg);
+            logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
         return null;
@@ -371,8 +403,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                     nic = null;
                 }
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
                 if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
@@ -432,22 +464,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public Map<String, String> getUserdataDetails() {
-        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
-        if (userdataDetails != null && userdataDetails.size() != 0) {
-            Collection parameterCollection = userdataDetails.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
-                }
-            }
-        }
-        return userdataDetailsMap;
+        return convertDetailsToMap(userdataDetails);
     }
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public List<Long> getNetworkIds() {
@@ -682,6 +707,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return overrideDiskOfferingId;
     }
 
+    public ApiConstants.IoDriverPolicy getIoDriverPolicy() {
+        if (StringUtils.isNotBlank(ioDriverPolicy)) {
+            try {
+                String policyType = ioDriverPolicy.trim().toUpperCase();
+                return ApiConstants.IoDriverPolicy.valueOf(policyType);
+            } catch (IllegalArgumentException e) {
+                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
+                logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+            }
+        }
+        return null;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -722,7 +760,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public String getEventDescription() {
-        return "starting Vm. Vm Id: " + getEntityUuid();
+        if(getStartVm()) {
+            return "starting Vm. Vm Id: " + getEntityUuid();
+        }
+        return "deploying Vm. Vm Id: " + getEntityUuid();
     }
 
     @Override
@@ -734,18 +775,18 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public void execute() {
         UserVm result;
 
+        CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
         if (getStartVm()) {
             try {
-                CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
                 result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
-                s_logger.warn("Exception: ", ex);
+                logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
             } catch (ResourceAllocationException ex) {
-                s_logger.warn("Exception: ", ex);
+                logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
             } catch (ConcurrentOperationException ex) {
-                s_logger.warn("Exception: ", ex);
+                logger.warn("Exception: ", ex);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             } catch (InsufficientCapacityException ex) {
                 StringBuilder message = new StringBuilder(ex.getMessage());
@@ -754,12 +795,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                s_logger.info(ex);
-                s_logger.info(message.toString(), ex);
+                logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+                logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            result = _userVmService.getUserVm(getEntityId());
+            logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
         if (result != null) {
@@ -784,17 +826,17 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
             }
         } catch (InsufficientCapacityException ex) {
-            s_logger.info(ex);
-            s_logger.trace(ex.getMessage(), ex);
+            logger.info(ex);
+            logger.trace(ex.getMessage(), ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }  catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
     }

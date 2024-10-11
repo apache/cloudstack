@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -79,13 +80,13 @@ public interface VolumeOrchestrationService {
             Long.class,
             "storage.max.volume.size",
             "2000",
-            "The maximum size for a volume (in GB).",
+            "The maximum size for a volume (in GiB).",
             true);
 
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
-    Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
+    Volume allocateDuplicateVolume(Volume oldVol, DiskOffering diskOffering, Long templateId);
 
     boolean volumeOnSharedStoragePool(Volume volume);
 
@@ -126,9 +127,11 @@ public interface VolumeOrchestrationService {
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException;
+    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException, ResourceAllocationException;
 
     boolean canVmRestartOnAnotherServer(long vmId);
+
+    void saveVolumeDetails(Long diskOfferingId, Long volumeId);
 
     /**
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
@@ -153,7 +156,7 @@ public interface VolumeOrchestrationService {
      * @param type Type of the volume - ROOT, DATADISK, etc
      * @param name Name of the volume
      * @param offering DiskOffering for the volume
-     * @param size DiskOffering for the volume
+     * @param sizeInBytes size of the volume in bytes
      * @param minIops minimum IOPS for the disk, if not passed DiskOffering value will be used
      * @param maxIops maximum IOPS for the disk, if not passed DiskOffering value will be used
      * @param vm VirtualMachine this volume is attached to
@@ -165,8 +168,12 @@ public interface VolumeOrchestrationService {
      * @param chainInfo chain info for the volume. Hypervisor specific.
      * @return  DiskProfile of imported volume
      */
-    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
+    DiskProfile importVolume(Type type, String name, DiskOffering offering, Long sizeInBytes, Long minIops, Long maxIops,
+                             Long zoneId, HypervisorType hypervisorType, VirtualMachine vm, VirtualMachineTemplate template,
                              Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+
+    DiskProfile updateImportedVolume(Type type, DiskOffering offering, VirtualMachine vm, VirtualMachineTemplate template,
+                                     Long deviceId, Long poolId, String path, String chainInfo, DiskProfile diskProfile);
 
     /**
      * Unmanage VM volumes

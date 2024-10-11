@@ -2,8 +2,10 @@ Source: cloudstack
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 9), openjdk-11-jdk | java11-sdk | java11-jdk | zulu-11, genisoimage,
- python-mysql.connector | python3-mysql.connector, maven (>= 3) | maven3, python (>= 2.7), python3 (>= 3), nodejs (>= 12), lsb-release, dh-systemd, python-setuptools, python3-setuptools
+Build-Depends: debhelper (>= 9), openjdk-17-jdk | java17-sdk | java17-jdk | zulu-17 | openjdk-11-jdk | java11-sdk | java11-jdk | zulu-11, genisoimage,
+ python-mysql.connector | python3-mysql.connector | mysql-connector-python-py3, maven (>= 3) | maven3,
+ python (>= 2.7) | python2 (>= 2.7), python3 (>= 3), python-setuptools, python3-setuptools,
+ nodejs (>= 12), lsb-release, dh-systemd | debhelper (>= 13)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
@@ -15,14 +17,14 @@ Description: A common package which contains files which are shared by several C
 
 Package: cloudstack-management
 Architecture: all
-Depends: ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), net-tools, sudo, python3-mysql.connector, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, rng-tools, python3-dnspython, lsb-release, init-system-helpers (>= 1.14~), python3-setuptools
+Depends: ${python3:Depends}, openjdk-17-jre-headless | java17-runtime-headless | java17-runtime | zulu-17, cloudstack-common (= ${source:Version}), net-tools, sudo, python3-mysql.connector | mysql-connector-python-py3, augeas-tools, mysql-client | mariadb-client, adduser, bzip2, ipmitool, file, gawk, iproute2, qemu-utils, rng-tools, python3-dnspython, lsb-release, init-system-helpers (>= 1.14~), python3-setuptools
 Conflicts: cloud-server, cloud-client, cloud-client-ui
 Description: CloudStack server library
  The CloudStack management server
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${python:Depends}, ${python3:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), lsb-base (>= 9), openssh-client, qemu-kvm (>= 2.5) | qemu-system-x86 (>= 5.2), libvirt-bin (>= 1.3) | libvirt-daemon-system (>= 3.0), iproute2, ebtables, vlan, ipset, python3-libvirt, ethtool, iptables, cryptsetup, rng-tools, lsb-release, aria2, ufw, apparmor
+Depends: ${python:Depends}, ${python3:Depends}, openjdk-17-jre-headless | java17-runtime-headless | java17-runtime | zulu-17, cloudstack-common (= ${source:Version}), lsb-base (>= 9), openssh-client, qemu-kvm (>= 2.5) | qemu-system-x86 (>= 5.2), libvirt-bin (>= 1.3) | libvirt-daemon-system (>= 3.0), iproute2, ebtables, vlan, ipset, python3-libvirt, ethtool, iptables, cryptsetup, rng-tools, rsync, lsb-release, ufw, apparmor, cpu-checker
 Recommends: init-system-helpers
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent
@@ -32,7 +34,7 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), init-system-helpers
+Depends: openjdk-17-jre-headless | java17-runtime-headless | java17-runtime | zulu-17, cloudstack-common (= ${source:Version}), init-system-helpers
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.

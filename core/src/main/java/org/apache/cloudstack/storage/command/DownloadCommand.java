@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
@@ -33,7 +34,7 @@ import com.cloud.storage.Storage.ImageFormat;
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
 
     public static enum ResourceType {
-        VOLUME, TEMPLATE
+        VOLUME, TEMPLATE, SNAPSHOT
     }
 
     private boolean hvm;
@@ -47,6 +48,8 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     private String installPath;
     private DataStoreTO _store;
     private DataStoreTO cacheStore;
+
+    private boolean followRedirects = false;
 
     protected DownloadCommand() {
     }
@@ -64,6 +67,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         installPath = that.installPath;
         _store = that._store;
         _proxy = that._proxy;
+        followRedirects = that.followRedirects;
     }
 
     public DownloadCommand(TemplateObjectTO template, Long maxDownloadSizeInBytes) {
@@ -79,6 +83,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
             setSecUrl(((NfsTO)_store).getUrl());
         }
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.followRedirects = template.isFollowRedirects();
     }
 
     public DownloadCommand(TemplateObjectTO template, String user, String passwd, Long maxDownloadSizeInBytes) {
@@ -94,6 +99,19 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         _store = volume.getDataStore();
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         resourceType = ResourceType.VOLUME;
+        this.followRedirects = volume.isFollowRedirects();
+    }
+
+    public DownloadCommand(SnapshotObjectTO snapshot, Long maxDownloadSizeInBytes, String url) {
+        super(snapshot.getName(), url, null, snapshot.getAccountId());
+        _store = snapshot.getDataStore();
+        installPath = snapshot.getPath();
+        id = snapshot.getId();
+        if (_store instanceof NfsTO) {
+            setSecUrl(((NfsTO)_store).getUrl());
+        }
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.resourceType = ResourceType.SNAPSHOT;
     }
 
     @Override
@@ -180,5 +198,13 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
     public DataStoreTO getCacheStore() {
         return cacheStore;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 }

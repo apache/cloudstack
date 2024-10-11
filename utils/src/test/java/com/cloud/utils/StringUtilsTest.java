@@ -252,4 +252,14 @@ public class StringUtilsTest {
         String output = StringUtils.toCSVList(Arrays.asList(input.split(",")));
         assertTrue(input.equals(output));
     }
+
+    @Test
+    public void testGetKeyValuePairWithSeparator() {
+        String key = "ssh";
+        String value = "ABCD==";
+        String kp = String.format("%s=%s", key, value);
+        Pair<String, String> output = StringUtils.getKeyValuePairWithSeparator(kp, "=");
+        assertEquals(key, output.first());
+        assertEquals(value, output.second());
+    }
 }

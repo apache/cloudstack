@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.exception.CloudRuntimeException;
-
-import org.apache.log4j.Logger;
-
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -29,9 +24,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41700to41710.class);
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+public class Upgrade41610to41700 extends  DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
+
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
@@ -82,7 +80,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void updateSystemVmTemplates(Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        logger.debug("Updating System Vm template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
@@ -92,7 +90,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     public void fixWrongDatastoreClusterPoolUuid(Connection conn) {
-        LOG.debug("Replacement of faulty pool uuids on datastorecluster");
+        logger.debug("Replacement of faulty pool uuids on datastorecluster");
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT id,uuid FROM storage_pool "
                 + "WHERE uuid NOT LIKE \"%-%-%-%\" AND removed IS NULL "
                 + "AND pool_type = 'DatastoreCluster';"); ResultSet rs = pstmt.executeQuery()) {
@@ -109,7 +107,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             updateStmt.executeBatch();
         } catch (SQLException ex) {
             String errorMsg = "fixWrongPoolUuid:Exception while updating faulty pool uuids";
-            LOG.error(errorMsg,ex);
+            logger.error(errorMsg,ex);
             throw new CloudRuntimeException(errorMsg, ex);
         }
     }

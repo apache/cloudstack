@@ -483,7 +483,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         self.assertEqual(
             vm_response.id,
             vm.id,
-            "The virtual machine id and the the virtual machine from listVirtualMachines is not matching."
+            "The virtual machine id and the virtual machine from listVirtualMachines is not matching."
         )
 
         self.assertEqual(

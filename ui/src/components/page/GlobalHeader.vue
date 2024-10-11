@@ -18,7 +18,7 @@
 <template>
   <a-layout-header v-if="!headerBarFixed" :class="[fixedHeader && 'ant-header-fixedHeader', sidebarOpened ? 'ant-header-side-opened' : 'ant-header-side-closed', theme ]" :style="{ padding: '0' }">
     <div v-if="mode === 'sidemenu'" class="header">
-      <template v-if="device==='mobile'">
+      <template v-if="device === 'mobile'">
         <menu-fold-outlined class="trigger" v-if="collapsed" @click="toggle" />
         <menu-unfold-outlined class="trigger" v-else @click="toggle" />
       </template>
@@ -26,9 +26,9 @@
         <menu-unfold-outlined class="trigger" v-if="collapsed" @click="toggle" />
         <menu-fold-outlined class="trigger" v-else @click="toggle" />
       </template>
-      <project-menu v-if="device !== 'mobile'" />
+      <project-menu />
       <saml-domain-switcher style="margin-left: 20px" />
-      <user-menu></user-menu>
+      <user-menu :device="device"></user-menu>
     </div>
     <div v-else :class="['top-nav-header-index', theme]">
       <div class="header-index-wide">
@@ -45,7 +45,7 @@
             <menu-unfold-outlined class="trigger" v-else @click="toggle" />
           </div>
         </div>
-        <project-menu v-if="device !== 'mobile'" />
+        <project-menu />
         <saml-domain-switcher style="margin-left: 20px" />
         <user-menu></user-menu>
       </div>

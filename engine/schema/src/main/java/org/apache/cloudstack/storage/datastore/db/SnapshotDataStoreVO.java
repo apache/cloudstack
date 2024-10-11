@@ -29,13 +29,15 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -46,7 +48,7 @@ import com.cloud.utils.fsm.StateObject;
 @Entity
 @Table(name = "snapshot_store_ref")
 public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMachine.State>, DataObjectInStore {
-    private static final Logger s_logger = Logger.getLogger(SnapshotDataStoreVO.class);
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -84,6 +86,13 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "install_path")
     private String installPath;
 
+    @Column(name = "download_url", length = 2048)
+    private String extractUrl;
+
+    @Column(name = "download_url_created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date extractUrlCreated = null;
+
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updatedCount;
 
@@ -94,6 +103,22 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
+
+    @Column(name = "download_pct")
+    private int downloadPercent;
+
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    private VMTemplateStorageResourceAssoc.Status downloadState;
+
+    @Column(name = "local_path")
+    private String localDownloadPath;
+
+    @Column(name = "error_str")
+    private String errorString;
+
+    @Column(name = "display")
+    private boolean display = true;
 
     @Column(name = "ref_cnt")
     Long refCnt = 0L;
@@ -280,7 +305,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
             refCnt--;
         }
         else {
-            s_logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
+            logger.warn("We should not try to decrement a zero reference count even though our code has guarded");
         }
     }
 
@@ -292,7 +317,63 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
         this.volumeId = volumeId;
     }
 
+    public String getExtractUrl() {
+        return extractUrl;
+    }
+
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
+
+    public Date getExtractUrlCreated() {
+        return extractUrlCreated;
+    }
+
+    public void setExtractUrlCreated(Date extractUrlCreated) {
+        this.extractUrlCreated = extractUrlCreated;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public int getDownloadPercent() {
+        return downloadPercent;
+    }
+
+    public void setDownloadPercent(int downloadPercent) {
+        this.downloadPercent = downloadPercent;
+    }
+
+    public VMTemplateStorageResourceAssoc.Status getDownloadState() {
+        return downloadState;
+    }
+
+    public void setDownloadState(VMTemplateStorageResourceAssoc.Status downloadState) {
+        this.downloadState = downloadState;
+    }
+
+    public void setLocalDownloadPath(String localPath) {
+        localDownloadPath = localPath;
+    }
+
+    public String getLocalDownloadPath() {
+        return localDownloadPath;
+    }
+
+    public void setErrorString(String errorString) {
+        this.errorString = errorString;
+    }
+
+    public String getErrorString() {
+        return errorString;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }

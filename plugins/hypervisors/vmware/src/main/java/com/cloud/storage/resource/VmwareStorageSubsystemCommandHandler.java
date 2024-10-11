@@ -19,14 +19,21 @@
 package com.cloud.storage.resource;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.utils.NumbersUtil;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -38,13 +45,14 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
+import com.cloud.utils.NumbersUtil;
 
 public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemCommandHandlerBase {
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageSubsystemCommandHandler.class);
     private VmwareStorageManager storageManager;
     private PremiumSecondaryStorageResource storageResource;
     private String _nfsVersion;
@@ -88,7 +96,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 processor.setDiskProvisioningStrictness(diskProvisioningStrictness);
                 break;
             default:
-                s_logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
+                logger.error("Unknown reconfigurable field " + key.getName() + " for VmwareStorageProcessor");
                 return false;
             }
         }
@@ -153,7 +161,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                         DeleteCommand deleteCommand = new DeleteCommand(template);
                         storageResource.defaultAction(deleteCommand);
                     } catch (Exception e) {
-                        s_logger.debug("Failed to clean up staging area:", e);
+                        logger.debug("Failed to clean up staging area:", e);
                     }
                     return result;
                 }
@@ -189,7 +197,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                     DeleteCommand deleteCommand = new DeleteCommand(newSnapshot);
                     storageResource.defaultAction(deleteCommand);
                 } catch (Exception e) {
-                    s_logger.debug("Failed to clean up staging area:", e);
+                    logger.debug("Failed to clean up staging area:", e);
                 }
                 return result;
             }
@@ -202,4 +210,32 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         }
     }
 
+    @Override
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
+        SnapshotObjectTO snapshot = cmd.getSnapshot();
+        String parentPath = storageResource.getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
+        String path = snapshot.getPath();
+        File snapFile = new File(parentPath + File.separator + path);
+        if (snapFile.exists() && !snapFile.isDirectory()) {
+            return new QuerySnapshotZoneCopyAnswer(cmd, List.of(path));
+        }
+        int index = path.lastIndexOf(File.separator);
+        String snapDir = path.substring(0, index);
+        List<String> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
+            List<String> fileNames = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            for (String file : fileNames) {
+                file = snapDir + "/" + file;
+                logger.debug(String.format("Found snapshot file %s", file));
+                files.add(file);
+            }
+        } catch (IOException ioe) {
+            logger.error("Error preparing file list for snapshot copy", ioe);
+        }
+        return new QuerySnapshotZoneCopyAnswer(cmd, files);
+    }
 }

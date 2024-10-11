@@ -81,6 +81,7 @@ public class Attribute {
 
     protected String table;
     protected String columnName;
+    protected Object value;
     protected Field field;
     protected int flags;
     protected Column column;
@@ -98,6 +99,10 @@ public class Attribute {
         this.columnName = columnName;
         this.field = null;
         this.column = null;
+    }
+
+    public Attribute(Object value) {
+        this.value = value;
     }
 
     protected void setupColumnInfo(Class<?> clazz, AttributeOverride[] overrides, String tableName, boolean isEmbedded, boolean isId) {
@@ -212,6 +217,10 @@ public class Attribute {
 
     public Field getField() {
         return field;
+    }
+
+    public Object getValue() {
+        return value;
     }
 
     public Object get(Object entity) {

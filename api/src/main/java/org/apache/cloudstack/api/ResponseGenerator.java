@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
+
+import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -30,16 +34,21 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ASNRangeResponse;
+import org.apache.cloudstack.api.response.ASNumberResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
@@ -51,6 +60,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
@@ -61,7 +71,9 @@ import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
@@ -79,6 +91,7 @@ import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -98,6 +111,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
@@ -116,6 +130,7 @@ import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
@@ -131,8 +146,10 @@ import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
@@ -141,6 +158,9 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.capacity.Capacity;
@@ -166,6 +186,7 @@ import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -226,6 +247,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -243,6 +265,8 @@ public interface ResponseGenerator {
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
+
+    ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup);
 
     SnapshotResponse createSnapshotResponse(Snapshot snapshot);
 
@@ -330,9 +354,11 @@ public interface ResponseGenerator {
 
     SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
-    ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode, String url);
+    ExtractResponse createImageExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
 
-    ExtractResponse createExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
+    ExtractResponse createVolumeExtractResponse(Long id, Long zoneId, Long accountId, String mode, String url);
+
+    ExtractResponse createSnapshotExtractResponse(Long id, Long zoneId, Long accountId, String url);
 
     String toSerializedString(CreateCmdResponse response, String responseType);
 
@@ -433,7 +459,7 @@ public interface ResponseGenerator {
      * @param result
      * @return
      */
-    PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result);
+    PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result);
 
     /**
      * @param result
@@ -458,6 +484,8 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
+
+    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 
@@ -522,4 +550,22 @@ public interface ResponseGenerator {
     DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result);
 
     FirewallResponse createIpv6FirewallRuleResponse(FirewallRule acl);
+
+    UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host);
+
+    SecondaryStorageHeuristicsResponse createSecondaryStorageSelectorResponse(Heuristic heuristic);
+
+    IpQuarantineResponse createQuarantinedIpsResponse(PublicIpQuarantine publicIp);
+
+    ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
+
+    BucketResponse createBucketResponse(Bucket bucket);
+
+    ASNRangeResponse createASNumberRangeResponse(ASNumberRange asnRange);
+
+    ASNumberResponse createASNumberResponse(ASNumber asn);
+
+    BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository repository);
+
+    SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
 }

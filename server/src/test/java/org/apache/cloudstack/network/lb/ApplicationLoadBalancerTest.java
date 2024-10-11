@@ -16,39 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import junit.framework.TestCase;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
-import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
@@ -76,6 +43,35 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import junit.framework.TestCase;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
+import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class is responsible for unittesting the methods defined in ApplicationLoadBalancerService
@@ -148,21 +144,21 @@ public class ApplicationLoadBalancerTest extends TestCase {
         ApplicationLoadBalancerRuleVO lbRule =
             new ApplicationLoadBalancerRuleVO("new", "new", 22, 22, "roundrobin", validGuestNetworkId, validAccountId, 1L, new Ip(validRequestedIp), validGuestNetworkId,
                 Scheme.Internal);
-        Mockito.when(_lbDao.persist(Matchers.any(ApplicationLoadBalancerRuleVO.class))).thenReturn(lbRule);
+        Mockito.when(_lbDao.persist(ArgumentMatchers.any(ApplicationLoadBalancerRuleVO.class))).thenReturn(lbRule);
 
-        Mockito.when(_lbMgr.validateLbRule(Matchers.any(LoadBalancingRule.class))).thenReturn(true);
+        Mockito.when(_lbMgr.validateLbRule(ArgumentMatchers.any(LoadBalancingRule.class))).thenReturn(true);
 
-        Mockito.when(_firewallDao.setStateToAdd(Matchers.any(FirewallRuleVO.class))).thenReturn(true);
+        Mockito.when(_firewallDao.setStateToAdd(ArgumentMatchers.any(FirewallRuleVO.class))).thenReturn(true);
 
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
         CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
-        Mockito.when(_ntwkModel.areServicesSupportedInNetwork(Matchers.anyLong(), Matchers.any(Network.Service.class))).thenReturn(true);
+        Mockito.when(_ntwkModel.areServicesSupportedInNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Network.Service.class))).thenReturn(true);
 
         Map<Network.Capability, String> caps = new HashMap<Network.Capability, String>();
         caps.put(Capability.SupportedProtocols, NetUtils.TCP_PROTO);
-        Mockito.when(_ntwkModel.getNetworkServiceCapabilities(Matchers.anyLong(), Matchers.any(Network.Service.class))).thenReturn(caps);
+        Mockito.when(_ntwkModel.getNetworkServiceCapabilities(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Network.Service.class))).thenReturn(caps);
 
         Mockito.when(_lbDao.countBySourceIp(new Ip(validRequestedIp), validGuestNetworkId)).thenReturn(1L);
 

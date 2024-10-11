@@ -23,17 +23,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: 16
 
       - name: Env details
         run: |
@@ -47,8 +50,17 @@ jobs:
         run: |
           cd ui
           sudo npm install -g @vue/cli npm-check-updates
-          rm -f package-lock.json
           npm install
           npm run build
           npm run lint
           npm run test:unit
+
+      - uses: codecov/codecov-action@v4
+        with:
+          working-directory: ui
+          files: ./coverage/lcov.info
+          fail_ci_if_error: true
+          flags: uitests
+          verbose: true
+          name: codecov
+          token: ${{ secrets.CODECOV_TOKEN }}

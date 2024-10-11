@@ -33,14 +33,21 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="user.authenticators.order" />
         <property name="excludeKey" value="user.authenticators.exclude" />
-        <property name="orderConfigDefault" value="PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT" />
+        <property name="orderConfigDefault" value="PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT,OAUTH2" />
+    </bean>
+
+    <bean id="userTwoFactorAuthenticatorsRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="orderConfigKey" value="user.2fa.providers.order" />
+        <property name="excludeKey" value="user.2fa.providers.exclude" />
+        <property name="orderConfigDefault" value="totp,staticpin" />
     </bean>
 
     <bean id="pluggableAPIAuthenticatorsRegistry"
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="orderConfigKey" value="pluggableApi.authenticators.order" />
         <property name="excludeKey" value="pluggableApi.authenticators.exclude" />
-        <property name="orderConfigDefault" value="SAML2Auth" />
+        <property name="orderConfigDefault" value="SAML2Auth,OAUTH2Auth" />
     </bean>
 
     <bean id="userPasswordEncodersRegistry"
@@ -255,7 +262,7 @@
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.DumpRegistry" >
         <property name="registries" value="#{registryRegistry.registered}" />
     </bean>
-    
+
     <bean id="registryRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
@@ -269,11 +276,11 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="api.checkers.acl.exclude" />
     </bean>
-    
+
     <bean id="querySelectorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="query.selectors.exclude" />
-    </bean>    
+    </bean>
 
     <bean id="apiCommandsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
@@ -281,10 +288,10 @@
     </bean>
 
     <bean id="hypervisorGurusRegistry"
-        class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="hypervisor.gurus.exclude" />
     </bean>
-    
+
     <bean id="vpcProvidersRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="vpc.providers.exclude" />
@@ -332,7 +339,31 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 
-    <bean id="kubernetesClusterHelperRegistry"
+    <bean id="kubernetesServiceHelperRegistry"
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+    </bean>
+
+    <bean id="userDataProvidersRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+    </bean>
+
+    <bean id="clusterDrsAlgorithmRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+    </bean>
+
+    <bean id="internalLoadBalancerElementServiceRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="preRegistered">
+            <list>
+                <ref bean="InternalLbVm" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="eventBusRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="event.buses.exclude" />
+    </bean>
+
+    <bean id="sharedFSProvidersRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 </beans>

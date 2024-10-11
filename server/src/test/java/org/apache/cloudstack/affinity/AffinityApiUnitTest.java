@@ -16,50 +16,6 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.test.utils.SpringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
@@ -83,6 +39,48 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -151,12 +149,12 @@ public class AffinityApiUnitTest {
         _affinityService.setAffinityGroupProcessors(affinityProcessors);
 
         AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L, ControlledEntity.ACLType.Account);
-        Mockito.when(_affinityGroupDao.persist(Matchers.any(AffinityGroupVO.class))).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findByAccountAndName(Matchers.anyLong(), Matchers.anyString())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.lockRow(Matchers.anyLong(), anyBoolean())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.expunge(Matchers.anyLong())).thenReturn(true);
-        Mockito.when(_eventDao.persist(Matchers.any(EventVO.class))).thenReturn(new EventVO());
+        Mockito.when(_affinityGroupDao.persist(ArgumentMatchers.any(AffinityGroupVO.class))).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findById(ArgumentMatchers.anyLong())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findByAccountAndName(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.lockRow(ArgumentMatchers.anyLong(), anyBoolean())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.expunge(ArgumentMatchers.anyLong())).thenReturn(true);
+        Mockito.when(_eventDao.persist(ArgumentMatchers.any(EventVO.class))).thenReturn(new EventVO());
     }
 
     @After

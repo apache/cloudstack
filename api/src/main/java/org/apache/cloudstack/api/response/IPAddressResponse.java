@@ -75,6 +75,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description = "the domain the public IP address is associated with")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the public IP address belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
     @Param(description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
@@ -96,15 +100,19 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private Boolean isSystem;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "virtual machine id the ip address is assigned to (not null only for static nat Ip)")
+    @Param(description = "virtual machine id the ip address is assigned to")
     private String virtualMachineId;
+
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_TYPE)
+    @Param(description = "virtual machine type the ip address is assigned to", since = "4.19.0")
+    private String virtualMachineType;
 
     @SerializedName("vmipaddress")
     @Param(description = "virtual machine (dnat) ip address (not null only for static nat Ip)")
     private String virtualMachineIp;
 
     @SerializedName("virtualmachinename")
-    @Param(description = "virtual machine name the ip address is assigned to (not null only for static nat Ip)")
+    @Param(description = "virtual machine name the ip address is assigned to")
     private String virtualMachineName;
 
     @SerializedName("virtualmachinedisplayname")
@@ -124,7 +132,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String networkId;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    @Param(description = "State of the ip address. Can be: Allocating, Allocated, Releasing, Reserved and Free")
     private String state;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
@@ -159,10 +167,13 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description="the name of the Network where ip belongs to")
     private String networkName;
 
-    /*
-        @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-        private IdentityProxy jobId = new IdentityProxy("async_job");
-    */
+    @SerializedName(ApiConstants.HAS_RULES)
+    @Param(description="whether the ip address has Firewall/PortForwarding/LoadBalancing rules defined")
+    private boolean hasRules;
+
+    @SerializedName(ApiConstants.FOR_SYSTEM_VMS)
+    @Param(description="true if range is dedicated for System VMs")
+    private boolean forSystemVms;
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -204,6 +215,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
@@ -230,6 +245,10 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
 
     public void setVirtualMachineId(String virtualMachineId) {
         this.virtualMachineId = virtualMachineId;
+    }
+
+    public void setVirtualMachineType(String virtualMachineType) {
+        this.virtualMachineType = virtualMachineType;
     }
 
     public void setVirtualMachineIp(String virtualMachineIp) {
@@ -304,5 +323,13 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
 
     public void setNetworkName(String networkName) {
         this.networkName = networkName;
+    }
+
+    public void setHasRules(final boolean hasRules) {
+        this.hasRules = hasRules;
+    }
+
+    public void setForSystemVms(boolean forSystemVms) {
+        this.forSystemVms = forSystemVms;
     }
 }

@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "removeVpnUser", description = "Removes vpn user", responseObject = SuccessResponse.class, entityType = {VpnUser.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -109,7 +107,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         boolean result = _ravService.removeVpnUser(ownerId, userName, CallContext.current().getCallingAccount());
         if (!result) {
             String errorMessage = String.format("Failed to remove VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
-            s_logger.error(errorMessage);
+            logger.error(errorMessage);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
 
@@ -118,13 +116,13 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
             appliedVpnUsers = _ravService.applyVpnUsers(ownerId, userName, true);
         } catch (ResourceUnavailableException ex) {
             String errorMessage = String.format("Failed to refresh VPN user=[%s] due to resource unavailable. VPN owner id=[%s].", userName, ownerId);
-            s_logger.error(errorMessage, ex);
+            logger.error(errorMessage, ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage, ex);
         }
 
         if (!appliedVpnUsers) {
             String errorMessage = String.format("Failed to refresh VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
-            s_logger.debug(errorMessage);
+            logger.debug(errorMessage);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
 

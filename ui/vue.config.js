@@ -127,6 +127,7 @@ const vueConfig = {
         modifyVars: {
           // https://ant.design/docs/spec/colors
           // https://vue.ant.design/docs/vue/customize-theme/
+          'root-entry-name': 'default'
         },
         javascriptEnabled: true
       }

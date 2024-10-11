@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
 @APICommand(name = "extractIso", description = "Extracts an ISO", responseObject = ExtractResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractIsoCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -122,7 +120,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
             CallContext.current().setEventDetails(getEventDescription());
             String uploadUrl = _templateService.extract(this);
             if (uploadUrl != null) {
-                ExtractResponse response = _responseGenerator.createExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
+                ExtractResponse response = _responseGenerator.createImageExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
                 response.setResponseName(getCommandName());
                 response.setObjectName("iso");
                 this.setResponseObject(response);
@@ -130,7 +128,7 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract ISO");
             }
         } catch (InternalErrorException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

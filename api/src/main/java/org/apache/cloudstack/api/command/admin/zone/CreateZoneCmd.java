@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "createZone", description = "Creates a Zone.", responseObject = ZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateZoneCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -86,6 +84,10 @@ public class CreateZoneCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "true if local storage offering enabled, false otherwise")
     private Boolean localStorageEnabled;
+
+    @Parameter(name = ApiConstants.IS_EDGE, type = CommandType.BOOLEAN, description = "true if the zone is an edge zone, false otherwise", since = "4.18.0")
+    private Boolean isEdge;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -151,6 +153,13 @@ public class CreateZoneCmd extends BaseCmd {
             return false;
         }
         return localStorageEnabled;
+    }
+
+    public boolean isEdge() {
+        if (isEdge == null) {
+            return false;
+        }
+        return isEdge;
     }
 
     /////////////////////////////////////////////////////

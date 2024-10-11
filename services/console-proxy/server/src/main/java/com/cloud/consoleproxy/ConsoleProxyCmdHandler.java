@@ -24,29 +24,30 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyCmdHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyCmdHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public void handle(HttpExchange t) throws IOException {
         try {
             Thread.currentThread().setName("Cmd Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
-            s_logger.info("CmdHandler " + t.getRequestURI());
+            logger.info("CmdHandler " + t.getRequestURI());
             doHandle(t);
         } catch (Exception e) {
-            s_logger.error(e.toString(), e);
+            logger.error(e.toString(), e);
             String response = "Not found";
             t.sendResponseHeaders(404, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
         } catch (OutOfMemoryError e) {
-            s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+            logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
-            s_logger.error(e.toString(), e);
+            logger.error(e.toString(), e);
         } finally {
             t.close();
         }
@@ -56,12 +57,12 @@ public class ConsoleProxyCmdHandler implements HttpHandler {
         String path = t.getRequestURI().getPath();
         int i = path.indexOf("/", 1);
         String cmd = path.substring(i + 1);
-        s_logger.info("Get CMD request for " + cmd);
+        logger.info("Get CMD request for " + cmd);
         if (cmd.equals("getstatus")) {
             ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
 
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "text/plain");
+            hds.set("content-type", "text/plain");
             t.sendResponseHeaders(200, 0);
             OutputStreamWriter os = new OutputStreamWriter(t.getResponseBody(),"UTF-8");
             statsCollector.getStatsReport(os);

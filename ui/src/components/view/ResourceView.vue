@@ -37,14 +37,14 @@
         </keep-alive>
         <a-tabs
           v-else
-          style="width: 100%"
+          style="width: 100%; margin-top: -12px"
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
           <template v-for="tab in tabs" :key="tab.name">
             <a-tab-pane
               :key="tab.name"
-              :tab="$t('label.' + tab.name)"
+              :tab="$t('label.' + tabName(tab))"
               v-if="showTab(tab)">
               <keep-alive>
                 <component
@@ -114,15 +114,7 @@ export default {
       handler (newItem, oldItem) {
         if (newItem.id === oldItem.id) return
 
-        if (this.resource.associatednetworkid) {
-          api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
-            if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
-              this.networkService = response.listnetworksresponse.network[0]
-            } else {
-              this.networkService = {}
-            }
-          })
-        }
+        this.fetchData()
       }
     },
     '$route.fullPath': function () {
@@ -140,8 +132,20 @@ export default {
     window.addEventListener('popstate', function () {
       self.setActiveTab()
     })
+    this.fetchData()
   },
   methods: {
+    fetchData () {
+      if (this.resource.associatednetworkid) {
+        api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
+          if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
+            this.networkService = response.listnetworksresponse.network[0]
+          } else {
+            this.networkService = {}
+          }
+        })
+      }
+    },
     onTabChange (key) {
       this.activeTab = key
       const query = Object.assign({}, this.$route.query)
@@ -157,6 +161,12 @@ export default {
         }).join('&')
       )
       this.$emit('onTabChange', key)
+    },
+    tabName (tab) {
+      if (typeof tab.name === 'function') {
+        return tab.name(this.resource)
+      }
+      return tab.name
     },
     showTab (tab) {
       if (this.networkService && this.networkService.service && tab.networkServiceFilter) {

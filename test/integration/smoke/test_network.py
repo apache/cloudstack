@@ -17,6 +17,8 @@
 # under the License.
 """ BVT tests for Network Life Cycle
 """
+import json
+
 # Import Local Modules
 from marvin.codes import (FAILED, STATIC_NAT_RULE, LB_RULE,
                           NAT_RULE, PASS)
@@ -24,7 +26,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import rebootRouter
 from marvin.sshClient import SshClient
-from marvin.lib.utils import cleanup_resources, get_process_status, get_host_credentials
+from marvin.lib.utils import cleanup_resources, get_process_status, get_host_credentials, random_gen
 from marvin.lib.base import (Account,
                              VirtualMachine,
                              ServiceOffering,
@@ -37,7 +39,9 @@ from marvin.lib.base import (Account,
                              LoadBalancerRule,
                              Router,
                              NIC,
-                             Cluster)
+                             Template,
+                             Cluster,
+                             SSHKeyPair)
 from marvin.lib.common import (get_domain,
                                get_free_vlan,
                                get_zone,
@@ -58,9 +62,11 @@ from marvin.lib.decoratorGenerators import skipTestIf
 from ddt import ddt, data
 import unittest
 # Import System modules
+import os
 import time
 import logging
 import random
+import tempfile
 
 _multiprocess_shared_ = True
 
@@ -72,9 +78,6 @@ logger.addHandler(stream_handler)
 
 class TestPublicIP(cloudstackTestCase):
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-
     @classmethod
     def setUpClass(cls):
         testClient = super(TestPublicIP, cls).getClsTestClient()
@@ -85,6 +88,7 @@ class TestPublicIP(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         # Create Accounts & networks
         cls.account = Account.create(
             cls.apiclient,
@@ -92,18 +96,21 @@ class TestPublicIP(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.user = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.user)
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
         )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -114,17 +121,20 @@ class TestPublicIP(cloudstackTestCase):
             cls.account.name,
             cls.account.domainid
         )
+        cls._cleanup.append(cls.account_network)
         cls.user_network = Network.create(
             cls.apiclient,
             cls.services["network"],
             cls.user.name,
             cls.user.domainid
         )
+        cls._cleanup.append(cls.user_network)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"],
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.template = get_test_template(
@@ -146,6 +156,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.account_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.account_vm)
 
         cls.user_vm = VirtualMachine.create(
             cls.apiclient,
@@ -156,6 +167,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.user_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.user_vm)
 
         # Create Source NAT IP addresses
         PublicIPAddress.create(
@@ -170,25 +182,11 @@ class TestPublicIP(cloudstackTestCase):
             cls.zone.id,
             cls.user.domainid
         )
-        cls._cleanup = [
-            cls.account_vm,
-            cls.user_vm,
-            cls.account_network,
-            cls.user_network,
-            cls.account,
-            cls.user,
-            cls.network_offering
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPublicIP, cls).tearDownClass()
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_public_ip_admin_account(self):
@@ -879,11 +877,71 @@ class TestReleaseIP(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_releaseIP(self):
-        """Test for release public IP address"""
+        """Test for release public IP address using the ID"""
 
         logger.debug("Deleting Public IP : %s" % self.ip_addr.id)
 
         self.ip_address.delete(self.apiclient)
+
+        retriesCount = 10
+        isIpAddressDisassociated = False
+        while retriesCount > 0:
+            listResponse = list_publicIP(
+                self.apiclient,
+                id=self.ip_addr.id,
+                state="Allocated"
+            )
+            if listResponse is None:
+                isIpAddressDisassociated = True
+                break
+            retriesCount -= 1
+            time.sleep(60)
+        # End while
+
+        self.assertTrue(
+            isIpAddressDisassociated,
+            "Failed to disassociate IP address")
+
+        # ListPortForwardingRules should not list
+        # associated rules with Public IP address
+        try:
+            list_nat_rule = list_nat_rules(
+                self.apiclient,
+                id=self.nat_rule.id
+            )
+            logger.debug("List NAT Rule response" + str(list_nat_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # listLoadBalancerRules should not list
+        # associated rules with Public IP address
+        try:
+            list_lb_rule = list_lb_rules(
+                self.apiclient,
+                id=self.lb_rule.id
+            )
+            logger.debug("List LB Rule response" + str(list_lb_rule))
+        except CloudstackAPIException:
+            logger.debug("Port Forwarding Rule is deleted")
+
+        # SSH Attempt though public IP should fail
+        with self.assertRaises(Exception):
+            SshClient(
+                self.ip_addr.ipaddress,
+                self.services["natrule"]["publicport"],
+                self.virtual_machine.username,
+                self.virtual_machine.password,
+                retries=2,
+                delay=0
+            )
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
+    def test_releaseIP_using_IP(self):
+        """Test for release public IP address using the address"""
+
+        logger.debug("Deleting Public IP : %s" % self.ip_addr.ipaddress)
+        self.ip_address.delete_by_ip(self.apiclient)
 
         retriesCount = 10
         isIpAddressDisassociated = False
@@ -2061,3 +2119,313 @@ class TestSharedNetwork(cloudstackTestCase):
             0,
             "Failed to find the placeholder IP"
         )
+
+
+class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestSharedNetworkWithConfigDrive, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.hv = cls.testClient.getHypervisorInfo()
+
+        if cls.hv.lower() == 'simulator':
+            cls.skip = True
+            return
+        else:
+            cls.skip = False
+
+        cls._cleanup = []
+
+        template = Template.register(
+            cls.apiclient,
+            cls.services["test_templates_cloud_init"][cls.hv.lower()],
+            zoneid=cls.zone.id,
+            hypervisor=cls.hv,
+        )
+        template.download(cls.apiclient)
+        cls._cleanup.append(template)
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = template.id
+        cls.services["virtual_machine"]["username"] = "ubuntu"
+        # Create Network Offering
+        cls.services["shared_network_offering_configdrive"]["specifyVlan"] = "True"
+        cls.services["shared_network_offering_configdrive"]["specifyIpRanges"] = "True"
+        cls.shared_network_offering = NetworkOffering.create(cls.apiclient,
+                                                             cls.services["shared_network_offering_configdrive"],
+                                                             conservemode=True)
+
+        cls.isolated_network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["isolated_network_offering"],
+            conservemode=True
+        )
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(
+            cls.isolated_network_offering,
+            cls.apiclient,
+            id=cls.isolated_network_offering.id,
+            state="enabled"
+        )
+
+        # Update network offering state from disabled to enabled.
+        NetworkOffering.update(cls.shared_network_offering, cls.apiclient, state="enabled")
+
+        cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offering"])
+        physical_network, vlan = get_free_vlan(cls.apiclient, cls.zone.id)
+        # create network using the shared network offering created
+
+        cls.services["shared_network"]["acltype"] = "domain"
+        cls.services["shared_network"]["vlan"] = vlan
+        cls.services["shared_network"]["networkofferingid"] = cls.shared_network_offering.id
+        cls.services["shared_network"]["physicalnetworkid"] = physical_network.id
+
+        cls.setSharedNetworkParams("shared_network")
+        cls.shared_network = Network.create(cls.apiclient,
+                                            cls.services["shared_network"],
+                                            networkofferingid=cls.shared_network_offering.id,
+                                            zoneid=cls.zone.id)
+
+        cls.isolated_network = Network.create(
+            cls.apiclient,
+            cls.services["isolated_network"],
+            networkofferingid=cls.isolated_network_offering.id,
+            zoneid=cls.zone.id
+        )
+
+        cls._cleanup.extend([
+            cls.service_offering,
+            cls.shared_network,
+            cls.shared_network_offering,
+            cls.isolated_network,
+            cls.isolated_network_offering,
+        ])
+        cls.tmp_files = []
+        cls.keypair = cls.generate_ssh_keys()
+        return
+
+    @classmethod
+    def generate_ssh_keys(cls):
+        """Generates ssh key pair
+
+        Writes the private key into a temp file and returns the file name
+
+        :returns: generated keypair
+        :rtype: MySSHKeyPair
+        """
+        cls.keypair = SSHKeyPair.create(
+            cls.apiclient,
+            name=random_gen() + ".pem")
+
+        cls._cleanup.append(SSHKeyPair(cls.keypair.__dict__, None))
+        cls.debug("Created keypair with name: %s" % cls.keypair.name)
+        cls.debug("Writing the private key to local file")
+        pkfile = tempfile.gettempdir() + os.sep + cls.keypair.name
+        cls.keypair.private_key_file = pkfile
+        cls.tmp_files.append(pkfile)
+        cls.debug("File path: %s" % pkfile)
+        with open(pkfile, "w+") as f:
+            f.write(cls.keypair.privatekey)
+        os.chmod(pkfile, 0o400)
+
+        return cls.keypair
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        if self.skip:
+            self.skipTest("Hypervisor is simulator - skipping Test..")
+        self.cleanup = []
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.apiclient, cls._cleanup)
+            for tmp_file in cls.tmp_files:
+                os.remove(tmp_file)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @classmethod
+    def setSharedNetworkParams(cls, network, range=20):
+
+        # @range: range decides the endip. Pass the range as "x" if you want the difference between the startip
+        # and endip as "x"
+        # Set the subnet number of shared networks randomly prior to execution
+        # of each test case to avoid overlapping of ip addresses
+        shared_network_subnet_number = random.randrange(1, 254)
+        cls.services[network]["gateway"] = "172.16." + str(shared_network_subnet_number) + ".1"
+        cls.services[network]["startip"] = "172.16." + str(shared_network_subnet_number) + ".2"
+        cls.services[network]["endip"] = "172.16." + str(shared_network_subnet_number) + "." + str(range + 1)
+        cls.services[network]["netmask"] = "255.255.255.0"
+        logger.debug("Executing command '%s'" % cls.services[network])
+
+    def _mount_config_drive(self, ssh):
+        """
+        This method is to verify whether configdrive iso
+        is attached to vm or not
+        Returns mount path if config drive is attached else None
+        """
+        mountdir = "/root/iso"
+        cmd = "sudo blkid -t LABEL='config-2' " \
+              "/dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
+        tmp_cmd = [
+            'sudo bash -c "if [ ! -d {0} ]; then mkdir {0}; fi"'.format(mountdir),
+            "sudo umount %s" % mountdir]
+        self.debug("Unmounting drive from %s" % mountdir)
+        for tcmd in tmp_cmd:
+            ssh.execute(tcmd)
+
+        self.debug("Trying to find ConfigDrive device")
+        configDrive = ssh.execute(cmd)
+        if not configDrive:
+            self.warn("ConfigDrive is not attached")
+            return None
+
+        res = ssh.execute("sudo mount {} {}".format(str(configDrive[0]), mountdir))
+        if str(res).lower().find("read-only") > -1:
+            self.debug("ConfigDrive iso is mounted at location %s" % mountdir)
+            return mountdir
+        else:
+            return None
+
+    def _umount_config_drive(self, ssh, mount_path):
+        """unmount config drive inside guest vm
+
+        :param ssh: SSH connection to the VM
+        :type ssh: marvin.sshClient.SshClient
+        :type mount_path: str
+        """
+        ssh.execute("sudo umount -d %s" % mount_path)
+        # Give the VM time to unlock the iso device
+        time.sleep(0.5)
+        # Verify umount
+        result = ssh.execute("sudo ls %s" % mount_path)
+        self.assertTrue(len(result) == 0,
+                        "After umount directory should be empty "
+                        "but contains: %s" % result)
+
+    def _get_config_drive_data(self, ssh, file, name, fail_on_missing=True):
+        """Fetches the content of a file file on the config drive
+
+        :param ssh: SSH connection to the VM
+        :param file: path to the file to fetch
+        :param name: description of the file
+        :param fail_on_missing:
+                 whether the test should fail if the file is missing
+        :type ssh: marvin.sshClient.SshClient
+        :type file: str
+        :type name: str
+        :type fail_on_missing: bool
+        :returns: the content of the file
+        :rtype: str
+        """
+        cmd = "sudo cat %s" % file
+        res = ssh.execute(cmd)
+        content = '\n'.join(res)
+
+        if fail_on_missing and "No such file or directory" in content:
+            self.debug("{} is not found".format(name))
+            self.fail("{} is not found".format(name))
+
+        return content
+
+    def _get_ip_address_output(self, ssh):
+        cmd = "ip address"
+        res = ssh.execute(cmd)
+        return '\n'.join(res)
+
+    @attr(tags=["advanced", "shared"], required_hardware="true")
+    def test_01_deployVMInSharedNetwork(self):
+        try:
+            self.virtual_machine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
+                                                         networkids=[self.shared_network.id, self.isolated_network.id],
+                                                         serviceofferingid=self.service_offering.id,
+                                                         keypair=self.keypair.name
+                                                         )
+            self.cleanup.append(self.virtual_machine)
+        except Exception as e:
+            self.fail("Exception while deploying virtual machine: %s" % e)
+
+        public_ips = list_publicIP(
+            self.apiclient,
+            associatednetworkid=self.isolated_network.id
+        )
+        public_ip = public_ips[0]
+        FireWallRule.create(
+            self.apiclient,
+            ipaddressid=public_ip.id,
+            protocol=self.services["natrule"]["protocol"],
+            cidrlist=['0.0.0.0/0'],
+            startport=self.services["natrule"]["publicport"],
+            endport=self.services["natrule"]["publicport"]
+        )
+
+        nat_rule = NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            public_ip.id
+        )
+
+        private_key_file_location = self.keypair.private_key_file if self.keypair else None
+        ssh = self.virtual_machine.get_ssh_client(ipaddress=nat_rule.ipaddress,
+                                                  keyPairFileLocation=private_key_file_location, retries=5)
+
+        mount_path = self._mount_config_drive(ssh)
+
+        network_data_content = self._get_config_drive_data(ssh, mount_path + "/openstack/latest/network_data.json",
+                                                           "network_data")
+
+        network_data = json.loads(network_data_content)
+
+        self._umount_config_drive(ssh, mount_path)
+
+        ip_address_output = self._get_ip_address_output(ssh)
+
+        self.assertTrue('links' in network_data, "network_data.json doesn't contain links")
+        self.assertTrue('networks' in network_data, "network_data.json doesn't contain networks")
+        self.assertTrue('services' in network_data, "network_data.json doesn't contain services")
+
+        for x in ['links', 'networks', 'services']:
+            self.assertTrue(x in network_data, "network_data.json doesn't contain " + x)
+            self.assertEqual(len(network_data[x]), 2, "network_data.json doesn't contain 2 " + x)
+
+        self.assertIn(network_data['links'][0]['ethernet_mac_address'],
+                      [self.virtual_machine.nic[0].macaddress, self.virtual_machine.nic[1].macaddress],
+                      "macaddress doesn't match")
+        self.assertIn(network_data['links'][1]['ethernet_mac_address'],
+                      [self.virtual_machine.nic[0].macaddress, self.virtual_machine.nic[1].macaddress],
+                      "macaddress doesn't match")
+
+        self.assertIn(network_data['networks'][0]['ip_address'],
+                      [self.virtual_machine.nic[0].ipaddress, self.virtual_machine.nic[1].ipaddress],
+                      "ip address doesn't match")
+        self.assertIn(network_data['networks'][1]['ip_address'],
+                      [self.virtual_machine.nic[0].ipaddress, self.virtual_machine.nic[1].ipaddress],
+                      "ip address doesn't match")
+        self.assertIn(network_data['networks'][0]['netmask'],
+                      [self.virtual_machine.nic[0].netmask, self.virtual_machine.nic[1].netmask],
+                      "netmask doesn't match")
+        self.assertIn(network_data['networks'][1]['netmask'],
+                      [self.virtual_machine.nic[0].netmask, self.virtual_machine.nic[1].netmask],
+                      "netmask doesn't match")
+
+        self.assertEqual(network_data['services'][0]['type'], 'dns', "network_data.json doesn't contain dns service")
+        self.assertEqual(network_data['services'][1]['type'], 'dns', "network_data.json doesn't contain dns service")
+
+        self.assertTrue(self.virtual_machine.nic[0].ipaddress in ip_address_output, "ip address doesn't match")
+        self.assertTrue(self.virtual_machine.nic[1].ipaddress in ip_address_output, "ip address doesn't match")

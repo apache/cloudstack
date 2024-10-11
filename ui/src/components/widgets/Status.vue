@@ -16,14 +16,16 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom" :title="getTooltip(text)">
-    <a-badge
-      :style="getStyle()"
-      :title="text"
-      :color="getStatusColor(text)"
-      :status="getBadgeStatus(text)"
-      :text="getText()" />
-  </a-tooltip>
+  <div style="display: inline-flex;">
+    <a-tooltip placement="bottom" :title="getTooltip(text)">
+      <a-badge
+        :style="getStyle()"
+        :title="text"
+        :color="getStatusColor(text)"
+        :status="getBadgeStatus(text)"
+        :text="getText()" />
+    </a-tooltip>
+  </div>
 </template>
 
 <script>
@@ -84,6 +86,12 @@ export default {
             break
           case 'InProgress':
             state = this.$t('state.inprogress')
+            break
+          case 'Down':
+            state = this.$t('state.down')
+            break
+          case 'Up':
+            state = this.$t('state.up')
             break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
@@ -166,23 +174,24 @@ export default {
       if (!(state && this.displayText)) {
         return ''
       }
+      let result
       if (this.$route.path === '/vmsnapshot' || this.$route.path.includes('/vmsnapshot/')) {
-        return this.$t('message.vmsnapshot.state.' + state.toLowerCase())
+        result = this.$t('message.vmsnapshot.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
+        result = this.$t('message.vm.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
+        result = this.$t('message.volume.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+        result = this.$t('message.guestnetwork.state.' + state.toLowerCase())
+      } else if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
+        result = this.$t('message.publicip.state.' + state.toLowerCase())
       }
-      if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
-        return this.$t('message.vm.state.' + state.toLowerCase())
+
+      if (!result || (result.startsWith('message.') && result.endsWith('.state.' + state.toLowerCase()))) {
+        // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
+        result = this.$t(state)
       }
-      if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
-        return this.$t('message.volume.state.' + state.toLowerCase())
-      }
-      if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-        return this.$t('message.guestnetwork.state.' + state.toLowerCase())
-      }
-      if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
-        return this.$t('message.publicip.state.' + state.toLowerCase())
-      }
-      // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
-      return this.$t(state)
+      return result
     },
     getStyle () {
       let styles = { display: 'inline-flex' }

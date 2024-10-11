@@ -17,7 +17,7 @@
 package com.cloud.vm;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,22 +30,22 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -76,7 +76,9 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -95,7 +97,6 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.host.dao.HostDetailsDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -115,6 +116,10 @@ public class FirstFitPlannerTest {
     UserVmDetailsDao vmDetailsDao;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    ConfigurationGroupDao configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao configSubGroupDao;
     @Inject
     CapacityDao capacityDao;
     @Inject
@@ -147,6 +152,7 @@ public class FirstFitPlannerTest {
     public void setUp() {
         ConfigKey.init(configDepot);
 
+        when(configDepot.global()).thenReturn(configDao);
         when(configDao.getValue(Mockito.anyString())).thenReturn(null);
         when(configDao.getValue(Config.ImplicitHostTags.key())).thenReturn("GPU");
 
@@ -238,11 +244,8 @@ public class FirstFitPlannerTest {
     }
 
     private List<Long> initializeForClusterThresholdDisabled() {
-        when(configDepot.global()).thenReturn(configDao);
-
-        ConfigurationVO config = mock(ConfigurationVO.class);
-        when(config.getValue()).thenReturn(String.valueOf(false));
-        when(configDao.findById(DeploymentClusterPlanner.ClusterThresholdEnabled.key())).thenReturn(config);
+        when(configDepot.getConfigStringValue(DeploymentClusterPlanner.ClusterThresholdEnabled.key(),
+                ConfigKey.Scope.Global, null)).thenReturn(Boolean.FALSE.toString());
 
         List<Long> clustersCrossingThreshold = new ArrayList<Long>();
         clustersCrossingThreshold.add(3L);
@@ -326,7 +329,7 @@ public class FirstFitPlannerTest {
         hostList6.add(new Long(15));
         String[] implicitHostTags = {"GPU"};
         int ramInBytes = ramInOffering * 1024 * 1024;
-        when(serviceOfferingDetailsDao.findDetail(Matchers.anyLong(), anyString())).thenReturn(null);
+        when(serviceOfferingDetailsDao.findDetail(ArgumentMatchers.anyLong(), anyString())).thenReturn(null);
         when(hostGpuGroupsDao.listHostIds()).thenReturn(hostList0);
         when(capacityDao.listHostsWithEnoughCapacity(noOfCpusInOffering * cpuSpeedInOffering, ramInBytes, new Long(1), Host.Type.Routing.toString())).thenReturn(hostList1);
         when(capacityDao.listHostsWithEnoughCapacity(noOfCpusInOffering * cpuSpeedInOffering, ramInBytes, new Long(2), Host.Type.Routing.toString())).thenReturn(hostList2);
@@ -429,6 +432,16 @@ public class FirstFitPlannerTest {
         @Bean
         public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
+        }
+
+        @Bean
+        public ConfigurationGroupDao configurationGroupDao() {
+            return Mockito.mock(ConfigurationGroupDao.class);
+        }
+
+        @Bean
+        public ConfigurationSubGroupDao configurationSubGroupDao() {
+            return Mockito.mock(ConfigurationSubGroupDao.class);
         }
 
         @Bean

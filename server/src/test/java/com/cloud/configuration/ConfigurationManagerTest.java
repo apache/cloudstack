@@ -17,61 +17,12 @@
 
 package com.cloud.configuration;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.stubbing.Answer;
-
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
@@ -105,11 +56,13 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.offering.DiskOffering;
 import com.cloud.projects.ProjectManager;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -126,10 +79,66 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
-    private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
+    private Logger logger = LogManager.getLogger(ConfigurationManagerTest.class);
 
     @Spy
     @InjectMocks
@@ -203,6 +212,8 @@ public class ConfigurationManagerTest {
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
     @Mock
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Mock
+    MessageBusBase messageBus;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -212,9 +223,11 @@ public class ConfigurationManagerTest {
     @Mock
     Account account;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -254,14 +267,15 @@ public class ConfigurationManagerTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testDedicatePublicIpRange() throws Exception {
 
-        s_logger.info("Running tests for DedicatePublicIpRange API");
+        logger.info("Running tests for DedicatePublicIpRange API");
 
         /*
          * TEST 1: given valid parameters DedicatePublicIpRange should succeed
@@ -291,7 +305,7 @@ public class ConfigurationManagerTest {
     @Test
     public void testReleasePublicIpRange() throws Exception {
 
-        s_logger.info("Running tests for DedicatePublicIpRange API");
+        logger.info("Running tests for DedicatePublicIpRange API");
 
         /*
          * TEST 1: given valid parameters and no allocated public ip's in the range ReleasePublicIpRange should succeed
@@ -334,7 +348,7 @@ public class ConfigurationManagerTest {
             Vlan result = configurationMgr.dedicatePublicIpRange(dedicatePublicIpRangesCmd);
             Assert.assertNotNull(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runDedicatePublicIpRangePostiveTest message: " + e.toString());
+            logger.info("exception in testing runDedicatePublicIpRangePostiveTest message: " + e.toString());
         } finally {
             txn.close("runDedicatePublicIpRangePostiveTest");
         }
@@ -453,7 +467,7 @@ public class ConfigurationManagerTest {
             Boolean result = configurationMgr.releasePublicIpRange(releasePublicIpRangesCmd);
             Assert.assertTrue(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runReleasePublicIpRangePostiveTest1 message: " + e.toString());
+            logger.info("exception in testing runReleasePublicIpRangePostiveTest1 message: " + e.toString());
         } finally {
             txn.close("runReleasePublicIpRangePostiveTest1");
         }
@@ -487,7 +501,7 @@ public class ConfigurationManagerTest {
             Boolean result = configurationMgr.releasePublicIpRange(releasePublicIpRangesCmd);
             Assert.assertTrue(result);
         } catch (Exception e) {
-            s_logger.info("exception in testing runReleasePublicIpRangePostiveTest2 message: " + e.toString());
+            logger.info("exception in testing runReleasePublicIpRangePostiveTest2 message: " + e.toString());
         } finally {
             txn.close("runReleasePublicIpRangePostiveTest2");
         }
@@ -541,15 +555,67 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void validateEmptySourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+
+        configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+    }
+
+    @Test
+    public void validateInvalidSourceNatTypeForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Either peraccount or perzone source NAT type can be specified for SupportedSourceNatTypes"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidBooleanValueForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "maybe");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Unknown specified value for RedundantRouter"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidCapabilityForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.ElasticIp, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] capabilities can be specified for source nat service"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
     public void validateEmptyStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
 
         configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
     }
 
     @Test
     public void validateInvalidStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "Frue and Talse");
 
         boolean caught = false;
@@ -563,8 +629,42 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void isRedundantRouter() {
+        Set<Network.Provider> providers = new HashSet<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "true");
+        Assert.assertTrue(configurationMgr.isRedundantRouter(providers, Network.Service.SourceNat, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perzone");
+        Assert.assertTrue(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isNotSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        Assert.assertFalse(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void sourceNatCapabilitiesContainValidValues() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "True");
+
+        Assert.assertTrue(configurationMgr.sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap));
+    }
+
+    @Test
     public void validateTTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -573,7 +673,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -582,7 +682,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateTFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "false");
 
@@ -601,7 +701,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "False");
 
@@ -980,17 +1080,18 @@ public class ConfigurationManagerTest {
 
     @Test
     public void shouldUpdateDiskOfferingTests(){
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyString()));
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), Mockito.anyString(), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), Mockito.anyInt(), nullable(Boolean.class), nullable(String.class), nullable(String.class)));
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), Mockito.anyBoolean(), nullable(String.class), nullable(String.class)));
-        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), Mockito.anyString(), Mockito.anyString()));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyString(), Mockito.anyString(), Mockito.any(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(Mockito.anyString(), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), Mockito.any(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), Mockito.anyString(), nullable(Integer.class), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), Mockito.anyInt(), nullable(Boolean.class), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), Mockito.anyBoolean(), nullable(String.class), nullable(String.class), nullable(DiskOffering.State.class)));
+        Assert.assertTrue(configurationMgr.shouldUpdateDiskOffering(nullable(String.class), nullable(String.class), nullable(int.class), nullable(Boolean.class), Mockito.anyString(), Mockito.anyString(), nullable(DiskOffering.State.class)));
     }
 
     @Test
     public void shouldUpdateDiskOfferingTestFalse(){
-        Assert.assertFalse(configurationMgr.shouldUpdateDiskOffering(null, null, null, null, null, null));
+        Assert.assertFalse(configurationMgr.shouldUpdateDiskOffering(null, null, null, null, null, null, null));
     }
 
     @Test
@@ -1070,12 +1171,17 @@ public class ConfigurationManagerTest {
     @Test
     public void updateDiskOfferingTagsWithPrimaryStorageWithCorrectTagsTestSuccess(){
         String tags = "tag1,tag2";
-        List<String> storageTagsWithCorrectTags = new ArrayList<>(Arrays.asList("tag1","tag2"));
         List<StoragePoolVO> pools = new ArrayList<>(Arrays.asList(storagePoolVO));
         List<VolumeVO> volumes = new ArrayList<>(Arrays.asList(volumeVO));
 
+        StoragePoolTagVO poolTagMock1 = Mockito.mock(StoragePoolTagVO.class);
+        StoragePoolTagVO poolTagMock2 = Mockito.mock(StoragePoolTagVO.class);
+        List<StoragePoolTagVO> poolTags = List.of(poolTagMock1, poolTagMock2);
+        Mockito.doReturn("tag1").when(poolTagMock1).getTag();
+        Mockito.doReturn("tag2").when(poolTagMock2).getTag();
+
         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
-        Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithCorrectTags);
+        Mockito.when(storagePoolTagsDao.findStoragePoolTags(anyLong())).thenReturn(poolTags);
         Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
 
@@ -1229,5 +1335,97 @@ public class ConfigurationManagerTest {
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void mockPersistDatacenterForCreateZone() {
+        Mockito.when(_zoneDao.persist(Mockito.any(DataCenterVO.class))).thenAnswer((Answer<DataCenterVO>) invocation -> {
+            DataCenterVO zone = (DataCenterVO)invocation.getArguments()[0];
+            ReflectionTestUtils.setField(zone, "uuid", UUID.randomUUID().toString());
+            ReflectionTestUtils.setField(zone, "id", 1L);
+            return zone;
+        });
+    }
+
+    @Test
+    public void testCreateEdgeZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(true);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Advanced, zone.getNetworkType());
+        Assert.assertEquals(DataCenter.Type.Edge, zone.getType());
+    }
+
+    @Test
+    public void testCreateCoreZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(false);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Advanced, zone.getNetworkType());
+        Assert.assertEquals(DataCenter.Type.Core, zone.getType());
+    }
+
+    @Test
+    public void testCreateBasicZone() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(false);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        mockPersistDatacenterForCreateZone();
+        DataCenter zone = configurationMgr.createZone(cmd);
+        Assert.assertNotNull(zone);
+        Assert.assertEquals(NetworkType.Basic, zone.getNetworkType());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateBasicEdgeZoneFailure() {
+        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+        Mockito.when(cmd.isEdge()).thenReturn(true);
+        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        configurationMgr.createZone(cmd);
+    }
+
+    @Test
+    public void testEditEdgeZone() {
+        // editZone should be successful despite no Public network
+        final Long zoneId = 1L;
+        UpdateZoneCmd cmd = Mockito.mock(UpdateZoneCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(zoneId);
+        Mockito.when(cmd.getZoneName()).thenReturn("NewName");
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getNetworkType()).thenReturn(NetworkType.Advanced);
+        Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
+        Mockito.when(zone.getId()).thenReturn(zoneId);
+        Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(zone);
+        Mockito.when(_networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, Networks.TrafficType.Public)).thenReturn(null);
+        Mockito.when(_zoneDao.update(Mockito.anyLong(), Mockito.any(DataCenterVO.class))).thenReturn(true);
+        configurationMgr.editZone(cmd);
+    }
+
+    @Test
+    public void testEdgeZoneCreatePod() {
+        final long zoneId = 1L;
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getNetworkType()).thenReturn(NetworkType.Advanced);
+        Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
+        Mockito.when(zone.getId()).thenReturn(1L);
+        Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(zone);
+        Mockito.when(_configDao.getValue(Config.ControlCidr.key())).thenReturn(Config.ControlCidr.getDefaultValue());
+        Mockito.when(_podDao.persist(Mockito.any(HostPodVO.class))).thenAnswer((Answer<HostPodVO>) invocation -> {
+            HostPodVO pod = (HostPodVO)invocation.getArguments()[0];
+            ReflectionTestUtils.setField(pod, "uuid", UUID.randomUUID().toString());
+            ReflectionTestUtils.setField(pod, "id", 1L);
+            return pod;
+        });
+        Mockito.doNothing().when(messageBus).publish(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null);
     }
 }

@@ -27,15 +27,21 @@ github:
     - infrastructure
     - java
     - python
-    - hosting
     - kvm
+    - libvirt
     - vsphere
+    - vmware
     - xenserver
     - xcp-ng
+    - orchestration
+    - virtualization
+    - virtual-machine
+    - kubernetes
 
   features:
     wiki: true
     issues: true
+    discussions: true
     projects: true
 
   enabled_merge_buttons:
@@ -45,5 +51,20 @@ github:
 
   collaborators:
     - acs-robot
+    - rajujith
+    - GaOrtiga
+    - SadiJr
+    - winterhazel
+    - gpordeus
+    - hsato03
+    - bernardodemarco
+    - abh1sar
+    - FelipeM525
 
   protected_branches: ~
+
+notifications:
+  commits:      commits@cloudstack.apache.org
+  issues:       commits@cloudstack.apache.org
+  pullrequests: commits@cloudstack.apache.org
+  discussions:  users@cloudstack.apache.org

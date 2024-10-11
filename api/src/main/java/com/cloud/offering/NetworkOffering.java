@@ -43,6 +43,15 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
     }
 
+    public enum NetworkMode {
+        NATTED,
+        ROUTED
+    }
+
+    enum RoutingMode {
+        Static, Dynamic
+    }
+
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
@@ -51,6 +60,12 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String SystemPrivateGatewayNetworkOfferingWithoutVlan = "System-Private-Gateway-Network-Offering-Without-Vlan";
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
+    public static final String DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE = "DefaultTungstenSharedNetworkOfferingWithSGService";
+    public static final String DEFAULT_NAT_NSX_OFFERING_FOR_VPC = "DefaultNATNSXNetworkOfferingForVpc";
+    public static final String DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB = "DefaultNATNSXNetworkOfferingForVpcWithInternalLB";
+    public static final String DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC = "DefaultRoutedNSXNetworkOfferingForVpc";
+    public static final String DEFAULT_NAT_NSX_OFFERING = "DefaultNATNSXNetworkOffering";
+    public static final String DEFAULT_ROUTED_NSX_OFFERING = "DefaultRoutedNSXNetworkOffering";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
@@ -86,6 +101,12 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     Integer getMulticastRateMbps();
 
     boolean isForVpc();
+
+    boolean isForTungsten();
+
+    boolean isForNsx();
+
+    NetworkMode getNetworkMode();
 
     TrafficType getTrafficType();
 
@@ -148,4 +169,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     String getServicePackage();
 
     Date getCreated();
+
+    RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }

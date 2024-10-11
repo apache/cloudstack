@@ -25,15 +25,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloud.host.HostTagVO;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -44,7 +51,8 @@ import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenterVO;
@@ -65,6 +73,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -95,7 +104,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class PresetVariableHelper {
-    protected Logger logger = Logger.getLogger(PresetVariableHelper.class);
+    protected Logger logger = LogManager.getLogger(PresetVariableHelper.class);
 
     @Inject
     AccountDao accountDao;
@@ -165,6 +174,13 @@ public class PresetVariableHelper {
 
     @Inject
     BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    NetworkDao networkDao;
+
+    @Inject
+    VpcDao vpcDao;
+
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
@@ -269,6 +285,8 @@ public class PresetVariableHelper {
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
         loadPresetVariableValueForVmSnapshot(usageRecord, value);
         loadPresetVariableValueForBackup(usageRecord, value);
+        loadPresetVariableValueForNetwork(usageRecord, value);
+        loadPresetVariableValueForVpc(usageRecord, value);
 
         return value;
     }
@@ -318,6 +336,10 @@ public class PresetVariableHelper {
 
         value.setTags(getPresetVariableValueResourceTags(vmId, ResourceObjectType.UserVm));
         value.setTemplate(getPresetVariableValueTemplate(vmVo.getTemplateId()));
+        Hypervisor.HypervisorType hypervisorType = vmVo.getHypervisorType();
+        if (hypervisorType != null) {
+            value.setHypervisorType(hypervisorType.name());
+        }
     }
 
     protected void logNotLoadingMessageInTrace(String resource, int usageType) {
@@ -345,7 +367,17 @@ public class PresetVariableHelper {
         Host host = new Host();
         host.setId(hostVo.getUuid());
         host.setName(hostVo.getName());
-        host.setTags(hostTagsDao.getHostTags(hostId));
+        List<HostTagVO> hostTagVOList = hostTagsDao.getHostTags(hostId);
+        List<String> hostTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(hostTagVOList)) {
+            isTagARule = hostTagVOList.get(0).getIsTagARule();
+            if (!isTagARule) {
+                hostTags = hostTagVOList.parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        host.setTags(hostTags);
+        host.setIsTagARule(isTagARule);
 
         return host;
     }
@@ -470,6 +502,11 @@ public class PresetVariableHelper {
 
         value.setTags(getPresetVariableValueResourceTags(volumeId, ResourceObjectType.Volume));
         value.setSize(ByteScaleUtils.bytesToMebibytes(volumeVo.getSize()));
+
+        ImageFormat format = volumeVo.getFormat();
+        if (format != null) {
+            value.setVolumeFormat(format.name());
+        }
     }
 
     protected GenericPresetVariable getPresetVariableValueDiskOffering(Long diskOfferingId) {
@@ -497,7 +534,17 @@ public class PresetVariableHelper {
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
         storage.setScope(storagePoolVo.getScope());
-        storage.setTags(storagePoolTagsDao.getStoragePoolTags(storageId));
+        List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
+        List<String> storageTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(storagePoolTagVOList)) {
+            isTagARule = storagePoolTagVOList.get(0).isTagARule();
+            if (!isTagARule) {
+                storageTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        storage.setTags(storageTags);
+        storage.setIsTagARule(isTagARule);
 
         return storage;
     }
@@ -556,22 +603,37 @@ public class PresetVariableHelper {
         value.setName(snapshotVo.getName());
         value.setSize(ByteScaleUtils.bytesToMebibytes(snapshotVo.getSize()));
         value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
-        value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId), usageType));
+        value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId, usageRecord.getZoneId()), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
+        Hypervisor.HypervisorType hypervisorType = snapshotVo.getHypervisorType();
+        if (hypervisorType != null) {
+            value.setHypervisorType(hypervisorType.name());
+        }
+    }
+
+    protected SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        for (SnapshotDataStoreVO ref : snaps) {
+            ImageStoreVO store = imageStoreDao.findById(ref.getDataStoreId());
+            if (store != null && zoneId == store.getDataCenterId()) {
+                return ref;
+            }
+        }
+        return null;
     }
 
     /**
      * If {@link SnapshotInfo#BackupSnapshotAfterTakingSnapshot} is enabled, returns the secondary storage's ID where the snapshot is. Otherwise, returns the primary storage's ID
      *  where the snapshot is.
      */
-    protected long getSnapshotDataStoreId(Long snapshotId) {
+    protected long getSnapshotDataStoreId(Long snapshotId, long zoneId) {
         if (backupSnapshotAfterTakingSnapshot) {
-            SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+            SnapshotDataStoreVO snapshotStore = getSnapshotImageStoreRef(snapshotId, zoneId);
             validateIfObjectIsNull(snapshotStore, snapshotId, "data store for snapshot");
             return snapshotStore.getDataStoreId();
         }
 
-        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
         validateIfObjectIsNull(snapshotStore, snapshotId, "data store for snapshot");
         return snapshotStore.getDataStoreId();
     }
@@ -610,6 +672,11 @@ public class PresetVariableHelper {
         value.setName(vmSnapshotVo.getName());
         value.setTags(getPresetVariableValueResourceTags(vmSnapshotId, ResourceObjectType.VMSnapshot));
         value.setVmSnapshotType(vmSnapshotVo.getType());
+
+        VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmSnapshotVo.getVmId());
+        if (vmVo != null && vmVo.getHypervisorType() != null) {
+            value.setHypervisorType(vmVo.getHypervisorType().name());
+        }
     }
 
     protected void loadPresetVariableValueForBackup(UsageVO usageRecord, Value value) {
@@ -634,6 +701,37 @@ public class PresetVariableHelper {
         backupOffering.setExternalId(backupOfferingVo.getExternalId());
 
         return backupOffering;
+    }
+
+    protected void loadPresetVariableValueForNetwork(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.NETWORK) {
+            logNotLoadingMessageInTrace("Network", usageType);
+            return;
+        }
+
+        Long networkId = usageRecord.getUsageId();
+        NetworkVO network = networkDao.findByIdIncludingRemoved(networkId);
+        validateIfObjectIsNull(network, networkId, "Network");
+
+        value.setId(network.getUuid());
+        value.setName(network.getName());
+        value.setState(usageRecord.getState());
+    }
+
+    protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
+        int usageType = usageRecord.getUsageType();
+        if (usageType != QuotaTypes.VPC) {
+            logNotLoadingMessageInTrace("VPC", usageType);
+            return;
+        }
+
+        Long vpcId = usageRecord.getUsageId();
+        VpcVO vpc = vpcDao.findByIdIncludingRemoved(vpcId);
+        validateIfObjectIsNull(vpc, vpcId, "VPC");
+
+        value.setId(vpc.getUuid());
+        value.setName(vpc.getName());
     }
 
     /**

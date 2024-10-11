@@ -19,7 +19,6 @@ package com.cloud.network.guru;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
@@ -47,7 +46,6 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(VxlanGuestNetworkGuru.class);
 
     public VxlanGuestNetworkGuru() {
         super();
@@ -59,29 +57,26 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
         // This guru handles only Guest Isolated network that supports Source nat service
         if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
                 (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == Network.GuestType.L2) &&
-                isMyIsolationMethod(physicalNetwork)) {
+                isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " or " + GuestType.L2 + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " or " + GuestType.L2 + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-
-        NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
+        NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (network == null) {
             return null;
         }
-
         if (offering.getGuestType() == GuestType.L2 && network.getBroadcastUri() != null) {
             String vxlan = BroadcastDomainType.getValue(network.getBroadcastUri());
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
         network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
-
-        return network;
+        return updateNetworkDesignForIPv6IfNeeded(network, userSpecified);
     }
 
     @Override
@@ -154,7 +149,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         NetworkVO networkObject = _networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Vxlan || networkObject.getBroadcastUri() == null) {
-            s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
 

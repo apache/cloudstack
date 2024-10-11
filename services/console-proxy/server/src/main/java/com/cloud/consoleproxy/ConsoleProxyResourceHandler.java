@@ -28,10 +28,11 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyResourceHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyResourceHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     static Map<String, String> s_mimeTypes;
     static {
@@ -63,19 +64,19 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange t) throws IOException {
         try {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Resource Handler " + t.getRequestURI());
+            if (logger.isDebugEnabled())
+                logger.debug("Resource Handler " + t.getRequestURI());
 
             long startTick = System.currentTimeMillis();
 
             doHandle(t);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + " Process time " + (System.currentTimeMillis() - startTick) + " ms");
+            if (logger.isDebugEnabled())
+                logger.debug(t.getRequestURI() + " Process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception, ", e);
+            logger.error("Unexpected exception, ", e);
             t.sendResponseHeaders(500, -1);     // server error
         } finally {
             t.close();
@@ -86,8 +87,8 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
     private void doHandle(HttpExchange t) throws Exception {
         String path = t.getRequestURI().getPath();
 
-        if (s_logger.isInfoEnabled())
-            s_logger.info("Get resource request for " + path);
+        if (logger.isInfoEnabled())
+            logger.info("Get resource request for " + path);
 
         int i = path.indexOf("/", 1);
         String filepath = path.substring(i + 1);
@@ -96,8 +97,8 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
         String contentType = getContentType(extension);
 
         if (!validatePath(filepath)) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Resource access is forbidden, uri: " + path);
+            if (logger.isInfoEnabled())
+                logger.info("Resource access is forbidden, uri: " + path);
 
             t.sendResponseHeaders(403, -1);     // forbidden
             return;
@@ -111,27 +112,27 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
                 long d = Date.parse(ifModifiedSince);
                 if (d + 1000 >= lastModified) {
                     Headers hds = t.getResponseHeaders();
-                    hds.set("Content-Type", contentType);
+                    hds.set("content-type", contentType);
                     t.sendResponseHeaders(304, -1);
 
-                    if (s_logger.isInfoEnabled())
-                        s_logger.info("Sent 304 file has not been " + "modified since " + ifModifiedSince);
+                    if (logger.isInfoEnabled())
+                        logger.info("Sent 304 file has not been " + "modified since " + ifModifiedSince);
                     return;
                 }
             }
 
             long length = f.length();
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", contentType);
-            hds.set("Last-Modified", new Date(lastModified).toGMTString());
+            hds.set("content-type", contentType);
+            hds.set("last-modified", new Date(lastModified).toGMTString());
             t.sendResponseHeaders(200, length);
             responseFileContent(t, f);
 
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Sent file " + path + " with content type " + contentType);
+            if (logger.isInfoEnabled())
+                logger.info("Sent file " + path + " with content type " + contentType);
         } else {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("file does not exist" + path);
+            if (logger.isInfoEnabled())
+                logger.info("file does not exist" + path);
             t.sendResponseHeaders(404, -1);
         }
     }
@@ -158,17 +159,17 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
         }
     }
 
-    private static boolean validatePath(String path) {
+    private boolean validatePath(String path) {
         int i = path.indexOf("/");
         if (i == -1) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Invalid resource path: can not start at resource root");
+            if (logger.isInfoEnabled())
+                logger.info("Invalid resource path: can not start at resource root");
             return false;
         }
 
         if (path.contains("..")) {
-            if (s_logger.isInfoEnabled())
-                s_logger.info("Invalid resource path: contains relative up-level navigation");
+            if (logger.isInfoEnabled())
+                logger.info("Invalid resource path: contains relative up-level navigation");
 
             return false;
         }

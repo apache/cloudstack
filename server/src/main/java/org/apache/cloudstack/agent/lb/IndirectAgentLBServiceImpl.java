@@ -34,7 +34,6 @@ import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBStaticAlgorithm;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -48,12 +47,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
-    public static final Logger LOG = Logger.getLogger(IndirectAgentLBServiceImpl.class);
 
-    public static final ConfigKey<String> IndirectAgentLBAlgorithm = new ConfigKey<>("Advanced", String.class,
-            "indirect.agent.lb.algorithm", "static",
+    public static final ConfigKey<String> IndirectAgentLBAlgorithm = new ConfigKey<>(String.class,
+    "indirect.agent.lb.algorithm", "Advanced", "static",
             "The algorithm to be applied on the provided 'host' management server list that is sent to indirect agents. Allowed values are: static, roundrobin and shuffle.",
-            true, ConfigKey.Scope.Global);
+            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "static,roundrobin,shuffle");
 
     public static final ConfigKey<Long> IndirectAgentLBCheckInterval = new ConfigKey<>("Advanced", Long.class,
             "indirect.agent.lb.check.interval", "0",
@@ -86,8 +84,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
         // just in case we have a host in creating state make sure it is in the list:
         if (null != hostId && ! hostIdList.contains(hostId)) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("adding requested host to host list as it does not seem to be there; " + hostId);
+            if (logger.isTraceEnabled()) {
+                logger.trace("adding requested host to host list as it does not seem to be there; " + hostId);
             }
             hostIdList.add(hostId);
         }
@@ -150,8 +148,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     private void conditionallyAddHost(List<Host> agentBasedHosts, Host host) {
         if (host == null) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("trying to add no host to a list");
+            if (logger.isTraceEnabled()) {
+                logger.trace("trying to add no host to a list");
             }
             return;
         }
@@ -165,8 +163,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         // so the remaining EnumSet<ResourceState> disallowedStates = EnumSet.complementOf(allowedStates)
         // would be {ResourceState.Creating, ResourceState.Error};
         if (!allowedStates.contains(host.getResourceState())) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
             }
             return;
         }
@@ -175,8 +173,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 && host.getType() != Host.Type.ConsoleProxy
                 && host.getType() != Host.Type.SecondaryStorage
                 && host.getType() != Host.Type.SecondaryStorageVM) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace(String.format("host is of wrong type, not adding to the host list, (id = %s, type = %s)", host.getUuid(), host.getType()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("host is of wrong type, not adding to the host list, (id = %s, type = %s)", host.getUuid(), host.getType()));
             }
             return;
         }
@@ -184,8 +182,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         if (host.getHypervisorType() != null
                 && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
 
-            if (LOG.isTraceEnabled()) {
-                LOG.trace(String.format("hypervisor is not the right type, not adding to the host list, (id = %s, hypervisortype = %s)", host.getUuid(), host.getHypervisorType()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("hypervisor is not the right type, not adding to the host list, (id = %s, hypervisortype = %s)", host.getUuid(), host.getHypervisorType()));
             }
             return;
         }
@@ -208,7 +206,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     @Override
     public void propagateMSListToAgents() {
-        LOG.debug("Propagating management server list update to agents");
+        logger.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
         final Map<Long, List<Long>> dcOrderedHostsMap = new HashMap<>();
         for (final Host host : getAllAgentBasedHosts()) {
@@ -221,7 +219,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
             final Answer answer = agentManager.easySend(host.getId(), cmd);
             if (answer == null || !answer.getResult()) {
-                LOG.warn(String.format("Failed to setup management servers list to the agent of %s", host));
+                logger.warn(String.format("Failed to setup management servers list to the agent of %s", host));
             }
         }
     }

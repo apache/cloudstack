@@ -29,11 +29,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "removeRawUsageRecords", description = "Safely removes raw records from cloud_usage table", responseObject = SuccessResponse.class, since = "4.6.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveRawUsageRecordsCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveRawUsageRecordsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

@@ -30,13 +30,21 @@
         :columns="columns"
         :pagination="false"
         style="margin-bottom: 24px; width: 100%" >
-        <template #actions="{ record }">
-          <tooltip-button
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            @onClick="onDelete(record.key)" />
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'gateway'">
+            <div> {{  record.gateway }}</div>
+            <div v-if="record.fornsx"> <a-tag color="processing"> {{ $t('label.tag.nsx') }} </a-tag> </div>
+            <div v-else-if="isNsxZone"> <a-tag color="processing"> {{ $t('label.tag.systemvm') }}  </a-tag> </div>
+          </template>
+          <template v-if="column.key === 'actions'">
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              :disabled="(record.fornsx && !forNsx) || (!record.fornsx && forNsx)"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              @onClick="onDelete(record.key)" />
+          </template>
         </template>
         <template #footer>
           <a-form
@@ -68,6 +76,7 @@
                 <a-form-item name="vlan" ref="vlan">
                   <a-input
                     v-model:value="form.vlan"
+                    :disabled="forNsx"
                     :placeholder="$t('label.vlan')"
                   />
                 </a-form-item>
@@ -110,14 +119,16 @@
       </div>
     </div>
     <a-modal
+      v-if="showError"
       :visible="showError"
       :closable="true"
       :maskClosable="false"
       :title="`${$t('label.error')}!`"
+      :footer="null"
       @cancel="showError = false"
       centered
     >
-      <div v-ctrl-enter="showError = false">
+      <div v-ctrl-enter="() => showError = false">
         <span>{{ $t('message.required.add.least.ip') }}</span>
         <div :span="24" class="action-button">
           <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
@@ -156,6 +167,14 @@ export default {
     isFixError: {
       type: Boolean,
       default: false
+    },
+    forNsx: {
+      type: Boolean,
+      default: false
+    },
+    isNsxZone: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -166,6 +185,7 @@ export default {
       ipRanges: [],
       columns: [
         {
+          key: 'gateway',
           title: this.$t('label.gateway'),
           dataIndex: 'gateway',
           width: 140
@@ -191,9 +211,9 @@ export default {
           width: 140
         },
         {
+          key: 'actions',
           title: '',
           dataIndex: 'actions',
-          slots: { customRender: 'actions' },
           width: 70
         }
       ],
@@ -241,13 +261,17 @@ export default {
     handleAddRange () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+        const len = this.isValidSetup() ? this.ipRanges.length - 1 : 0
+        const key = this.isValidSetup() ? this.ipRanges[len].key : 0
         this.ipRanges.push({
-          key: this.ipRanges.length.toString(),
+          key: key + 1,
           gateway: values.gateway,
           netmask: values.netmask,
           vlan: values.vlan,
           startIp: values.startIp,
-          endIp: values.endIp
+          endIp: values.endIp,
+          fornsx: this.forNsx,
+          forsystemvms: this.isNsxZone && !this.forNsx
         })
         this.formRef.value.resetFields()
       }).catch(error => {
@@ -260,6 +284,7 @@ export default {
     },
     handleSubmit () {
       if (this.isValidSetup()) {
+        this.showError = false
         if (this.isFixError) {
           this.$emit('submitLaunchZone')
           return

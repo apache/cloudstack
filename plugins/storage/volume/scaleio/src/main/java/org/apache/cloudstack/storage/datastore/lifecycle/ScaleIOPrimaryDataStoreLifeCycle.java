@@ -47,7 +47,6 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -74,9 +73,7 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreLifeCycle.class);
-
+public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
     private ClusterDao clusterDao;
     @Inject
@@ -111,7 +108,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             List<org.apache.cloudstack.storage.datastore.api.StoragePool> storagePools = client.listStoragePools();
             for (org.apache.cloudstack.storage.datastore.api.StoragePool pool : storagePools) {
                 if (pool.getName().equals(storagePoolName)) {
-                    LOGGER.info("Found PowerFlex storage pool: " + storagePoolName);
+                    logger.info("Found PowerFlex storage pool: " + storagePoolName);
                     final org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics poolStatistics = client.getStoragePoolStatistics(pool.getId());
                     pool.setStatistics(poolStatistics);
 
@@ -121,7 +118,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                 }
             }
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error("Failed to add storage pool", e);
+            logger.error("Failed to add storage pool", e);
             throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to find and validate storage pool: " + storagePoolName);
         }
         throw new CloudRuntimeException("Failed to find the provided storage pool name: " + storagePoolName + " in the discovered PowerFlex storage pools");
@@ -139,6 +136,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
         if (zoneId == null) {
@@ -177,7 +175,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         try {
             storagePoolName = URLDecoder.decode(uri.getPath(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            LOGGER.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
+            logger.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
         }
         if (storagePoolName == null) { // if decoding fails, use getPath() anyway
             storagePoolName = uri.getPath();
@@ -224,6 +222,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         parameters.setHypervisorType(Hypervisor.HypervisorType.KVM);
         parameters.setUuid(UUID.randomUUID().toString());
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
 
         StoragePoolStatistics poolStatistics = scaleIOPool.getStatistics();
         if (poolStatistics != null) {
@@ -258,8 +257,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + cluster.getHypervisorType().toString());
         }
 
-        checkConnectedSdcs(dataStore.getId());
-
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) dataStore;
         List<HostVO> hostsInCluster = resourceManager.listAllUpAndEnabledHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
@@ -268,7 +265,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + primaryDataStoreInfo.getClusterId());
         }
 
-        LOGGER.debug("Attaching the pool to each of the hosts in the cluster: " + primaryDataStoreInfo.getClusterId());
+        logger.debug("Attaching the pool to each of the hosts in the cluster: " + primaryDataStoreInfo.getClusterId());
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hostsInCluster) {
             try {
@@ -276,14 +273,12 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                logger.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "on the cluster: " + primaryDataStoreInfo.getClusterId(), e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
-            primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-            throw new CloudRuntimeException("Failed to create storage pool in the cluster: " + primaryDataStoreInfo.getClusterId() + " as it is not accessible to hosts");
+            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
         }
 
         dataStoreHelper.attachCluster(dataStore);
@@ -301,9 +296,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + hypervisorType.toString());
         }
 
-        checkConnectedSdcs(dataStore.getId());
-
-        LOGGER.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
+        logger.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
@@ -312,33 +305,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "in the zone: " + scope.getScopeId(), e);
             }
         }
         if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool " + dataStore + " in this zone.");
-            primaryDataStoreDao.expunge(dataStore.getId());
-            throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
+            logger.warn("No host can access storage pool " + dataStore + " in the zone: " + scope.getScopeId());
         }
 
         dataStoreHelper.attachZone(dataStore);
         return true;
-    }
-
-    private void checkConnectedSdcs(Long dataStoreId) {
-        boolean haveConnectedSdcs = false;
-        try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStoreId, storagePoolDetailsDao);
-            haveConnectedSdcs = client.haveConnectedSdcs();
-        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error(String.format("Failed to create storage pool for datastore: %s", dataStoreId), e);
-            throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to create storage pool for datastore: %s", dataStoreId));
-        }
-
-        if (!haveConnectedSdcs) {
-            LOGGER.debug(String.format("No connected SDCs found for the PowerFlex storage pool of datastore: %s", dataStoreId));
-            throw new CloudRuntimeException(String.format("Failed to create storage pool as connected SDCs not found for datastore: %s", dataStoreId));
-        }
     }
 
     @Override
@@ -385,12 +360,12 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
             final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
             if (answer != null && answer.getResult()) {
-                LOGGER.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                logger.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
             } else {
                 if (answer != null) {
-                    LOGGER.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
+                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
                 } else {
-                    LOGGER.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
                 }
             }
         }
@@ -421,7 +396,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             }
 
             primaryDataStoreDao.updateCapacityBytes(storagePool.getId(), Long.parseLong(capacityBytes));
-            LOGGER.info("Storage pool successfully updated");
+            logger.info("Storage pool successfully updated");
         } catch (Throwable e) {
             throw new CloudRuntimeException("Failed to update the storage pool" + e);
         }

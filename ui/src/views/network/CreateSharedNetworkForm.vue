@@ -80,7 +80,7 @@
               :loading="formPhysicalNetworkLoading"
               :placeholder="apiParams.physicalnetworkid.description"
               @change="val => { handlePhysicalNetworkChange(formPhysicalNetworks[val]) }">
-              <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex" :label="opt.name || opt.description">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -139,13 +139,13 @@
               <a-radio-button value="all" v-if="isAdmin()">
                 {{ $t('label.all') }}
               </a-radio-button>
-              <a-radio-button value="domain" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') && isAdminOrDomainAdmin()">
+              <a-radio-button value="domain" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') && isAdminOrDomainAdmin() || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.domain') }}
               </a-radio-button>
-              <a-radio-button value="account" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="account" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.account') }}
               </a-radio-button>
-              <a-radio-button value="project" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="project" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled') || 'Advanced' === selectedZone.networktype && isAdmin()">
                 {{ $t('label.project') }}
               </a-radio-button>
             </a-radio-group>
@@ -164,7 +164,7 @@
               :loading="domainLoading"
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <block-outlined v-else style="margin-right: 5px" />
@@ -193,7 +193,7 @@
               :loading="accountLoading"
               :placeholder="apiParams.account.description"
               @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <user-outlined v-else style="margin-right: 5px" />
@@ -216,7 +216,7 @@
               :loading="projectLoading"
               :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
-              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -235,7 +235,7 @@
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -546,7 +546,8 @@ export default {
       minMTU: 68,
       setMTU: false,
       errorPublicMtu: '',
-      errorPrivateMtu: ''
+      errorPrivateMtu: '',
+      isNsxEnabled: false
     }
   },
   watch: {
@@ -590,7 +591,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vlan: [{ required: true, message: this.$t('message.please.enter.value') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
@@ -648,7 +648,7 @@ export default {
         api('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
             const zone = json.listzonesresponse.zone[i]
-            if (zone.networktype === 'Advanced') {
+            if (zone.networktype === 'Advanced' && (isAdmin() || zone.securitygroupsenabled !== true)) {
               this.zones.push(zone)
             }
           }
@@ -666,6 +666,7 @@ export default {
       this.setMTU = zone?.allowuserspecifyvrmtu || false
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+      this.isNsxEnabled = zone?.isnsxenabled || false
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
@@ -717,7 +718,7 @@ export default {
           var trafficTypes = json.listtraffictypesresponse.traffictype
           if (this.arrayHasItems(trafficTypes)) {
             for (const type of trafficTypes) {
-              if (type.traffictype === 'Guest') {
+              if (type.traffictype === 'Guest' && physicalNetwork.isolationmethods !== 'NSX') {
                 this.formPhysicalNetworks.push(physicalNetwork)
                 break
               }

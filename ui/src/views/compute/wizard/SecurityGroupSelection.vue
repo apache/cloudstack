@@ -94,7 +94,7 @@ export default {
         }
       ],
       items: [],
-      selectedRowKeys: [],
+      selectedRowKeys: this?.preFillContent?.securitygroupids || [],
       page: 1,
       pageSize: 10,
       keyword: null,
@@ -140,8 +140,9 @@ export default {
   methods: {
     fetchData () {
       const params = {
-        domainid: this.$store.getters.userInfo.domainid,
-        account: this.$store.getters.userInfo.account,
+        projectid: this.$store.getters.project ? this.$store.getters.project.id : null,
+        domainid: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.project && this.$store.getters.project.id ? null : this.$store.getters.userInfo.account,
         page: this.page,
         pageSize: this.pageSize
       }

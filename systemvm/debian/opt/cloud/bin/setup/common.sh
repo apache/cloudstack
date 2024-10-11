@@ -326,7 +326,10 @@ setup_common() {
   then
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   fi
-  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  if [ -n "$ETH1_IP" ]
+  then
+    setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  fi
   if [ -n "$ETH2_IP" ]
   then
     setup_interface "2" $ETH2_IP $ETH2_MASK $GW
@@ -698,15 +701,15 @@ setup_ntp() {
 }
 
 routing_svcs() {
-   echo "haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "haproxy apache2 frr" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ "$RROUTER" -eq "1" ]
    then
-       echo "keepalived conntrackd" >> /var/cache/cloud/enabled_svcs
-       echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
+       echo "keepalived" >> /var/cache/cloud/enabled_svcs
+       echo "dnsmasq conntrackd" >> /var/cache/cloud/disabled_svcs
    else
        echo "dnsmasq" >> /var/cache/cloud/enabled_svcs
-       echo "keepalived conntrackd " >> /var/cache/cloud/disabled_svcs
+       echo "keepalived conntrackd" >> /var/cache/cloud/disabled_svcs
    fi
 }
 
@@ -797,6 +800,9 @@ parse_cmd_line() {
             ;;
         ip6firewall)
             export IP6_FIREWALL=$VALUE
+            ;;
+        is_routed)
+            export IS_ROUTED=$VALUE
             ;;
         domain)
             export DOMAIN=$VALUE

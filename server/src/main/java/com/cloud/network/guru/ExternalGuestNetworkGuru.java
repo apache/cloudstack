@@ -24,7 +24,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -73,7 +74,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
@@ -90,6 +90,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     FirewallRulesDao _fwRulesDao;
     @Inject
     FirewallRulesCidrsDao _fwRulesCidrDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     public ExternalGuestNetworkGuru() {
         super();
@@ -105,41 +107,43 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
+            logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
 
         if (_networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.Connectivity)) {
             return null;
         }
 
-        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO config = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (config == null) {
             return null;
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
-        if (userSpecified == null) {
-            return config;
+        if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode()) && !offering.isForVpc()) {
+            if (userSpecified.getCidr() != null) {
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
+            } else {
+                if (userSpecified.getNetworkCidrSize() == null) {
+                    throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
+                }
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(owner.getDomainId(), owner.getAccountId(), config.getDataCenterId(), userSpecified.getNetworkCidrSize());
+                if (subnet != null) {
+                    final String[] cidrTuple = subnet.getSubnet().split("\\/");
+                    config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    config.setCidr(subnet.getSubnet());
+                } else {
+                    throw new InvalidParameterValueException("Failed to allocate a CIDR with requested size.");
+                }
+            }
         }
-        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
-                    (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
-            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
-        }
-        if (userSpecified.getIp6Cidr() != null) {
-            config.setIp6Cidr(userSpecified.getIp6Cidr());
-            config.setIp6Gateway(userSpecified.getIp6Gateway());
-        }
-        if (userSpecified.getRouterIpv6() != null) {
-            config.setRouterIpv6(userSpecified.getRouterIpv6());
-        }
-
-        return config;
+        return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 
     @Override
@@ -240,7 +244,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
         }
 
-        //Egress rules cidr is subset of guest nework cidr, we need to change
+        //Egress rules cidr is subset of guest network cidr, we need to change
         List <FirewallRuleVO> fwEgressRules = _fwRulesDao.listByNetworkPurposeTrafficType(config.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
 
         for (FirewallRuleVO rule: fwEgressRules) {
@@ -289,7 +293,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             if (!isPublicNetwork) {
                 Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(config, null);
                 if (placeholderNic == null) {
-                    s_logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
+                    logger.debug("Saving placeholder nic with ip4 address " + profile.getIPv4Address() +
                             " and ipv6 address " + profile.getIPv6Address() + " for the network " + config);
                     _networkMgr.savePlaceholderNic(config, profile.getIPv4Address(), profile.getIPv6Address(), VirtualMachine.Type.DomainRouter);
                 }

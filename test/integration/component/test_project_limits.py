@@ -234,21 +234,21 @@ class TestProjectLimits(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -394,21 +394,21 @@ class TestProjectLimits(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -1066,7 +1066,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
 
         # Steps for validation
         # 1. Fetch max.account.networks from configurations
-        # 2. Create an account. Create account more that max.accout.network
+        # 2. Create an account. Create account more that max.account.network
         # 3. Create network should fail
 
         self.debug("Creating project with '%s' as admin" %

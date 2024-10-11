@@ -17,7 +17,8 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div style="width: 100%; display: flex">
+
+     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
         style="width: 100%; margin-right: 10px"
@@ -31,6 +32,14 @@
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
+      <div class="search-bar">
+        <a-input-search
+          style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          @search="fetchData"
+        />
+      </div>
     </div>
 
     <div class="list">
@@ -40,7 +49,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">
@@ -65,19 +73,19 @@
                 <div class="list__label">{{ $t('label.protocol') }}</div>
                 <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="element.startport">
+              <div class="list__col" v-if="element.startport !== undefined">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ element.startport }}</div>
               </div>
-              <div class="list__col" v-if="element.endport">
+              <div class="list__col" v-if="element.endport !== undefined">
                 <div class="list__label">{{ $t('label.endport') }}</div>
                 <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="element.icmpcode">
+              <div class="list__col" v-if="element.icmpcode !== undefined">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
                 <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="element.icmptype">
+              <div class="list__col" v-if="element.icmptype !== undefined">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
                 <div>{{ element.icmptype }}</div>
               </div>
@@ -91,6 +99,16 @@
               </div>
             </div>
             <div class="list__actions">
+              <tooltip-button
+                v-if="element.id !== acls[0].id"
+                :tooltip="$t('label.move.to.top')"
+                icon="vertical-align-top-outlined"
+                @onClick="() => moveRuleToTop(element)" />
+              <tooltip-button
+                v-if="element.id !== acls[acls.length - 1].id"
+                :tooltip="$t('label.move.to.bottom')"
+                icon="vertical-align-bottom-outlined"
+                @onClick="() => moveRuleToBottom(element)" />
               <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(element)" />
               <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(element)" />
               <tooltip-button
@@ -182,10 +200,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
-            <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
+            <a-select-option value="allow" :label="$t('label.allow')">{{ $t('label.allow') }}</a-select-option>
+            <a-select-option value="deny" :label="$t('label.deny')">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')" ref="protocol" name="protocol">
@@ -194,13 +212,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
-            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all" :label="$t('label.all')">{{ $t('label.all') }}</a-select-option>
+            <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ $t('label.protocol.number') }}</a-select-option>
           </a-select>
         </a-form-item>
 
@@ -209,19 +227,50 @@
           :label="$t('label.protocolnumber')"
           ref="protocolnumber"
           name="protocolnumber">
-          <a-input v-model:value="form.protocolnumber" />
+          <a-select
+            v-model:value="form.protocolnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt, optIndex) in protocolNumbers" :key="optIndex" :label="opt.name">
+              {{ opt.index + ' - ' + opt.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+        <div v-if="form.protocol === 'icmp' || (form.protocol === 'protocolnumber' && form.protocolnumber === 1)">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
-            <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
+            <a-select
+              v-model:value="form.icmptype"
+              @change="val => { updateIcmpCodes(val) }"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+              <a-select-option v-for="(opt) in icmpTypes" :key="opt.index" :label="opt.description">
+                {{ opt.index + ' - ' + opt.description }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
           <a-form-item :label="$t('label.icmpcode')" ref="icmpcode" name="icmpcode">
-            <a-input v-model:value="form.icmpcode" :placeholder="$t('icmp.code.desc')" />
+            <a-select
+              v-model:value="form.icmpcode"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+              <a-select-option v-for="(opt) in icmpCodes" :key="opt.code" :label="opt.description">
+                {{ opt.code + ' - ' + opt.description }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
         </div>
 
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol)">
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol) && !(form.protocol === 'protocolnumber' && form.protocolnumber === 1)">
           <a-form-item :label="$t('label.startport')" ref="startport" name="startport">
             <a-input-number style="width: 100%" v-model:value="form.startport" />
           </a-form-item>
@@ -236,10 +285,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
-            <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
+            <a-select-option value="ingress" :label="$t('label.ingress')">{{ $t('label.ingress') }}</a-select-option>
+            <a-select-option value="egress" :label="$t('label.egress')">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.description')" ref="reason" name="reason">
@@ -284,8 +333,12 @@ export default {
   },
   data () {
     return {
+      searchQuery: '', // Bind this to the search input
       acls: [],
       fetchLoading: false,
+      protocolNumbers: [],
+      icmpTypes: [],
+      icmpCodes: [],
       tags: [],
       selectedAcl: null,
       tagsModalVisible: false,
@@ -297,6 +350,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchNetworkProtocols()
     this.fetchData()
   },
   watch: {
@@ -311,6 +365,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
+      this.form.icmptype = -1
+      this.form.icmpcode = -1
     },
     csv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
       let result = null
@@ -322,6 +378,10 @@ export default {
       }
 
       keys = Object.keys(data[0])
+      for (var i = 1; i < data.length; ++i) {
+        const rowKeys = Object.keys(data[i])
+        keys = keys.concat(rowKeys.filter(k => !keys.includes(k)))
+      }
 
       result = ''
       result += keys.join(columnDelimiter)
@@ -334,7 +394,17 @@ export default {
             result += columnDelimiter
           }
 
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          if (key === 'tags') {
+            var tags = '"'
+            if (item[key].length > 0) {
+              item[key].forEach(tag => {
+                tags += '(' + tag.key + ',' + tag.value + ')'
+              })
+            }
+            result += tags + '"'
+          } else {
+            result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+          }
           ctr++
         })
         result += lineDelimiter
@@ -342,9 +412,42 @@ export default {
 
       return result
     },
+    fetchNetworkProtocols () {
+      api('listNetworkProtocols', {
+        option: 'protocolnumber'
+      }).then(json => {
+        this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
+      })
+      api('listNetworkProtocols', {
+        option: 'icmptype'
+      }).then(json => {
+        this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
+        const results = json.listnetworkprotocolsresponse?.networkprotocol || []
+        for (const result of results) {
+          this.icmpTypes.push(result)
+        }
+      })
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+    },
+    updateIcmpCodes (val) {
+      this.form.icmpcode = -1
+      this.icmpCodes = []
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+      const icmpType = this.icmpTypes.find(icmpType => icmpType.index === val)
+      if (icmpType && icmpType.details) {
+        const icmpTypeDetails = icmpType.details
+        for (const k of Object.keys(icmpTypeDetails)) {
+          this.icmpCodes.push({ code: parseInt(k), description: icmpTypeDetails[k] })
+        }
+      }
+    },
     fetchData () {
       this.fetchLoading = true
-      api('listNetworkACLs', { aclid: this.resource.id }).then(json => {
+      const params = {
+        aclid: this.resource.id,
+        keyword: this.searchQuery
+      }
+      api('listNetworkACLs', params).then(json => {
         this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)
@@ -467,8 +570,15 @@ export default {
         self.form.cidrlist = acl.cidrlist
         self.form.action = acl.action
         self.form.protocol = acl.protocol
+        if (!['tcp', 'udp', 'icmp', 'all'].includes(acl.protocol)) {
+          self.form.protocol = 'protocolnumber'
+          self.form.protocolnumber = parseInt(acl.protocol)
+        }
         self.form.startport = acl.startport
         self.form.endport = acl.endport
+        self.form.icmptype = parseInt(acl.icmptype)
+        this.updateIcmpCodes(self.form.icmptype)
+        self.form.icmpcode = acl.icmpcode
         self.form.traffictype = acl.traffictype
         self.form.reason = acl.reason
       }, 200)
@@ -488,9 +598,9 @@ export default {
         data.endport = values.endport || ''
       }
 
-      if (values.protocol === 'icmp') {
-        data.icmptype = values.icmptype || -1
-        data.icmpcode = values.icmpcode || -1
+      if (values.protocol === 'icmp' || (values.protocol === 'protocolnumber' && values.protocolnumber === 1)) {
+        data.icmptype = values.icmptype
+        data.icmpcode = values.icmpcode
       }
 
       if (values.protocol === 'protocolnumber') {
@@ -623,6 +733,12 @@ export default {
 
       if (e.moved.newIndex + 1 < this.acls.length) nextaclruleid = this.acls[e.moved.newIndex + 1].id
 
+      this.moveRule(
+        id,
+        previousaclruleid,
+        nextaclruleid)
+    },
+    moveRule (id, previousaclruleid, nextaclruleid) {
       this.fetchLoading = true
       api('moveNetworkAclItem', {
         id,
@@ -654,6 +770,12 @@ export default {
         this.$notifyError(error)
         this.fetchLoading = false
       })
+    },
+    moveRuleToTop (element) {
+      this.moveRule(element.id, null, this.acls[0].id)
+    },
+    moveRuleToBottom (element) {
+      this.moveRule(element.id, this.acls[this.acls.length - 1].id, null)
     },
     exportAclList () {
       const csvData = this.csv({ data: this.acls })

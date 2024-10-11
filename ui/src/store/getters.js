@@ -28,6 +28,7 @@ const getters = {
   apis: state => state.user.apis,
   features: state => state.user.features,
   userInfo: state => state.user.info,
+  latestVersion: state => state.user.latestVersion,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
   listAllProjects: state => state.app.listAllProjects,
@@ -35,6 +36,7 @@ const getters = {
   isLdapEnabled: state => state.user.isLdapEnabled,
   cloudian: state => state.user.cloudian,
   zones: state => state.user.zones,
+  showSecurityGroups: state => state.user.showSecurityGroups,
   timezoneoffset: state => state.user.timezoneoffset,
   usebrowsertimezone: state => state.user.usebrowsertimezone,
   server: state => state.app.server,
@@ -43,7 +45,15 @@ const getters = {
   defaultListViewPageSize: state => state.user.defaultListViewPageSize,
   countNotify: state => state.user.countNotify,
   customColumns: state => state.user.customColumns,
-  logoutFlag: state => state.user.logoutFlag
+  logoutFlag: state => state.user.logoutFlag,
+  shutdownTriggered: state => state.user.shutdownTriggered,
+  twoFaEnabled: state => state.user.twoFaEnabled,
+  twoFaProvider: state => state.user.twoFaProvider,
+  twoFaIssuer: state => state.user.twoFaIssuer,
+  loginFlag: state => state.user.loginFlag,
+  allProjects: (state) => state.app.allProjects,
+  customHypervisorName: state => state.user.customHypervisorName,
+  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob
 }
 
 export default getters

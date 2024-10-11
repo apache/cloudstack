@@ -26,7 +26,7 @@
           :placeholder="$t('label.search')"
           v-model:value="filter"
           @search="handleSearch"
-          autoFocus />
+          v-focus="true" />
       </div>
 
       <div class="form__item">
@@ -42,8 +42,10 @@
           @handle-search-filter="handleTableChange"
           style="overflow-y: auto" >
 
-          <template #account><user-outlined /> {{ $t('label.account') }}</template>
-          <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
+          <template #headerCell="{ column }">
+            <template v-if="column.key === 'account'"><user-outlined /> {{ $t('label.account') }}</template>
+            <template v-if="column.key === 'domain'"><block-outlined /> {{ $t('label.domain') }}</template>
+          </template>
 
         </a-table>
       </div>
@@ -77,17 +79,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || ''),
           width: '40%'
         },
         {
+          key: 'account',
           dataIndex: 'account',
-          slots: { title: 'account' },
           width: '30%'
         },
         {
+          key: 'domain',
           dataIndex: 'domain',
-          slots: { title: 'domain' },
           width: '30%'
         }
       ],

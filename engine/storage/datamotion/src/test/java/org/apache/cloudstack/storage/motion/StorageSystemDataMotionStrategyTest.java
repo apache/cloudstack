@@ -23,7 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import java.util.HashMap;
@@ -47,8 +46,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.host.HostVO;
@@ -62,7 +60,6 @@ import com.cloud.storage.VolumeVO;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -192,12 +189,25 @@ public class StorageSystemDataMotionStrategyTest {
     public void configureMigrateDiskInfoTest() {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
         Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
-        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath");
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", null);
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
         Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
         Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+    }
+
+    @Test
+    public void configureMigrateDiskInfoWithBackingTest() {
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", "backingPath");
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
+        Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
+        Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+        Assert.assertEquals("backingPath", migrateDiskInfo.getBackingStoreText());
     }
 
     @Test
@@ -358,73 +368,5 @@ public class StorageSystemDataMotionStrategyTest {
         listTypes[2] = StoragePoolType.RBD;
 
         assertFalse(strategy.isStoragePoolTypeInList(StoragePoolType.SharedMountPoint, listTypes));
-    }
-
-    @Test
-    public void validateAddSourcePoolToPoolsMapDestinationPoolIsManaged() {
-        Mockito.doReturn(true).when(destinationStoragePoolVoMock).isManaged();
-        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-
-        Mockito.verify(destinationStoragePoolVoMock).isManaged();
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-    }
-
-    @Test
-    public void validateAddSourcePoolToPoolsMapDestinationPoolIsNotNFS() {
-        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
-        storagePoolTypes.remove(StoragePoolType.NetworkFilesystem);
-
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        storagePoolTypes.forEach(poolType -> {
-            Mockito.doReturn(poolType).when(destinationStoragePoolVoMock).getPoolType();
-            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-        });
-
-        VerificationMode times = Mockito.times(storagePoolTypes.size());
-        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-    }
-
-    @Test
-    public void validateAddSourcePoolToPoolsMapMapContainsKey() {
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
-        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
-        Mockito.doReturn(true).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-
-        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
-        Mockito.verify(destinationStoragePoolVoMock).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock).getPoolType();
-        Mockito.verify(sourceStoragePoolVoMock).getUuid();
-        Mockito.verify(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-    }
-
-    @Test
-    public void validateAddSourcePoolToPoolsMapMapDoesNotContainsKey() {
-        List<StoragePoolType> storagePoolTypes = new LinkedList<>(Arrays.asList(StoragePoolType.values()));
-
-        Mockito.doReturn(false).when(destinationStoragePoolVoMock).isManaged();
-        Mockito.doReturn(StoragePoolType.NetworkFilesystem).when(destinationStoragePoolVoMock).getPoolType();
-        Mockito.doReturn("").when(sourceStoragePoolVoMock).getUuid();
-        Mockito.doReturn(false).when(mapStringStoragePoolTypeMock).containsKey(Mockito.anyString());
-        Mockito.doReturn(null).when(mapStringStoragePoolTypeMock).put(Mockito.anyString(), Mockito.any());
-
-        storagePoolTypes.forEach(poolType -> {
-            Mockito.doReturn(poolType).when(sourceStoragePoolVoMock).getPoolType();
-            strategy.addSourcePoolToPoolsMap(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
-        });
-
-        VerificationMode times = Mockito.times(storagePoolTypes.size());
-        Mockito.verify(destinationStoragePoolVoMock, never()).getScope();
-        Mockito.verify(destinationStoragePoolVoMock, times).isManaged();
-        Mockito.verify(destinationStoragePoolVoMock, times).getPoolType();
-        Mockito.verify(sourceStoragePoolVoMock, times).getUuid();
-        Mockito.verify(mapStringStoragePoolTypeMock, times).containsKey(Mockito.anyString());
-        Mockito.verify(sourceStoragePoolVoMock, times).getPoolType();
-        Mockito.verify(mapStringStoragePoolTypeMock, times).put(Mockito.anyString(), Mockito.any());
-        Mockito.verifyNoMoreInteractions(mapStringStoragePoolTypeMock, sourceStoragePoolVoMock, destinationStoragePoolVoMock);
     }
 }

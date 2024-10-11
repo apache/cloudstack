@@ -22,6 +22,10 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.YearMonth;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -31,17 +35,25 @@ import java.time.format.DateTimeParseException;
 import java.time.OffsetDateTime;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
+import org.springframework.scheduling.support.CronExpression;
+
 
 public class DateUtil {
     public static final int HOURS_IN_A_MONTH = 30 * 24;
 
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
-    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final String ZONED_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+    private static final DateFormat ZONED_DATETIME_SIMPLE_FORMATTER = new SimpleDateFormat(ZONED_DATETIME_FORMAT);
 
     private static final DateTimeFormatter[] parseFormats = new DateTimeFormatter[]{
         DateTimeFormatter.ISO_OFFSET_DATE_TIME,
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ"),
+        DateTimeFormatter.ofPattern(ZONED_DATETIME_FORMAT),
         DateTimeFormatter.ISO_INSTANT,
         // with milliseconds
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX"),
@@ -52,7 +64,7 @@ public class DateUtil {
     };
 
     public static Date currentGMTTime() {
-        // Date object always stores miliseconds offset based on GMT internally
+        // Date object always stores milliseconds offset based on GMT internally
         return new Date();
     }
 
@@ -84,7 +96,7 @@ public class DateUtil {
     }
 
     public static String displayDateInTimezone(TimeZone tz, Date time) {
-        return getDateDisplayString(tz, time, "yyyy-MM-dd HH:mm:ss z");
+        return getDateDisplayString(tz, time, ZONED_DATETIME_FORMAT);
     }
 
     public static String getDateDisplayString(TimeZone tz, Date time) {
@@ -92,6 +104,10 @@ public class DateUtil {
     }
 
     public static String getDateDisplayString(TimeZone tz, Date time, String formatString) {
+        if (time == null) {
+            return null;
+        }
+
         DateFormat df = new SimpleDateFormat(formatString);
         df.setTimeZone(tz);
 
@@ -102,9 +118,9 @@ public class DateUtil {
         if (date == null) {
             return "";
         }
-        String formattedString = null;
-        synchronized (s_outputFormat) {
-            formattedString = s_outputFormat.format(date);
+        String formattedString;
+        synchronized (ZONED_DATETIME_SIMPLE_FORMATTER) {
+            formattedString = ZONED_DATETIME_SIMPLE_FORMATTER.format(date);
         }
         return formattedString;
     }
@@ -294,5 +310,40 @@ public class DateUtil {
 
         return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
 
+    }
+
+    public static CronExpression parseSchedule(String schedule) {
+        if (schedule != null) {
+            // CronExpression's granularity is in seconds. Prepending "0 " to change the granularity to minutes.
+            return CronExpression.parse(String.format("0 %s", schedule));
+        } else {
+            return null;
+        }
+    }
+
+    public static String getHumanReadableSchedule(CronExpression schedule) {
+        CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING);
+        CronParser parser = new CronParser(cronDefinition);
+        CronDescriptor descriptor = CronDescriptor.instance();
+        return descriptor.describe(parser.parse(schedule.toString()));
+    }
+
+    public static ZonedDateTime getZoneDateTime(Date date, ZoneId tzId) {
+        if (date == null) {
+            return null;
+        }
+        ZonedDateTime zonedDate = ZonedDateTime.ofInstant(date.toInstant(), tzId);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), TimeZone.getDefault().toZoneId());
+        zonedDate = zonedDate.withYear(localDateTime.getYear())
+                .withMonth(localDateTime.getMonthValue())
+                .withDayOfMonth(localDateTime.getDayOfMonth())
+                .withHour(localDateTime.getHour())
+                .withMinute(localDateTime.getMinute())
+                .withSecond(localDateTime.getSecond());
+        return zonedDate;
+    }
+
+    public static int getHoursInCurrentMonth(Date date) {
+        return YearMonth.of(date.getYear(), date.getMonth() + 1).lengthOfMonth() * 24;
     }
 }

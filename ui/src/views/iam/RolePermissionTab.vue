@@ -69,7 +69,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">
@@ -112,6 +111,7 @@ import draggable from 'vuedraggable'
 import PermissionEditable from './PermissionEditable'
 import RuleDelete from './RuleDelete'
 import TooltipButton from '@/components/widgets/TooltipButton'
+import { toCsv } from '@/utils/util.js'
 
 export default {
   name: 'RolePermissionTab',
@@ -250,32 +250,8 @@ export default {
         this.updateTable = false
       })
     },
-    rulesDataToCsv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
-      if (data === null || !data.length) {
-        return null
-      }
-
-      const keys = ['rule', 'permission', 'description']
-      let result = ''
-      result += keys.join(columnDelimiter)
-      result += lineDelimiter
-
-      data.forEach(item => {
-        keys.forEach(key => {
-          if (item[key] === undefined) {
-            item[key] = ''
-          }
-          result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
-          result += columnDelimiter
-        })
-        result = result.slice(0, -1)
-        result += lineDelimiter
-      })
-
-      return result
-    },
     exportRolePermissions () {
-      const rulesCsvData = this.rulesDataToCsv({ data: this.rules })
+      const rulesCsvData = toCsv({ keys: ['rule', 'permission', 'description'], data: this.rules })
       const hiddenElement = document.createElement('a')
       hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(rulesCsvData)
       hiddenElement.target = '_blank'

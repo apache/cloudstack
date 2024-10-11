@@ -29,6 +29,7 @@ public class PingRoutingCommand extends PingCommand {
 
     boolean _gatewayAccessible = true;
     boolean _vnetAccessible = true;
+    private Boolean hostHealthCheckResult;
 
     protected PingRoutingCommand() {
     }
@@ -56,5 +57,13 @@ public class PingRoutingCommand extends PingCommand {
 
     public void setVnetAccessible(boolean vnetAccessible) {
         _vnetAccessible = vnetAccessible;
+    }
+
+    public Boolean getHostHealthCheckResult() {
+        return hostHealthCheckResult;
+    }
+
+    public void setHostHealthCheckResult(Boolean hostHealthCheckResult) {
+        this.hostHealthCheckResult = hostHealthCheckResult;
     }
 }

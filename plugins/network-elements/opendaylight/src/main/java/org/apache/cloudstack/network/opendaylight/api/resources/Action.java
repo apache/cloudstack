@@ -40,18 +40,19 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class Action {
 
-    private static final Logger s_logger = Logger.getLogger(Action.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final int BODY_RESP_MAX_LEN = 1024;
 
     // private static final String DEFAULT
 
     protected static final String TEXT_HTML_CONTENT_TYPE = "text/html";
     protected static final String JSON_CONTENT_TYPE = "application/json";
-    protected static final String CONTENT_TYPE = "Content-Type";
+    protected static final String CONTENT_TYPE = "content-type";
 
     private final URL url;
     private final String username;
@@ -95,14 +96,14 @@ public abstract class Action {
             if (getMethod.getStatusCode() != HttpStatus.SC_OK) {
                 String errorMessage = responseToErrorMessage(getMethod);
                 getMethod.releaseConnection();
-                s_logger.error("Failed to retrieve object : " + errorMessage);
+                logger.error("Failed to retrieve object : " + errorMessage);
                 throw new NeutronRestApiException("Failed to retrieve object : " + errorMessage);
             }
 
             return getMethod.getResponseBodyAsString();
 
         } catch (NeutronRestApiException e) {
-            s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
+            logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } catch (IOException e) {
             throw new NeutronRestApiException(e);
@@ -135,13 +136,13 @@ public abstract class Action {
             if (postMethod.getStatusCode() != HttpStatus.SC_CREATED) {
                 String errorMessage = responseToErrorMessage(postMethod);
                 postMethod.releaseConnection();
-                s_logger.error("Failed to create object : " + errorMessage);
+                logger.error("Failed to create object : " + errorMessage);
                 throw new NeutronRestApiException("Failed to create object : " + errorMessage);
             }
 
             return postMethod.getResponseBodyAsString();
         } catch (NeutronRestApiException e) {
-            s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
+            logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } catch (IOException e) {
             throw new NeutronRestApiException("Failed to load json response body", e);
@@ -174,11 +175,11 @@ public abstract class Action {
             if (putMethod.getStatusCode() != HttpStatus.SC_OK) {
                 String errorMessage = responseToErrorMessage(putMethod);
                 putMethod.releaseConnection();
-                s_logger.error("Failed to update object : " + errorMessage);
+                logger.error("Failed to update object : " + errorMessage);
                 throw new NeutronRestApiException("Failed to update object : " + errorMessage);
             }
         } catch (NeutronRestApiException e) {
-            s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
+            logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } finally {
             putMethod.releaseConnection();
@@ -206,13 +207,13 @@ public abstract class Action {
             if (putMethod.getStatusCode() != HttpStatus.SC_OK) {
                 String errorMessage = responseToErrorMessage(putMethod);
                 putMethod.releaseConnection();
-                s_logger.error("Failed to update object : " + errorMessage);
+                logger.error("Failed to update object : " + errorMessage);
                 throw new NeutronRestApiException("Failed to update object : " + errorMessage);
             }
 
             return putMethod.getResponseBodyAsString();
         } catch (NeutronRestApiException e) {
-            s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
+            logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } catch (IOException e) {
             throw new NeutronRestApiException("Failed to load json response body", e);
@@ -244,11 +245,11 @@ public abstract class Action {
             if (deleteMethod.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
                 String errorMessage = responseToErrorMessage(deleteMethod);
                 deleteMethod.releaseConnection();
-                s_logger.error("Failed to delete object : " + errorMessage);
+                logger.error("Failed to delete object : " + errorMessage);
                 throw new NeutronRestApiException("Failed to delete object : " + errorMessage);
             }
         } catch (NeutronRestApiException e) {
-            s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
+            logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
             throw new NeutronRestApiException("API call to Neutron Controller Failed", e);
         } finally {
             deleteMethod.releaseConnection();
@@ -279,7 +280,7 @@ public abstract class Action {
             try {
                 return method.getResponseBodyAsString(BODY_RESP_MAX_LEN);
             } catch (IOException e) {
-                s_logger.debug("Error while loading response body", e);
+                logger.debug("Error while loading response body", e);
             }
         }
 

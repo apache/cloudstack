@@ -51,7 +51,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -240,12 +240,25 @@ public class KvmNonManagedStorageSystemDataMotionTest {
     public void configureMigrateDiskInfoTest() {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
         Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
-        MigrateCommand.MigrateDiskInfo migrateDiskInfo = kvmNonManagedStorageDataMotionStrategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath");
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = kvmNonManagedStorageDataMotionStrategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", null);
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.FILE, migrateDiskInfo.getDiskType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.QCOW2, migrateDiskInfo.getDriverType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.FILE, migrateDiskInfo.getSource());
         Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
         Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+    }
+
+    @Test
+    public void configureMigrateDiskInfoWithBackingTest() {
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = kvmNonManagedStorageDataMotionStrategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", "backingPath");
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.FILE, migrateDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.QCOW2, migrateDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.FILE, migrateDiskInfo.getSource());
+        Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
+        Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+        Assert.assertEquals("backingPath", migrateDiskInfo.getBackingStoreText());
     }
 
     @Test
@@ -463,19 +476,19 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
     @Test
     public void testVerifyLiveMigrationMapForKVM() {
-        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
+        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyLiveMigrationMapForKVMNotExistingSource() {
         when(primaryDataStoreDao.findById(POOL_1_ID)).thenReturn(null);
-        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
+        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyLiveMigrationMapForKVMNotExistingDest() {
         when(primaryDataStoreDao.findById(POOL_2_ID)).thenReturn(null);
-        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
+        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -484,7 +497,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         when(pool1.getId()).thenReturn(POOL_1_ID);
         when(pool2.getId()).thenReturn(POOL_2_ID);
         lenient().when(pool2.isManaged()).thenReturn(false);
-        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap, host2);
+        kvmNonManagedStorageDataMotionStrategy.verifyLiveMigrationForKVM(migrationMap);
     }
 
     @Test

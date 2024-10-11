@@ -38,17 +38,25 @@ public interface RoleService {
      *  Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.
      *  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
      */
+    Role findRole(Long id, boolean ignorePrivateRoles);
+
+    List<Role> findRoles(List<Long> ids, boolean ignorePrivateRoles);
+
     Role findRole(Long id);
 
-    Role createRole(String name, RoleType roleType, String description);
+    Role createRole(String name, RoleType roleType, String description, boolean publicRole);
 
-    Role createRole(String name, Role role, String description);
+    Role createRole(String name, Role role, String description, boolean publicRole);
 
-    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced);
+    Role importRole(String name, RoleType roleType, String description, List<Map<String, Object>> rules, boolean forced, boolean isPublicRole);
 
-    Role updateRole(Role role, String name, RoleType roleType, String description);
+    Role updateRole(Role role, String name, RoleType roleType, String description, Boolean publicRole);
 
     boolean deleteRole(Role role);
+
+    boolean enableRole(Role role);
+
+    boolean disableRole(Role role);
 
     RolePermission findRolePermission(Long id);
 
@@ -72,7 +80,7 @@ public interface RoleService {
      */
     List<Role> listRoles();
 
-    Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit);
+    Pair<List<Role>, Integer> listRoles(String state, Long startIndex, Long limit);
 
     /**
      *  Find all roles that have the giving {@link String} as part of their name.
@@ -80,14 +88,14 @@ public interface RoleService {
      */
     List<Role> findRolesByName(String name);
 
-    Pair<List<Role>, Integer> findRolesByName(String name, Long startIndex, Long limit);
+    Pair<List<Role>, Integer> findRolesByName(String name, String keyword, String state, Long startIndex, Long limit);
 
     /**
      *  Find all roles by {@link RoleType}. If the role type is {@link RoleType#Admin}, the calling account must be a root admin, otherwise we return an empty list.
      */
     List<Role> findRolesByType(RoleType roleType);
 
-    Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit);
+    Pair<List<Role>, Integer> findRolesByType(RoleType roleType, String state, Long startIndex, Long limit);
 
     List<RolePermission> findAllPermissionsBy(Long roleId);
 

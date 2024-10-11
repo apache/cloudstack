@@ -54,7 +54,8 @@
               return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="apiParams.zoneid.description">
+            :placeholder="apiParams.zoneid.description"
+            @change="handleZoneChange">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -96,6 +97,34 @@
             v-model:value="form.minmemory"
             :placeholder="apiParams.minmemory.description"/>
         </a-form-item>
+        <a-form-item ref="directdownload" name="directdownload">
+          <template #label>
+            <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
+          </template>
+          <a-switch
+            :disabled="directDownloadDisabled"
+            v-model:checked="form.directdownload"
+            :placeholder="apiParams.directdownload.description"/>
+        </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -122,7 +151,11 @@ export default {
     return {
       zones: [],
       zoneLoading: false,
-      loading: false
+      loading: false,
+      selectedZone: {},
+      directDownloadDisabled: false,
+      lastNonEdgeDirectDownloadUserSelection: false,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -141,7 +174,11 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        mincpunumber: 2,
+        minmemory: 2048,
+        directdownload: false
+      })
       this.rules = reactive({
         semanticversion: [{ required: true, message: this.$t('message.error.kuberversion') }],
         zoneid: [{
@@ -179,6 +216,7 @@ export default {
       })
     },
     fetchData () {
+      this.fetchArchitectureTypes()
       this.fetchZoneData()
     },
     isValidValueForKey (obj, key) {
@@ -186,6 +224,19 @@ export default {
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
     },
     fetchZoneData () {
       const params = {}
@@ -203,23 +254,38 @@ export default {
         }
       })
     },
+    handleZoneChange (zoneIdx) {
+      const zone = this.zones[zoneIdx]
+      if (this.selectedZone.type === zone.type) {
+        return
+      }
+      var lastZoneType = this.selectedZone?.type || ''
+      if (lastZoneType !== 'Edge') {
+        this.nonEdgeDirectDownloadUserSelection = this.form.directdownload
+      }
+      this.selectedZone = zone
+      if (zone.type && zone.type === 'Edge') {
+        this.form.directdownload = true
+        this.directDownloadDisabled = true
+        return
+      }
+      this.directDownloadDisabled = false
+      this.form.directdownload = this.nonEdgeDirectDownloadUserSelection
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.loading = true
-        const params = {
-          semanticversion: values.semanticversion,
-          url: values.url
+        const params = {}
+        const customCheckParams = ['mincpunumber', 'minmemory', 'zoneid']
+        for (const key in values) {
+          if (!customCheckParams.includes(key) && values[key]) {
+            params[key] = values[key]
+          }
         }
-        if (this.isValidValueForKey(values, 'name')) {
-          params.name = values.name
-        }
-        if (this.isValidValueForKey(values, 'checksum')) {
-          params.checksum = values.checksum
-        }
-        if (this.isValidValueForKey(values, 'zoneid')) {
+        if (this.isValidValueForKey(values, 'zoneid') && values.zoneid > 0) {
           params.zoneid = this.zones[values.zoneid].id
         }
         if (this.isValidValueForKey(values, 'mincpunumber') && values.mincpunumber > 0) {

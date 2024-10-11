@@ -27,18 +27,6 @@
       @focus="fetchData"
       showSearch>
 
-      <template #suffixIcon>
-        <a-tooltip placement="bottom">
-          <template #title>
-            <span>{{ $t('label.projects') }}</span>
-          </template>
-          <span class="custom-suffix-icon">
-            <ProjectOutlined v-if="!loading" class="ant-select-suffix" />
-            <LoadingOutlined v-else />
-          </span>
-        </a-tooltip>
-      </template>
-
       <a-select-option
         v-for="(project, index) in projects"
         :key="index"
@@ -78,6 +66,7 @@ export default {
       let projectIndex = 0
       if (this.$store.getters?.project?.id) {
         projectIndex = this.projects.findIndex(project => project.id === this.$store.getters.project.id)
+        this.$store.dispatch('ToggleTheme', projectIndex === undefined ? 'light' : 'dark')
       }
 
       return projectIndex
@@ -92,7 +81,7 @@ export default {
       const projects = []
       const getNextPage = () => {
         this.loading = true
-        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
+        api('listProjects', { listAll: true, page: page, pageSize: 500, details: 'min', showIcon: true }).then(json => {
           if (json?.listprojectsresponse?.project) {
             projects.push(...json.listprojectsresponse.project)
           }
@@ -101,9 +90,8 @@ export default {
             getNextPage()
           }
         }).finally(() => {
-          this.projects = _.orderBy(projects, ['displaytext'], ['asc'])
-          this.projects.unshift({ name: this.$t('label.default.view') })
           this.loading = false
+          this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         })
       }
       getNextPage()
@@ -124,6 +112,17 @@ export default {
     filterProject (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
+  },
+  mounted () {
+    this.$store.watch(
+      (state, getters) => getters.allProjects,
+      (newValue, oldValue) => {
+        if (oldValue !== newValue && newValue !== undefined) {
+          this.projects = _.orderBy(newValue, ['displaytext'], ['asc'])
+          this.projects.unshift({ name: this.$t('label.default.view') })
+        }
+      }
+    )
   }
 }
 </script>
@@ -131,7 +130,7 @@ export default {
 <style lang="less" scoped>
 .project {
   &-select {
-    width: 30vw;
+    width: 27vw;
   }
 
   &-icon {

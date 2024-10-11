@@ -70,6 +70,22 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
     @Param(description = "Session key that can be passed in subsequent Query command calls", isSensitive = true)
     private String sessionKey;
 
+    @SerializedName(value = ApiConstants.IS_2FA_ENABLED)
+    @Param(description = "Is two factor authentication enabled", since = "4.18.0.0")
+    private String is2FAenabled;
+
+    @SerializedName(value = ApiConstants.IS_2FA_VERIFIED)
+    @Param(description = "Is two factor authentication verified", since = "4.18.0.0")
+    private String is2FAverified;
+
+    @SerializedName(value = ApiConstants.PROVIDER_FOR_2FA)
+    @Param(description = "Two factor authentication provider", since = "4.18.0.0")
+    private String providerFor2FA;
+
+    @SerializedName(value = ApiConstants.ISSUER_FOR_2FA)
+    @Param(description = "Two factor authentication issuer", since = "4.18.0.0")
+    private String issuerFor2FA;
+
     public String getUsername() {
         return username;
     }
@@ -162,5 +178,37 @@ public class LoginCmdResponse extends AuthenticationCmdResponse {
 
     public void setSessionKey(String sessionKey) {
         this.sessionKey = sessionKey;
+    }
+
+    public String is2FAenabled() {
+        return is2FAenabled;
+    }
+
+    public void set2FAenabled(String is2FAenabled) {
+        this.is2FAenabled = is2FAenabled;
+    }
+
+    public String is2FAverfied() {
+        return is2FAverified;
+    }
+
+    public void set2FAverfied(String is2FAverified) {
+        this.is2FAverified = is2FAverified;
+    }
+
+    public String getProviderFor2FA() {
+        return providerFor2FA;
+    }
+
+    public void setProviderFor2FA(String providerFor2FA) {
+        this.providerFor2FA = providerFor2FA;
+    }
+
+    public String getIssuerFor2FA() {
+        return issuerFor2FA;
+    }
+
+    public void setIssuerFor2FA(String issuerFor2FA) {
+        this.issuerFor2FA = issuerFor2FA;
     }
 }

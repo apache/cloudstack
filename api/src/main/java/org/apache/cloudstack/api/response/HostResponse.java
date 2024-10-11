@@ -29,7 +29,7 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -89,7 +89,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
-    private HypervisorType hypervisor;
+    private String hypervisor;
 
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
@@ -222,6 +222,18 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "comma-separated list of tags for the host")
     private String hostTags;
 
+    @SerializedName("explicithosttags")
+    @Param(description = "comma-separated list of explicit host tags for the host", since = "4.20.0")
+    private String explicitHostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
+    private String implicitHostTags;
+
+    @SerializedName(ApiConstants.IS_TAG_A_RULE)
+    @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
+    private Boolean isTagARule;
+
     @SerializedName("hasenoughcapacity")
     @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
     private Boolean hasEnoughCapacity;
@@ -268,11 +280,19 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     @SerializedName("ueficapability")
     @Param(description = "true if the host has capability to support UEFI boot")
-    private Boolean uefiCapabilty;
+    private Boolean uefiCapability;
 
     @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
     @Param(description = "true if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
+
+    @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
+    @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
+    private Boolean instanceConversionSupported;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the host", since = "4.20")
+    private String arch;
 
     @Override
     public String getObjectId() {
@@ -335,7 +355,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.version = version;
     }
 
-    public void setHypervisor(HypervisorType hypervisor) {
+    public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 
@@ -455,6 +475,22 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.hostTags = hostTags;
     }
 
+    public String getExplicitHostTags() {
+        return explicitHostTags;
+    }
+
+    public void setExplicitHostTags(String explicitHostTags) {
+        this.explicitHostTags = explicitHostTags;
+    }
+
+    public String getImplicitHostTags() {
+        return implicitHostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
+    }
+
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
         this.hasEnoughCapacity = hasEnoughCapacity;
     }
@@ -523,7 +559,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.username = username;
     }
 
-    public void setDetails(Map details) {
+    public void setDetails(Map details, Hypervisor.HypervisorType hypervisorType) {
 
         if (details == null) {
             return;
@@ -542,6 +578,15 @@ public class HostResponse extends BaseResponseWithAnnotations {
             detailsCopy.remove(Host.HOST_VOLUME_ENCRYPTION);
         } else {
             this.setEncryptionSupported(new Boolean(false)); // default
+        }
+
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            if (detailsCopy.containsKey(Host.HOST_INSTANCE_CONVERSION)) {
+                this.setInstanceConversionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_INSTANCE_CONVERSION)));
+                detailsCopy.remove(Host.HOST_INSTANCE_CONVERSION);
+            } else {
+                this.setInstanceConversionSupported(new Boolean(false)); // default
+            }
         }
 
         this.details = detailsCopy;
@@ -602,7 +647,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return version;
     }
 
-    public HypervisorType getHypervisor() {
+    public String getHypervisor() {
         return hypervisor;
     }
 
@@ -694,7 +739,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return clusterType;
     }
 
-    public Boolean isLocalStorageActive() {
+    public Boolean getLocalStorageActive() {
         return localStorageActive;
     }
 
@@ -714,7 +759,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return hasEnoughCapacity;
     }
 
-    public Boolean isSuitableForMigration() {
+    public Boolean getSuitableForMigration() {
         return suitableForMigration;
     }
 
@@ -726,11 +771,103 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return haHost;
     }
 
-    public void setUefiCapabilty(Boolean hostCapability) {
-        this.uefiCapabilty = hostCapability;
+    public void setUefiCapability(Boolean hostCapability) {
+        this.uefiCapability = hostCapability;
     }
 
     public void setEncryptionSupported(Boolean encryptionSupported) {
         this.encryptionSupported = encryptionSupported;
+    }
+
+    public void setInstanceConversionSupported(Boolean instanceConversionSupported) {
+        this.instanceConversionSupported = instanceConversionSupported;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
+    }
+
+    public void setIsTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public Long getCpuAllocatedValue() {
+        return cpuAllocatedValue;
+    }
+
+    public String getCpuAllocatedPercentage() {
+        return cpuAllocatedPercentage;
+    }
+
+    public String getCpuAllocatedWithOverprovisioning() {
+        return cpuAllocatedWithOverprovisioning;
+    }
+
+    public Double getCpuloadaverage() {
+        return cpuloadaverage;
+    }
+
+    public void setCpuloadaverage(Double cpuloadaverage) {
+        this.cpuloadaverage = cpuloadaverage;
+    }
+
+    public String getMemWithOverprovisioning() {
+        return memWithOverprovisioning;
+    }
+
+    public String getMemoryAllocatedPercentage() {
+        return memoryAllocatedPercentage;
+    }
+
+    public Long getMemoryAllocatedBytes() {
+        return memoryAllocatedBytes;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public Boolean getHasEnoughCapacity() {
+        return hasEnoughCapacity;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
+    public String getAnnotation() {
+        return annotation;
+    }
+
+    public Date getLastAnnotated() {
+        return lastAnnotated;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Boolean getUefiCapability() {
+        return uefiCapability;
+    }
+
+    public Boolean getEncryptionSupported() {
+        return encryptionSupported;
+    }
+
+    public Boolean getInstanceConversionSupported() {
+        return instanceConversionSupported;
     }
 }

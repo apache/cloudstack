@@ -92,6 +92,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if users can see all accounts within the same domain, false otherwise")
     private boolean allowUserViewAllDomainAccounts;
 
+    @SerializedName(ApiConstants.ALLOW_USER_FORCE_STOP_VM)
+    @Param(description = "true if users are allowed to force stop a vm, false otherwise", since = "4.20.0")
+    private boolean allowUserForceStopVM;
+
     @SerializedName("kubernetesserviceenabled")
     @Param(description = "true if Kubernetes Service plugin is enabled, false otherwise")
     private boolean kubernetesServiceEnabled;
@@ -100,9 +104,37 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if experimental features for Kubernetes cluster such as Docker private registry are enabled, false otherwise")
     private boolean kubernetesClusterExperimentalFeaturesEnabled;
 
+    @SerializedName("customhypervisordisplayname")
+    @Param(description = "Display name for custom hypervisor", since = "4.19.0")
+    private String customHypervisorDisplayName;
+
     @SerializedName("defaultuipagesize")
     @Param(description = "default page size in the UI for various views, value set in the configurations", since = "4.15.2")
     private Long defaultUiPageSize;
+
+    @SerializedName(ApiConstants.INSTANCES_STATS_RETENTION_TIME)
+    @Param(description = "the retention time for Instances stats", since = "4.18.0")
+    private Integer instancesStatsRetentionTime;
+
+    @SerializedName(ApiConstants.INSTANCES_STATS_USER_ONLY)
+    @Param(description = "true if stats are collected only for user instances, false if system instance stats are also collected", since = "4.18.0")
+    private Boolean instancesStatsUserOnly;
+
+    @SerializedName(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED)
+    @Param(description = "true if stats are retained for instance disks otherwise false", since = "4.18.0")
+    private Boolean instancesDisksStatsRetentionEnabled;
+
+    @SerializedName(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME)
+    @Param(description = "the retention time for Instances disks stats", since = "4.18.0")
+    private Integer instancesDisksStatsRetentionTime;
+
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT)
+    @Param(description = "the min CPU count for the service offering used by the shared filesystem instance", since = "4.20.0")
+    private Integer sharedFsVmMinCpuCount;
+
+    @SerializedName(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE)
+    @Param(description = "the min Ram size for the service offering used by the shared filesystem instance", since = "4.20.0")
+    private Integer sharedFsVmMinRamSize;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -172,6 +204,10 @@ public class CapabilitiesResponse extends BaseResponse {
         this.allowUserViewAllDomainAccounts = allowUserViewAllDomainAccounts;
     }
 
+    public void setAllowUserForceStopVM(boolean allowUserForceStopVM) {
+        this.allowUserForceStopVM = allowUserForceStopVM;
+    }
+
     public void setKubernetesServiceEnabled(boolean kubernetesServiceEnabled) {
         this.kubernetesServiceEnabled = kubernetesServiceEnabled;
     }
@@ -182,5 +218,33 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setDefaultUiPageSize(Long defaultUiPageSize) {
         this.defaultUiPageSize = defaultUiPageSize;
+    }
+
+    public void setInstancesStatsRetentionTime(Integer instancesStatsRetentionTime) {
+        this.instancesStatsRetentionTime = instancesStatsRetentionTime;
+    }
+
+    public void setInstancesStatsUserOnly(Boolean instancesStatsUserOnly) {
+        this.instancesStatsUserOnly = instancesStatsUserOnly;
+    }
+
+    public void setInstancesDisksStatsRetentionEnabled(Boolean instancesDisksStatsRetentionEnabled) {
+        this.instancesDisksStatsRetentionEnabled = instancesDisksStatsRetentionEnabled;
+    }
+
+    public void setInstancesDisksStatsRetentionTime(Integer instancesDisksStatsRetentionTime) {
+        this.instancesDisksStatsRetentionTime = instancesDisksStatsRetentionTime;
+    }
+
+    public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
+        this.customHypervisorDisplayName = customHypervisorDisplayName;
+    }
+
+    public void setSharedFsVmMinCpuCount(Integer sharedFsVmMinCpuCount) {
+        this.sharedFsVmMinCpuCount = sharedFsVmMinCpuCount;
+    }
+
+    public void setSharedFsVmMinRamSize(Integer sharedFsVmMinRamSize) {
+        this.sharedFsVmMinRamSize = sharedFsVmMinRamSize;
     }
 }

@@ -221,16 +221,19 @@ export default {
 
       this.params.serviceofferingid = id
       this.selectedOffering = this.offeringsMap[id]
-      api('listDiskOfferings', {
-        id: this.selectedOffering.diskofferingid
-      }).then(response => {
-        const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
-        if (this.offerings) {
-          this.selectedDiskOffering = diskOfferings[0]
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      })
+      this.selectedDiskOffering = null
+      if (this.selectedOffering.diskofferingid) {
+        api('listDiskOfferings', {
+          id: this.selectedOffering.diskofferingid
+        }).then(response => {
+          const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
+          if (this.diskOfferings) {
+            this.selectedDiskOffering = diskOfferings[0]
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+        })
+      }
       this.params.automigrate = this.autoMigrate
     },
     updateFieldValue (name, value) {
@@ -255,6 +258,8 @@ export default {
         if (jobId) {
           this.$pollJob({
             jobId,
+            title: this.$t('label.scale.vm'),
+            description: this.resource.name,
             successMethod: result => {
               this.$notification.success({
                 message: this.$t('message.success.change.offering')

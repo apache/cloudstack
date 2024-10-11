@@ -25,8 +25,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -63,9 +61,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.google.common.base.Preconditions;
 
-public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
-
+public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject private CapacityManager _capacityMgr;
     @Inject private ClusterDao _clusterDao;
     @Inject private DataCenterDao _zoneDao;
@@ -91,6 +87,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         @SuppressWarnings("unchecked")
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
@@ -142,6 +139,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         }
 
         parameters.setTags(tags);
+        parameters.setIsTagARule(isTagARule);
         parameters.setDetails(details);
 
         String managementVip = SolidFireUtil.getManagementVip(url);
@@ -167,7 +165,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
                           ", using default value: " + lClusterDefaultMinIops +
                           ". Exception: " + ex);
         }
@@ -179,7 +177,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
                           ", using default value: " + lClusterDefaultMaxIops +
                           ". Exception: " + ex);
         }
@@ -191,7 +189,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                 fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
                           ", using default value: " + fClusterDefaultBurstIopsPercentOfMaxIops +
                           ". Exception: " + ex);
         }
@@ -245,7 +243,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
             try {
                 _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 
@@ -269,7 +267,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
             try {
                 _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 
@@ -323,7 +321,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                     SolidFireUtil.deleteVolume(sfConnection, sfTemplateVolumeId);
                 }
                 catch (Exception ex) {
-                    s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
+                    logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
                 }
 
                 _tmpltPoolDao.remove(templatePoolRef.getId());
@@ -384,5 +382,14 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
     @Override
     public void disableStoragePool(DataStore dataStore) {
         _dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorType as null.
+         */
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 }

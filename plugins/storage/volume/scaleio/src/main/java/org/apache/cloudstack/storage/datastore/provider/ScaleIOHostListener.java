@@ -34,7 +34,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(ScaleIOHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager _agentMgr;
     @Inject private AlertManager _alertMgr;
@@ -69,12 +70,33 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            s_logger.error("Failed to add host by HostListener as host was not found with id : " + hostId);
+            logger.error("Failed to connect host by HostListener as host was not found with id : " + hostId);
             return false;
         }
 
         StoragePool storagePool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(poolId, hostId);
+        String sdcId = getSdcIdOfHost(host, storagePool);
+        if (StringUtils.isBlank(sdcId)) {
+            if (storagePoolHost != null) {
+                _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
+            }
+        } else {
+            if (storagePoolHost == null) {
+                storagePoolHost = new StoragePoolHostVO(poolId, hostId, sdcId);
+                _storagePoolHostDao.persist(storagePoolHost);
+            } else {
+                storagePoolHost.setLocalPath(sdcId);
+                _storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
+            }
+            logger.info("Connection established between storage pool: " + storagePool + " and host: " + hostId);
+        }
+        return true;
+    }
 
+    private String getSdcIdOfHost(HostVO host, StoragePool storagePool) {
+        long hostId = host.getId();
+        long poolId = storagePool.getId();
         String systemId = _storagePoolDetailsDao.findDetail(poolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
@@ -86,10 +108,10 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
         Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
-            String msg = "SDC details not found on the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            String msg = "PowerFlex storage SDC details not found on the host: " + hostId + ", (re)install SDC and restart agent";
+            logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not found on host: " + host.getUuid(), msg);
-            return false;
+            return null;
         }
 
         String sdcId = null;
@@ -101,50 +123,23 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (StringUtils.isBlank(sdcId)) {
-            String msg = "Couldn't retrieve SDC details from the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            String msg = "Couldn't retrieve PowerFlex storage SDC details from the host: " + hostId + ", (re)install SDC and restart agent";
+            logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
-            return false;
+            return null;
         }
 
-        if (!isHostSdcConnected(sdcId, poolId)) {
-            s_logger.warn("SDC not connected on the host: " + hostId);
-            String msg = "SDC not connected on the host: " + hostId + ", reconnect the SDC to MDM and restart agent";
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host.getUuid(), msg);
-            return false;
-        }
-
-        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(poolId, hostId);
-        if (storagePoolHost == null) {
-            storagePoolHost = new StoragePoolHostVO(poolId, hostId, sdcId);
-            _storagePoolHostDao.persist(storagePoolHost);
-        } else {
-            storagePoolHost.setLocalPath(sdcId);
-            _storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
-        }
-
-        s_logger.info("Connection established between storage pool: " + storagePool + " and host: " + hostId);
-        return true;
+        return sdcId;
     }
 
     private String getHostSdcId(String sdcGuid, long poolId) {
         try {
-            s_logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", poolId, sdcGuid));
+            logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", poolId, sdcGuid));
             ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
             return client.getSdcIdByGuid(sdcGuid);
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            s_logger.error(String.format("Failed to get host SDC Id for pool: %s", poolId), e);
+            logger.error(String.format("Failed to get host SDC Id for pool: %s", poolId), e);
             throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to get host SDC Id for pool: %s", poolId));
-        }
-    }
-
-    private boolean isHostSdcConnected(String sdcId, long poolId) {
-        try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
-            return client.isSdcConnected(sdcId);
-        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            s_logger.error("Failed to check host sdc connection", e);
-            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to check host sdc connection");
         }
     }
 
@@ -156,26 +151,22 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool " + storagePool.getId() + " to host " + hostId;
+            String msg = "Unable to attach  PowerFlex storage pool " + storagePool.getId() + " to host " + hostId;
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
+            throw new CloudRuntimeException("Unable to establish a connection from agent to  PowerFlex storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
                     " (" + storagePool.getId() + ")");
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; PowerFlex Storage Pool = " + storagePool.getId() + " Host = " + hostId;
 
         return (ModifyStoragePoolAnswer) answer;
     }
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(poolId, hostId);
-        if (storagePoolHost != null) {
-            _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
-        }
-
+        // SDC ID is getting updated upon host connect, no need to delete the storage_pool_host_ref entry
         return true;
     }
 

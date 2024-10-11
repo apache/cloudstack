@@ -27,7 +27,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
@@ -218,7 +217,6 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     private LoadBalancingRulesManager lbRulesManager;
 
     private long _defaultLbCapacity;
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @Override
     @DB
@@ -265,7 +263,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         try {
             uri = new URI(url);
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             throw new InvalidParameterValueException(e.getMessage());
         }
 
@@ -369,7 +367,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
             return true;
         } catch (Exception e) {
-            s_logger.debug(e);
+            logger.debug(e);
             return false;
         }
     }
@@ -481,7 +479,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             if (tryLbProvisioning) {
                                 retry = false;
                                 // TODO: throwing warning instead of error for now as its possible another provider can service this network
-                                s_logger.warn("There are no load balancer device with the capacity for implementing this network");
+                                logger.warn("There are no load balancer device with the capacity for implementing this network");
                                 throw exception;
                             } else {
                                 tryLbProvisioning = true; // if possible provision a LB appliance in to the physical network
@@ -520,11 +518,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             try {
                                 createLbAnswer = (CreateLoadBalancerApplianceAnswer)_agentMgr.easySend(lbProviderDevice.getHostId(), lbProvisionCmd);
                                 if (createLbAnswer == null || !createLbAnswer.getResult()) {
-                                    s_logger.error("Could not provision load balancer instance on the load balancer device " + lbProviderDevice.getId());
+                                    logger.error("Could not provision load balancer instance on the load balancer device " + lbProviderDevice.getId());
                                     continue;
                                 }
                             } catch (Exception agentException) {
-                                s_logger.error("Could not provision load balancer instance on the load balancer device " + lbProviderDevice.getId() + " due to " +
+                                logger.error("Could not provision load balancer instance on the load balancer device " + lbProviderDevice.getId() + " due to " +
                                     agentException.getMessage());
                                 continue;
                             }
@@ -549,7 +547,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             try {
                                 publicIPVlanTag = BroadcastDomainType.getValue(publicIp.getVlanTag());
                             } catch (URISyntaxException e) {
-                                s_logger.error("Failed to parse public ip vlan tag" + e.getMessage());
+                                logger.error("Failed to parse public ip vlan tag" + e.getMessage());
                             }
 
                             String url =
@@ -562,7 +560,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(),
                                         createLbAnswer.getServerResource(), false, false, null, null);
                             } catch (Exception e) {
-                                s_logger.error("Failed to add load balancer appliance in to cloudstack due to " + e.getMessage() +
+                                logger.error("Failed to add load balancer appliance in to cloudstack due to " + e.getMessage() +
                                     ". So provisioned load balancer appliance will be destroyed.");
                             }
 
@@ -579,14 +577,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                 try {
                                     answer = (DestroyLoadBalancerApplianceAnswer)_agentMgr.easySend(lbProviderDevice.getHostId(), lbDeleteCmd);
                                     if (answer == null || !answer.getResult()) {
-                                        s_logger.warn("Failed to destroy load balancer appliance created");
+                                        logger.warn("Failed to destroy load balancer appliance created");
                                     } else {
                                         // release the public & private IP back to dc pool, as the load balancer appliance is now destroyed
                                         _dcDao.releasePrivateIpAddress(lbIP, guestConfig.getDataCenterId(), null);
                                         _ipAddrMgr.disassociatePublicIpAddress(publicIp.getId(), _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                                     }
                                 } catch (Exception e) {
-                                    s_logger.warn("Failed to destroy load balancer appliance created for the network" + guestConfig.getId() + " due to " + e.getMessage());
+                                    logger.warn("Failed to destroy load balancer appliance created for the network" + guestConfig.getId() + " due to " + e.getMessage());
                                 }
                             }
                         }
@@ -720,17 +718,17 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     DestroyLoadBalancerApplianceAnswer answer = null;
                     try {
                         answer = (DestroyLoadBalancerApplianceAnswer)_agentMgr.easySend(lbDevice.getParentHostId(), lbDeleteCmd);
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.warn("Failed to destoy load balancer appliance used by the network"
-                                    + guestConfig.getId() + " due to " + answer == null ? "communication error with agent"
-                                    : answer.getDetails());
+                        if (answer == null) {
+                            logger.warn(String.format("Failed to destroy load balancer appliance used by the network [%s] due to a communication error with agent.", guestConfig.getId()));
+                        } else if (!answer.getResult()) {
+                            logger.warn(String.format("Failed to destroy load balancer appliance used by the network [%s] due to [%s].", guestConfig.getId(),  answer.getDetails()));
                         }
                     } catch (Exception e) {
-                        s_logger.warn("Failed to destroy load balancer appliance used by the network" + guestConfig.getId() + " due to " + e.getMessage());
+                        logger.warn("Failed to destroy load balancer appliance used by the network" + guestConfig.getId() + " due to " + e.getMessage());
                     }
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully destroyed load balancer appliance used for the network" + guestConfig.getId());
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Successfully destroyed load balancer appliance used for the network" + guestConfig.getId());
                     }
                     deviceMapLock.unlock();
 
@@ -750,11 +748,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 return true;
             } else {
-                s_logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + "as failed to acquire lock ");
+                logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + "as failed to acquire lock ");
                 return false;
             }
         } catch (Exception exception) {
-            s_logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + " due to " + exception.getMessage());
+            logger.error("Failed to release load balancer device for the network" + guestConfig.getId() + " due to " + exception.getMessage());
         } finally {
             deviceMapLock.releaseRef();
         }
@@ -820,7 +818,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             loadBalancingIpAddress = directIp.getAddress().addr();
                         } catch (InsufficientCapacityException capException) {
                             String msg = "Ran out of guest IP addresses from the shared network.";
-                            s_logger.error(msg);
+                            logger.error(msg);
                             throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
                         }
                     }
@@ -828,7 +826,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 if (loadBalancingIpAddress == null) {
                     String msg = "Ran out of guest IP addresses.";
-                    s_logger.error(msg);
+                    logger.error(msg);
                     throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
                 }
 
@@ -853,7 +851,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     throw ex;
                 }
 
-                s_logger.debug("Created static nat rule for inline load balancer");
+                logger.debug("Created static nat rule for inline load balancer");
                 nic.setState(MappingState.Create);
             } else {
                 loadBalancingIpNic = _nicDao.findById(mapping.getNicId());
@@ -875,11 +873,11 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                     // Delete the NIC
                     _nicDao.expunge(loadBalancingIpNic.getId());
 
-                    s_logger.debug("Revoked static nat rule for inline load balancer");
+                    logger.debug("Revoked static nat rule for inline load balancer");
                     nic.setState(MappingState.Remove);
                 }
             } else {
-                s_logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
+                logger.debug("Revoking a rule for an inline load balancer that has not been programmed yet.");
                 nic.setNic(null);
                 return nic;
             }
@@ -921,7 +919,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } else {
             ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
             if (lbDeviceVO == null) {
-                s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
+                logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
                 return true;
             } else {
                 externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
@@ -933,7 +931,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() +
+            logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() +
                 "; this network is not implemented. Skipping backend commands.");
             return true;
         }
@@ -1001,13 +999,13 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
                     String msg = "Unable to apply load balancer rules to the external load balancer appliance in zone " + zone.getName() + " due to: " + details + ".";
-                    s_logger.error(msg);
+                    logger.error(msg);
                     throw new ResourceUnavailableException(msg, DataCenter.class, network.getDataCenterId());
                 }
             }
         } catch (Exception ex) {
             if (externalLoadBalancerIsInline) {
-                s_logger.error("Rollbacking static nat operation of inline mode load balancing due to error on applying LB rules!");
+                logger.error("Rollbacking static nat operation of inline mode load balancing due to error on applying LB rules!");
                 String existedGuestIp = loadBalancersToApply.get(0).getSrcIp();
                 // Rollback static NAT operation in current session
                 for (int i = 0; i < loadBalancingRules.size(); i++) {
@@ -1034,7 +1032,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Override
     public boolean manageGuestNetworkWithExternalLoadBalancer(boolean add, Network guestConfig) throws ResourceUnavailableException, InsufficientCapacityException {
         if (guestConfig.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("External load balancer can only be used for guest networks.");
+            logger.trace("External load balancer can only be used for guest networks.");
             return false;
         }
 
@@ -1051,17 +1049,17 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
                 if (lbDeviceVO == null) {
                     String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
-                    s_logger.error(msg);
+                    logger.error(msg);
                     throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
                 }
             }
             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
-            s_logger.debug("Allocated external load balancer device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
+            logger.debug("Allocated external load balancer device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
         } else {
             // find the load balancer device allocated for the network
             ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig);
             if (lbDeviceVO == null) {
-                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
+                logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
                     + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
                 return true;
             }
@@ -1087,14 +1085,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             selfIp = _ipAddrMgr.acquireGuestIpAddress(guestConfig, null);
             if (selfIp == null) {
                 String msg = "failed to acquire guest IP address so not implementing the network on the external load balancer ";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new InsufficientNetworkCapacityException(msg, Network.class, guestConfig.getId());
             }
         } else {
             // get the self-ip used by the load balancer
             Nic selfipNic = getPlaceholderNic(guestConfig);
             if (selfipNic == null) {
-                s_logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
+                logger.warn("Network shutdwon requested on external load balancer element, which did not implement the network."
                     + " Either network implement failed half way through or already network shutdown is completed. So just returning.");
                 return true;
             }
@@ -1115,7 +1113,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             String answerDetails = (answer != null) ? answer.getDetails() : null;
             answerDetails = (answerDetails != null) ? " due to " + answerDetails : "";
             String msg = "External load balancer was unable to " + action + " the guest network on the external load balancer in zone " + zone.getName() + answerDetails;
-            s_logger.error(msg);
+            logger.error(msg);
             throw new ResourceUnavailableException(msg, Network.class, guestConfig.getId());
         }
 
@@ -1131,14 +1129,14 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             boolean releasedLB = freeLoadBalancerForNetwork(guestConfig);
             if (!releasedLB) {
                 String msg = "Failed to release the external load balancer used for the network: " + guestConfig.getId();
-                s_logger.error(msg);
+                logger.error(msg);
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             Account account = _accountDao.findByIdIncludingRemoved(guestConfig.getAccountId());
             String action = add ? "implemented" : "shut down";
-            s_logger.debug("External load balancer has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() +
+            logger.debug("External load balancer has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() +
                 ") with VLAN tag " + guestVlanTag);
         }
 
@@ -1196,20 +1194,20 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         List<Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Service.Firewall);
         //Only support one provider now
         if (providers == null) {
-            s_logger.error("Cannot find firewall provider for network " + network.getId());
+            logger.error("Cannot find firewall provider for network " + network.getId());
             return null;
         }
         if (providers.size() != 1) {
-            s_logger.error("Found " + providers.size() + " firewall provider for network " + network.getId());
+            logger.error("Found " + providers.size() + " firewall provider for network " + network.getId());
             return null;
         }
 
         NetworkElement element = _networkModel.getElementImplementingProvider(providers.get(0).getName());
         if (!(element instanceof IpDeployer)) {
-            s_logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
+            logger.error("The firewall provider for network " + network.getName() + " don't have ability to deploy IP address!");
             return null;
         }
-        s_logger.info("Let " + element.getName() + " handle ip association for " + getName() + " in network " + network.getId());
+        logger.info("Let " + element.getName() + " handle ip association for " + getName() + " in network " + network.getId());
         return (IpDeployer)element;
     }
 
@@ -1231,7 +1229,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         } else {
             ExternalLoadBalancerDeviceVO lbDeviceVO = getExternalLoadBalancerForNetwork(network);
             if (lbDeviceVO == null) {
-                s_logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
+                logger.warn("There is no external load balancer device assigned to this network either network is not implement are already shutdown so just returning");
                 return null;
             } else {
                 externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
@@ -1241,7 +1239,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         boolean externalLoadBalancerIsInline = _networkMgr.isNetworkInlineMode(network);
 
         if (network.getState() == Network.State.Allocated) {
-            s_logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() +
+            logger.debug("External load balancer was asked to apply LB rules for network with ID " + network.getId() +
                 "; this network is not implemented. Skipping backend commands.");
             return null;
         }
@@ -1293,7 +1291,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 return answer == null ? null : answer.getLoadBalancers();
             }
         } catch (Exception ex) {
-            s_logger.error("Exception Occurred ", ex);
+            logger.error("Exception Occurred ", ex);
         }
         //null return is handled by clients
         return null;

@@ -27,5 +27,3 @@ mysqladmin -S /tmp/mysql$1/mysqld.sock shutdown -u root
 rm -rf /tmp/mysql$1
 
 echo "Deleting db directories"
-
-

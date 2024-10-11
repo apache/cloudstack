@@ -44,7 +44,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -187,6 +187,7 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         loginCmdResponse.setFirstName("firstName");
         loginCmdResponse.setLastName("lastName");
         loginCmdResponse.setSessionKey("newSessionKeyString");
+        loginCmdResponse.set2FAenabled("false");
         Mockito.when(apiServer.loginUser(nullable(HttpSession.class), nullable(String.class), nullable(String.class),
                 nullable(Long.class), nullable(String.class), nullable(InetAddress.class), nullable(Map.class))).thenReturn(loginCmdResponse);
         Mockito.doNothing().when(resp).sendRedirect(nullable(String.class));

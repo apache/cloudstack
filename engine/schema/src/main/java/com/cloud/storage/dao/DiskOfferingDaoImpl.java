@@ -32,7 +32,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -58,16 +57,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         UniqueNameSearch.done();
 
         _computeOnlyAttr = _allAttributes.get("computeOnly");
-    }
-
-    @Override
-    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        return super.searchIncludingRemoved(sc, filter, lock, cache);
-    }
-
-    @Override
-    public <K> List<K> customSearchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
-        return super.customSearchIncludingRemoved(sc, filter);
     }
 
     @Override
@@ -156,5 +145,23 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         diskOffering.setRemoved(new Date());
 
         return update(id, diskOffering);
+    }
+
+    @Override
+    public List<DiskOfferingVO> listByStorageTag(String tag) {
+        SearchBuilder<DiskOfferingVO> sb = createSearchBuilder();
+        sb.and("tagNotNull", sb.entity().getTags(), SearchCriteria.Op.NNULL);
+        sb.and().op("tagEq", sb.entity().getTags(), SearchCriteria.Op.EQ);
+        sb.or("tagStartLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagMidLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.or("tagEndLike", sb.entity().getTags(), SearchCriteria.Op.LIKE);
+        sb.cp();
+        sb.done();
+        SearchCriteria<DiskOfferingVO> sc = sb.create();
+        sc.setParameters("tagEq", tag);
+        sc.setParameters("tagStartLike", tag + ",%");
+        sc.setParameters("tagMidLike", "%," + tag + ",%");
+        sc.setParameters("tagEndLike",   "%," + tag);
+        return listBy(sc);
     }
 }

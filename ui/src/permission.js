@@ -26,11 +26,11 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER, CURRENT_PROJECT } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const allowList = ['login'] // no redirect allowlist
+const allowList = ['login', 'VerifyOauth', 'forgotPassword', 'resetPassword'] // no redirect allowlist
 
 router.beforeEach((to, from, next) => {
   // start progress bar
@@ -56,10 +56,44 @@ router.beforeEach((to, from, next) => {
 
   const validLogin = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
+    var currentURL = new URL(window.location.href)
+    var urlParams = new URLSearchParams(currentURL.search)
+    var code = urlParams.get('code')
+    if (code != null) {
+      urlParams.delete('code')
+    }
+    currentURL.search = ''
+    window.history.replaceState(null, null, currentURL.toString())
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
+    } else if (to.path === '/verify2FA' || to.path === '/setup2FA') {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' }) || store.getters.twoFaProvider
+      if ((store.getters.twoFaEnabled && !store.getters.loginFlag) || (isSAML === true && twoFaEnabled === true)) {
+        console.log('Do Two-factor authentication')
+        store.commit('SET_2FA_PROVIDER', twoFaProvider)
+        next()
+      } else {
+        next({ path: '/dashboard' })
+        NProgress.done()
+      }
     } else {
+      const isSAML = JSON.parse(Cookies.get('isSAML') || Cookies.get('isSAML', { path: '/client' }) || false)
+      const twoFaEnabled = JSON.parse(Cookies.get('twoFaEnabled') || Cookies.get('twoFaEnabled', { path: '/client' }) || false)
+      const twoFaProvider = Cookies.get('twoFaProvider') || Cookies.get('twoFaProvider', { path: '/client' })
+      if (isSAML === true && !store.getters.loginFlag && to.path !== '/dashboard') {
+        if (twoFaEnabled === true && twoFaProvider !== '' && twoFaProvider !== undefined) {
+          next({ path: '/verify2FA' })
+          return
+        }
+        if (twoFaEnabled === true && (twoFaProvider === '' || twoFaProvider === undefined)) {
+          next({ path: '/setup2FA' })
+          return
+        }
+        store.commit('SET_LOGIN_FLAG', true)
+      }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
@@ -78,24 +112,31 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              store.dispatch('ToggleTheme', 'light')
+              var project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              if (project == null) {
+                project = {}
+                store.commit('SET_PROJECT', project)
+              }
+              store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
             })
           })
           .catch(() => {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: 'Error',
-              description: i18n.global.t('message.error.discovering.feature'),
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            if (to.path === '/user/login') {
+              notification.error({
+                top: '65px',
+                message: 'Error',
+                description: i18n.global.t('message.error.discovering.feature'),
+                duration: 0,
+                onClose: () => {
+                  let countNotify = store.getters.countNotify
+                  countNotify > 0 ? countNotify-- : countNotify = 0
+                  store.commit('SET_COUNT_NOTIFY', countNotify)
+                }
+              })
+            }
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })
             })
@@ -105,7 +146,16 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
-    if (allowList.includes(to.name)) {
+    if (window.location.href.includes('verifyOauth') && to.name === undefined) {
+      currentURL = new URL(window.location.href)
+      urlParams = new URLSearchParams(currentURL.search)
+      code = urlParams.get('code')
+      urlParams.delete('verifyOauth')
+      urlParams.delete('state')
+      currentURL.search = '?code=' + code
+      window.history.replaceState(null, null, currentURL.toString())
+      next({ path: '/verifyOauth', query: { redirect: to.fullPath } })
+    } else if (allowList.includes(to.name)) {
       next()
     } else {
       next({ path: '/user/login', query: { redirect: to.fullPath } })

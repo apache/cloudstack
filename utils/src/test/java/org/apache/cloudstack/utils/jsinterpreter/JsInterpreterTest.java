@@ -35,22 +35,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import javax.script.ScriptEngine;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.xml.*", "org.apache.xerces.*", "org.xml.*", "org.w3c.*"})
-@PrepareForTest(JsInterpreter.class)
+@RunWith(MockitoJUnitRunner.class)
 public class JsInterpreterTest {
-    private long timeout = 2000;
-
     @InjectMocks
     @Spy
-    JsInterpreter jsInterpreterSpy = new JsInterpreter(timeout);
+    JsInterpreter jsInterpreterSpy = new JsInterpreter();
 
     @Mock
     ExecutorService executorMock;
@@ -95,7 +89,6 @@ public class JsInterpreterTest {
     public void executeScriptTestReturnResultOfScriptExecution() {
         String script = "5";
         Object expected = new Object();
-        Mockito.doReturn(script).when(jsInterpreterSpy).addVariablesToScript(Mockito.anyString());
         Mockito.doReturn(expected).when(jsInterpreterSpy).executeScript(Mockito.anyString());
 
         Object result = jsInterpreterSpy.executeScript(script);
@@ -173,9 +166,8 @@ public class JsInterpreterTest {
     }
 
     @Test
-    @PrepareForTest(NashornScriptEngineFactory.class)
     public void setScriptEngineDisablingJavaLanguageTest() {
-        NashornScriptEngineFactory nashornScriptEngineFactoryMock = Mockito.mock(NashornScriptEngineFactory.class);
+        NashornScriptEngineFactory nashornScriptEngineFactoryMock = Mockito.spy(NashornScriptEngineFactory.class);
         ScriptEngine scriptEngineMock = Mockito.mock(ScriptEngine.class);
 
         Mockito.doReturn(scriptEngineMock).when(nashornScriptEngineFactoryMock).getScriptEngine(Mockito.anyString());
@@ -184,5 +176,23 @@ public class JsInterpreterTest {
 
         Assert.assertEquals(scriptEngineMock, jsInterpreterSpy.interpreter);
         Mockito.verify(nashornScriptEngineFactoryMock).getScriptEngine("--no-java");
+    }
+
+    @Test
+    public void injectStringVariableTestNullValueDoNothing() {
+        jsInterpreterSpy.variables = new LinkedHashMap<>();
+
+        jsInterpreterSpy.injectStringVariable("a", null);
+
+        Assert.assertTrue(jsInterpreterSpy.variables.isEmpty());
+    }
+
+    @Test
+    public void injectStringVariableTestNotNullValueSurroundWithDoubleQuotes() {
+        jsInterpreterSpy.variables = new LinkedHashMap<>();
+
+        jsInterpreterSpy.injectStringVariable("a", "b");
+
+        Assert.assertEquals(jsInterpreterSpy.variables.get("a"), "\"b\"");
     }
 }

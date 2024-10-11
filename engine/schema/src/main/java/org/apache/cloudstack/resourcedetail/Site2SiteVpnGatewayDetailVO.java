@@ -80,6 +80,3 @@ public class Site2SiteVpnGatewayDetailVO implements ResourceDetail {
         return display;
     }
 }
-
-
-

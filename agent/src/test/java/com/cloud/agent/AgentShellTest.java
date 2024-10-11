@@ -26,20 +26,21 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.cloud.utils.StringUtils;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class AgentShellTest {
 
     @InjectMocks
@@ -57,6 +58,18 @@ public class AgentShellTest {
 
     @Mock
     UUID uuidMock;
+
+    MockedStatic<AgentPropertiesFileHandler> agentPropertiesFileHandlerMocked;
+
+    @Before
+    public void setUp() throws Exception {
+         agentPropertiesFileHandlerMocked = Mockito.mockStatic(AgentPropertiesFileHandler.class, Mockito.CALLS_REAL_METHODS);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        agentPropertiesFileHandlerMocked.close();
+    }
 
     @Test
     public void parseCommand() throws ConfigurationException {
@@ -106,44 +119,35 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getPortOrWorkersTestValueIsNullGetFromProperty() {
         int expected = 195;
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
 
         int result = agentShellSpy.getPortOrWorkers(null, propertyIntegerMock);
         Assert.assertEquals(expected, result);
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getPortOrWorkersTestValueIsNotAValidIntegerReturnDefaultFromProperty() {
         int expected = 42;
-
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
         Mockito.doReturn(expected).when(propertyIntegerMock).getDefaultValue();
 
         int result = agentShellSpy.getPortOrWorkers("test", propertyIntegerMock);
         Assert.assertEquals(expected, result);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getPortOrWorkersTestValueIsAValidIntegerReturnValue() {
         int expected = 42;
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
         Mockito.doReturn(79).when(propertyIntegerMock).getDefaultValue();
 
         int result = agentShellSpy.getPortOrWorkers(String.valueOf(expected), propertyIntegerMock);
         Assert.assertEquals(expected, result);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
     }
 
     @Test
@@ -183,41 +187,34 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getZoneOrPodTestValueIsNullAndPropertyStartsAndEndsWithAtSignReturnPropertyDefaultValue() {
         String expected = "default";
-
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("test");
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("test");
 
         Mockito.doReturn(true).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
         Mockito.doReturn(expected).when(propertyStringMock).getDefaultValue();
 
         String result = agentShellSpy.getZoneOrPod(null, propertyStringMock);
         Assert.assertEquals(expected, result);
+
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getZoneOrPodTestValueIsNullAndPropertyDoesNotStartAndEndWithAtSignReturnPropertyDefaultValue() {
         String expected = "test";
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
 
         Mockito.doReturn(false).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        Mockito.doReturn("default").when(propertyStringMock).getDefaultValue();
 
         String result = agentShellSpy.getZoneOrPod(null, propertyStringMock);
         Assert.assertEquals(expected, result);
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getZoneOrPodTestValueIsNotNullAndStartsAndEndsWithAtSignReturnPropertyDefaultValue() {
         String expected = "default";
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
 
         Mockito.doReturn(true).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
         Mockito.doReturn(expected).when(propertyStringMock).getDefaultValue();
@@ -225,25 +222,20 @@ public class AgentShellTest {
         String result = agentShellSpy.getZoneOrPod("test", propertyStringMock);
         Assert.assertEquals(expected, result);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getZoneOrPodTestValueIsNotNullAndDoesNotStartAndEndWithAtSignReturnPropertyDefaultValue() {
         String expected = "test";
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
 
         Mockito.doReturn(false).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        Mockito.doReturn("default").when(propertyStringMock).getDefaultValue();
 
         String result = agentShellSpy.getZoneOrPod(expected, propertyStringMock);
         Assert.assertEquals(expected, result);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
     }
 
     @Test
@@ -255,12 +247,10 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getGuidTestGuidIsNullReturnProperty() throws ConfigurationException {
         String expected = "test";
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
 
         String result = agentShellSpy.getGuid(null);
 
@@ -268,34 +258,34 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest({AgentShell.class, AgentPropertiesFileHandler.class})
     public void getGuidTestGuidAndPropertyAreNullIsDeveloperGenerateNewUuid() throws ConfigurationException {
         String expected = "test";
 
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class, UUID.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(null, true);
-        PowerMockito.when(UUID.randomUUID()).thenReturn(uuidMock);
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(null, true);
+        MockedStatic<UUID> uuidMocked = Mockito.mockStatic(UUID.class);
+        uuidMocked.when(() -> UUID.randomUUID()).thenReturn(uuidMock);
         Mockito.doReturn(expected).when(uuidMock).toString();
 
         String result = agentShellSpy.getGuid(null);
 
         Assert.assertEquals(expected, result);
+        uuidMocked.close();
     }
 
     @Test(expected = ConfigurationException.class)
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void getGuidTestGuidAndPropertyAreNullIsNotDeveloperThrowConfigurationException() throws ConfigurationException {
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(null, false);
+
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(null, false);
 
         agentShellSpy.getGuid(null);
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void setHostTestValueIsNotNullAndStartsAndEndsWithAtSignThrowConfigurationException(){
         Mockito.doReturn(true).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+
+
+
 
         boolean error = false;
 
@@ -309,16 +299,14 @@ public class AgentShellTest {
             throw new AssertionError("This test expects a ConfigurationException.");
         }
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void setHostTestValueIsNullPropertyStartsAndEndsWithAtSignThrowConfigurationException(){
         Mockito.doReturn(true).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("test");
+
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("test");
 
         boolean error = false;
 
@@ -332,39 +320,46 @@ public class AgentShellTest {
             throw new AssertionError("This test expects a ConfigurationException.");
         }
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class);
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()));
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void setHostTestValueIsNotNullAndDoesNotStartAndEndWithAtSignSetHosts() throws ConfigurationException {
         String expected = "test";
         Mockito.doReturn(false).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
 
         agentShellSpy.setHost(expected);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class, Mockito.never());
-        AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()), Mockito.never());
 
         Mockito.verify(agentShellSpy).setHosts(expected);
     }
 
     @Test
-    @PrepareForTest(AgentPropertiesFileHandler.class)
     public void setHostTestValueIsNullPropertyDoesNotStartAndEndWithAtSignSetHosts() throws ConfigurationException {
         String expected = "test";
 
         Mockito.doReturn(false).when(agentShellSpy).isValueStartingAndEndingWithAtSign(Mockito.any());
-        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
-        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
+
+        agentPropertiesFileHandlerMocked.when(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn(expected);
 
         agentShellSpy.setHost(null);
 
-        PowerMockito.verifyStatic(AgentPropertiesFileHandler.class);
+        agentPropertiesFileHandlerMocked.verify(() -> AgentPropertiesFileHandler.getPropertyValue(Mockito.any()));
         AgentPropertiesFileHandler.getPropertyValue(Mockito.any());
 
         Mockito.verify(agentShellSpy).setHosts(expected);
+    }
+
+    @Test
+    public void updateAndGetConnectedHost() {
+        String expected = "test";
+
+        AgentShell shell = new AgentShell();
+        shell.setHosts("test");
+        shell.getNextHost();
+        shell.updateConnectedHost();
+
+        Assert.assertEquals(expected, shell.getConnectedHost());
     }
 }

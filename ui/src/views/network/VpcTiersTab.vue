@@ -68,7 +68,7 @@
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
                 :disabled="!('deployVirtualMachine' in $store.getters.apis)"
-                @click="$router.push({ path: '/action/deployVirtualMachine?networkid=' + network.id + '&zoneid=' + network.zoneid })">
+                @click="$router.push({ path: '/action/deployVirtualMachine', query: { networkid: network.id, zoneid: network.zoneid } })">
                 <template #icon><plus-outlined /></template>
                 {{ $t('label.vm.add') }}
               </a-button>
@@ -80,17 +80,19 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
-                  </router-link>
-                </template>
-                <template #state="{ record }">
-                  <status :text="record.state" displayText></status>
-                </template>
-                <template #ip="{ record }">
-                  <div v-for="nic in record.nic" :key="nic.id">
-                    {{ nic.networkid === network.id ? nic.ipaddress : '' }}
-                  </div>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
+                  <template v-if="column.key === 'state'">
+                    <status :text="record.state" displayText></status>
+                  </template>
+                  <template v-if="column.key === 'ip'">
+                    <div v-for="nic in record.nic" :key="nic.id">
+                      {{ nic.networkid === network.id ? nic.ipaddress : '' }}
+                    </div>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -110,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="displayCollapsible[network.id] ? null: 'disabled'" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"
@@ -127,9 +129,11 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
-                  </router-link>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -188,9 +192,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
@@ -216,6 +220,25 @@
             <a-input
               v-model:value="form.vlan"
               :placeholder="$t('label.vlan')"/>
+          </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyasnumber">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="$t('label.asnumber')"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="$t('label.asnumber')"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
@@ -252,9 +275,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id" :label="`${item.name}(${item.description})`">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
@@ -316,9 +339,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
+              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]" :label="key">
                 {{ key }}
               </a-select-option>
             </a-select>
@@ -384,9 +407,9 @@ export default {
       },
       internalLbCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.sourceipaddress'),
@@ -401,58 +424,20 @@ export default {
           dataIndex: 'account'
         }
       ],
-      LBPublicIPCols: [
-        {
-          title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.vm'),
-          dataIndex: 'virtualmachinename'
-        }
-      ],
-      StaticNatCols: [
-        {
-          title: this.$t('label.ips'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.zoneid'),
-          dataIndex: 'zonename'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        }
-      ],
       vmCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
-          title: this.$t('label.ip'),
-          slots: { customRender: 'ip' }
+          key: 'ip',
+          title: this.$t('label.ip')
         }
       ],
       customStyle: 'margin-bottom: 0; border: none',
@@ -470,7 +455,13 @@ export default {
         }
       },
       publicLBExists: false,
-      setMTU: false
+      setMTU: false,
+      isNsxEnabled: false,
+      isOfferingNatMode: false,
+      isOfferingRoutedMode: false,
+      displayCollapsible: [],
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   created () {
@@ -485,6 +476,23 @@ export default {
     }
   },
   methods: {
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering.routingmode && this.selectedNetworkOffering.routingmode.toLowerCase() === 'dynamic'
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.resource.zoneid
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
+    },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
@@ -493,8 +501,8 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
-    showIlb (network) {
-      return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    showIlb (network, networkOffering) {
+      return ((networkOffering.supportsinternallb && network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value.split(',').includes('Internal')).length > 0)).length > 0)) || false
     },
     updateMtu () {
       if (this.form.privatemtu > this.privateMtuMax) {
@@ -507,12 +515,14 @@ export default {
     fetchData () {
       this.networks = this.resource.network
       this.fetchMtuForZone()
+      this.getVpcNetworkOffering()
       if (!this.networks || this.networks.length === 0) {
         return
       }
       for (const network of this.networks) {
         this.fetchLoadBalancers(network.id)
         this.fetchVMs(network.id)
+        this.updateDisplayCollapsible(network.networkofferingid, network)
       }
       this.publicLBNetworkExists()
     },
@@ -522,6 +532,7 @@ export default {
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
+        this.isNsxEnabled = json?.listzonesresponse?.zone?.[0]?.isnsxenabled || false
       })
     },
     fetchNetworkAclList () {
@@ -549,6 +560,30 @@ export default {
         })
       })
     },
+    updateDisplayCollapsible (offeringId, network) {
+      api('listNetworkOfferings', {
+        id: offeringId
+      }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        this.displayCollapsible[network.id] = this.showIlb(network, networkOffering)
+      }).catch(e => {
+        this.$notifyError(e)
+      })
+    },
+    getVpcNetworkOffering () {
+      return new Promise((resolve, reject) => {
+        api('listVPCOfferings', {
+          id: this.resource.vpcofferingid
+        }).then(json => {
+          const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
+          resolve(vpcOffering)
+          this.isOfferingNatMode = vpcOffering?.networkmode === 'NATTED' || false
+          this.isOfferingRoutedMode = vpcOffering?.networkmode === 'ROUTED' || false
+        }).catch(e => {
+          reject(e)
+        })
+      })
+    },
     publicLBNetworkExists () {
       api('listNetworks', {
         vpcid: this.resource.id,
@@ -556,7 +591,7 @@ export default {
       }).then(async json => {
         var lbNetworks = json.listnetworksresponse.network || []
         if (lbNetworks.length > 0) {
-          this.publicLBExists = true
+          this.publicLBExists = false
           for (var idx = 0; idx < lbNetworks.length; idx++) {
             const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
             const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -572,24 +607,41 @@ export default {
     fetchNetworkOfferings () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkOfferings', {
+      const params = {
         forvpc: true,
         guestiptype: 'Isolated',
-        supportedServices: 'SourceNat',
         state: 'Enabled'
-      }).then(json => {
+      }
+      if (!this.isNsxEnabled && !this.isOfferingRoutedMode) {
+        params.supportedServices = 'SourceNat'
+      }
+      api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
-        if (this.publicLBExists) {
-          for (var index in this.networkOfferings) {
-            const offering = this.networkOfferings[index]
-            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
-            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+        const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
+        for (var index in this.networkOfferings) {
+          const offering = this.networkOfferings[index]
+          const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+          if (this.publicLBExists && (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1)) {
+            filteredOfferings.push(offering)
+          } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
+            const vpcLbServiceProvider = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider[0].name
+            const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
+            if (vpcLbServiceProvider && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProvider === offeringLbServiceProvider))) {
               filteredOfferings.push(offering)
             }
+          } else {
+            filteredOfferings.push(offering)
           }
-          this.networkOfferings = filteredOfferings
         }
+        this.networkOfferings = filteredOfferings
+        if (this.isNsxEnabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
+        }
+        if (this.resource.asnumberid) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.routingmode === 'Dynamic')
+        }
+        this.fetchZoneASNumbers()
         this.form.networkOffering = this.networkOfferings[0].id
       }).catch(error => {
         this.$notifyError(error)
@@ -698,6 +750,10 @@ export default {
           params.privatemtu = values.privatemtu
         }
 
+        if (values.asnumber && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
+        }
+
         api('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
@@ -726,6 +782,7 @@ export default {
 
         api('createLoadBalancer', {
           name: values.name,
+          sourceipaddress: values.sourceIP,
           sourceport: values.sourcePort,
           instanceport: values.instancePort,
           algorithm: values.algorithm,

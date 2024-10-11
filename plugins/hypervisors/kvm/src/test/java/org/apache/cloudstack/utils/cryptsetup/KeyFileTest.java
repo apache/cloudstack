@@ -20,11 +20,14 @@ package org.apache.cloudstack.utils.cryptsetup;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@RunWith(MockitoJUnitRunner.class)
 public class KeyFileTest {
 
     @Test

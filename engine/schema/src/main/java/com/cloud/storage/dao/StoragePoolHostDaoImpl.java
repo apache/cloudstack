@@ -23,24 +23,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import org.springframework.stereotype.Component;
 
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Long> implements StoragePoolHostDao {
-    public static final Logger s_logger = Logger.getLogger(StoragePoolHostDaoImpl.class.getName());
 
     protected final SearchBuilder<StoragePoolHostVO> PoolSearch;
     protected final SearchBuilder<StoragePoolHostVO> HostSearch;
     protected final SearchBuilder<StoragePoolHostVO> PoolHostSearch;
+
+    protected SearchBuilder<StoragePoolHostVO> poolNotInClusterSearch;
+
+    @Inject
+    HostDao hostDao;
 
     protected static final String HOST_FOR_POOL_SEARCH = "SELECT * FROM storage_pool_host_ref ph,  host h where  ph.host_id = h.id and ph.pool_id=? and h.status=? ";
 
@@ -68,6 +77,15 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         PoolHostSearch.and("host_id", PoolHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         PoolHostSearch.done();
 
+    }
+
+    @PostConstruct
+    public void init(){
+        poolNotInClusterSearch = createSearchBuilder();
+        poolNotInClusterSearch.and("poolId", poolNotInClusterSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        SearchBuilder<HostVO> hostSearch = hostDao.createSearchBuilder();
+        poolNotInClusterSearch.join("hostSearch", hostSearch, hostSearch.entity().getId(), poolNotInClusterSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        hostSearch.and("clusterId", hostSearch.entity().getClusterId(), SearchCriteria.Op.NEQ);
     }
 
     @Override
@@ -115,10 +133,10 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                     result.add(findById(id));
                 }
             }catch (SQLException e) {
-                s_logger.warn("listByHostStatus:Exception: ", e);
+                logger.warn("listByHostStatus:Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("listByHostStatus:Exception: ", e);
+            logger.warn("listByHostStatus:Exception: ", e);
         }
         return result;
     }
@@ -141,10 +159,10 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                     hosts.add(hostId);
                 }
             } catch (SQLException e) {
-                s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+                logger.warn("findHostsConnectedToPools:Exception: ", e);
             }
         } catch (Exception e) {
-            s_logger.warn("findHostsConnectedToPools:Exception: ", e);
+            logger.warn("findHostsConnectedToPools:Exception: ", e);
         }
 
         return hosts;
@@ -165,7 +183,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-            s_logger.debug("SQLException: ", e);
+            logger.debug("SQLException: ", e);
         }
         return l;
     }
@@ -195,5 +213,13 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         txn.start();
         remove(sc);
         txn.commit();
+    }
+
+    @Override
+    public Pair<List<StoragePoolHostVO>, Integer> listByPoolIdNotInCluster(long clusterId, long poolId) {
+        SearchCriteria<StoragePoolHostVO> sc = poolNotInClusterSearch.create();
+        sc.setParameters("poolId", poolId);
+        sc.setJoinParameters("hostSearch", "clusterId", clusterId);
+        return searchAndCount(sc, null);
     }
 }

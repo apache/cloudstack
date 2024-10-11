@@ -17,10 +17,12 @@
 package com.cloud.vm;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -65,7 +67,7 @@ public interface VirtualMachineManager extends Manager {
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
 
     ConfigKey<Boolean> VmConfigDriveUseHostCacheOnUnsupportedPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.use.host.cache.on.unsupported.pool", "true",
-            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone);
+            "If true, config drive is created on the host cache storage when vm.configdrive.primarypool.enabled is true and the primary pool type doesn't support config drive.", true, ConfigKey.Scope.Zone, VmConfigDriveOnPrimaryPool.key());
 
     ConfigKey<Boolean> VmConfigDriveForceHostCacheUse = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.force.host.cache.use", "false",
             "If true, config drive is forced to create on the host cache storage. Currently only supported for KVM.", true, ConfigKey.Scope.Zone);
@@ -81,6 +83,23 @@ public interface VirtualMachineManager extends Manager {
 
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
+
+    ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
+            "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<String> VmMetadataManufacturer = new ConfigKey<>("Advanced", String.class,
+            "vm.metadata.manufacturer", "Apache Software Foundation",
+            "If provided, a custom manufacturer will be used in the instance metadata. When an empty" +
+                    "value is set then default manufacturer will be 'Apache Software Foundation'. " +
+                    "A custom manufacturer may break cloud-init functionality with CloudStack datasource. Please " +
+                    "refer documentation", true, ConfigKey.Scope.Zone);
+    ConfigKey<String> VmMetadataProductName = new ConfigKey<>("Advanced", String.class,
+            "vm.metadata.product", "",
+            "If provided, a custom product name will be used in the instance metadata. When an empty" +
+                    "value is set then default product name will be 'CloudStack <HYPERVISOR_NAME> Hypervisor'. " +
+                    "A custom product name may break cloud-init functionality with CloudStack datasource. Please " +
+                    "refer documentation",
+            true, ConfigKey.Scope.Zone);
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
@@ -250,7 +269,7 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean unmanage(String vmUuid);
 
-    UserVm restoreVirtualMachine(long vmId, Long newTemplateId) throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm restoreVirtualMachine(long vmId, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 
     boolean checkIfVmHasClusterWideVolumes(Long vmId);
 
@@ -262,5 +281,30 @@ public interface VirtualMachineManager extends Manager {
     boolean isRootVolumeOnLocalStorage(long vmId);
 
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
+
+    Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm, boolean skipCurrentHostForStartingVm);
+
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmIds list of VM IDs
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
+    /**
+     * Obtains statistics for a list of VMs; CPU and network utilization
+     * @param hostId ID of the host
+     * @param hostName name of the host
+     * @param vmMap map of VM IDs and the corresponding VirtualMachine object
+     * @return map of VM ID and stats entry for the VM
+     */
+    HashMap<Long, ? extends VmStats> getVirtualMachineStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmDiskStats>> getVmDiskStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    HashMap<Long, List<? extends VmNetworkStats>> getVmNetworkStatistics(long hostId, String hostName, Map<Long, ? extends VirtualMachine> vmMap);
+
+    Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
 
 }

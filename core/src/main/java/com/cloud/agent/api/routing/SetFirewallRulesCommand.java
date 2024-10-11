@@ -111,9 +111,4 @@ public class SetFirewallRulesCommand extends NetworkElementCommand {
 
         return result;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
-    }
 }

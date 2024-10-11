@@ -26,16 +26,14 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.properties.EncryptableProperties;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 
 public class DbProperties {
-
-    private static final Logger log = Logger.getLogger(DbProperties.class);
+    protected static Logger LOGGER = LogManager.getLogger(DbProperties.class);
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;
@@ -46,11 +44,12 @@ public class DbProperties {
         checker.check(dbProps, dbEncryptionType);
 
         if (EncryptionSecretKeyChecker.useEncryption()) {
+            LOGGER.debug("encryptionsecretkeychecker using encryption");
+            EncryptionSecretKeyChecker.decryptAnyProperties(dbProps);
             return dbProps;
         } else {
-            EncryptableProperties encrProps = new EncryptableProperties(EncryptionSecretKeyChecker.getEncryptor());
-            encrProps.putAll(dbProps);
-            return encrProps;
+            LOGGER.debug("encryptionsecretkeychecker not using encryption");
+            return dbProps;
         }
     }
 
@@ -70,7 +69,7 @@ public class DbProperties {
 
                 if (is == null) {
                     System.err.println("Failed to find db.properties");
-                    log.error("Failed to find db.properties");
+                    LOGGER.error("Failed to find db.properties");
                 }
 
                 if (is != null) {
@@ -81,12 +80,10 @@ public class DbProperties {
                 checker.check(dbProps, dbEncryptionType);
 
                 if (EncryptionSecretKeyChecker.useEncryption()) {
-                    StandardPBEStringEncryptor encryptor = EncryptionSecretKeyChecker.getEncryptor();
-                    EncryptableProperties encrDbProps = new EncryptableProperties(encryptor);
-                    encrDbProps.putAll(dbProps);
-                    dbProps = encrDbProps;
+                    EncryptionSecretKeyChecker.decryptAnyProperties(dbProps);
                 }
             } catch (IOException e) {
+                LOGGER.error(String.format("Failed to load DB properties: %s", e.getMessage()), e);
                 throw new IllegalStateException("Failed to load db.properties", e);
             } finally {
                 IOUtils.closeQuietly(is);
@@ -94,6 +91,8 @@ public class DbProperties {
 
             properties = dbProps;
             loaded = true;
+        } else {
+            LOGGER.debug("DB properties were already loaded");
         }
 
         return properties;

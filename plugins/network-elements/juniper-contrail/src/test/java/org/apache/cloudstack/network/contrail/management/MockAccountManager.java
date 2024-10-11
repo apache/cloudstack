@@ -24,11 +24,13 @@ import java.net.InetAddress;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
@@ -70,7 +72,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
 public class MockAccountManager extends ManagerBase implements AccountManager {
-    private static final Logger s_logger = Logger.getLogger(MockAccountManager.class);
 
     @Inject
     AccountDao _accountDao;
@@ -95,7 +96,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
         }
         CallContext.register(_systemUser, _systemAccount);
-        s_logger.info("MockAccountManager initialization successful");
+        logger.info("MockAccountManager initialization successful");
         return true;
     }
 
@@ -170,6 +171,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public UserAccount getActiveUserAccount(String username, Long domainId) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
         return null;
     }
 
@@ -327,6 +333,25 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticator(Long domainId, Long userAccountId) {
+        return null;
+    }
+
+    @Override
+    public void verifyUsingTwoFactorAuthenticationCode(String code, Long domainId, Long userAccountId) {
+    }
+
+    @Override
+    public UserTwoFactorAuthenticationSetupResponse setupUserTwoFactorAuthentication(SetupUserTwoFactorAuthenticationCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public List<String> getApiNameList() {
+        return null;
+    }
+
+    @Override
     public boolean deleteUserAccount(long arg0) {
         // TODO Auto-generated method stub
         return false;
@@ -466,6 +491,16 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders() {
+        return null;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
+        return null;
+    }
+
+    @Override
     public void checkAccess(User user, ControlledEntity entity)
             throws PermissionDeniedException {
 
@@ -478,5 +513,15 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return null;
+    }
+
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
+                                               String currentPassword,
+                                               boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
     }
 }

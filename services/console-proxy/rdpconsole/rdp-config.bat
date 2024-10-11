@@ -39,4 +39,3 @@ sc config TermService start=auto
 rem Start TS service
 
 net start Termservice
-

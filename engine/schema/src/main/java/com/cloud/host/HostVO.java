@@ -16,13 +16,17 @@
 // under the License.
 package com.cloud.host;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -38,16 +42,25 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.cpu.CPU;
+import org.apache.cloudstack.util.CPUArchConverter;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import java.util.Arrays;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "host")
@@ -116,7 +129,7 @@ public class HostVO implements Host {
     private String storageMacAddressDeux;
 
     @Column(name = "hypervisor_type", updatable = true, nullable = false)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "proxy_port")
@@ -126,6 +139,7 @@ public class HostVO implements Host {
     private String resource;
 
     @Column(name = "fs_type")
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType fsType;
 
     @Column(name = "available")
@@ -140,6 +154,10 @@ public class HostVO implements Host {
 
     @Column(name = "hypervisor_version")
     private String hypervisorVersion;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
@@ -158,6 +176,14 @@ public class HostVO implements Host {
     // Call host dao to load it.
     @Transient
     List<String> hostTags;
+
+    /**
+     * This is a delayed load value.
+     * If the value is null, then this field has not been loaded yet.
+     * Call host dao to load it.
+     */
+    @Transient
+    Boolean isTagARule;
 
     // This value is only for saving and current cannot be loaded.
     @Transient
@@ -322,8 +348,13 @@ public class HostVO implements Host {
         return hostTags;
     }
 
-    public void setHostTags(List<String> hostTags) {
+    public void setHostTags(List<String> hostTags, Boolean isTagARule) {
         this.hostTags = hostTags;
+        this.isTagARule = isTagARule;
+    }
+
+    public Boolean getIsTagARule() {
+        return isTagARule;
     }
 
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
@@ -713,6 +744,15 @@ public class HostVO implements Host {
         return resourceState;
     }
 
+    @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
+    }
+
     public void setResourceState(ResourceState state) {
         resourceState = state;
     }
@@ -744,14 +784,60 @@ public class HostVO implements Host {
         this.uuid = uuid;
     }
 
-    public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering){
+    private Set<String> getHostServiceOfferingAndTemplateStrictTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
+        if (StringUtils.isEmpty(serviceOffering.getHostTag()) && StringUtils.isEmpty(template.getTemplateTag())) {
+            return new HashSet<>();
+        }
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
+        HashSet<String> tags = new HashSet<>();
+        if (StringUtils.isNotEmpty(serviceOffering.getHostTag())) {
+            tags.addAll(Arrays.asList(serviceOffering.getHostTag().split(",")));
+        }
+        if (StringUtils.isNotEmpty(template.getTemplateTag())) {
+            tags.add(template.getTemplateTag());
+        }
+        tags.removeIf(tag -> !strictHostTags.contains(tag));
+        tags.removeAll(hostTagsSet);
+        return tags;
+    }
+
+    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
+        if (serviceOffering == null || template == null) {
+            return false;
+        }
+        Set<String> tags = getHostServiceOfferingAndTemplateStrictTags(serviceOffering, template, strictHostTags);
+        if (tags.isEmpty()) {
+            return true;
+        }
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
+        return hostTagsSet.containsAll(tags);
+    }
+
+    public Set<String> getHostServiceOfferingAndTemplateMissingTags(ServiceOffering serviceOffering, VirtualMachineTemplate template, Set<String> strictHostTags) {
+        Set<String> tags = getHostServiceOfferingAndTemplateStrictTags(serviceOffering, template, strictHostTags);
+        if (tags.isEmpty()) {
+            return new HashSet<>();
+        }
+        List<String> hostTagsList = getHostTags();
+        HashSet<String> hostTagsSet = CollectionUtils.isNotEmpty(hostTagsList) ? new HashSet<>(hostTagsList) : new HashSet<>();
+        tags.removeAll(hostTagsSet);
+        return tags;
+    }
+
+    public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering) {
         if (serviceOffering == null) {
             return false;
         }
+
+        if (BooleanUtils.isTrue(this.getIsTagARule())) {
+            return TagAsRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value());
+        }
+
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
             return true;
         }
-
         List<String> serviceOfferingTags = Arrays.asList(serviceOffering.getHostTag().split(","));
         return this.getHostTags() != null && this.getHostTags().containsAll(serviceOfferingTags);
     }

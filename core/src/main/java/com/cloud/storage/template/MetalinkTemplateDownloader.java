@@ -28,7 +28,6 @@ import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
@@ -47,7 +46,6 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
     protected GetMethod request;
     private boolean toFileSet = false;
 
-    private static final Logger LOGGER = Logger.getLogger(MetalinkTemplateDownloader.class.getName());
 
     public MetalinkTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSize) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSize, callback);
@@ -60,7 +58,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
     protected GetMethod createRequest(String downloadUrl) {
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(followRedirects);
         if (!toFileSet) {
             String[] parts = downloadUrl.split("/");
             String filename = parts[parts.length - 1];
@@ -97,7 +95,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         try {
             client.executeMethod(request);
         } catch (IOException e) {
-            LOGGER.error("Error on HTTP request: " + e.getMessage());
+            logger.error("Error on HTTP request: " + e.getMessage());
             return false;
         }
         return performDownload();
@@ -110,7 +108,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            LOGGER.error("Error downloading template from: " + _downloadUrl + " due to: " + e.getMessage());
+            logger.error("Error downloading template from: " + _downloadUrl + " due to: " + e.getMessage());
             return false;
         }
         return true;
@@ -121,13 +119,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
             return 0;
         }
 
-        LOGGER.info("Starting metalink download from: " + _downloadUrl);
+        logger.info("Starting metalink download from: " + _downloadUrl);
         _start = System.currentTimeMillis();
 
         status = Status.IN_PROGRESS;
         List<String> metalinkUrls = UriUtils.getMetalinkUrls(_downloadUrl);
         if (CollectionUtils.isEmpty(metalinkUrls)) {
-            LOGGER.error("No URLs found for metalink: " + _downloadUrl);
+            logger.error("No URLs found for metalink: " + _downloadUrl);
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
@@ -140,11 +138,11 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
             i++;
         }
         if (!downloaded) {
-            LOGGER.error("Template couldnt be downloaded");
+            logger.error("Template couldn't be downloaded");
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
-        LOGGER.info("Template downloaded successfully on: " + _toFile);
+        logger.info("Template downloaded successfully on: " + _toFile);
         status = Status.DOWNLOAD_FINISHED;
         _downloadTime = System.currentTimeMillis() - _start;
         if (_callback != null) {
@@ -172,5 +170,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
     @Override
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        super.setFollowRedirects(followRedirects);
+        if (this.request != null) {
+            this.request.setFollowRedirects(followRedirects);
+        }
     }
 }

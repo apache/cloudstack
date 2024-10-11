@@ -30,6 +30,11 @@ public class VmDiskStatsEntry implements VmDiskStats {
     long bytesWrite = 0;
     long bytesRead = 0;
 
+    long deltaIoRead = 0;
+    long deltaIoWrite = 0;
+    long deltaBytesWrite = 0;
+    long deltaBytesRead = 0;
+
     public VmDiskStatsEntry() {
     }
 
@@ -92,6 +97,38 @@ public class VmDiskStatsEntry implements VmDiskStats {
     @Override
     public long getIOWrite() {
         return ioWrite;
+    }
+
+    public long getDeltaIoRead() {
+        return deltaIoRead;
+    }
+
+    public void setDeltaIoRead(long deltaIoRead) {
+        this.deltaIoRead = deltaIoRead;
+    }
+
+    public long getDeltaIoWrite() {
+        return deltaIoWrite;
+    }
+
+    public void setDeltaIoWrite(long deltaIoWrite) {
+        this.deltaIoWrite = deltaIoWrite;
+    }
+
+    public long getDeltaBytesWrite() {
+        return deltaBytesWrite;
+    }
+
+    public void setDeltaBytesWrite(long deltaBytesWrite) {
+        this.deltaBytesWrite = deltaBytesWrite;
+    }
+
+    public long getDeltaBytesRead() {
+        return deltaBytesRead;
+    }
+
+    public void setDeltaBytesRead(long deltaBytesRead) {
+        this.deltaBytesRead = deltaBytesRead;
     }
 
 }

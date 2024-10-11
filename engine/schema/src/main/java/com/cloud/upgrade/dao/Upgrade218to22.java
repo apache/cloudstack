@@ -34,7 +34,6 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.event.EventTypes;
@@ -45,8 +44,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-public class Upgrade218to22 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade218to22.class);
+public class Upgrade218to22 extends DbUpgradeAbstractImpl {
     boolean _basicZone;
 
     @Override
@@ -212,7 +210,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
     protected void upgradeDomR(Connection conn, long dcId, long domrId, Long publicNetworkId, long guestNetworkId, long controlNetworkId, String zoneType, String vnet)
         throws SQLException {
-        s_logger.debug("Upgrading domR" + domrId);
+        logger.debug("Upgrading domR" + domrId);
         try (
                 PreparedStatement pstmt =
             conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, domain_router.public_mac_address, domain_router.public_ip_address, domain_router.public_netmask, domain_router.guest_mac_address, domain_router.guest_ip_address, domain_router.guest_netmask, domain_router.vnet, domain_router.gateway FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");
@@ -274,7 +272,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
     protected void upgradeSsvm(Connection conn, long dataCenterId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType)
         throws SQLException {
-        s_logger.debug("Upgrading ssvm in " + dataCenterId);
+        logger.debug("Upgrading ssvm in " + dataCenterId);
         //select instance
         try (
                 PreparedStatement selectInstance =
@@ -284,7 +282,7 @@ public class Upgrade218to22 implements DbUpgrade {
             try (ResultSet instanceResult = selectInstance.executeQuery();) {
 
                 if (!instanceResult.next()) {
-                    s_logger.debug("Unable to find ssvm in data center " + dataCenterId);
+                    logger.debug("Unable to find ssvm in data center " + dataCenterId);
                     return;
                 }
 
@@ -309,7 +307,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     try (ResultSet hostResult = selectHost.executeQuery();) {
 
                         if (!hostResult.next()) {
-                            s_logger.debug("Unable to find ssvm in data center " + dataCenterId);
+                            logger.debug("Unable to find ssvm in data center " + dataCenterId);
                             return;
                         }
 
@@ -365,7 +363,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
     protected void upgradeConsoleProxy(Connection conn, long dcId, long cpId, long publicNetworkId, long managementNetworkId, long controlNetworkId, String zoneType)
         throws SQLException {
-        s_logger.debug("Upgrading cp" + cpId);
+        logger.debug("Upgrading cp" + cpId);
         try (PreparedStatement pstmt =
             conn.prepareStatement("SELECT vm_instance.id, vm_instance.state, vm_instance.private_mac_address, vm_instance.private_ip_address, vm_instance.private_netmask, console_proxy.public_mac_address, console_proxy.public_ip_address, console_proxy.public_netmask, console_proxy.guest_mac_address, console_proxy.guest_ip_address, console_proxy.guest_netmask, console_proxy.gateway, vm_instance.type FROM vm_instance INNER JOIN console_proxy ON vm_instance.id=console_proxy.id WHERE vm_instance.removed is NULL AND vm_instance.id=?");) {
             pstmt.setLong(1, cpId);
@@ -466,7 +464,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     vm[4] = rs.getString(5); // vm state
                     vms.add(vm);
                 }
-                s_logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
+                logger.debug("Upgrading " + vms.size() + " vms for router " + domainRouterId);
                 for (Object[] vm : vms) {
                     String state = (String)vm[4];
 
@@ -617,7 +615,7 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     protected void upgradeDirectUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
-        s_logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
+        logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
         try (PreparedStatement pstmt =
             conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET user_ip_address.source_network_id=vlan.network_id WHERE user_ip_address.data_center_id=? AND vlan.vlan_type=?");) {
             pstmt.setLong(1, dcId);
@@ -638,8 +636,8 @@ public class Upgrade218to22 implements DbUpgrade {
                     ip[3] = rs.getDate(4); // allocated
                     allocatedIps.add(ip);
                 }
-                s_logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
-                s_logger.debug("Updating mac addresses for data center id=" + dcId + ". Found " + allocatedIps.size() + " ip addresses to update");
+                logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
+                logger.debug("Updating mac addresses for data center id=" + dcId + ". Found " + allocatedIps.size() + " ip addresses to update");
                 for (Object[] allocatedIp : allocatedIps) {
                     try (PreparedStatement selectMacAddresses = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");) {
                         selectMacAddresses.setLong(1, dcId);
@@ -665,7 +663,7 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     protected void upgradePublicUserIpAddress(Connection conn, long dcId, long networkId, String vlanType) throws SQLException {
-        s_logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
+        logger.debug("Upgrading user ip address for data center " + dcId + " network " + networkId + " vlan type " + vlanType);
         try (PreparedStatement pstmt =
             conn.prepareStatement("UPDATE user_ip_address INNER JOIN vlan ON user_ip_address.vlan_db_id=vlan.id SET source_network_id=? WHERE user_ip_address.data_center_id=? AND vlan.vlan_type=?");) {
             pstmt.setLong(1, networkId);
@@ -763,7 +761,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
 
         } catch (SQLException e) {
-            s_logger.error("Can't update data center ", e);
+            logger.error("Can't update data center ", e);
             throw new CloudRuntimeException("Can't update data center ", e);
         }
     }
@@ -832,7 +830,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.setString(1, type);
             try (ResultSet rs = pstmt.executeQuery();) {
                 if (!rs.next()) {
-                    s_logger.error("Unable to find the network offering for networktype '" + type + "'");
+                    logger.error("Unable to find the network offering for networktype '" + type + "'");
                     throw new CloudRuntimeException("Unable to find the storage network offering.");
                 }
                 networkOfferingId = rs.getLong(1);
@@ -970,7 +968,7 @@ public class Upgrade218to22 implements DbUpgrade {
 
     private void updateRouters(Connection conn, Long dcId, long controlNetworkId, long basicDefaultDirectNetworkId, ArrayList<Object[]> routers) throws SQLException {
         for (Object[] router : routers) {
-            s_logger.debug("Updating domR with network id in basic zone id=" + dcId);
+            logger.debug("Updating domR with network id in basic zone id=" + dcId);
             updateNetworkForRouter(conn, router, basicDefaultDirectNetworkId);
             upgradeUserVms(conn, (Long)router[0], basicDefaultDirectNetworkId, (String)router[1], "untagged", "DirectPodBasedNetworkGuru", "Create");
             upgradeDomR(conn, dcId, (Long)router[0], null, basicDefaultDirectNetworkId, controlNetworkId, "Basic", "untagged");
@@ -1007,7 +1005,7 @@ public class Upgrade218to22 implements DbUpgrade {
             updateDomainRouter.setLong(2, (Long)router[0]);
             updateDomainRouter.executeUpdate();
         }
-        s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
+        logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
     }
 
     private void createDirectNetworks(Connection conn, Object[] dc, Long dcId) throws SQLException {
@@ -1029,7 +1027,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     updateNetworkInVlanTableforTag(conn, vlanNetworkMap, vlanId, tag);
 
                     upgradeDirectUserIpAddress(conn, dcId, vlanNetworkMap.get(tag), "DirectAttached");
-                    s_logger.debug("Created Direct networks and upgraded Direct ip addresses");
+                    logger.debug("Created Direct networks and upgraded Direct ip addresses");
                 }
             }
         }
@@ -1118,11 +1116,11 @@ public class Upgrade218to22 implements DbUpgrade {
                 String gateway = retrieveGateway(conn, directNetworkId);
 
                 updateDomainRouter(conn, routerId, directNetworkId);
-                s_logger.debug("NetworkId updated for router id=" + routerId + "with network id = " + directNetworkId);
+                logger.debug("NetworkId updated for router id=" + routerId + "with network id = " + directNetworkId);
                 upgradeUserVms(conn, routerId, directNetworkId, gateway, vnet, "DirectNetworkGuru", "Create");
-                s_logger.debug("Upgraded Direct vms in Advance zone id=" + dcId);
+                logger.debug("Upgraded Direct vms in Advance zone id=" + dcId);
                 upgradeDomR(conn, dcId, routerId, null, directNetworkId, controlNetworkId, "Advanced", vnet);
-                s_logger.debug("Upgraded Direct domRs in Advance zone id=" + dcId);
+                logger.debug("Upgraded Direct domRs in Advance zone id=" + dcId);
             }
         }
     }
@@ -1166,9 +1164,9 @@ public class Upgrade218to22 implements DbUpgrade {
                 PreparedStatement pstmt = conn.prepareStatement("UPDATE user_statistics SET device_type='DomainRouter'");
             ){
             pstmt.executeUpdate();
-            s_logger.debug("Upgraded userStatistcis with device_type=DomainRouter");
+            logger.debug("Upgraded userStatistcis with device_type=DomainRouter");
 
-            // update device_id infrormation
+            // update device_id information
             try (
                     PreparedStatement selectUserStatistics = conn.prepareStatement("SELECT id, account_id, data_center_id FROM user_statistics");
                     ResultSet rs = selectUserStatistics.executeQuery();
@@ -1182,7 +1180,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         selectNetworkType.setLong(1, dataCenterId);
                         try (ResultSet dcSet = selectNetworkType.executeQuery();) {
                             if (!dcSet.next()) {
-                                s_logger.error("Unable to get data_center information as a part of user_statistics update");
+                                logger.error("Unable to get data_center information as a part of user_statistics update");
                                 throw new CloudRuntimeException("Unable to get data_center information as a part of user_statistics update");
                             }
                             String dataCenterType = dcSet.getString(1);
@@ -1204,7 +1202,7 @@ public class Upgrade218to22 implements DbUpgrade {
                                     selectnonRemovedVms.setLong(2, dataCenterId);
                                     try (ResultSet nonRemovedVms = selectnonRemovedVms.executeQuery();) {
                                         if (nonRemovedVms.next()) {
-                                            s_logger.warn("Failed to find domR for for account id=" + accountId + " in zone id=" + dataCenterId +
+                                            logger.warn("Failed to find domR for account id=" + accountId + " in zone id=" + dataCenterId +
                                                     "; will try to locate domR based on user_vm info");
                                             //try to get domR information from the user_vm belonging to the account
                                             try (PreparedStatement selectNetworkType =
@@ -1213,14 +1211,14 @@ public class Upgrade218to22 implements DbUpgrade {
                                                 selectNetworkType.setLong(2, dataCenterId);
                                                 try (ResultSet userVmSet = selectNetworkType.executeQuery();) {
                                                     if (!userVmSet.next()) {
-                                                        s_logger.warn("Skipping user_statistics upgrade for account id=" + accountId + " in datacenter id=" + dataCenterId);
+                                                        logger.warn("Skipping user_statistics upgrade for account id=" + accountId + " in datacenter id=" + dataCenterId);
                                                         continue;
                                                     }
                                                     deviceId = userVmSet.getLong(1);
                                                 }
                                             }
                                         } else {
-                                            s_logger.debug("Account id=" + accountId + " doesn't own any user vms and domRs, so skipping user_statistics update");
+                                            logger.debug("Account id=" + accountId + " doesn't own any user vms and domRs, so skipping user_statistics update");
                                             continue;
                                         }
                                     }
@@ -1237,7 +1235,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("Upgraded userStatistcis with deviceId(s)");
+            logger.debug("Upgraded userStatistcis with deviceId(s)");
 
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to migrate usage events: ", e);
@@ -1263,7 +1261,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
 
             if (!rules.isEmpty()) {
-                s_logger.debug("Found " + rules.size() + " port forwarding rules to upgrade");
+                logger.debug("Found " + rules.size() + " port forwarding rules to upgrade");
                 for (Object[] rule : rules) {
                     long id = (Long)rule[0];
                     String sourcePort = (String)rule[2];
@@ -1275,7 +1273,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         try (ResultSet userIpAddressData = selectUserIpAddressData.executeQuery();) {
 
                             if (!userIpAddressData.next()) {
-                                s_logger.error("Unable to find public IP address " + publicIp);
+                                logger.error("Unable to find public IP address " + publicIp);
                                 throw new CloudRuntimeException("Unable to find public IP address " + publicIp);
                             }
                             int ipAddressId = userIpAddressData.getInt(1);
@@ -1285,7 +1283,7 @@ public class Upgrade218to22 implements DbUpgrade {
                             String privateIp = (String)rule[3];
 
                             // update port_forwarding_rules table
-                            s_logger.trace("Updating port_forwarding_rules table...");
+                            logger.trace("Updating port_forwarding_rules table...");
                             try (PreparedStatement selectInstanceId = conn.prepareStatement("SELECT instance_id FROM nics where network_id=? AND ip4_address=?");) {
                                 selectInstanceId.setLong(1, networkId);
                                 selectInstanceId.setString(2, privateIp);
@@ -1293,14 +1291,14 @@ public class Upgrade218to22 implements DbUpgrade {
 
                                     if (!selectedInstanceId.next()) {
                                         // the vm might be expunged already...so just give the warning
-                                        s_logger.warn("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId + "; assume that the vm is expunged");
+                                        logger.warn("Unable to find vmId for private ip address " + privateIp + " for account id=" + accountId + "; assume that the vm is expunged");
                                         // throw new CloudRuntimeException("Unable to find vmId for private ip address " + privateIp +
                                         // " for account id=" + accountId);
                                     } else {
                                         long instanceId = selectedInstanceId.getLong(1);
-                                        s_logger.debug("Instance id is " + instanceId);
+                                        logger.debug("Instance id is " + instanceId);
                                         // update firewall_rules table
-                                        s_logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
+                                        logger.trace("Updating firewall_rules table as a part of PF rules upgrade...");
                                         try (
                                                 PreparedStatement insertFirewallRules =
                                                 conn.prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'PortForwarding',       ?,      ?,      ?,      ?,       0,     now())");
@@ -1315,7 +1313,7 @@ public class Upgrade218to22 implements DbUpgrade {
                                             insertFirewallRules.setLong(8, networkId);
                                             insertFirewallRules.setString(9, UUID.randomUUID().toString());
                                             insertFirewallRules.executeUpdate();
-                                            s_logger.trace("firewall_rules table is updated as a part of PF rules upgrade");
+                                            logger.trace("firewall_rules table is updated as a part of PF rules upgrade");
                                         }
                                         String privatePort = (String)rule[4];
                                         try (PreparedStatement insertPortForwardingRules = conn.prepareStatement("INSERT INTO port_forwarding_rules VALUES (?,    ?,      ?,      ?,       ?)");) {
@@ -1326,7 +1324,7 @@ public class Upgrade218to22 implements DbUpgrade {
                                             insertPortForwardingRules.setInt(5, Integer.parseInt(privatePort.trim()));
                                             insertPortForwardingRules.executeUpdate();
                                         }
-                                        s_logger.trace("port_forwarding_rules table is updated");
+                                        logger.trace("port_forwarding_rules table is updated");
                                     }
                                 }
                             }
@@ -1334,7 +1332,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("Port forwarding rules are updated");
+            logger.debug("Port forwarding rules are updated");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update port forwarding rules ", e);
         }
@@ -1358,7 +1356,7 @@ public class Upgrade218to22 implements DbUpgrade {
             }
 
             if (!lbs.isEmpty()) {
-                s_logger.debug("Found " + lbs.size() + " lb rules to upgrade");
+                logger.debug("Found " + lbs.size() + " lb rules to upgrade");
                 long newLbId = 0;
                 try (
                         PreparedStatement selectFWRules = conn.prepareStatement("SELECT max(id) FROM firewall_rules order by id");
@@ -1382,7 +1380,7 @@ public class Upgrade218to22 implements DbUpgrade {
                         try (ResultSet ipData = selectIpData.executeQuery();) {
 
                             if (!ipData.next()) {
-                                s_logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId +
+                                logger.warn("Unable to find public IP address " + publicIp + "; skipping lb rule id=" + originalLbId +
                                         " from update. Cleaning it up from load_balancer_vm_map and load_balancer table");
                                 try (PreparedStatement deleteLbVmMap = conn.prepareStatement("DELETE from load_balancer_vm_map where load_balancer_id=?");) {
                                     deleteLbVmMap.setLong(1, originalLbId);
@@ -1399,7 +1397,7 @@ public class Upgrade218to22 implements DbUpgrade {
                             long domainId = ipData.getLong(3);
                             long networkId = ipData.getLong(4);
                             // update firewall_rules table
-                            s_logger.trace("Updating firewall_rules table as a part of LB rules upgrade...");
+                            logger.trace("Updating firewall_rules table as a part of LB rules upgrade...");
                             try (PreparedStatement insertFirewallRules =
                                 conn.prepareStatement("INSERT INTO firewall_rules (id, ip_address_id, start_port, end_port, state, protocol, purpose, account_id, domain_id, network_id, xid, is_static_nat, created) VALUES (?,    ?,      ?,      ?,      'Active',        ?,     'LoadBalancing',       ?,      ?,      ?,      ?,       0,       now())");) {
                                 insertFirewallRules.setLong(1, newLbId);
@@ -1413,13 +1411,13 @@ public class Upgrade218to22 implements DbUpgrade {
                                 insertFirewallRules.setString(9, UUID.randomUUID().toString());
                                 insertFirewallRules.executeUpdate();
                             }
-                            s_logger.trace("firewall_rules table is updated as a part of LB rules upgrade");
+                            logger.trace("firewall_rules table is updated as a part of LB rules upgrade");
                         }
                     }
 
 
                     // update load_balancing_rules
-                    s_logger.trace("Updating load_balancing_rules table as a part of LB rules upgrade...");
+                    logger.trace("Updating load_balancing_rules table as a part of LB rules upgrade...");
                     try (PreparedStatement insertLoadBalancer = conn.prepareStatement("INSERT INTO load_balancing_rules VALUES (?,      ?,      NULL,      ?,       ?,      ?)");) {
                         insertLoadBalancer.setLong(1, newLbId);
                         insertLoadBalancer.setString(2, name);
@@ -1428,10 +1426,10 @@ public class Upgrade218to22 implements DbUpgrade {
                         insertLoadBalancer.setString(5, algorithm);
                         insertLoadBalancer.executeUpdate();
                     }
-                    s_logger.trace("load_balancing_rules table is updated as a part of LB rules upgrade");
+                    logger.trace("load_balancing_rules table is updated as a part of LB rules upgrade");
 
                     // update load_balancer_vm_map table
-                    s_logger.trace("Updating load_balancer_vm_map table as a part of LB rules upgrade...");
+                    logger.trace("Updating load_balancer_vm_map table as a part of LB rules upgrade...");
                     try (
                             PreparedStatement selectInstance = conn.prepareStatement("SELECT instance_id FROM load_balancer_vm_map WHERE load_balancer_id=?");
                         ) {
@@ -1451,10 +1449,10 @@ public class Upgrade218to22 implements DbUpgrade {
                         updateLoadBalancer.setLong(2, originalLbId);
                         updateLoadBalancer.executeUpdate();
                     }
-                    s_logger.trace("load_balancer_vm_map table is updated as a part of LB rules upgrade");
+                    logger.trace("load_balancer_vm_map table is updated as a part of LB rules upgrade");
                 }
             }
-            s_logger.debug("LB rules are upgraded");
+            logger.debug("LB rules are upgraded");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Can't update LB rules ", e);
         }
@@ -1724,7 +1722,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 ResultSet rs1 = pstmt1.executeQuery();
             ) {
             if (!rs1.next()) {
-                s_logger.debug("cloud_usage db doesn't exist. Skipping events migration");
+                logger.debug("cloud_usage db doesn't exist. Skipping events migration");
                 return;
             }
 
@@ -1734,7 +1732,7 @@ public class Upgrade218to22 implements DbUpgrade {
             String sql =
                 "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.id > ? and vmevt.state = 'Completed' ";
             if (lastProcessedEvent == null) {
-                s_logger.trace("no events are processed earlier, copying all events");
+                logger.trace("no events are processed earlier, copying all events");
                 sql = "SELECT type, description, user_id, account_id, created, level, parameters FROM cloud.event vmevt WHERE vmevt.state = 'Completed' ";
             }
 
@@ -1744,7 +1742,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt.setLong(i++, lastProcessedEvent);
                 }
                 try (ResultSet rs = pstmt.executeQuery();) {
-                    s_logger.debug("Begin Migrating events");
+                    logger.debug("Begin Migrating events");
                     while (rs.next()) {
                         EventVO event = new EventVO();
                         event.setType(rs.getString(1));
@@ -1758,7 +1756,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("Migrating events completed");
+            logger.debug("Migrating events completed");
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to migrate usage events: ", e);
         }
@@ -2142,7 +2140,7 @@ public class Upgrade218to22 implements DbUpgrade {
             cleanupLbVmMaps(conn);
 
         } catch (SQLException e) {
-            s_logger.error("Can't perform data migration ", e);
+            logger.error("Can't perform data migration ", e);
             throw new CloudRuntimeException("Can't perform data migration ", e);
         }
 
@@ -2180,7 +2178,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 ResultSet rs = selectStoragePoolRef.executeQuery();
             ) {
             if (!rs.next()) {
-                s_logger.debug("No records in template_spool_ref, skipping this upgrade part");
+                logger.debug("No records in template_spool_ref, skipping this upgrade part");
                 return;
             }
             while (rs.next()) {
@@ -2192,7 +2190,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     try (ResultSet selectedStoragePool = selectStoragePool.executeQuery();) {
 
                         if (!selectedStoragePool.next()) {
-                            s_logger.debug("Orphaned template_spool_ref record is found (storage pool doesn't exist any more0) id=" + id + "; so removing the record");
+                            logger.debug("Orphaned template_spool_ref record is found (storage pool doesn't exist any more0) id=" + id + "; so removing the record");
                             try (PreparedStatement delete = conn.prepareStatement("DELETE FROM template_spool_ref where id=?");) {
                                 delete.setLong(1, id);
                                 delete.executeUpdate();
@@ -2201,9 +2199,9 @@ public class Upgrade218to22 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("Finished deleting orphaned template_spool_ref(s)");
+            logger.debug("Finished deleting orphaned template_spool_ref(s)");
         } catch (Exception e) {
-            s_logger.error("Failed to delete orphaned template_spool_ref(s): ", e);
+            logger.error("Failed to delete orphaned template_spool_ref(s): ", e);
             throw new CloudRuntimeException("Failed to delete orphaned template_spool_ref(s): ", e);
         }
     }
@@ -2215,7 +2213,7 @@ public class Upgrade218to22 implements DbUpgrade {
             ){
             while (selectedVolumes.next()) {
                 Long id = selectedVolumes.getLong(1);
-                s_logger.debug("Volume id is " + id);
+                logger.debug("Volume id is " + id);
                 Long instanceId = selectedVolumes.getLong(2);
                 Long accountId = selectedVolumes.getLong(3);
 
@@ -2245,15 +2243,15 @@ public class Upgrade218to22 implements DbUpgrade {
                             try(PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes SET state='Destroy' WHERE id=?");) {
                                 pstmt.setLong(1, id);
                                 pstmt.executeUpdate();
-                                s_logger.debug("Volume with id=" + id + " is marked with Destroy state as a part of volume cleanup (it's Destroyed had 127 value)");
+                                logger.debug("Volume with id=" + id + " is marked with Destroy state as a part of volume cleanup (it's Destroyed had 127 value)");
                             }
                         }
                     }
                 }
             }
-            s_logger.debug("Finished cleaning up volumes with incorrect Destroyed field (127)");
+            logger.debug("Finished cleaning up volumes with incorrect Destroyed field (127)");
         } catch (Exception e) {
-            s_logger.error("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
+            logger.error("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
             throw new CloudRuntimeException("Failed to cleanup volumes with incorrect Destroyed field (127):", e);
         }
     }
@@ -2267,7 +2265,7 @@ public class Upgrade218to22 implements DbUpgrade {
             if (result__index.next()) {
                 try (PreparedStatement alterTable = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group__account_id`");) {
                     alterTable.executeUpdate();
-                    s_logger.debug("Unique key 'fk_network_group__account_id' is removed successfully");
+                    logger.debug("Unique key 'fk_network_group__account_id' is removed successfully");
                 }
             }
 
@@ -2278,7 +2276,7 @@ public class Upgrade218to22 implements DbUpgrade {
                 if (result___index.next()) {
                     try (PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` DROP INDEX `fk_network_group___account_id`");) {
                         pstmt.executeUpdate();
-                        s_logger.debug("Unique key 'fk_network_group___account_id' is removed successfully");
+                        logger.debug("Unique key 'fk_network_group___account_id' is removed successfully");
                     }
                 }
             }
@@ -2310,7 +2308,7 @@ public class Upgrade218to22 implements DbUpgrade {
                                 ResultSet rs2 = pstmt2.executeQuery();
                             ) {
                             if (!rs1.next() && rs2.next()) {
-                                s_logger.debug("Removing load balancer vm mappings for lb id=" + lbId + " as a part of cleanup");
+                                logger.debug("Removing load balancer vm mappings for lb id=" + lbId + " as a part of cleanup");
                                 try (PreparedStatement delete = conn.prepareStatement("DELETE FROM load_balancer_vm_map where load_balancer_id=?");) {
                                     delete.setLong(1, lbId);
                                     delete.executeUpdate();
@@ -2329,7 +2327,7 @@ public class Upgrade218to22 implements DbUpgrade {
      * Create usage events for existing port forwarding rules
      */
     private void createPortForwardingEvents(Connection conn) {
-        s_logger.debug("Creating Port Forwarding usage events");
+        logger.debug("Creating Port Forwarding usage events");
         try (
                 PreparedStatement pstmt =
                 conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'PortForwarding' and "
@@ -2354,7 +2352,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt1.executeUpdate();
                 }
             }
-            s_logger.debug("Completed creating Port Forwarding usage events");
+            logger.debug("Completed creating Port Forwarding usage events");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add port forwarding usage events due to:", e);
         }
@@ -2364,7 +2362,7 @@ public class Upgrade218to22 implements DbUpgrade {
      * Create usage events for existing load balancer rules
      */
     private void createLoadBalancerEvents(Connection conn) {
-        s_logger.debug("Creating load balancer usage events");
+        logger.debug("Creating load balancer usage events");
         try (
                 PreparedStatement pstmt =
                     conn.prepareStatement("SELECT fw.account_id, ip.data_center_id, fw.id FROM firewall_rules fw, user_ip_address ip where purpose = 'LoadBalancing' and "
@@ -2389,7 +2387,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt1.executeUpdate();
                 }
             }
-            s_logger.debug("Completed creating load balancer usage events");
+            logger.debug("Completed creating load balancer usage events");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add Load Balancer usage events due to:", e);
         }
@@ -2399,7 +2397,7 @@ public class Upgrade218to22 implements DbUpgrade {
      * Create usage events for network offerings
      */
     private void createNetworkOfferingEvents(Connection conn) {
-        s_logger.debug("Creating network offering usage events");
+        logger.debug("Creating network offering usage events");
         try (
                 PreparedStatement pstmt =
                     conn.prepareStatement("SELECT vm.account_id, vm.data_center_id, ni.instance_id, vm.name, nw.network_offering_id, nw.is_default FROM nics ni, "
@@ -2429,7 +2427,7 @@ public class Upgrade218to22 implements DbUpgrade {
                     pstmt1.executeUpdate();
                 }
             }
-            s_logger.debug("Completed creating network offering usage events");
+            logger.debug("Completed creating network offering usage events");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Failed to add network offering usage events due to:", e);
         }

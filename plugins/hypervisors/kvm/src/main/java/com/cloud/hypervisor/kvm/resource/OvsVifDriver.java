@@ -30,7 +30,6 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -45,7 +44,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class OvsVifDriver extends VifDriverBase {
-    private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
     private String _controlCidr = NetUtils.getLinkLocalCIDR();
     private DpdkDriver dpdkDriver;
@@ -60,10 +58,7 @@ public class OvsVifDriver extends VifDriverBase {
             dpdkDriver = new DpdkDriverImpl();
         }
 
-        String controlCidr = (String)params.get("control.cidr");
-        if (StringUtils.isNotBlank(controlCidr)) {
-            _controlCidr = controlCidr;
-        }
+        _controlCidr = getControlCidr(_controlCidr);
 
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
@@ -71,10 +66,10 @@ public class OvsVifDriver extends VifDriverBase {
 
     public void getPifs() {
         final String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
-        s_logger.debug("cmdout was " + cmdout);
+        logger.debug("cmdout was " + cmdout);
         final List<String> bridges = Arrays.asList(cmdout.split("%"));
         for (final String bridge : bridges) {
-            s_logger.debug("looking for pif for bridge " + bridge);
+            logger.debug("looking for pif for bridge " + bridge);
             // String pif = getOvsPif(bridge);
             // Not really interested in the pif name at this point for ovs
             // bridges
@@ -87,7 +82,7 @@ public class OvsVifDriver extends VifDriverBase {
             }
             _pifs.put(bridge, pif);
         }
-        s_logger.debug("done looking for pifs, no more bridges");
+        logger.debug("done looking for pifs, no more bridges");
     }
 
     /**
@@ -97,7 +92,7 @@ public class OvsVifDriver extends VifDriverBase {
      */
     protected void plugDPDKInterface(InterfaceDef intf, String trafficLabel, Map<String, String> extraConfig,
                                      String vlanId, String guestOsType, NicTO nic, String nicAdapter) {
-        s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
+        logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
         String dpdkOvsPath = _libvirtComputingResource.dpdkOvsPath;
         if (StringUtils.isBlank(dpdkOvsPath)) {
             throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
@@ -114,7 +109,7 @@ public class OvsVifDriver extends VifDriverBase {
 
     @Override
     public InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
-        s_logger.debug("plugging nic=" + nic);
+        logger.debug("plugging nic=" + nic);
 
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
         if (!_libvirtComputingResource.dpdkSupport || !nic.isDpdkEnabled()) {
@@ -142,7 +137,7 @@ public class OvsVifDriver extends VifDriverBase {
                     if (_libvirtComputingResource.dpdkSupport && nic.isDpdkEnabled()) {
                         plugDPDKInterface(intf, trafficLabel, extraConfig, vlanId, guestOsType, nic, nicAdapter);
                     } else {
-                        s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
+                        logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                         intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                         intf.setVlanTag(Integer.parseInt(vlanId));
                     }
@@ -151,13 +146,13 @@ public class OvsVifDriver extends VifDriverBase {
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 }
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch || nic.getBroadcastType() == Networks.BroadcastDomainType.OpenDaylight) {
-                s_logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
+                logger.debug("nic " + nic + " needs to be connected to LogicalSwitch " + logicalSwitchUuid);
                 intf.setVirtualPortInterfaceId(nic.getUuid());
                 String brName = (trafficLabel != null && !trafficLabel.isEmpty()) ? _pifs.get(trafficLabel) : _pifs.get("private");
                 intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
             } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
                 String brName = getOvsTunnelNetworkName(nic.getBroadcastUri().getAuthority());
-                s_logger.debug("nic " + nic + " needs to be connected to Open vSwitch bridge " + brName);
+                logger.debug("nic " + nic + " needs to be connected to Open vSwitch bridge " + brName);
                 intf.defBridgeNet(brName, null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
             } else {
                 intf.defBridgeNet(_bridges.get("guest"), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
@@ -170,7 +165,7 @@ public class OvsVifDriver extends VifDriverBase {
             Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
-                    s_logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
+                    logger.debug("creating a vlan dev and bridge for public traffic per traffic label " + trafficLabel);
                     intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter), networkRateKBps);
                     intf.setVlanTag(Integer.parseInt(vlanId));
                 } else {
@@ -209,7 +204,7 @@ public class OvsVifDriver extends VifDriverBase {
             // If DPDK is enabled, we'll need to cleanup the port as libvirt won't
             String dpdkPort = iface.getDpdkSourcePort();
             String cmd = String.format("ovs-vsctl del-port %s", dpdkPort);
-            s_logger.debug("Removing DPDK port: " + dpdkPort);
+            logger.debug("Removing DPDK port: " + dpdkPort);
             Script.runSimpleBashScript(cmd);
         }
     }

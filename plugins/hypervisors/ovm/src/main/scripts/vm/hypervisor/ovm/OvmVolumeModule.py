@@ -100,7 +100,7 @@ class OvmVolume(OvmObject):
             priStorageMountPoint = sr.mountpoint
             volDir = join(priStorageMountPoint, 'running_pool', volDirUuid)
             if exists(volDir):
-                raise Exception("Volume dir %s alreay existed, can not override"%volDir)
+                raise Exception("Volume dir %s already existed, can not override"%volDir)
             os.makedirs(volDir)
             OvmStoragePool()._checkDirSizeForImage(volDir, templateUrl)
             volName = volUuid + '.raw'

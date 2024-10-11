@@ -21,9 +21,9 @@ package com.cloud.network.element;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -267,7 +267,7 @@ public class NiciraNvpElementTest {
 
     @Test
     public void implementSharedNetworkUuidVlanIdTest() throws URISyntaxException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // SHARED NETWORKS CASE 1: LOGICAL ROUTER'S UUID AS VLAN ID
+        // SHARED NETWORKS CASE 1: loggerICAL ROUTER'S UUID AS VLAN ID
         final Network network = mock(Network.class);
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
         when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));

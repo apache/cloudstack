@@ -22,23 +22,22 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class PrometheusExporterServerImpl extends ManagerBase implements PrometheusExporterServer, Configurable {
-    private static final Logger LOG = Logger.getLogger(PrometheusExporterServerImpl.class);
 
     private static HttpServer httpServer;
 
     @Inject
     private PrometheusExporter prometheusExporter;
 
-    private final static class ExporterHandler implements HttpHandler {
+    private final class ExporterHandler implements HttpHandler {
         private PrometheusExporter prometheusExporter;
 
         ExporterHandler(final PrometheusExporter prometheusExporter) {
@@ -49,7 +48,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
         @Override
         public void handle(final HttpExchange httpExchange) throws IOException {
             final String remoteClientAddress = httpExchange.getRemoteAddress().getAddress().toString().replace("/", "");
-            LOG.debug("Prometheus exporter received client request from: " + remoteClientAddress);
+            logger.debug("Prometheus exporter received client request from: " + remoteClientAddress);
             String response = "Forbidden";
             int responseCode = 403;
             if (Arrays.asList(PrometheusExporterAllowedAddresses.value().split(",")).contains(remoteClientAddress)) {
@@ -57,11 +56,21 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
             }
-            httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
-            httpExchange.sendResponseHeaders(responseCode, response.length());
+            byte[] bytesToOutput = response.getBytes(StandardCharsets.UTF_8);
+            httpExchange.getResponseHeaders().set("content-type", "text/plain; charset=UTF-8");
+            httpExchange.sendResponseHeaders(responseCode, bytesToOutput.length);
             final OutputStream os = httpExchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            try {
+                os.write(bytesToOutput);
+            } catch (IOException e) {
+                logger.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Error during Prometheus export: ", e);
+                }
+                os.write("The system could not export Prometheus due to an internal error. Contact your operator to learn about the reason.".getBytes());
+            } finally {
+                os.close();
+            }
         }
     }
 
@@ -85,9 +94,9 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                     }
                 });
                 httpServer.start();
-                LOG.debug("Started prometheus exporter http server");
+                logger.debug("Started prometheus exporter http server");
             } catch (final IOException e) {
-                LOG.info("Failed to start prometheus exporter http server due to: ", e);
+                logger.info("Failed to start prometheus exporter http server due to: ", e);
             }
         }
         return true;
@@ -97,7 +106,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
     public boolean stop() {
         if (httpServer != null) {
             httpServer.stop(0);
-            LOG.debug("Stopped Prometheus exporter http server");
+            logger.debug("Stopped Prometheus exporter http server");
         }
         return true;
     }

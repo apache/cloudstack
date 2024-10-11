@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.net.URI;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
@@ -33,7 +32,6 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  UpgradeSnapshotCommand.class)
 public final class CitrixUpgradeSnapshotCommandWrapper extends CommandWrapper<UpgradeSnapshotCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixUpgradeSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final UpgradeSnapshotCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -58,7 +56,7 @@ public final class CitrixUpgradeSnapshotCommandWrapper extends CommandWrapper<Up
             return new Answer(command, true, "success");
         } catch (final Exception e) {
             final String details = "upgrading snapshot " + backedUpSnapshotUuid + " failed due to " + e.toString();
-            s_logger.error(details, e);
+            logger.error(details, e);
 
         }
         return new Answer(command, false, "failure");

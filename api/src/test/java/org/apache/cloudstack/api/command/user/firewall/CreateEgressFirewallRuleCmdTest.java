@@ -20,28 +20,40 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.ServerApiException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 
-@PrepareForTest(NetUtils.class)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CreateEgressFirewallRuleCmdTest {
 
     @Mock
     NetworkService networkServiceMock;
 
     @Spy
-    @InjectMocks
     CreateEgressFirewallRuleCmd cmdMock = new CreateEgressFirewallRuleCmd();
+
+    MockedStatic<NetUtils> netUtilsMocked;
+
+    @Before
+    public void setUp() throws Exception {
+        ReflectionTestUtils.setField(cmdMock, "_networkService", networkServiceMock);;
+        netUtilsMocked = Mockito.mockStatic(NetUtils.class);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        netUtilsMocked.close();
+    }
 
     @Test
     public void validateCidrsTestValidCidrs(){
@@ -59,10 +71,9 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn(cidrMock).when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(cidrMock)).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(cidrMock)).thenReturn(false);
-        PowerMockito.when(NetUtils.isNetworkAWithinNetworkB(cidrMock,cidrMock)).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(cidrMock)).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(cidrMock)).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isNetworkAWithinNetworkB(cidrMock,cidrMock)).thenReturn(true);
 
         cmdMock.validateCidrs();
 
@@ -71,12 +82,9 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(2));
-        NetUtils.isValidIp4Cidr(cidrMock);
-        NetUtils.isValidIp6Cidr(cidrMock);
-
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isNetworkAWithinNetworkB(cidrMock,cidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(cidrMock), Mockito.times(2));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(cidrMock), Mockito.never());
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(cidrMock,cidrMock), Mockito.times(1));
     }
 
     @Test
@@ -95,10 +103,9 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn("10.1.1.0/24").when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq("10.1.1.0/24"))).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq("10.1.1.0/24"))).thenReturn(false);
-        PowerMockito.when(NetUtils.isNetworkAWithinNetworkB(Mockito.eq("10.1.1.0/24"), Mockito.eq("10.1.1.0/24"))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq("10.1.1.0/24"))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq("10.1.1.0/24"))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isNetworkAWithinNetworkB(Mockito.eq("10.1.1.0/24"), Mockito.eq("10.1.1.0/24"))).thenReturn(true);
 
         cmdMock.validateCidrs();
 
@@ -107,12 +114,10 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(2));
-        NetUtils.isValidIp4Cidr(Mockito.eq("10.1.1.0/24"));
-        NetUtils.isValidIp6Cidr(Mockito.eq("10.1.1.0/24"));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(Mockito.eq("10.1.1.0/24")), Mockito.times(2));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(Mockito.eq("10.1.1.0/24")), Mockito.never());
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isNetworkAWithinNetworkB(Mockito.eq("10.1.1.0/24"), Mockito.eq("10.1.1.0/24"));
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(Mockito.eq("10.1.1.0/24"), Mockito.eq("10.1.1.0/24")));
     }
 
     @Test (expected = ServerApiException.class)
@@ -131,9 +136,8 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn("10.1.1.0/24").when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(sourceCidrMock)).thenReturn(false);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(sourceCidrMock)).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(sourceCidrMock)).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(sourceCidrMock)).thenReturn(false);
 
         cmdMock.validateCidrs();
 
@@ -142,9 +146,8 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(1));
-        NetUtils.isValidIp4Cidr(sourceCidrMock);
-        NetUtils.isValidIp6Cidr(sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(sourceCidrMock), Mockito.times(1));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(sourceCidrMock), Mockito.times(1));
     }
 
     @Test (expected = ServerApiException.class)
@@ -167,13 +170,12 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn(sourceCidrMock).when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
-        PowerMockito.when(NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock)).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock)).thenReturn(true);
 
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
 
         cmdMock.validateCidrs();
 
@@ -182,16 +184,14 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isValidIp4Cidr(sourceCidrMock);
-        NetUtils.isValidIp6Cidr(sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(sourceCidrMock));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(sourceCidrMock));
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isNetworkAWithinNetworkB(sourceCidrMock,sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock));
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isValidIp4Cidr(destCidrMock);
-        NetUtils.isValidIp6Cidr(destCidrMock);
+
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(destCidrMock));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(destCidrMock));
     }
 
     @Test
@@ -214,12 +214,11 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn(sourceCidrMock).when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
 
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq(destCidrMock))).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq(destCidrMock))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq(destCidrMock))).thenReturn(false);
 
         cmdMock.validateCidrs();
 
@@ -228,16 +227,13 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isValidIp4Cidr(sourceCidrMock);
-        NetUtils.isValidIp6Cidr(sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(sourceCidrMock), Mockito.times(1));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(sourceCidrMock), Mockito.never());
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.never());
-        NetUtils.isNetworkAWithinNetworkB(sourceCidrMock,sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock), Mockito.never());
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isValidIp4Cidr(destCidrMock);
-        NetUtils.isValidIp6Cidr(destCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(destCidrMock));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(destCidrMock), Mockito.never());
     }
 
     @Test(expected = ServerApiException.class)
@@ -256,10 +252,9 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn(cidrMock).when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(cidrMock)).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(cidrMock)).thenReturn(false);
-        PowerMockito.when(NetUtils.isNetworkAWithinNetworkB(cidrMock, cidrMock)).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(cidrMock)).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(cidrMock)).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isNetworkAWithinNetworkB(cidrMock, cidrMock)).thenReturn(false);
 
         cmdMock.validateCidrs();
 
@@ -268,12 +263,10 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(1));
-        NetUtils.isValidIp4Cidr(cidrMock);
-        NetUtils.isValidIp6Cidr(cidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(cidrMock));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(cidrMock));
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isNetworkAWithinNetworkB(cidrMock, cidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(cidrMock, cidrMock));
     }
 
     @Test
@@ -291,10 +284,9 @@ public class CreateEgressFirewallRuleCmdTest {
 
         Mockito.doReturn(sourceCidrMock).when(networkMock).getCidr();
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
-        PowerMockito.when(NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
-        PowerMockito.when(NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock)).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp4Cidr(Mockito.eq(sourceCidrMock))).thenReturn(true);
+        netUtilsMocked.when(() -> NetUtils.isValidIp6Cidr(Mockito.eq(sourceCidrMock))).thenReturn(false);
+        netUtilsMocked.when(() -> NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock)).thenReturn(true);
 
         cmdMock.validateCidrs();
 
@@ -303,15 +295,12 @@ public class CreateEgressFirewallRuleCmdTest {
         Mockito.verify(networkServiceMock).getNetwork(networkIdMock);
         Mockito.verify(networkMock).getCidr();
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isValidIp4Cidr(sourceCidrMock);
-        NetUtils.isValidIp6Cidr(sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(sourceCidrMock));
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(sourceCidrMock), Mockito.never());
 
-        PowerMockito.verifyStatic(NetUtils.class);
-        NetUtils.isNetworkAWithinNetworkB(sourceCidrMock,sourceCidrMock);
+        netUtilsMocked.verify(() -> NetUtils.isNetworkAWithinNetworkB(sourceCidrMock, sourceCidrMock));
 
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.never());
-        NetUtils.isValidIp4Cidr(null);
-        NetUtils.isValidIp6Cidr(null);
+        netUtilsMocked.verify(() -> NetUtils.isValidIp4Cidr(null), Mockito.never());
+        netUtilsMocked.verify(() -> NetUtils.isValidIp6Cidr(null), Mockito.never());
     }
 }

@@ -29,32 +29,44 @@
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">
+              <a-step
+                v-if="!isNormalUserOrProject"
+                :title="this.$t('label.assign.instance.another')">
+                <template #description>
+                  <div style="margin-top: 15px">
+                    {{ $t('label.assigning.vms') }}
+                    <ownership-selection
+                      @fetch-owner="fetchOwnerOptions"/>
+                  </div>
+                </template>
+              </a-step>
               <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
                 <template #description>
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
                       <div v-if="zones.length <= 8">
-                        <a-row type="flex" :gutter="5" justify="start">
+                        <a-row type="flex" :gutter="[16, 18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
                               :key="idx"
+                              :size="large"
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
-                              <a-col :span="8">
-                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
-                                  <a-radio :value="zoneItem.id">
-                                    <div>
-                                      <resource-icon
-                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :image="zoneItem.icon.base64image"
-                                        size="36"
-                                        style="marginTop: -30px; marginLeft: 60px" />
-                                      <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
-                                    </div>
-                                  </a-radio>
-                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
-                                </a-card-grid>
+                              <a-col :span="6">
+                                <a-radio-button
+                                  :value="zoneItem.id"
+                                  style="border-width: 2px"
+                                  class="zone-radio-button">
+                                  <span>
+                                    <resource-icon
+                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                      :image="zoneItem.icon.base64image"
+                                      size="2x" />
+                                    <global-outlined size="2x" v-else />
+                                    {{ zoneItem.name }}
+                                    </span>
+                                </a-radio-button>
                               </a-col>
                             </a-radio-group>
                           </div>
@@ -74,7 +86,7 @@
                       >
                         <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
                           <span>
-                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
                             <global-outlined v-else style="margin-right: 5px" />
                             {{ zone1.name }}
                           </span>
@@ -123,6 +135,7 @@
                         :filterOption="filterOption"
                         :options="hostSelectOptions"
                         :loading="loading.hosts"
+                        @change="onSelectHostId"
                       ></a-select>
                     </a-form-item>
                   </div>
@@ -139,6 +152,18 @@
                       @tabChange="key => onTabChange(key, 'tabKey')">
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.template.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, true)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="templateid"
                           :items="options.templates"
@@ -168,6 +193,18 @@
                       </div>
                       <div v-else>
                         {{ $t('message.iso.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.iso.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, false)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="isoid"
                           :items="options.isos"
@@ -220,7 +257,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -388,7 +425,10 @@
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="zone && zone.networktype !== 'Basic'">
                 <template #description>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected" style="margin-top: 5px">
+                    <div style="margin-bottom: 10px">
+                      {{ $t('message.network.selection') + ('createNetwork' in $store.getters.apis ? ' ' + $t('message.network.selection.new.network') : '') }}
+                    </div>
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
                       <instance-nics-network-select-list-view
                         :nics="templateNics"
@@ -468,13 +508,13 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
                         <span v-else-if="property.type && (property.type==='int' || property.type==='real')">
                           <a-input-number
-                            v-model:value="form['properties.'+ escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :min="getPropertyQualifiers(property.qualifiers, 'number-select').min"
                             :max="getPropertyQualifiers(property.qualifiers, 'number-select').max" />
@@ -483,7 +523,7 @@
                           <a-select
                             showSearch
                             optionFilterProp="label"
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
                               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -496,12 +536,12 @@
                         </span>
                         <span v-else-if="property.type && property.type==='string' && property.password">
                           <a-input-password
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                         <span v-else>
                           <a-input
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                       </a-form-item>
@@ -517,7 +557,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
@@ -527,7 +567,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
+                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id" :label="bootType.description">
                             {{ bootType.description }}
                           </a-select-option>
                         </a-select>
@@ -538,7 +578,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
+                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id" :label="bootMode.description">
                             {{ bootMode.description }}
                           </a-select-option>
                         </a-select>
@@ -581,8 +621,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -604,8 +646,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -653,8 +697,10 @@
                                                 :dataSource="userDataParams"
                                                 :pagination="false"
                                                 :rowKey="record => record.key">
-                                                <template #value="{ record }">
-                                                  <a-input v-model:value="userDataValues[record.key]" />
+                                                <template #bodyCell="{ column, record }">
+                                                  <template v-if="column.key === 'value'">
+                                                    <a-input v-model:value="userDataValues[record.key]" />
+                                                  </template>
                                                 </template>
                                               </a-table>
                                             </a-input-group>
@@ -688,6 +734,47 @@
                         :preFillContent="dataPreFill"
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
+                    </a-form-item>
+                    <a-form-item name="nicmultiqueuenumber" ref="nicmultiqueuenumber" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.nicmultiqueuenumber')" :tooltip="$t('label.nicmultiqueuenumber.tooltip')"/>
+                      </template>
+                      <a-input-number
+                        style="width: 100%;"
+                        v-model:value="form.nicmultiqueuenumber" />
+                    </a-form-item>
+                    <a-form-item name="nicpackedvirtqueuesenabled" ref="nicpackedvirtqueuesenabled" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.nicpackedvirtqueuesenabled')" :tooltip="$t('label.nicpackedvirtqueuesenabled.tooltip')"/>
+                      </template>
+                      <a-switch
+                        v-model:checked="form.nicpackedvirtqueuesenabled"
+                        :checked="nicpackedvirtqueuesenabled"
+                        @change="val => { nicpackedvirtqueuesenabled = val }"/>
+                    </a-form-item>
+                    <a-form-item name="iothreadsenabled" ref="iothreadsenabled" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.iothreadsenabled')" :tooltip="$t('label.iothreadsenabled.tooltip')"/>
+                      </template>
+                      <a-form-item name="iothreadsenabled" ref="iothreadsenabled">
+                        <a-switch
+                          v-model:checked="form.iothreadsenabled"
+                          :checked="iothreadsenabled"
+                          @change="val => { iothreadsenabled = val }"/>
+                      </a-form-item>
+                    </a-form-item>
+                    <a-form-item name="iodriverpolicy" ref="iodriverpolicy" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.iodriverpolicy')" :tooltip="$t('label.iodriverpolicy.tooltip')"/>
+                      </template>
+                      <a-select
+                        v-model:value="form.iodriverpolicy"
+                        optionFilterProp="label"
+                        :filterOption="filterOption">
+                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id" :label="iodriverpolicy.description">
+                          {{ iodriverpolicy.description }}
+                        </a-select-option>
+                      </a-select>
                     </a-form-item>
                   </div>
                 </template>
@@ -763,13 +850,13 @@
               </a-button>
               <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
-                {{ $t('label.launch.vm') }}
+                {{ this.form.startvm ? $t('label.launch.vm') : $t('label.create.vm') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
                   <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
                     <a-menu-item type="primary" key="1">
                       <rocket-outlined />
-                      {{ $t('label.launch.vm.and.stay') }}
+                      {{ this.form.startvm ? $t('label.launch.vm.and.stay') : $t('label.create.vm.and.stay') }}
                     </a-menu-item>
                   </a-menu>
                 </template>
@@ -788,13 +875,15 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw, nextTick, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
+import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
@@ -811,11 +900,11 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
   components: {
+    OwnershipSelection,
     SshKeyPairSelection,
     UserDataSelection,
     NetworkConfiguration,
@@ -849,6 +938,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -892,6 +982,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
+        ioPolicyTypes: [],
         dynamicScalingVmConfig: false
       },
       rowCount: {},
@@ -911,6 +1002,11 @@ export default {
         clusters: false,
         hosts: false,
         groups: false
+      },
+      owner: {
+        projectid: store.getters.project?.id,
+        domainid: store.getters.project?.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project?.id ? null : store.getters.userInfo.account
       },
       instanceConfig: {},
       template: {},
@@ -941,7 +1037,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -993,7 +1089,19 @@ export default {
       zones: [],
       selectedZone: '',
       formModel: {},
-      nicToNetworkSelection: []
+      nicToNetworkSelection: [],
+      selectedArchitecture: null,
+      architectureTypes: {
+        opts: [
+          {
+            id: 'x86_64',
+            description: 'AMD 64 bits (x86_64)'
+          }, {
+            id: 'aarch64',
+            description: 'ARM 64 bits (aarch64)'
+          }
+        ]
+      }
     }
   },
   computed: {
@@ -1003,19 +1111,58 @@ export default {
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
+    isNormalUserOrProject () {
+      return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
+    },
     diskSize () {
-      const rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
-      const customDiskSize = _.get(this.instanceConfig, 'size', 0)
-      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
-      const dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+      const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
+      const customDataDiskSize = _.get(this.instanceConfig, 'size', null)
+      let computeOfferingDiskSize = _.get(this.serviceOffering, 'rootdisksize', null)
+      computeOfferingDiskSize = computeOfferingDiskSize > 0 ? computeOfferingDiskSize : null
+      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', null)
+      const overrideDiskOfferingDiskSize = _.get(this.overrideDiskOffering, 'disksize', null)
+
+      let rootDiskSize
+      let dataDiskSize
+      if (this.vm.isoid != null) {
+        rootDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      } else {
+        rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
+        dataDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      }
+
       const size = []
-      if (rootDiskSize > 0) {
+      if (rootDiskSize) {
         size.push(`${rootDiskSize} GB (Root)`)
       }
-      if (dataDiskSize > 0) {
+      if (dataDiskSize) {
         size.push(`${dataDiskSize} GB (Data)`)
       }
       return size.join(' | ')
+    },
+    rootDiskOffering () {
+      const rootDiskOffering = this.vm.isoid != null ? this.diskOffering : this.overrideDiskOffering
+
+      const id = _.get(rootDiskOffering, 'id', null)
+      const displayText = _.get(rootDiskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Root)`
+      }
+    },
+    dataDiskOffering () {
+      if (this.vm.isoid != null) {
+        return null
+      }
+
+      const id = _.get(this.diskOffering, 'id', null)
+      const displayText = _.get(this.diskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Data)`
+      }
     },
     affinityGroupIds () {
       return _.map(this.affinityGroups, 'id')
@@ -1026,6 +1173,9 @@ export default {
           list: 'listServiceOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
             issystem: false,
             page: 1,
             pageSize: 10,
@@ -1036,6 +1186,9 @@ export default {
           list: 'listDiskOfferings',
           options: {
             zoneid: _.get(this.zone, 'id'),
+            projectid: this.owner.projectid,
+            domainid: this.owner.domainid,
+            account: this.owner.account,
             page: 1,
             pageSize: 10,
             keyword: undefined
@@ -1058,6 +1211,9 @@ export default {
           options: {
             page: 1,
             pageSize: 10,
+            account: this.owner.account,
+            domainid: this.owner.domainid,
+            projectid: this.owner.projectid,
             keyword: undefined,
             listall: false
           }
@@ -1085,9 +1241,9 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             canusefordeploy: true,
-            projectid: store.getters.project ? store.getters.project.id : null,
-            domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
-            account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
+            projectid: store.getters.project.id || this.owner.projectid,
+            domainid: store.getters.project.id ? null : this.owner.domainid,
+            account: store.getters.project.id ? null : this.owner.account,
             page: 1,
             pageSize: 10,
             keyword: undefined,
@@ -1160,7 +1316,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1173,7 +1329,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1186,7 +1342,7 @@ export default {
       })
       options.unshift({
         label: this.$t('label.default'),
-        value: undefined
+        value: null
       })
       return options
     },
@@ -1250,7 +1406,19 @@ export default {
       return tabList
     },
     showSecurityGroupSection () {
-      return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
+      if (this.networks.length < 1) {
+        return false
+      }
+      for (const network of this.options.networks) {
+        if (this.form.networkids && this.form.networkids.includes(network.id)) {
+          for (const service of network.service) {
+            if (service.name === 'SecurityGroup') {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
@@ -1305,37 +1473,21 @@ export default {
         }
 
         this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
-        if (this.serviceOffering?.diskofferingid) {
-          if (iso) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-          } else {
-            instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
-          }
-        }
-        if (!iso && this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
+
+        instanceConfig.overridediskofferingid = this.rootDiskSelected?.id || this.serviceOffering?.diskofferingid
         if (instanceConfig.overridediskofferingid) {
           this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
         } else {
           this.overrideDiskOffering = null
         }
 
-        if (!iso && this.diskSelected) {
+        if (iso && this.serviceOffering?.diskofferingid) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else if (!iso && this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
-        if (instanceConfig.overridediskofferingid) {
-          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
-        } else {
-          this.overrideDiskOffering = null
-        }
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
+
+        this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
@@ -1365,16 +1517,10 @@ export default {
           this.vm.hostname = host.name
         }
 
-        if (this.serviceOffering?.rootdisksize) {
-          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
-        } else if (this.diskSize) {
+        if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
         } else {
           this.vm.disksizetotalgb = null
-        }
-
-        if (this.diskSize) {
-          this.vm.disksizetotalgb = this.diskSize
         }
 
         if (this.networks) {
@@ -1423,6 +1569,11 @@ export default {
           this.vm.diskofferingname = this.diskOffering.displaytext
           this.vm.diskofferingsize = this.diskOffering.disksize
         }
+
+        this.vm.rootdiskofferingid = this.rootDiskOffering?.id
+        this.vm.rootdiskofferingdisplaytext = this.rootDiskOffering?.displayText
+        this.vm.datadiskofferingid = this.dataDiskOffering?.id
+        this.vm.datadiskofferingdisplaytext = this.dataDiskOffering?.displayText
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
@@ -1483,61 +1634,7 @@ export default {
           })
         }
 
-        if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
-          this.templateProperties.forEach((props, category) => {
-            props.forEach((property, propertyIndex) => {
-              if (property.type && property.type === 'boolean') {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value === 'TRUE'
-              } else if (property.type && (property.type === 'int' || property.type === 'real')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
-                  ? property.value
-                  : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
-              } else if (property.type && property.type === 'string' && property.password) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-                this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
-                  validator: async (rule, value) => {
-                    if (!property.qualifiers) {
-                      return Promise.resolve()
-                    }
-                    var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
-                    var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
-                    var errorMessage = ''
-                    var isPasswordInvalidLength = function () {
-                      return false
-                    }
-                    if (minlength) {
-                      errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
-                      isPasswordInvalidLength = function () {
-                        return !value || value.length < minlength
-                      }
-                    }
-                    if (maxlength !== Number.MAX_SAFE_INTEGER) {
-                      if (minlength) {
-                        errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || (maxlength < value.length || value.length < minlength)
-                        }
-                      } else {
-                        errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || value.length > maxlength
-                        }
-                      }
-                    }
-                    if (isPasswordInvalidLength()) {
-                      return Promise.reject(errorMessage)
-                    }
-                    return Promise.resolve()
-                  }
-                }]
-              } else {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              }
-            })
-          })
-        }
+        this.updateFormProperties()
 
         if (this.vm.templateid && this.templateLicenses && this.templateLicenses.length > 0) {
           this.rules.licensesaccepted = [{
@@ -1593,11 +1690,11 @@ export default {
         if (this.templateId) {
           apiName = 'listTemplates'
           params.listall = true
-          params.templatefilter = 'all'
+          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
         } else if (this.isoId) {
           params.listall = true
-          params.isofilter = 'all'
+          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.isoId
           apiName = 'listIsos'
         } else if (this.networkId) {
@@ -1644,8 +1741,9 @@ export default {
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
+      this.fetchIoPolicyTypes()
       nextTick().then(() => {
-        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
+        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
         this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
         this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
@@ -1664,6 +1762,7 @@ export default {
         this.showRootDiskSizeChanger = false
       } else {
         this.rootDiskSelected = null
+        this.form.overridediskofferingid = undefined
       }
       this.showOverrideDiskOfferingOption = val
     },
@@ -1689,11 +1788,19 @@ export default {
       }
       this.options.bootModes = bootModes
     },
+    fetchIoPolicyTypes () {
+      this.options.ioPolicyTypes = [
+        { id: 'native', description: 'native' },
+        { id: 'threads', description: 'threads' },
+        { id: 'io_uring', description: 'io_uring' },
+        { id: 'storage_specific', description: 'storage_specific' }
+      ]
+    },
     fetchInstaceGroups () {
       this.options.instanceGroups = []
       api('listInstanceGroups', {
-        account: this.$store.getters.userInfo.account,
-        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
+        domainid: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.domainid,
         listall: true
       }).then(response => {
         const groups = response.listinstancegroupsresponse.instancegroup || []
@@ -1754,11 +1861,20 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.defaultBootType)
-          this.defaultBootMode = this.template?.details?.UEFI
-          this.updateTemplateLinkedUserData(this.template.userdataid)
-          this.userdataDefaultOverridePolicy = this.template.userdatapolicy
+          this.updateTemplateLinkedUserData(template.userdataid)
+          this.userdataDefaultOverridePolicy = template.userdatapolicy
+          this.form.dynamicscalingenabled = template.isdynamicallyscalable
+          this.defaultBootType = template.details?.UEFI ? 'UEFI' : 'BIOS'
+          this.form.boottype = this.defaultBootType
+          this.fetchBootModes(this.form.boottype)
+          this.defaultBootMode = template.details?.UEFI || this.options.bootModes?.[0]?.id || undefined
+          this.form.bootmode = this.defaultBootMode
+          this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
+          this.form.iodriverpolicy = template.details?.['io.policy']
+          this.form.keyboard = template.details?.keyboard
+          if (template.details['vmware-to-kvm-mac-addresses']) {
+            this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
+          }
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1809,7 +1925,7 @@ export default {
       this.form.networkids = ids
     },
     updateDefaultNetworks (id) {
-      this.defaultNetwork = id
+      this.defaultnetworkid = id
       this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
@@ -1828,7 +1944,7 @@ export default {
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        if (resp[0]) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -1850,8 +1966,8 @@ export default {
       this.templateUserDataParams = []
 
       api('listUserData', { id: id }).then(json => {
-        const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        const resp = json.listuserdataresponse.userdata || []
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -1878,6 +1994,14 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
+    changeArchitecture (arch, isTemplate) {
+      this.selectedArchitecture = arch
+      if (isTemplate) {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
+    },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
       this.handleSubmit(e.domEvent)
@@ -1888,7 +2012,6 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-
         if (!values.templateid && !values.isoid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -1933,8 +2056,13 @@ export default {
           deployVmData.bootmode = values.bootmode
         }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
-        if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+        deployVmData.iothreadsenabled = values.iothreadsenabled
+        deployVmData.iodriverpolicy = values.iodriverpolicy
+        deployVmData.nicmultiqueuenumber = values.nicmultiqueuenumber
+        deployVmData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
+        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
+        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
+          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
@@ -1972,7 +2100,7 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
-        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid && !values.isoid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
           if (values.rootdisksize && values.rootdisksize > 0) {
             deployVmData.rootdisksize = values.rootdisksize
@@ -2056,7 +2184,9 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        deployVmData.userdataid = values.userdataid
+        if (isUserdataAllowed) {
+          deployVmData.userdataid = values.userdataid
+        }
 
         if (values.name) {
           deployVmData.name = values.name
@@ -2078,6 +2208,14 @@ export default {
           deployVmData.bootintosetup = values.bootintosetup
         }
 
+        if (this.owner.account) {
+          deployVmData.account = this.owner.account
+          deployVmData.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          deployVmData.domainid = this.owner.domainid
+          deployVmData.projectid = this.owner.projectid
+        }
+
         const title = this.$t('label.launch.vm')
         const description = values.name || ''
         const password = this.$t('label.password')
@@ -2092,7 +2230,7 @@ export default {
             idx++
           }
         }
-        if (this.userDataValues) {
+        if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
@@ -2117,6 +2255,15 @@ export default {
                   this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(vm.password)
+                      },
+                      () => [this.$t('label.copy.password')]
+                    ),
                     duration: 0
                   })
                 }
@@ -2160,6 +2307,29 @@ export default {
           })
         }
       })
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: store.getters.userInfo.domainid,
+        account: store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+      this.resetData()
     },
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []
@@ -2258,10 +2428,17 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
+      args.account = store.getters.project?.id ? null : this.owner.account
+      args.domainid = store.getters.project?.id ? null : this.owner.domainid
+      args.projectid = store.getters.project?.id || this.owner.projectid
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.templateId
+      args.isvnf = false
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
@@ -2279,6 +2456,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
       args.isoFilter = isoFilter
       args.bootable = true
       args.showicon = 'true'
@@ -2342,6 +2522,10 @@ export default {
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
+      this.isZoneSelectedMultiArch = this.zone.ismultiarch
+      if (this.isZoneSelectedMultiArch) {
+        this.selectedArchitecture = this.architectureTypes.opts[0].id
+      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId
@@ -2375,14 +2559,26 @@ export default {
     },
     onSelectPodId (value) {
       this.podId = value
+      if (this.podId === null) {
+        this.form.podid = undefined
+      }
 
       this.fetchOptions(this.params.clusters, 'clusters')
       this.fetchOptions(this.params.hosts, 'hosts')
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      if (this.clusterId === null) {
+        this.form.clusterid = undefined
+      }
 
       this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      if (this.hostId === null) {
+        this.form.hostid = undefined
+      }
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
@@ -2501,7 +2697,8 @@ export default {
       }
     },
     resetFromTemplateConfiguration () {
-      this.deleteFrom(this.params.serviceOfferings.options, ['cpuspeed', 'cpunumber', 'memory'])
+      this.deleteFrom(this.instanceConfig, ['disksize', 'rootdisksize'])
+      this.deleteFrom(this.params.serviceOfferings.options, ['templateid', 'cpuspeed', 'cpunumber', 'memory'])
       this.deleteFrom(this.dataPreFill, ['cpuspeed', 'cpunumber', 'memory'])
       this.handleSearchFilter('serviceOfferings', {
         page: 1,
@@ -2509,20 +2706,86 @@ export default {
       })
     },
     handleTemplateConfiguration () {
-      if (!this.selectedTemplateConfiguration) {
+      if (!this.selectedTemplateConfiguration && !this.template.templatetag) {
         return
       }
-      const params = {
-        cpunumber: this.selectedTemplateConfiguration.cpunumber,
-        cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
-        memory: this.selectedTemplateConfiguration.memory,
+      let params = {
         page: 1,
         pageSize: 10
       }
-      this.dataPreFill.cpunumber = params.cpunumber
-      this.dataPreFill.cpuspeed = params.cpuspeed
-      this.dataPreFill.memory = params.memory
+      if (this.template.templatetag) {
+        params.templateid = this.template.id
+      }
+      if (this.selectedTemplateConfiguration && Object.keys(this.selectedTemplateConfiguration).length > 0) {
+        params = {
+          ...params,
+          cpunumber: this.selectedTemplateConfiguration.cpunumber,
+          cpuspeed: this.selectedTemplateConfiguration.cpuspeed,
+          memory: this.selectedTemplateConfiguration.memory
+        }
+        this.dataPreFill.cpunumber = params.cpunumber
+        this.dataPreFill.cpuspeed = params.cpuspeed
+        this.dataPreFill.memory = params.memory
+      }
       this.handleSearchFilter('serviceOfferings', params)
+    },
+    updateFormProperties () {
+      if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
+        this.form.properties = {}
+        Object.keys(this.templateProperties).forEach((category, categoryIndex) => {
+          this.templateProperties[category].forEach((property, _) => {
+            if (property.type && property.type === 'boolean') {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value === 'TRUE'
+            } else if (property.type && (property.type === 'int' || property.type === 'real')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
+                ? property.value
+                : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
+            } else if (property.type && property.type === 'string' && property.password) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+              this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
+                validator: async (rule, value) => {
+                  if (!property.qualifiers) {
+                    return Promise.resolve()
+                  }
+                  var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
+                  var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
+                  var errorMessage = ''
+                  var isPasswordInvalidLength = function () {
+                    return false
+                  }
+                  if (minlength) {
+                    errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
+                    isPasswordInvalidLength = function () {
+                      return !value || value.length < minlength
+                    }
+                  }
+                  if (maxlength !== Number.MAX_SAFE_INTEGER) {
+                    if (minlength) {
+                      errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || (maxlength < value.length || value.length < minlength)
+                      }
+                    } else {
+                      errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || value.length > maxlength
+                      }
+                    }
+                  }
+                  if (isPasswordInvalidLength()) {
+                    return Promise.reject(errorMessage)
+                  }
+                  return Promise.resolve()
+                }
+              }]
+            } else {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            }
+          })
+        })
+      }
     },
     updateTemplateParameters () {
       if (this.template) {
@@ -2532,15 +2795,16 @@ export default {
         this.templateProperties = this.fetchTemplateProperties(this.template)
         this.selectedTemplateConfiguration = {}
         setTimeout(() => {
-          if (this.templateConfigurationExists) {
-            this.selectedTemplateConfiguration = this.templateConfigurations[0]
+          if (this.templateConfigurationExists || this.template.templatetag) {
+            this.selectedTemplateConfiguration = this.templateConfigurationExists ? this.templateConfigurations[0] : {}
             this.handleTemplateConfiguration()
-            if ('templateConfiguration' in this.form.fieldsStore.fieldsMeta) {
+            if (this.selectedTemplateConfiguration) {
               this.updateFieldValue('templateConfiguration', this.selectedTemplateConfiguration.id)
             }
             this.updateComputeOffering(null) // reset as existing selection may be incompatible
           }
         }, 500)
+        this.updateFormProperties()
       }
     },
     onSelectTemplateConfigurationId (value) {
@@ -2604,6 +2868,14 @@ export default {
         }
       }
       return networks
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }
@@ -2642,6 +2914,15 @@ export default {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
+  }
+
+  .zone-radio-button {
+    width:100%;
+    min-width: 345px;
+    height: 60px;
+    display: flex;
+    padding-left: 20px;
+    align-items: center;
   }
 
   .vm-info-card {

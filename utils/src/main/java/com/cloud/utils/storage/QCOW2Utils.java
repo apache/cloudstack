@@ -22,20 +22,22 @@ package com.cloud.utils.storage;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UriUtils;
 
 public final class QCOW2Utils {
-    public static final Logger LOGGER = Logger.getLogger(QCOW2Utils.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
 
     private static final int VIRTUALSIZE_HEADER_LOCATION = 24;
     private static final int VIRTUALSIZE_HEADER_LENGTH = 8;
@@ -57,7 +59,10 @@ public final class QCOW2Utils {
      * @param inputStream The QCOW2 object in stream format.
      * @return The virtual size of the QCOW2 object.
      */
-    public static long getVirtualSize(InputStream inputStream) throws IOException {
+    public static long getVirtualSize(InputStream inputStream, boolean isCompressed) throws IOException {
+        if (isCompressed) {
+            return getVirtualSizeFromInputStream(inputStream);
+        }
         byte[] bytes = new byte[VIRTUALSIZE_HEADER_LENGTH];
 
         if (inputStream.skip(VIRTUALSIZE_HEADER_LOCATION) != VIRTUALSIZE_HEADER_LOCATION) {
@@ -71,20 +76,13 @@ public final class QCOW2Utils {
         return NumbersUtil.bytesToLong(bytes);
     }
 
-    public static long getVirtualSize(String urlStr) {
-        InputStream inputStream = null;
-
+    private static long getVirtualSizeFromInputStream(InputStream inputStream) throws IOException {
         try {
-            URL url = new URL(urlStr);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(url.openStream());
-            inputStream = bufferedInputStream;
-
             try {
-                CompressorInputStream compressorInputStream = new CompressorStreamFactory().createCompressorInputStream(bufferedInputStream);
-                inputStream = compressorInputStream;
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+                inputStream = new CompressorStreamFactory().createCompressorInputStream(bufferedInputStream);
             } catch (CompressorException e) {
                 LOGGER.warn(e.getMessage());
-                inputStream = bufferedInputStream;
             }
 
             byte[] inputBytes = inputStream.readNBytes(VIRTUALSIZE_HEADER_LOCATION + VIRTUALSIZE_HEADER_LENGTH);
@@ -93,7 +91,7 @@ public final class QCOW2Utils {
             inputMagicBytes.put(inputBytes, 0, MAGIC_HEADER_LENGTH);
 
             ByteBuffer qcow2MagicBytes = ByteBuffer.allocate(MAGIC_HEADER_LENGTH);
-            qcow2MagicBytes.put("QFI".getBytes(Charset.forName("UTF-8")));
+            qcow2MagicBytes.put("QFI".getBytes(StandardCharsets.UTF_8));
             qcow2MagicBytes.put((byte)0xfb);
 
             long virtualSize = 0L;
@@ -105,12 +103,6 @@ public final class QCOW2Utils {
             }
 
             return virtualSize;
-        } catch (MalformedURLException e) {
-            LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
-            throw new IllegalArgumentException("Invalid URL: " + urlStr);
-        }  catch (IOException e) {
-            LOGGER.warn("Failed to validate for qcow2, error: " + e.getMessage());
-            throw new IllegalArgumentException("Failed to connect URL: " + urlStr);
         } finally {
             if (inputStream != null) {
                 try {
@@ -118,6 +110,26 @@ public final class QCOW2Utils {
                 } catch (final IOException e) {
                     LOGGER.warn("Failed to close input stream due to: " + e.getMessage());
                 }
+            }
+        }
+    }
+
+    public static long getVirtualSizeFromUrl(String urlStr, boolean followRedirects) {
+        HttpURLConnection httpConn = null;
+        try {
+            URI url = new URI(urlStr);
+            httpConn = (HttpURLConnection)url.toURL().openConnection();
+            httpConn.setInstanceFollowRedirects(followRedirects);
+            return getVirtualSize(httpConn.getInputStream(), UriUtils.isUrlForCompressedFile(urlStr));
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
+            throw new IllegalArgumentException("Invalid URL: " + urlStr);
+        }  catch (IOException e) {
+            LOGGER.warn("Failed to validate for qcow2, error: " + e.getMessage());
+            throw new IllegalArgumentException("Failed to connect URL: " + urlStr);
+        } finally {
+            if (httpConn != null) {
+                httpConn.disconnect();
             }
         }
     }

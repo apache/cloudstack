@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -45,22 +46,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends StorageService {
-    ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
-            "storage.cleanup.interval",
-            "Advanced",
-            "86400",
-            "The interval (in seconds) to wait before running the storage cleanup thread.",
-            false,
-            ConfigKey.Scope.Global,
-            null);
-    ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<>(Integer.class,
-            "storage.cleanup.delay",
-            "Advanced",
-            "86400",
-            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.",
-            false,
-            ConfigKey.Scope.Global,
-            null);
     ConfigKey<Boolean> StorageCleanupEnabled = new ConfigKey<>(Boolean.class,
             "storage.cleanup.enabled",
             "Advanced",
@@ -69,6 +54,24 @@ public interface StorageManager extends StorageService {
             false,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> StorageCleanupInterval = new ConfigKey<>(Integer.class,
+            "storage.cleanup.interval",
+            "Advanced",
+            "86400",
+            "The interval (in seconds) to wait before running the storage cleanup thread.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            StorageCleanupEnabled.key());
+    ConfigKey<Integer> StorageCleanupDelay = new ConfigKey<>(Integer.class,
+            "storage.cleanup.delay",
+            "Advanced",
+            "86400",
+            "Determines how long (in seconds) to wait before actually expunging destroyed volumes. The default value = the default value of storage.cleanup.interval.",
+            false,
+            ConfigKey.Scope.Global,
+            null,
+            StorageCleanupEnabled.key());
     ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<>(Boolean.class,
             "storage.template.cleanup.enabled",
             "Storage",
@@ -76,7 +79,8 @@ public interface StorageManager extends StorageService {
             "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
             false,
             ConfigKey.Scope.Global,
-            null);
+            null,
+            StorageCleanupEnabled.key());
     ConfigKey<Integer> KvmStorageOfflineMigrationWait = new ConfigKey<>(Integer.class,
             "kvm.storage.offline.migration.wait",
             "Storage",
@@ -114,7 +118,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.disk.wait",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the storage pool disk (of managed pool) to become available in the host. Currently supported for PowerFlex only.",
             true,
             ConfigKey.Scope.StoragePool,
             null);
@@ -123,7 +127,7 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.timeout",
             "Storage",
             "60",
-            "Timeout (in secs) for the storage pool client connection timeout (for managed pools). Currently only supported for PowerFlex.",
+            "Timeout (in secs) for the API client connection timeout of storage pool (for managed pools). Currently supported for PowerFlex only.",
             false,
             ConfigKey.Scope.StoragePool,
             null);
@@ -132,7 +136,25 @@ public interface StorageManager extends StorageService {
             "storage.pool.client.max.connections",
             "Storage",
             "100",
-            "Maximum connections for the storage pool client (for managed pools). Currently only supported for PowerFlex.",
+            "Maximum connections for the API client of storage pool (for managed pools). Currently supported for PowerFlex only.",
+            false,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<Integer> STORAGE_POOL_CONNECTED_CLIENTS_LIMIT = new ConfigKey<>(Integer.class,
+            "storage.pool.connected.clients.limit",
+            "Storage",
+            "-1",
+            "Maximum connected storage pool clients supported for the storage (for managed pools), <= 0 for unlimited (default: -1). Currently supported for PowerFlex only.",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+
+    ConfigKey<String> STORAGE_POOL_IO_POLICY = new ConfigKey<>(String.class,
+            "kvm.storage.pool.io.policy",
+            "Storage",
+            null,
+            "IO driver policy - 'threads', 'native' or 'io_uring'. If the IO policy is set for a specific storage and enabled in the VM settings this option will override be overridden from the VM's setting",
             false,
             ConfigKey.Scope.StoragePool,
             null);
@@ -179,6 +201,13 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    static final ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+            Boolean.class, "store.download.follow.redirects", "false",
+            "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
+            true, ConfigKey.Scope.Global);
+
+    ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
+            "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
 
     /**
      * should we execute in sequence not involving any storages?
@@ -232,6 +261,10 @@ public interface StorageManager extends StorageService {
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
+    boolean poolProvidesCustomStorageStats(StoragePool pool);
+
+    Map<String, String> getCustomStorageStats(StoragePool pool);
+
     /**
      * Checks if a host has running VMs that are using its local storage pool.
      * @return true if local storage is active on the host
@@ -254,6 +287,8 @@ public interface StorageManager extends StorageService {
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
 
+    CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
+
     List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
@@ -265,6 +300,8 @@ public interface StorageManager extends StorageService {
     List<StoragePoolHostVO> findStoragePoolsConnectedToHost(long hostId);
 
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
+
+    boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
     Host getHost(long hostId);
 
@@ -279,6 +316,9 @@ public interface StorageManager extends StorageService {
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
     boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
+
+    boolean storagePoolHasEnoughIops(Long requestedIops, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(Long size, StoragePool pool);
 
     boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
@@ -312,7 +352,13 @@ public interface StorageManager extends StorageService {
 
     boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
+    boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
+
+    Pair<Map<String, String>, Boolean> getStoragePoolNFSMountOpts(StoragePool pool, Map<String, String> details);
+
+    String getStoragePoolMountFailureReason(String error);
 
     boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
@@ -334,6 +380,8 @@ public interface StorageManager extends StorageService {
 
     Long getDiskIopsWriteRate(ServiceOffering offering, DiskOffering diskOffering);
 
+    ImageStore updateImageStoreStatus(Long id, String name, Boolean readonly, Long capacityBytes);
+
     void cleanupDownloadUrls();
 
     void setDiskProfileThrottling(DiskProfile dskCh, ServiceOffering offering, DiskOffering diskOffering);
@@ -343,5 +391,7 @@ public interface StorageManager extends StorageService {
     boolean isStoragePoolDatastoreClusterParent(StoragePool pool);
 
     void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId);
+
+    void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList);
 
 }

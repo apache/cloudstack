@@ -19,12 +19,14 @@ package com.cloud.api.query.vo;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.util.StoragePoolTypeConverter;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -34,6 +36,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 /**
  * Storage Pool DB view.
@@ -64,7 +67,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     private StoragePoolStatus status;
 
     @Column(name = "pool_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
@@ -110,6 +113,9 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     @Column(name = "tag")
     private String tag;
 
+    @Column(name = "is_tag_a_rule")
+    private boolean isTagARule;
+
     @Column(name = "disk_used_capacity")
     private long usedCapacity;
 
@@ -133,7 +139,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     private Long capacityIops;
 
     @Column(name = "hypervisor")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisor;
 
     @Column(name = "storage_provider_name")
@@ -241,6 +247,10 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
 
     public String getTag() {
         return tag;
+    }
+
+    public boolean getIsTagARule() {
+        return isTagARule;
     }
 
     public long getUsedCapacity() {

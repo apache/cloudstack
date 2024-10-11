@@ -24,24 +24,53 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
+  searchFilters: ['name', 'accounttype', 'domainid'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
   details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
     param: 'account'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'account'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'account'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'account'
+  }, {
+    name: 'ssh',
+    title: 'label.sshkeypairs',
+    param: 'account'
+  }, {
+    name: 'userdata',
+    title: 'label.userdata',
+    param: 'account'
+  }, {
+    name: 'template',
+    title: 'label.templates',
+    param: 'account'
   }],
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'locked']
+    return filters
+  },
   tabs: [
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
-      name: 'resources',
+      name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
-      name: 'limits',
+      name: 'limits.configure',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
@@ -87,7 +116,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain'],
+      args: ['newname', 'account', 'domainid', 'networkdomain', 'roleid'],
       mapping: {
         account: {
           value: (record) => { return record.name }
@@ -195,9 +224,8 @@ export default {
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,
-      show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return record.id !== 'undefined' && store.userInfo.accountid === record.id
       },
       groupAction: true,
       popup: true,

@@ -18,28 +18,31 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 @ResourceWrapper(handles =  SetupDirectDownloadCertificateCommand.class)
 public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends CommandWrapper<SetupDirectDownloadCertificateCommand, Answer, LibvirtComputingResource> {
 
     private static final String temporaryCertFilePrefix = "CSCERTIFICATE";
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtSetupDirectDownloadCertificateCommandWrapper.class);
 
     /**
      * Retrieve agent.properties file
@@ -61,7 +64,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
             try {
                 pass = PropertiesUtil.loadFromFile(agentFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
             } catch (IOException e) {
-                s_logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
+                logger.error("Could not get 'keystore.passphrase' property value due to: " + e.getMessage());
             }
         }
         return pass;
@@ -78,12 +81,13 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
      * Import certificate from temporary file into keystore
      */
     private void importCertificate(String tempCerFilePath, String keyStoreFile, String certificateName, String privatePassword) {
-        s_logger.debug("Importing certificate from temporary file to keystore");
-        String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
-        String importCmd = String.format(importCommandFormat, tempCerFilePath, keyStoreFile, certificateName, privatePassword);
-        int result = Script.runSimpleBashScriptForExitValue(importCmd);
+        logger.debug("Importing certificate from temporary file to keystore");
+        String keyToolPath = Script.getExecutableAbsolutePath("keytool");
+        int result = Script.executeCommandForExitValue(keyToolPath, "-importcert", "file", tempCerFilePath,
+                "-keystore", keyStoreFile, "-alias", sanitizeBashCommandArgument(certificateName), "-storepass",
+                privatePassword, "-noprompt");
         if (result != 0) {
-            s_logger.debug("Certificate " + certificateName + " not imported as it already exist on keystore");
+            logger.debug("Certificate " + certificateName + " not imported as it already exist on keystore");
         }
     }
 
@@ -93,9 +97,8 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     private String createTemporaryFile(File agentFile, String certificateName, String certificate) {
         String tempCerFilePath = String.format("%s/%s-%s",
                 agentFile.getParent(), temporaryCertFilePrefix, certificateName);
-        s_logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
-        int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, tempCerFilePath));
-        if (result != 0) {
+        logger.debug("Creating temporary certificate file into: " + tempCerFilePath);
+        if (!FileUtil.writeToFile(tempCerFilePath, certificate)) {
             throw new CloudRuntimeException("Could not create the certificate file on path: " + tempCerFilePath);
         }
         return tempCerFilePath;
@@ -104,9 +107,24 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     /**
      * Remove temporary file
      */
-    private void cleanupTemporaryFile(String temporaryFile) {
-        s_logger.debug("Cleaning up temporary certificate file");
-        Script.runSimpleBashScript("rm -f " + temporaryFile);
+
+    protected void cleanupTemporaryFile(String temporaryFile) {
+        logger.debug("Cleaning up temporary certificate file");
+        if (StringUtils.isBlank(temporaryFile)) {
+            logger.debug("Provided temporary certificate file path is empty");
+            return;
+        }
+        try {
+            Path filePath = Paths.get(temporaryFile);
+            if (!Files.exists(filePath)) {
+                logger.debug("Temporary certificate file does not exist: " + temporaryFile);
+                return;
+            }
+            Files.delete(filePath);
+        } catch (IOException e) {
+            logger.warn(String.format("Error while cleaning up temporary file: %s", temporaryFile));
+            logger.debug(String.format("Error while cleaning up temporary file: %s", temporaryFile), e);
+        }
     }
 
     @Override
@@ -126,7 +144,7 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
             importCertificate(temporaryFile, keyStoreFile, certificateName, privatePassword);
             cleanupTemporaryFile(temporaryFile);
         } catch (FileNotFoundException | CloudRuntimeException e) {
-            s_logger.error("Error while setting up certificate " + certificateName, e);
+            logger.error("Error while setting up certificate " + certificateName, e);
             return new Answer(cmd, false, e.getMessage());
         }
 

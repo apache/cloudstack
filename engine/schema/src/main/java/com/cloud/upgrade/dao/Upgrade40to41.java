@@ -25,13 +25,11 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade40to41 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade40to41.class);
+public class Upgrade40to41 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -85,7 +83,7 @@ public class Upgrade40to41 implements DbUpgrade {
         }
         try (PreparedStatement pstmt = conn.prepareStatement("update `cloud`.`region` set id = ?");) {
             //Update regionId in region table
-            s_logger.debug("Updating region table with Id: " + region_id);
+            logger.debug("Updating region table with Id: " + region_id);
             pstmt.setInt(1, region_id);
             pstmt.executeUpdate();
 
@@ -101,7 +99,7 @@ public class Upgrade40to41 implements DbUpgrade {
                 "not null and traffic_type is null");)
         {
             updateNwpstmt.executeUpdate();
-            s_logger.debug("Updating firewall Ingress rule traffic type: " + updateNwpstmt);
+            logger.debug("Updating firewall Ingress rule traffic type: " + updateNwpstmt);
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update ingress firewall rules ", e);
         }
@@ -120,13 +118,13 @@ public class Upgrade40to41 implements DbUpgrade {
                     NwAcctDomIdpstmt.setLong(1, netId);
 
                     try (ResultSet NwAcctDomIdps = NwAcctDomIdpstmt.executeQuery();) {
-                        s_logger.debug("Getting account_id, domain_id from networks table: " + NwAcctDomIdpstmt);
+                        logger.debug("Getting account_id, domain_id from networks table: " + NwAcctDomIdpstmt);
 
                         if (NwAcctDomIdps.next()) {
                             long accountId = NwAcctDomIdps.getLong(1);
                             long domainId = NwAcctDomIdps.getLong(2);
                             //Add new rule for the existing networks
-                            s_logger.debug("Adding default egress firewall rule for network " + netId);
+                            logger.debug("Adding default egress firewall rule for network " + netId);
                             try (PreparedStatement fwRulespstmt = conn.prepareStatement("INSERT INTO firewall_rules "+
                                     " (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,"
                                     + " traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), "
@@ -137,7 +135,7 @@ public class Upgrade40to41 implements DbUpgrade {
                             fwRulespstmt.setLong(3, domainId);
                             fwRulespstmt.setLong(4, netId);
                             fwRulespstmt.setString(5, UUID.randomUUID().toString());
-                            s_logger.debug("Inserting default egress firewall rule " + fwRulespstmt);
+                            logger.debug("Inserting default egress firewall rule " + fwRulespstmt);
                             fwRulespstmt.executeUpdate();
                             }  catch (SQLException e) {
                                 throw new CloudRuntimeException("failed to insert default egress firewall rule ", e);
@@ -154,7 +152,7 @@ public class Upgrade40to41 implements DbUpgrade {
 
                                         try (PreparedStatement fwCidrsPstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");) {
                                             fwCidrsPstmt.setLong(1, firewallRuleId);
-                                            s_logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + fwCidrsPstmt);
+                                            logger.debug("Inserting rule for cidr 0.0.0.0/0 for the new Firewall rule id=" + firewallRuleId + " with statement " + fwCidrsPstmt);
                                             fwCidrsPstmt.executeUpdate();
                                         }  catch (SQLException e) {
                                             throw new CloudRuntimeException("Unable to set egress firewall rules ", e);
@@ -185,4 +183,3 @@ public class Upgrade40to41 implements DbUpgrade {
     }
 
 }
-

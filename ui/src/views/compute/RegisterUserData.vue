@@ -43,6 +43,9 @@
             v-model:value="form.userdata"
             :placeholder="apiParams.userdata.description"/>
         </a-form-item>
+        <a-form-item name="isbase64" ref="isbase64" :label="$t('label.is.base64.encoded')">
+          <a-checkbox v-model:checked="form.isbase64"></a-checkbox>
+        </a-form-item>
         <a-form-item name="params" ref="params">
           <template #label>
             <tooltip-label :title="$t('label.userdataparams')" :tooltip="apiParams.params.description"/>
@@ -51,9 +54,9 @@
             mode="tags"
             v-model:value="form.params"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.params.description">
             <a-select-option v-for="opt in params" :key="opt">
@@ -71,12 +74,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
               :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
             @change="val => { handleDomainChanged(domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+            <a-select-option
+              v-for="(opt, optIndex) in domains"
+              :key="optIndex"
+              :label="opt.path || opt.name || opt.description || ''">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -144,7 +150,9 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        isbase64: false
+      })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
         userdata: [{ required: true, message: this.$t('message.error.userdata') }]
@@ -184,14 +192,6 @@ export default {
     handleDomainChanged (domain) {
       this.selectedDomain = domain
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -209,14 +209,14 @@ export default {
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
         }
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        params.userdata = values.isbase64 ? values.userdata : this.$toBase64AndURIEncoded(values.userdata)
 
         if (values.params != null && values.params.length > 0) {
           var userdataparams = values.params.join(',')
           params.params = userdataparams
         }
 
-        api('registerUserData', params).then(json => {
+        api('registerUserData', {}, 'POST', params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)

@@ -17,27 +17,9 @@
 
 package com.cloud.consoleproxy;
 
-import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.info.ConsoleProxyStatus;
 import com.cloud.network.Networks.TrafficType;
@@ -50,9 +32,32 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.mockito.AdditionalMatchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class ConsoleProxyManagerTest {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerTest.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Mock
     GlobalLock globalLockMock;
@@ -62,24 +67,34 @@ public class ConsoleProxyManagerTest {
     DataCenterDao dataCenterDaoMock;
     @Mock
     NetworkDao networkDaoMock;
+
+    @Mock
+    Logger loggerMock;
     @Mock
     ConsoleProxyManagerImpl consoleProxyManagerImplMock;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "allocProxyLock", globalLockMock);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "dataCenterDao", dataCenterDaoMock);
         ReflectionTestUtils.setField(consoleProxyManagerImplMock, "networkDao", networkDaoMock);
-        Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).expandPool(Mockito.anyLong(), Mockito.anyObject());
+        ReflectionTestUtils.setField(consoleProxyManagerImplMock, "logger", loggerMock);
+        Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).expandPool(Mockito.anyLong(), Mockito.any());
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForCreation(Mockito.any(DataCenter.class));
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForAdvancedZone(Mockito.any(DataCenter.class));
         Mockito.doCallRealMethod().when(consoleProxyManagerImplMock).getDefaultNetworkForBasicZone(Mockito.any(DataCenter.class));
     }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testNewCPVMCreation() throws Exception {
-        s_logger.info("Running test for new CPVM creation");
+        logger.info("Running test for new CPVM creation");
 
         // No existing CPVM
         Mockito.when(consoleProxyManagerImplMock.assignProxyFromStoppedPool(Mockito.anyLong())).thenReturn(null);
@@ -95,7 +110,7 @@ public class ConsoleProxyManagerTest {
 
     @Test
     public void testExistingCPVMStart() throws Exception {
-        s_logger.info("Running test for existing CPVM start");
+        logger.info("Running test for existing CPVM start");
 
         // CPVM already exists
         Mockito.when(consoleProxyManagerImplMock.assignProxyFromStoppedPool(Mockito.anyLong())).thenReturn(consoleProxyVOMock);
@@ -107,7 +122,7 @@ public class ConsoleProxyManagerTest {
 
     @Test
     public void testExisingCPVMStartFailure() throws Exception {
-        s_logger.info("Running test for existing CPVM start failure");
+        logger.info("Running test for existing CPVM start failure");
 
         // CPVM already exists
         Mockito.when(consoleProxyManagerImplMock.assignProxyFromStoppedPool(Mockito.anyLong())).thenReturn(consoleProxyVOMock);
@@ -274,5 +289,25 @@ public class ConsoleProxyManagerTest {
         ConsoleProxyStatus expectedResult = null;
         ConsoleProxyStatus result = new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus(null);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    private void verifyScannablePoolsZoneIds(List<Long> expected, Long[] result) {
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expected.size(), result.length);
+        for (int i = 0; i < expected.size(); ++i) {
+            Assert.assertEquals(expected.get(i), result[i]);
+        }
+    }
+
+    @Test
+    public void testGetScannablePools() {
+        List<Long> dbZoneIds = new ArrayList<>();
+        Mockito.when(dataCenterDaoMock.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        ConsoleProxyManagerImpl consoleProxyManager = new ConsoleProxyManagerImpl();
+        ReflectionTestUtils.setField(consoleProxyManager, "dataCenterDao", dataCenterDaoMock);
+        verifyScannablePoolsZoneIds(dbZoneIds, consoleProxyManager.getScannablePools());
+        dbZoneIds = Arrays.asList(2L, 3L);
+        Mockito.when(dataCenterDaoMock.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        verifyScannablePoolsZoneIds(dbZoneIds, consoleProxyManager.getScannablePools());
     }
 }

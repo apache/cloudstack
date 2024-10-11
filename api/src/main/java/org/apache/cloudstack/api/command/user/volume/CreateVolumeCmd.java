@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -48,7 +47,6 @@ import com.cloud.vm.VirtualMachine;
         Volume.class, VirtualMachine.class},
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
     /////////////////////////////////////////////////////
@@ -70,7 +68,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                description = "the domain ID associated with the disk offering. If used with the account parameter"
-                   + " returns the disk volume associated with the account for the specified domain.")
+                   + " returns the disk volume associated with the account for the specified domain." +
+                       "If account is NOT provided then the volume will be assigned to the caller account and domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,

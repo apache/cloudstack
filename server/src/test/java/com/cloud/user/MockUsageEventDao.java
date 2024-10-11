@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.utils.Pair;
@@ -31,6 +24,12 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class MockUsageEventDao implements UsageEventDao{
 
@@ -212,6 +211,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public int expunge(SearchCriteria<UsageEventVO> sc, long limit) {
+        return 0;
+    }
+
+    @Override
     public void expunge() {
 
     }
@@ -263,6 +267,11 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
+    public UsageEventVO findOneBy(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        return null;
+    }
+
+    @Override
     public Class<UsageEventVO> getEntityBeanType() {
         return null;
     }
@@ -290,6 +299,11 @@ public class MockUsageEventDao implements UsageEventDao{
 
     @Override
     public Integer countAll() {
+        return null;
+    }
+
+    @Override
+    public List<UsageEventVO> findByUuids(String... uuids) {
         return null;
     }
 
@@ -322,5 +336,20 @@ public class MockUsageEventDao implements UsageEventDao{
     @Override
     public Pair<List<UsageEventVO>, Integer> searchAndCount(SearchCriteria<UsageEventVO> sc, Filter filter, boolean includeRemoved) {
         return null;
+    }
+
+    @Override
+    public int expunge(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        return 0;
+    }
+
+    @Override
+    public int batchExpunge(SearchCriteria<UsageEventVO> sc, Long batchSize) {
+        return 0;
+    }
+
+    @Override
+    public int expungeList(List<Long> longs) {
+        return 0;
     }
 }

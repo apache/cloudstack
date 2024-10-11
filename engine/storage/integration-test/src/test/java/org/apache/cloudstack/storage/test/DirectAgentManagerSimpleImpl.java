@@ -26,7 +26,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -60,7 +59,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentManager {
-    private static final Logger logger = Logger.getLogger(DirectAgentManagerSimpleImpl.class);
     private final Map<Long, ServerResource> hostResourcesMap = new HashMap<Long, ServerResource>();
     @Inject
     HostDao hostDao;

@@ -19,10 +19,11 @@ package com.cloud.consoleproxy;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyHttpHandlerHelper.class);
 
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
@@ -39,8 +40,8 @@ public class ConsoleProxyHttpHandlerHelper {
                 String value = paramTokens[1] + "=" + paramTokens[2];
                 map.put(name, value);
             } else {
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Invalid parameter in URL found. param: " + param);
+                if (LOGGER.isDebugEnabled())
+                    LOGGER.debug("Invalid parameter in URL found. param: " + param);
             }
         }
 
@@ -54,27 +55,35 @@ public class ConsoleProxyHttpHandlerHelper {
             guardUserInput(map);
             if (param != null) {
                 if (param.getClientHostAddress() != null) {
-                    s_logger.debug("decode token. host: " + param.getClientHostAddress());
+                    LOGGER.debug("decode token. host: " + param.getClientHostAddress());
                     map.put("host", param.getClientHostAddress());
                 } else {
-                    s_logger.error("decode token. host info is not found!");
+                    LOGGER.error("decode token. host info is not found!");
                 }
                 if (param.getClientHostPort() != 0) {
-                    s_logger.debug("decode token. port: " + param.getClientHostPort());
+                    LOGGER.debug("decode token. port: " + param.getClientHostPort());
                     map.put("port", String.valueOf(param.getClientHostPort()));
                 } else {
-                    s_logger.error("decode token. port info is not found!");
+                    LOGGER.error("decode token. port info is not found!");
                 }
                 if (param.getClientTag() != null) {
-                    s_logger.debug("decode token. tag: " + param.getClientTag());
+                    LOGGER.debug("decode token. tag: " + param.getClientTag());
                     map.put("tag", param.getClientTag());
                 } else {
-                    s_logger.error("decode token. tag info is not found!");
+                    LOGGER.error("decode token. tag info is not found!");
+                }
+                if (param.getClientDisplayName() != null) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("decode token. displayname: " + param.getClientDisplayName());
+                    }
+                    map.put("displayname", param.getClientDisplayName());
+                } else {
+                    LOGGER.error("decode token. displayname info is not found!");
                 }
                 if (param.getClientHostPassword() != null) {
                     map.put("sid", param.getClientHostPassword());
                 } else {
-                    s_logger.error("decode token. sid info is not found!");
+                    LOGGER.error("decode token. sid info is not found!");
                 }
                 if (param.getClientTunnelUrl() != null)
                     map.put("consoleurl", param.getClientTunnelUrl());
@@ -102,7 +111,7 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("extraSecurityToken", param.getExtraSecurityToken());
                 }
             } else {
-                s_logger.error("Unable to decode token");
+                LOGGER.error("Unable to decode token");
             }
         } else {
             // we no longer accept information from parameter other than token
@@ -110,7 +119,7 @@ public class ConsoleProxyHttpHandlerHelper {
         }
 
         if (map.containsKey("extra")) {
-            s_logger.debug(String.format("Found extra parameter: %s for client security validation check " +
+            LOGGER.debug(String.format("Found extra parameter: %s for client security validation check " +
                     "on the VNC server", map.get("extra")));
         }
 

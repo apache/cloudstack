@@ -22,11 +22,11 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 // import { fas } from '@fortawesome/free-solid-svg-icons'
 // import { far } from '@fortawesome/free-regular-svg-icons'
 
-import { faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava } from '@fortawesome/free-brands-svg-icons'
-import { faCompactDisc, faCameraRetro } from '@fortawesome/free-solid-svg-icons'
+import { faCentos, faUbuntu, faDebian, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava } from '@fortawesome/free-brands-svg-icons'
+import { faCompactDisc, faCameraRetro, faDharmachakra } from '@fortawesome/free-solid-svg-icons'
 
-library.add(faCentos, faUbuntu, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava)
-library.add(faCompactDisc, faCameraRetro)
+library.add(faCentos, faUbuntu, faDebian, faSuse, faRedhat, faFedora, faLinux, faFreebsd, faApple, faWindows, faJava)
+library.add(faCompactDisc, faCameraRetro, faDharmachakra)
 
 export default {
   install: (app) => {

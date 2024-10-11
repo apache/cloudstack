@@ -47,11 +47,11 @@ export default {
       }
     },
     {
-      name: 'resources',
+      name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
-      name: 'limits',
+      name: 'limits.configure',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
@@ -101,7 +101,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit.project.details',
       dataView: true,
-      args: ['displaytext'],
+      args: ['name', 'displaytext'],
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
       }

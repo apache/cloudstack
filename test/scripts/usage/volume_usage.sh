@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 
- 
+
 
 #set -x
 #Check first ROOT volume
@@ -157,5 +157,3 @@ else
 echo "Skipping verification for account $i (the account either a) misses root volume $volume_name b) volume wasn't deleted 3) Delete volume failed "
 fi
 done
-
-

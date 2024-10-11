@@ -19,13 +19,20 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtStoragePoolDefTest extends TestCase {
 
+    @Test
     public void testSetGetStoragePool() {
         PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
@@ -43,8 +50,17 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(port, pool.getSourcePort());
         assertEquals(dir, pool.getSourceDir());
         assertEquals(targetPath, pool.getTargetPath());
+
+        List<String> nfsMountOpts = new ArrayList<>();
+        nfsMountOpts.add("vers=4.1");
+        nfsMountOpts.add("nconnect=4");
+        pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
+        assertTrue(pool.getNfsMountOpts().contains("vers=4.1"));
+        assertTrue(pool.getNfsMountOpts().contains("nconnect=4"));
+        assertEquals(pool.getNfsMountOpts().size(), 2);
     }
 
+    @Test
     public void testNfsStoragePool() {
         PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
@@ -52,16 +68,43 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         String host = "127.0.0.1";
         String dir  = "/export/primary";
         String targetPath = "/mnt/" + uuid;
+        List<String> nfsMountOpts = new ArrayList<>();
+        nfsMountOpts.add("vers=4.1");
+        nfsMountOpts.add("nconnect=4");
 
-        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath);
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
 
-        String expectedXml = "<pool type='" + type.toString() + "'>\n<name>" + name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+        String expectedXml = "<pool type='" + type.toString() + "' xmlns:fs='http://libvirt.org/schemas/storagepool/fs/1.0'>\n" +
+                             "<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
                              "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n</source>\n<target>\n" +
-                             "<path>" + targetPath + "</path>\n</target>\n</pool>\n";
+                             "<path>" + targetPath + "</path>\n</target>\n" +
+                             "<fs:mount_opts>\n<fs:option name='vers=4.1'/>\n<fs:option name='nconnect=4'/>\n</fs:mount_opts>\n</pool>\n";
 
         assertEquals(expectedXml, pool.toString());
     }
 
+    @Test
+    public void testGlusterFSStoragePool() {
+        PoolType type = PoolType.GLUSTERFS;
+        String name = "myGFSPool";
+        String uuid = "89a605bc-d470-4637-b3df-27388be452f5";
+        String host = "127.0.0.1";
+        String dir  = "/export/primary";
+        String targetPath = "/mnt/" + uuid;
+        List<String> nfsMountOpts = new ArrayList<>();
+
+        LibvirtStoragePoolDef pool = new LibvirtStoragePoolDef(type, name, uuid, host, dir, targetPath, nfsMountOpts);
+
+        String expectedXml = "<pool type='netfs'>\n" +
+                "<name>" +name + "</name>\n<uuid>" + uuid + "</uuid>\n" +
+                "<source>\n<host name='" + host + "'/>\n<dir path='" + dir + "'/>\n" +
+                "<format type='glusterfs'/>\n</source>\n<target>\n" +
+                "<path>" + targetPath + "</path>\n</target>\n</pool>\n";
+
+        assertEquals(expectedXml, pool.toString());
+    }
+
+    @Test
     public void testRbdStoragePool() {
         PoolType type = PoolType.RBD;
         String name = "myRBDPool";
@@ -83,6 +126,7 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(expectedXml, pool.toString());
     }
 
+    @Test
     public void testRbdStoragePoolWithoutPort() {
         PoolType type = PoolType.RBD;
         String name = "myRBDPool";

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -33,11 +34,18 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * ConfigDepotImpl implements the ConfigDepot and ConfigDepotAdmin interface.
@@ -67,18 +75,29 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *     validation class to validate the value the admin input for the key.
  */
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
-    private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
+    protected final static long CONFIG_CACHE_EXPIRE_SECONDS = 30;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ConfigurationGroupDao _configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao _configSubGroupDao;
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
+    Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
+    Cache<String, String> configCache;
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
 
     public ConfigDepotImpl() {
+        configCache = Caffeine.newBuilder()
+                .maximumSize(512)
+                .expireAfterWrite(CONFIG_CACHE_EXPIRE_SECONDS, TimeUnit.SECONDS)
+                .build();
         ConfigKey.init(this);
         createEmptyScopeLevelMappings();
     }
@@ -117,7 +136,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         if (_configured.contains(configurable))
             return;
 
-        s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
+        logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
 
         for (ConfigKey<?> key : configurable.getConfigKeys()) {
             Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
@@ -139,6 +158,28 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     private void createOrupdateConfigObject(Date date, String componentName, ConfigKey<?> key, String value) {
+        Long groupId = 1L;
+        Long subGroupId = 1L;
+        if (key.group() != null) {
+            Ternary<String, String, Long> group = key.group();
+            ConfigurationGroupVO groupVO = _configGroupDao.findByName(group.first());
+            if (groupVO == null) {
+                groupVO = new ConfigurationGroupVO(group.first(), group.second(), group.third());
+                groupVO = _configGroupDao.persist(groupVO);
+            }
+            groupId = groupVO.getId();
+        }
+
+        if (key.subGroup() != null) {
+            Pair<String, Long> subGroup = key.subGroup();
+            ConfigurationSubGroupVO subGroupVO = _configSubGroupDao.findByNameAndGroup(subGroup.first(), groupId);
+            if (subGroupVO == null) {
+                subGroupVO = new ConfigurationSubGroupVO();
+                subGroupVO = _configSubGroupDao.persist(subGroupVO);
+            }
+            subGroupId = subGroupVO.getId();
+        }
+
         ConfigurationVO vo = _configDao.findById(key.key());
         if (vo == null) {
             vo = new ConfigurationVO(componentName, key);
@@ -146,8 +187,26 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             if (value != null) {
                 vo.setValue(value);
             }
+
+            if (key.group() == null && key.subGroup() == null ) {
+                Pair<Long, Long> configGroupAndSubGroup = getConfigurationGroupAndSubGroupByName(key.key());
+                vo.setGroupId(configGroupAndSubGroup.first());
+                vo.setSubGroupId(configGroupAndSubGroup.second());
+            } else {
+                vo.setGroupId(groupId);
+                vo.setSubGroupId(subGroupId);
+            }
+            if (key.kind() != null) {
+                vo.setKind(key.kind().toString());
+            }
+            if (key.options() != null) {
+                vo.setOptions(key.options());
+            }
+
             _configDao.persist(vo);
+            newConfigs.add(vo.getName());
         } else {
+            boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
                 !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
                 !ObjectUtils.equals(vo.getComponent(), componentName)) {
@@ -157,6 +216,48 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 vo.setScope(key.scope().toString());
                 vo.setComponent(componentName);
                 vo.setUpdated(date);
+                configUpdated = true;
+            }
+
+            if (key.displayText() != null && !ObjectUtils.equals(vo.getDisplayText(), key.displayText())) {
+                vo.setDisplayText(key.displayText());
+                configUpdated = true;
+            }
+
+            if (key.parent() != null && !ObjectUtils.equals(vo.getParent(), key.parent())) {
+                vo.setParent(key.parent());
+                configUpdated = true;
+            }
+
+            if (key.group() == null && key.subGroup() == null ) {
+                Pair<Long, Long> configGroupAndSubGroup = getConfigurationGroupAndSubGroupByName(key.key());
+                if (configGroupAndSubGroup.first() != 1 && configGroupAndSubGroup.second() != 1) {
+                    vo.setGroupId(configGroupAndSubGroup.first());
+                    vo.setSubGroupId(configGroupAndSubGroup.second());
+                    configUpdated = true;
+                }
+            }
+
+            if (key.group() != null && !ObjectUtils.equals(vo.getGroupId(), groupId)) {
+                vo.setGroupId(groupId);
+                configUpdated = true;
+            }
+
+            if (key.subGroup() != null && !ObjectUtils.equals(vo.getSubGroupId(), subGroupId)) {
+                vo.setSubGroupId(subGroupId);
+                configUpdated = true;
+            }
+
+            if (key.kind() != null) {
+                vo.setKind(key.kind().toString());
+                configUpdated = true;
+            }
+            if (key.options() != null) {
+                vo.setOptions(key.options());
+                configUpdated = true;
+            }
+
+            if (configUpdated) {
                 _configDao.persist(vo);
             }
         }
@@ -174,6 +275,48 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     public ConfigurationDao global() {
         return _configDao;
+    }
+
+    protected String getConfigStringValueInternal(String cacheKey) {
+        String[] parts = cacheKey.split("-");
+        String key = parts[0];
+        ConfigKey.Scope scope = ConfigKey.Scope.Global;
+        Long scopeId = null;
+        try {
+            scope = ConfigKey.Scope.valueOf(parts[1]);
+            scopeId = Long.valueOf(parts[2]);
+        } catch (IllegalArgumentException ignored) {}
+        if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
+            ScopedConfigStorage scopedConfigStorage = null;
+            for (ScopedConfigStorage storage : _scopedStorages) {
+                if (storage.getScope() == scope) {
+                    scopedConfigStorage = storage;
+                }
+            }
+            if (scopedConfigStorage == null) {
+                throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
+            }
+            return scopedConfigStorage.getConfigValue(scopeId, key);
+        }
+        ConfigurationVO configurationVO = _configDao.findById(key);
+        if (configurationVO != null) {
+            return configurationVO.getValue();
+        }
+        return null;
+    }
+
+    private String getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
+        return String.format("%s-%s-%d", key, scope, (scopeId == null ? 0 : scopeId));
+    }
+
+    @Override
+    public String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId) {
+        return configCache.get(getConfigCacheKey(key, scope, scopeId), this::getConfigStringValueInternal);
+    }
+
+    @Override
+    public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
+        configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
     }
 
     public ScopedConfigStorage findScopedConfigStorage(ConfigKey<?> config) {
@@ -227,6 +370,36 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public <T> void createOrUpdateConfigObject(String componentName, ConfigKey<T> key, String value) {
         createOrupdateConfigObject(new Date(), componentName, key, value);
+    }
 
+    @Override
+    public Pair<Long, Long> getConfigurationGroupAndSubGroupByName(String configName) {
+        Long subGroupId = 1L;
+        Long groupId = 1L;
+        if (StringUtils.isNotBlank(configName)) {
+            String[] nameWords = configName.split("\\.");
+            if (nameWords.length > 0) {
+                for (int index = 0; index < nameWords.length; index++) {
+                    ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findByName(nameWords[index]);
+
+                    if (configSubGroup == null) {
+                        configSubGroup = _configSubGroupDao.findByKeyword(nameWords[index]);
+                    }
+
+                    if (configSubGroup != null) {
+                        subGroupId = configSubGroup.getId();
+                        groupId = configSubGroup.getGroupId();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return new Pair<>(groupId, subGroupId);
+    }
+
+    @Override
+    public boolean isNewConfig(ConfigKey<?> configKey) {
+        return newConfigs.contains(configKey.key());
     }
 }

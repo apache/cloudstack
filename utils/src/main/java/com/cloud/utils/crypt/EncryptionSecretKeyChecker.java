@@ -26,26 +26,26 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.DbProperties;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionSecretKeyChecker {
 
-    private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Two possible locations with the new packaging naming
     private static final String s_altKeyFile = "key";
     private static final String s_keyFile = "key";
     private static final String s_envKey = "CLOUD_SECRET_KEY";
-    private static StandardPBEStringEncryptor s_encryptor = new StandardPBEStringEncryptor();
+    private static CloudStackEncryptor s_encryptor = null;
     private static boolean s_useEncryption = false;
 
     @PostConstruct
@@ -58,21 +58,18 @@ public class EncryptionSecretKeyChecker {
     public void check(Properties properties, String property) throws IOException {
         String encryptionType = properties.getProperty(property);
 
-        s_logger.debug("Encryption Type: " + encryptionType);
+        logger.debug("Encryption Type: " + encryptionType);
 
         if (encryptionType == null || encryptionType.equals("none")) {
             return;
         }
 
         if (s_useEncryption) {
-            s_logger.warn("Encryption already enabled, is check() called twice?");
+            logger.warn("Encryption already enabled, is check() called twice?");
             return;
         }
 
-        s_encryptor.setAlgorithm("PBEWithMD5AndDES");
         String secretKey = null;
-
-        SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
 
         if (encryptionType.equals("file")) {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream(s_keyFile);
@@ -102,7 +99,7 @@ public class EncryptionSecretKeyChecker {
         } else if (encryptionType.equals("web")) {
             int port = 8097;
             try (ServerSocket serverSocket = new ServerSocket(port);) {
-                s_logger.info("Waiting for admin to send secret key on port " + port);
+                logger.info("Waiting for admin to send secret key on port " + port);
                 try (
                         Socket clientSocket = serverSocket.accept();
                         PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -122,12 +119,14 @@ public class EncryptionSecretKeyChecker {
             throw new CloudRuntimeException("Invalid encryption type: " + encryptionType);
         }
 
-        stringConfig.setPassword(secretKey);
-        s_encryptor.setConfig(stringConfig);
-        s_useEncryption = true;
+        if (secretKey == null) {
+            throw new CloudRuntimeException("null secret key is found when setting up server encryption");
+        }
+
+        initEncryptor(secretKey);
     }
 
-    public static StandardPBEStringEncryptor getEncryptor() {
+    public static CloudStackEncryptor getEncryptor() {
         return s_encryptor;
     }
 
@@ -135,12 +134,36 @@ public class EncryptionSecretKeyChecker {
         return s_useEncryption;
     }
 
-    //Initialize encryptor for migration during secret key change
-    public static void initEncryptorForMigration(String secretKey) {
-        s_encryptor.setAlgorithm("PBEWithMD5AndDES");
-        SimpleStringPBEConfig stringConfig = new SimpleStringPBEConfig();
-        stringConfig.setPassword(secretKey);
-        s_encryptor.setConfig(stringConfig);
+    public static void initEncryptor(String secretKey) {
+        s_encryptor = new CloudStackEncryptor(secretKey, null, EncryptionSecretKeyChecker.class);
         s_useEncryption = true;
+    }
+
+    public static void resetEncryptor() {
+        s_encryptor = null;
+        s_useEncryption = false;
+    }
+
+    protected static String decryptPropertyIfNeeded(String value) {
+        if (s_encryptor == null) {
+            throw new CloudRuntimeException("encryptor not initialized");
+        }
+
+        if (value.startsWith("ENC(") && value.endsWith(")")) {
+            String inner = value.substring("ENC(".length(), value.length() - ")".length());
+            return s_encryptor.decrypt(inner);
+        }
+        return value;
+    }
+
+    public static void decryptAnyProperties(Properties properties) {
+        if (s_encryptor == null) {
+            throw new CloudRuntimeException("encryptor not initialized");
+        }
+
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            String value = (String) entry.getValue();
+            properties.replace(entry.getKey(), decryptPropertyIfNeeded(value));
+        }
     }
 }

@@ -20,12 +20,18 @@ package com.cloud.hypervisor.kvm.resource;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.UUID;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtKvmAgentHookTest extends TestCase {
 
     private final String source = "<xml />";
@@ -47,20 +53,21 @@ public class LibvirtKvmAgentHookTest extends TestCase {
             "new BaseTransform()\n" +
             "\n";
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         super.setUp();
         PrintWriter pw = new PrintWriter(new File(dir, script));
         pw.println(testImpl);
         pw.close();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         new File(dir, script).delete();
         super.tearDown();
     }
 
+    @Test
     public void testTransform() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, method);
         assertEquals(t.isInitialized(), true);
@@ -68,24 +75,28 @@ public class LibvirtKvmAgentHookTest extends TestCase {
         assertEquals(result, source + source);
     }
 
+    @Test
     public void testWrongMethod() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, "methodX");
         assertEquals(t.isInitialized(), true);
         assertEquals(t.handle(source), source);
     }
 
+    @Test
     public void testNullMethod() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, script, methodNull);
         assertEquals(t.isInitialized(), true);
         assertEquals(t.handle(source), null);
     }
 
+    @Test
     public void testWrongScript() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook(dir, "wrong-script.groovy", method);
         assertEquals(t.isInitialized(), false);
         assertEquals(t.handle(source), source);
     }
 
+    @Test
     public void testWrongDir() throws IOException, ResourceException, ScriptException {
         LibvirtKvmAgentHook t = new LibvirtKvmAgentHook("/" + UUID.randomUUID().toString() + "-dir", script, method);
         assertEquals(t.isInitialized(), false);

@@ -721,7 +721,7 @@ class TestAddNetworkToVirtualMachine(cloudstackTestCase):
 
         self.debug("Created network %s" % network_2.name)
 
-        self.debug("Trying to add netwrok %s to VM %s, this should fail" %
+        self.debug("Trying to add network %s to VM %s, this should fail" %
                    (network_2.name, virtual_machine.id))
 
         with self.assertRaises(Exception) as e:

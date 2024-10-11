@@ -28,33 +28,34 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConsoleProxyAjaxImageHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxImageHandler.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public void handle(HttpExchange t) throws IOException {
         try {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("AjaxImageHandler " + t.getRequestURI());
+            if (logger.isDebugEnabled())
+                logger.debug("AjaxImageHandler " + t.getRequestURI());
 
             long startTick = System.currentTimeMillis();
 
             doHandle(t);
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
+            if (logger.isDebugEnabled())
+                logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IOException e) {
             throw e;
         } catch (IllegalArgumentException e) {
-            s_logger.warn("Exception, ", e);
+            logger.warn("Exception, ", e);
             t.sendResponseHeaders(400, -1);     // bad request
         } catch (OutOfMemoryError e) {
-            s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+            logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception, ", e);
+            logger.error("Unexpected exception, ", e);
             t.sendResponseHeaders(500, -1);     // server error
         } finally {
             t.close();
@@ -69,6 +70,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
         String portStr = queryMap.get("port");
         String sid = queryMap.get("sid");
         String tag = queryMap.get("tag");
+        String displayName = queryMap.get("displayname");
         String ticket = queryMap.get("ticket");
         String keyStr = queryMap.get("key");
         String console_url = queryMap.get("consoleurl");
@@ -90,7 +92,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
         try {
             port = Integer.parseInt(portStr);
         } catch (NumberFormatException e) {
-            s_logger.warn("Invalid numeric parameter in query string: " + portStr);
+            logger.warn("Invalid numeric parameter in query string: " + portStr);
             throw new IllegalArgumentException(e);
         }
 
@@ -104,7 +106,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
                 height = Integer.parseInt(h);
 
         } catch (NumberFormatException e) {
-            s_logger.warn("Invalid numeric parameter in query string: " + keyStr);
+            logger.warn("Invalid numeric parameter in query string: " + keyStr);
             throw new IllegalArgumentException(e);
         }
 
@@ -113,6 +115,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
         param.setClientHostPort(port);
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
+        param.setClientDisplayName(displayName);
         param.setTicket(ticket);
         param.setClientTunnelUrl(console_url);
         param.setClientTunnelSession(console_host_session);
@@ -128,9 +131,9 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
             javax.imageio.ImageIO.write(bufferedImage, "jpg", bos);
             byte[] bs = bos.toByteArray();
             Headers hds = t.getResponseHeaders();
-            hds.set("Content-Type", "image/jpeg");
-            hds.set("Cache-Control", "no-cache");
-            hds.set("Cache-Control", "no-store");
+            hds.set("content-type", "image/jpeg");
+            hds.set("cache-control", "no-cache");
+            hds.set("cache-control", "no-store");
             t.sendResponseHeaders(200, bs.length);
             OutputStream os = t.getResponseBody();
             os.write(bs);
@@ -141,7 +144,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 
             if (img != null) {
                 Headers hds = t.getResponseHeaders();
-                hds.set("Content-Type", "image/jpeg");
+                hds.set("content-type", "image/jpeg");
                 t.sendResponseHeaders(200, img.length);
 
                 OutputStream os = t.getResponseBody();
@@ -151,8 +154,8 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
                     os.close();
                 }
             } else {
-                if (s_logger.isInfoEnabled())
-                    s_logger.info("Image has already been swept out, key: " + key);
+                if (logger.isInfoEnabled())
+                    logger.info("Image has already been swept out, key: " + key);
                 t.sendResponseHeaders(404, -1);
             }
         }

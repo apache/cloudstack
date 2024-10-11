@@ -17,22 +17,6 @@
 
 package com.cloud.network.security;
 
-import java.io.IOException;
-
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
@@ -68,10 +52,26 @@ import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
+import java.io.IOException;
 
 @Configuration
-@ComponentScan(basePackageClasses = {SecurityGroupRulesDaoImpl.class, UserVmDaoImpl.class, AccountDaoImpl.class, ConfigurationDaoImpl.class,
-    SecurityGroupWorkDaoImpl.class, VmRulesetLogDaoImpl.class, VMInstanceDaoImpl.class, DomainDaoImpl.class, UsageEventDaoImpl.class,
+@ComponentScan(basePackageClasses = {SecurityGroupRulesDaoImpl.class, UserVmDaoImpl.class, AccountDaoImpl.class, ConfigurationDaoImpl.class, ConfigurationGroupDaoImpl.class,
+    ConfigurationSubGroupDaoImpl.class, SecurityGroupWorkDaoImpl.class, VmRulesetLogDaoImpl.class, VMInstanceDaoImpl.class, DomainDaoImpl.class, UsageEventDaoImpl.class,
     ResourceTagsDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class,
     DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, HostTransferMapDaoImpl.class, SecurityGroupManagerImpl2.class, SecurityGroupDaoImpl.class,
     SecurityGroupVMMapDaoImpl.class, UserVmDetailsDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,

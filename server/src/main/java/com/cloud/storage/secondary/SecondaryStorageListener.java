@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.storage.secondary;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -31,7 +32,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {
-    private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     SecondaryStorageVmManager _ssVmMgr = null;
 
@@ -78,8 +79,8 @@ public class SecondaryStorageListener implements Listener {
                 return;
             }
         } else if (cmd instanceof StartupSecondaryStorageCommand) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Received a host startup notification " + cmd);
+            if (logger.isInfoEnabled()) {
+                logger.info("Received a host startup notification " + cmd);
             }
             _ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             _ssVmMgr.generateSetupCommand(agent.getId());

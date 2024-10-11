@@ -47,10 +47,12 @@
                 </a-avatar>
               </template>
               <template #description>
-                <span v-if="getResourceName(notice.description, 'name') && notice.path">
-                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path && !['VPC_RESTART_REQUIRED', 'NETWORK_RESTART_REQUIRED'].includes(notice.key)">
+                  <router-link :to="{ path: notice.path}">{{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
+                  {{ getResourceName(notice.description, "msg") }}</span>
+                <span v-else-if="notice.path && ['VPC_RESTART_REQUIRED', 'NETWORK_RESTART_REQUIRED'].includes(notice.key)">
+                  <router-link :to="{ path: notice.path, query: notice.query }">{{ notice.description }}</router-link>
                 </span>
-                <span v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
                 <span v-else>{{ notice.description }}</span>
               </template>
             </a-list-item-meta>
@@ -109,7 +111,7 @@ export default {
       (state, getters) => getters.headerNotices,
       (newValue, oldValue) => {
         if (oldValue !== newValue && newValue !== undefined) {
-          this.notices = newValue.reverse()
+          this.notices = newValue
         }
       }
     )

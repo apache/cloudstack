@@ -18,9 +18,43 @@
 //
 package com.cloud.server;
 
+import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.server.StatsCollector.ExternalStatsProtocol;
+import com.cloud.storage.VolumeStatsVO;
+import com.cloud.storage.dao.VolumeStatsDao;
+import com.cloud.user.VmDiskStatisticsVO;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VmStats;
+import com.cloud.vm.VmStatsVO;
+import com.cloud.vm.dao.VmStatsDaoImpl;
+import com.google.gson.Gson;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.BatchPoints;
+import org.influxdb.dto.BatchPoints.Builder;
+import org.influxdb.dto.Point;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,42 +62,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.dto.BatchPoints;
-import org.influxdb.dto.BatchPoints.Builder;
-import org.influxdb.dto.Point;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
-
-import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.server.StatsCollector.ExternalStatsProtocol;
-import com.cloud.user.VmDiskStatisticsVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VmStats;
-import com.cloud.vm.VmStatsVO;
-import com.cloud.vm.dao.VmStatsDao;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(DataProviderRunner.class)
-@PrepareForTest({InfluxDBFactory.class, BatchPoints.class})
+@RunWith(DataProviderRunner.class)
 public class StatsCollectorTest {
 
     @InjectMocks
@@ -77,25 +81,49 @@ public class StatsCollectorTest {
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
 
     @Mock
-    VmStatsDao vmStatsDaoMock;
+    VmStatsDaoImpl vmStatsDaoMock;
 
     @Mock
     VmStatsEntry statsForCurrentIterationMock;
 
     @Captor
-    ArgumentCaptor<VmStatsVO> vmStatsVOCaptor;
+    ArgumentCaptor<VmStatsVO> vmStatsVOCaptor = ArgumentCaptor.forClass(VmStatsVO.class);
 
     @Captor
-    ArgumentCaptor<Boolean> booleanCaptor;
+    ArgumentCaptor<Boolean> booleanCaptor = ArgumentCaptor.forClass(Boolean.class);
 
     @Mock
-    Boolean accumulateMock;
+    VmStatsVO vmStatsVoMock1 = Mockito.mock(VmStatsVO.class);
 
     @Mock
-    VmStatsVO vmStatsVoMock1, vmStatsVoMock2;
+    VmStatsVO vmStatsVoMock2 = Mockito.mock(VmStatsVO.class);
 
     @Mock
-    VmStatsEntry vmStatsEntryMock;
+    VmStatsEntry vmStatsEntryMock = Mockito.mock(VmStatsEntry.class);
+
+    @Mock
+    VolumeStatsDao volumeStatsDao = Mockito.mock(VolumeStatsDao.class);
+
+    private static Gson gson = new Gson();
+
+    private MockedStatic<InfluxDBFactory> influxDBFactoryMocked;
+
+    private AutoCloseable closeable;
+
+    @Before
+    public void setUp() throws Exception {
+        closeable = MockitoAnnotations.openMocks(this);
+        statsCollector.vmStatsDao = vmStatsDaoMock;
+        statsCollector.volumeStatsDao = volumeStatsDao;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (influxDBFactoryMocked != null) {
+            influxDBFactoryMocked.close();
+        }
+        closeable.close();
+    }
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -112,8 +140,8 @@ public class StatsCollectorTest {
         statsCollector.externalStatsPort = INFLUXDB_DEFAULT_PORT;
         InfluxDB influxDbConnection = Mockito.mock(InfluxDB.class);
         when(influxDbConnection.databaseExists(DEFAULT_DATABASE_NAME)).thenReturn(databaseExists);
-        PowerMockito.mockStatic(InfluxDBFactory.class);
-        PowerMockito.when(InfluxDBFactory.connect(URL)).thenReturn(influxDbConnection);
+        influxDBFactoryMocked = Mockito.mockStatic(InfluxDBFactory.class);
+        influxDBFactoryMocked.when(() -> InfluxDBFactory.connect(URL)).thenReturn(influxDbConnection);
 
         InfluxDB returnedConnection = statsCollector.createInfluxDbConnection();
 
@@ -126,21 +154,22 @@ public class StatsCollectorTest {
         Mockito.doNothing().when(influxDbConnection).write(Mockito.any(Point.class));
         Builder builder = Mockito.mock(Builder.class);
         BatchPoints batchPoints = Mockito.mock(BatchPoints.class);
-        PowerMockito.mockStatic(BatchPoints.class);
-        PowerMockito.when(BatchPoints.database(DEFAULT_DATABASE_NAME)).thenReturn(builder);
-        when(builder.build()).thenReturn(batchPoints);
-        Map<String, String> tagsToAdd = new HashMap<>();
-        tagsToAdd.put("hostId", "1");
-        Map<String, Object> fieldsToAdd = new HashMap<>();
-        fieldsToAdd.put("total_memory_kbs", 10000000);
-        Point point = Point.measurement("measure").tag(tagsToAdd).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS).fields(fieldsToAdd).build();
-        List<Point> points = new ArrayList<>();
-        points.add(point);
-        when(batchPoints.point(point)).thenReturn(batchPoints);
+        try (MockedStatic<BatchPoints> ignored = Mockito.mockStatic(BatchPoints.class)) {
+            Mockito.when(BatchPoints.database(DEFAULT_DATABASE_NAME)).thenReturn(builder);
+            when(builder.build()).thenReturn(batchPoints);
+            Map<String, String> tagsToAdd = new HashMap<>();
+            tagsToAdd.put("hostId", "1");
+            Map<String, Object> fieldsToAdd = new HashMap<>();
+            fieldsToAdd.put("total_memory_kbs", 10000000);
+            Point point = Point.measurement("measure").tag(tagsToAdd).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS).fields(fieldsToAdd).build();
+            List<Point> points = new ArrayList<>();
+            points.add(point);
+            when(batchPoints.point(point)).thenReturn(batchPoints);
 
-        statsCollector.writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
+            statsCollector.writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
 
-        Mockito.verify(influxDbConnection).write(batchPoints);
+            Mockito.verify(influxDbConnection).write(batchPoints);
+        }
     }
 
     @Test
@@ -221,7 +250,8 @@ public class StatsCollectorTest {
         configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 123l, 123l, false);
     }
 
-    private void configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expectedResult) {
+    private void configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(long bytesRead, long bytesWrite, long ioRead,
+            long ioWrite, boolean expectedResult) {
         VmDiskStatisticsVO previousVmDiskStatisticsVO = new VmDiskStatisticsVO(1l, 1l, 1l, 1l);
         previousVmDiskStatisticsVO.setCurrentBytesRead(123l);
         previousVmDiskStatisticsVO.setCurrentBytesWrite(123l);
@@ -240,12 +270,13 @@ public class StatsCollectorTest {
 
     @Test
     @DataProvider({
-        "0,0,0,0,true", "1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false",
-        "0,0,0,1,false", "1,0,0,1,false", "1,0,1,0,false", "1,1,0,0,false",
-        "0,1,1,0,false", "0,1,0,1,false", "0,0,1,1,false", "0,1,1,1,false",
-        "1,1,0,1,false", "1,0,1,1,false", "1,1,1,0,false", "1,1,1,1,false",
+            "0,0,0,0,true", "1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false",
+            "0,0,0,1,false", "1,0,0,1,false", "1,0,1,0,false", "1,1,0,0,false",
+            "0,1,1,0,false", "0,1,0,1,false", "0,0,1,1,false", "0,1,1,1,false",
+            "1,1,0,1,false", "1,0,1,1,false", "1,1,1,0,false", "1,1,1,1,false",
     })
-    public void configureAndTestCheckIfDiskStatsAreZero(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expected) {
+    public void configureAndTestCheckIfDiskStatsAreZero(long bytesRead, long bytesWrite, long ioRead, long ioWrite,
+            boolean expected) {
         VmDiskStatsEntry vmDiskStatsEntry = new VmDiskStatsEntry();
         vmDiskStatsEntry.setBytesRead(bytesRead);
         vmDiskStatsEntry.setBytesWrite(bytesWrite);
@@ -273,7 +304,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
@@ -282,7 +313,7 @@ public class StatsCollectorTest {
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any());
+        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any(), Mockito.anyLong());
     }
 
     @Test
@@ -300,17 +331,16 @@ public class StatsCollectorTest {
         VmStatsVO actual = vmStatsVOCaptor.getAllValues().get(0);
         Assert.assertEquals(Long.valueOf(2L), actual.getVmId());
         Assert.assertEquals(Long.valueOf(1L), actual.getMgmtServerId());
-        Assert.assertEquals(expectedVmStatsStr, actual.getVmStatsData());
+        Assert.assertEquals(convertJsonToOrderedMap(expectedVmStatsStr), convertJsonToOrderedMap(actual.getVmStatsData()));
         Assert.assertEquals(timestamp, actual.getTimestamp());
     }
 
     @Test
     public void getVmStatsTestWithAccumulateNotNull() {
         Mockito.doReturn(Arrays.asList(vmStatsVoMock1)).when(vmStatsDaoMock).findByVmIdOrderByTimestampDesc(Mockito.anyLong());
-        Mockito.doReturn(true).when(accumulateMock).booleanValue();
         Mockito.doReturn(vmStatsEntryMock).when(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), Mockito.anyBoolean());
 
-        VmStats result = statsCollector.getVmStats(1L, accumulateMock);
+        VmStats result = statsCollector.getVmStats(1L, false);
 
         Mockito.verify(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), booleanCaptor.capture());
         boolean actualArg = booleanCaptor.getValue().booleanValue();
@@ -358,8 +388,8 @@ public class StatsCollectorTest {
                 + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
                 + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
                 + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
-        Mockito.doReturn(fakeStatsData1).when(vmStatsVoMock1).getVmStatsData();
-        Mockito.doReturn(fakeStatsData2).when(vmStatsVoMock2).getVmStatsData();
+        Mockito.when(vmStatsVoMock1.getVmStatsData()).thenReturn(fakeStatsData1);
+        Mockito.when(vmStatsVoMock2.getVmStatsData()).thenReturn(fakeStatsData2);
 
         VmStatsEntry result = statsCollector.accumulateVmMetricsStats(new ArrayList<VmStatsVO>(
                 Arrays.asList(vmStatsVoMock1, vmStatsVoMock2)));
@@ -387,6 +417,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbIpv4Local() {
         Properties p = new Properties();
@@ -395,6 +426,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbSymbolicLocal() {
         Properties p = new Properties();
@@ -403,6 +435,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbOnSameIp() {
         Properties p = new Properties();
@@ -412,6 +445,7 @@ public class StatsCollectorTest {
 
         Assert.assertTrue(statsCollector.isDbLocal());
     }
+
     @Test
     public void testIsDbNotLocal() {
         Properties p = new Properties();
@@ -420,5 +454,72 @@ public class StatsCollectorTest {
         when(statsCollector.getDbProperties()).thenReturn(p);
 
         Assert.assertFalse(statsCollector.isDbLocal());
+    }
+
+    private void performPersistVolumeStatsTest(Hypervisor.HypervisorType hypervisorType) {
+        Date timestamp = new Date();
+        String vmName = "vm";
+        String path = "path";
+        long ioReadDiff = 100;
+        long ioWriteDiff = 200;
+        long readDiff = 1024;
+        long writeDiff = 0;
+        Long volumeId = 1L;
+        VmDiskStatsEntry statsForCurrentIteration = null;
+        if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
+                    2000 + ioWriteDiff,
+                    1000 + ioReadDiff,
+                    20480 + writeDiff,
+                    10240 + readDiff);
+            statsForCurrentIteration.setDeltaIoRead(ioReadDiff);
+            statsForCurrentIteration.setDeltaIoWrite(ioWriteDiff);
+            statsForCurrentIteration.setDeltaBytesRead(readDiff);
+            statsForCurrentIteration.setDeltaBytesWrite(writeDiff);
+        } else {
+            statsForCurrentIteration = new VmDiskStatsEntry(vmName, path,
+                    ioWriteDiff,
+                    ioReadDiff,
+                    writeDiff,
+                    readDiff);
+        }
+        List<VolumeStatsVO> persistedStats = new ArrayList<>();
+        Mockito.when(volumeStatsDao.persist(Mockito.any(VolumeStatsVO.class))).thenAnswer((Answer<VolumeStatsVO>) invocation -> {
+            VolumeStatsVO statsVO = (VolumeStatsVO) invocation.getArguments()[0];
+            persistedStats.add(statsVO);
+            return statsVO;
+        });
+        statsCollector.persistVolumeStats(volumeId, statsForCurrentIteration, hypervisorType, timestamp);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(persistedStats));
+        Assert.assertNotNull(persistedStats.get(0));
+        VolumeStatsVO stat = persistedStats.get(0);
+        Assert.assertEquals(volumeId, stat.getVolumeId());
+        VmDiskStatsEntry entry = gson.fromJson(stat.getVolumeStatsData(), VmDiskStatsEntry.class);
+        Assert.assertEquals(vmName, entry.getVmName());
+        Assert.assertEquals(path, entry.getPath());
+        Assert.assertEquals(ioReadDiff, entry.getIORead());
+        Assert.assertEquals(ioWriteDiff, entry.getIOWrite());
+        Assert.assertEquals(readDiff, entry.getBytesRead());
+        Assert.assertEquals(writeDiff, entry.getBytesWrite());
+    }
+
+    @Test
+    public void testPersistVolumeStatsKVM() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.KVM);
+    }
+
+    @Test
+    public void testPersistVolumeStatsVmware() {
+        performPersistVolumeStatsTest(Hypervisor.HypervisorType.VMware);
+    }
+
+    private Map<String, String> convertJsonToOrderedMap(String json) {
+        Map<String, String> jsonMap = new TreeMap<String, String>();
+        String[] keyValuePairs = json.replace("{", "").replace("}","").split(",");
+        for (String pair: keyValuePairs) {
+            String[] keyValue = pair.split(":");
+            jsonMap.put(keyValue[0], keyValue[1]);
+        }
+        return jsonMap;
     }
 }

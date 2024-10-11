@@ -132,6 +132,22 @@ a {
   color: @primary-color;
 }
 
+.custom-icon path {
+  fill: @navigation-text-color;
+}
+
+.ant-menu-light {
+  .ant-menu-item:hover > a,
+  .ant-menu-submenu-title:hover > a,
+  .ant-menu-submenu-title:hover,
+  .ant-menu-item:hover,
+  .ant-menu-submenu-title:hover {
+    .custom-icon path {
+      fill: @primary-color;
+    }
+  }
+}
+
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
   background-color: @primary-color-light;
 }
@@ -260,6 +276,7 @@ a {
 
     .custom-icon path {
       color: @primary-color;
+      fill: @primary-color;
     }
   }
 
@@ -292,6 +309,7 @@ a {
 
   .custom-icon path {
     color: @primary-color;
+    fill: @primary-color;
   }
 }
 
@@ -400,6 +418,10 @@ a {
   background-color: #f9f9f9;
 }
 
+.child-row {
+  background-color: #f5f5f5;
+}
+
 .tag-disabled-input, .btn-add-tag {
   background-color: #fff;
 }
@@ -449,6 +471,10 @@ a {
   width: auto;
 }
 
+.ant-list-item.selected-item {
+  background-color: @primary-color-light;
+}
+
 .ant-select-arrow .anticon {
   vertical-align: top;
 }
@@ -483,4 +509,38 @@ a {
 .ant-dropdown-menu-item:hover,
 .ant-dropdown-menu-submenu-title:hover {
   background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
+}
+
+.ant-tabs.tab-center {
+  > .ant-tabs-nav, > div > .ant-tabs-nav,
+  > .ant-tabs-nav .ant-tabs-nav-wrap,
+  > div > .ant-tabs-nav .ant-tabs-nav-wrap {
+    justify-content: center;
+  }
+}
+
+.ant-tabs-large>.ant-tabs-nav .ant-tabs-tab {
+  padding: 16px;
+}
+
+.ant-tabs-left>.ant-tabs-nav .ant-tabs-tab {
+  padding: 8px 24px 8px 8px;
+  text-align: center;
+}
+
+.ant-steps {
+  &-item-container {
+    &:hover {
+      .ant-steps-item-content .ant-steps-item-description {
+        color: inherit !important;
+      }
+    }
+  }
+
+  &-item-process {
+    .ant-steps-item-content .ant-steps-item-title {
+      color: inherit !important;
+      font-weight: 600;
+    }
+  }
 }
