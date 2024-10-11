@@ -22,6 +22,7 @@ import io.netris.ApiException;
 import io.netris.ApiResponse;
 import io.netris.api.v1.AuthenticationApi;
 import io.netris.api.v1.SitesApi;
+import io.netris.api.v1.TenantsApi;
 import io.netris.api.v2.VpcApi;
 import io.netris.model.AuthSchema;
 import io.netris.model.GetSiteBody;
@@ -29,6 +30,8 @@ import io.netris.model.SitesResponseOK;
 import io.netris.model.VPCListing;
 import io.netris.model.VPCResponseOK;
 import io.netris.model.response.AuthResponse;
+import io.netris.model.response.TenantResponse;
+import io.netris.model.response.TenantsResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -53,7 +56,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             ApiResponse<AuthResponse> authResponse = authenticationApi.apiAuthPost(authSchema);
             if (authResponse.getStatusCode() == 200) {
                 String cookie = authResponse.getHeaders().get("Set-Cookie").get(0).split(";")[0];
-                apiClient.setApiKey(cookie);
                 apiClient.addDefaultHeader("Cookie", cookie);
             } else {
                 String msg = String.format("Authentication to the Netris Controller %s failed, please check the credentials provided", apiClient.getBasePath());
@@ -106,5 +108,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         } catch (ApiException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    @Override
+    public List<TenantResponse> listTenants() throws ApiException {
+        TenantsApi api = new TenantsApi(apiClient);
+        ApiResponse<TenantsResponse> response = api.apiTenantsGet();
+        return response.getData().getData();
     }
 }

@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import io.netris.ApiException;
 import io.netris.model.GetSiteBody;
 import io.netris.model.VPCListing;
+import io.netris.model.response.TenantResponse;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +31,7 @@ public class NetrisApiClientImplTest {
     private static final String username = "netris";
     private static final String password = "qHHa$CZ2oJv*@!7mwoSR";
 
-    private NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password);
+    private static final NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password);
 
     @Test
     public void testNetrisAuthStatus() {
@@ -46,5 +48,11 @@ public class NetrisApiClientImplTest {
     public void testListVpcs() {
         List<VPCListing> vpcs = client.listVPCs();
         Assert.assertTrue(vpcs.size() > 0);
+    }
+
+    @Test
+    public void testListTenants() throws ApiException {
+        List<TenantResponse> tenants = client.listTenants();
+        Assert.assertTrue(tenants.size() > 0);
     }
 }
