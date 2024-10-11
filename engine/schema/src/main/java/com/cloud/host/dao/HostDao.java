@@ -171,8 +171,9 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     boolean isHostUp(long hostId);
 
-    List<Long> findHostIdsByZoneClusterResourceStateAndType(final Long zoneId, final Long clusterId,
-            final List<ResourceState> resourceStates, final List<Type> types);
+    List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
+            final List<ResourceState> resourceStates, final List<Type> types,
+            final List<Hypervisor.HypervisorType> hypervisorTypes);
 
     List<Long> listAllIds();
 

@@ -103,8 +103,8 @@ public class IndirectAgentLBServiceImplTest {
         addField(agentMSLB, "agentManager", agentManager);
 
         List<Long> hostIds = hosts.stream().map(HostVO::getId).collect(Collectors.toList());
-        doReturn(hostIds).when(hostDao).findHostIdsByZoneClusterResourceStateAndType(Mockito.anyLong(), Mockito.eq(null),
-                Mockito.anyList(), Mockito.anyList());
+        doReturn(hostIds).when(hostDao).findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(Mockito.anyLong(),
+                Mockito.eq(null), Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
     }
 
     @Before
@@ -195,16 +195,16 @@ public class IndirectAgentLBServiceImplTest {
 
     @Test
     public void testGetOrderedRunningHostIdsEmptyList() {
-        doReturn(Collections.emptyList()).when(hostDao).findHostIdsByZoneClusterResourceStateAndType(Mockito.eq(DC_1_ID), Mockito.eq(null),
-                Mockito.anyList(), Mockito.anyList());
+        doReturn(Collections.emptyList()).when(hostDao).findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(
+                Mockito.eq(DC_1_ID), Mockito.eq(null), Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
         Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_1_ID).isEmpty());
     }
 
     @Test
     public void testGetOrderedRunningHostIdsOrderList() {
         doReturn(Arrays.asList(host4.getId(), host2.getId(), host1.getId(), host3.getId())).when(hostDao)
-                .findHostIdsByZoneClusterResourceStateAndType(Mockito.eq(DC_1_ID), Mockito.eq(null),
-                        Mockito.anyList(), Mockito.anyList());
+                .findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(Mockito.eq(DC_1_ID), Mockito.eq(null),
+                        Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
         Assert.assertEquals(Arrays.asList(host1.getId(), host2.getId(), host3.getId(), host4.getId()),
                 agentMSLB.getOrderedHostIdList(DC_1_ID));
     }

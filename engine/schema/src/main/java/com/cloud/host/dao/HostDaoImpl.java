@@ -1570,14 +1570,20 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<Long> findHostIdsByZoneClusterResourceStateAndType(final Long zoneId, final Long clusterId,
-               final List<ResourceState> resourceStates, final List<Type> types) {
+    public List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
+                final List<ResourceState> resourceStates, final List<Type> types,
+                final List<Hypervisor.HypervisorType> hypervisorTypes) {
         GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
         sb.selectFields(sb.entity().getId());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.IN);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.IN);
+        if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
+            sb.and().op(sb.entity().getHypervisorType(), SearchCriteria.Op.NULL);
+            sb.or("hypervisorTypes", sb.entity().getHypervisorType(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
         sb.done();
         SearchCriteria<Long> sc = sb.create();
         if (zoneId != null) {
@@ -1585,6 +1591,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
+        }
+        if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
+            sb.and().op(sb.entity().getHypervisorType(), SearchCriteria.Op.NULL);
+            sc.setParameters("hypervisorTypes", hypervisorTypes.toArray());
+            sb.cp();
         }
         sc.setParameters("resourceState", resourceStates.toArray());
         sc.setParameters("type", types.toArray());

@@ -42,6 +42,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -132,11 +133,12 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     }
 
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
-        return hostDao.findHostIdsByZoneClusterResourceStateAndType(zoneId, clusterId,
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
                 List.of(ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
                         ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance),
                 List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
-                        Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM));
+                        Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM),
+                List.of(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.KVM));
     }
 
     private org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm getAgentMSLBAlgorithm() {
