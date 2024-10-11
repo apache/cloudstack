@@ -1005,28 +1005,27 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         if (updateCounts.isEmpty()) {
             return notUpdated;
         }
-        StringBuilder sql = new StringBuilder("UPDATE vm_instance SET " +
-                "power_host = ?, power_state_update_time = now(), power_state = CASE ");
+        StringBuilder sql = new StringBuilder("UPDATE `cloud`.`vm_instance` SET " +
+                "`power_host` = ?, `power_state_update_time` = now(), `power_state` = CASE ");
         updateCounts.keySet().forEach(key -> {
             sql.append("WHEN id = ").append(key).append(" THEN '").append(instancePowerStates.get(key)).append("' ");
         });
-        sql.append("END, power_state_update_count = CASE ");
+        sql.append("END, `power_state_update_count` = CASE ");
         StringBuilder idList = new StringBuilder();
         updateCounts.forEach((key, value) -> {
-            sql.append("WHEN id = ").append(key).append(" THEN ").append(value).append(" ");
+            sql.append("WHEN `id` = ").append(key).append(" THEN ").append(value).append(" ");
             idList.append(key).append(",");
         });
         idList.setLength(idList.length() - 1);
-        sql.append("END WHERE id IN (").append(idList).append(")");
-        try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
-            try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
-                pstmt.setLong(1, powerHostId);
-                pstmt.executeUpdate();
-            } catch (SQLException e) {
-                s_logger.error(String.format("Unable to execute update power states SQL from VMs %s due to: %s",
-                        idList, e.getMessage()), e);
-                return instancePowerStates;
-            }
+        sql.append("END WHERE `id` IN (").append(idList).append(")");
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
+            pstmt.setLong(1, powerHostId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            s_logger.error(String.format("Unable to execute update power states SQL from VMs %s due to: %s",
+                    idList, e.getMessage()), e);
+            return instancePowerStates;
         }
         return notUpdated;
     }
