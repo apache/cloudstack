@@ -20,11 +20,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import io.netris.ApiClient;
 import io.netris.ApiException;
 import io.netris.ApiResponse;
-import io.netris.api.AuthenticationApi;
-import io.netris.api.SitesApi;
+import io.netris.api.v1.AuthenticationApi;
+import io.netris.api.v1.SitesApi;
+import io.netris.api.v2.VpcApi;
 import io.netris.model.AuthSchema;
 import io.netris.model.GetSiteBody;
 import io.netris.model.SitesResponseOK;
+import io.netris.model.VPCListing;
+import io.netris.model.VPCResponseOK;
 import io.netris.model.response.AuthResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,6 +91,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         SitesApi api = new SitesApi(apiClient);
         try {
             SitesResponseOK response = api.apiSitesGet();
+            return response.getData();
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<VPCListing> listVPCs() {
+        VpcApi api = new VpcApi(apiClient);
+        try {
+            VPCResponseOK response = api.apiV2VpcGet();
             return response.getData();
         } catch (ApiException e) {
             throw new CloudRuntimeException(e);
