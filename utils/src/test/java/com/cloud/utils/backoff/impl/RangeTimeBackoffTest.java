@@ -43,6 +43,12 @@ public class RangeTimeBackoffTest {
         Assert.assertTrue(timeTaken <= max * 1000L);
     }
 
+    private void checkTimeTakenBetweenDelta(long timeTaken, int value) {
+        long min = (value * 1000L) - 10L;
+        long max = (value* 1000L) + 10L;
+        Assert.assertTrue(min <= timeTaken && timeTaken <= max);
+    }
+
     @Test
     public void testWaitEmptyValue() {
         RangeTimeBackoff backoff = new RangeTimeBackoff();
@@ -52,8 +58,7 @@ public class RangeTimeBackoffTest {
         backoff.configure("RangeTimeBackoff", map);
         long startTime = System.currentTimeMillis();
         backoff.waitBeforeRetry();
-        long timeTaken = System.currentTimeMillis() - startTime;
-        Assert.assertTrue(timeTaken >= RangeTimeBackoff.DEFAULT_MIN_TIME * 1000L);
+        checkTimeTakenBetweenDelta(System.currentTimeMillis() - startTime, RangeTimeBackoff.DEFAULT_MIN_TIME);
     }
 
     @Test
@@ -63,8 +68,7 @@ public class RangeTimeBackoffTest {
         backoff.configure("RangeTimeBackoff", map);
         long startTime = System.currentTimeMillis();
         backoff.waitBeforeRetry();
-        long timeTaken = System.currentTimeMillis() - startTime;
-        Assert.assertTrue(timeTaken >= RangeTimeBackoff.DEFAULT_MIN_TIME * 1000L);
+        checkTimeTakenBetweenDelta(System.currentTimeMillis() - startTime, RangeTimeBackoff.DEFAULT_MIN_TIME);
     }
 
     @Test
@@ -78,7 +82,6 @@ public class RangeTimeBackoffTest {
         backoff.configure("RangeTimeBackoff", map);
         long startTime = System.currentTimeMillis();
         backoff.waitBeforeRetry();
-        long timeTaken = System.currentTimeMillis() - startTime;
-        Assert.assertTrue(timeTaken >= min * 1000L);
+        checkTimeTakenBetweenDelta(System.currentTimeMillis() - startTime, min);
     }
 }

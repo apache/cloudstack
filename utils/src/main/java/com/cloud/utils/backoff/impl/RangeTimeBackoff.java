@@ -38,7 +38,7 @@ import com.cloud.utils.component.AdapterBase;
 public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
     protected static final int DEFAULT_MIN_TIME = 5;
     private int minTime = DEFAULT_MIN_TIME;
-    private int maxTime = 3 * DEFAULT_MIN_TIME;
+    private int maxTime = DEFAULT_MIN_TIME;
     private final Map<String, Thread> asleep = new ConcurrentHashMap<>();
     private static final Logger LOG = Logger.getLogger(RangeTimeBackoff.class.getName());
 
@@ -71,7 +71,7 @@ public class RangeTimeBackoff extends AdapterBase implements BackoffAlgorithm {
     @Override
     public boolean configure(String name, Map<String, Object> params) {
         minTime = NumbersUtil.parseInt((String)params.get("minSeconds"), DEFAULT_MIN_TIME);
-        maxTime = NumbersUtil.parseInt((String)params.get("maxSeconds"), minTime * 3);
+        maxTime = NumbersUtil.parseInt((String)params.get("maxSeconds"), minTime);
         return true;
     }
 }
