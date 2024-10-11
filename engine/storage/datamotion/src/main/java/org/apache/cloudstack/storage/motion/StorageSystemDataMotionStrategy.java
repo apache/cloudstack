@@ -2171,11 +2171,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 srcVolumeInfo.getTemplateId() != null &&
                 Objects.nonNull(vmTemplate) &&
                 !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
-            LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+            logger.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
             copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
             return MigrationOptions.Type.LinkedClone;
         }
-        LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
+        logger.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
                 "template or we are doing full clone migration.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
         return MigrationOptions.Type.FullClone;
     }

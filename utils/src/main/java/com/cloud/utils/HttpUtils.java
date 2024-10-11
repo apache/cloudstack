@@ -119,12 +119,12 @@ public class HttpUtils {
         final String jsessionidFromCookie = HttpUtils.findCookie(cookies, "JSESSIONID");
         if (jsessionidFromCookie == null
                 || !(jsessionidFromCookie.startsWith(session.getId() + '.'))) {
-            s_logger.error("JSESSIONID from cookie is invalid.");
+            LOGGER.error("JSESSIONID from cookie is invalid.");
             return false;
         }
         final String sessionKey = (String) session.getAttribute(sessionKeyString);
         if (sessionKey == null) {
-            s_logger.error("sessionkey attribute of the session is null.");
+            LOGGER.error("sessionkey attribute of the session is null.");
             return false;
         }
         final String sessionKeyFromCookie = HttpUtils.findCookie(cookies, sessionKeyString);

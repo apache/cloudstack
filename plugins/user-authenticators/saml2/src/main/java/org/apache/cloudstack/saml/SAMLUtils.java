@@ -319,7 +319,7 @@ public class SAMLUtils {
         }
         String sameSite = ApiServlet.getApiSessionKeySameSite();
         String sessionKeyCookie = String.format("%s=%s;Domain=%s;Path=%s;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), domain, path, sameSite);
-        s_logger.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
+        LOGGER.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
         resp.addHeader("SET-COOKIE", sessionKeyCookie);
     }
 

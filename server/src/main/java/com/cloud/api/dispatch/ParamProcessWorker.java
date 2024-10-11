@@ -310,7 +310,7 @@ public class ParamProcessWorker implements DispatchWorker {
         doAccessChecks(cmd, entitiesToAccess);
     }
 
-    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
+    protected void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> entityOwners = cmd.getEntityOwnerIds();
         Account[] owners = null;

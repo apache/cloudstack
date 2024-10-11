@@ -174,7 +174,7 @@ public class ParamProcessWorkerTest {
 
     @Test
     public void doAccessChecksTestChecksCallerAccessToOwnerWhenCmdExtendsBaseAsyncCreateCmd() {
-        Mockito.doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
+        Mockito.lenient().doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
         Mockito.doNothing().when(paramProcessWorkerSpy).checkCallerAccessToEntities(Mockito.any(), Mockito.any(), Mockito.any());
 
         paramProcessWorkerSpy.doAccessChecks(new AssociateIPAddrCmd(), entities);
@@ -184,7 +184,7 @@ public class ParamProcessWorkerTest {
 
     @Test
     public void doAccessChecksTestChecksCallerAccessToEntities() {
-        Mockito.doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
+        Mockito.lenient().doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
         Mockito.doNothing().when(paramProcessWorkerSpy).checkCallerAccessToEntities(Mockito.any(), Mockito.any(), Mockito.any());
 
         paramProcessWorkerSpy.doAccessChecks(new AssociateIPAddrCmd(), entities);

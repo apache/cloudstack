@@ -3489,7 +3489,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try {
                 Qcow2Inspector.validateQcow2File(finalFilename);
             } catch (RuntimeException e) {
-                s_logger.error(String.format("Uploaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                logger.error(String.format("Uploaded file [%s] is not a valid QCOW2.", finalFilename), e);
                 return "The uploaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
             }
         }

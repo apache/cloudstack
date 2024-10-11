@@ -749,9 +749,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else if (Domain.class.isAssignableFrom(resourceClass)) {
             checkAccess(account, (Domain) resource);
         } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
-            s_logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+            logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
         }
-        s_logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
+        logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
     }
 
     @Override
