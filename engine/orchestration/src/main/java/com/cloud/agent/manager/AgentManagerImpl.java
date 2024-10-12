@@ -233,7 +233,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         registerForHostEvents(new SetHostParamsListener(), true, true, false);
 
         final int agentTaskThreads = DirectAgentLoadSize.value();
-        _executor = new ThreadPoolExecutor(Math.max(agentTaskThreads/10, 1), agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        _executor = new ThreadPoolExecutor(agentTaskThreads, agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
         // allow core threads to time out even when there are no items in the queue
