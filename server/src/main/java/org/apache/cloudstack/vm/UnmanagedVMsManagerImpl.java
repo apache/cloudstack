@@ -31,6 +31,8 @@ import com.cloud.agent.api.GetRemoteVmsAnswer;
 import com.cloud.agent.api.GetRemoteVmsCommand;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.agent.api.ImportConvertedInstanceAnswer;
+import com.cloud.agent.api.ImportConvertedInstanceCommand;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -1790,8 +1792,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (selectedHost.getResourceState() != ResourceState.Enabled ||
-                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
-                    selectedHost.getClusterId() != destinationCluster.getId()) {
+                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing) {
                 String msg = String.format("Cannot perform the conversion on the host %s as it is not a running and Enabled host", selectedHost.getName());
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
@@ -1852,7 +1853,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVM);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks());
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, ovfTemplateDirConvertLocation, false, false);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
 
@@ -1872,7 +1873,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
-        return ((ConvertInstanceAnswer) convertAnswer).getConvertedInstance();
+        Answer importAnswer;
+        try {
+            ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(remoteInstanceTO,
+                    destinationStoragePools, temporaryConvertLocation);
+            importAnswer = agentManager.send(convertHost.getId(), importCmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String err = String.format(
+                    "Could not import the converted instance command to host %d (%s) due to: %s",
+                    convertHost.getId(), convertHost.getName(), e.getMessage());
+            LOGGER.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
+
+        return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
     }
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVMAfterExportingOVFToConvertLocation(String sourceVM, UnmanagedInstanceTO sourceVMwareInstance, HostVO convertHost,
@@ -1884,7 +1898,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks());
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
-                Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation, null, false, true);
+                Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true);
         int timeoutSeconds = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
         cmd.setWait(timeoutSeconds);
         int noOfThreads = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles.value();
