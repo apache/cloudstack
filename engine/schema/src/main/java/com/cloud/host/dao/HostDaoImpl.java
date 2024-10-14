@@ -341,6 +341,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ClusterHypervisorSearch.and("hypervisor", ClusterHypervisorSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         ClusterHypervisorSearch.and("type", ClusterHypervisorSearch.entity().getType(), SearchCriteria.Op.EQ);
         ClusterHypervisorSearch.and("status", ClusterHypervisorSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        ClusterHypervisorSearch.and("resourceState", ClusterHypervisorSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         ClusterHypervisorSearch.done();
 
         UnmanagedDirectConnectSearch = createSearchBuilder();
@@ -1370,6 +1371,31 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return new ArrayList<>(result);
     }
 
+    @Override
+    public List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount() {
+        String query = "SELECT cel.host_id, COUNT(*) " +
+                "FROM cmd_exec_log cel " +
+                "JOIN host h ON cel.host_id = h.id " +
+                "WHERE h.removed IS NULL " +
+                "GROUP BY cel.host_id " +
+                "ORDER BY 2";
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        List<Long> result = new ArrayList<>();
+
+        PreparedStatement pstmt;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add((long) rs.getInt(1));
+            }
+        } catch (SQLException e) {
+            logger.warn("SQLException caught while listing SSVMs with least migrate jobs.", e);
+        }
+        return result;
+    }
+
     private String getHostIdsByComputeTags(List<String> offeringTags){
         List<String> questionMarks = new ArrayList();
         offeringTags.forEach((tag) -> { questionMarks.add("?"); });
@@ -1506,12 +1532,42 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
+    @Override
+    public List<HostVO> listByClusterHypervisorTypeAndHostCapability(Long clusterId, HypervisorType hypervisorType, String hostCapabilty) {
+        SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
+        DetailVO tagEntity = hostCapabilitySearch.entity();
+        hostCapabilitySearch.and("capability", tagEntity.getName(), SearchCriteria.Op.EQ);
+        hostCapabilitySearch.and("value", tagEntity.getValue(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+        HostVO entity = hostSearch.entity();
+        hostSearch.and("clusterId", entity.getClusterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("hypervisor", entity.getHypervisorType(), SearchCriteria.Op.EQ);
+        hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
+        hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
+        hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
+        hostSearch.join("hostCapabilitySearch", hostCapabilitySearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<HostVO> sc = hostSearch.create();
+        sc.setJoinParameters("hostCapabilitySearch", "value", Boolean.toString(true));
+        sc.setJoinParameters("hostCapabilitySearch", "capability", hostCapabilty);
+
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("hypervisor", hypervisorType);
+        sc.setParameters("type", Type.Routing);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType) {
         SearchCriteria<HostVO> sc = ClusterHypervisorSearch.create();
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("hypervisor", hypervisorType);
         sc.setParameters("type", Type.Routing);
         sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
         return listBy(sc);
     }
 

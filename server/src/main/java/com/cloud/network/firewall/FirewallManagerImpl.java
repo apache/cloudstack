@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
@@ -154,6 +155,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -202,57 +205,54 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return createFirewallRule(sourceIpAddressId, caller, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(),
             rule.getSourceCidrList(), null, rule.getIcmpCode(), rule.getIcmpType(), null, rule.getType(), rule.getNetworkId(), rule.getTrafficType(), rule.isDisplay());
     }
+
     //Destination CIDR capability is currently implemented for egress rules only. For others, the field is passed as null.
     @DB
-    protected FirewallRule createFirewallRule(final Long ipAddrId, Account caller, final String xId, final Integer portStart, final Integer portEnd,
-        final String protocol, final List<String> sourceCidrList, final List<String> destCidrList, final Integer icmpCode, final Integer icmpType, final Long relatedRuleId,
- final FirewallRule.FirewallRuleType type,
-            final Long networkId, final FirewallRule.TrafficType trafficType, final Boolean forDisplay) throws NetworkRuleConflictException {
-
+    protected FirewallRule createFirewallRule(final Long ipAddrId, Account caller, final String xId, final Integer portStart, final Integer portEnd, final String protocol,
+                                              final List<String> sourceCidrList, final List<String> destCidrList, final Integer icmpCode, final Integer icmpType, final Long relatedRuleId,
+                                              final FirewallRule.FirewallRuleType type, final Long networkId, final FirewallRule.TrafficType trafficType, final Boolean forDisplay) throws NetworkRuleConflictException {
         IPAddressVO ipAddress = null;
-        if (ipAddrId != null) {
-            // this for ingress firewall rule, for egress id is null
-             ipAddress = _ipAddressDao.findById(ipAddrId);
-        // Validate ip address
-        if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
-                throw new InvalidParameterValueException("Unable to create firewall rule; " + "couldn't locate IP address by id in the system");
-        }
-        _networkModel.checkIpForService(ipAddress, Service.Firewall, null);
-        }
+        try {
+            // Validate ip address
+            if (ipAddrId != null) {
+                // this for ingress firewall rule, for egress id is null
+                ipAddress = _ipAddressDao.acquireInLockTable(ipAddrId);
+                if (ipAddress == null) {
+                    throw new InvalidParameterValueException("Unable to create firewall rule; " + "couldn't locate IP address by id in the system");
+                }
+                _networkModel.checkIpForService(ipAddress, Service.Firewall, null);
+            }
 
-        validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type, networkId, trafficType);
+            validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type, networkId, trafficType);
 
-        // icmp code and icmp type can't be passed in for any other protocol rather than icmp
-        if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
-            throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
-        }
+            // icmp code and icmp type can't be passed in for any other protocol rather than icmp
+            if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
+                throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
+            }
 
-        if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
-            throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
-        }
+            if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
+                throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+            }
 
-        Long accountId = null;
-        Long domainId = null;
+            Long accountId = null;
+            Long domainId = null;
 
-        if (ipAddress != null) {
-            //Ingress firewall rule
-            accountId = ipAddress.getAllocatedToAccountId();
-            domainId = ipAddress.getAllocatedInDomainId();
-        } else if (networkId != null) {
-            //egress firewall rule
+            if (ipAddress != null) {
+                //Ingress firewall rule
+                accountId = ipAddress.getAllocatedToAccountId();
+                domainId = ipAddress.getAllocatedInDomainId();
+            } else if (networkId != null) {
+                //egress firewall rule
                 Network network = _networkModel.getNetwork(networkId);
                 accountId = network.getAccountId();
                 domainId = network.getDomainId();
-        }
+            }
 
-        final Long accountIdFinal = accountId;
-        final Long domainIdFinal = domainId;
-        return Transaction.execute(new TransactionCallbackWithException<FirewallRuleVO, NetworkRuleConflictException>() {
-            @Override
-            public FirewallRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
-                FirewallRuleVO newRule =
-                        new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId, accountIdFinal, domainIdFinal, Purpose.Firewall,
-                                sourceCidrList, destCidrList, icmpCode, icmpType, relatedRuleId, trafficType);
+            final Long accountIdFinal = accountId;
+            final Long domainIdFinal = domainId;
+            return Transaction.execute((TransactionCallbackWithException<FirewallRuleVO, NetworkRuleConflictException>) status -> {
+                FirewallRuleVO newRule = new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId, accountIdFinal, domainIdFinal, Purpose.Firewall,
+                        sourceCidrList, destCidrList, icmpCode, icmpType, relatedRuleId, trafficType);
                 newRule.setType(type);
                 if (forDisplay != null) {
                     newRule.setDisplay(forDisplay);
@@ -269,8 +269,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 CallContext.current().putContextParameter(FirewallRule.class, newRule.getId());
 
                 return newRule;
+            });
+        } finally {
+            if (ipAddrId != null) {
+                _ipAddressDao.releaseFromLockTable(ipAddrId);
             }
-        });
+        }
     }
 
     @Override
@@ -537,6 +541,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         } else if (purpose == Purpose.PortForwarding) {
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         } else if (purpose == Purpose.Firewall) {
+            if (routedIpv4Manager.isVirtualRouterGateway(network)) {
+                throw new CloudRuntimeException("Unable to create routing firewall rule. Please use routing firewall API instead.");
+            }
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
         }
 
@@ -676,9 +683,19 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
+    @DB
     public boolean applyIngressFirewallRules(long ipId, Account caller) throws ResourceUnavailableException {
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
-        return applyFirewallRules(rules, false, caller);
+        try {
+            IPAddressVO ipAddress = _ipAddressDao.acquireInLockTable(ipId);
+            if (ipAddress == null) {
+                logger.error(String.format("Unable to acquire lock for public IP [%s].", ipId));
+                throw new CloudRuntimeException("Unable to acquire lock for public IP.");
+            }
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(ipId, Purpose.Firewall);
+            return applyFirewallRules(rules, false, caller);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipId);
+        }
     }
 
     @Override
@@ -798,16 +815,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (apply) {
             // ingress firewall rule
             if (rule.getSourceIpAddressId() != null) {
-                //feteches ingress firewall, ingress firewall rules associated with the ip
+                //fetches ingress firewall, ingress firewall rules associated with the ip
                 List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
                 return applyFirewallRules(rules, false, caller);
-                //egress firewall rule
             } else if (networkId != null) {
-                boolean isIpv6 = Purpose.Ipv6Firewall.equals(rule.getPurpose());
-                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
-                if (isIpv6) {
-                    rules.addAll(_firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
-                }
+                //egress firewall rule, or ipv4/ipv6 routing firewall rule
+                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), rule.getTrafficType());
                 return applyFirewallRules(rules, false, caller);
             }
         } else {

@@ -177,9 +177,9 @@ test_data = {
     "service_offering_h2": {
         "name": "Tagged h2 Small Instance",
         "displaytext": "Tagged h2 Small Instance",
-        "cpunumber": 1,
-        "cpuspeed": 100,
-        "memory": 256,
+        "cpunumber": 2,
+        "cpuspeed": 200,
+        "memory": 512,
         "hosttags": "h2"
     },
     "disk_offering": {
@@ -448,6 +448,21 @@ test_data = {
             "Dhcp": "VirtualRouter",
             "Dns": "VirtualRouter",
             "UserData": "VirtualRouter"
+        }
+    },
+    "shared_network_offering_configdrive": {
+        "name": "MySharedOfferingWithConfigDrive-shared",
+        "displaytext": "MySharedOfferingWithConfigDrive",
+        "guestiptype": "Shared",
+        "supportedservices": "Dhcp,Dns,UserData",
+        "specifyVlan": "False",
+        "specifyIpRanges": "False",
+        "traffictype": "GUEST",
+        "tags": "native",
+        "serviceProviderList": {
+            "Dhcp": "ConfigDrive",
+            "Dns": "ConfigDrive",
+            "UserData": "ConfigDrive"
         }
     },
     "shared_network_offering_all_services": {
@@ -1034,7 +1049,53 @@ test_data = {
             "requireshvm": "True",
             "ispublic": "True",
             "deployasis": "True"
-        }
+        },
+        "simulator": {
+            "name": "tiny-simulator",
+            "displaytext": "tiny simulator",
+            "format": "vhd",
+            "hypervisor": "simulator",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina.vhd.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+    },
+    "test_templates_cloud_init": {
+        "kvm": {
+            "name": "ubuntu 22.04 kvm",
+            "displaytext": "ubuntu 22.04 kvm",
+            "format": "raw",
+            "hypervisor": "kvm",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "False"
+        },
+        "xenserver": {
+            "name": "ubuntu 22.04 xen",
+            "displaytext": "ubuntu 22.04 xen",
+            "format": "vhd",
+            "hypervisor": "xenserver",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64-azure.vhd.tar.gz",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "vmware": {
+            "name": "ubuntu 22.04 vmware",
+            "displaytext": "ubuntu 22.04 vmware",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "deployasis": "True"
+        },
     },
     "test_ovf_templates": [
         {

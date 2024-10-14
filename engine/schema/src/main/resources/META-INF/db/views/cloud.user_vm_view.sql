@@ -25,6 +25,7 @@ SELECT
     `vm_instance`.`name` AS `name`,
     `user_vm`.`display_name` AS `display_name`,
     `user_vm`.`user_data` AS `user_data`,
+    `user_vm`.`user_vm_type` AS `user_vm_type`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,
     `account`.`account_name` AS `account_name`,
@@ -53,6 +54,7 @@ SELECT
     `vm_instance`.`instance_name` AS `instance_name`,
     `vm_instance`.`guest_os_id` AS `guest_os_id`,
     `vm_instance`.`display_vm` AS `display_vm`,
+    `vm_instance`.`delete_protection` AS `delete_protection`,
     `guest_os`.`uuid` AS `guest_os_uuid`,
     `vm_instance`.`pod_id` AS `pod_id`,
     `host_pod_ref`.`uuid` AS `pod_uuid`,
@@ -196,7 +198,7 @@ FROM
         LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
         AND ISNULL(`vpc`.`removed`))))
-        LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
+        LEFT JOIN `user_ip_address` FORCE INDEX(`fk_user_ip_address__vm_id`) ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
         AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)

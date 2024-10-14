@@ -33,4 +33,9 @@ public class PrimeraAdapterFactory implements ProviderAdapterFactory {
         return new PrimeraAdapter(url, details);
     }
 
+    @Override
+    public Object canDirectAttachSnapshot() {
+        return true;
+    }
+
 }

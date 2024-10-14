@@ -17,6 +17,10 @@
 package com.cloud.storage.dao;
 
 
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -25,9 +29,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import javax.inject.Inject;
-import java.util.List;
 
 public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
 
@@ -43,8 +44,8 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        StoragePoolDetailVO vo = findDetail(id, key.key());
+    public String getConfigValue(long id, String key) {
+        StoragePoolDetailVO vo = findDetail(id, key);
         return vo == null ? null : vo.getValue();
     }
 

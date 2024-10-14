@@ -38,9 +38,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.host.HostTagVO;
+import com.cloud.cpu.CPU;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostTagVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -426,6 +427,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String url = cmd.getUrl();
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
+        CPU.CPUArch arch = cmd.getArch();
 
         if (url != null) {
             url = URLDecoder.decode(url);
@@ -525,6 +527,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         cluster.setClusterType(clusterType);
         cluster.setAllocationState(allocationState);
+        cluster.setArch(arch.getType());
         try {
             cluster = _clusterDao.persist(cluster);
         } catch (final Exception e) {
@@ -1141,6 +1144,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         String allocationState = cmd.getAllocationState();
         String managedstate = cmd.getManagedstate();
         String name = cmd.getClusterName();
+        CPU.CPUArch arch = cmd.getArch();
 
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
@@ -1211,6 +1215,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             } else {
                 doUpdate = true;
             }
+        }
+
+        if (arch != null) {
+            cluster.setArch(arch.getType());
+            doUpdate = true;
         }
 
         if (doUpdate) {
@@ -2334,22 +2343,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        if (startup instanceof StartupRoutingCommand) {
-            final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
-            final List<String> implicitHostTags = ssCmd.getHostTags();
-            if (!implicitHostTags.isEmpty()) {
-                if (hostTags == null) {
-                    hostTags = _hostTagsDao.getHostTags(host.getId()).parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
-                }
-                if (hostTags != null) {
-                    implicitHostTags.removeAll(hostTags);
-                    hostTags.addAll(implicitHostTags);
-                } else {
-                    hostTags = implicitHostTags;
-                }
-            }
-        }
-
         host.setDataCenterId(dc.getId());
         host.setPodId(podId);
         host.setClusterId(clusterId);
@@ -2369,6 +2362,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setLastPinged(System.currentTimeMillis() >> 10);
         host.setHostTags(hostTags, false);
         host.setDetails(details);
+        host.setArch(CPU.CPUArch.fromType(startup.getArch()));
         if (startup.getStorageIpAddressDeux() != null) {
             host.setStorageIpAddressDeux(startup.getStorageIpAddressDeux());
             host.setStorageMacAddressDeux(startup.getStorageMacAddressDeux());
@@ -2392,6 +2386,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (startup instanceof StartupRoutingCommand) {
             final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
+            _hostTagsDao.updateImplicitTags(host.getId(), ssCmd.getHostTags());
 
             updateSupportsClonedVolumes(host, ssCmd.getSupportsClonedVolumes());
         }
@@ -2731,7 +2726,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
                 if (existingPrivateIPs.size() == 1) {
                     final DataCenterIpAddressVO vo = existingPrivateIPs.get(0);
-                    if (vo.getInstanceId() != null) {
+                    if (vo.getNicId() != null) {
                         throw new IllegalArgumentException("The private ip address of the server (" + serverPrivateIP + ") is already in use in pod: " + pod.getName() +
                                 " and zone: " + dc.getName());
                     }
@@ -2761,6 +2756,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + hyType + " into cluster: " + clusterVO.getId() +
                     " whose hypervisor type is: " + clusterVO.getHypervisorType());
         }
+        CPU.CPUArch hostCpuArch = CPU.CPUArch.fromType(ssCmd.getCpuArch());
+        if (hostCpuArch != null && clusterVO.getArch() != null && hostCpuArch != clusterVO.getArch()) {
+            String msg = String.format("Can't add a host whose arch is: %s into cluster of arch type: %s",
+                    hostCpuArch.getType(), clusterVO.getArch().getType());
+            logger.error(msg);
+            throw new IllegalArgumentException(msg);
+        }
 
         final Map<String, String> hostDetails = ssCmd.getHostDetails();
         if (hostDetails != null) {
@@ -2779,6 +2781,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setCaps(ssCmd.getCapabilities());
         host.setCpuSockets(ssCmd.getCpuSockets());
         host.setCpus(ssCmd.getCpus());
+        host.setArch(hostCpuArch);
         host.setTotalMemory(ssCmd.getMemory());
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
@@ -3387,6 +3390,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
 
@@ -3406,13 +3418,34 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HostGpuGroupsVO> listAvailableGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final Filter searchFilter = new Filter(VGPUTypesVO.class, "remainingCapacity", false, null, null);
+        Filter searchFilter = new Filter(null, null);
+        searchFilter.addOrderBy(VGPUTypesVO.class, "remainingCapacity", false, "groupId");
         final SearchCriteria<HostGpuGroupsVO> sc = _gpuAvailability.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("groupName", groupName);
         sc.setJoinParameters("groupId", "vgpuType", vgpuType);
         sc.setJoinParameters("groupId", "remainingCapacity", 0);
         return _hostGpuGroupsDao.customSearch(sc, searchFilter);
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(final HypervisorType type, final long dcId, final long clusterId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, final long dcId, final long clusterId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.IN, types);
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getClusterId(), Op.NEQ, clusterId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
     }
 
     @Override

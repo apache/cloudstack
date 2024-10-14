@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -53,6 +54,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
@@ -259,6 +261,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     ResourceLimitService _resourceLimitMgr;
 
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
@@ -717,50 +721,59 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     @DB
     public boolean disassociatePublicIpAddress(long addrId, long userId, Account caller) {
-
         boolean success = true;
-        IPAddressVO ipToBeDisassociated = _ipAddressDao.findById(addrId);
 
-        PublicIpQuarantine publicIpQuarantine = null;
-        // Cleanup all ip address resources - PF/LB/Static nat rules
-        if (!cleanupIpResources(addrId, userId, caller)) {
-            success = false;
-            logger.warn("Failed to release resources for ip address id=" + addrId);
-        }
+        try {
+            IPAddressVO ipToBeDisassociated = _ipAddressDao.acquireInLockTable(addrId);
 
-        IPAddressVO ip = markIpAsUnavailable(addrId);
-        if (ip == null) {
-            return true;
-        }
+            if (ipToBeDisassociated == null) {
+                logger.error(String.format("Unable to acquire lock on public IP %s.", addrId));
+                throw new CloudRuntimeException("Unable to acquire lock on public IP.");
+            }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
-        }
+            PublicIpQuarantine publicIpQuarantine = null;
+            // Cleanup all ip address resources - PF/LB/Static nat rules
+            if (!cleanupIpResources(addrId, userId, caller)) {
+                success = false;
+                logger.warn("Failed to release resources for ip address id=" + addrId);
+            }
 
-        if (ip.getAssociatedWithNetworkId() != null) {
-            Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
-            try {
-                if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
-                    logger.warn("Unable to apply ip address associations for " + network);
-                    success = false;
+            IPAddressVO ip = markIpAsUnavailable(addrId);
+            if (ip == null) {
+                return true;
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
+            }
+
+            if (ip.getAssociatedWithNetworkId() != null) {
+                Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
+                try {
+                    if (!applyIpAssociations(network, rulesContinueOnErrFlag)) {
+                        logger.warn("Unable to apply ip address associations for " + network);
+                        success = false;
+                    }
+                } catch (ResourceUnavailableException e) {
+                    throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
                 }
-            } catch (ResourceUnavailableException e) {
-                throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
+            } else if (ip.getState() == State.Releasing) {
+                publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
+                _ipAddressDao.unassignIpAddress(ip.getId());
             }
-        } else if (ip.getState() == State.Releasing) {
-            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
-            _ipAddressDao.unassignIpAddress(ip.getId());
-        }
 
-        annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
+            annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
 
-        if (success) {
-            if (ip.isPortable()) {
-                releasePortableIpAddress(addrId);
+            if (success) {
+                if (ip.isPortable()) {
+                    releasePortableIpAddress(addrId);
+                }
+                logger.debug("Released a public ip id=" + addrId);
+            } else if (publicIpQuarantine != null) {
+                removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
             }
-            logger.debug("Released a public ip id=" + addrId);
-        } else if (publicIpQuarantine != null) {
-            removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+        } finally {
+            _ipAddressDao.releaseFromLockTable(addrId);
         }
 
         return success;
@@ -1252,7 +1265,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         AcquirePodIpCmdResponse ret = new AcquirePodIpCmdResponse();
         ret.setCidrAddress(pod_vo.getCidrAddress());
         ret.setGateway(pod_vo.getGateway());
-        ret.setInstanceId(vo.getInstanceId());
+        ret.setNicId(vo.getNicId());
         ret.setIpAddress(vo.getIpAddress());
         ret.setMacAddress(vo.getMacAddress());
         ret.setPodId(vo.getPodId());
@@ -1539,14 +1552,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
-        IPAddressVO ip = _ipAddressDao.findById(ipId);
-        //update ip address with networkId
-        ip.setAssociatedWithNetworkId(networkId);
-        ip.setSourceNat(isSourceNat);
-        _ipAddressDao.update(ipId, ip);
-
         boolean success = false;
-        try {
+        IPAddressVO ip = null;
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            ip = _ipAddressDao.findById(ipId);
+            //update ip address with networkId
+            ip.setAssociatedWithNetworkId(networkId);
+            ip.setSourceNat(isSourceNat);
+            _ipAddressDao.update(ipId, ip);
+
             success = applyIpAssociations(network, false);
             if (success) {
                 logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
@@ -1554,6 +1568,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
             }
             return _ipAddressDao.findById(ipId);
+        } catch (Exception e) {
+            logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
+            throw new CloudRuntimeException(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
         } finally {
             if (!success && releaseOnFailure) {
                 if (ip != null) {
@@ -1861,7 +1878,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
                                     + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null, null, null, null, null,
-                                    null, null, null, null, null);
+                                    null, null, null, null, null, null);
                             if (guestNetwork == null) {
                                 logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "

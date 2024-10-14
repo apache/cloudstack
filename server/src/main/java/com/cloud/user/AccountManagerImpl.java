@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -73,15 +74,18 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
@@ -168,6 +172,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -317,6 +322,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IpAddressManager _ipAddrMgr;
     @Inject
     private RoleService roleService;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Inject
     private PasswordPolicy passwordPolicy;
@@ -330,6 +337,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
+    private static final String OAUTH2_PROVIDER_NAME = "oauth2";
     private List<String> apiNameList;
 
     protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
@@ -423,6 +431,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public void setQuerySelectors(List<QuerySelector> querySelectors) {
         _querySelectors = querySelectors;
+    }
+
+    protected void deleteWebhooksForAccount(long accountId) {
+        try {
+            WebhookHelper webhookService = ComponentContext.getDelegateComponentOfType(WebhookHelper.class);
+            webhookService.deleteWebhooksForAccount(accountId);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            logger.debug("No WebhookHelper bean found");
+        }
     }
 
     @Override
@@ -722,6 +739,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check that resources belong to the same account
 
+    }
+
+    @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        Class<?> resourceClass = resource.getClass();
+        if (ControlledEntity.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, accessType, true, (ControlledEntity) resource);
+        } else if (Domain.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, (Domain) resource);
+        } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
+            logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+        }
+        logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
     }
 
     @Override
@@ -1054,6 +1084,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // remove dedicated IPv4 subnets
+            routedIpv4Manager.removeIpv4SubnetsForZoneByAccountId(accountId);
+
+            // remove dedicated BGP peers
+            routedIpv4Manager.removeBgpPeersByAccountId(accountId);
+
             // release account specific guest vlans
             List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(accountId);
             for (AccountGuestVlanMapVO map : maps) {
@@ -1103,6 +1139,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // Delete registered UserData
             userDataDao.removeByAccountId(accountId);
+
+            // Delete Webhooks
+            deleteWebhooksForAccount(accountId);
 
             return true;
         } catch (Exception ex) {
@@ -1353,6 +1392,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
     }
 
+    @Override
+    public void checkApiAccess(Account caller, String command) {
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        checkApiAccess(apiCheckers, caller, command);
+    }
+
     @NotNull
     private List<APIChecker> getEnabledApiCheckers() {
         // we are really only interested in the dynamic access checker
@@ -1424,7 +1469,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
 
-        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword(), false);
         String email = updateUserCmd.getEmail();
         if (StringUtils.isNotBlank(email)) {
             user.setEmail(email);
@@ -1452,7 +1497,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
         if (newPassword == null) {
             logger.trace("No new password to update for user: " + user.getUuid());
             return;
@@ -1467,16 +1512,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        boolean skipValidation = isAdmin || skipCurrentPassValidation;
         if (isAdmin) {
             logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
-        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+        if (!skipValidation && StringUtils.isBlank(currentPassword)) {
             throw new InvalidParameterValueException("To set a new password the current password must be provided.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
         }
-        if (!isAdmin) {
+        if (!skipValidation) {
             validateCurrentPassword(user, currentPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
@@ -1820,7 +1866,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (caller.getId() == accountId) {
+            Domain domain = _domainDao.findById(account.getDomainId());
+            throw new InvalidParameterValueException(String.format("Deletion of your own account is not allowed. To delete account %s (ID: %s, Domain: %s), " +
+                            "request to another user with permissions to perform the operation.",
+                    account.getAccountName(), account.getUuid(), domain.getUuid()));
+        }
+
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1840,7 +1893,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+    protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
             logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
@@ -2660,7 +2713,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     continue;
                 }
             }
-            if (secretCode != null && !authenticator.getName().equals("oauth2")) {
+            if ((secretCode != null && !authenticator.getName().equals(OAUTH2_PROVIDER_NAME))
+                    || (secretCode == null && authenticator.getName().equals(OAUTH2_PROVIDER_NAME))) {
                 continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
@@ -2752,13 +2806,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Unable to find user by id");
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
-        checkAccess(CallContext.current().getCallingUser(), account);
+        User caller = CallContext.current().getCallingUser();
+        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
+        checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
+        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
+            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
+            logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+    }
+
+    protected boolean isDomainAdminForRootDomain(User callingUser) {
+        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
+        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override
@@ -2795,6 +2864,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
         // don't allow updating system user

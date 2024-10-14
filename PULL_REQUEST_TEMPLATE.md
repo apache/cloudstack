@@ -23,6 +23,7 @@ This PR...
 - [ ] Enhancement (improves an existing feature and functionality)
 - [ ] Cleanup (Code refactoring and cleanup, that may add test cases)
 - [ ] build/CI
+- [ ] test (unit or integration test code)
 
 ### Feature/Enhancement Scale or Bug Severity
 

@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.dc;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.Column;
@@ -68,6 +70,10 @@ public class ClusterVO implements Cluster {
     @Column(name = "allocation_state")
     @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private String arch;
 
     @Column(name = "managed_state")
     @Enumerated(value = EnumType.STRING)
@@ -198,6 +204,15 @@ public class ClusterVO implements Cluster {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Cluster;
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 
     @Override

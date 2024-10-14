@@ -37,6 +37,7 @@ import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -80,6 +81,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
@@ -273,6 +278,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
 
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the VM's primary IP address")
+    private String ipAddress;
+
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "public IP address id associated with vm via Static nat rule")
     private String publicIpId;
@@ -310,6 +319,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
+
+    @SerializedName(ApiConstants.DELETE_PROTECTION)
+    @Param(description = "true if vm has delete protection.", since = "4.20.0")
+    private boolean deleteProtection;
 
     @SerializedName(ApiConstants.SERVICE_STATE)
     @Param(description = "State of the Service from LB rule")
@@ -378,6 +391,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.VNF_DETAILS)
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
+
+    @SerializedName((ApiConstants.VM_TYPE))
+    @Param(description = "User VM type", since = "4.20.0")
+    private String vmType;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -627,6 +644,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return hypervisor;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public String getPublicIpId() {
         return publicIpId;
     }
@@ -694,6 +715,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setCreated(Date created) {
         this.created = created;
     }
@@ -863,6 +888,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
+        setIpAddress(nics);
+    }
+
+    public void setIpAddress(final Set<NicResponse> nics) {
+        if (CollectionUtils.isNotEmpty(nics)) {
+            this.ipAddress = nics.iterator().next().getIpaddress();
+        }
     }
 
     public void addNic(NicResponse nic) {
@@ -965,6 +997,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDynamicallyScalable(Boolean dynamicallyScalable) {
         isDynamicallyScalable = dynamicallyScalable;
+    }
+
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
     }
 
     public String getOsTypeId() {
@@ -1116,5 +1156,17 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
             this.vnfDetails = new LinkedHashMap<>();
         }
         this.vnfDetails.put(key,value);
+    }
+
+    public void setVmType(String vmType) {
+        this.vmType = vmType;
+    }
+
+    public String getVmType() {
+        return vmType;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
