@@ -34,16 +34,19 @@ from threading import Thread
 # ---- 2) waf configured PYTHONDIR
 # ---- 3) System Python path
 for pythonpath in (
-		"@PYTHONDIR@",
-		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
-	):
-		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
+    "@PYTHONDIR@",
+    os.path.join(
+        os.path.dirname(__file__), os.path.pardir, os.path.pardir, "python", "lib"
+    ),
+):
+    if os.path.isdir(pythonpath):
+        sys.path.insert(0, pythonpath)
 # ---- End snippet of code ----
 from cloud_utils import check_call, CalledProcessError, read_properties
 
 cfg = "@MSCONF@/db.properties"
 
-#---------------------- option parsing and command line checks ------------------------
+# ---------------------- option parsing and command line checks ------------------------
 
 
 usage = """%prog <license file> <-a | host names / IP addresses...>
@@ -51,132 +54,171 @@ usage = """%prog <license file> <-a | host names / IP addresses...>
 This command deploys the license file specified in the command line into a specific XenServer host or all XenServer hosts known to the management server."""
 
 parser = OptionParser(usage=usage)
-parser.add_option("-a", "--all", action="store_true", dest="all", default=False,
-                  help="deploy to all known hosts rather that a single host")
+parser.add_option(
+    "-a",
+    "--all",
+    action="store_true",
+    dest="all",
+    default=False,
+    help="deploy to all known hosts rather that a single host",
+)
 
-#------------------ functions --------------------
+# ------------------ functions --------------------
 
-def e(msg): parser.error(msg)
 
-def getknownhosts(host,username,password):
-	conn = mysql.connector.connect(host=host, user=username, password=password)
-	cur = conn.cursor()
-	cur.execute("SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'username' and setup = 1")
-	usernames = dict(cur.fetchall())
-	cur.execute("SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'password' and setup = 1")
-	passwords = dict(cur.fetchall())
-	creds = dict( [ [x,(usernames[x],passwords[x])] for x in list(usernames.keys()) ] )
-	cur.close()
-	conn.close()
-	return creds
+def e(msg):
+    parser.error(msg)
 
-def splitlast(string,splitter):
-	splitted = string.split(splitter)
-	first,last = splitter.join(splitted[:-1]),splitted[-1]
-	return first,last
+
+def getknownhosts(host, username, password):
+    conn = mysql.connector.connect(host=host, user=username, password=password)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'username' and setup = 1"
+    )
+    usernames = dict(cur.fetchall())
+    cur.execute(
+        "SELECT h.private_ip_address,d.value FROM cloud.host h inner join cloud.host_details d on (h.id = d.host_id) where d.name = 'password' and setup = 1"
+    )
+    passwords = dict(cur.fetchall())
+    creds = dict([[x, (usernames[x], passwords[x])] for x in list(usernames.keys())])
+    cur.close()
+    conn.close()
+    return creds
+
+
+def splitlast(string, splitter):
+    splitted = string.split(splitter)
+    first, last = splitter.join(splitted[:-1]), splitted[-1]
+    return first, last
+
 
 def parseuserpwfromhosts(hosts):
-	creds = {}
-	for host in hosts:
-		user = "root"
-		password = ""
-		if "@" in host:
-			user,host = splitlast(host,"@")
-			if ":" in user:
-				user,password = splitlast(user,":")
-		creds[host] = (user,password)
-	return creds
+    creds = {}
+    for host in hosts:
+        user = "root"
+        password = ""
+        if "@" in host:
+            user, host = splitlast(host, "@")
+            if ":" in user:
+                user, password = splitlast(user, ":")
+        creds[host] = (user, password)
+    return creds
+
 
 class XenServerConfigurator(Thread):
 
-	def __init__(self,host,user,password,keyfiledata):
-		Thread.__init__(self)
-		self.host = host
-		self.user = user
-		self.password = password
-		self.keyfiledata = keyfiledata
-		self.retval = None # means all's good
-		self.stdout = ""
-		self.stderr = ""
-		self.state = 'initialized'
+    def __init__(self, host, user, password, keyfiledata):
+        Thread.__init__(self)
+        self.host = host
+        self.user = user
+        self.password = password
+        self.keyfiledata = keyfiledata
+        self.retval = None  # means all's good
+        self.stdout = ""
+        self.stderr = ""
+        self.state = "initialized"
 
-	def run(self):
-		try:
-			self.state = 'running'
-			c = paramiko.SSHClient()
-			c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-			c.connect(self.host,username=self.user,password=self.password)
-			sftp = c.open_sftp()
-			sftp.chdir("/tmp")
-			f = sftp.open("xen-license","w")
-			f.write(self.keyfiledata)
-			f.close()
-			sftp.close()
-			stdin,stdout,stderr = c.exec_command("xe host-license-add license-file=/tmp/xen-license")
-			c.exec_command("false")
-			self.stdout = stdout.read(-1)
-			self.stderr = stderr.read(-1)
-			self.retval = stdin.channel.recv_exit_status()
-			c.close()
-			if self.retval != 0: self.state = 'failed'
-			else: self.state = 'finished'
+    def run(self):
+        try:
+            self.state = "running"
+            c = paramiko.SSHClient()
+            c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            c.connect(self.host, username=self.user, password=self.password)
+            sftp = c.open_sftp()
+            sftp.chdir("/tmp")
+            f = sftp.open("xen-license", "w")
+            f.write(self.keyfiledata)
+            f.close()
+            sftp.close()
+            stdin, stdout, stderr = c.exec_command(
+                "xe host-license-add license-file=/tmp/xen-license"
+            )
+            c.exec_command("false")
+            self.stdout = stdout.read(-1)
+            self.stderr = stderr.read(-1)
+            self.retval = stdin.channel.recv_exit_status()
+            c.close()
+            if self.retval != 0:
+                self.state = "failed"
+            else:
+                self.state = "finished"
 
-		except Exception as e:
-			self.state = 'failed'
-			self.retval = e
-			#raise
+        except Exception as e:
+            self.state = "failed"
+            self.retval = e
+            # raise
 
-	def __str__(self):
-		if self.state == 'failed':
-			return "<%s XenServerConfigurator on %s@%s: %s>"%(self.state,self.user,self.host,str(self.retval))
-		else:
-			return "<%s XenServerConfigurator on %s@%s>"%(self.state,self.user,self.host)
+    def __str__(self):
+        if self.state == "failed":
+            return "<%s XenServerConfigurator on %s@%s: %s>" % (
+                self.state,
+                self.user,
+                self.host,
+                str(self.retval),
+            )
+        else:
+            return "<%s XenServerConfigurator on %s@%s>" % (
+                self.state,
+                self.user,
+                self.host,
+            )
 
-#------------- actual code --------------------
+
+# ------------- actual code --------------------
 
 (options, args) = parser.parse_args()
 
 try:
-	licensefile,args = args[0],args[1:]
-except IndexError: e("The first argument must be the license file to use")
+    licensefile, args = args[0], args[1:]
+except IndexError:
+    e("The first argument must be the license file to use")
 
 if options.all:
-	if len(args) != 0: e("IP addresses cannot be specified if -a is specified")
-	config = read_properties(cfg)
-	creds = getknownhosts(config["db.cloud.host"],config["db.cloud.username"],config["db.cloud.password"])
-	hosts = list(creds.keys())
+    if len(args) != 0:
+        e("IP addresses cannot be specified if -a is specified")
+    config = read_properties(cfg)
+    creds = getknownhosts(
+        config["db.cloud.host"],
+        config["db.cloud.username"],
+        config["db.cloud.password"],
+    )
+    hosts = list(creds.keys())
 else:
-	if not args: e("You must specify at least one IP address, or -a")
-	hosts = args
-	creds = parseuserpwfromhosts(hosts)
+    if not args:
+        e("You must specify at least one IP address, or -a")
+    hosts = args
+    creds = parseuserpwfromhosts(hosts)
 
 try:
-	keyfiledata = file(licensefile).read(-1)
+    keyfiledata = file(licensefile).read(-1)
 except OSError as e:
-	sys.stderr.write("The file %s cannot be opened"%licensefile)
-	sys.exit(1)
+    sys.stderr.write("The file %s cannot be opened" % licensefile)
+    sys.exit(1)
 
 configurators = []
-for host,(user,password) in list(creds.items()):
-	configurators.append ( XenServerConfigurator(host,user,password,keyfiledata ) )
+for host, (user, password) in list(creds.items()):
+    configurators.append(XenServerConfigurator(host, user, password, keyfiledata))
 
-
-for c in configurators: c.start()
 
 for c in configurators:
-	print(c.host + "...", end=' ')
-	c.join()
-	if c.state == 'failed':
-		if c.retval:
-			msg = "failed with return code %s: %s%s"%(c.retval,c.stdout,c.stderr)
-			msg = msg.strip()
-			print(msg)
-		else: print("failed: %s"%c.retval)
-	else:
-		print("done")
+    c.start()
 
-successes = len( [ a for a in configurators if not a.state == 'failed' ] )
-failures = len( [ a for a in configurators if a.state == 'failed' ] )
+for c in configurators:
+    print(c.host + "...", end=" ")
+    c.join()
+    if c.state == "failed":
+        if c.retval:
+            msg = "failed with return code %s: %s%s" % (c.retval, c.stdout, c.stderr)
+            msg = msg.strip()
+            print(msg)
+        else:
+            print("failed: %s" % c.retval)
+    else:
+        print("done")
 
-print("%3s successes"%successes)
-print("%3s failures"%failures)
+successes = len([a for a in configurators if not a.state == "failed"])
+failures = len([a for a in configurators if a.state == "failed"])
+
+print("%3s successes" % successes)
+print("%3s failures" % failures)
