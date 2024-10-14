@@ -76,6 +76,9 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Boolean> SAMLForceAuthn = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.force.authn", "false",
             "When enabled (default false), SAML2 will force a new authentication. This can be useful if multiple application use different saml logins from the same application (I.E. browser)", true);
 
+    ConfigKey<String> SAMLUserSessionKeyPathAttribute = new ConfigKey<String>("Advanced", String.class, "saml2.user.sessionkey.path", "",
+            "The Path attribute of sessionkey cookie when SAML users have logged in. If not set, it will be set to the path of SAML redirection URL (saml2.redirect.url).", true);
+
     SAMLProviderMetadata getSPMetadata();
     SAMLProviderMetadata getIdPMetadata(String entityId);
     Collection<SAMLProviderMetadata> getAllIdPMetadata();
