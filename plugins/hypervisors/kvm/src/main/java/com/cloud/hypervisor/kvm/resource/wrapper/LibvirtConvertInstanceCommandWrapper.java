@@ -18,11 +18,6 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -33,12 +28,10 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
@@ -80,7 +73,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
                     "Please install virt-v2v%s on the host before attempting the instance conversion.", sourceInstanceName, serverResource.isUbuntuHost()? ", nbdkit" : "");
             s_logger.info(msg);
-            return new ConvertInstanceAnswer(cmd, false, msg);
+            return new Answer(cmd, false, msg);
         }
 
         if (!areSourceAndDestinationHypervisorsSupported(sourceHypervisorType, destinationHypervisorType)) {
@@ -88,7 +81,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                     String.format("The destination hypervisor type is %s, KVM was expected, cannot handle it", destinationHypervisorType) :
                     String.format("The source hypervisor type %s is not supported for KVM conversion", sourceHypervisorType);
             s_logger.error(err);
-            return new ConvertInstanceAnswer(cmd, false, err);
+            return new Answer(cmd, false, err);
         }
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
@@ -103,7 +96,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             if (StringUtils.isBlank(exportInstanceOVAUrl)) {
                 String err = String.format("Couldn't export OVA for the VM %s, due to empty url", sourceInstanceName);
                 s_logger.error(err);
-                return new ConvertInstanceAnswer(cmd, false, err);
+                return new Answer(cmd, false, err);
             }
 
             int noOfThreads = cmd.getThreadsCountToExportOvf();
@@ -117,7 +110,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             if (!ovfExported) {
                 String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
                 s_logger.error(err);
-                return new ConvertInstanceAnswer(cmd, false, err);
+                return new Answer(cmd, false, err);
             }
             sourceOVFDirPath = String.format("%s%s/", sourceOVFDirPath, sourceInstanceName);
         } else {
@@ -136,14 +129,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String err = String.format("The virt-v2v conversion for the OVF %s failed. " +
                                 "Please check the agent logs for the virt-v2v output", ovfTemplateDirOnConversionLocation);
                 s_logger.error(err);
-                return new ConvertInstanceAnswer(cmd, false, err);
+                return new Answer(cmd, false, err);
             }
-            return new ConvertInstanceAnswer(cmd, false, null);
+            return new Answer(cmd, false, null);
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
                     sourceInstanceName, sourceHypervisorType, e.getMessage());
             s_logger.error(error, e);
-            return new ConvertInstanceAnswer(cmd, false, error);
+            return new Answer(cmd, false, error);
         } finally {
             if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
                 String sourceOVFDir = String.format("%s/%s", temporaryConvertPath, ovfTemplateDirOnConversionLocation);

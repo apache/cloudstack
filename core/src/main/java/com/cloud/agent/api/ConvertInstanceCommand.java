@@ -20,8 +20,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.hypervisor.Hypervisor;
 
-import java.util.List;
-
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;

@@ -23,7 +23,6 @@ import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
-import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
@@ -31,6 +30,8 @@ import com.cloud.agent.api.GetRemoteVmsAnswer;
 import com.cloud.agent.api.GetRemoteVmsCommand;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.agent.api.ImportConvertedInstanceAnswer;
+import com.cloud.agent.api.ImportConvertedInstanceCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.ClusterVO;
@@ -630,11 +631,11 @@ public class UnmanagedVMsManagerImplTest {
         when(convertHost.getId()).thenReturn(convertHostId);
         when(convertHost.getName()).thenReturn("KVM-Convert-Host");
         when(convertHost.getType()).thenReturn(Host.Type.Routing);
-        when(convertHost.getClusterId()).thenReturn(clusterId);
         if (selectConvertHost) {
             when(importVmCmd.getConvertInstanceHostId()).thenReturn(convertHostId);
             when(hostDao.findById(convertHostId)).thenReturn(convertHost);
         }
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(clusterId, Hypervisor.HypervisorType.KVM, Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(convertHost));
 
         DataStoreTO dataStoreTO = mock(DataStoreTO.class);
         DataStore dataStore = mock(DataStore.class);
@@ -693,11 +694,13 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
+        Answer convertInstanceAnswer = mock(Answer.class);
+        ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
         when(convertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
-        when(convertInstanceAnswer.getConvertedInstance()).thenReturn(instance);
+        when(convertImportedInstanceAnswer.getConvertedInstance()).thenReturn(instance);
         if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(convertInstanceAnswer);
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ImportConvertedInstanceCommand.class))).thenReturn(convertImportedInstanceAnswer);
         }
 
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {

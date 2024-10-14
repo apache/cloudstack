@@ -18,7 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
-import com.cloud.hypervisor.Hypervisor;
 
 import java.util.List;
 
