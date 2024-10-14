@@ -38,7 +38,7 @@ def writeIfNotHere(fileName, texts):
     texts = [ "%s\n" % t for t in texts ]
     need = False
     for t in texts:
-        if not t in entries:
+        if t not in entries:
             entries.append(t)
             need = True
 

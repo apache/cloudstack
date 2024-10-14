@@ -17,6 +17,9 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
+import com.vmware.nsx.cluster.Status;
+import com.vmware.nsx.model.ClusterStatus;
+import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.PathExpression;
@@ -92,5 +95,17 @@ public class NsxApiClientTest {
         List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
         Assert.assertEquals(List.of(String.format("%s/%s", NsxApiClient.GROUPS_PATH_PREFIX, segmentName)), sourceGroups);
         Assert.assertEquals(List.of("ANY"), destinationGroups);
+    }
+
+    @Test
+    public void testIsNsxControllerActive() {
+        Status statusService = Mockito.mock(Status.class);
+        Mockito.when(nsxService.apply(Status.class)).thenReturn(statusService);
+        ClusterStatus clusterStatus = Mockito.mock(ClusterStatus.class);
+        ControllerClusterStatus status = Mockito.mock(ControllerClusterStatus.class);
+        Mockito.when(status.getStatus()).thenReturn("stable");
+        Mockito.when(statusService.get()).thenReturn(clusterStatus);
+        Mockito.when(clusterStatus.getControlClusterStatus()).thenReturn(status);
+        Assert.assertTrue(client.isNsxControllerActive());
     }
 }

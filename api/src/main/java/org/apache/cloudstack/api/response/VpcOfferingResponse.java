@@ -70,9 +70,9 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "true if vpc offering can be used by NSX networks only")
     private Boolean forNsx;
 
-    @SerializedName(ApiConstants.NSX_MODE)
-    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
-    private String nsxMode;
+    @SerializedName(ApiConstants.NETWORK_MODE)
+    @Param(description = "Mode in which the network will operate. The valid values are NATTED and ROUTED")
+    private String networkMode;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
@@ -93,6 +93,14 @@ public class VpcOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.INTERNET_PROTOCOL)
     @Param(description = "the internet protocol of the vpc offering")
     private String internetProtocol;
+
+    @SerializedName(ApiConstants.SPECIFY_AS_NUMBER)
+    @Param(description = "true if network offering supports choosing AS numbers")
+    private Boolean specifyAsNumber;
+
+    @SerializedName(ApiConstants.ROUTING_MODE)
+    @Param(description = "the routing mode for the network offering, supported types are Static or Dynamic.")
+    private String routingMode;
 
     public void setId(String id) {
         this.id = id;
@@ -150,8 +158,8 @@ public class VpcOfferingResponse extends BaseResponse {
         this.forNsx = forNsx;
     }
 
-    public void setNsxMode(String nsxMode) {
-        this.nsxMode = nsxMode;
+    public void setNetworkMode(String networkMode) {
+        this.networkMode = networkMode;
     }
 
     public String getZoneId() {
@@ -176,5 +184,21 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
+    }
+
+    public Boolean getSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(String routingMode) {
+        this.routingMode = routingMode;
     }
 }

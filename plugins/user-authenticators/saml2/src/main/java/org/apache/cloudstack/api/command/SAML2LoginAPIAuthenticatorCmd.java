@@ -226,6 +226,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                             "Received SAML response for a SSO request that we may not have made or has expired, please try logging in again",
                             params, responseType));
                 }
+                samlAuthManager.purgeToken(token);
 
                 // Set IdpId for this session
                 session.setAttribute(SAMLPluginConstants.SAML_IDPID, issuer.getValue());

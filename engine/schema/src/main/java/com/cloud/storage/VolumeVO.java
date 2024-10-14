@@ -182,6 +182,9 @@ public class VolumeVO implements Volume {
     @Column(name = "encrypt_format")
     private String encryptFormat;
 
+    @Column(name = "delete_protection")
+    private boolean deleteProtection;
+
 
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId,
@@ -678,4 +681,13 @@ public class VolumeVO implements Volume {
     public String getEncryptFormat() { return encryptFormat; }
 
     public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
+
+    @Override
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
+    }
 }

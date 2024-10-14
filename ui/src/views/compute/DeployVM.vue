@@ -152,6 +152,18 @@
                       @tabChange="key => onTabChange(key, 'tabKey')">
                       <div v-if="tabKey === 'templateid'">
                         {{ $t('message.template.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.template.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, true)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="templateid"
                           :items="options.templates"
@@ -181,6 +193,18 @@
                       </div>
                       <div v-else>
                         {{ $t('message.iso.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.iso.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, false)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
                         <template-iso-selection
                           input-decorator="isoid"
                           :items="options.isos"
@@ -914,6 +938,7 @@ export default {
       podId: null,
       clusterId: null,
       zoneSelected: false,
+      isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -1064,7 +1089,19 @@ export default {
       zones: [],
       selectedZone: '',
       formModel: {},
-      nicToNetworkSelection: []
+      nicToNetworkSelection: [],
+      selectedArchitecture: null,
+      architectureTypes: {
+        opts: [
+          {
+            id: 'x86_64',
+            description: 'AMD 64 bits (x86_64)'
+          }, {
+            id: 'aarch64',
+            description: 'ARM 64 bits (aarch64)'
+          }
+        ]
+      }
     }
   },
   computed: {
@@ -1078,25 +1115,54 @@ export default {
       return ['User'].includes(this.$store.getters.userInfo.roletype) || store.getters.project.id
     },
     diskSize () {
-      let dataDiskSize
-      let rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
-      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
-      const customDiskSize = _.get(this.instanceConfig, 'size', 0)
+      const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
+      const customDataDiskSize = _.get(this.instanceConfig, 'size', null)
+      let computeOfferingDiskSize = _.get(this.serviceOffering, 'rootdisksize', null)
+      computeOfferingDiskSize = computeOfferingDiskSize > 0 ? computeOfferingDiskSize : null
+      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', null)
+      const overrideDiskOfferingDiskSize = _.get(this.overrideDiskOffering, 'disksize', null)
 
+      let rootDiskSize
+      let dataDiskSize
       if (this.vm.isoid != null) {
-        rootDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+        rootDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
       } else {
-        dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
+        rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
+        dataDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
       }
 
       const size = []
-      if (rootDiskSize > 0) {
+      if (rootDiskSize) {
         size.push(`${rootDiskSize} GB (Root)`)
       }
-      if (dataDiskSize > 0) {
+      if (dataDiskSize) {
         size.push(`${dataDiskSize} GB (Data)`)
       }
       return size.join(' | ')
+    },
+    rootDiskOffering () {
+      const rootDiskOffering = this.vm.isoid != null ? this.diskOffering : this.overrideDiskOffering
+
+      const id = _.get(rootDiskOffering, 'id', null)
+      const displayText = _.get(rootDiskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Root)`
+      }
+    },
+    dataDiskOffering () {
+      if (this.vm.isoid != null) {
+        return null
+      }
+
+      const id = _.get(this.diskOffering, 'id', null)
+      const displayText = _.get(this.diskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Data)`
+      }
     },
     affinityGroupIds () {
       return _.map(this.affinityGroups, 'id')
@@ -1340,7 +1406,19 @@ export default {
       return tabList
     },
     showSecurityGroupSection () {
-      return (this.networks.length > 0 && this.zone?.securitygroupsenabled) || (this.zone?.networktype === 'Basic')
+      if (this.networks.length < 1) {
+        return false
+      }
+      for (const network of this.options.networks) {
+        if (this.form.networkids && this.form.networkids.includes(network.id)) {
+          for (const service of network.service) {
+            if (service.name === 'SecurityGroup') {
+              return true
+            }
+          }
+        }
+      }
+      return false
     },
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
@@ -1439,16 +1517,10 @@ export default {
           this.vm.hostname = host.name
         }
 
-        if (this.serviceOffering?.rootdisksize) {
-          this.vm.disksizetotalgb = this.serviceOffering.rootdisksize
-        } else if (this.diskSize) {
+        if (this.diskSize) {
           this.vm.disksizetotalgb = this.diskSize
         } else {
           this.vm.disksizetotalgb = null
-        }
-
-        if (this.diskSize) {
-          this.vm.disksizetotalgb = this.diskSize
         }
 
         if (this.networks) {
@@ -1497,6 +1569,11 @@ export default {
           this.vm.diskofferingname = this.diskOffering.displaytext
           this.vm.diskofferingsize = this.diskOffering.disksize
         }
+
+        this.vm.rootdiskofferingid = this.rootDiskOffering?.id
+        this.vm.rootdiskofferingdisplaytext = this.rootDiskOffering?.displayText
+        this.vm.datadiskofferingid = this.dataDiskOffering?.id
+        this.vm.datadiskofferingdisplaytext = this.dataDiskOffering?.displayText
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
@@ -1916,6 +1993,14 @@ export default {
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
+    },
+    changeArchitecture (arch, isTemplate) {
+      this.selectedArchitecture = arch
+      if (isTemplate) {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
     },
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
@@ -2343,6 +2428,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
       args.account = store.getters.project?.id ? null : this.owner.account
       args.domainid = store.getters.project?.id ? null : this.owner.domainid
       args.projectid = store.getters.project?.id || this.owner.projectid
@@ -2368,6 +2456,9 @@ export default {
         args.pageSize = args.pageSize || 10
       }
       args.zoneid = _.get(this.zone, 'id')
+      if (this.isZoneSelectedMultiArch) {
+        args.arch = this.selectedArchitecture
+      }
       args.isoFilter = isoFilter
       args.bootable = true
       args.showicon = 'true'
@@ -2431,6 +2522,10 @@ export default {
       this.podId = null
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
+      this.isZoneSelectedMultiArch = this.zone.ismultiarch
+      if (this.isZoneSelectedMultiArch) {
+        this.selectedArchitecture = this.architectureTypes.opts[0].id
+      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId

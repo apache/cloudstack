@@ -110,11 +110,13 @@ public interface VpcManager {
     Network
         createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2, Pair<Integer, Integer> vrIfaceMTUs)
+            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2,
+            Pair<Integer, Integer> vrIfaceMTUs, Integer networkCidrSize)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
-     * Assigns source nat public IP address to VPC
+     * Assigns source nat public IP address to VPC.
+     * In case of NSX backed VPCs: CloudStack deploys VRs with Public NIC IP different to the VPC source NAT IP, the source NAT IP is on the NSX Public range
      *
      * @param owner
      * @param vpc
@@ -122,7 +124,7 @@ public interface VpcManager {
      * @throws InsufficientAddressCapacityException
      * @throws ConcurrentOperationException
      */
-    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc, Long podId) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Validates network offering to find if it can be used for network creation in VPC

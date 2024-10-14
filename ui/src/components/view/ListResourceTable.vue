@@ -50,6 +50,10 @@
             {{ $toLocaleDate(text) }}
           </template>
 
+          <template v-else-if="column.key === 'size' || column.key === 'virtualsize'">
+            {{ bytesToHumanReadableSize(text) }}
+          </template>
+
           <template v-else>
             {{ text }}
           </template>

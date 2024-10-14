@@ -85,22 +85,48 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
+        <a-row :gutter="12" v-if="routingMode === 'dynamic' && forNsx">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="specifyasnumber" ref="specifyasnumber">
+              <template #label>
+                <tooltip-label :title="$t('label.specifyasnumber')"/>
+              </template>
+              <a-switch v-model:checked="form.specifyasnumber" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-form-item name="networkmode" ref="networkmode">
           <template #label>
-            <tooltip-label :title="$t('label.nsxmode')" :tooltip="apiParams.nsxmode.description"/>
+            <tooltip-label :title="$t('label.networkmode')" :tooltip="apiParams.networkmode.description"/>
           </template>
           <a-select
-            v-if="showMode"
             optionFilterProp="label"
-            v-model:value="form.nsxmode"
+            v-model:value="form.networkmode"
+            @change="val => { handleForNetworkModeChange(val) }"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.nsxmode.description">
-            <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
+            :placeholder="apiParams.networkmode.description">
+            <a-select-option v-for="(opt) in networkmodes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
           </a-select>
+        </a-form-item>
+        <a-form-item name="routingmode" ref="routingmode" v-if="networkmode === 'ROUTED' || internetProtocolValue === 'ipv6' || internetProtocolValue === 'dualstack'">
+          <template #label>
+            <tooltip-label :title="$t('label.routingmode')" :tooltip="apiParams.routingmode.description"/>
+          </template>
+          <a-radio-group
+            v-model:value="form.routingmode"
+            buttonStyle="solid"
+            @change="selected => { routingMode = selected.target.value }">
+            <a-radio-button value="static">
+              {{ $t('label.static') }}
+            </a-radio-button>
+            <a-radio-button value="dynamic">
+              {{ $t('label.dynamic') }}
+            </a-radio-button>
+          </a-radio-group>
         </a-form-item>
         <a-form-item>
           <template #label>
@@ -247,7 +273,6 @@ export default {
       zones: [],
       zoneLoading: false,
       forNsx: false,
-      showMode: false,
       loading: false,
       supportedServices: [],
       supportedServiceLoading: false,
@@ -258,7 +283,9 @@ export default {
       sourceNatServiceChecked: false,
       selectedServiceProviderMap: {},
       ipv6NetworkOfferingEnabled: false,
-      modes: [
+      routingMode: 'static',
+      networkmode: '',
+      networkmodes: [
         {
           id: 0,
           name: 'NATTED'
@@ -302,7 +329,8 @@ export default {
         distributedrouter: true,
         ispublic: true,
         internetprotocol: this.internetProtocolValue,
-        nsxsupportlb: true
+        nsxsupportlb: true,
+        routingmode: 'static'
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
@@ -479,6 +507,11 @@ export default {
         })
       }
       this.supportedServices = []
+      if (this.networkmode === 'ROUTED') {
+        services = services.filter(service => {
+          return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
+        })
+      }
       for (var i in services) {
         services[i].description = services[i].name
       }
@@ -490,7 +523,6 @@ export default {
     },
     async handleForNsxChange (forNsx) {
       this.forNsx = forNsx
-      this.showMode = forNsx
       if (forNsx) {
         this.form.nsxsupportlb = true
         this.handleNsxLbService(true)
@@ -532,6 +564,10 @@ export default {
       if (this.isVpcVirtualRouterForAtLeastOneService && this.serviceOfferings.length === 0) {
         this.fetchServiceOfferingData()
       }
+    },
+    handleForNetworkModeChange (networkMode) {
+      this.networkmode = networkMode
+      this.fetchSupportedServiceData()
     },
     fetchServiceOfferingData () {
       const params = {}
@@ -585,9 +621,13 @@ export default {
         }
         if (values.fornsx === true) {
           params.fornsx = true
-          params.nsxmode = values.nsxmode
           params.nsxsupportlb = values.nsxsupportlb
         }
+        params.networkmode = values.networkmode
+        if (!values.forVpc) {
+          params.specifyasnumber = values.specifyasnumber
+        }
+        params.routingmode = values.routingmode
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = []
@@ -615,6 +655,11 @@ export default {
           }
           if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+            serviceCapabilityIndex++
+          } else if (values.redundantrouter === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++

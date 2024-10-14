@@ -54,6 +54,10 @@ public class WebhookResponse extends BaseResponse implements ControlledViewEntit
     @Param(description = "The name of the domain in which the Webhook exists")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the Webhook belongs")
+    private String domainPath;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "The account associated with the Webhook")
     private String accountName;
@@ -105,6 +109,11 @@ public class WebhookResponse extends BaseResponse implements ControlledViewEntit
     @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

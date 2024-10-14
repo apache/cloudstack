@@ -19,42 +19,6 @@
 -- Schema upgrade from 4.9.1.0 to 4.9.2.0;
 --;
 
---;
--- Stored procedure to do idempotent insert;
---;
-
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`(
-                            IN in_hypervisor_type VARCHAR(32),
-                            IN in_hypervisor_version VARCHAR(32),
-                            IN in_guest_os_name VARCHAR(255),
-                            IN in_guest_os_id BIGINT(20) UNSIGNED,
-                            IN is_user_defined int(1) UNSIGNED)
-BEGIN
-        IF NOT EXISTS ((SELECT * FROM `cloud`.`guest_os_hypervisor` WHERE
-            hypervisor_type=in_hypervisor_type AND
-            hypervisor_version=in_hypervisor_version AND
-            guest_os_id = in_guest_os_id))
-        THEN
-                INSERT INTO `cloud`.`guest_os_hypervisor` (
-                        uuid,
-                        hypervisor_type,
-                        hypervisor_version,
-                        guest_os_name,
-                        guest_os_id,
-                        created,
-                        is_user_defined)
-                        VALUES (
-                            UUID(),
-                            in_hypervisor_type,
-                            in_hypervisor_version,
-                            in_guest_os_name,
-                            in_guest_os_id,
-                            utc_timestamp(),
-                            is_user_defined
-                        ); END IF; END;;
-
 CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0', 'CentOS 4.5 (32-bit)', 1,  0);
 CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0', 'CentOS 4.6 (32-bit)', 2,  0);
 CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0', 'CentOS 4.7 (32-bit)', 3,  0);
@@ -234,5 +198,3 @@ CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0'
 
 CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0', 'Ubuntu Trusty Tahr 14.04', 255, 0);
 CALL `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`('Xenserver', '7.0.0', 'Ubuntu Trusty Tahr 14.04', 256, 0);
-
-DROP PROCEDURE `cloud`.`IDEMPOTENT_INSERT_GUESTOS_HYPERVISOR_MAPPING`

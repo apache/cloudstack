@@ -355,15 +355,14 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 vm.setPowerState(VirtualMachine.PowerState.PowerOff);
                 _instanceDao.update(vm.getId(), vm);
             }
-           for ( Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
+           for (Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
                VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
                volume.setState(Volume.State.Ready);
                _volumeDao.update(volume.getId(), volume);
                if (VMVolToRestore.getType() == Volume.Type.ROOT) {
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
-               }
-               else if ( VMVolToRestore.getType() == Volume.Type.DATADISK) {
+               } else if (VMVolToRestore.getType() == Volume.Type.DATADISK) {
                    List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
                    _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));

@@ -17,7 +17,11 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.nsx.cluster.Status;
+import com.vmware.nsx.model.ClusterStatus;
+import com.vmware.nsx.model.ControllerClusterStatus;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
@@ -45,13 +49,13 @@ import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
+import com.vmware.nsx_policy.model.LBIcmpMonitorProfile;
 import com.vmware.nsx_policy.model.LBMonitorProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
 import com.vmware.nsx_policy.model.LBPoolListResult;
 import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBService;
 import com.vmware.nsx_policy.model.LBTcpMonitorProfile;
-import com.vmware.nsx_policy.model.LBUdpMonitorProfile;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
@@ -84,6 +88,7 @@ import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,6 +117,7 @@ public class NsxApiClient {
     protected Logger logger = LogManager.getLogger(getClass());
 
     // Constants
+    private static final String CLUSTER_STATUS_STABLE = "STABLE";
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
     private static final String TIER_1_LOCALE_SERVICE_ID = "default";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
@@ -123,7 +129,7 @@ public class NsxApiClient {
     // TODO: Pass as global / zone-level setting?
     protected static final String NSX_LB_PASSIVE_MONITOR = "/infra/lb-monitor-profiles/default-passive-lb-monitor";
     protected static final String TCP_MONITOR_PROFILE = "LBTcpMonitorProfile";
-    protected static final String UDP_MONITOR_PROFILE = "LBUdpMonitorProfile";
+    protected static final String ICMP_MONITOR_PROFILE = "LBIcmpMonitorProfile";
     protected static final String NAT_ID = "USER";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
@@ -197,6 +203,26 @@ public class NsxApiClient {
         Configuration config = configBuilder.build();
         apiClient = ApiClients.newRestClient(controllerUrl, config);
         nsxService = apiClient::createStub;
+    }
+
+    public boolean isNsxControllerActive() {
+        try {
+            Status statusService = (Status) nsxService.apply(Status.class);
+            ClusterStatus clusterStatus = statusService.get();
+            if (clusterStatus == null) {
+                logger.error("Cannot get NSX Cluster Status");
+                return false;
+            }
+            ControllerClusterStatus status = clusterStatus.getControlClusterStatus();
+            if (status == null) {
+                logger.error("Cannot get NSX Controller Cluster Status");
+                return false;
+            }
+            return CLUSTER_STATUS_STABLE.equalsIgnoreCase(status.getStatus());
+        } catch (Error error) {
+            logger.error("Error checking NSX Controller Health: {}", error.getMessage());
+            return false;
+        }
     }
 
     public void createTier1NatRule(String tier1GatewayName, String natId, String natRuleId,
@@ -435,7 +461,7 @@ public class NsxApiClient {
                 String t1GatewayName = getTier1GatewayName(domainId, accountId, zoneId, networkId, false);
                 deleteLoadBalancer(getLoadBalancerName(t1GatewayName));
             }
-            removeSegment(segmentName);
+            removeSegment(segmentName, zoneId);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
             String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
             logger.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
@@ -448,7 +474,8 @@ public class NsxApiClient {
         }
     }
 
-    protected void removeSegment(String segmentName) {
+
+    protected void removeSegment(String segmentName, long zoneId) {
         logger.debug(String.format("Removing the segment with ID %s", segmentName));
         Segments segmentService = (Segments) nsxService.apply(Segments.class);
         String errMsg = String.format("The segment with ID %s is not found, skipping removal", segmentName);
@@ -467,15 +494,16 @@ public class NsxApiClient {
         SegmentPorts segmentPortsService = (SegmentPorts) nsxService.apply(SegmentPorts.class);
         PolicyGroupMembersListResult segmentPortsList = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath);
         Long portCount = segmentPortsList.getResultCount();
-        portCount = retrySegmentDeletion(segmentPortsService, portCount, segmentName, enforcementPointPath);
-        logger.info("Port count: " + portCount);
+        if (portCount > 0L) {
+            portCount = retrySegmentDeletion(segmentPortsService, segmentName, enforcementPointPath, zoneId);
+        }
         if (portCount == 0L) {
             logger.debug(String.format("Removing the segment with ID %s", segmentName));
             removeGroupForSegment(segmentName);
             segmentService.delete(segmentName);
         } else {
             String msg = String.format("Cannot remove the NSX segment %s because there are still %s port group(s) attached to it", segmentName, portCount);
-            logger.debug(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -485,13 +513,16 @@ public class NsxApiClient {
                 false, null, 50L, false, null);
     }
 
-    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, Long portCount, String segmentName, String enforcementPointPath) {
-        int retries = 20;
+    private Long retrySegmentDeletion(SegmentPorts segmentPortsService, String segmentName, String enforcementPointPath, long zoneId) {
+        int retries = NsxService.NSX_API_FAILURE_RETRIES.valueIn(zoneId);
+        int waitingSecs = NsxService.NSX_API_FAILURE_INTERVAL.valueIn(zoneId);
         int count = 1;
+        Long portCount;
         do {
             try {
-                logger.info("Waiting for all port groups to be unlinked from the segment - Attempt: " + count++ + " Waiting for 5 secs");
-                Thread.sleep(5000);
+                logger.info("Waiting for all port groups to be unlinked from the segment {} - " +
+                        "Attempt: {}. Waiting for {} secs", segmentName, count++, waitingSecs);
+                Thread.sleep(waitingSecs * 1000L);
                 portCount = getSegmentPortList(segmentPortsService, segmentName, enforcementPointPath).getResultCount();
                 retries--;
             } catch (InterruptedException e) {
@@ -526,24 +557,37 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
+    protected void deletePortForwardingNatRuleService(String ruleName, String privatePort, String protocol) {
+        String svcName = getServiceName(ruleName, privatePort, protocol, null, null);
         try {
-            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
-            logger.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
-            // delete NAT rule
-            natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
-            if (service == Network.Service.PortForwarding) {
-                String svcName = getServiceName(ruleName, privatePort, protocol, null, null);
-                // Delete service
-                Services services = (Services) nsxService.apply(Services.class);
+            Services services = (Services) nsxService.apply(Services.class);
+            com.vmware.nsx_policy.model.Service servicePFRule = services.get(svcName);
+            if (servicePFRule != null && !servicePFRule.getMarkedForDelete() && !BooleanUtils.toBoolean(servicePFRule.getIsDefault())) {
                 services.delete(svcName);
             }
         } catch (Error error) {
-            ApiError ae = error.getData()._convertTo(ApiError.class);
-            String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
-                    ruleName, tier1GatewayName, networkName, ae.getErrorMessage());
-            logger.error(msg);
-            throw new CloudRuntimeException(msg);
+            String msg = String.format("Cannot find service %s associated to rule %s, skipping its deletion: %s",
+                    svcName, ruleName, error.getMessage());
+            logger.debug(msg);
+        }
+    }
+
+    public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            logger.debug("Deleting NSX NAT rule {} for tier-1 gateway {} (network: {})", ruleName, tier1GatewayName, networkName);
+            PolicyNatRule natRule = natService.get(tier1GatewayName, NatId.USER.name(), ruleName);
+            if (natRule != null && !natRule.getMarkedForDelete()) {
+                logger.debug("Deleting rule {} from Tier 1 Gateway {}", ruleName, tier1GatewayName);
+                natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
+            }
+        } catch (Error error) {
+            String msg = String.format("Cannot find NAT rule with name %s: %s, skipping deletion", ruleName, error.getMessage());
+            logger.debug(msg);
+        }
+
+        if (service == Network.Service.PortForwarding) {
+            deletePortForwardingNatRuleService(ruleName, privatePort, protocol);
         }
     }
 
@@ -577,9 +621,14 @@ public class NsxApiClient {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
             PolicyNatRule rule = natService.get(tier1GatewayName, NAT_ID, ruleName);
+            logger.debug("Rule {} from Tier 1 GW {}: {}", ruleName, tier1GatewayName,
+                    rule == null ? "null" : rule.getId() + " " + rule.getPath());
             return !Objects.isNull(rule);
         } catch (Error error) {
-            logger.debug(String.format("Found a port forward rule named: %s on NSX", ruleName));
+            String msg = String.format("Error checking if port forwarding rule %s exists on Tier 1 Gateway %s: %s",
+                    ruleName, tier1GatewayName, error.getMessage());
+            Throwable throwable = error.getCause();
+            logger.error(msg, throwable);
             return false;
         }
     }
@@ -637,13 +686,10 @@ public class NsxApiClient {
                     .build();
             lbActiveMonitor.patch(lbMonitorProfileId, lbTcpMonitorProfile);
         } else if ("UDP".equals(protocol.toUpperCase(Locale.ROOT))) {
-            LBUdpMonitorProfile lbUdpMonitorProfile = new LBUdpMonitorProfile.Builder(UDP_MONITOR_PROFILE)
+            LBIcmpMonitorProfile icmpMonitorProfile = new LBIcmpMonitorProfile.Builder(ICMP_MONITOR_PROFILE)
                     .setDisplayName(lbMonitorProfileId)
-                    .setMonitorPort(Long.parseLong(port))
-                    .setSend("")
-                    .setReceive("")
                     .build();
-            lbActiveMonitor.patch(lbMonitorProfileId, lbUdpMonitorProfile);
+            lbActiveMonitor.patch(lbMonitorProfileId, icmpMonitorProfile);
         }
 
         LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);

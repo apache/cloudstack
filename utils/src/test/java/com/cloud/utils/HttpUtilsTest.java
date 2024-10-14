@@ -60,35 +60,97 @@ public class HttpUtilsTest {
         final String sessionKeyValue = "randomUniqueSessionID";
 
         // session and sessionKeyString null test
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
         sessionKeyString =  "sessionkey";
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
         // param and cookie null test
         session = new MockHttpSession();
+        final String sessionId = session.getId();
         session.setAttribute(sessionKeyString, sessionKeyValue);
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
-        // param null, cookies not null test
+        // param null, cookies not null test (JSESSIONID is null)
         params = null;
         cookies = new Cookie[]{new Cookie(sessionKeyString, sessionKeyValue)};
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, "randomString"));
-        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, "randomString", HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+
+        // param null, cookies not null test (JSESSIONID is not null and matches)
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", sessionId + ".node0");
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, "randomString", HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+
+        // param null, cookies not null test (JSESSIONID is not null but mismatches)
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", "node0xxxxxxxxxxxxx.node0");
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, "randomString", HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
         // param not null, cookies null test
         params = new HashMap<String, Object[]>();
         params.put(sessionKeyString, new String[]{"randomString"});
         cookies = null;
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
         params.put(sessionKeyString, new String[]{sessionKeyValue});
-        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
-        // both param and cookies not null test
+        // both param and cookies not null test (JSESSIONID is null)
         params = new HashMap<String, Object[]>();
-        cookies = new Cookie[]{new Cookie(sessionKeyString, sessionKeyValue)};
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
         params.put(sessionKeyString, new String[]{"incorrectValue"});
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
         params.put(sessionKeyString, new String[]{sessionKeyValue});
-        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+
+        // both param and cookies not null test (JSESSIONID is not null but mismatches)
+        params = new HashMap<String, Object[]>();
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", "node0xxxxxxxxxxxxx.node0");
+        params.put(sessionKeyString, new String[]{"incorrectValue"});
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        params.put(sessionKeyString, new String[]{sessionKeyValue});
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+
+        // both param and cookies not null test (JSESSIONID is not null amd matches)
+        params = new HashMap<String, Object[]>();
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", sessionId + ".node0");
+        params.put(sessionKeyString, new String[]{"incorrectValue"});
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        params.put(sessionKeyString, new String[]{sessionKeyValue});
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+
+        // param not null, cookies null test (JSESSIONID is not null amd matches)
+        params = new HashMap<String, Object[]>();
+        cookies = new Cookie[1];
+        cookies[0] = new Cookie("JSESSIONID", sessionId + ".node0");
+        params.put(sessionKeyString, new String[]{"incorrectValue"});
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.ParameterOnly));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter));
+        params.put(sessionKeyString, new String[]{sessionKeyValue});
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.ParameterOnly));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter));
+
+        // param not null (correct), cookies not null test (correct)
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", sessionId + ".node0");
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.ParameterOnly));
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter));
+
+        // param not null (correct), cookies not null test (wrong)
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(sessionKeyString, "incorrectValue");
+        cookies[1] = new Cookie("JSESSIONID", sessionId + ".node0");
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.ParameterOnly));
+        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter));
     }
 }

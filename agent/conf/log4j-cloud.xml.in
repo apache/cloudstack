@@ -30,7 +30,7 @@ under the License.
          <Policies>
             <TimeBasedTriggeringPolicy/>
          </Policies>
-         <PatternLayout pattern="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
 
       <!-- ============================== -->

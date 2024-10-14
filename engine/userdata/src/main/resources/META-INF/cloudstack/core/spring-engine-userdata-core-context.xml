@@ -30,5 +30,5 @@
     <bean id="userDataManager" class="org.apache.cloudstack.userdata.UserDataManagerImpl">
         <property name="userDataProviders" value="#{userDataProvidersRegistry.registered}" />
     </bean>
- 
+
 </beans>

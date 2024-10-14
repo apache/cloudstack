@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
@@ -154,6 +155,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     private boolean _elbEnabled = false;
     static Boolean rulesContinueOnErrFlag = true;
@@ -538,6 +541,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         } else if (purpose == Purpose.PortForwarding) {
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         } else if (purpose == Purpose.Firewall) {
+            if (routedIpv4Manager.isVirtualRouterGateway(network)) {
+                throw new CloudRuntimeException("Unable to create routing firewall rule. Please use routing firewall API instead.");
+            }
             caps = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
         }
 
@@ -809,16 +815,12 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (apply) {
             // ingress firewall rule
             if (rule.getSourceIpAddressId() != null) {
-                //feteches ingress firewall, ingress firewall rules associated with the ip
+                //fetches ingress firewall, ingress firewall rules associated with the ip
                 List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
                 return applyFirewallRules(rules, false, caller);
-                //egress firewall rule
             } else if (networkId != null) {
-                boolean isIpv6 = Purpose.Ipv6Firewall.equals(rule.getPurpose());
-                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
-                if (isIpv6) {
-                    rules.addAll(_firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
-                }
+                //egress firewall rule, or ipv4/ipv6 routing firewall rule
+                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), rule.getTrafficType());
                 return applyFirewallRules(rules, false, caller);
             }
         } else {

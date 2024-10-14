@@ -223,7 +223,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private void checkForRulesToDelete() throws ManagementServerException {
         NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+        if (kubernetesClusterNetwork != null && !manager.isDirectAccess(kubernetesClusterNetwork)) {
             deleteKubernetesClusterNetworkRules();
         }
     }

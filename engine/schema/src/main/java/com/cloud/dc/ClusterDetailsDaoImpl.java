@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -136,8 +135,8 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
-        ClusterDetailsVO vo = findDetail(id, key.key());
+    public String getConfigValue(long id, String key) {
+        ClusterDetailsVO vo = findDetail(id, key);
         return vo == null ? null : vo.getValue();
     }
 

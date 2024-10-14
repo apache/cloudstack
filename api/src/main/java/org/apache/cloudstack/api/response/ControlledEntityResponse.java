@@ -27,4 +27,6 @@ public interface ControlledEntityResponse {
     public void setDomainId(String domainId);
 
     public void setDomainName(String domainName);
+
+    public void setDomainPath(String domainPath);
 }

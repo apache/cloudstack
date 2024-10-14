@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host.Type;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -212,6 +214,10 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
 
     @Column(name = "username")
     private String username;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Override
     public long getId() {
@@ -431,5 +437,9 @@ public class HostJoinVO extends BaseViewVO implements InternalIdentity, Identity
         return Arrays.asList(
                     ResourceState.Maintenance, ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance)
                 .contains(getResourceState());
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch;
     }
 }

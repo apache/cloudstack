@@ -65,6 +65,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.junit.After;
@@ -203,6 +204,8 @@ public class AccountManagetImplTestBase {
     UsageEventDao _usageEventDao;
     @Mock
     AccountService _accountService;
+    @Mock
+    RoutedIpv4Manager routedIpv4Manager;
 
     @Before
     public void setup() {

@@ -54,6 +54,10 @@ public class UserDataResponse extends BaseResponseWithAnnotations implements Con
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
     private String domain;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the userdata owner belongs", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.USER_DATA) @Param(description="base64 encoded userdata content")
     private String userData;
 
@@ -142,5 +146,10 @@ public class UserDataResponse extends BaseResponseWithAnnotations implements Con
 
     public void setDomainName(String domain) {
         this.domain = domain;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 }

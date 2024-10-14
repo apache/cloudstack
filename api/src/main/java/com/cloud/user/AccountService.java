@@ -116,6 +116,8 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
+    void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
+
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**

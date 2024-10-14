@@ -19,7 +19,6 @@ package org.apache.cloudstack.framework.config;
 import java.sql.Date;
 
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -215,42 +214,38 @@ public class ConfigKey<T> {
 
     public T value() {
         if (_value == null || isDynamic()) {
-            ConfigurationVO vo = (s_depot != null && s_depot.global() != null) ? s_depot.global().findById(key()) : null;
-            final String value = (vo != null && vo.getValue() != null) ? vo.getValue() : defaultValue();
-            _value = ((value == null) ? (T)defaultValue() : valueOf(value));
+            String value = s_depot != null ? s_depot.getConfigStringValue(_name, Scope.Global, null) : null;
+            _value = valueOf((value == null) ? defaultValue() : value);
         }
 
         return _value;
     }
 
-    public T valueIn(Long id) {
+    protected T valueInScope(Scope scope, Long id) {
         if (id == null) {
             return value();
         }
 
-        String value = s_depot != null ? s_depot.findScopedConfigStorage(this).getConfigValue(id, this) : null;
+        String value = s_depot != null ? s_depot.getConfigStringValue(_name, scope, id) : null;
         if (value == null) {
             return value();
-        } else {
-            return valueOf(value);
         }
+        return valueOf(value);
+    }
+
+    public T valueIn(Long id) {
+        return valueInScope(_scope, id);
     }
 
     public T valueInDomain(Long domainId) {
-        if (domainId == null) {
-            return value();
-        }
-
-        String value = s_depot != null ? s_depot.getDomainScope(this).getConfigValue(domainId, this) : null;
-        if (value == null) {
-            return value();
-        } else {
-            return valueOf(value);
-        }
+        return valueInScope(Scope.Domain, domainId);
     }
 
     @SuppressWarnings("unchecked")
     protected T valueOf(String value) {
+        if (value == null) {
+            return null;
+        }
         Number multiplier = 1;
         if (multiplier() != null) {
             multiplier = (Number)multiplier();

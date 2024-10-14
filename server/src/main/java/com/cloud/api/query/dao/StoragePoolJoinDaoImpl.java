@@ -172,6 +172,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setTags(pool.getTag());
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
+        poolResponse.setManaged(storagePool.isManaged());
 
         // set async job
         if (pool.getJobId() != null) {
@@ -204,6 +205,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Override
     public StoragePoolResponse newStoragePoolForMigrationResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
@@ -230,6 +232,17 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+
+        if (storagePool != null) {
+            poolResponse.setManaged(storagePool.isManaged());
+            if (storagePool.isManaged()) {
+                DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+                PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+                long usedIops = driver.getUsedIops(storagePool);
+                poolResponse.setAllocatedIops(usedIops);
+            }
+        }
+
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
 
         // TODO: StatsCollector does not persist data

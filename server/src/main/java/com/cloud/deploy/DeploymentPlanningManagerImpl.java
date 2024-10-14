@@ -19,6 +19,7 @@ package com.cloud.deploy;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import com.cloud.storage.VMTemplateVO;
@@ -271,6 +273,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         _affinityProcessors = affinityProcessors;
     }
 
+    private static final List<CPU.CPUArch> clusterArchTypes = Arrays.asList(CPU.CPUArch.amd64, CPU.CPUArch.arm64);
+
     protected void avoidOtherClustersForDeploymentIfMigrationDisabled(VirtualMachine vm, Host lastHost, ExcludeList avoids) {
         if (lastHost == null || lastHost.getClusterId() == null ||
                 ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId())) {
@@ -329,6 +333,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         logger.debug("ROOT volume [{}] {} to deploy VM [{}].", () -> getRootVolumeUuid(_volsDao.findByInstance(vm.getId())), () -> plan.getPoolId() != null ? "is ready" : "is not ready", vm::getUuid);
 
         avoidDisabledResources(vmProfile, dc, avoids);
+        avoidDifferentArchResources(vmProfile, dc, avoids);
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         String uefiFlag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.UefiFlag);
@@ -453,6 +458,22 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
         }
         return dest;
+    }
+
+    private void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+        VirtualMachineTemplate template = vmProfile.getTemplate();
+        for (CPU.CPUArch arch : clusterArchTypes) {
+            if (arch.equals(template.getArch())) {
+                continue;
+            }
+            List<ClusterVO> avoidClusters = _clusterDao.listClustersByArchAndZoneId(dc.getId(), arch);
+            if (CollectionUtils.isNotEmpty(avoidClusters)) {
+                logger.debug("Excluding {} clusters as they are {} arch, conflicting with the requested arch {}",
+                        avoidClusters.size(), arch.getType(), template.getArch().getType());
+                List<Long> clusterIds = avoidClusters.stream().map(x -> x.getId()).collect(Collectors.toList());
+                avoids.addClusterList(clusterIds);
+            }
+        }
     }
 
     private DeployDestination deployInVmLastHost(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,

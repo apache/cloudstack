@@ -141,6 +141,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "the storage pool capabilities")
     private Map<String, String> caps;
 
+    @SerializedName(ApiConstants.MANAGED)
+    @Param(description = "whether this pool is managed or not")
+    private Boolean managed;
+
     public Map<String, String> getCaps() {
         return caps;
     }
@@ -370,5 +374,25 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setNfsMountOpts(String nfsMountOpts) {
         this.nfsMountOpts = nfsMountOpts;
+    }
+
+    public Long getAllocatedIops() {
+        return allocatedIops;
+    }
+
+    public Boolean getTagARule() {
+        return isTagARule;
+    }
+
+    public void setTagARule(Boolean tagARule) {
+        isTagARule = tagARule;
+    }
+
+    public Boolean getManaged() {
+        return managed;
+    }
+
+    public void setManaged(Boolean managed) {
+        this.managed = managed;
     }
 }

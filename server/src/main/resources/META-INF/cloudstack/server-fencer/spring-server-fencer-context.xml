@@ -27,11 +27,11 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-  
+
     <bean id="recreatableFencer" class="com.cloud.ha.RecreatableFencer" />
 
     <bean id="KVMFencer" class="com.cloud.ha.KVMFencer">
         <property name="name" value="KVMFenceBuilder" />
     </bean>
-    
+
 </beans>

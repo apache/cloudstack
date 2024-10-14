@@ -110,7 +110,8 @@ export default {
     },
     fetchData () {
       var params = {
-        zoneid: this.resource.zoneid
+        zoneid: this.resource.zoneid,
+        details: 'min'
       }
       if (this.resource.hypervisor && this.resource.hypervisor !== 'None') {
         params.hypervisor = this.resource.hypervisor

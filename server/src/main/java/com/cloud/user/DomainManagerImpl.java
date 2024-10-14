@@ -51,6 +51,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.region.RegionManager;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -161,6 +162,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ResourceLimitService resourceLimitService;
     @Inject
     private AffinityGroupDomainMapDao affinityGroupDomainMapDao;
+    @Inject
+    private RoutedIpv4Manager routedIpv4Manager;
 
     @Inject
     MessageBus _messageBus;
@@ -392,6 +395,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             } else {
                 removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
             }
+
+            // remove dedicated IPv4 subnets
+            routedIpv4Manager.removeIpv4SubnetsForZoneByDomainId(domain.getId());
+
+            // remove dedicated BGP peers
+            routedIpv4Manager.removeBgpPeersByDomainId(domain.getId());
 
             if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
                 CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");

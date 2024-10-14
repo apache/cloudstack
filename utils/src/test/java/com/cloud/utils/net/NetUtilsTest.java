@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
@@ -294,6 +295,17 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidIp4Cidr(cidrFirst));
         assertTrue(NetUtils.isValidIp4Cidr(cidrSecond));
         assertTrue(NetUtils.isValidIp4Cidr(cidrThird));;
+    }
+
+    @Test
+    public void testGetCleanIp4Cidr() throws Exception {
+        final String cidrFirst = "10.0.144.0/20";
+        final String cidrSecond = "10.0.151.5/20";
+        final String cidrThird = "10.0.144.10/21";
+
+        assertEquals(cidrFirst, NetUtils.getCleanIp4Cidr(cidrFirst));
+        assertEquals("10.0.144.0/20", NetUtils.getCleanIp4Cidr(cidrSecond));
+        assertEquals("10.0.144.0/21", NetUtils.getCleanIp4Cidr(cidrThird));;
     }
 
     @Test
@@ -888,5 +900,36 @@ public class NetUtilsTest {
     @Test(expected=CloudRuntimeException.class)
     public void validateIcmpTypeAndCodesThrowsException9() {
         NetUtils.validateIcmpTypeAndCode(3, -257);
+    }
+
+    @Test
+    public void validateCidrSizeOfIpRange() {
+        Assert.assertEquals(24, NetUtils.getCidrSizeOfIpRange(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.2.1")));
+        Assert.assertEquals(24, NetUtils.getCidrSizeOfIpRange(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.1.255")));
+        Assert.assertEquals(25, NetUtils.getCidrSizeOfIpRange(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.1.254")));
+        Assert.assertEquals(31, NetUtils.getCidrSizeOfIpRange(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.1.2")));
+        Assert.assertEquals(32, NetUtils.getCidrSizeOfIpRange(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.1.0")));
+    }
+
+    @Test
+    public void validateSplitIpRangeIntoSubnets() {
+        List<Pair<Long, Integer>> subnets = NetUtils.splitIpRangeIntoSubnets(NetUtils.ip2Long("192.168.1.0"), NetUtils.ip2Long("192.168.2.1"));
+        Assert.assertEquals(2, subnets.size());
+        Assert.assertEquals("192.168.1.0/24", String.format("%s/%s", NetUtils.long2Ip(subnets.get(0).first()), subnets.get(0).second()));
+        Assert.assertEquals("192.168.2.0/31", String.format("%s/%s", NetUtils.long2Ip(subnets.get(1).first()), subnets.get(1).second()));
+    }
+
+    @Test
+    public void validateStartIpAndEndIpFromCidr() {
+        long[] ips = NetUtils.getIpRangeStartIpAndEndIpFromCidr("192.168.1.0/24");
+        Assert.assertEquals(2, ips.length);
+        Assert.assertEquals("192.168.1.0", NetUtils.long2Ip(ips[0]));
+        Assert.assertEquals("192.168.1.255", NetUtils.long2Ip(ips[1]));
+    }
+
+    @Test
+    public void testTransformCidr() {
+        Assert.assertEquals("192.168.0.0/24", NetUtils.transformCidr("192.168.0.100/24"));
+        Assert.assertEquals("10.10.10.10/32", NetUtils.transformCidr("10.10.10.10/32"));
     }
 }

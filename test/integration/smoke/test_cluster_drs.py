@@ -100,7 +100,9 @@ class TestClusterDRS(cloudstackTestCase):
         )
         cls._cleanup.append(cls.network)
 
-        cls.migrateSvms(cls.cluster)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ['simulator']:
+            cls.migrateSvms(cls.cluster)
 
     @classmethod
     def migrateSvms(cls, cluster):

@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.security.InvalidParameterException;
-
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -28,6 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GetVMPasswordResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -61,7 +59,7 @@ public class GetVMPasswordCmd extends BaseCmd {
     public void execute() {
         String passwd = _mgr.getVMPassword(this);
         if (passwd == null || passwd.equals(""))
-            throw new InvalidParameterException("No password for VM with id '" + getId() + "' found.");
+            throw new InvalidParameterValueException("No password for VM with id '" + getId() + "' found.");
 
         setResponseObject(new GetVMPasswordResponse(getCommandName(), passwd));
     }

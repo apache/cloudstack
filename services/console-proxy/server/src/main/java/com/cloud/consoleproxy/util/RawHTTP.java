@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 //
 // This file is originally from XenConsole with modifications
 //
@@ -48,7 +51,7 @@ import java.util.regex.Pattern;
  * connections and import/export operations.
  */
 public final class RawHTTP {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static final Pattern END_PATTERN = Pattern.compile("^\r\n$");
     private static final Pattern HEADER_PATTERN = Pattern.compile("^([A-Z_a-z0-9-]+):\\s*(.*)\r\n$");

@@ -23,8 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -263,10 +263,17 @@ public class UriUtils {
     }
 
     public static Pair<String, Integer> validateUrl(String format, String url) throws IllegalArgumentException {
-        return validateUrl(format, url, false);
+        return validateUrl(format, url, false, false);
     }
 
-    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipIpv6Check) throws IllegalArgumentException {
+    /**
+     * Verifies whether the provided URL is valid.
+     * @param skipHostCheck if false, this function will verify whether the provided URL is resolvable, if it is a legal address and if it does not use IPv6 (configured by `skipIpv6Check`). If any of these conditions are false, an exception will be thrown.
+     * @param skipIpv6Check if false, this function will verify whether the host uses IPv6 and, if it does, an exception will be thrown. This check is also skipped if `skipHostCheck` is true.
+     * @return a pair containing the host and the corresponding port.
+     * @throws IllegalArgumentException if the provided URL is invalid.
+     */
+    public static Pair<String, Integer> validateUrl(String format, String url, boolean skipHostCheck, boolean skipIpv6Check) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
             if ((uri.getScheme() == null) ||
@@ -282,16 +289,8 @@ public class UriUtils {
             }
 
             String host = uri.getHost();
-            try {
-                InetAddress hostAddr = InetAddress.getByName(host);
-                if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
-                    throw new IllegalArgumentException("Illegal host specified in url");
-                }
-                if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
-                    throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-                }
-            } catch (UnknownHostException uhe) {
-                throw new IllegalArgumentException("Unable to resolve " + host);
+            if (!skipHostCheck) {
+                checkHost(host, skipIpv6Check);
             }
 
             // verify format
@@ -302,6 +301,28 @@ public class UriUtils {
             return new Pair<String, Integer>(host, port);
         } catch (URISyntaxException use) {
             throw new IllegalArgumentException("Invalid URL: " + url);
+        }
+    }
+
+    /**
+     * Verifies whether the provided host is valid. Throws an `IllegalArgumentException` if:
+     * <ul>
+     *     <li>The host is not resolvable;</li>
+     *     <li>The host address is illegal (any local, link local, loopback or multicast address);</li>
+     *     <li>The host uses IPv6. This check is skipped if `skipIv6Check` is set to true.</li>
+     * </ul>
+     */
+    private static void checkHost(String host, boolean skipIpv6Check) {
+        try {
+            InetAddress hostAddr = InetAddress.getByName(host);
+            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+                throw new IllegalArgumentException("Illegal host specified in URL.");
+            }
+            if (!skipIpv6Check && hostAddr instanceof Inet6Address) {
+                throw new IllegalArgumentException(String.format("IPv6 addresses are not supported (%s).", hostAddr.getHostAddress()));
+            }
+        } catch (UnknownHostException uhe) {
+            throw new IllegalArgumentException(String.format("Unable to resolve %s.", host));
         }
     }
 

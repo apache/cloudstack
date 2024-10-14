@@ -183,7 +183,7 @@ class cloudstackTestCase(unittest.case.TestCase):
             sshClient.execute("service httpd start")
             time.sleep(5)
             ssh_response = str(sshClient.execute("service httpd status")).lower()
-        if not "running" in ssh_response:
+        if "running" not in ssh_response:
             raise Exception("Failed to start httpd service")
         self.debug("Setup webserver using apache")
 

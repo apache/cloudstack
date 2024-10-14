@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.template;
 
 import org.apache.commons.lang3.BooleanUtils;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,6 +54,9 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force delete a template.", since = "4.9+")
     private Boolean forced;
 
+    @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, required = false, description = "Necessary if the template's type is system.", since = "4.20.0", authorized = {RoleType.Admin})
+    private Boolean isSystem;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -67,6 +71,10 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
 
     public boolean isForced() {
         return BooleanUtils.toBooleanDefaultIfNull(forced, false);
+    }
+
+    public boolean getIsSystem() {
+        return BooleanUtils.toBooleanDefaultIfNull(isSystem, false);
     }
 
     /////////////////////////////////////////////////////

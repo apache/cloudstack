@@ -167,10 +167,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
-    /*
-    @Column(name="tags")
-    protected String tags;
-    */
+    @Column(name = "delete_protection")
+    protected boolean deleteProtection;
 
     @Transient
     Map<String, String> details;
@@ -540,6 +538,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public boolean isDynamicallyScalable() {
         return dynamicallyScalable;
+    }
+
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
     }
 
     @Override

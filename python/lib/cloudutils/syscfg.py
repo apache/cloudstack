@@ -114,7 +114,7 @@ class sysConfigAgent(sysConfig):
                    pass
 
                 if size != -1 and size < (30 * 1024 * 1024):
-                    raise  CloudRuntimeException("Need at least 30G free disk space under /var/lib/libvirt/images")
+                    raise CloudRuntimeException("Need at least 30G free disk space under /var/lib/libvirt/images")
 
             #check memory
             mem = -1
@@ -124,7 +124,7 @@ class sysConfigAgent(sysConfig):
                 pass
 
             if mem != -1 and mem < 1:
-                raise  CloudRuntimeException("Need at least 1G memory")
+                raise CloudRuntimeException("Need at least 1G memory")
 
 
         if os.geteuid() != 0:

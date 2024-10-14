@@ -59,6 +59,10 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
     @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain in which the virtual machine exists", since = "4.19.2.0")
+    private String domainPath;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -88,4 +92,8 @@ public class ServiceInstanceResponse extends BaseResponse implements ControlledE
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
 }

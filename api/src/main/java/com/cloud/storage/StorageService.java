@@ -95,6 +95,10 @@ public interface StorageService {
 
     StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
+    StoragePool enablePrimaryStoragePool(Long id);
+
+    StoragePool disablePrimaryStoragePool(Long id);
+
     StoragePool getStoragePool(long id);
 
     boolean deleteImageStore(DeleteImageStoreCmd cmd);

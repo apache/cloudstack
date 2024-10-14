@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.cpu.CPU;
 import com.cloud.storage.StorageManager;
 import com.cloud.user.UserData;
 import org.apache.logging.log4j.Logger;
@@ -348,6 +349,11 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public UserData.UserDataOverridePolicy getUserDataOverridePolicy() {
         return imageVO.getUserDataOverridePolicy();
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return imageVO.getArch();
     }
 
     @Override

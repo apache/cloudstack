@@ -43,7 +43,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createIpv6FirewallRule",
-        description = "Creates an Ipv6 firewall rule in the given network (the network has to belong to VPC)",
+        description = "Creates an Ipv6 firewall rule in the given network (the network must not belong to VPC)",
         responseObject = FirewallRuleResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,

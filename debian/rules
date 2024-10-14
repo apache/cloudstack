@@ -4,6 +4,7 @@ VERSION := $(shell grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
+CMK_REL := $(shell wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/releases" 2>/dev/null | jq -r '.[0].tag_name')
 
 %:
 	dh $@ --with systemd
@@ -85,7 +86,7 @@ override_dh_auto_install:
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
 
 	# Bundle cmk in cloudstack-management
-	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/6.3.0/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
+	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$(CMK_REL)/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
 	chmod +x $(DESTDIR)/usr/bin/cmk
 
 	# nast hack for a couple of configuration files

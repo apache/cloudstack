@@ -32,6 +32,22 @@ export default {
     name: 'account',
     title: 'label.accounts',
     param: 'domainid'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'domainid'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'domainid'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'domainid'
+  }, {
+    name: 'template',
+    title: 'label.templates',
+    param: 'domainid'
   }],
   tabs: [
     {

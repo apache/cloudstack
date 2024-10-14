@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
@@ -102,7 +104,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.utils.HttpUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SAMLUtils {
     protected static Logger LOGGER = LogManager.getLogger(SAMLUtils.class);
@@ -297,7 +301,26 @@ public class SAMLUtils {
             resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
         resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
-        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
+
+        String redirectUrl = SAML2AuthManager.SAMLCloudStackRedirectionUrl.value();
+        String path = SAML2AuthManager.SAMLUserSessionKeyPathAttribute.value();
+        String domain = null;
+        try {
+            URI redirectUri = new URI(redirectUrl);
+            domain = redirectUri.getHost();
+            if (StringUtils.isBlank(path)) {
+                path = redirectUri.getPath();
+            }
+            if (StringUtils.isBlank(path)) {
+                path = "/";
+            }
+        } catch (URISyntaxException ex) {
+            throw new CloudRuntimeException("Invalid URI: " + redirectUrl);
+        }
+        String sameSite = ApiServlet.getApiSessionKeySameSite();
+        String sessionKeyCookie = String.format("%s=%s;Domain=%s;Path=%s;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), domain, path, sameSite);
+        LOGGER.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
+        resp.addHeader("SET-COOKIE", sessionKeyCookie);
     }
 
     /**

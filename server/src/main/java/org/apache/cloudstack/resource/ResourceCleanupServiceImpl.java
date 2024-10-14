@@ -579,7 +579,9 @@ public class ResourceCleanupServiceImpl extends ManagerBase implements ResourceC
     @Override
     public boolean stop() {
         purgeExpungedResourcesJobExecutor.shutdown();
-        expungedResourcesCleanupExecutor.shutdownNow();
+        if (expungedResourcesCleanupExecutor != null) {
+            expungedResourcesCleanupExecutor.shutdownNow();
+        }
         return true;
     }
 

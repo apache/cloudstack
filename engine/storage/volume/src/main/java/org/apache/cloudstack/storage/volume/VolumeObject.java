@@ -936,6 +936,11 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public boolean isDeleteProtection() {
+        return volumeVO.isDeleteProtection();
+    }
+
+    @Override
     public boolean isFollowRedirects() {
         return followRedirects;
     }

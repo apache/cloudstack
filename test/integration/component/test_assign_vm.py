@@ -18,9 +18,9 @@
 """
 """
 #Import Local Modules
-from nose.plugins.attrib           import attr
-from marvin.cloudstackTestCase     import cloudstackTestCase
-from marvin.lib.base   import (Account,
+from nose.plugins.attrib import attr
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (Account,
                                            Domain,
                                            User,
                                            Project,

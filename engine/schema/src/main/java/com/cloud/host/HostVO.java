@@ -42,6 +42,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.cpu.CPU;
+import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -152,6 +154,10 @@ public class HostVO implements Host {
 
     @Column(name = "hypervisor_version")
     private String hypervisorVersion;
+
+    @Column(name = "arch")
+    @Convert(converter = CPUArchConverter.class)
+    private CPU.CPUArch arch;
 
     @Column(name = "update_count", updatable = true, nullable = false)
     protected long updated;    // This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
@@ -736,6 +742,15 @@ public class HostVO implements Host {
     @Override
     public ResourceState getResourceState() {
         return resourceState;
+    }
+
+    @Override
+    public CPU.CPUArch getArch() {
+        return arch;
+    }
+
+    public void setArch(CPU.CPUArch arch) {
+        this.arch = arch;
     }
 
     public void setResourceState(ResourceState state) {

@@ -63,6 +63,10 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the domain name of the security group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the security group belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName("ingressrule")
     @Param(description = "the list of ingress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private Set<SecurityGroupRuleResponse> ingressRules;
@@ -124,6 +128,11 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledVie
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setSecurityGroupIngressRules(Set<SecurityGroupRuleResponse> securityGroupRules) {

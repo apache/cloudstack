@@ -91,6 +91,28 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
     }
 
     @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        SearchCriteria<NetworkServiceMapVO> sc = MultipleServicesSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("provider", provider.getName());
+
+        if (services != null) {
+            String[] servicesStr = new String[services.length];
+
+            int i = 0;
+            for (Service service : services) {
+                servicesStr[i] = service.getName();
+                i++;
+            }
+
+            sc.setParameters("service", (Object[])servicesStr);
+        }
+
+        List<NetworkServiceMapVO> networkServices = listBy(sc);
+        return !networkServices.isEmpty();
+    }
+
+    @Override
     public boolean canProviderSupportServiceInNetwork(long networkId, Service service, Provider provider) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);

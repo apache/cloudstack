@@ -1,0 +1,91 @@
+{
+  "_license": "Apache License 2.0",
+  "builders": [
+    {
+      "boot_command": [
+        "c<wait>",
+        "linux /install.a64/vmlinuz <wait>",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed_aarch64.cfg <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "auto <wait>",
+        "language=en locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "netcfg/get_hostname=systemvm <wait>",
+        "netcfg/get_domain=apache.org <wait>",
+        "country=IN keymap=us <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "---",
+        "<enter><wait>",
+        "initrd /install.a64/initrd.gz",
+        "<enter><wait>",
+        "boot<enter><wait>"
+      ],
+      "boot_wait": "60s",
+      "disk_interface": "virtio",
+      "cdrom_interface": "virtio-scsi",
+      "disk_size": "5000M",
+      "format": "qcow2",
+      "headless": true,
+      "http_directory": "http",
+      "iso_checksum": "sha512:fc3560bb586af14b1d77ab7c2806616916926afcbd5cb3fd5a04a5633dfd91cfbbccada1a123f1ea14c480153b731cbee72a230cea17fd9116b9df8444d8df1c",
+      "iso_url": "https://cdimage.debian.org/mirror/cdimage/release/12.7.0/arm64/iso-cd/debian-12.7.0-arm64-netinst.iso",
+      "net_device": "virtio-net",
+      "output_directory": "../dist",
+      "qemu_binary": "qemu-system-aarch64",
+      "qemuargs": [
+        [
+          "-m",
+          "500M"
+        ],
+        [
+          "-machine",
+          "virt"
+        ],
+        [
+          "-cpu",
+          "cortex-a72"
+        ],
+        [
+          "-smp",
+          "1"
+        ],
+        [ "-bios", "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd" ],
+        [ "-monitor", "none" ],
+        [ "-boot", "strict=off" ]
+      ],
+      "shutdown_command": "sudo halt -p",
+      "ssh_password": "cloud",
+      "ssh_timeout": "120m",
+      "ssh_username": "cloud",
+      "type": "qemu",
+      "vm_name": "systemvmtemplate"
+    }
+  ],
+  "description": "CloudStack SystemVM template",
+  "provisioners": [
+    {
+      "execute_command": "echo 'cloud' | sudo -u root -S bash {{.Path}}",
+      "scripts": [
+        "scripts/apt_upgrade.sh",
+        "scripts/configure_grub.sh",
+        "scripts/configure_locale.sh",
+        "scripts/configure_networking.sh",
+        "scripts/configure_acpid.sh",
+        "scripts/install_systemvm_packages.sh",
+        "scripts/configure_conntrack.sh",
+        "scripts/authorized_keys.sh",
+        "scripts/configure_persistent_config.sh",
+        "scripts/configure_login.sh",
+        "../cloud_scripts_shar_archive.sh",
+        "scripts/configure_systemvm_services.sh",
+        "scripts/cleanup.sh",
+        "scripts/finalize.sh"
+      ],
+      "type": "shell"
+    }
+  ]
+}

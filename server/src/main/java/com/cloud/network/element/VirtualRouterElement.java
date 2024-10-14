@@ -24,7 +24,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -95,6 +97,7 @@ import com.cloud.network.rules.LoadBalancerContainer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -119,7 +122,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, UserDataServiceProvider, SourceNatServiceProvider,
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
-NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
+NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider, BgpServiceProvider {
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
@@ -553,7 +556,9 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         dhcpCapabilities.put(Capability.DhcpAccrossMultipleSubnets, "true");
         capabilities.put(Service.Dhcp, dhcpCapabilities);
 
-        capabilities.put(Service.Gateway, null);
+        final Map<Capability, String> gatewayCapabilities = new HashMap<Capability, String>();
+        gatewayCapabilities.put(Capability.RedundantRouter, "true");
+        capabilities.put(Service.Gateway, gatewayCapabilities);
 
         final Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
         sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");
@@ -1390,5 +1395,37 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             router.setUpdateState(VirtualRouter.UpdateState.UPDATE_FAILED);
             _routerDao.persist(router);
         }
+    }
+
+    @Override
+    public boolean applyBgpPeers(Vpc vpc, Network network, List<? extends BgpPeer> bgpPeers) throws ResourceUnavailableException {
+        if (ObjectUtils.allNull(vpc, network)) {
+            throw new CloudRuntimeException("One of VPC and network must be passed, however both are null.");
+        }
+        final List<DomainRouterVO> routers;
+        if (vpc != null) {
+            routers = _routerDao.listByVpcId(vpc.getId());
+        } else {
+            routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        }
+
+        if (CollectionUtils.isEmpty(routers)) {
+            logger.warn(String.format("Can't find at least one router for vpc %s or network %s !", vpc, network));
+            return true;
+        }
+
+        boolean result = true;
+        long dataCenterId = vpc != null ? vpc.getZoneId() : network.getDataCenterId();
+        final DataCenterVO dcVO = _dcDao.findById(dataCenterId);
+        final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
+
+        for (final DomainRouterVO domainRouterVO : routers) {
+            if (domainRouterVO.getState() != VirtualMachine.State.Running) {
+                continue;
+            }
+
+            result = result && networkTopology.applyBgpPeers(network, bgpPeers, domainRouterVO);
+        }
+        return result;
     }
 }

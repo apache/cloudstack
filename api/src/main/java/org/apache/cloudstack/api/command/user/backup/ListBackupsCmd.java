@@ -116,6 +116,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             Pair<List<Backup>, Integer> result = backupManager.listBackups(this);
             setupResponseBackupList(result.first(), result.second());
         } catch (Exception e) {
+            logger.debug("Exception while listing backups", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

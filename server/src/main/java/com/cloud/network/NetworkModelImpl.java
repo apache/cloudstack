@@ -18,7 +18,6 @@
 package com.cloud.network;
 
 import java.math.BigInteger;
-import java.security.InvalidParameterException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -145,6 +144,8 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import static com.cloud.network.Network.Service.SecurityGroup;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
@@ -417,10 +418,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
         // Since it's non-conserve mode, only one service should used for IP
         if (services.size() != 1) {
-            throw new InvalidParameterException("There are multiple services used ip " + ip.getAddress() + ".");
+            throw new InvalidParameterValueException("There are multiple services used ip " + ip.getAddress() + ".");
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
-            throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " +
+            throw new InvalidParameterValueException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " +
                 service.getName());
         }
         return true;
@@ -458,7 +459,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // Since IP already has service to bind with, the oldProvider can't be null
         Set<Provider> newProviders = serviceToProviders.get(service);
         if (newProviders == null || newProviders.isEmpty()) {
-            throw new InvalidParameterException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
+            throw new InvalidParameterValueException("There is no new provider for IP " + publicIp.getAddress() + " of service " + service.getName() + "!");
         }
         Provider newProvider = (Provider)newProviders.toArray()[0];
         Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
@@ -471,7 +472,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
             // FIXME: I ignored this check
         } else {
-            throw new InvalidParameterException("Ip cannot be applied for new provider!");
+            throw new InvalidParameterValueException("Ip cannot be applied for new provider!");
         }
         return true;
     }
@@ -787,13 +788,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+    public NetworkVO getNetworkWithSGWithFreeIPs(Account account, Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;
         }
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
+            try {
+                checkAccountNetworkPermissions(account, nw);
+            } catch (PermissionDeniedException e) {
+                continue;
+            }
+
             List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
             for (VlanVO vlan : vlans) {
                 if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
@@ -1150,6 +1157,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
+    public boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services) {
+        return _ntwkSrvcDao.isAnyServiceSupportedInNetwork(networkId, provider, services);
+    }
+
+    @Override
     public List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName) {
         Network.Service service = null;
         if (serviceName != null) {
@@ -1263,7 +1275,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), null, null);
         }
 
-        return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), Service.SecurityGroup);
+        return isServiceEnabledInNetwork(physicalNetworkId, network.getId(), SecurityGroup);
     }
 
     @Override
@@ -2174,7 +2186,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
-//        NetworkGuru guru = _networkGurus.get(network.getGuruName());
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
@@ -2184,7 +2195,17 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
             profile.setMtu(network.getPrivateMtu());
         }
-//        guru.updateNicProfile(profile, network);
+
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+
+        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dc);
+        profile.setIPv4Dns1(ip4Dns.first());
+        profile.setIPv4Dns2(ip4Dns.second());
+
+        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dc);
+        profile.setIPv6Dns1(ip6Dns.first());
+        profile.setIPv6Dns2(ip6Dns.second());
+
         return profile;
     }
 
@@ -2746,5 +2767,40 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
         }
+    }
+
+    @Override
+    public boolean isSecurityGroupSupportedForZone(Long zoneId) {
+        List<? extends PhysicalNetwork> networks = getPhysicalNtwksSupportingTrafficType(zoneId, TrafficType.Guest);
+        for (PhysicalNetwork network : networks ) {
+            if (_pNSPDao.isServiceProviderEnabled(network.getId(), Provider.SecurityGroupProvider.getName(), Service.SecurityGroup.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone,
+                                                       List<Long> networkIds,
+                                                       List<Long> securityGroupsIds) {
+        if (zone.isSecurityGroupEnabled()) {
+            return true;
+        }
+        if (CollectionUtils.isNotEmpty(networkIds)) {
+            for (Long networkId : networkIds) {
+                Network network = _networksDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+                }
+                if (network.getGuestType() == Network.GuestType.Shared && isSecurityGroupSupportedInNetwork(network)) {
+                    return true;
+                }
+            }
+        } else if (CollectionUtils.isNotEmpty(securityGroupsIds)) {
+            Network networkWithSecurityGroup = getNetworkWithSGWithFreeIPs(account, zone.getId());
+            return networkWithSecurityGroup != null;
+        }
+        return false;
     }
 }

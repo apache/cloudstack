@@ -365,6 +365,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
+    @Column(name = "user_vm_type")
+    private String userVmType;
+
     @Column(name = "project_id")
     private long projectId;
 
@@ -432,6 +435,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
+
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
 
 
     public UserVmJoinVO() {
@@ -819,6 +825,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userData;
     }
 
+    public String getUserVmType() {
+        return userVmType;
+    }
+
     public long getGuestOsId() {
         return guestOsId;
     }
@@ -939,6 +949,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isDynamicallyScalable;
     }
 
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
+    }
 
     @Override
     public Class<?> getEntityType() {

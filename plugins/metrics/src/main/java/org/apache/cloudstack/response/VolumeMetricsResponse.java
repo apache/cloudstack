@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.gson.annotations.SerializedName;
 
 public class VolumeMetricsResponse extends VolumeResponse {
-    @SerializedName("sizegb")
+    @SerializedName(ApiConstants.SIZEGB)
     @Param(description = "disk size in GiB")
     private String diskSizeGB;
 

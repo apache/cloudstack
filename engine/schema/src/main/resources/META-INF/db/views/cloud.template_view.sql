@@ -50,6 +50,7 @@ SELECT
     `vm_template`.`sort_key` AS `sort_key`,
     `vm_template`.`removed` AS `removed`,
     `vm_template`.`enable_sshkey` AS `enable_sshkey`,
+    `vm_template`.`arch` AS `arch`,
     `parent_template`.`id` AS `parent_template_id`,
     `parent_template`.`uuid` AS `parent_template_uuid`,
     `source_template`.`id` AS `source_template_id`,

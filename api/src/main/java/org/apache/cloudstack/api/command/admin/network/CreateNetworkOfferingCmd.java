@@ -146,12 +146,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.NSX_MODE,
-            type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
-            since = "4.20.0")
-    private String nsxMode;
-
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
             description = "true if network offering for NSX network offering supports Load balancer service.",
@@ -163,6 +157,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering for NSX network offering supports Internal Load balancer service.",
             since = "4.20.0")
     private Boolean nsxSupportsInternalLbService;
+
+    @Parameter(name = ApiConstants.NETWORK_MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
+            since = "4.20.0")
+    private String networkMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
@@ -210,6 +210,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "set to true if the offering is to be enabled during creation. Default is false",
             since = "4.16")
     private Boolean enable;
+
+    @Parameter(name = ApiConstants.SPECIFY_AS_NUMBER, type = CommandType.BOOLEAN, since = "4.20.0",
+            description = "true if network offering supports choosing AS number")
+    private Boolean specifyAsNumber;
+
+    @Parameter(name = ApiConstants.ROUTING_MODE,
+            type = CommandType.STRING,
+            since = "4.20.0",
+            description = "the routing mode for the network offering. Supported types are: Static or Dynamic.")
+    private String routingMode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -302,8 +312,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return BooleanUtils.isTrue(forNsx);
     }
 
-    public String getNsxMode() {
-        return nsxMode;
+    public String getNetworkMode() {
+        return networkMode;
     }
 
     public boolean getNsxSupportsLbService() {
@@ -460,6 +470,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             return enable;
         }
         return false;
+    }
+
+    public boolean getSpecifyAsNumber() {
+        return BooleanUtils.toBoolean(specifyAsNumber);
+    }
+
+    public String getRoutingMode() {
+        return routingMode;
     }
 
     /////////////////////////////////////////////////////

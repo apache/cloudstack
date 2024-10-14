@@ -185,6 +185,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the domain associated with the router")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the router belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "the ID of the service offering of the virtual machine")
     private String serviceOfferingId;
@@ -381,6 +385,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setPublicNetworkId(String publicNetworkId) {
         this.publicNetworkId = publicNetworkId;
     }

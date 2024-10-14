@@ -54,6 +54,10 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the bucket")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain to which the bucket belongs", since = "4.19.2.0")
+    private String domainPath;
     @SerializedName(ApiConstants.OBJECT_STORAGE_ID)
     @Param(description = "id of the object storage hosting the Bucket; returned to admin user only")
     private String objectStoragePoolId;
@@ -144,6 +148,11 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override

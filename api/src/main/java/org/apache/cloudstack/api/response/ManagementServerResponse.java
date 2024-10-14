@@ -167,4 +167,8 @@ public class ManagementServerResponse extends BaseResponse {
     public void setServiceIp(String serviceIp) {
         this.serviceIp = serviceIp;
     }
+
+    public String getKernelVersion() {
+        return kernelVersion;
+    }
 }

@@ -533,11 +533,6 @@ public class TemplateServiceImpl implements TemplateService {
                                 logger.info("Skip downloading template " + tmplt.getUniqueName() + " since no url is specified.");
                                 continue;
                             }
-                            // if this is private template, skip sync to a new image store
-                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
-                                logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
-                                continue;
-                            }
 
                             // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
                             // means that this is a duplicate entry from migration of previous NFS to staging.
@@ -819,7 +814,7 @@ public class TemplateServiceImpl implements TemplateService {
         String templateName = dataDiskTemplate.isIso() ? dataDiskTemplate.getPath().substring(dataDiskTemplate.getPath().lastIndexOf(File.separator) + 1) : template.getName() + suffix + diskCount;
         VMTemplateVO templateVO = new VMTemplateVO(templateId, templateName, format, false, false, false, ttype, template.getUrl(),
                 template.requiresHvm(), template.getBits(), template.getAccountId(), null, templateName, false, guestOsId, false, template.getHypervisorType(), null,
-                null, false, false, false, false);
+                null, false, false, false, false, template.getArch());
         if (dataDiskTemplate.isIso()){
             templateVO.setUniqueName(templateName);
         }

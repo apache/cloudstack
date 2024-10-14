@@ -19,17 +19,17 @@ under the License.
 <rpc>
 <get-configuration>
 <configuration>
-<security>        
-<nat>            
-<proxy-arp>                
-<interface>                    
-<name>%public-interface-name%</name>                   
-<address %delete%>                        
-<name>%public-ip-address%</name>                    
-</address>                
-</interface>            
-</proxy-arp>        
-</nat>    
+<security>
+<nat>
+<proxy-arp>
+<interface>
+<name>%public-interface-name%</name>
+<address %delete%>
+<name>%public-ip-address%</name>
+</address>
+</interface>
+</proxy-arp>
+</nat>
 </security>
 </configuration>
 </get-configuration>

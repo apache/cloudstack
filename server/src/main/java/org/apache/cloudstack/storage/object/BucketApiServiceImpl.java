@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.object;
 
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import com.amazonaws.services.s3.model.IllegalBucketNameException;
+import com.cloud.agent.api.to.BucketTO;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -136,29 +137,30 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         BucketVO bucket = _bucketDao.findById(cmd.getEntityId());
+        BucketTO bucketTO = new BucketTO(bucket);
         boolean objectLock = false;
         boolean bucketCreated = false;
         if(cmd.isObjectLocking()) {
             objectLock = true;
         }
         try {
-            objectStore.createBucket(bucket, objectLock);
+            bucketTO = new BucketTO(objectStore.createBucket(bucket, objectLock));
             bucketCreated = true;
 
             if (cmd.isVersioning()) {
-                objectStore.setBucketVersioning(bucket.getName());
+                objectStore.setBucketVersioning(bucketTO);
             }
 
             if (cmd.isEncryption()) {
-                objectStore.setBucketEncryption(bucket.getName());
+                objectStore.setBucketEncryption(bucketTO);
             }
 
             if (cmd.getQuota() != null) {
-                objectStore.setQuota(bucket.getName(), cmd.getQuota());
+                objectStore.setQuota(bucketTO, cmd.getQuota());
             }
 
             if (cmd.getPolicy() != null) {
-                objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+                objectStore.setBucketPolicy(bucketTO, cmd.getPolicy());
             }
 
             bucket.setState(Bucket.State.Created);
@@ -166,7 +168,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         } catch (Exception e) {
             logger.debug("Failed to create bucket with name: "+bucket.getName(), e);
             if(bucketCreated) {
-                objectStore.deleteBucket(bucket.getName());
+                objectStore.deleteBucket(bucketTO);
             }
             _bucketDao.remove(bucket.getId());
             throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()+". "+e.getMessage());
@@ -178,13 +180,14 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_DELETE, eventDescription = "deleting bucket")
     public boolean deleteBucket(long bucketId, Account caller) {
         Bucket bucket = _bucketDao.findById(bucketId);
+        BucketTO bucketTO = new BucketTO(bucket);
         if (bucket == null) {
             throw new InvalidParameterValueException("Unable to find bucket with ID: " + bucketId);
         }
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        if (objectStore.deleteBucket(bucket.getName())) {
+        if (objectStore.deleteBucket(bucketTO)) {
             return _bucketDao.remove(bucketId);
         }
         return false;
@@ -194,6 +197,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_UPDATE, eventDescription = "updating bucket")
     public boolean updateBucket(UpdateBucketCmd cmd, Account caller) {
         BucketVO bucket = _bucketDao.findById(cmd.getId());
+        BucketTO bucketTO = new BucketTO(bucket);
         if (bucket == null) {
             throw new InvalidParameterValueException("Unable to find bucket with ID: " + cmd.getId());
         }
@@ -203,29 +207,29 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         try {
             if (cmd.getEncryption() != null) {
                 if (cmd.getEncryption()) {
-                    objectStore.setBucketEncryption(bucket.getName());
+                    objectStore.setBucketEncryption(bucketTO);
                 } else {
-                    objectStore.deleteBucketEncryption(bucket.getName());
+                    objectStore.deleteBucketEncryption(bucketTO);
                 }
                 bucket.setEncryption(cmd.getEncryption());
             }
 
             if (cmd.getVersioning() != null) {
                 if (cmd.getVersioning()) {
-                    objectStore.setBucketVersioning(bucket.getName());
+                    objectStore.setBucketVersioning(bucketTO);
                 } else {
-                    objectStore.deleteBucketVersioning(bucket.getName());
+                    objectStore.deleteBucketVersioning(bucketTO);
                 }
                 bucket.setVersioning(cmd.getVersioning());
             }
 
             if (cmd.getPolicy() != null) {
-                objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+                objectStore.setBucketPolicy(bucketTO, cmd.getPolicy());
                 bucket.setPolicy(cmd.getPolicy());
             }
 
             if (cmd.getQuota() != null) {
-                objectStore.setQuota(bucket.getName(), cmd.getQuota());
+                objectStore.setQuota(bucketTO, cmd.getQuota());
                 bucket.setQuota(cmd.getQuota());
             }
             _bucketDao.update(bucket.getId(), bucket);

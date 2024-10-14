@@ -47,8 +47,10 @@ import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpoint
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -65,6 +67,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
 import com.cloud.utils.HttpUtils;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
+import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
@@ -255,7 +259,8 @@ public class ApiServlet extends HttpServlet {
                         }
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
-                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
+                            String sameSite = getApiSessionKeySameSite();
+                            resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;%s", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY), sameSite));
                         }
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
@@ -264,19 +269,22 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
-                        if (session != null) {
-                            final Long userId = (Long) session.getAttribute("userid");
-                            final Account account = (Account) session.getAttribute("accountobj");
-                            Long accountId = null;
-                            if (account != null) {
-                                accountId = account.getId();
-                            }
-                            auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
-                            if (userId != null) {
-                                apiServer.logoutUser(userId);
-                            }
-                            invalidateHttpSession(session, "invalidating session after logout call");
+                        if (session == null) {
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Session not found for the logout process.");
                         }
+
+                        final Long userId = (Long) session.getAttribute("userid");
+                        final Account account = (Account) session.getAttribute("accountobj");
+                        Long accountId = null;
+                        if (account != null) {
+                            accountId = account.getId();
+                        }
+                        auditTrailSb.insert(0, "(userId=" + userId + " accountId=" + accountId + " sessionId=" + session.getId() + ")");
+                        if (userId != null) {
+                            apiServer.logoutUser(userId);
+                        }
+                        invalidateHttpSession(session, "invalidating session after logout call");
+
                         final Cookie[] cookies = req.getCookies();
                         if (cookies != null) {
                             for (final Cookie cookie : cookies) {
@@ -372,6 +380,22 @@ public class ApiServlet extends HttpServlet {
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
+        }
+    }
+
+    public static String getApiSessionKeySameSite() {
+        ApiSessionKeySameSite sameSite = EnumUtils.getEnumIgnoreCase(ApiSessionKeySameSite.class,
+                ApiServer.ApiSessionKeyCookieSameSiteSetting.value(), ApiSessionKeySameSite.Lax);
+        switch (sameSite) {
+            case Strict:
+                return "SameSite=Strict";
+            case NoneAndSecure:
+                return "SameSite=None;Secure";
+            case Null:
+                return "";
+            case Lax:
+            default:
+                return "SameSite=Lax";
         }
     }
 
@@ -510,7 +534,9 @@ public class ApiServlet extends HttpServlet {
     }
 
     private boolean invalidateHttpSessionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
-        if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
+        ApiSessionKeyCheckOption sessionKeyCheckOption = EnumUtils.getEnumIgnoreCase(ApiSessionKeyCheckOption.class,
+                ApiServer.ApiSessionKeyCheckLocations.value(), ApiSessionKeyCheckOption.CookieAndParameter);
+        if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY, sessionKeyCheckOption)) {
             String msg = String.format("invalidating session %s for account %s", session.getId(), account);
             invalidateHttpSession(session, msg);
             auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");

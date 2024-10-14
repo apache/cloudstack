@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClu
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.network.Network;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -122,4 +123,6 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 
     List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
+
+    boolean isDirectAccess(Network network);
 }
