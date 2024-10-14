@@ -69,12 +69,11 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         String sourceInstanceName = sourceInstance.getInstanceName();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
+        final String temporaryConvertUuid = cmd.getTemporaryConvertUuid();
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
-
-        final String temporaryConvertUuid = UUID.randomUUID().toString();
 
         try {
             String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);

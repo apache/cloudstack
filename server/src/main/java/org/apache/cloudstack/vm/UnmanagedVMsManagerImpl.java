@@ -23,6 +23,7 @@ import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
@@ -1880,14 +1881,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         Answer importAnswer;
         try {
-            ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(remoteInstanceTO,
-                    destinationStoragePools, temporaryConvertLocation);
+            ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
+                    remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
+                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid());
             importAnswer = agentManager.send(destinationHost.getId(), importCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format(
                     "Could not send the import converted instance command to host %d (%s) due to: %s",
                     destinationHost.getId(), destinationHost.getName(), e.getMessage());
             LOGGER.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
+
+        if (!importAnswer.getResult()) {
+            String err = String.format(
+                    "The import process failed for instance %s from VMware to KVM on host %s: %s",
+                    sourceVM, destinationHost.getName(), importAnswer.getDetails());
+            LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -1935,8 +1945,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         Answer importAnswer;
         try {
-            ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(remoteInstanceTO,
-                    destinationStoragePools, temporaryConvertLocation);
+            ImportConvertedInstanceCommand importCmd = new ImportConvertedInstanceCommand(
+                    remoteInstanceTO, destinationStoragePools, temporaryConvertLocation,
+                    ((ConvertInstanceAnswer)convertAnswer).getTemporaryConvertUuid());
             importAnswer = agentManager.send(destinationHost.getId(), importCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             String err = String.format(
@@ -1945,6 +1956,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }
+
+        if (!importAnswer.getResult()) {
+            String err = String.format(
+                    "The import process failed for instance %s from VMware to KVM on host %s: %s",
+                    sourceVM, destinationHost.getName(), importAnswer.getDetails());
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+
         return ((ImportConvertedInstanceAnswer) importAnswer).getConvertedInstance();
     }
 

@@ -26,15 +26,18 @@ public class ImportConvertedInstanceCommand extends Command {
     private RemoteInstanceTO sourceInstance;
     private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
+    private String temporaryConvertUuid;
 
     public ImportConvertedInstanceCommand() {
     }
 
     public ImportConvertedInstanceCommand(RemoteInstanceTO sourceInstance,
-                                          List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation) {
+                                          List<String> destinationStoragePools,
+                                          DataStoreTO conversionTemporaryLocation, String temporaryConvertUuid) {
         this.sourceInstance = sourceInstance;
         this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
+        this.temporaryConvertUuid = temporaryConvertUuid;
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -47,6 +50,10 @@ public class ImportConvertedInstanceCommand extends Command {
 
     public DataStoreTO getConversionTemporaryLocation() {
         return conversionTemporaryLocation;
+    }
+
+    public String getTemporaryConvertUuid() {
+        return temporaryConvertUuid;
     }
 
     @Override

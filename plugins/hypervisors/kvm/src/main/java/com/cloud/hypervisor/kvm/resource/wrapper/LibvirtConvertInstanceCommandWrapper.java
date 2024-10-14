@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.ConvertInstanceAnswer;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
@@ -122,6 +123,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
+        boolean cleanupSecondaryStorage = false;
         try {
             boolean result = performInstanceConversion(sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
@@ -131,17 +133,22 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 s_logger.error(err);
                 return new Answer(cmd, false, err);
             }
-            return new Answer(cmd, false, null);
+            return new ConvertInstanceAnswer(cmd, temporaryConvertUuid);
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
                     sourceInstanceName, sourceHypervisorType, e.getMessage());
             s_logger.error(error, e);
+            cleanupSecondaryStorage = true;
             return new Answer(cmd, false, error);
         } finally {
             if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
                 String sourceOVFDir = String.format("%s/%s", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
                 s_logger.debug("Cleaning up exported OVA at dir " + sourceOVFDir);
                 FileUtil.deletePath(sourceOVFDir);
+            }
+            if (cleanupSecondaryStorage && conversionTemporaryLocation instanceof NfsTO) {
+                s_logger.debug("Cleaning up secondary storage temporary location");
+                storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
     }
@@ -183,133 +190,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 encodedUsername, encodedPassword, vcenter, datacenter, vm);
     }
 
-    protected List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser, String convertedBasePath) {
-        List<LibvirtVMDef.DiskDef> disksDefs = xmlParser.getDisks();
-        disksDefs = disksDefs.stream().filter(x -> x.getDiskType() == LibvirtVMDef.DiskDef.DiskType.FILE &&
-                x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(disksDefs)) {
-            String err = String.format("Cannot find any disk defined on the converted XML domain %s.xml", convertedBasePath);
-            s_logger.error(err);
-            throw new CloudRuntimeException(err);
-        }
-        sanitizeDisksPath(disksDefs);
-        return getPhysicalDisksFromDefPaths(disksDefs, pool);
-    }
-
-    private List<KVMPhysicalDisk> getPhysicalDisksFromDefPaths(List<LibvirtVMDef.DiskDef> disksDefs, KVMStoragePool pool) {
-        List<KVMPhysicalDisk> disks = new ArrayList<>();
-        for (LibvirtVMDef.DiskDef diskDef : disksDefs) {
-            KVMPhysicalDisk physicalDisk = pool.getPhysicalDisk(diskDef.getDiskPath());
-            disks.add(physicalDisk);
-        }
-        return disks;
-    }
-
-    protected List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
-        String msg = String.format("Could not parse correctly the converted XML domain, checking for disks on %s with prefix %s", path, prefix);
-        s_logger.info(msg);
-        pool.refresh();
-        List<KVMPhysicalDisk> disksWithPrefix = pool.listPhysicalDisks()
-                .stream()
-                .filter(x -> x.getName().startsWith(prefix) && !x.getName().endsWith(".xml"))
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(disksWithPrefix)) {
-            msg = String.format("Could not find any converted disk with prefix %s on temporary location %s", prefix, path);
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        return disksWithPrefix;
-    }
-
     protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
         for (LibvirtVMDef.DiskDef disk : disks) {
             String[] diskPathParts = disk.getDiskPath().split("/");
             String relativePath = diskPathParts[diskPathParts.length - 1];
             disk.setDiskPath(relativePath);
         }
-    }
-
-    protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
-                                                                  List<String> destinationStoragePools,
-                                                                  KVMStoragePoolManager storagePoolMgr) {
-        List<KVMPhysicalDisk> targetDisks = new ArrayList<>();
-        if (temporaryDisks.size() != destinationStoragePools.size()) {
-            String warn = String.format("Discrepancy between the converted instance disks (%s) " +
-                    "and the expected number of disks (%s)", temporaryDisks.size(), destinationStoragePools.size());
-            s_logger.warn(warn);
-        }
-        for (int i = 0; i < temporaryDisks.size(); i++) {
-            String poolPath = destinationStoragePools.get(i);
-            KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolPath);
-            if (destinationPool == null) {
-                String err = String.format("Could not find a storage pool by URI: %s", poolPath);
-                s_logger.error(err);
-                continue;
-            }
-            if (destinationPool.getType() != Storage.StoragePoolType.NetworkFilesystem) {
-                String err = String.format("Storage pool by URI: %s is not an NFS storage", poolPath);
-                s_logger.error(err);
-                continue;
-            }
-            KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
-            if (s_logger.isDebugEnabled()) {
-                String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
-                        " to destination storage pool %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid());
-                s_logger.debug(msg);
-            }
-
-            String destinationName = UUID.randomUUID().toString();
-
-            KVMPhysicalDisk destinationDisk = storagePoolMgr.copyPhysicalDisk(sourceDisk, destinationName, destinationPool, 7200 * 1000);
-            targetDisks.add(destinationDisk);
-        }
-        return targetDisks;
-    }
-
-    protected List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<KVMPhysicalDisk> vmDisks, LibvirtDomainXMLParser xmlParser) {
-        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
-        List<LibvirtVMDef.DiskDef> diskDefs = xmlParser != null ? xmlParser.getDisks() : null;
-        for (int i = 0; i< vmDisks.size(); i++) {
-            KVMPhysicalDisk physicalDisk = vmDisks.get(i);
-            KVMStoragePool storagePool = physicalDisk.getPool();
-            UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
-            disk.setPosition(i);
-            Pair<String, String> storagePoolHostAndPath = getNfsStoragePoolHostAndPath(storagePool);
-            disk.setDatastoreHost(storagePoolHostAndPath.first());
-            disk.setDatastorePath(storagePoolHostAndPath.second());
-            disk.setDatastoreName(storagePool.getUuid());
-            disk.setDatastoreType(storagePool.getType().name());
-            disk.setCapacity(physicalDisk.getVirtualSize());
-            disk.setFileBaseName(physicalDisk.getName());
-            if (CollectionUtils.isNotEmpty(diskDefs)) {
-                LibvirtVMDef.DiskDef diskDef = diskDefs.get(i);
-                disk.setController(diskDef.getBusType() != null ? diskDef.getBusType().toString() : LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString());
-            } else {
-                // If the job is finished but we cannot parse the XML, the guest VM can use the virtio driver
-                disk.setController(LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString());
-            }
-            instanceDisks.add(disk);
-        }
-        return instanceDisks;
-    }
-
-    protected Pair<String, String> getNfsStoragePoolHostAndPath(KVMStoragePool storagePool) {
-        String sourceHostIp = null;
-        String sourcePath = null;
-        List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{Script.getExecutableAbsolutePath("mount")});
-        commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), storagePool.getLocalPath()});
-        String storagePoolMountPoint = Script.executePipedCommands(commands, 0).second();
-        s_logger.debug(String.format("NFS Storage pool: %s - local path: %s, mount point: %s", storagePool.getUuid(), storagePool.getLocalPath(), storagePoolMountPoint));
-        if (StringUtils.isNotEmpty(storagePoolMountPoint)) {
-            String[] res = storagePoolMountPoint.strip().split(" ");
-            res = res[0].split(":");
-            if (res.length > 1) {
-                sourceHostIp = res[0].strip();
-                sourcePath = res[1].strip();
-            }
-        }
-        return new Pair<>(sourceHostIp, sourcePath);
     }
 
     private boolean exportOVAFromVMOnVcenter(String vmExportUrl,

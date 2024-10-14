@@ -39,7 +39,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -53,7 +52,7 @@ import java.util.UUID;
 public class LibvirtImportConvertedInstanceCommandWrapperTest {
 
     @Spy
-    private LibvirtImportConvertedInstanceCommandWrapper convertInstanceCommandWrapper =
+    private LibvirtImportConvertedInstanceCommandWrapper importInstanceCommandWrapper =
             Mockito.spy(LibvirtImportConvertedInstanceCommandWrapper.class);
 
     @Mock
@@ -85,7 +84,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
 
     @Test
     public void testGetTemporaryStoragePool() {
-        KVMStoragePool temporaryStoragePool = convertInstanceCommandWrapper.getTemporaryStoragePool(secondaryDataStore, libvirtComputingResourceMock.getStoragePoolMgr());
+        KVMStoragePool temporaryStoragePool = importInstanceCommandWrapper.getTemporaryStoragePool(secondaryDataStore, libvirtComputingResourceMock.getStoragePoolMgr());
         Assert.assertNotNull(temporaryStoragePool);
     }
 
@@ -107,7 +106,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2,
                 convertedDisk1, convertedDisk2, convertedXml));
 
-        List<KVMPhysicalDisk> convertedDisks = convertInstanceCommandWrapper.getTemporaryDisksWithPrefixFromTemporaryPool(temporaryPool, convertPath, convertPrefix);
+        List<KVMPhysicalDisk> convertedDisks = importInstanceCommandWrapper.getTemporaryDisksWithPrefixFromTemporaryPool(temporaryPool, convertPath, convertPrefix);
         Assert.assertEquals(2, convertedDisks.size());
     }
 
@@ -128,8 +127,8 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
         Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
 
-        List<KVMPhysicalDisk> disks = convertInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "");
-        Mockito.verify(convertInstanceCommandWrapper).sanitizeDisksPath(List.of(diskDef));
+        List<KVMPhysicalDisk> disks = importInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "");
+        Mockito.verify(importInstanceCommandWrapper).sanitizeDisksPath(List.of(diskDef));
         Assert.assertEquals(1, disks.size());
         Assert.assertEquals("disk1", disks.get(0).getName());
     }
@@ -143,7 +142,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
         diskDef.defFileBasedDisk(fullPath, "test", bus, type);
 
-        convertInstanceCommandWrapper.sanitizeDisksPath(List.of(diskDef));
+        importInstanceCommandWrapper.sanitizeDisksPath(List.of(diskDef));
         Assert.assertEquals(relativePath, diskDef.getDiskPath());
     }
 
@@ -163,7 +162,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
         Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
                 .thenReturn(destDisk);
 
-        List<KVMPhysicalDisk> movedDisks = convertInstanceCommandWrapper.moveTemporaryDisksToDestination(disks, destinationPools, storagePoolManager);
+        List<KVMPhysicalDisk> movedDisks = importInstanceCommandWrapper.moveTemporaryDisksToDestination(disks, destinationPools, storagePoolManager);
         Assert.assertEquals(1, movedDisks.size());
         Assert.assertEquals("xyz", movedDisks.get(0).getPath());
     }
@@ -185,12 +184,12 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
 
             LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
             Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
-            Mockito.doReturn(new Pair<String, String>(null, null)).when(convertInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
+            Mockito.doReturn(new Pair<String, String>(null, null)).when(importInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
 
             Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
                     .thenReturn(new Pair<>(0, null));
 
-            List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
+            List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = importInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
             Assert.assertEquals(1, unmanagedInstanceDisks.size());
             UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
             Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.IDE.toString(), disk.getController());
@@ -208,7 +207,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
             Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
                     .thenReturn(new Pair<>(0, mountOutput));
 
-            Pair<String, String> pair = convertInstanceCommandWrapper.getNfsStoragePoolHostAndPath(temporaryPool);
+            Pair<String, String> pair = importInstanceCommandWrapper.getNfsStoragePoolHostAndPath(temporaryPool);
             Assert.assertEquals(host, pair.first());
             Assert.assertEquals(path, pair.second());
         }
@@ -232,7 +231,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
     public void testExecuteConvertUnsupportedOnTheHost() {
         RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
         ImportConvertedInstanceCommand cmd = getImportConvertedInstanceCommand(remoteInstanceTO);
-        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+        Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
         Assert.assertFalse(answer.getResult());
     }
 
@@ -240,28 +239,7 @@ public class LibvirtImportConvertedInstanceCommandWrapperTest {
     public void testExecuteConvertUnsupportedHypervisors() {
         RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.XenServer);
         ImportConvertedInstanceCommand cmd = getImportConvertedInstanceCommand(remoteInstanceTO);
-        Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+        Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
         Assert.assertFalse(answer.getResult());
-    }
-
-    @Test
-    public void testExecuteConvertFailure() {
-        RemoteInstanceTO remoteInstanceTO = getRemoteInstanceTO(Hypervisor.HypervisorType.VMware);
-        ImportConvertedInstanceCommand cmd = getImportConvertedInstanceCommand(remoteInstanceTO);
-        String localMountPoint = "/mnt/xyz";
-        Mockito.when(temporaryPool.getLocalPath()).thenReturn(localMountPoint);
-
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class);
-             MockedConstruction<Script> ignored2 = Mockito.mockConstruction(Script.class, (mock, context) -> {
-                 Mockito.when(mock.execute()).thenReturn("");
-                 Mockito.when(mock.getExitValue()).thenReturn(1);
-             })
-        ) {
-
-            Answer answer = convertInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
-            Assert.assertFalse(answer.getResult());
-//            Mockito.verify(convertInstanceCommandWrapper).performInstanceConversion(Mockito.anyString(),
-//                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
-        }
     }
 }

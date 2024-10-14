@@ -23,6 +23,7 @@ import com.cloud.agent.api.CheckConvertInstanceAnswer;
 import com.cloud.agent.api.CheckConvertInstanceCommand;
 import com.cloud.agent.api.CheckVolumeAnswer;
 import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
@@ -694,10 +695,11 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        Answer convertInstanceAnswer = mock(Answer.class);
+        ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
         ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
         when(convertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
         when(convertImportedInstanceAnswer.getConvertedInstance()).thenReturn(instance);
+        when(convertImportedInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
         if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(convertInstanceAnswer);
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ImportConvertedInstanceCommand.class))).thenReturn(convertImportedInstanceAnswer);
