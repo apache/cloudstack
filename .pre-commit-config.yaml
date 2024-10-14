@@ -75,17 +75,7 @@ repos:
     hooks:
     - id: flake8
       args: [--config, .github/linters/.flake8]
-      exclude: >
-        (?x)
-        ^agent/bindir/cloud-setup-agent\.in$|
-        ^client/bindir/cloud-update-xenserver-licenses\.in$|
-        ^cloud-cli/bindir/cloud-tool$|
-        ^python/bindir/cloud-grab-dependent-library-versions$|
-        ^python/bindir/cloud-setup-baremetal$|
-        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
-        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
-        ^setup/bindir/cloud-setup-encryption\.in$|
-        ^venv/.*$
+      exclude: ^venv/.*$
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.40.0
     hooks:
