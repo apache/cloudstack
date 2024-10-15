@@ -28,7 +28,7 @@ jest.mock('@/vue-app', () => ({
     $localStorage: {
       set: jest.fn((key, value) => {}),
       get: jest.fn((key) => {
-         return null
+        return null
       })
     }
   }
