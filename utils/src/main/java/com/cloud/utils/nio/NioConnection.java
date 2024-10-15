@@ -63,7 +63,8 @@ import com.cloud.utils.exception.NioConnectionException;
  * provides that.
  */
 public abstract class NioConnection implements Callable<Boolean> {
-    private static final Logger s_logger = Logger.getLogger(NioConnection.class);;
+    private static final Logger s_logger = Logger.getLogger(NioConnection.class);
+    public static final String SERVER_BUSY_MESSAGE = "Server is busy.";
 
     protected Selector _selector;
     protected ExecutorService _threadExecutor;
@@ -91,12 +92,13 @@ public abstract class NioConnection implements Callable<Boolean> {
         _selector = null;
         _port = port;
         _factory = factory;
-        this.sslHandshakeMaxWorkers = sslHandshakeMaxWorkers;
+        int sslMinWorkers = Math.max(sslHandshakeMinWorkers, 1);
+        this.sslHandshakeMaxWorkers = Math.max(sslHandshakeMaxWorkers, sslMinWorkers);
         workerQueue = new LinkedBlockingQueue<>(5 * workers);
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
                 workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
         sslHandshakeQueue = new SynchronousQueue<>();
-        _sslHandshakeExecutor = new ThreadPoolExecutor(sslHandshakeMinWorkers, sslHandshakeMaxWorkers, 30,
+        _sslHandshakeExecutor = new ThreadPoolExecutor(sslMinWorkers, this.sslHandshakeMaxWorkers, 30,
                 TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-SSLHandshakeHandler"),
                 new ThreadPoolExecutor.AbortPolicy());
     }
@@ -111,8 +113,8 @@ public abstract class NioConnection implements Callable<Boolean> {
         try {
             init();
         } catch (final ConnectException e) {
-            s_logger.warn("Unable to connect to remote: is there a server running on port" + _port);
-            return;
+            s_logger.warn("Unable to connect to remote: is there a server running on port" + _port, e);
+            throw new NioConnectionException(e.getMessage(), e);
         } catch (final IOException e) {
             s_logger.error("Unable to initialize the threads.", e);
             throw new NioConnectionException(e.getMessage(), e);
@@ -129,6 +131,7 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     public void stop() {
         _executor.shutdown();
+        _sslHandshakeExecutor.shutdown();
         _isRunning = false;
         if (_threadExecutor != null) {
             _futureTask.cancel(false);
@@ -206,16 +209,23 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     abstract void unregisterLink(InetSocketAddress saddr);
 
+    protected boolean rejectConnectionIfBusy(final SocketChannel socketChannel) throws IOException {
+        if (activeAcceptConnections.get() < sslHandshakeMaxWorkers) {
+            return false;
+        }
+        // Reject new connection if the server is busy
+        s_logger.warn(String.format("%s Rejecting new connection. %d active connections currently",
+                SERVER_BUSY_MESSAGE, sslHandshakeMaxWorkers));
+        socketChannel.close();
+        _selector.wakeup();
+        return true;
+    }
+
+
     protected void accept(final SelectionKey key) throws IOException {
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();
-        if (activeAcceptConnections.get() >= sslHandshakeMaxWorkers) {
-            // Reject new connection if the server is busy
-            s_logger.warn("Server is busy. Rejecting new connection.");
-            if (socketChannel != null) {
-                socketChannel.close();
-            }
-            _selector.wakeup();
+        if (rejectConnectionIfBusy(socketChannel)) {
             return;
         }
         socketChannel.configureBlocking(false);
@@ -520,7 +530,8 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     /* Release the resource used by the instance */
     public void cleanUp() throws IOException {
-        if (_selector != null) {
+        if (_selector != null && _selector.isOpen()) {
+            _selector.wakeup();
             _selector.close();
         }
     }

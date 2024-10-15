@@ -186,10 +186,10 @@ public class NioTest {
         protected void init() throws IOException {
             _selector = Selector.open();
             try {
-                _clientConnection = SocketChannel.open();
-                LOGGER.info("Connecting to " + _host + ":" + _port);
-                final InetSocketAddress peerAddr = new InetSocketAddress(_host, _port);
-                _clientConnection.connect(peerAddr);
+                clientConnection = SocketChannel.open();
+                LOGGER.info("Connecting to " + host + ":" + _port);
+                final InetSocketAddress peerAddr = new InetSocketAddress(host, _port);
+                clientConnection.connect(peerAddr);
                 // This is done on purpose, the malicious client would connect
                 // to the server and then do nothing, hence using a large sleep value
                 Thread.sleep(Long.MAX_VALUE);

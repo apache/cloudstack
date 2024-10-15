@@ -40,10 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.resource.AgentStatusUpdater;
-import com.cloud.resource.ResourceStatusUpdater;
-import com.cloud.agent.api.PingAnswer;
-import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.SetupMSListAnswer;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
@@ -66,6 +62,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
@@ -75,7 +72,10 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
+import com.cloud.resource.AgentStatusUpdater;
+import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -553,14 +553,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             s_logger.warn("Fail to clean up old connection. " + e);
         }
 
-        while (_connection.isStartup()) {
+        do {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
-        }
+        } while (_connection.isStartup());
 
         do {
             final String host = _shell.getNextHost();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), _shell.getSslHandshakeTimeout(), this);
-            s_logger.info("Reconnecting to host:" + host);
+            s_logger.info(String.format("Reconnecting to host: %s", host));
             try {
                 _connection.start();
             } catch (final NioConnectionException e) {
