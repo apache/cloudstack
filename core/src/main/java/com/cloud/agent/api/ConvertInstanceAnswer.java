@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
-
 public class ConvertInstanceAnswer extends Answer {
 
     private String temporaryConvertUuid;
