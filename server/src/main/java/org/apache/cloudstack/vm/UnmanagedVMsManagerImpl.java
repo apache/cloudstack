@@ -1605,7 +1605,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                     " from VMware to KVM ", convertHost.getId(), convertHost.getName(), sourceVMName));
 
-            temporaryConvertLocation = selectInstanceConversionTemporaryLocation(destinationCluster, convertStoragePoolId);
+            temporaryConvertLocation = selectInstanceConversionTemporaryLocation(
+                    destinationCluster, convertHost, convertStoragePoolId);
             List<StoragePoolVO> convertStoragePools = findInstanceConversionStoragePoolsInCluster(destinationCluster);
             long importStartTime = System.currentTimeMillis();
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
@@ -1969,7 +1970,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(msg);
     }
 
-    protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster, Long convertStoragePoolId) {
+    protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster,
+                                                                    HostVO convertHost,
+                                                                    Long convertStoragePoolId) {
         if (convertStoragePoolId != null) {
             StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
             if (selectedStoragePool == null) {
@@ -1979,6 +1982,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     (selectedStoragePool.getScope() == ScopeType.ZONE && selectedStoragePool.getDataCenterId() != destinationCluster.getDataCenterId())) {
                 logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
                         "it is not in the scope of the cluster %s", selectedStoragePool.getName(), destinationCluster.getName()));
+            }
+            if (convertHost != null && selectedStoragePool.getScope() == ScopeType.CLUSTER && !selectedStoragePool.getClusterId().equals(convertHost.getClusterId())) {
+                logFailureAndThrowException(String.format("Cannot use the storage pool %s for the instance conversion as " +
+                        "the host %s for conversion is in a different cluster", selectedStoragePool.getName(), convertHost.getName()));
             }
             if (selectedStoragePool.getScope() == ScopeType.HOST) {
                 logFailureAndThrowException(String.format("The storage pool %s is a local storage pool and not supported for temporary conversion location, cluster and zone wide NFS storage pools are supported", selectedStoragePool.getName()));

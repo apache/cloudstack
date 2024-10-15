@@ -932,10 +932,17 @@ export default {
     },
     fetchStoragePoolsForConversion () {
       if (this.selectedStorageOptionForConversion === 'primary') {
-        api('listStoragePools', {
+        const params = {
           zoneid: this.cluster.zoneid,
           status: 'Up'
-        }).then(json => {
+        }
+        if (this.selectedKvmHostForConversion) {
+          const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
+          if (kvmHost.clusterid !== this.cluster.id) {
+            params.scope = 'ZONE'
+          }
+        }
+        api('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
