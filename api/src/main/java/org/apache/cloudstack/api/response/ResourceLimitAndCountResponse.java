@@ -90,6 +90,12 @@ public interface ResourceLimitAndCountResponse {
 
     public void setBackupAvailable(String backupAvailable);
 
+    public void setBackupStorageLimit(String backupStorageLimit);
+
+    public void setBackupStorageTotal(Long backupStorageTotal);
+
+    public void setBackupStorageAvailable(String backupStorageAvailable);
+
     public void setTemplateLimit(String templateLimit);
 
     public void setTemplateTotal(Long templateTotal);

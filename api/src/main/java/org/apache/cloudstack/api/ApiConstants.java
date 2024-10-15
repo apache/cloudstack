@@ -50,9 +50,15 @@ public class ApiConstants {
     public static final String AVAILABLE = "available";
     public static final String AVAILABLE_SUBNETS = "availablesubnets";
     public static final String AVAILABLE_VIRTUAL_MACHINE_COUNT = "availablevirtualmachinecount";
+    public static final String BACKUP_AVAILABLE = "backupavailable";
     public static final String BACKUP_ID = "backupid";
+    public static final String BACKUP_LIMIT = "backuplimit";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BACKUP_STORAGE_AVAILABLE = "backupstorageavailable";
+    public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
+    public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
+    public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
     public static final String BGP_PEER_IDS = "bgppeerids";

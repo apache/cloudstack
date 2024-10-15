@@ -217,7 +217,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setMemoryTotal(memoryTotal);
         response.setMemoryAvailable(memoryAvail);
 
-      //get resource limits for primary storage space and convert it from Bytes to GiB
+        //get resource limits for primary storage space and convert it from Bytes to GiB
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getPrimaryStorageLimit(), account.getId(), ResourceType.primary_storage);
         String primaryStorageLimitDisplay = (fullView || primaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
         long primaryStorageTotal = (account.getPrimaryStorageTotal() == null) ? 0 : (account.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
@@ -238,13 +238,23 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
 
+        //get resource limits for backups
         long backupLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupLimit(), account.getId(), ResourceType.backup);
-        String backupLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(snapshotLimit);
+        String backupLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
         long backupTotal = (account.getBackupTotal() == null) ? 0 : account.getBackupTotal();
         String backupAvail = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
         response.setBackupLimit(backupLimitDisplay);
         response.setBackupTotal(backupTotal);
         response.setBackupAvailable(backupAvail);
+
+        //get resource limits for backup storage space and convert it from Bytes to GiB
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupStorageLimit(), account.getId(), ResourceType.backup);
+        String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        long backupStorageTotal = (account.getBackupStorageTotal() == null) ? 0 : (account.getBackupStorageTotal() / ResourceType.bytesToGiB);
+        String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
+        response.setBackupStorageLimit(backupStorageLimitDisplay);
+        response.setBackupStorageTotal(backupStorageTotal);
+        response.setBackupStorageAvailable(backupStorageAvail);
     }
 
     @Override

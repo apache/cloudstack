@@ -37,4 +37,5 @@ public interface BackupDao extends GenericDao<BackupVO, Long> {
     List<Backup> listByOfferingId(Long backupOfferingId);
     BackupResponse newBackupResponse(Backup backup);
     public Long countBackupsForAccount(long accountId);
+    public Long countBackupStorageForAccount(long accountId);
 }

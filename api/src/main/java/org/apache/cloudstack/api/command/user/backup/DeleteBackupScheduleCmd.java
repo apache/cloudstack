@@ -64,7 +64,7 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
             entityType = BackupSchedule.class,
             required = true,
             description = "ID of the schedule",
-    since = "4.20.1")
+            since = "4.21.0")
     private Long id;
 
     /////////////////////////////////////////////////////

@@ -58,6 +58,38 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "false",
             "Enable volume attach/detach operations for VMs that are assigned to Backup Offerings.", true);
 
+    static final ConfigKey<Integer> BackupHourlyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.hourly",
+            "8",
+            "Maximum recurring hourly backups to be retained for an instance. If the limit is reached, early backups from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring hourly backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Integer> BackupDailyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.daily",
+            "8",
+            "Maximum recurring daily backups to be retained for an instance. If the limit is reached, backups from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring daily backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Integer> BackupWeeklyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.weekly",
+            "8",
+            "Maximum recurring weekly backups to be retained for an instance. If the limit is reached, backups from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring weekly backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    static final ConfigKey<Integer> BackupMonthlyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.monthly",
+            "8",
+            "Maximum recurring monthly backups to be retained for an instance. If the limit is reached, backups from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring monthly backups can not be scheduled.",
+            false,
+             ConfigKey.Scope.Global,
+            null);
+
     /**
      * List backup provider offerings
      * @param zoneId zone id

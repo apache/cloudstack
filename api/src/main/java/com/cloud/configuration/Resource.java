@@ -34,7 +34,8 @@ public interface Resource {
         memory("memory", 9),
         primary_storage("primary_storage", 10),
         secondary_storage("secondary_storage", 11),
-        backup("backup", 12);
+        backup("backup", 12),
+        backup_storage("backup_storage", 13);
 
         private String name;
         private int ordinal;

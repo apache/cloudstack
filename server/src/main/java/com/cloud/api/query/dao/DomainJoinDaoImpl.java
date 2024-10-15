@@ -213,6 +213,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
 
+        //get resource limits for backups
         long backupLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupLimit(), ResourceType.backup, domain.getId());
         String backupLimitDisplay = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
         long backupTotal = (domain.getBackupTotal() == null) ? 0 : domain.getBackupTotal();
@@ -220,6 +221,15 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setBackupLimit(backupLimitDisplay);
         response.setBackupTotal(backupTotal);
         response.setBackupAvailable(backupAvail);
+
+        //get resource limits for backup storage space and convert it from Bytes to GiB
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(domain.getBackupStorageLimit(), domain.getId(), ResourceType.backup);
+        String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        long backupStorageTotal = (domain.getBackupStorageTotal() == null) ? 0 : (domain.getBackupStorageTotal() / ResourceType.bytesToGiB);
+        String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
+        response.setBackupStorageLimit(backupStorageLimitDisplay);
+        response.setBackupStorageTotal(backupStorageTotal);
+        response.setBackupStorageAvailable(backupStorageAvail);
     }
 
     @Override

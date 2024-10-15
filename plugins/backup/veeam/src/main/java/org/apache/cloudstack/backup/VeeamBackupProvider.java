@@ -222,6 +222,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public boolean takeBackup(final VirtualMachine vm) {
         final VeeamClient client = getClient(vm.getDataCenterId());
+        // TODO : return BackupVO
         return client.startBackupJob(vm.getBackupExternalId());
     }
 

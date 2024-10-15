@@ -513,6 +513,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            // TODO : What is Network backup provider. How to get the size of the backup saved?
             backupDao.persist(backup);
             return backup;
         } else {

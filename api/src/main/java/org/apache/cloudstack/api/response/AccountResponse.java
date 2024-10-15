@@ -127,17 +127,29 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total number of snapshots available for this account")
     private String snapshotAvailable;
 
-    @SerializedName("backuplimit")
-    @Param(description = "the total number of backups which can be stored by this account")
+    @SerializedName(ApiConstants.BACKUP_LIMIT)
+    @Param(description = "the total number of backups which can be stored by this account", since = "4.21.0")
     private String backupLimit;
 
-    @SerializedName("backuptotal")
-    @Param(description = "the total number of backups stored by this account")
+    @SerializedName(ApiConstants.BACKUP_TOTAL)
+    @Param(description = "the total number of backups stored by this account", since = "4.21.0")
     private Long backupTotal;
 
-    @SerializedName("backupvailable")
-    @Param(description = "the total number of backups available for this account")
+    @SerializedName(ApiConstants.BACKUP_AVAILABLE)
+    @Param(description = "the total number of backups available to this account", since = "4.21.0")
     private String backupAvailable;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_LIMIT)
+    @Param(description = "the total backup storage space (in GiB) the account can own", since = "4.21.0")
+    private String backupStorageLimit;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_TOTAL)
+    @Param(description = "the total backup storage space (in GiB) owned by the account", since = "4.21.0")
+    private Long backupStorageTotal;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_AVAILABLE)
+    @Param(description = "the total backup storage space (in GiB) available to the account", since = "4.21.0")
+    private String backupStorageAvailable;
 
     @SerializedName("templatelimit")
     @Param(description = "the total number of templates which can be created by this account")
@@ -407,6 +419,21 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setBackupAvailable(String backupAvailable) {
         this.backupAvailable = backupAvailable;
+    }
+
+    @Override
+    public void setBackupStorageLimit(String backupStorageLimit) {
+        this.backupStorageLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupStorageTotal(Long backupStorageTotal) {
+        this.backupStorageTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupStorageAvailable(String backupStorageAvailable) {
+        this.backupStorageAvailable = backupAvailable;
     }
 
     @Override

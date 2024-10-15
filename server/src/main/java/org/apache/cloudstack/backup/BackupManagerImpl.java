@@ -516,6 +516,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
             return deleteAllVMBackupSchedules(vm.getId());
         } else {
+            // TODO : need to call checkAccess here?
             final BackupSchedule schedule = backupScheduleDao.findById(id);
             if (schedule == null) {
                 throw new CloudRuntimeException("Could not find the requested backup schedule.");
@@ -567,6 +568,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw e;
         }
 
+        try {
+            // TODO : put requrested size as the last argument
+            resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup_storage);
+        } catch (ResourceAllocationException e) {
+            if (type != Backup.Type.MANUAL) {
+                String msg = "Backup storage space resource limit exceeded for account id : " + owner.getId() + ". Failed to create backup";
+                logger.warn(msg);
+                alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup storage space resource limit exceeded for account id : " + owner.getId()
+                        + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+            }
+            throw e;
+        }
+
         ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(),
                 EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
                 vmId, ApiCommandResourceType.VirtualMachine.toString(),
@@ -583,6 +597,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vmBackup.setBackupIntervalType((short)type.ordinal());
             backupDao.update(vmBackup.getId(), vmBackup);
             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+            // TODO : put delta as the last argument
+            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage);
             return true;
         }
         throw new CloudRuntimeException("Failed to create VM backup");
@@ -957,6 +973,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+            // TODO : put delta as the last argument
+            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage);
             return backupDao.remove(backup.getId());
         }
         throw new CloudRuntimeException("Failed to delete the backup");
@@ -1024,6 +1042,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         backgroundPollManager.submitTask(new BackupSyncTask(this));
+        Backup.Type.HOURLY.setMax(BackupHourlyMax.value());
+        Backup.Type.DAILY.setMax(BackupDailyMax.value());
+        Backup.Type.WEEKLY.setMax(BackupWeeklyMax.value());
+        Backup.Type.MONTHLY.setMax(BackupMonthlyMax.value());
         return true;
     }
 
@@ -1103,7 +1125,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 BackupFrameworkEnabled,
                 BackupProviderPlugin,
                 BackupSyncPollingInterval,
-                BackupEnableAttachDetachVolumes
+                BackupEnableAttachDetachVolumes,
+                BackupHourlyMax,
+                BackupDailyMax,
+                BackupWeeklyMax,
+                BackupMonthlyMax
         };
     }
 

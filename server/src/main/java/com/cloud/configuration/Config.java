@@ -1317,6 +1317,7 @@ public enum Config {
             "20",
             "The default maximum number of snapshots that can be created for an account",
             null),
+    // TODO : use configKey instead?
     DefaultMaxAccountBackups(
             "Account Defaults",
             ManagementServer.class,
@@ -1324,6 +1325,14 @@ public enum Config {
             "max.account.backups",
             "20",
             "The default maximum number of backups that can be created for an account",
+            null),
+    DefaultMaxAccountBackupStorage(
+            "Account Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.account.backup.storage",
+            "400",
+            "The default maximum backup storage space (in GiB) that can be used for an account",
             null),
     DefaultMaxAccountVolumes(
             "Account Defaults",
@@ -1423,7 +1432,8 @@ DefaultMaxAccountProjects(
     DefaultMaxDomainPublicIPs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.public.ips", "40", "The default maximum number of public IPs that can be consumed by a domain", null),
     DefaultMaxDomainTemplates("Domain Defaults", ManagementServer.class, Long.class, "max.domain.templates", "40", "The default maximum number of templates that can be deployed for a domain", null),
     DefaultMaxDomainSnapshots("Domain Defaults", ManagementServer.class, Long.class, "max.domain.snapshots", "40", "The default maximum number of snapshots that can be created for a domain", null),
-    DefaultMaxDomainBackups("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backups", "40", "The default maximum number of backups that can be created for a domain", null),
+    DefaultMaxDomainBackups("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backups", "-1", "The default maximum number of backups that can be created for a domain", null),
+    DefaultMaxDomainBackupStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backup.storage", "-1", "The default maximum backup storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainVolumes("Domain Defaults", ManagementServer.class, Long.class, "max.domain.volumes", "40", "The default maximum number of volumes that can be created for a domain", null),
     DefaultMaxDomainNetworks("Domain Defaults", ManagementServer.class, Long.class, "max.domain.networks", "40", "The default maximum number of networks that can be created for a domain", null),
     DefaultMaxDomainVpcs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.vpcs", "40", "The default maximum number of vpcs that can be created for a domain", null),
@@ -1465,6 +1475,7 @@ DefaultMaxAccountProjects(
             "20",
             "The default maximum number of snapshots that can be created for a project",
             null),
+    // Move to configkey?
     DefaultMaxProjectBackups(
             "Project Defaults",
             ManagementServer.class,
@@ -1472,6 +1483,14 @@ DefaultMaxAccountProjects(
             "max.project.backups",
             "20",
             "The default maximum number of backups that can be created for a project",
+            null),
+    DefaultMaxProjectBackupStorage(
+            "Project Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.project.backup.storage",
+            "400",
+            "The default maximum backup storage space (in GiB) that can be used for a project",
             null),
     DefaultMaxProjectVolumes(
             "Project Defaults",

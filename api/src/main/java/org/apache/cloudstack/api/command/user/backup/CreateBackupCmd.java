@@ -66,7 +66,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             type = CommandType.UUID,
             entityType = BackupScheduleResponse.class,
             description = "backup schedule ID of the VM, if this is null, it indicates that it is a manual backup.",
-            since = "4.20.1")
+            since = "4.21.0")
     private Long scheduleId;
 
     /////////////////////////////////////////////////////
