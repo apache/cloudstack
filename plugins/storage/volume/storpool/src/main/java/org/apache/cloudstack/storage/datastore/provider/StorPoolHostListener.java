@@ -172,6 +172,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
         }
 
         StorPoolHelper.setSpClusterIdIfNeeded(hostId, mspAnswer.getClusterId(), clusterDao, hostDao, clusterDetailsDao);
+        StorPoolHelper.setLocationIfNeeded(pool, storagePoolDetailsDao, mspAnswer.getClusterLocation());
 
         StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
         return true;
