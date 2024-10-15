@@ -59,6 +59,7 @@ import javax.inject.Inject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class DefaultHostListener implements HypervisorHostListener {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -133,8 +134,9 @@ public class DefaultHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
         StoragePool pool = (StoragePool) this.dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         Map<String, String> detailsMap = storagePoolDetailsDao.listDetailsKeyPairs(poolId);
-        detailsMap.putAll(storageManager.getStoragePoolNFSMountOpts(pool, null).first());
+        Map<String, String> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null).first();
 
+        Optional.ofNullable(nfsMountOpts).ifPresent(detailsMap::putAll);
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
         cmd.setWait(modifyStoragePoolCommandWait);
         HostVO host = hostDao.findById(hostId);
