@@ -97,7 +97,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                 workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
         sslHandshakeQueue = new SynchronousQueue<>();
         _sslHandshakeExecutor = new ThreadPoolExecutor(sslHandshakeMinWorkers, sslHandshakeMaxWorkers, 30,
-                TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-Handler"),
+                TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-SSLHandshakeHandler"),
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
