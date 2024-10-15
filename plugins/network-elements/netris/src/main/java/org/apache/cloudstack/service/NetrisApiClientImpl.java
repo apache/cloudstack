@@ -24,7 +24,6 @@ import io.netris.api.v1.AuthenticationApi;
 import io.netris.api.v1.SitesApi;
 import io.netris.api.v1.TenantsApi;
 import io.netris.api.v2.VpcApi;
-import io.netris.model.AuthSchema;
 import io.netris.model.GetSiteBody;
 import io.netris.model.SitesResponseOK;
 import io.netris.model.VPCListing;
@@ -35,85 +34,73 @@ import io.netris.model.response.TenantsResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public class NetrisApiClientImpl implements NetrisApiClient {
 
     private final Logger logger = LogManager.getLogger(getClass());
 
-    private static final ApiClient apiClient = new ApiClient();
+    private static ApiClient apiClient;
 
     public NetrisApiClientImpl(String endpointBaseUrl, String username, String password) {
-        apiClient.setBasePath(endpointBaseUrl);
-        authenticate(username, password);
-    }
-
-    private void authenticate(String username, String password) {
-        AuthSchema authSchema = createAuthSchema(username, password);
-        AuthenticationApi authenticationApi = new AuthenticationApi(apiClient);
         try {
-            ApiResponse<AuthResponse> authResponse = authenticationApi.apiAuthPost(authSchema);
-            if (authResponse.getStatusCode() == 200) {
-                String cookie = authResponse.getHeaders().get("Set-Cookie").get(0).split(";")[0];
-                apiClient.addDefaultHeader("Cookie", cookie);
-            } else {
-                String msg = String.format("Authentication to the Netris Controller %s failed, please check the credentials provided", apiClient.getBasePath());
-                logger.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
+            apiClient = new ApiClient(endpointBaseUrl, username, password, 1L);
         } catch (ApiException e) {
-            String msg = String.format("Error authenticating to the Netris Controller %s: Code %s - Message: %s", apiClient.getBasePath(), e.getCode(), e.getResponseBody());
-            logger.error(msg, e);
-            throw new CloudRuntimeException(msg);
+            logAndThrowException(String.format("Error creating the Netris API Client for %s", endpointBaseUrl), e);
         }
     }
 
-    private AuthSchema createAuthSchema(String username, String password) {
-        AuthSchema authSchema = new AuthSchema();
-        authSchema.setUser(username);
-        authSchema.setPassword(password);
-        authSchema.setAuthSchemeID(new BigDecimal(1));
-        return authSchema;
+    protected void logAndThrowException(String prefix, ApiException e) throws CloudRuntimeException {
+        String msg = String.format("%s: (%s, %s, %s)", prefix, e.getCode(), e.getMessage(), e.getResponseBody());
+        logger.error(msg);
+        throw new CloudRuntimeException(msg);
     }
 
     @Override
     public boolean isSessionAlive() {
-        AuthenticationApi api = new AuthenticationApi(apiClient);
+        ApiResponse<AuthResponse> response = null;
         try {
-            ApiResponse<AuthResponse> response = api.apiAuthGet();
-            return response.getStatusCode() == 200;
+            AuthenticationApi api = apiClient.getApiStubForMethod(AuthenticationApi.class);
+            response = api.apiAuthGet();
         } catch (ApiException e) {
-            throw new CloudRuntimeException(e);
+            logAndThrowException("Error checking the Netris API session is alive", e);
         }
+        return response != null && response.getStatusCode() == 200;
     }
 
     @Override
     public List<GetSiteBody> listSites() {
-        SitesApi api = new SitesApi(apiClient);
+        SitesResponseOK response = null;
         try {
-            SitesResponseOK response = api.apiSitesGet();
-            return response.getData();
+            SitesApi api = apiClient.getApiStubForMethod(SitesApi.class);
+            response = api.apiSitesGet();
         } catch (ApiException e) {
-            throw new CloudRuntimeException(e);
+            logAndThrowException("Error listing Netris Sites", e);
         }
+        return response != null ? response.getData() : null;
     }
 
     @Override
     public List<VPCListing> listVPCs() {
-        VpcApi api = new VpcApi(apiClient);
+        VPCResponseOK response = null;
         try {
-            VPCResponseOK response = api.apiV2VpcGet();
-            return response.getData();
+            VpcApi api = apiClient.getApiStubForMethod(VpcApi.class);
+            response = api.apiV2VpcGet();
         } catch (ApiException e) {
-            throw new CloudRuntimeException(e);
+            logAndThrowException("Error listing Netris VPCs", e);
         }
+        return response != null ? response.getData() : null;
     }
 
     @Override
-    public List<TenantResponse> listTenants() throws ApiException {
-        TenantsApi api = new TenantsApi(apiClient);
-        ApiResponse<TenantsResponse> response = api.apiTenantsGet();
-        return response.getData().getData();
+    public List<TenantResponse> listTenants() {
+        ApiResponse<TenantsResponse> response = null;
+        try {
+            TenantsApi api = apiClient.getApiStubForMethod(TenantsApi.class);
+            response = api.apiTenantsGet();
+        } catch (ApiException e) {
+            logAndThrowException("Error listing Netris Tenants", e);
+        }
+        return (response != null && response.getData() != null) ? response.getData().getData() : null;
     }
 }
