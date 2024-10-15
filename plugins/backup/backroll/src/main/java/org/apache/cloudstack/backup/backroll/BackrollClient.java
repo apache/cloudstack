@@ -80,7 +80,6 @@ import org.apache.logging.log4j.Logger;
 
 import org.joda.time.DateTime;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -140,25 +139,22 @@ public class BackrollClient {
         }
     }
 
-    public String startBackupJob(final String jobId) {
+    public String startBackupJob(final String jobId)
+            throws ClientProtocolException, IOException, ParseException, NotOkBodyException {
         logger.info("Trying to start backup for Backroll job: {}", jobId);
 
-        try {
-            loginIfAuthenticationFailed();
-            return this.<BackrollTaskRequestResponse>parse(okBody(
-                    post(String.format("/tasks/singlebackup/%s", jobId), null))).location
-                    .replace("/api/v1/status/", "");
-        } catch (final Exception e) {
-            logger.error("Failed to start Backroll backup job due to: {}", e.getMessage());
-        }
-        return null;
+        ensureLoggedIn();
+
+        return this.<BackrollTaskRequestResponse>parse(okBody(
+                post(String.format("/tasks/singlebackup/%s", jobId), null))).location
+                .replace("/api/v1/status/", "");
     }
 
     public String getBackupOfferingUrl()
             throws ClientProtocolException, IOException, ParseException, NotOkBodyException {
         logger.info("Trying to list backroll backup policies");
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         return this.<BackrollTaskRequestResponse>parse(okBody(get("/backup_policies"))).location.replace("/api/v1",
                 "");
@@ -168,7 +164,7 @@ public class BackrollClient {
             throws ParseException, NotOkBodyException, ClientProtocolException, IOException, InterruptedException {
         logger.info("Trying to list backroll backup policies");
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         BackupPoliciesResponse backupPoliciesResponse = waitGet(idTask);
 
@@ -182,7 +178,7 @@ public class BackrollClient {
     public void restoreVMFromBackup(final String vmId, final String backupName) throws Exception {
         logger.info("Start restore backup with backroll with backup {} for vm {}", backupName, vmId);
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         JSONObject jsonBody = new JSONObject();
         jsonBody.put("virtual_machine_id", vmId);
@@ -207,7 +203,7 @@ public class BackrollClient {
             throws ParseException, IOException, NotOkBodyException {
         logger.info("Trying to get backup status for Backroll task: {}", taskId);
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         BackrollTaskStatus status = new BackrollTaskStatus();
 
@@ -225,32 +221,27 @@ public class BackrollClient {
         return status;
     }
 
-    public boolean deleteBackup(final String vmId, final String backupName)
-            throws ClientProtocolException, IOException {
+    public void deleteBackup(final String vmId, final String backupName)
+            throws Exception {
         logger.info("Trying to delete backup {} for vm {} using Backroll", vmId, backupName);
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
-        try {
-            String urlToRequest = this.<BackrollTaskRequestResponse>parse(okBody(delete(
-                    String.format("/virtualmachines/%s/backups/%s", vmId, backupName)))).location
-                    .replace("/api/v1", "");
+        String urlToRequest = this.<BackrollTaskRequestResponse>parse(okBody(delete(
+                String.format("/virtualmachines/%s/backups/%s", vmId, backupName)))).location
+                .replace("/api/v1", "");
 
-            BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = waitGet(urlToRequest);
-            logger.debug(backrollBackupsFromVMResponse.state);
-            return backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS);
-        } catch (final NotOkBodyException e) {
-            return false;
-        } catch (final Exception e) {
-            logger.error("Failed to delete backup using Backroll due to: {}", e.getMessage());
+        BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = waitGet(urlToRequest);
+        logger.debug(backrollBackupsFromVMResponse.state);
+        if (!backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS)) {
+            throw new Exception("Backroll task failed.");
         }
-        return false;
     }
 
     public Metric getVirtualMachineMetrics(final String vmId) throws ClientProtocolException, IOException {
         logger.info("Trying to retrieve virtual machine metric from Backroll for vm {}", vmId);
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         Metric metric = new Metric(0L, 0L);
 
@@ -285,7 +276,7 @@ public class BackrollClient {
             JsonProcessingException, ParseException, IOException, NotOkBodyException, InterruptedException {
         logger.info("Trying to get backup metrics for VM: {}, and backup: {}", vmId, backupId);
 
-        loginIfAuthenticationFailed();
+        ensureLoggedIn();
 
         String urlToRequest = this.<BackrollTaskRequestResponse>parse(okBody(get(
                 String.format("/virtualmachines/%s/backups/%s", vmId, backupId)))).location.replace("/api/v1", "");
@@ -332,26 +323,20 @@ public class BackrollClient {
     }
 
     private HttpResponse post(final String path, final JSONObject json) throws IOException {
-        String xml = null;
-        StringEntity params = null;
-        if (json != null) {
-            logger.debug("JSON {}", json.toString());
-            params = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-        }
-
         String url = apiURI.toString() + path;
         final HttpPost request = new HttpPost(url);
-
-        if (params != null) {
-            request.setEntity(params);
-        }
 
         request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
         request.setHeader("Content-type", "application/json");
 
+        if (json != null) {
+            logger.debug("JSON {}", json.toString());
+            request.setEntity(new StringEntity(json.toString(), ContentType.APPLICATION_JSON));
+        }
+
         final HttpResponse response = httpClient.execute(request);
 
-        logger.debug("Response received in POST request with body {} is: {} for URL {}.", xml, response.toString(),
+        logger.debug("Response received in POST request with body {} is: {} for URL {}.", json, response.toString(),
                 url);
 
         return response;
@@ -378,9 +363,14 @@ public class BackrollClient {
         return response;
     }
 
-    private boolean isResponseAuthorized(final HttpResponse response) {
-        return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK
-                || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED;
+    private boolean isResponseOk(final HttpResponse response) {
+        switch (response.getStatusLine().getStatusCode()) {
+            case HttpStatus.SC_OK:
+            case HttpStatus.SC_ACCEPTED:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public class NotOkBodyException extends Exception {
@@ -398,18 +388,15 @@ public class BackrollClient {
 
     private String okBody(final HttpResponse response)
             throws ParseException, IOException, NotOkBodyException {
-        switch (response.getStatusLine().getStatusCode()) {
-            case HttpStatus.SC_OK:
-            case HttpStatus.SC_ACCEPTED:
-                HttpEntity bodyEntity = response.getEntity();
-                try {
-                    return EntityUtils.toString(bodyEntity);
-                } finally {
-                    EntityUtils.consumeQuietly(bodyEntity);
-                }
-            default:
-                throw new NotOkBodyException(response);
+        if (isResponseOk(response)) {
+            HttpEntity bodyEntity = response.getEntity();
+            try {
+                return EntityUtils.toString(bodyEntity);
+            } finally {
+                EntityUtils.consumeQuietly(bodyEntity);
+            }
         }
+        throw new NotOkBodyException(response);
     }
 
     private <T> T parse(final String json)
@@ -441,15 +428,15 @@ public class BackrollClient {
         boolean result = false;
         try {
             final HttpResponse response = post("/auth", null);
-            result = isResponseAuthorized(response);
-            EntityUtils.consumeQuietly(response.getEntity());
+            result = isResponseOk(response);
+            EntityUtils.consumeQuietly(response.getEntity()); // TODO Move to a finally clause ?
         } catch (IOException e) {
             logger.error("Failed to authenticate to Backroll due to: {}", e.getMessage());
         }
         return result;
     }
 
-    private void loginIfAuthenticationFailed() throws ClientProtocolException, IOException {
+    private void ensureLoggedIn() throws ClientProtocolException, IOException {
         if (!isAuthenticated()) {
             login(appname, password);
         }
