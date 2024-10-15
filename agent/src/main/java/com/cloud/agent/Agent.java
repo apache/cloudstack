@@ -153,6 +153,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     private String _keystoreSetupPath;
     private String _keystoreCertImportPath;
+    private String hostname;
 
     // for simulator use only
     public Agent(final IAgentShell shell) {
@@ -485,22 +486,28 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
     }
 
-    protected void setupStartupCommand(final StartupCommand startup) {
-        InetAddress addr;
+    protected String retrieveHostname() {
+        final Script command = new Script("hostname", 500, s_logger);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        final String result = command.execute(parser);
+        if (result != null) {
+            return parser.getLine();
+        }
         try {
-            addr = InetAddress.getLocalHost();
+            InetAddress addr = InetAddress.getLocalHost();
+            return addr.toString();
         } catch (final UnknownHostException e) {
             s_logger.warn("unknown host? ", e);
             throw new CloudRuntimeException("Cannot get local IP address");
         }
+    }
 
-        final Script command = new Script("hostname", 500, s_logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        final String result = command.execute(parser);
-        final String hostname = result == null ? parser.getLine() : addr.toString();
-
+    protected void setupStartupCommand(final StartupCommand startup) {
         startup.setId(getId());
         if (startup.getName() == null) {
+            if (StringUtils.isBlank(hostname)) {
+                hostname = retrieveHostname();
+            }
             startup.setName(hostname);
         }
         startup.setDataCenter(getZone());
