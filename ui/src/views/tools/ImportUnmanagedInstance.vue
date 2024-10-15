@@ -915,7 +915,7 @@ export default {
     },
     fetchKvmHostsForConversion () {
       api('listHosts', {
-        clusterid: this.cluster.id,
+        zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
         state: 'Up',
@@ -923,6 +923,7 @@ export default {
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
         this.kvmHostsForConversion.map(host => {
+          host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
           if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
             host.name = host.name + ' (' + this.$t('label.supported') + ')'
           }
