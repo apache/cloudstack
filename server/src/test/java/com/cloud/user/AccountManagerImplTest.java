@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -514,7 +515,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void validateAndUpdatUserApiKeyAccess() {
         Mockito.doReturn("Enabled").when(UpdateUserCmdMock).getApiKeyAccess();
-        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock, accountMock);
+        try (MockedStatic<ActionEventUtils> eventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock, accountMock);
+        }
 
         Mockito.verify(userVoMock).setApiKeyAccess(true);
     }
@@ -528,7 +535,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void validateAndUpdatAccountApiKeyAccess() {
         Mockito.doReturn("Inherit").when(UpdateAccountCmdMock).getApiKeyAccess();
-        accountManagerImpl.validateAndUpdateAccountApiKeyAccess(UpdateAccountCmdMock, accountVoMock);
+        try (MockedStatic<ActionEventUtils> eventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            accountManagerImpl.validateAndUpdateAccountApiKeyAccess(UpdateAccountCmdMock, accountVoMock);
+        }
 
         Mockito.verify(accountVoMock).setApiKeyAccess(null);
     }
