@@ -514,7 +514,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void validateAndUpdatUserApiKeyAccess() {
         Mockito.doReturn("Enabled").when(UpdateUserCmdMock).getApiKeyAccess();
-        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock, accountMock);
 
         Mockito.verify(userVoMock).setApiKeyAccess(true);
     }
@@ -522,7 +522,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test(expected = InvalidParameterValueException.class)
     public void validateAndUpdatUserApiKeyAccessInvalidParameter() {
         Mockito.doReturn("False").when(UpdateUserCmdMock).getApiKeyAccess();
-        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock, accountMock);
     }
 
     @Test
