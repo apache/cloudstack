@@ -53,6 +53,7 @@ import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -707,6 +708,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 value = DBEncryptionUtil.encrypt(value);
             }
 
+            ApiCommandResourceType resourceType;
             ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
             switch (scopeVal) {
             case Zone:
@@ -714,6 +716,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Zone;
                 _dcDetailsDao.addDetail(resourceId, name, value, true);
                 break;
             case Cluster:
@@ -721,6 +724,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Cluster;
                 String newName = name;
                 if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
                     newName = "cpuOvercommitRatio";
@@ -743,6 +747,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (pool == null) {
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.StoragePool;
                 if(name.equals(CapacityManager.StorageOverprovisioningFactor.key())) {
                     if(!pool.getPoolType().supportsOverProvisioning() ) {
                         throw new InvalidParameterValueException("Unable to update storage pool with id " + resourceId + ". Overprovision not supported for " + pool.getPoolType());
@@ -764,6 +769,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (account == null) {
                     throw new InvalidParameterValueException("unable to find account by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Account;
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(resourceId, name);
                 if (accountDetailVO == null) {
                     accountDetailVO = new AccountDetailVO(resourceId, name, value);
@@ -777,6 +783,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case ImageStore:
                 final ImageStoreVO imgStore = _imageStoreDao.findById(resourceId);
                 Preconditions.checkState(imgStore != null);
+                resourceType = ApiCommandResourceType.ImageStore;
                 _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
                 break;
 
@@ -785,6 +792,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (domain == null) {
                     throw new InvalidParameterValueException("unable to find domain by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Domain;
                 DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(resourceId, name);
                 if (domainDetailVO == null) {
                     domainDetailVO = new DomainDetailVO(resourceId, name, value);
@@ -798,6 +806,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
+
+            CallContext.current().setEventResourceType(resourceType);
+            CallContext.current().setEventResourceId(resourceId);
+            CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope));
 
             _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
@@ -1012,7 +1024,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (value.isEmpty() || value.equals("null")) {
             value = (id == null) ? null : "";
         }
-
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
