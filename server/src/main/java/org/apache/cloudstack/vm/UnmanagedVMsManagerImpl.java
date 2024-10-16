@@ -1788,7 +1788,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return params;
     }
 
-    private HostVO selectKVMHostForImportingInCluster(Cluster destinationCluster, Long importInstanceHostId) {
+    HostVO selectKVMHostForImportingInCluster(Cluster destinationCluster, Long importInstanceHostId) {
         if (importInstanceHostId != null) {
             String err = null;
             HostVO selectedHost = hostDao.findById(importInstanceHostId);
@@ -1797,7 +1797,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         importInstanceHostId);
             } else if (selectedHost.getResourceState() != ResourceState.Enabled) {
                 err = String.format(
-                        "Cannot import the converted instance on the host %s as it is not a running and Enabled host",
+                        "Cannot import the converted instance on the host %s as it is not in Enabled state",
                         selectedHost.getName());
             } else if (selectedHost.getStatus() != Status.Up) {
                 err = String.format(
@@ -1832,7 +1832,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    private HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             String err = null;
