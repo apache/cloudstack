@@ -933,10 +933,10 @@ export default {
         zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
-        state: 'Up',
-        resourcestate: 'Enabled'
+        state: 'Up'
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
+        this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
         this.kvmHostsForConversion.map(host => {
           host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
           if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {

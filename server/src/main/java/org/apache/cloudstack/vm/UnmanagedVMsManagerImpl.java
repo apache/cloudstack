@@ -1790,22 +1790,32 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private HostVO selectKVMHostForImportingInCluster(Cluster destinationCluster, Long importInstanceHostId) {
         if (importInstanceHostId != null) {
+            String err = null;
             HostVO selectedHost = hostDao.findById(importInstanceHostId);
             if (selectedHost == null) {
-                String msg = String.format("Cannot find host with ID %s", importInstanceHostId);
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
-            if (selectedHost.getResourceState() != ResourceState.Enabled ||
-                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
-                    destinationCluster.getDataCenterId() != selectedHost.getDataCenterId() ||
-                    selectedHost.getClusterId() != destinationCluster.getId()
-            ) {
-                String msg = String.format(
+                err = String.format("Cannot find host with ID %s to import the instance",
+                        importInstanceHostId);
+            } else if (selectedHost.getResourceState() != ResourceState.Enabled) {
+                err = String.format(
                         "Cannot import the converted instance on the host %s as it is not a running and Enabled host",
                         selectedHost.getName());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
+            } else if (selectedHost.getStatus() != Status.Up) {
+                err = String.format(
+                        "Cannot import the converted instance on the host %s as it is not running",
+                        selectedHost.getName());
+            } else if (selectedHost.getType() != Host.Type.Routing) {
+                err = String.format(
+                        "Cannot import the converted instance on the host %s as it is not a routing host",
+                        selectedHost.getName());
+            } else if (destinationCluster.getId() != selectedHost.getClusterId()) {
+                err = String.format(
+                        "Cannot import the converted instance on the host %s as it is not in the same zone as the destination cluster",
+                        selectedHost.getName());
+            }
+
+            if (err != null) {
+                LOGGER.error(err);
+                throw new CloudRuntimeException(err);
             }
             return selectedHost;
         }
@@ -1825,19 +1835,30 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
+            String err = null;
             if (selectedHost == null) {
-                String msg = String.format("Cannot find host with ID %s", convertInstanceHostId);
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
+                err = String.format("Cannot find host with ID %s for conversion",
+                        convertInstanceHostId);
+            } else if (!List.of(ResourceState.Enabled, ResourceState.Disabled).contains(selectedHost.getResourceState())) {
+                err = String.format(
+                        "Cannot perform the conversion on the host %s as the host is in %s state",
+                        selectedHost.getName(), selectedHost.getResourceState());
+            } else if (selectedHost.getStatus() != Status.Up) {
+                err = String.format(
+                        "Cannot perform the conversion on the host %s as it is not running",
+                        selectedHost.getName());
+            } else if (selectedHost.getType() != Host.Type.Routing) {
+                err = String.format(
+                        "Cannot perform the conversion on the host %s as it is not a routing host",
+                        selectedHost.getName());
+            } else if (destinationCluster.getDataCenterId() != selectedHost.getDataCenterId()) {
+                err = String.format(
+                        "Cannot perform the conversion on the host %s as it is not in the same zone as the destination cluster",
+                        selectedHost.getName());
             }
-
-            if (!List.of(ResourceState.Enabled, ResourceState.Disabled).contains(selectedHost.getResourceState()) ||
-                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
-                    destinationCluster.getDataCenterId() != selectedHost.getDataCenterId()
-            ) {
-                String msg = String.format("Cannot perform the conversion on the host %s as it is not running", selectedHost.getName());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
+            if (err != null) {
+                LOGGER.error(err);
+                throw new CloudRuntimeException(err);
             }
             return selectedHost;
         }
