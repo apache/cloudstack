@@ -150,7 +150,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private Long convertInstanceHostId;
 
     @Parameter(name = ApiConstants.IMPORT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, since = "4.19.2",
-            description = "(only for importing VMs from VMware to KVM) optional - the host to use to import the converted instance for migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the host to import the converted instance migrated from VMware to KVM.")
     private Long importInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
