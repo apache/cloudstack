@@ -80,7 +80,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
     protected Integer sslHandshakeTimeout = null;
-    private int sslHandshakeMaxWorkers;
+    private final int sslHandshakeMaxWorkers;
     private final AtomicInteger activeAcceptConnections = new AtomicInteger(0);
     private final BlockingQueue<Runnable> workerQueue;
     private final BlockingQueue<Runnable> sslHandshakeQueue;
@@ -92,13 +92,12 @@ public abstract class NioConnection implements Callable<Boolean> {
         _selector = null;
         _port = port;
         _factory = factory;
-        int sslMinWorkers = Math.max(sslHandshakeMinWorkers, 1);
-        this.sslHandshakeMaxWorkers = Math.max(sslHandshakeMaxWorkers, sslMinWorkers);
+        this.sslHandshakeMaxWorkers = Math.max(sslHandshakeMaxWorkers, 1);
         workerQueue = new LinkedBlockingQueue<>(5 * workers);
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
                 workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
         sslHandshakeQueue = new SynchronousQueue<>();
-        _sslHandshakeExecutor = new ThreadPoolExecutor(sslMinWorkers, this.sslHandshakeMaxWorkers, 30,
+        _sslHandshakeExecutor = new ThreadPoolExecutor(Math.max(sslHandshakeMinWorkers, 0), this.sslHandshakeMaxWorkers, 30,
                 TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-SSLHandshakeHandler"),
                 new ThreadPoolExecutor.AbortPolicy());
     }
