@@ -632,11 +632,13 @@ public class UnmanagedVMsManagerImplTest {
         when(convertHost.getId()).thenReturn(convertHostId);
         when(convertHost.getName()).thenReturn("KVM-Convert-Host");
         when(convertHost.getType()).thenReturn(Host.Type.Routing);
+        when(convertHost.getDataCenterId()).thenReturn(zoneId);
+        when(convertHost.getClusterId()).thenReturn(clusterId);
         if (selectConvertHost) {
             when(importVmCmd.getConvertInstanceHostId()).thenReturn(convertHostId);
+            when(importVmCmd.getImportInstanceHostId()).thenReturn(convertHostId);
             when(hostDao.findById(convertHostId)).thenReturn(convertHost);
         }
-        when(hostDao.listByClusterHypervisorTypeAndHostCapability(clusterId, Hypervisor.HypervisorType.KVM, Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(convertHost));
 
         DataStoreTO dataStoreTO = mock(DataStoreTO.class);
         DataStore dataStore = mock(DataStore.class);

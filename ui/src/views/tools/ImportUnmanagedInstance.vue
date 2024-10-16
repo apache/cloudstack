@@ -164,6 +164,18 @@
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
+              <a-form-item name="importhostid" ref="importhostid">
+                <check-box-select-pair
+                  layout="vertical"
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
+                  :resourceKey="cluster.id"
+                  :selectOptions="kvmHostsForImporting"
+                  :checkBoxLabel="$t('message.select.kvm.host.instance.conversion')"
+                  :defaultCheckBoxValue="false"
+                  :reversed="false"
+                  @handle-checkselectpair-change="updateSelectedKvmHostForImporting"
+                />
+              </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
@@ -494,7 +506,9 @@ export default {
       switches: {},
       loading: false,
       kvmHostsForConversion: [],
+      kvmHostsForImporting: [],
       selectedKvmHostForConversion: null,
+      selectedKvmHostForImporting: null,
       storageOptionsForConversion: [
         {
           id: 'secondary',
@@ -730,6 +744,7 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
+      this.fetchKvmHostsForImporting()
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
@@ -930,6 +945,17 @@ export default {
         })
       })
     },
+    fetchKvmHostsForImporting () {
+      api('listHosts', {
+        clusterid: this.cluster.id,
+        hypervisor: this.cluster.hypervisortype,
+        type: 'Routing',
+        state: 'Up',
+        resourcestate: 'Enabled'
+      }).then(json => {
+        this.kvmHostsForImporting = json.listhostsresponse.host || []
+      })
+    },
     fetchStoragePoolsForConversion () {
       if (this.selectedStorageOptionForConversion === 'primary') {
         const params = {
@@ -954,6 +980,14 @@ export default {
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
+      }
+    },
+    updateSelectedKvmHostForImporting (clusterid, checked, value) {
+      if (checked) {
+        this.selectedKvmHostForImporting = value
+      } else {
+        this.selectedKvmHostForImporting = null
+        this.resetStorageOptionsForConversion()
       }
     },
     updateSelectedKvmHostForConversion (clusterid, checked, value) {

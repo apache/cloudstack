@@ -1570,6 +1570,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String clusterName = cmd.getClusterName();
         String sourceHostName = cmd.getHostIp();
         Long convertInstanceHostId = cmd.getConvertInstanceHostId();
+        Long importInstanceHostId = cmd.getImportInstanceHostId();
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
@@ -1599,8 +1600,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DataStoreTO temporaryConvertLocation = null;
         String ovfTemplateOnConvertLocation = null;
         try {
-            HostVO convertHost = selectInstanceConversionKVMHostInCluster(destinationCluster, convertInstanceHostId);
-            HostVO importHost = convertInstanceHostId == null ? convertHost : selectInstanceConversionKVMHostInCluster(destinationCluster, null);
+            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
+            HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
             CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false);
             LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                     " from VMware to KVM ", convertHost.getId(), convertHost.getName(), sourceVMName));
@@ -1787,7 +1788,41 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return params;
     }
 
-    private HostVO selectInstanceConversionKVMHostInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+    private HostVO selectKVMHostForImportingInCluster(Cluster destinationCluster, Long importInstanceHostId) {
+        if (importInstanceHostId != null) {
+            HostVO selectedHost = hostDao.findById(importInstanceHostId);
+            if (selectedHost == null) {
+                String msg = String.format("Cannot find host with ID %s", importInstanceHostId);
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            if (selectedHost.getResourceState() != ResourceState.Enabled ||
+                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
+                    destinationCluster.getDataCenterId() != selectedHost.getDataCenterId() ||
+                    selectedHost.getClusterId() != destinationCluster.getId()
+            ) {
+                String msg = String.format(
+                        "Cannot import the converted instance on the host %s as it is not a running and Enabled host",
+                        selectedHost.getName());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            return selectedHost;
+        }
+
+        List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            return hosts.get(new Random().nextInt(hosts.size()));
+        }
+
+        String err = String.format(
+                "Could not find any suitable %s host in cluster %s to import the converted instance",
+                destinationCluster.getHypervisorType(), destinationCluster.getName());
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
+    }
+
+    private HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             if (selectedHost == null) {
@@ -1795,9 +1830,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            if (selectedHost.getResourceState() != ResourceState.Enabled ||
-                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing) {
-                String msg = String.format("Cannot perform the conversion on the host %s as it is not a running and Enabled host", selectedHost.getName());
+
+            if (!List.of(ResourceState.Enabled, ResourceState.Disabled).contains(selectedHost.getResourceState()) ||
+                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
+                    destinationCluster.getDataCenterId() != selectedHost.getDataCenterId()
+            ) {
+                String msg = String.format("Cannot perform the conversion on the host %s as it is not running", selectedHost.getName());
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
             }
