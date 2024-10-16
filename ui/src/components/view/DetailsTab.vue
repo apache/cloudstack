@@ -42,14 +42,7 @@
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="$route.meta.name === 'storagepool' && item === 'details' && dataResource[item].rbd_default_data_pool">
-        <div>
-          <strong>{{ $t('label.data.pool') }}</strong>
-          <br/>
-          <div>{{ dataResource[item].rbd_default_data_pool }}</div>
-        </div>
-      </a-list-item>
-      <a-list-item v-else-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
+      <a-list-item v-if="(item in dataResource && !customDisplayItems.includes(item)) || (offeringDetails.includes(item) && dataResource.serviceofferingdetails)">
         <div style="width: 100%">
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t(getDetailTitle(item)) }}</strong>
           <br/>
@@ -158,6 +151,13 @@
           <div>{{ $toLocaleDate(dataResource[item]) }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'details' && $route.meta.name === 'storagepool' && dataResource[item].rbd_default_data_pool">
+        <div>
+          <strong>{{ $t('label.data.pool') }}</strong>
+          <br/>
+          <div>{{ dataResource[item].rbd_default_data_pool }}</div>
+        </div>
+      </a-list-item>
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -214,7 +214,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
