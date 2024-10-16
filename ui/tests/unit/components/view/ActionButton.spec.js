@@ -24,6 +24,15 @@ import ActionButton from '@/components/view/ActionButton'
 
 jest.mock('axios', () => mockAxios)
 
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      set: jest.fn((key, value) => {}),
+      get: jest.fn((key) => {})
+    }
+  }
+}))
+
 let router, store, i18n
 const state = {
   user: {

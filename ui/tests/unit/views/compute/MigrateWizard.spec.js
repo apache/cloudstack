@@ -24,6 +24,15 @@ import MigrateWizard from '@/views/compute/MigrateWizard'
 
 jest.mock('axios', () => mockAxios)
 
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      set: jest.fn((key, value) => {}),
+      get: jest.fn((key) => {})
+    }
+  }
+}))
+
 let i18n
 let store
 let mocks
