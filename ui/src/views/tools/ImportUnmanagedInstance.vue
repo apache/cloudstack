@@ -170,7 +170,7 @@
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="kvmHostsForImporting"
-                  :checkBoxLabel="$t('message.select.kvm.host.instance.conversion')"
+                  :checkBoxLabel="$t('message.select.kvm.host.instance.import')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedKvmHostForImporting"
