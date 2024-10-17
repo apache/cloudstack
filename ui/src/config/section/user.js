@@ -25,6 +25,13 @@ export default {
   docHelp: 'adminguide/accounts.html#users',
   hidden: true,
   permission: ['listUsers'],
+  searchFilters: () => {
+    var filters = []
+    if (store.getters.userInfo.roletype === 'Admin') {
+      filters.push('apikeyaccess')
+    }
+    return filters
+  },
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [

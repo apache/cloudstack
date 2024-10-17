@@ -19,6 +19,7 @@ package com.cloud.user;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -127,9 +128,9 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    public Map<String, String> getKeys(GetUserKeysCmd cmd);
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd);
 
-    public Map<String, String> getKeys(Long userId);
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId);
 
     /**
      * Lists user two-factor authentication provider plugins
