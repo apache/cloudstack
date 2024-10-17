@@ -345,6 +345,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     Type getType();
 
+    String getBackupName();
+
     HypervisorType getHypervisorType();
 
     Map<String, String> getDetails();
@@ -355,5 +357,4 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
     boolean isDisplay();
 
     boolean isDynamicallyScalable();
-
 }

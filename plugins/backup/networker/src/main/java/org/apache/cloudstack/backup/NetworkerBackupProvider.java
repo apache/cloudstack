@@ -308,7 +308,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) { return true; }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+    public boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups) {
         LOG.debug("Removing VirtualMachine from Backup offering and Deleting any existing backups");
 
         List<String> backupsTaken = getClient(vm.getDataCenterId()).getBackupsForVm(vm);
