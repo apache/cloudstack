@@ -117,6 +117,27 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "cluster_type")
     private ClusterType clusterType;
 
+    @Column(name = "control_service_offering_id")
+    private Long controlServiceOfferingId;
+
+    @Column(name = "worker_service_offering_id")
+    private Long workerServiceOfferingId;
+
+    @Column(name = "etcd_service_offering_id")
+    private Long etcdServiceOfferingId;
+
+    @Column(name = "etcd_node_count")
+    private Long etcdNodeCount;
+
+    @Column(name = "control_template_id")
+    private Long controlTemplateId;
+
+    @Column(name = "worker_template_id")
+    private Long workerTemplateId;
+
+    @Column(name = "etcd_template_id")
+    private Long etcdTemplateId;
+
     @Override
     public long getId() {
         return id;
@@ -236,7 +257,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     @Override
     public long getTotalNodeCount() {
-        return this.controlNodeCount + this.nodeCount;
+        return this.controlNodeCount + this.nodeCount + this.getEtcdNodeCount();
     }
 
     @Override
@@ -405,5 +426,61 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Override
     public Class<?> getEntityType() {
         return KubernetesCluster.class;
+    }
+
+    public Long getControlServiceOfferingId() {
+        return controlServiceOfferingId;
+    }
+
+    public void setControlServiceOfferingId(Long controlServiceOfferingId) {
+        this.controlServiceOfferingId = controlServiceOfferingId;
+    }
+
+    public Long getWorkerServiceOfferingId() {
+        return workerServiceOfferingId;
+    }
+
+    public void setWorkerServiceOfferingId(Long workerServiceOfferingId) {
+        this.workerServiceOfferingId = workerServiceOfferingId;
+    }
+
+    public Long getEtcdServiceOfferingId() {
+        return etcdServiceOfferingId;
+    }
+
+    public void setEtcdServiceOfferingId(Long etcdServiceOfferingId) {
+        this.etcdServiceOfferingId = etcdServiceOfferingId;
+    }
+
+    public Long getEtcdNodeCount() {
+        return etcdNodeCount != null ? etcdNodeCount : 0L;
+    }
+
+    public void setEtcdNodeCount(Long etcdNodeCount) {
+        this.etcdNodeCount = etcdNodeCount;
+    }
+
+    public Long getEtcdTemplateId() {
+        return etcdTemplateId;
+    }
+
+    public void setEtcdTemplateId(Long etcdTemplateId) {
+        this.etcdTemplateId = etcdTemplateId;
+    }
+
+    public Long getWorkerTemplateId() {
+        return workerTemplateId;
+    }
+
+    public void setWorkerTemplateId(Long workerTemplateId) {
+        this.workerTemplateId = workerTemplateId;
+    }
+
+    public Long getControlTemplateId() {
+        return controlTemplateId;
+    }
+
+    public void setControlTemplateId(Long controlTemplateId) {
+        this.controlTemplateId = controlTemplateId;
     }
 }
