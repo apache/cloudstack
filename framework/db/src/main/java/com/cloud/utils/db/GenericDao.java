@@ -248,14 +248,6 @@ public interface GenericDao<T, ID extends Serializable> {
     int expungeList(List<ID> ids);
 
     /**
-     * Delete the entity beans specified by the search criteria with a given limit
-     * @param sc Search criteria
-     * @param limit Maximum number of rows that will be affected
-     * @return Number of rows deleted
-     */
-    int expunge(SearchCriteria<T> sc, long limit);
-
-    /**
      * expunge the removed rows.
      */
     void expunge();

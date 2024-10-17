@@ -126,14 +126,7 @@ public class VolumeStatsDaoImpl extends GenericDaoBase<VolumeStatsVO, Long> impl
 
         logger.debug(String.format("Starting to remove all volume_stats rows older than [%s].", limitDate));
 
-        long totalRemoved = 0;
-        long removed;
-
-        do {
-            removed = expunge(sc, limitPerQuery);
-            totalRemoved += removed;
-            logger.trace(String.format("Removed [%s] volume_stats rows on the last update and a sum of [%s] volume_stats rows older than [%s] until now.", removed, totalRemoved, limitDate));
-        } while (limitPerQuery > 0 && removed >= limitPerQuery);
+        long totalRemoved = batchExpunge(sc, limitPerQuery);
 
         logger.info(String.format("Removed a total of [%s] volume_stats rows older than [%s].", totalRemoved, limitDate));
     }
