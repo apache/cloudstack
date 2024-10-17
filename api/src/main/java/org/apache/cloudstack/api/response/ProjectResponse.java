@@ -188,6 +188,18 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total number of snapshots available for this project", since = "4.2.0")
     private String snapshotAvailable;
 
+    @SerializedName("backuplimit")
+    @Param(description = "the total number of backups which can be stored by this project", since = "4.20.1")
+    private String backupLimit;
+
+    @SerializedName("backuptotal")
+    @Param(description = "the total number of backups stored by this project", since = "4.20.1")
+    private Long backupTotal;
+
+    @SerializedName("backupavailable")
+    @Param(description = "the total number of backups available for this project", since = "4.20.1")
+    private String backupAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "the total number of templates which can be created by this project", since = "4.2.0")
     private String templateLimit;
@@ -318,6 +330,21 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
     }
 
     @Override

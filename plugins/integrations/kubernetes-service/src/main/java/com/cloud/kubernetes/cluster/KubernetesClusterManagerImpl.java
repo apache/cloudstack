@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1468,6 +1469,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
 
                 List<KubernetesClusterVmMapVO> vmMapList = kubernetesClusterVmMapDao.listByClusterId(kubernetesClusterId);
+                List<VMInstanceVO> vms = vmMapList.stream().map(vmMap -> vmInstanceDao.findById(vmMap.getVmId())).collect(Collectors.toList());
+                if (checkIfVmsAssociatedWithBackupOffering(vms)) {
+                    throw new CloudRuntimeException("Unable to delete Kubernetes cluster, as node(s) are associated to a backup offering");
+                }
                 for (KubernetesClusterVmMapVO vmMap : vmMapList) {
                     try {
                         userVmService.destroyVm(vmMap.getVmId(), expunge);
@@ -1488,6 +1493,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             });
         }
+    }
+
+    public static boolean checkIfVmsAssociatedWithBackupOffering(List<VMInstanceVO> vms) {
+        for(VMInstanceVO vm : vms) {
+            if (Objects.nonNull(vm.getBackupOfferingId())) {
+               return true;
+            }
+        }
+        return false;
     }
 
     @Override

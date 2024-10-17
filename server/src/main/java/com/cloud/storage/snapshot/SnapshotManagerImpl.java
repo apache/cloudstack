@@ -45,6 +45,7 @@ import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -283,7 +284,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
+        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax,
+                BackupHourlyMax, BackupDailyMax, BackupWeeklyMax, BackupMonthlyMax, usageSnapshotSelection,
                 SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
     }
 
@@ -1573,6 +1575,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type.DAILY.setMax(SnapshotDailyMax.value());
         Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
         Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
+        Backup.Type.HOURLY.setMax(BackupHourlyMax.value());
+        Backup.Type.DAILY.setMax(BackupDailyMax.value());
+        Backup.Type.WEEKLY.setMax(BackupWeeklyMax.value());
+        Backup.Type.MONTHLY.setMax(BackupMonthlyMax.value());
+
         _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
