@@ -374,6 +374,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             if (plannerName == null) {
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                     plannerName = "BareMetalPlanner";
+                } else if (vm.getHypervisorType() == HypervisorType.External) {
+                    plannerName = "ExternalServerPlanner";
                 } else {
                     plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
                 }
@@ -517,7 +519,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                 Pod pod = _podDao.findById(host.getPodId());
                 Cluster cluster = _clusterDao.findById(host.getClusterId());
-                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                if (vm.getHypervisorType() == HypervisorType.BareMetal || vm.getHypervisorType() == HypervisorType.External) {
                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<>(), displayStorage);
                     logger.debug("Returning Deployment Destination: {}.", dest);
                     return dest;
@@ -631,7 +633,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         Cluster cluster = _clusterDao.findById(host.getClusterId());
 
         boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
-        if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+        if (vm.getHypervisorType() == HypervisorType.BareMetal || vm.getHypervisorType() == HypervisorType.External) {
             DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<>(),
                     displayStorage);
             logger.debug("Returning Deployment Destination: {}.", dest);
@@ -1330,7 +1332,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 // if found suitable hosts in this cluster, find suitable storage
                 // pools for each volume of the VM
                 if (CollectionUtils.isNotEmpty(suitableHosts)) {
-                    if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
+                    if (vmProfile.getHypervisorType() == HypervisorType.BareMetal || vmProfile.getHypervisorType() == HypervisorType.External) {
                         DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
                         return dest;
                     }
@@ -2009,7 +2011,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     }
                     Map<Long, Long> volumeReservationMap = new HashMap<>();
 
-                    if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                    if (vm.getHypervisorType() != HypervisorType.BareMetal && vm.getHypervisorType() != HypervisorType.External) {
                         for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
                             volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
                         }

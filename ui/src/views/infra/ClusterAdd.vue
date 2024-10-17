@@ -62,7 +62,7 @@
         </a-select>
       </div>
 
-      <div class="form__item">
+      <div class="form__item" v-if="hypervisor !== 'External'">
         <div class="form__label">{{ $t('label.arch') }}</div>
         <a-select
           showSearch
@@ -73,6 +73,25 @@
           v-model:value="selectedArchitecture">
           <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
             {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
+      </div>
+
+      <div class="form__item" v-if="hypervisor === 'External'">
+        <div class="form__label">{{ $t('label.externalprovisioner') }}</div>
+        <a-select
+          v-model:value="externalprovisioner"
+          @change="resetAllFields"
+          showSearch
+          optionFilterProp="value"
+          :filterOption="(input, option) => {
+            return option.value.toLowerCase().indexOf(input) >= 0
+          }" >
+          <a-select-option
+            v-for="pv in externalProvisioners"
+            :value="pv.id"
+            :key="pv.id">
+            {{ pv.id }}
           </a-select-option>
         </a-select>
       </div>
@@ -183,6 +202,7 @@ export default {
       ovm3vip: null,
       zonesList: [],
       hypervisorsList: [],
+      externalHypervisorProvisionersList: [],
       podsList: [],
       showDedicated: false,
       dedicatedDomainId: null,
@@ -193,7 +213,8 @@ export default {
       selectedArchitecture: null,
       placeholder: {
         clustername: null
-      }
+      },
+      externalProvisioners: []
     }
   },
   created () {
@@ -203,6 +224,7 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
+      this.fetchExternalHypervisorProvisioners()
       this.fetchArchitectureTypes()
       this.params = this.$store.getters.apis.addCluster.params
       Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
@@ -243,6 +265,26 @@ export default {
       })
       this.architectureTypes.opts = typesList
       this.selectedArchitecture = this.architectureTypes.opts[0].id
+    },
+    fetchExternalHypervisorProvisioners () {
+      const params = {
+        name: 'external.provisioners'
+      }
+      api('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            const result = config.value
+            var externalProvisionersTemp = []
+            result.split(',').map(function (item) {
+              externalProvisionersTemp.push({ id: item.trim() })
+            })
+            this.externalProvisioners = externalProvisionersTemp
+          }
+        }
+      }).finally(() => {
+        this.loading = false
+      })
     },
     fetchPods () {
       this.loading = true
@@ -334,6 +376,9 @@ export default {
       }
       if (this.password) {
         data.password = this.password
+      }
+      if (this.hypervisor === 'External') {
+        data.externalprovisioner = this.externalprovisioner
       }
       api('addCluster', {}, 'POST', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
