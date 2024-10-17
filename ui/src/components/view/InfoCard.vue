@@ -733,9 +733,11 @@
         </div>
       </div>
 
-      <div class="account-center-tags">
+      <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
         <a-divider/>
-        <div class="resource-detail-item" v-if="resource.apikeyaccess">
+      </div>
+      <div class="account-center-tags" v-if="resource.apikeyaccess">
+        <div class="resource-detail-item">
           <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
           <div class="resource-detail-item__details">
             <status class="status" :text="resource.apikeyaccess" displayText/>
