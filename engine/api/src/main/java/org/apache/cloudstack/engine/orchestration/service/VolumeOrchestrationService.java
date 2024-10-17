@@ -98,7 +98,7 @@ public interface VolumeOrchestrationService {
 
     VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
-    Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
+    Volume migrateVolume(Volume volume, StoragePool destPool, DiskOffering newDiskOffering) throws StorageUnavailableException;
 
     Volume liveMigrateVolume(Volume volume, StoragePool destPool);
 
