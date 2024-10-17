@@ -1244,13 +1244,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    // FIXME: Does not work for joins.
-    @Override
-    public int expunge(final SearchCriteria<T> sc, long limit) {
-        Filter filter = new Filter(limit);
-        return expunge(sc, filter);
-    }
-
     @Override
     public int expunge(final SearchCriteria<T> sc, final Filter filter) {
         if (sc == null) {
