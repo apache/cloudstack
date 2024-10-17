@@ -235,7 +235,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     public boolean isUserAllowedToSeeActivationRules(User user) {
-        List<ApiDiscoveryResponse> apiList = (List<ApiDiscoveryResponse>) apiDiscoveryService.listApis(user, null).getResponses();
+        List<ApiDiscoveryResponse> apiList = (List<ApiDiscoveryResponse>) apiDiscoveryService.listApis(user, null, null).getResponses();
         return apiList.stream().anyMatch(response -> StringUtils.equalsAny(response.getName(), "quotaTariffCreate", "quotaTariffUpdate"));
     }
 

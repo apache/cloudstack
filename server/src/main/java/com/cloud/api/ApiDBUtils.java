@@ -33,6 +33,8 @@ import javax.inject.Inject;
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -500,6 +502,7 @@ public class ApiDBUtils {
 
     static BucketDao s_bucketDao;
     static VirtualMachineManager s_virtualMachineManager;
+    static ApiKeyPairDao s_apiKeyPairDao;
 
     @Inject
     private ManagementServer ms;
@@ -766,6 +769,8 @@ public class ApiDBUtils {
     @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
+    private ApiKeyPairDao apiKeyPairDao;
+    @Inject
     private SharedFSJoinDao sharedFSJoinDao;
 
     @PostConstruct
@@ -902,6 +907,7 @@ public class ApiDBUtils {
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
+        s_apiKeyPairDao = apiKeyPairDao;
         s_sharedFSJoinDao = sharedFSJoinDao;
     }
 
@@ -1967,6 +1973,10 @@ public class ApiDBUtils {
         else
             response.setIsCallerChildDomain(false);
         return response;
+    }
+
+    public static ApiKeyPairVO searchForLatestUserKeyPair(Long userId) {
+        return s_apiKeyPairDao.getLastApiKeyCreatedByUser(userId);
     }
 
     public static UserAccountJoinVO newUserView(User usr) {

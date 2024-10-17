@@ -279,7 +279,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api1", Permission.ALLOW);
         rolePermissions.put("api2", Permission.ALLOW);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, lessPermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, Collections.singletonList(rolePermission1Mock));
 
         Assert.assertTrue(result);
     }
@@ -290,7 +290,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api2", Permission.ALLOW);
         rolePermissions.put("api3", Permission.ALLOW);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, morePermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, Collections.singletonList(rolePermission1Mock));
 
         Assert.assertFalse(result);
     }
@@ -301,7 +301,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api1", Permission.ALLOW);
         rolePermissions.put("api2", Permission.DENY);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, morePermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, Collections.singletonList(rolePermission1Mock));
 
         Assert.assertFalse(result);
     }
@@ -310,7 +310,7 @@ public class RoleManagerImplTest {
     public void getRolePermissionsTestRoleReturnsRolePermissions() {
         setUpRoleVisibilityTests();
 
-        Map<String, Permission> roleRulesAndPermissions = roleManagerImpl.getRoleRulesAndPermissions(morePermissionsRoleMock.getId());
+        Map<String, Permission> roleRulesAndPermissions = roleManagerImpl.getRoleRulesAndPermissions(List.of(rolePermission1Mock, rolePermission2Mock));
 
         Assert.assertEquals(2, roleRulesAndPermissions.size());
         Assert.assertEquals(roleRulesAndPermissions.get("api1"), Permission.ALLOW);

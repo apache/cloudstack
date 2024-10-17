@@ -609,7 +609,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
         responseList.setResponses(cmdList);
 
-        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null, null);
 
         assertTrue(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
     }
@@ -625,7 +625,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
         responseList.setResponses(cmdList);
 
-        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null, null);
 
         assertTrue(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
     }
@@ -641,7 +641,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         ListResponse<ApiDiscoveryResponse> responseList = new ListResponse<>();
         responseList.setResponses(cmdList);
 
-        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null);
+        Mockito.doReturn(responseList).when(discoveryServiceMock).listApis(userMock, null, null);
 
         assertFalse(quotaResponseBuilderSpy.isUserAllowedToSeeActivationRules(userMock));
     }

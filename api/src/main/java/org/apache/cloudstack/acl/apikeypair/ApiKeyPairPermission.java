@@ -14,36 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+package org.apache.cloudstack.acl.apikeypair;
 
-import java.util.List;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 
-import com.cloud.user.UserVO;
-import com.cloud.utils.db.GenericDao;
-
-/*
- * Data Access Object for user table
- */
-public interface UserDao extends GenericDao<UserVO, Long> {
-    UserVO getUser(String username, String password);
-
-    UserVO getUserByName(String username, Long domainId);
-
-    UserVO getUser(String username);
-
-    UserVO getUser(long userId);
-
-    List<UserVO> findUsersLike(String username);
-
-    List<UserVO> listByAccount(long accountId);
-
-    /**
-     * Finds a user based on the registration token provided.
-     * @param registrationToken
-     * @return
-     */
-    UserVO findUserByRegistrationToken(String registrationToken);
-
-    List<UserVO> findUsersByName(String username);
-
+public interface ApiKeyPairPermission extends RolePermissionEntity {
+    long getApiKeyPairId();
 }

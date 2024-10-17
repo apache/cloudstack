@@ -18,6 +18,7 @@ package org.apache.cloudstack.discovery;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.user.User;
@@ -28,5 +29,5 @@ import java.util.List;
 public interface ApiDiscoveryService extends PluggableService {
     List<String> listApiNames(Account account);
 
-    ListResponse<? extends BaseResponse> listApis(User user, String apiName);
+    ListResponse<? extends BaseResponse> listApis(User user, String apiName, ListApisCmd listApisCmd);
 }
