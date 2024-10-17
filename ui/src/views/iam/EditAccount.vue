@@ -61,16 +61,11 @@
           <template #label>
             <tooltip-label :title="$t('label.apikeyaccess')" :tooltip="apiParams.apikeyaccess.description"/>
           </template>
-          <a-select
-            v-model:value="form.apikeyaccess"
-            showSearch
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option value="Disabled">Disabled</a-select-option>
-            <a-select-option value="Enabled">Enabled</a-select-option>
-            <a-select-option value="Inherit">Inherit</a-select-option>
-          </a-select>
+          <a-radio-group v-model:value="form.apikeyaccess" buttonStyle="solid">
+            <a-radio-button value="ENABLED">Enabled</a-radio-button>
+            <a-radio-button value="INHERIT">Inherit</a-radio-button>
+            <a-radio-button value="DISABLED">Disabled</a-radio-button>
+          </a-radio-group>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
