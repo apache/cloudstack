@@ -1593,9 +1593,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             sc.setParameters("clusterId", clusterId);
         }
         if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
-            sb.and().op(sb.entity().getHypervisorType(), SearchCriteria.Op.NULL);
             sc.setParameters("hypervisorTypes", hypervisorTypes.toArray());
-            sb.cp();
         }
         sc.setParameters("resourceState", resourceStates.toArray());
         sc.setParameters("type", types.toArray());
