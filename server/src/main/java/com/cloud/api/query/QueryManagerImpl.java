@@ -659,7 +659,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
-                responseView = ResponseView.Full;
+            responseView = ResponseView.Full;
         }
         List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(responseView, CallContext.current().getCallingAccount().getDomainId(),
                 result.first().toArray(new UserAccountJoinVO[result.first().size()]));
