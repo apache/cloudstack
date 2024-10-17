@@ -19,10 +19,13 @@ package com.cloud.storage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -38,14 +41,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.server.ManagementService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -85,6 +91,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
@@ -210,6 +217,8 @@ public class VolumeApiServiceImplTest {
     private StoragePool storagePoolMock;
     private long storagePoolMockId = 1;
     @Mock
+    private DiskOfferingVO diskOfferingMock;
+    @Mock
     private DiskOfferingVO newDiskOfferingMock;
 
     @Mock
@@ -238,10 +247,20 @@ public class VolumeApiServiceImplTest {
     @Mock
     private StorageManager storageMgr;
 
+    @Mock
+    private ConfigurationManager _configMgr;
+
+    @Mock
+    private VolumeOrchestrationService _volumeMgr;
+
+    @Mock
+    private ManagementService managementService;
+
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
     private long volumeSizeMock = 456789921939l;
+    private long newVolumeSizeMock = 456789930000l;
     private static long imageStoreId = 10L;
 
     private String projectMockUuid = "projectUuid";
@@ -250,6 +269,7 @@ public class VolumeApiServiceImplTest {
     private long projectMockAccountId = 132329390L;
 
     private long diskOfferingMockId = 100203L;
+    private long newDiskOfferingMockId = 100204L;
 
     private long offeringMockId = 31902L;
 
@@ -1819,5 +1839,93 @@ public class VolumeApiServiceImplTest {
         when(volume.getFormat()).thenReturn(Storage.ImageFormat.RAW);
 
         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
+    }
+
+    private void testResizeVolumeSetup() throws ExecutionException, InterruptedException {
+        Long poolId = 11L;
+
+        when(volumeDaoMock.findById(volumeMockId)).thenReturn(volumeVoMock);
+        when(volumeVoMock.getId()).thenReturn(volumeMockId);
+        when(volumeDaoMock.getHypervisorType(volumeMockId)).thenReturn(HypervisorType.KVM);
+        when(volumeVoMock.getState()).thenReturn(Volume.State.Ready);
+        when(volumeVoMock.getDiskOfferingId()).thenReturn(diskOfferingMockId);
+        when(_diskOfferingDao.findById(diskOfferingMockId)).thenReturn(diskOfferingMock);
+        when(_diskOfferingDao.findById(newDiskOfferingMockId)).thenReturn(newDiskOfferingMock);
+        when(newDiskOfferingMock.getRemoved()).thenReturn(null);
+        when(diskOfferingMock.getDiskSizeStrictness()).thenReturn(false);
+        when(newDiskOfferingMock.getDiskSizeStrictness()).thenReturn(false);
+        when(volumeVoMock.getInstanceId()).thenReturn(null);
+        when(volumeVoMock.getVolumeType()).thenReturn(Type.DATADISK);
+        when(newDiskOfferingMock.getDiskSize()).thenReturn(newVolumeSizeMock);
+
+        VolumeInfo volInfo = Mockito.mock(VolumeInfo.class);
+        when(volumeDataFactoryMock.getVolume(volumeMockId)).thenReturn(volInfo);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        when((volInfo.getDataStore())).thenReturn(dataStore);
+
+        when(volumeVoMock.getPoolId()).thenReturn(poolId);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        when(primaryDataStoreDaoMock.findById(poolId)).thenReturn(storagePool);
+
+        Mockito.lenient().doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).resize(any(VolumeInfo.class));
+        Mockito.doReturn(Mockito.mock(VolumeApiResult.class)).when(asyncCallFutureVolumeapiResultMock).get();
+    }
+
+    @Test
+    public void testResizeVolumeWithEnoughCapacity() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            volumeApiServiceImpl.resizeVolume(cmd);
+
+            verify(volumeServiceMock).resize(any(VolumeInfo.class));
+        }
+    }
+
+    @Test
+    public void testResizeVolumeWithoutEnoughCapacity() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+        ReflectionTestUtils.setField(cmd, "autoMigrate", true);
+
+        testResizeVolumeSetup();
+
+        when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(false).thenReturn(true);
+        StoragePoolVO suitableStoragePool = Mockito.mock(StoragePoolVO.class);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = new Pair<>(Arrays.asList(suitableStoragePool), Arrays.asList(suitableStoragePool));
+        when(managementService.listStoragePoolsForSystemMigrationOfVolume(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyBoolean(), anyBoolean())).thenReturn(poolsPair);
+        doReturn(volumeInfoMock).when(volumeApiServiceImpl).migrateVolume(any());
+        when(volumeInfoMock.getId()).thenReturn(volumeMockId);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            volumeApiServiceImpl.resizeVolume(cmd);
+
+            verify(volumeApiServiceImpl).migrateVolume(any());
+            verify(volumeServiceMock).resize(any(VolumeInfo.class));
+        }
+    }
+
+    @Test
+    public void testResizeVolumeInAllocateState() throws ResourceAllocationException, ExecutionException, InterruptedException {
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        ReflectionTestUtils.setField(cmd, "id", volumeMockId);
+        ReflectionTestUtils.setField(cmd, "newDiskOfferingId", newDiskOfferingMockId);
+
+        testResizeVolumeSetup();
+
+        when(volumeVoMock.getState()).thenReturn(Volume.State.Allocated);
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+            volumeApiServiceImpl.resizeVolume(cmd);
+
+            verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+        }
     }
 }
