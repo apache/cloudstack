@@ -733,14 +733,16 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="showKeys">
+      <div class="account-center-tags">
         <a-divider/>
-        <div class="resource-detail-item" v-if="resource.userapikeyaccess && !isAdmin()">
+        <div class="resource-detail-item" v-if="resource.apikeyaccess">
           <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
           <div class="resource-detail-item__details">
-            <status class="status" :text="resource.userapikeyaccess" displayText/>
+            <status class="status" :text="resource.apikeyaccess" displayText/>
           </div>
         </div>
+      </div>
+      <div class="account-center-tags" v-if="showKeys">
         <div class="user-keys">
           <key-outlined />
           <strong>
@@ -1089,7 +1091,9 @@ export default {
       api('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
-        this.newResource.userapikeyaccess = json.getuserkeysresponse.userkeys.apikeyaccess ? 'Enabled' : 'Disabled'
+        if (!this.isAdmin()) {
+          this.newResource.apikeyaccess = json.getuserkeysresponse.userkeys.apikeyaccess ? 'Enabled' : 'Disabled'
+        }
         this.$emit('change-resource', this.newResource)
       })
     },

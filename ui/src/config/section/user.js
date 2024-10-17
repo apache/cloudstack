@@ -33,7 +33,7 @@ export default {
     return filters
   },
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
-  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'apikeyaccess', 'account', 'domain', 'created'],
+  details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {
       name: 'details',
