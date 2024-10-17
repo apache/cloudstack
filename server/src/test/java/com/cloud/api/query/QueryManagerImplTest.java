@@ -62,6 +62,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListAffectedVmsForStorageScopeChangeCmd;
@@ -523,7 +524,7 @@ public class QueryManagerImplTest {
         Mockito.when(sb.create()).thenReturn(sc);
         Mockito.when(userAccountJoinDao.searchAndCount(any(SearchCriteria.class), any(Filter.class))).thenReturn(result);
 
-        queryManager.searchForUsers(cmd);
+        queryManager.searchForUsers(ResponseObject.ResponseView.Restricted, cmd);
 
         Mockito.verify(sc).setParameters("username", username);
         Mockito.verify(sc).setParameters("accountName", accountName);
