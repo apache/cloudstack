@@ -591,6 +591,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         final StartupAnswer startup = (StartupAnswer)answer;
         if (!startup.getResult()) {
             s_logger.error("Not allowed to connect to the server: " + answer.getDetails());
+            if (_resource != null && !_resource.isExitOnFailures()) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("%s does not allow exit on failure, reconnecting",
+                            _resource.getClass().getSimpleName()));
+                }
+                reconnect(link);
+                return;
+            }
             System.exit(1);
         }
         if (cancelled) {
@@ -652,6 +660,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof ReadyCommand && ((ReadyCommand)cmd).getDetails() != null) {
                         s_logger.debug("Not ready to connect to mgt server: " + ((ReadyCommand)cmd).getDetails());
+                        if (_resource != null && !_resource.isExitOnFailures()) {
+                            if (s_logger.isTraceEnabled()) {
+                                s_logger.trace(String.format("%s does not allow exit on failure, reconnecting",
+                                        _resource.getClass().getSimpleName()));
+                            }
+                            reconnect(link);
+                            return;
+                        }
                         System.exit(1);
                         return;
                     } else if (cmd instanceof MaintainCommand) {
