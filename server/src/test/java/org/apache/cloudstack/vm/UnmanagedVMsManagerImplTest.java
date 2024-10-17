@@ -420,6 +420,7 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
         }
@@ -767,11 +768,13 @@ public class UnmanagedVMsManagerImplTest {
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException {
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, false);
     }
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException {
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, true);
     }
 
