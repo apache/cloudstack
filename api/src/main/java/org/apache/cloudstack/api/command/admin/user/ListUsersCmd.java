@@ -20,20 +20,22 @@ import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.List;
 
 @APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ListUsersCmd extends BaseListAccountResourcesCmd {
+        responseView = ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd {
 
 
     /////////////////////////////////////////////////////
@@ -95,7 +97,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-        ListResponse<UserResponse> response = _queryService.searchForUsers(this);
+        ListResponse<UserResponse> response = _queryService.searchForUsers(getResponseView(), this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
         if (response != null && response.getCount() > 0 && getShowIcon()) {
