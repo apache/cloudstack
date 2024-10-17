@@ -122,6 +122,7 @@ class TestVMSchedule(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
         )
+        cls._cleanup.append(cls.virtual_machine)
         return
 
     @classmethod
