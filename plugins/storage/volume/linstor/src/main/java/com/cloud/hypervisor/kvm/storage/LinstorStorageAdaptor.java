@@ -22,11 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
@@ -53,6 +55,8 @@ import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
+
+import java.io.File;
 
 @StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.Linstor)
 public class LinstorStorageAdaptor implements StorageAdaptor {
@@ -579,8 +583,41 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                                                                 KVMStoragePool destPool, Storage.ImageFormat format,
                                                                 int timeout)
     {
-        s_logger.debug("Linstor: createTemplateFromDirectDownloadFile");
-        return null;
+        s_logger.debug(String.format("Linstor: createTemplateFromDirectDownloadFile: %s/%s", templateFilePath, format));
+        {
+            File sourceFile = new File(templateFilePath);
+            if (!sourceFile.exists()) {
+                throw new CloudRuntimeException("Direct download template file " + sourceFile +
+                        " does not exist on this host");
+            }
+        }
+        String name = UUID.randomUUID().toString();
+
+        String finalSourcePath = templateFilePath;
+        if (LibvirtStorageAdaptor.isTemplateExtractable(templateFilePath)) {
+            finalSourcePath = templateFilePath.substring(0, templateFilePath.lastIndexOf('.'));
+            LibvirtStorageAdaptor.extractDownloadedTemplate(templateFilePath, destPool, finalSourcePath);
+        }
+
+        File finalSourceFile = new File(finalSourcePath);
+        final KVMPhysicalDisk dstDisk = destPool.createPhysicalDisk(
+                name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, finalSourceFile.length(), null);
+
+        final DevelopersApi api = getLinstorAPI(destPool);
+        final String rscName = getLinstorRscName(name);
+        try {
+            LinstorUtil.applyAuxProps(api, rscName, finalSourceFile.getName(), null);
+        } catch (ApiException apiExc) {
+            s_logger.error(String.format("Error setting aux properties for %s", rscName));
+            logLinstorAnswers(apiExc.getApiCallRcList());
+        }
+
+        Script.runSimpleBashScript(
+                String.format("dd if=\"%s\" of=\"%s\" bs=64k conv=nocreat,sparse oflag=direct",
+                        finalSourcePath, dstDisk.getPath()));
+
+        Script.runSimpleBashScript("rm " + finalSourcePath);
+        return dstDisk;
     }
 
     public long getCapacity(LinstorStoragePool pool) {
