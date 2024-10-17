@@ -1456,9 +1456,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         logger.debug("Updating user with Id: " + user.getUuid());
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        validateAndUpdateUserApiKeyAccess(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
 
-        validateAndUpdateUserApiKeyAccess(updateUserCmd, user, account);
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
@@ -1676,12 +1676,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         user.setSecretKey(secretKey);
     }
 
-    protected void validateAndUpdateUserApiKeyAccess(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+    protected void validateAndUpdateUserApiKeyAccess(UpdateUserCmd updateUserCmd, UserVO user) {
         if (updateUserCmd.getApiKeyAccess() != null) {
             try {
                 ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateUserCmd.getApiKeyAccess().toUpperCase());
                 user.setApiKeyAccess(access.toBoolean());
-                ActionEventUtils.onActionEvent(user.getId(), account.getAccountId(), account.getDomainId(), EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the user to " + access.toString(), user.getId(), ApiCommandResourceType.User.toString());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access.toString(),
+                        user.getId(), ApiCommandResourceType.User.toString());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
             }
@@ -1693,7 +1697,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             try {
                 ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateAccountCmd.getApiKeyAccess().toUpperCase());
                 account.setApiKeyAccess(access.toBoolean());
-                ActionEventUtils.onActionEvent(User.UID_ADMIN, account.getAccountId(), account.getDomainId(), EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the account to " + access.toString(), account.getId(), ApiCommandResourceType.Account.toString());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access.toString(),
+                        account.getId(), ApiCommandResourceType.Account.toString());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
             }
