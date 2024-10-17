@@ -299,4 +299,7 @@
   <bean id="BgpPeerNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerNetworkMapDaoImpl" />
   <bean id="SharedFSDaoImpl" class="org.apache.cloudstack.storage.sharedfs.dao.SharedFSDaoImpl" />
   <bean id="SharedFSJoinDaoImpl" class="org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDaoImpl" />
+  <bean id="guiThemeDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDaoImpl" />
+  <bean id="guiThemeDetailsDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDaoImpl" />
+  <bean id="guiThemeJoinDaoImpl" class="org.apache.cloudstack.gui.theme.dao.GuiThemeJoinDaoImpl" />
 </beans>
