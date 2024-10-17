@@ -514,7 +514,7 @@ public class VolumeVO implements Volume {
 
     @Override
     public String toString() {
-        return new StringBuilder("Vol[").append(id).append("|name=").append(name).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
+        return String.format("StoragePool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "volumeType", "instanceId"));
     }
 
     @Override

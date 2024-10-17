@@ -26,6 +26,7 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -370,7 +371,7 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
+        return String.format("StoragePool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "poolType"));
     }
 
     @Override
