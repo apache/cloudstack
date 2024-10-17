@@ -194,7 +194,7 @@ public class SAMLUtils {
         authnRequest.setID(authnId);
         authnRequest.setDestination(idpUrl);
         authnRequest.setVersion(SAMLVersion.VERSION_20);
-        authnRequest.setForceAuthn(false);
+        authnRequest.setForceAuthn(SAML2AuthManager.SAMLForceAuthn.value());
         authnRequest.setIsPassive(false);
         authnRequest.setIssueInstant(new DateTime());
         authnRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);

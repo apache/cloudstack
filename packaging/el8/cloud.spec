@@ -102,6 +102,7 @@ Requires: java-17-openjdk
 Requires: tzdata-java
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
+Requires: libvirt-daemon-driver-storage-rbd
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
