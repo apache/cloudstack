@@ -11,7 +11,6 @@ Secondary storage stores the following:
 * ISO images — disc images containing data or bootable media for operating systems
 * Disk volume snapshots — saved copies of VM data which can be used for data recovery or to create new templates
 
-
 ### ROOT and DATA volumes
 
 ROOT volumes correspond to the boot disk of a VM. They are created automatically by CloudStack during VM creation.
@@ -20,7 +19,6 @@ is based on. We may change the ROOT volume disk offering but only to another sys
 
 DATA volumes correspond to additional disks. These can be created by users and then attached/detached to VMs.
 DATA volumes are created based on a user-defined disk offering.
-
 
 ## Plugin Organization
 
@@ -48,7 +46,6 @@ that does pretty much the same.
 
 Note that for the present the StorPool plugin may only be used for a single primary storage cluster; support for
 multiple clusters is planned.
-
 
 ## Build, Install, Setup
 
@@ -121,7 +118,6 @@ SP_TEMPLATE - name of StorPool's template
 
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
-
 
 ## Plugin Functionality
 
@@ -361,7 +357,6 @@ Users who were using the offerings to change the StorPool template via the `SP_T
  - `resizeVolume` API call for DATA disk
  - `scaleVirtualMachine` API call for ROOT disk
 
-
 If the disk offering has both `SP_TEMPLATE` and `SP_QOSCLASS` defined, the `SP_QOSCLASS` detail will be prioritised, setting the volume’s QoS using the respective ‘qc’ tag value. In case the QoS for a volume is changed manually, the ‘storpool_qos’ service will automatically reset the QoS limits following the ‘qc’ tag value once per minute.
 
 <h4>Usage</h4>
@@ -373,7 +368,6 @@ Go to Service Offerings > Disk Offering > Add disk offering.
 Add disk offering detail with API call in CloudStack CLI.
 
 	add resourcedetail resourcetype=diskoffering resourceid=$UUID details[0].key=SP_QOSCLASS details[0].value=$Tier Name
-
 
 Creating VM with QoS
 
