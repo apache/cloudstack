@@ -53,28 +53,6 @@ import com.cloud.vm.VirtualMachine;
 public class KVMStoragePoolManager {
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private class StoragePoolInformation {
-        String name;
-        String host;
-        int port;
-        String path;
-        String userInfo;
-        boolean type;
-        StoragePoolType poolType;
-        Map<String, String> details;
-
-        public StoragePoolInformation(String name, String host, int port, String path, String userInfo, StoragePoolType poolType, Map<String, String> details, boolean type) {
-            this.name = name;
-            this.host = host;
-            this.port = port;
-            this.path = path;
-            this.userInfo = userInfo;
-            this.type = type;
-            this.poolType = poolType;
-            this.details = details;
-        }
-    }
-
     private KVMHAMonitor _haMonitor;
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
     private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
@@ -303,12 +281,31 @@ public class KVMStoragePoolManager {
         } catch (Exception e) {
             StoragePoolInformation info = _storagePools.get(uuid);
             if (info != null) {
-                pool = createStoragePool(info.name, info.host, info.port, info.path, info.userInfo, info.poolType, info.details, info.type);
+                pool = createStoragePool(info.getName(), info.getHost(), info.getPort(), info.getPath(), info.getUserInfo(), info.getPoolType(), info.getDetails(), info.isType());
             } else {
                 throw new CloudRuntimeException("Could not fetch storage pool " + uuid + " from libvirt due to " + e.getMessage());
             }
         }
+
+        if (pool instanceof LibvirtStoragePool) {
+            addPoolDetails(uuid, (LibvirtStoragePool) pool);
+        }
+
         return pool;
+    }
+
+    /**
+     * As the class {@link LibvirtStoragePool} is constrained to the {@link org.libvirt.StoragePool} class, there is no way of saving a generic parameter such as the details, hence,
+     * this method was created to always make available the details of libvirt primary storages for when they are needed.
+     */
+    private void addPoolDetails(String uuid, LibvirtStoragePool pool) {
+        StoragePoolInformation storagePoolInformation = _storagePools.get(uuid);
+        Map<String, String> details = storagePoolInformation.getDetails();
+
+        if (MapUtils.isNotEmpty(details)) {
+            logger.trace("Adding the details {} to the pool with UUID {}.", details, uuid);
+            pool.setDetails(details);
+        }
     }
 
     public KVMStoragePool getStoragePoolByURI(String uri) {
