@@ -78,4 +78,8 @@ public interface ServerResource extends Manager {
 
     void setAgentControl(IAgentControl agentControl);
 
+    default boolean isExitOnFailures() {
+        return true;
+    }
+
 }
