@@ -552,8 +552,9 @@ export default {
       this.selectedNetworkOffering = {}
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
-        if (this.selectedZone.isnsxenabled) {
-          this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx)
+        this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
+        if (!this.selectedZone.routedmodeenabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
         }
       }).catch(error => {
         this.$notifyError(error)
