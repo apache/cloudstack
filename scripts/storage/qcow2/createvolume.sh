@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
- 
+
 
 # $Id: createvol.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/storage/qcow2/createvol.sh $
 # createvol.sh -- install a volume
@@ -71,12 +71,12 @@ uncompress() {
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file, exiting "
-    exit 1 
+    exit 1
   fi
- 
+
   mv $tmpfile $imgfile
   printf "$imgfile"
 
@@ -98,7 +98,7 @@ create_from_file() {
       cp -f $volimg /$volfs/$volname
     fi
   fi
-  
+
   if [ "$cleanup" == "true" ]
   then
     rm -f "$volimg"
@@ -162,17 +162,17 @@ do
 done
 
 
-if [ ! -d /$volfs ] 
+if [ ! -d /$volfs ]
 then
   mkdir -p /$volfs
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to create user fs $volfs\n" >&2
     exit 1
   fi
 fi
 
-if [ ! -f $volimg -a ! -b $volimg ] 
+if [ ! -f $volimg -a ! -b $volimg ]
 then
   printf "root disk file $volimg doesn't exist\n"
   exit 3

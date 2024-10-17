@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
@@ -42,6 +43,7 @@ import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterConstants;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterContext;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterDataObject;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterDiskOffering;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapterFactory;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderSnapshot;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderVolume;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderVolumeStats;
@@ -52,10 +54,12 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.provider.AdaptivePrimaryDatastoreAdapterFactoryMap;
+import org.apache.cloudstack.storage.image.store.TemplateObject;
+import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
-import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -72,7 +76,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
-
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -134,6 +137,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     DomainDao _domainDao;
     @Inject
     VolumeService _volumeService;
+    @Inject
+    VolumeDataFactory volumeDataFactory;
 
     private AdaptivePrimaryDatastoreAdapterFactoryMap _adapterFactoryMap = null;
 
@@ -143,7 +148,52 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     @Override
     public DataTO getTO(DataObject data) {
-        return null;
+        // we need to get connectionId and and the VLUN ID for currently attached hosts to add to the DataTO object
+        DataTO to = null;
+        if (data.getType() == DataObjectType.VOLUME) {
+            VolumeObjectTO vto = new VolumeObjectTO((VolumeObject)data);
+            vto.setPath(getPath(data));
+            to = vto;
+        } else if (data.getType() == DataObjectType.TEMPLATE) {
+            TemplateObjectTO tto =  new TemplateObjectTO((TemplateObject)data);
+            tto.setPath(getPath(data));
+            to = tto;
+        } else if (data.getType() == DataObjectType.SNAPSHOT) {
+            SnapshotObjectTO sto = new SnapshotObjectTO((SnapshotObject)data);
+            sto.setPath(getPath(data));
+            to = sto;
+        } else {
+            to = super.getTO(data);
+        }
+        return to;
+    }
+
+    /*
+     * For the given data object, return the path with current connection info.  If a snapshot
+     * object is passed, we will determine if a temporary volume is avialable for that
+     * snapshot object and return that conneciton info instead.
+     */
+    String getPath(DataObject data) {
+        StoragePoolVO storagePool = _storagePoolDao.findById(data.getDataStore().getId());
+        Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
+        ProviderAdapter api = getAPI(storagePool, details);
+
+        ProviderAdapterDataObject dataIn = newManagedDataObject(data, storagePool);
+
+        /** This means the object is not yet associated with the external provider so path is null */
+        if (dataIn.getExternalName() == null) {
+            return null;
+        }
+
+        ProviderAdapterContext context = newManagedVolumeContext(data);
+        Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
+        ProviderVolume volume = api.getVolume(context, dataIn);
+        // if this is an existing object, generate the path for it.
+        String finalPath = null;
+        if (volume != null) {
+            finalPath = generatePathInfo(volume, connIdMap);
+        }
+        return finalPath;
     }
 
     @Override
@@ -218,11 +268,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             dataIn.setExternalName(volume.getExternalName());
             dataIn.setExternalUuid(volume.getExternalUuid());
 
-            // add the volume to the host set
-            String connectionId = api.attach(context, dataIn);
-
             // update the cloudstack metadata about the volume
-            persistVolumeOrTemplateData(storagePool, details, dataObject, volume, connectionId);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, volume, null);
 
             result = new CreateCmdResult(dataObject.getUuid(), new Answer(null));
             result.setSuccess(true);
@@ -289,6 +336,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 ProviderAdapterContext context = newManagedVolumeContext(destdata);
                 ProviderAdapterDataObject sourceIn = newManagedDataObject(srcdata, storagePool);
                 ProviderAdapterDataObject destIn = newManagedDataObject(destdata, storagePool);
+
                 outVolume = api.copy(context, sourceIn, destIn);
 
                 // populate this data - it may be needed later
@@ -303,17 +351,9 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                     api.resize(context, destIn, destdata.getSize());
                 }
 
-                String connectionId = api.attach(context, destIn);
-
-                String finalPath;
-                // format: type=fiberwwn; address=<address>; connid=<connid>
-                if (connectionId != null) {
-                    finalPath = String.format("type=%s; address=%s; connid=%s", outVolume.getAddressType().toString(), outVolume.getAddress().toLowerCase(), connectionId);
-                } else {
-                    finalPath = String.format("type=%s; address=%s;", outVolume.getAddressType().toString(), outVolume.getAddress().toLowerCase());
-                }
-
-                persistVolumeData(storagePool, details, destdata, outVolume, connectionId);
+                // initial volume info does not have connection map yet.  That is added when grantAccess is called later.
+                String finalPath = generatePathInfo(outVolume, null);
+                persistVolumeData(storagePool, details, destdata, outVolume, null);
                 logger.info("Copy completed from [" + srcdata.getUuid() + "] to [" + destdata.getUuid() + "]");
 
                 VolumeObjectTO voto = new VolumeObjectTO();
@@ -443,6 +483,66 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     }
 
+    public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
+        logger.debug("Granting host " + host.getName() + " access to volume " + dataObject.getUuid());
+
+        try {
+            StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
+            Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
+            ProviderAdapter api = getAPI(storagePool, details);
+
+            ProviderAdapterContext context = newManagedVolumeContext(dataObject);
+            ProviderAdapterDataObject sourceIn = newManagedDataObject(dataObject, storagePool);
+            api.attach(context, sourceIn, host.getName());
+
+            // rewrite the volume data, especially the connection string for informational purposes - unless it was turned off above
+            ProviderVolume vol = api.getVolume(context, sourceIn);
+            ProviderAdapterDataObject dataIn = newManagedDataObject(dataObject, storagePool);
+            Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
+
+
+            logger.info("Granted host " + host.getName() + " access to volume " + dataObject.getUuid());
+            return true;
+        } catch (Throwable e) {
+            String msg = "Error granting host " + host.getName() + " access to volume " + dataObject.getUuid() + ":" + e.getMessage();
+            logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+        // nothing to do if the host is null
+        if (dataObject == null || host == null || dataStore == null) {
+            return;
+        }
+
+        logger.debug("Revoking access for host " + host.getName() + " to volume " + dataObject.getUuid());
+
+        try {
+            StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
+            Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
+            ProviderAdapter api = getAPI(storagePool, details);
+
+            ProviderAdapterContext context = newManagedVolumeContext(dataObject);
+            ProviderAdapterDataObject sourceIn = newManagedDataObject(dataObject, storagePool);
+
+            api.detach(context, sourceIn, host.getName());
+
+            // rewrite the volume data, especially the connection string for informational purposes
+            ProviderVolume vol = api.getVolume(context, sourceIn);
+            ProviderAdapterDataObject dataIn = newManagedDataObject(dataObject, storagePool);
+            Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
+            persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
+
+            logger.info("Revoked access for host " + host.getName() + " to volume " + dataObject.getUuid());
+        } catch (Throwable e) {
+            String msg = "Error revoking access for host " + host.getName() + " to volume " + dataObject.getUuid() + ":" + e.getMessage();
+            logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo,
             QualityOfServiceState qualityOfServiceState) {
@@ -493,15 +593,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
             // add the snapshot to the host group (needed for copying to non-provider storage
             // to create templates, etc)
-            String connectionId = null;
             String finalAddress = outSnapshot.getAddress();
-            if (outSnapshot.canAttachDirectly()) {
-                connectionId = api.attach(context, inSnapshotDO);
-                if (connectionId != null) {
-                    finalAddress = finalAddress + "::" + connectionId;
-                }
-            }
-
             snapshotTO.setPath(finalAddress);
             snapshotTO.setName(outSnapshot.getName());
             snapshotTO.setHypervisorType(HypervisorType.KVM);
@@ -632,10 +724,12 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString(), Boolean.TRUE.toString()); // set to false because it causes weird behavior when copying templates to root volumes
         mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
-        // indicates the datastore can create temporary volumes for use when copying
-        // data from a snapshot
-        mapCapabilities.put("CAN_CREATE_TEMP_VOLUME_FROM_SNAPSHOT", Boolean.TRUE.toString());
-
+        ProviderAdapterFactory factory = _adapterFactoryMap.getFactory(this.getProviderName());
+        if (factory != null) {
+            mapCapabilities.put("CAN_DIRECT_ATTACH_SNAPSHOT", factory.canDirectAttachSnapshot().toString());
+        } else {
+            mapCapabilities.put("CAN_DIRECT_ATTACH_SNAPSHOT", Boolean.FALSE.toString());
+        }
         return mapCapabilities;
     }
 
@@ -665,6 +759,11 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     @Override
     public boolean canProvideVolumeStats() {
+        return true;
+    }
+
+    @Override
+    public boolean requiresAccessForMigration(DataObject dataObject) {
         return true;
     }
 
@@ -716,8 +815,13 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         object.setType(ProviderAdapterDataObject.Type.VOLUME);
         ProviderVolumeStats stats = api.getVolumeStats(context, object);
 
-        Long provisionedSizeInBytes = stats.getActualUsedInBytes();
-        Long allocatedSizeInBytes = stats.getAllocatedInBytes();
+        Long provisionedSizeInBytes = null;
+        Long allocatedSizeInBytes = null;
+        if (stats != null) {
+            provisionedSizeInBytes = stats.getActualUsedInBytes();
+            allocatedSizeInBytes = stats.getAllocatedInBytes();
+        }
+
         if (provisionedSizeInBytes == null || allocatedSizeInBytes == null) {
             return null;
         }
@@ -735,31 +839,19 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     void persistVolumeOrTemplateData(StoragePoolVO storagePool, Map<String, String> storagePoolDetails,
-            DataObject dataObject, ProviderVolume volume, String connectionId) {
+            DataObject dataObject, ProviderVolume volume, Map<String,String> connIdMap) {
         if (dataObject.getType() == DataObjectType.VOLUME) {
-            persistVolumeData(storagePool, storagePoolDetails, dataObject, volume, connectionId);
+            persistVolumeData(storagePool, storagePoolDetails, dataObject, volume, connIdMap);
         } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
-            persistTemplateData(storagePool, storagePoolDetails, dataObject, volume, connectionId);
+            persistTemplateData(storagePool, storagePoolDetails, dataObject, volume, connIdMap);
         }
     }
 
     void persistVolumeData(StoragePoolVO storagePool, Map<String, String> details, DataObject dataObject,
-            ProviderVolume managedVolume, String connectionId) {
+            ProviderVolume managedVolume, Map<String,String> connIdMap) {
         VolumeVO volumeVO = _volumeDao.findById(dataObject.getId());
 
-        // if its null check if the storage provider returned one that is already set
-        if (connectionId == null) {
-            connectionId = managedVolume.getExternalConnectionId();
-        }
-
-        String finalPath;
-        // format: type=fiberwwn; address=<address>; connid=<connid>
-        if (connectionId != null) {
-            finalPath = String.format("type=%s; address=%s; connid=%s", managedVolume.getAddressType().toString(), managedVolume.getAddress().toLowerCase(), connectionId);
-        } else {
-            finalPath = String.format("type=%s; address=%s;", managedVolume.getAddressType().toString(), managedVolume.getAddress().toLowerCase());
-        }
-
+        String finalPath = generatePathInfo(managedVolume, connIdMap);
         volumeVO.setPath(finalPath);
         volumeVO.setFormat(ImageFormat.RAW);
         volumeVO.setPoolId(storagePool.getId());
@@ -784,23 +876,29 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     void persistTemplateData(StoragePoolVO storagePool, Map<String, String> details, DataObject dataObject,
-            ProviderVolume volume, String connectionId) {
+            ProviderVolume volume, Map<String,String> connIdMap) {
         TemplateInfo templateInfo = (TemplateInfo) dataObject;
         VMTemplateStoragePoolVO templatePoolRef = _vmTemplatePoolDao.findByPoolTemplate(storagePool.getId(),
                 templateInfo.getId(), null);
-        // template pool ref doesn't have a details object so we'll save:
-        // 1. external name ==> installPath
-        // 2. address ==> local download path
-        if (connectionId == null) {
-            templatePoolRef.setInstallPath(String.format("type=%s; address=%s", volume.getAddressType().toString(),
-                volume.getAddress().toLowerCase()));
-        } else {
-            templatePoolRef.setInstallPath(String.format("type=%s; address=%s; connid=%s", volume.getAddressType().toString(),
-                volume.getAddress().toLowerCase(), connectionId));
-        }
+
+        templatePoolRef.setInstallPath(generatePathInfo(volume, connIdMap));
         templatePoolRef.setLocalDownloadPath(volume.getExternalName());
         templatePoolRef.setTemplateSize(volume.getAllocatedSizeInBytes());
         _vmTemplatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
+    }
+
+    String generatePathInfo(ProviderVolume volume, Map<String,String> connIdMap) {
+        String finalPath = String.format("type=%s; address=%s; providerName=%s; providerID=%s;",
+            volume.getAddressType().toString(), volume.getAddress().toLowerCase(), volume.getExternalName(), volume.getExternalUuid());
+
+        // if a map was provided, add the connection IDs to the path info.  the map is all the possible vlun id's used
+        // across each host or the hostset (represented with host name key as "*");
+        if (connIdMap != null && connIdMap.size() > 0) {
+            for (String key: connIdMap.keySet()) {
+               finalPath += String.format(" connid.%s=%s;", key, connIdMap.get(key));
+            }
+        }
+        return finalPath;
     }
 
     ProviderAdapterContext newManagedVolumeContext(DataObject obj) {
@@ -898,5 +996,9 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
         dataIn.setUuid(data.getUuid());
         dataIn.setType(ProviderAdapterDataObject.Type.valueOf(data.getType().toString()));
         return dataIn;
+    }
+
+    public boolean volumesRequireGrantAccessWhenUsed() {
+        return true;
     }
 }

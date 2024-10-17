@@ -19,6 +19,7 @@ package com.cloud.network.as;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -70,6 +72,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -250,7 +253,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Inject
     NetworkOrchestrationService networkMgr;
     @Inject
+    NetworkModel networkModel;
+    @Inject
     private UserVmManager userVmMgr;
+    @Inject
+    private UserDataManager userDataMgr;
     @Inject
     private UserVmDao userVmDao;
     @Inject
@@ -571,7 +578,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             userDataDetails = cmd.getUserDataDetails().toString();
         }
         userData = userVmMgr.finalizeUserData(userData, userDataId, template);
-        userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
+        userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
         if (userData != null) {
             profileVO.setUserData(userData);
         }
@@ -650,7 +657,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
             VirtualMachineTemplate template = entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId);
             userData = userVmMgr.finalizeUserData(userData, userDataId, template);
-            userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
+            userData = userDataMgr.validateUserData(userData, cmd.getHttpMethod());
             vmProfile.setUserDataId(userDataId);
             vmProfile.setUserData(userData);
             vmProfile.setUserDataDetails(userDataDetails);
@@ -1172,6 +1179,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Long profileId = cmd.getProfileId();
         Long zoneId = cmd.getZoneId();
         Boolean forDisplay = cmd.getDisplay();
+        String keyword = cmd.getKeyword();
 
         SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<>(autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
@@ -1182,6 +1190,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         sb.and("profileId", sb.entity().getProfileId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplay(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
 
         if (policyId != null) {
             SearchBuilder<AutoScaleVmGroupPolicyMapVO> asVmGroupPolicySearch = autoScaleVmGroupPolicyMapDao.createSearchBuilder();
@@ -1210,6 +1219,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         if (forDisplay != null) {
             sc.setParameters("display", forDisplay);
+        }
+        if (StringUtils.isNotBlank(keyword)) {
+            sc.setParameters("keyword", "%" + keyword + "%");
         }
         return searchWrapper.search();
     }
@@ -1800,7 +1812,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId);
             } else {
-                if (zone.isSecurityGroupEnabled()) {
+                if (networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
+                        Collections.emptyList())) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
                             hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,

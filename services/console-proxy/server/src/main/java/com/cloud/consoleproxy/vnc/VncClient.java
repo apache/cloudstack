@@ -33,13 +33,15 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.RawHTTP;
 import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
 import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncClient {
-    protected static Logger LOGGER = Logger.getLogger(VncClient.class);
+    protected static Logger LOGGER = LogManager.getLogger(VncClient.class);
 
     private Socket socket;
     private DataInputStream is;

@@ -455,6 +455,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
@@ -513,5 +518,15 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return null;
+    }
+
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user,
+                                               String currentPassword,
+                                               boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
     }
 }

@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
@@ -93,6 +94,9 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 if (userVM == null || userVM.isRemoved()) {
                     continue;
                 }
+                CallContext vmContext = CallContext.register(CallContext.current(),
+                        ApiCommandResourceType.VirtualMachine);
+                vmContext.setEventResourceId(vmID);
                 try {
                     UserVm vm = userVmService.destroyVm(vmID, true);
                     if (!userVmManager.expunge(userVM)) {
@@ -106,6 +110,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 } catch (ResourceUnavailableException | ConcurrentOperationException e) {
                     logger.warn(String.format("Failed to destroy VM : %s part of the Kubernetes cluster : %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getDisplayName(), kubernetesCluster.getName()), e);
                     return false;
+                } finally {
+                    CallContext.unregister();
                 }
             }
         }
@@ -217,7 +223,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private void checkForRulesToDelete() throws ManagementServerException {
         NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+        if (kubernetesClusterNetwork != null && !manager.isDirectAccess(kubernetesClusterNetwork)) {
             deleteKubernetesClusterNetworkRules();
         }
     }

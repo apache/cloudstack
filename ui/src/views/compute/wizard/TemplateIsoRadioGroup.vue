@@ -46,6 +46,9 @@
                 :os-name="item.osName" />
               &nbsp;
               {{ item.displaytext }}
+              <span v-if="item?.projectid">
+                | <project-outlined /> {{ item.project }}
+            </span>
             </a-radio>
           </a-radio-group>
         </a-list-item>

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.api.command.user.vm;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
@@ -30,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -88,11 +88,11 @@ public class ListVMScheduleCmdTest {
     /**
      * given: "We have a VMScheduleManager and ListVMScheduleCmd"
      * when: "ListVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(vmScheduleManager.listSchedule(listVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
         listVMScheduleCmd.execute();
         ListResponse<VMScheduleResponse> actualResponseObject = (ListResponse<VMScheduleResponse>) listVMScheduleCmd.getResponseObject();
     }

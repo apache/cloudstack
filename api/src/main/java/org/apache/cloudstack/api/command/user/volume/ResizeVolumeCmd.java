@@ -101,6 +101,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return getEntityId();
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getMinIops() {
         return minIops;
     }
@@ -111,6 +115,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getSize() {
         return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 
     public boolean isShrinkOk() {

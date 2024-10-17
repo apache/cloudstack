@@ -213,7 +213,7 @@ public abstract class AgentHookBase implements AgentHook {
             byte[] ksBits = null;
 
             String consoleProxyUrlDomain = _configDao.getValue(Config.ConsoleProxyUrlDomain.key());
-            String consoleProxySslEnabled = _configDao.getValue("consoleproxy.sslEnabled");
+            String consoleProxySslEnabled = _configDao.getValue(ConsoleProxyManager.ConsoleProxySslEnabled.key());
             if (!StringUtils.isEmpty(consoleProxyUrlDomain) && !StringUtils.isEmpty(consoleProxySslEnabled)
                     && consoleProxySslEnabled.equalsIgnoreCase("true")) {
                 ksBits = _ksMgr.getKeystoreBits(ConsoleProxyManager.CERTIFICATE_NAME, ConsoleProxyManager.CERTIFICATE_NAME, storePassword);

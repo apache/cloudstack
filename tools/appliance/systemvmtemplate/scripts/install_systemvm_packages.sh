@@ -60,7 +60,7 @@ function install_packages() {
     sysstat \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
-    nfs-common \
+    nfs-common nfs-server xfsprogs \
     samba-common cifs-utils \
     xl2tpd bcrelay ppp tdb-tools \
     xenstore-utils libxenstore4 \
@@ -73,6 +73,7 @@ function install_packages() {
     haproxy \
     haveged \
     radvd \
+    frr \
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins strongswan-charon strongswan-starter \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons cloud-guest-utils \
@@ -83,7 +84,7 @@ function install_packages() {
   apt_clean
 
   # 32 bit architecture support for vhd-util
-  if [ "${arch}" != "i386" ]; then
+  if [[ "${arch}" != "i386" && "${arch}" == "amd64" ]]; then
     dpkg --add-architecture i386
     apt-get update
     ${apt_get} install libuuid1:i386 libc6:i386
@@ -92,17 +93,27 @@ function install_packages() {
   # Install docker and containerd for CKS
   curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
   apt-key fingerprint 0EBFCD88
-  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  if [ "${arch}" == "arm64" ]; then
+    add-apt-repository "deb [arch=arm64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  elif [ "${arch}" == "amd64" ]; then
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  elif [ "${arch}" == "s390x" ]; then
+    add-apt-repository "deb [arch=s390x] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  else
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+  fi
   apt-get update
   ${apt_get} install containerd.io
 
   apt_clean
 
-  install_vhd_util
-  # Install xenserver guest utilities as debian repos don't have it
-  wget --no-check-certificate https://download.cloudstack.org/systemvm/debian/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
-  dpkg -i xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
-  rm -f xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  if [ "${arch}" == "amd64" ]; then
+    install_vhd_util
+    # Install xenserver guest utilities as debian repos don't have it
+    wget --no-check-certificate https://download.cloudstack.org/systemvm/debian/xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+    dpkg -i xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+    rm -f xe-guest-utilities_7.20.2-0ubuntu1_amd64.deb
+  fi
 }
 
 return 2>/dev/null || install_packages

@@ -52,7 +52,7 @@
         <property name="typeClass" value="com.cloud.template.TemplateAdapter" />
     </bean>
 
-    
+
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="podAllocatorsRegistry" />
         <property name="typeClass"
@@ -76,7 +76,11 @@
         <property name="typeClass"
             value="org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy" />
     </bean>
-    
 
-    
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="sharedFSProvidersRegistry" />
+        <property name="typeClass"
+             value="org.apache.cloudstack.storage.sharedfs.SharedFSProvider" />
+    </bean>
+
 </beans>
