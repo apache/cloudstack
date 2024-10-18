@@ -115,6 +115,15 @@
           <div v-else-if="item === 'payload'" style="white-space: pre-wrap;">
             {{ JSON.stringify(JSON.parse(dataResource[item]), null, 4) || dataResource[item] }}
           </div>
+          <div v-else-if="item === 'dedicatedresources'">
+            <div v-for="(resource, idx) in sortDedicatedResourcesByName(dataResource[item])" :key="idx">
+              <div>
+                <router-link :to="getResourceLink(resource.resourcetype, resource.resourceid)">
+                  {{ resource.resourcename }}
+                </router-link>
+              </div>
+            </div>
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -150,6 +159,7 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
+import { genericCompare } from '@/utils/sort'
 
 export default {
   name: 'DetailsTab',
@@ -386,6 +396,16 @@ export default {
     },
     getDetailTitle (detail) {
       return `label.${String(this.detailsTitles[detail]).toLowerCase()}`
+    },
+    getResourceLink (type, id) {
+      return `/${type.toLowerCase()}/${id}`
+    },
+    sortDedicatedResourcesByName (resources) {
+      resources.sort((resource, otherResource) => {
+        return genericCompare(resource.resourcename, otherResource.resourcename)
+      })
+
+      return resources
     }
   }
 }

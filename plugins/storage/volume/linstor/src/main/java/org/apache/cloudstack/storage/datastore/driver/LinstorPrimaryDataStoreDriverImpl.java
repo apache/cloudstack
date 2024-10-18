@@ -26,7 +26,6 @@ import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
-import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.Snapshot;
@@ -62,8 +61,8 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -390,27 +389,6 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
-    private void applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
-        throws ApiException
-    {
-        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-        Properties props = new Properties();
-        if (dispName != null)
-        {
-            props.put("Aux/cs-name", dispName);
-        }
-        if (vmName != null)
-        {
-            props.put("Aux/cs-vm-name", vmName);
-        }
-        if (!props.isEmpty())
-        {
-            rdm.setOverrideProps(props);
-            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
-            checkLinstorAnswersThrow(answers);
-        }
-    }
-
     private String getRscGrp(StoragePoolVO storagePoolVO) {
         return storagePoolVO.getUserInfo() != null && !storagePoolVO.getUserInfo().isEmpty() ?
             storagePoolVO.getUserInfo() : "DfltRscGrp";
@@ -428,7 +406,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             ApiCallRcList answers = api.resourceGroupSpawn(rscGrp, rscGrpSpawn);
             checkLinstorAnswersThrow(answers);
 
-            applyAuxProps(api, rscName, volName, vmName);
+            answers = LinstorUtil.applyAuxProps(api, rscName, volName, vmName);
+            checkLinstorAnswersThrow(answers);
 
             return LinstorUtil.getDevicePath(api, rscName);
         } catch (ApiException apiEx)
@@ -499,7 +478,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 if (volumeInfo.getSize() != null && volumeInfo.getSize() > 0) {
                     resizeResource(linstorApi, rscName, volumeInfo.getSize());
                 }
-                applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
+
+                LinstorUtil.applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
                 applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
 
                 return LinstorUtil.getDevicePath(linstorApi, rscName);
@@ -551,7 +531,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             answers = linstorApi.resourceSnapshotRestore(cloneRes, snapName, snapshotRestore);
             checkLinstorAnswersThrow(answers);
 
-            applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
+            LinstorUtil.applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
             applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeVO.getMaxIops());
 
             return LinstorUtil.getDevicePath(linstorApi, rscName);
@@ -833,7 +813,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 VolumeInfo volume = sinfo.getBaseVolume();
                 deleteSnapshot(
                     srcData.getDataStore(),
-                    LinstorUtil.RSC_PREFIX + volume.getUuid(),
+                    LinstorUtil.RSC_PREFIX + volume.getPath(),
                     LinstorUtil.RSC_PREFIX + sinfo.getUuid());
             }
             res = new CopyCommandResult(null, answer);
@@ -969,7 +949,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         VolumeInfo srcVolInfo = (VolumeInfo) srcData;
         final StoragePoolVO pool = _storagePoolDao.findById(srcVolInfo.getDataStore().getId());
         final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
-        final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getUuid();
+        final String rscName = LinstorUtil.RSC_PREFIX + srcVolInfo.getPath();
 
         VolumeObjectTO to = (VolumeObjectTO) srcVolInfo.getTO();
         // patch source format
@@ -1082,7 +1062,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         options.put("volumeSize", snapshotObject.getBaseVolume().getSize() + "");
 
         try {
-            final String rscName = LinstorUtil.RSC_PREFIX + snapshotObject.getBaseVolume().getUuid();
+            final String rscName = LinstorUtil.RSC_PREFIX + snapshotObject.getBaseVolume().getPath();
             String snapshotName = setCorrectSnapshotPath(api, rscName, snapshotObject);
 
             CopyCommand cmd = new LinstorBackupSnapshotCommand(

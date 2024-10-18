@@ -149,7 +149,7 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+    Network getNetworkWithSGWithFreeIPs(Account account, Long zoneId);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
@@ -360,6 +360,6 @@ public interface NetworkModel {
 
     boolean isSecurityGroupSupportedForZone(Long zoneId);
 
-    boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds,
+    boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone, List<Long> networkIds,
                                                 List<Long> securityGroupsIds);
 }

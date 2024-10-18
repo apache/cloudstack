@@ -127,8 +127,6 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -274,8 +272,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-    @Inject
-    private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -1363,8 +1359,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean isNotIso = format != null && format != ImageFormat.ISO;
         boolean isRoot = Volume.Type.ROOT.equals(volume.getVolumeType());
 
-        ServiceOfferingJoinVO serviceOfferingView = serviceOfferingJoinDao.findById(diskOffering.getId());
-        boolean isOfferingEnforcingRootDiskSize = serviceOfferingView != null && serviceOfferingView.getRootDiskSize() > 0;
+        boolean isOfferingEnforcingRootDiskSize = diskOffering.isComputeOnly() && diskOffering.getDiskSize() > 0;
 
         return isOfferingEnforcingRootDiskSize && isRoot && isNotIso;
     }
@@ -1700,6 +1695,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public void validateDestroyVolume(Volume volume, Account caller, boolean expunge, boolean forceExpunge) {
+        if (volume.isDeleteProtection()) {
+            throw new InvalidParameterValueException(String.format(
+                    "Volume [id = %s, name = %s] has delete protection enabled and cannot be deleted.",
+                    volume.getUuid(), volume.getName()));
+        }
+
         if (expunge) {
             // When trying to expunge, permission is denied when the caller is not an admin and the AllowUserExpungeRecoverVolume is false for the caller.
             final Long userId = caller.getAccountId();
@@ -2356,7 +2357,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     if (vm != null && vm.getType().equals(VirtualMachine.Type.User)) {
                         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
                         if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
-                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem VM");
+                            throw new InvalidParameterValueException("Shrink volume cannot be done on a Shared FileSystem Instance");
                         }
                     }
                 }
@@ -2497,7 +2498,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
 
         if (!allowAttachForSharedFS && UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem VM");
+            throw new InvalidParameterValueException("Can't attach a volume to a Shared FileSystem Instance");
         }
 
         checkDeviceId(deviceId, volumeToAttach, vm);
@@ -2758,13 +2759,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume,
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId,
+                               Boolean displayVolume, Boolean deleteProtection,
                                String customId, long entityOwnerId, String chainInfo, String name) {
 
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (path != null || state != null || storageId != null || displayVolume != null || customId != null || chainInfo != null) {
-                throw new InvalidParameterValueException("The domain admin and normal user are not allowed to update volume except volume name");
+                throw new InvalidParameterValueException("The domain admin and normal user are " +
+                        "not allowed to update volume except volume name & delete protection");
             }
         }
 
@@ -2814,6 +2817,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (name != null) {
             volume.setName(name);
+        }
+
+        if (deleteProtection != null) {
+            volume.setDeleteProtection(deleteProtection);
         }
 
         updateDisplay(volume, displayVolume);
@@ -2917,7 +2924,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         UserVmVO vm = _userVmDao.findById(vmId);
 
         if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem VM");
+            throw new InvalidParameterValueException("Can't detach a volume from a Shared FileSystem Instance");
         }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {

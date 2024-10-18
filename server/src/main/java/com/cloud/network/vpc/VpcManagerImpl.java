@@ -44,9 +44,13 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
-import com.cloud.dc.ASNumberVO;
 import com.cloud.bgp.BGPService;
+import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.dc.Vlan;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -72,6 +76,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -247,6 +252,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     ResourceLimitService _resourceLimitMgr;
     @Inject
+    ReservationDao reservationDao;
+    @Inject
     VpcServiceMapDao _vpcSrvcDao;
     @Inject
     DataCenterDao _dcDao;
@@ -281,6 +288,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private ASNumberDao asNumberDao;
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
 
@@ -3169,10 +3178,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
-        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId) == null;
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
+        final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId, false) == null;
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
                 // update ip address with networkId
                 ip.setVpcId(vpcId);
@@ -3182,8 +3192,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 // mark ip as allocated
                 _ipAddrMgr.markPublicIpAsAllocated(ip);
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+            throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+        }
 
         logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
         CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
@@ -3266,7 +3280,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return guestNetwork;
     }
 
-    protected IPAddressVO getExistingSourceNatInVpc(final long ownerId, final long vpcId) {
+    protected IPAddressVO getExistingSourceNatInVpc(final long ownerId, final long vpcId, final boolean forNsx) {
 
         final List<IPAddressVO> addrs = listPublicIpsAssignedToVpc(ownerId, true, vpcId);
 
@@ -3277,8 +3291,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             // Account already has ip addresses
             for (final IPAddressVO addr : addrs) {
                 if (addr.isSourceNat()) {
-                    sourceNatIp = addr;
-                    return sourceNatIp;
+                    if (!forNsx) {
+                        sourceNatIp = addr;
+                    } else {
+                        if (addr.isForSystemVms()) {
+                            sourceNatIp = addr;
+                        }
+                    }
+                    if (Objects.nonNull(sourceNatIp)) {
+                        return sourceNatIp;
+                    }
                 }
             }
 
@@ -3302,17 +3324,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
-    public PublicIp assignSourceNatIpAddressToVpc(final Account owner, final Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToVpc(final Account owner, final Vpc vpc, final Long podId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         final long dcId = vpc.getZoneId();
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dcId);
+        boolean forNsx = nsxProvider != null;
 
-        final IPAddressVO sourceNatIp = getExistingSourceNatInVpc(owner.getId(), vpc.getId());
+        final IPAddressVO sourceNatIp = getExistingSourceNatInVpc(owner.getId(), vpc.getId(), forNsx);
 
         PublicIp ipToReturn = null;
 
         if (sourceNatIp != null) {
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
-            ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
+            if (forNsx) {
+                ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            } else {
+                ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
+            }
         }
 
         return ipToReturn;

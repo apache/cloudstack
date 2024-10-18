@@ -294,7 +294,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
                 }
             } catch (final Throwable e) {
-                logger.error("Unexcpeted exception: ", e);
+                logger.error("Unexpected exception: ", e);
             }
         }
     }
@@ -346,7 +346,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
                 });
             } catch (final Throwable e) {
-                logger.error("Unexcpeted exception: ", e);
+                logger.error("Unexpected exception: ", e);
             }
         }
     }
@@ -384,7 +384,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 }
                 executeAsync(peerName, agentId, cmds, true);
             } catch (final Exception e) {
-                logger.warn("Caught exception while talkign to " + peer.getMsid());
+                logger.warn("Caught exception while talking to " + peer.getMsid());
             }
         }
     }

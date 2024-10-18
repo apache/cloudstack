@@ -436,6 +436,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
 
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
+
 
     public UserVmJoinVO() {
         // Empty constructor
@@ -946,6 +949,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isDynamicallyScalable;
     }
 
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
+    }
 
     @Override
     public Class<?> getEntityType() {

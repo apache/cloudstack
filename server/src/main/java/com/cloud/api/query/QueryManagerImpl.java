@@ -245,6 +245,8 @@ import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PublicIpQuarantineDao;
@@ -552,6 +554,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private NetworkDao networkDao;
 
     @Inject
+    private IPAddressDao ipAddressDao;
+
+    @Inject
     private NicDao nicDao;
 
     @Inject
@@ -818,8 +823,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = eventIdPage.second();
         Long[] idArray = eventIdPage.first().toArray(new Long[0]);
 
-        if (count == 0) {
-            return new Pair<>(new ArrayList<>(), count);
+        /**
+         * Need to check array empty, because {@link com.cloud.utils.db.GenericDaoBase#searchAndCount(SearchCriteria, Filter, boolean)}
+         * makes two calls: first to get objects and second to get count.
+         * List events has start date filter, there is highly possible cause where no objects loaded
+         * and next millisecond new event added and finally we ended up with count = 1 and no ids.
+         */
+        if (count == 0 || idArray.length < 1) {
+            count = 0;
         }
 
         List<EventJoinVO> events = _eventJoinDao.searchByIds(idArray);
@@ -1455,6 +1466,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (isRootAdmin) {
                 userVmSearchBuilder.or("keywordInstanceName", userVmSearchBuilder.entity().getInstanceName(), Op.LIKE );
             }
+
+            SearchBuilder<IPAddressVO> ipAddressSearch = ipAddressDao.createSearchBuilder();
+            userVmSearchBuilder.join("ipAddressSearch", ipAddressSearch,
+                    ipAddressSearch.entity().getAssociatedWithVmId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.LEFT);
+
+            SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
+            userVmSearchBuilder.join("nicSearch", nicSearch, JoinBuilder.JoinType.LEFT,
+                    JoinBuilder.JoinCondition.AND,
+                    nicSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(),
+                    nicSearch.entity().getRemoved(), userVmSearchBuilder.entity().setLong(null));
+
+            userVmSearchBuilder.or("ipAddressSearch", "keywordPublicIpAddress", ipAddressSearch.entity().getAddress(), Op.LIKE);
+
+            userVmSearchBuilder.or("nicSearch", "keywordIpAddress", nicSearch.entity().getIPv4Address(), Op.LIKE);
+            userVmSearchBuilder.or("nicSearch", "keywordIp6Address", nicSearch.entity().getIPv6Address(), Op.LIKE);
+
             userVmSearchBuilder.cp();
         }
 
@@ -1548,6 +1575,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchCriteria.setParameters("keywordDisplayName", keywordMatch);
             userVmSearchCriteria.setParameters("keywordName", keywordMatch);
             userVmSearchCriteria.setParameters("keywordState", keyword);
+            userVmSearchCriteria.setParameters("keywordIpAddress", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordPublicIpAddress", keywordMatch);
+            userVmSearchCriteria.setParameters("keywordIp6Address", keywordMatch);
             if (isRootAdmin) {
                 userVmSearchCriteria.setParameters("keywordInstanceName", keywordMatch);
             }

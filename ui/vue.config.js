@@ -142,7 +142,11 @@ const vueConfig = {
         secure: false,
         ws: false,
         changeOrigin: true,
-        proxyTimeout: 10 * 60 * 1000 // 10 minutes
+        proxyTimeout: 10 * 60 * 1000, // 10 minutes
+        cookieDomainRewrite: '*',
+        cookiePathRewrite: {
+          '/client': '/'
+        }
       }
     },
     https: process.env.HTTPS_KEY ? {

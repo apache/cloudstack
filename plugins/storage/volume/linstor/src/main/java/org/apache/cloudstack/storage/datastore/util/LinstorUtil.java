@@ -22,8 +22,10 @@ import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Node;
+import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
+import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
@@ -239,5 +241,27 @@ public class LinstorUtil {
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
         LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
+    }
+
+    public static ApiCallRcList applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
+            throws ApiException
+    {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        if (dispName != null)
+        {
+            props.put("Aux/cs-name", dispName);
+        }
+        if (vmName != null)
+        {
+            props.put("Aux/cs-vm-name", vmName);
+        }
+        ApiCallRcList answers = new ApiCallRcList();
+        if (!props.isEmpty())
+        {
+            rdm.setOverrideProps(props);
+            answers = api.resourceDefinitionModify(rscName, rdm);
+        }
+        return answers;
     }
 }

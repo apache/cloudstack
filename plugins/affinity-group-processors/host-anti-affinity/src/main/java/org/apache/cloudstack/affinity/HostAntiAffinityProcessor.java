@@ -78,7 +78,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                _affinityGroupDao.listByIds(affinityGroupIds, true);
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
+                }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                     processAffinityGroup(vmGroupMapping, avoid, vm);
                 }
@@ -165,7 +167,9 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                _affinityGroupDao.listByIds(affinityGroupIds, true);
+                if (!affinityGroupIds.isEmpty()) {
+                    _affinityGroupDao.listByIds(affinityGroupIds, true);
+                }
                 for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                     // if more than 1 VM's are present in the group then check for
                     // conflict due to parallel deployment

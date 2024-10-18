@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy.vnc.security;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
 import com.cloud.consoleproxy.vnc.network.NioSocketSSLEngineManager;
@@ -29,9 +28,12 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncTLSSecurity implements VncSecurity {
 
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private SSLContext ctx;
     private SSLEngine engine;
