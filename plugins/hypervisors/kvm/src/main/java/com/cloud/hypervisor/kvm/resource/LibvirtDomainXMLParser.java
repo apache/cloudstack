@@ -126,11 +126,15 @@ public class LibvirtDomainXMLParser {
                             }
                             def.defFileBasedDisk(diskFile, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()), fmt);
                         } else if (device.equalsIgnoreCase("cdrom")) {
-                            def.defISODisk(diskFile, i+1, diskLabel);
+                            def.defISODisk(diskFile, i+1, diskLabel, DiskDef.DiskType.FILE);
                         }
                     } else if (type.equalsIgnoreCase("block")) {
-                        def.defBlockBasedDisk(diskDev, diskLabel,
-                            DiskDef.DiskBus.valueOf(bus.toUpperCase()));
+                        if (device.equalsIgnoreCase("disk")) {
+                            def.defBlockBasedDisk(diskDev, diskLabel,
+                                    DiskDef.DiskBus.valueOf(bus.toUpperCase()));
+                        } else if (device.equalsIgnoreCase("cdrom")) {
+                            def.defISODisk(diskFile, i+1, diskLabel, DiskDef.DiskType.BLOCK);
+                        }
                     }
                     if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
