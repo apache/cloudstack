@@ -80,7 +80,7 @@ public class CloudianHyperStoreUtil {
         "      \"Effect\": \"Deny\",\n" +
         "      \"Action\": [\n" +
         "        \"s3:createBucket\",\n" +
-        "        \"s3: deleteBucket\"\n" +
+        "        \"s3:deleteBucket\"\n" +
         "      ],\n" +
         "      \"Resource\": \"*\"\n" +
         "    }\n" +
