@@ -403,7 +403,7 @@
 "label.attaching": "Attaching",
 "label.authentication.method": "Authentication Method",
 "label.authentication.sshkey": "System SSH Key",
-"label.autofill.vcenter.credentials": "Autofill vCenter credentials",
+"label.autofill.vcenter.credentials.from.zone": "Autofill vCenter credentials from Zone",
 "label.autoscale": "AutoScale",
 "label.autoscalevmgroupname": "AutoScaling Group",
 "label.author.email": "Author e-mail",
