@@ -64,33 +64,28 @@ public class CloudianHyperStoreUtil {
 
     public static final String IAM_USER_USERNAME = "CloudStack";
     public static final String IAM_USER_POLICY_NAME = "CloudStackPolicy";
-    public static final String IAM_USER_POLICY;
-    static {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        sb.append("  \"Version\": \"2012-10-17\",\n");
-        sb.append("  \"Statement\": [\n");
-        sb.append("    {\n");
-        sb.append("      \"Sid\": \"AllowFullS3Access\",\n");
-        sb.append("      \"Effect\": \"Allow\",\n");
-        sb.append("      \"Action\": [\n");
-        sb.append("        \"s3:*\"\n");
-        sb.append("      ],\n");
-        sb.append("      \"Resource\": \"*\"\n");
-        sb.append("    },\n");
-        sb.append("    {\n");
-        sb.append("      \"Sid\": \"ExceptBucketCreationOrDeletion\",\n");
-        sb.append("      \"Effect\": \"Deny\",\n");
-        sb.append("      \"Action\": [\n");
-        sb.append("        \"s3:createBucket\",\n");
-        sb.append("        \"s3:deleteBucket\"\n");
-        sb.append("      ],\n");
-        sb.append("      \"Resource\": \"*\"\n");
-        sb.append("    }\n");
-        sb.append("  ]\n");
-        sb.append("}\n");
-        IAM_USER_POLICY = sb.toString();
-    }
+    public static final String IAM_USER_POLICY = "{\n" +
+        "  \"Version\": \"2012-10-17\",\n" +
+        "  \"Statement\": [\n" +
+        "    {\n" +
+        "      \"Sid\": \"AllowFullS3Access\",\n" +
+        "      \"Effect\": \"Allow\",\n" +
+        "      \"Action\": [\n" +
+        "        \"s3:*\"\n" +
+        "      ],\n" +
+        "      \"Resource\": \"*\"\n" +
+        "    },\n" +
+        "    {\n" +
+        "      \"Sid\": \"ExceptBucketCreationOrDeletion\",\n" +
+        "      \"Effect\": \"Deny\",\n" +
+        "      \"Action\": [\n" +
+        "        \"s3:createBucket\",\n" +
+        "        \"s3: deleteBucket\"\n" +
+        "      ],\n" +
+        "      \"Resource\": \"*\"\n" +
+        "    }\n" +
+        "  ]\n" +
+        "}\n";
 
     /**
      * This method is solely for test purposes so that we can mock the timeout.
@@ -120,9 +115,7 @@ public class CloudianHyperStoreUtil {
                 port = DEFAULT_ADMIN_PORT;
             }
             return new CloudianClient(host, port, scheme, user, pass, validateSSL, getAdminTimeoutSeconds());
-        } catch (MalformedURLException e) {
-            throw new CloudRuntimeException(e);
-        } catch (KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
+        } catch (MalformedURLException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e) {
             throw new CloudRuntimeException(e);
         }
     }

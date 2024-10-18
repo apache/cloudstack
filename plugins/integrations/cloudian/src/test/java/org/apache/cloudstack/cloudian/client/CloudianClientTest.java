@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.cloudian;
+package org.apache.cloudstack.cloudian.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -31,26 +31,33 @@ import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.cloudian.client.CloudianClient;
-import org.apache.cloudstack.cloudian.client.CloudianCredential;
-import org.apache.cloudstack.cloudian.client.CloudianGroup;
-import org.apache.cloudstack.cloudian.client.CloudianUser;
-import org.apache.cloudstack.cloudian.client.CloudianUserBucketUsage;
 import org.apache.cloudstack.cloudian.client.CloudianUserBucketUsage.CloudianBucketUsage;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CloudianClientTest {
     private final int port = 14333;
     private final int timeout = 2;
@@ -119,6 +126,38 @@ public class CloudianClientTest {
         client.listUser("someUserId", "somegGroupId");
     }
 
+    @Test
+    public void getNonEmptyContentStreamEmpty() {
+        InputStream emptyStream = new ByteArrayInputStream(new byte[]{});
+        HttpEntity entity = mock(HttpEntity.class);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        try {
+                when(entity.getContent()).thenReturn(emptyStream);
+                Assert.assertNull(client.getNonEmptyContentStream(response));
+        } catch (IOException e) {
+                Assert.fail("Should not be any exception here");
+        }
+    }
+
+    @Test
+    public void getNonEmptyContentStreamWithContent() {
+        InputStream nonEmptyStream = new ByteArrayInputStream(new byte[]{9, 8});
+        HttpEntity entity = mock(HttpEntity.class);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.getEntity()).thenReturn(entity);
+        try {
+                when(entity.getContent()).thenReturn(nonEmptyStream);
+                InputStream is = client.getNonEmptyContentStream(response);
+                Assert.assertNotNull(is);
+                Assert.assertEquals(9, is.read());
+                Assert.assertEquals(8, is.read());
+                Assert.assertEquals(-1, is.read());
+        } catch (IOException e) {
+                Assert.fail("Should not be any exception here");
+        }
+    }
+
     /////////////////////////////////////////////////////
     //////////////// System API tests ///////////////////
     /////////////////////////////////////////////////////
@@ -133,6 +172,20 @@ public class CloudianClientTest {
 
         String version = client.getServerVersion();
         Assert.assertEquals(expect, version);
+    }
+
+    @Test
+    public void getUserBucketUsagesBadUsageBlankGroup() {
+        ServerApiException thrown = Assert.assertThrows(ServerApiException.class, () -> client.getUserBucketUsages(null, null, null));
+        Assert.assertNotNull(thrown);
+        Assert.assertEquals(ApiErrorCode.PARAM_ERROR, thrown.getErrorCode());
+    }
+
+    @Test
+    public void getUserBucketUsagesBadUsageBlankUserWithBucket() {
+        ServerApiException thrown = Assert.assertThrows(ServerApiException.class, () -> client.getUserBucketUsages("group", "", "bucket"));
+        Assert.assertNotNull(thrown);
+        Assert.assertEquals(ApiErrorCode.PARAM_ERROR, thrown.getErrorCode());
     }
 
     @Test

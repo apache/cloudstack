@@ -41,8 +41,6 @@ import org.apache.cloudstack.storage.datastore.util.CloudianHyperStoreUtil;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.BucketObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
@@ -82,8 +80,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    protected Logger logger = LogManager.getLogger(CloudianHyperStoreObjectStoreDriverImpl.class);
-
     @Inject
     AccountDao _accountDao;
 

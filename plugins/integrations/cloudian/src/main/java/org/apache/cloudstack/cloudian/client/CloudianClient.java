@@ -18,6 +18,7 @@
 package org.apache.cloudstack.cloudian.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.net.SocketTimeoutException;
 import java.security.KeyManagementException;
@@ -156,6 +157,30 @@ public class CloudianClient {
         }
     }
 
+    /**
+     * Return the body content stream only if the body has bytes.
+     *
+     * Unfortunately, some of the responses such as listGroups() or listUsers() return
+     * an empty body instead of returning and empty list. The only way to detect this is
+     * to try read from the body. This method handles this and will return null if the
+     * body was empty or a valid stream with the body content otherwise.
+     *
+     * @param response the response to check for the body contents.
+     * @return a valid InputStream or null if the body was empty.
+     *
+     * @throws IOException some error reading from the body such as timeout etc.
+     */
+    protected InputStream getNonEmptyContentStream(HttpResponse response) throws IOException {
+        PushbackInputStream iStream = new PushbackInputStream(response.getEntity().getContent());
+        int firstByte=iStream.read();
+        if (firstByte == -1) {
+            return null;
+        } else {
+            iStream.unread(firstByte);
+            return iStream;
+        }
+    }
+
     private HttpResponse delete(final String path) throws IOException {
         final HttpResponse response = httpClient.execute(new HttpDelete(adminApiUrl + path), httpContext);
         checkAuthFailure(response);
@@ -235,14 +260,17 @@ public class CloudianClient {
      *
      * @param groupId the groupId is required (and must exist)
      * @param userId the userId is optional (null) and if not set all group users are returned.
-     * @param bucket the bucket is optional (null). If set the userId must also be set.
+     * @param bucket the bucket is optional (null). If set, the userId must also be set.
      * @return a list of bucket usages (possibly empty).
      * @throws ServerApiException on non-200 response such as unknown groupId etc or response issue.
      */
     public List<CloudianUserBucketUsage> getUserBucketUsages(final String groupId, final String userId, final String bucket) {
-        if (StringUtils.isBlank(groupId)) {
-            return new ArrayList<>();
+        if (StringUtils.isBlank(groupId) || (StringUtils.isBlank(userId) && !StringUtils.isBlank(bucket))) {
+            String msg = String.format("Bad parameters groupId=%s userId=%s bucket=%s", groupId, userId, bucket);
+            logger.error(msg);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, msg);
         }
+
         logger.debug("Getting bucket usages for groupId={} userId={} bucket={}", groupId, userId, bucket);
         StringBuilder cmd = new StringBuilder("/system/bucketusage?groupId=");
         cmd.append(groupId);
@@ -251,7 +279,6 @@ public class CloudianClient {
             cmd.append(userId);
         }
         if (! StringUtils.isBlank(bucket)) {
-            // Assume userId is also set (or request fails).
             cmd.append("&bucket=");
             cmd.append(bucket);
         }
@@ -341,15 +368,10 @@ public class CloudianClient {
             if (noResponseEntity(response)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "API error");
             }
-            // The empty list case is badly behaved and returns as 200 with an empty body.
-            // We'll try detect this by reading the first byte and then putting it back if required.
-            PushbackInputStream iStream = new PushbackInputStream(response.getEntity().getContent());
-            int firstByte=iStream.read();
-            if (firstByte == -1) {
-                return new ArrayList<>(); // EOF => empty list
+            InputStream iStream = getNonEmptyContentStream(response);
+            if (iStream == null) {
+                return new ArrayList<>(); // empty body => empty list
             }
-            // unread that first byte and process the JSON
-            iStream.unread(firstByte);
             final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(iStream, CloudianUser[].class));
         } catch (final IOException e) {
@@ -512,15 +534,10 @@ public class CloudianClient {
             if (noResponseEntity(response)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "API error");
             }
-            // The empty list case is badly behaved and returns as 200 with an empty body.
-            // We'll try detect this by reading the first byte and then putting it back if required.
-            PushbackInputStream iStream = new PushbackInputStream(response.getEntity().getContent());
-            int firstByte=iStream.read();
-            if (firstByte == -1) {
-                return new ArrayList<>(); // EOF => empty list
+            InputStream iStream = getNonEmptyContentStream(response);
+            if (iStream == null) {
+                return new ArrayList<>(); // Empty body => empty list
             }
-            // unread that first byte and process the JSON
-            iStream.unread(firstByte);
             final ObjectMapper mapper = new ObjectMapper();
             return Arrays.asList(mapper.readValue(iStream, CloudianGroup[].class));
         } catch (final IOException e) {
