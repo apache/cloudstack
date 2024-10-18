@@ -99,7 +99,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotZoneDao snapshotZoneDao;
 
-    private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
+    private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
@@ -197,7 +197,10 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotInfo child = snapshot.getChild();
 
                 if (child != null) {
-                    logger.debug(String.format("Snapshot [%s] has child [%s], not deleting it on the storage [%s]", snapshotTo, child.getTO(), storageToString));
+                    logger.debug(String.format("Snapshot [%s] has child [%s], not deleting it on the storage [%s], will only set it as hidden.", snapshotTo, child.getTO(), storageToString));
+                    SnapshotDataStoreVO snapshotDataStoreVo = snapshotStoreDao.findByStoreSnapshot(snapshot.getDataStore().getRole(), snapshot.getDataStore().getId(), snapshot.getSnapshotId());
+                    snapshotDataStoreVo.setState(State.Hidden);
+                    snapshotStoreDao.update(snapshotDataStoreVo.getId(), snapshotDataStoreVo);
                     break;
                 }
 
@@ -206,6 +209,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
                 if (parent != null) {
+                    logger.debug("Snapshot [{}] has parent [{}].", snapshot, parent);
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
                         //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
                         //Instead, mark it as destroyed in the db.
@@ -219,6 +223,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 }
 
                 if (!deleted) {
+                    logger.debug("Deleting snapshot [{}].", snapshot);
                     try {
                         boolean r = snapshotSvr.deleteSnapshot(snapshot);
                         if (r) {
@@ -360,6 +365,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo, Long zoneId) {
         List<SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), zoneId);
+        logger.debug("Found {} snapshot references to delete.", snapshotInfos);
 
         boolean result = false;
         for (var snapshotInfo : snapshotInfos) {
@@ -378,7 +384,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo) {
         DataStore dataStore = snapshotInfo.getDataStore();
         String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", dataStore.getRole().name(), dataStore.getUuid(), dataStore.getName());
-        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotId(snapshotVo.getId());
+        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotIdAndNotInDestroyedHiddenState(snapshotVo.getId());
         boolean isLastSnapshotRef = CollectionUtils.isEmpty(snapshotStoreRefs) || snapshotStoreRefs.size() == 1;
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
@@ -389,7 +395,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             if (deleteSnapshotChain(snapshotInfo, storageToString)) {
                 logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
             } else {
-                logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
+                logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as hidden for future garbage collecting.", snapshotVo,
                     storageToString));
             }
             snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotVo.getId(), dataStore.getId(), dataStore.getRole(), false);

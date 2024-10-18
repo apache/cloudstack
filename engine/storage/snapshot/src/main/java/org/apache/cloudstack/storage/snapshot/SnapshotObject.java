@@ -113,13 +113,13 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
-
+        logger.debug("Searching for parents of snapshot [{}], in store [{}] with role [{}].", snapshot.getSnapshotId(), store.getId(), store.getRole());
         SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
         if (snapStoreVO != null) {
             long parentId = snapStoreVO.getParentSnapshotId();
             if (parentId != 0) {
                 if (HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
-                    return getParentInfoFromImageIfPossible(parentId);
+                    return getCorrectIncrementalParent(parentId);
                 }
                 return snapshotFactory.getSnapshot(parentId, store);
             }
@@ -129,27 +129,25 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     /**
-     * Returns the snapshotInfo of the passed snapshot parentId. If the parent is on image store, will return the info from image store;
-     * else, will return the info from primary store.
+     * Returns the snapshotInfo of the passed snapshot parentId. Will search for the snapshot reference which has a checkpoint path. If none is found, throws an exception.
      * */
-    protected SnapshotInfo getParentInfoFromImageIfPossible(long parentId) {
+    protected SnapshotInfo getCorrectIncrementalParent(long parentId) {
         List<SnapshotDataStoreVO> parentSnapshotDatastoreVos = snapshotStoreDao.findBySnapshotId(parentId);
 
         if (parentSnapshotDatastoreVos.isEmpty()) {
             return null;
         }
 
-        SnapshotDataStoreVO parent = null;
+        logger.debug("Found parent snapshot references {}, will filter to just one.", parentSnapshotDatastoreVos);
 
-        for (SnapshotDataStoreVO parentSnapshotDatastoreVo : parentSnapshotDatastoreVos) {
-            parent = parentSnapshotDatastoreVo;
-            if (parentSnapshotDatastoreVo.getRole().equals(DataStoreRole.Image)) {
-                break;
-            }
-        }
+        SnapshotDataStoreVO parent = parentSnapshotDatastoreVos.stream().filter(snapshotDataStoreVO -> snapshotDataStoreVO.getKvmCheckpointPath() != null)
+                .findFirst().
+                orElseThrow(() -> new CloudRuntimeException(String.format("Could not find snapshot parent with id [%s]. None of the records have a checkpoint path.", parentId)));
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(parentId, parent.getDataStoreId(), parent.getRole());
         snapshotInfo.setKvmIncrementalSnapshot(parent.getKvmCheckpointPath() != null);
+
+        logger.debug("Filtered snapshot references {} to just {}.", parentSnapshotDatastoreVos, parent);
 
         return snapshotInfo;
     }
@@ -526,5 +524,11 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s, dataStoreId %s, imageStore id %s, checkpointPath %s.", snapshot, store != null? store.getId() : 0,
+                imageStore != null ? imageStore.getId() : 0, checkpointPath);
     }
 }

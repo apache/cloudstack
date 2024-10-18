@@ -65,6 +65,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId);
+
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
 
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);

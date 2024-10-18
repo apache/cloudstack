@@ -17,6 +17,7 @@
 package com.cloud.agent.api.to;
 
 import com.cloud.storage.DataStoreRole;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class NfsTO implements DataStoreTO {
 
@@ -79,5 +80,10 @@ public class NfsTO implements DataStoreTO {
 
     public void setNfsVersion(String nfsVersion) {
         this.nfsVersion = nfsVersion;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "_role", "uuid", "url");
     }
 }

@@ -25,15 +25,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.util.List;
 
 @ResourceWrapper(handles =  RecreateCheckpointsCommand.class)
 public class LibvirtRecreateCheckpointsCommandWrapper extends CommandWrapper<RecreateCheckpointsCommand, Answer, LibvirtComputingResource> {
-
-    private static Logger logger = Logger.getLogger(LibvirtRecreateCheckpointsCommandWrapper.class);
     @Override
     public Answer execute(RecreateCheckpointsCommand command, LibvirtComputingResource serverResource) {
         String vmName = command.getVmName();

@@ -1885,10 +1885,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             return true; // already downloaded on this image store
         }
-        if (List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
+        if ((dstSnapshotStore.getDownloadState() != null && List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
                 VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED,
-                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState()) ||
+                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState())) ||
                 !List.of(ObjectInDataStoreStateMachine.State.Creating,
                         ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
             _snapshotStoreDao.removeBySnapshotStore(snapshotId, dstSecStore.getId(), DataStoreRole.Image);

@@ -120,6 +120,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
         stateMachines.addTransition(State.Migrating, Event.MigrationSucceeded, State.Destroyed);
         stateMachines.addTransition(State.Migrating, Event.OperationSuccessed, State.Ready);
         stateMachines.addTransition(State.Migrating, Event.OperationFailed, State.Ready);
+        stateMachines.addTransition(State.Hidden, Event.DestroyRequested, State.Destroying);
     }
 
     @Override
@@ -219,7 +220,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     private SnapshotDataStoreVO tryToGetSnapshotOnSecondaryIfNotOnPrimaryAndIsKVM(DataStore dataStore, SnapshotInfo snapshotInfo, SnapshotDataStoreVO snapshotDataStoreVO,
                                                                                   boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
         if (snapshotDataStoreVO == null && Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && DataStoreRole.Primary.equals(dataStore.getRole())) {
-            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, null, snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
+            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, snapshotInfo.getImageStore().getId(), snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
         }
         return snapshotDataStoreVO;
     }

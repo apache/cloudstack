@@ -52,6 +52,11 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
 
     }
 
+    @Override
+    public DataObjectType getObjectType() {
+        return DataObjectType.SNAPSHOT;
+    }
+
     public SnapshotObjectTO(SnapshotInfo snapshot) {
         this.path = snapshot.getPath();
         this.setId(snapshot.getId());
@@ -84,11 +89,6 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
         }
         parents = parentsArray.toArray(new String[parentsArray.size()]);
         ArrayUtils.reverse(parents);
-    }
-
-    @Override
-    public DataObjectType getObjectType() {
-        return DataObjectType.SNAPSHOT;
     }
 
     @Override
