@@ -5412,13 +5412,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setLastServerStart(mgmt.getLastJvmStart());
         mgmtResponse.setLastServerStop(mgmt.getLastJvmStop());
         mgmtResponse.setLastBoot(mgmt.getLastSystemBoot());
-        mgmtResponse.setServiceIp(mgmt.getServiceIP());
         if (listPeers) {
             List<ManagementServerHostPeerJoinVO> peers = mshostPeerJoinDao.listByOwnerMshostId(mgmt.getId());
             for (ManagementServerHostPeerJoinVO peer: peers) {
                 mgmtResponse.addPeer(createPeerManagementServerNodeResponse(peer));
             }
         }
+        mgmtResponse.setIpAddress(mgmt.getServiceIP());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }
