@@ -84,7 +84,7 @@
     </template>
     <template #bodyCell="{ column, text }">
       <template v-if="column.key === 'successfulMigrations'">
-        {{  text.migrations.filter(m => m.jobstatus === 'SUCCEEDED').length }} / {{  text.migrations.length }}
+        {{  text.migrations.filter(m => m.migrationjobstatus === 'SUCCEEDED').length }} / {{  text.migrations.length }}
         <!-- {{  text.migrations }} -->
       </template>
       <template v-else-if="column.key === 'created'">
@@ -214,9 +214,9 @@ export default {
       generatedPlanMigrationColumns: generatedPlanMigrationColumns,
       migrationColumns: generatedPlanMigrationColumns.concat([
         {
-          key: 'jobstatus',
+          key: 'migrationjobstatus',
           title: this.$t('label.status'),
-          dataIndex: 'jobstatus'
+          dataIndex: 'migrationjobstatus'
         }
       ]),
       loading: false,
