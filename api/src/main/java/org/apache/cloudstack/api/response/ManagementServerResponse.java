@@ -72,9 +72,9 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the running OS kernel version for this Management Server")
     private String kernelVersion;
 
-    @SerializedName(ApiConstants.SERVICE_IP)
+    @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the IP Address for this Management Server")
-    private String serviceIp;
+    private String ipAddress;
 
     public String getId() {
         return this.id;
@@ -116,8 +116,8 @@ public class ManagementServerResponse extends BaseResponse {
         return lastBoot;
     }
 
-    public String getServiceIp() {
-        return serviceIp;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     public void setId(String id) {
@@ -164,8 +164,8 @@ public class ManagementServerResponse extends BaseResponse {
         this.kernelVersion = kernelVersion;
     }
 
-    public void setServiceIp(String serviceIp) {
-        this.serviceIp = serviceIp;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getKernelVersion() {
