@@ -28,7 +28,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -37,13 +36,21 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -306,12 +313,12 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Pair<User, Account> findUserByApiKey(String apiKey) {
+    public Ternary<User, Account, ApiKeyPair> findUserByApiKey(String apiKey) {
         return null;
     }
 
     @Override
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
+    public ApiKeyPair createApiKeyAndSecretKey(RegisterUserKeysCmd cmd) {
         return null;
     }
 
@@ -439,6 +446,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public void validateCallingUserHasAccessToDesiredUser(Long userId) {
+
+    }
+
     public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
         // TODO Auto-generated method stub
     }
@@ -455,8 +466,23 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public ListResponse<ApiKeyPairResponse> getKeys(ListUserKeysCmd cmd) {
         return null;
+    }
+
+    @Override
+    public List<ApiKeyPairPermission> listKeyRules(ListUserKeyRulesCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public void deleteApiKey(DeleteUserKeysCmd cmd) {
+
+    }
+
+    @Override
+    public void deleteApiKey(ApiKeyPair id) {
+
     }
 
     @Override
@@ -470,6 +496,25 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public ApiKeyPair getLatestUserKeyPair(Long userId) {
+        return null;
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairById(Long id) {
+        return null;
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairByApiKey(String apiKey) {
+        return null;
+    }
+
+    @Override
+    public String getAccessingApiKey(BaseCmd cmd) {
+        return null;
+    }
+
     public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
 
     }

@@ -35,6 +35,7 @@ import com.cloud.bgp.BGPService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -219,6 +220,8 @@ public abstract class BaseCmd {
     public VnfTemplateManager vnfTemplateManager;
     @Inject
     public BucketApiService _bucketService;
+    @Inject
+    public ApiKeyPairService apiKeyPairService;
     @Inject
     public BGPService bgpService;
 

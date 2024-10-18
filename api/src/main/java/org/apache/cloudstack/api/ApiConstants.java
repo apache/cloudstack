@@ -19,6 +19,7 @@ package org.apache.cloudstack.api;
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
+    public static final String ACCOUNT_NAME = "accountname";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
@@ -35,6 +36,8 @@ public class ApiConstants {
     public static final String ALLOW_USER_FORCE_STOP_VM = "allowuserforcestopvm";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
+    public static final String API_KEY_FILTER = "apikeyfilter";
+    public static final String HEADER_API_KEY = "apiKey";
     public static final String ARCHIVED = "archived";
     public static final String ARCH = "arch";
     public static final String AS_NUMBER = "asnumber";
@@ -303,6 +306,7 @@ public class ApiConstants {
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
     public static final String KEY = "key";
+    public static final String KEYPAIR_ID = "keypairid";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
     public static final String LAST_BOOT = "lastboottime";
@@ -445,6 +449,7 @@ public class ApiConstants {
     public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
+    public static final String SHOW_PERMISSIONS = "showpermissions";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
@@ -639,6 +644,7 @@ public class ApiConstants {
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
+    public static final String PERMISSIONS = "permissions";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";

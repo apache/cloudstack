@@ -383,6 +383,38 @@ CALL `cloud`.`IDEMPOTENT_MODIFY_COLUMN_CHAR_SET`('vpc_offerings', 'display_text'
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.roles','state', 'varchar(10) NOT NULL default "enabled" COMMENT "role state"');
 
+-- Create user token_keypairs table for apikey/secretkey tokens
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
+	`id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `domain_id` bigint(20) unsigned NOT NULL,
+    `account_id` bigint(20) unsigned NOT NULL,
+    `user_id` bigint(20) unsigned NOT NULL,
+    `start_date` datetime,
+    `end_date` datetime,
+    `description` varchar(100),
+    `api_key` varchar(255) NOT NULL,
+    `secret_key` varchar(255) NOT NULL,
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_api_keypair__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_api_keypair__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account`(`id`),
+    CONSTRAINT `fk_api_keypair__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `cloud`.`domain`(`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `cloud`.`keypair_permissions` (
+	`id` bigint(20) unsigned NOT NULL auto_increment,
+	`uuid` varchar(40) UNIQUE,
+	`sort_order` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `rule` varchar(255) NOT NULL,
+    `api_keypair_id` bigint(20) unsigned NOT NULL,
+    `permission` varchar(255) NOT NULL,
+    `description` varchar(255),
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_keypair_permissions__api_keypair_id` FOREIGN KEY(`api_keypair_id`) REFERENCES `cloud`.`api_keypair`(`id`)
+);
 -- Multi-Arch Zones
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'arch', 'varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the hosts in the cluster"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'arch', 'varchar(8) DEFAULT "x86_64" COMMENT "the CPU architecture of the host"');
