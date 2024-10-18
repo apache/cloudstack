@@ -469,6 +469,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this,
+                "id", "name", "uuid");
     }
 }

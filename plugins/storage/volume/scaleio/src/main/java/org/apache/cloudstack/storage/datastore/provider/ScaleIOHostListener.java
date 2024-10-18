@@ -32,6 +32,7 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -89,7 +90,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
                 storagePoolHost.setLocalPath(sdcId);
                 _storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
             }
-            logger.info("Connection established between storage pool: " + storagePool + " and host: " + hostId);
+            logger.info("Connection established between storage pool: {} and host: {}", storagePool, host);
         }
         return true;
     }
@@ -133,13 +134,16 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     }
 
     private String getHostSdcId(String sdcGuid, long poolId) {
+        StoragePoolVO storagePool = _primaryDataStoreDao.findById(poolId);
         try {
-            logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", poolId, sdcGuid));
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
+            logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", storagePool, sdcGuid));
+            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, _storagePoolDetailsDao);
             return client.getSdcIdByGuid(sdcGuid);
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            logger.error(String.format("Failed to get host SDC Id for pool: %s", poolId), e);
-            throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to get host SDC Id for pool: %s", poolId));
+            logger.error(String.format("Failed to get host SDC Id for pool: %s", storagePool), e);
+            throw new CloudRuntimeException(String.format(
+                    "Failed to establish connection with PowerFlex Gateway to get host SDC Id for pool: %s",
+                    storagePool));
         }
     }
 
@@ -147,15 +151,15 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         Answer answer = _agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command (" + storagePool.getName() + ")");
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach  PowerFlex storage pool " + storagePool.getId() + " to host " + hostId;
+            String msg = "Unable to attach  PowerFlex storage pool " + storagePool + " to host " + hostId;
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable to establish a connection from agent to  PowerFlex storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
+            throw new CloudRuntimeException("Unable to establish a connection from agent to  PowerFlex storage pool " + storagePool + " due to " + answer.getDetails() +
                     " (" + storagePool.getId() + ")");
         }
 

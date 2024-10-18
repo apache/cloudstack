@@ -393,7 +393,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(true);
 
         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
@@ -430,7 +430,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(false);
 
         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
@@ -461,7 +461,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(true);
 
         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
@@ -483,11 +483,11 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
         String sdcId = "7332760565f6340f";
-        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(1L, 1L);
+        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         doReturn(true).when(client).unmapVolumeFromSdc(any(), any());
         when(client.deleteVolume(any())).thenReturn(false);
 
@@ -510,7 +510,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
         String sdcId = "7332760565f6340f";
-        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(1L, 1L);
+        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
 
         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
     }

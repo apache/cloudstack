@@ -41,6 +41,8 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -465,5 +467,11 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Snapshot %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
+                .append("volumeId", getVolumeId()).append("path", getPath()).toString());
     }
 }
