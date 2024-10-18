@@ -62,7 +62,7 @@ def merge(dbag, rules):
                     for forward in dbag[source_ip]:
                         if ruleCompare(forward, newrule):
                             index = dbag[source_ip].index(forward)
-                            logging.info("Removing forwarding rule index %s", forward)
+                            logging.info("Removing forwarding rule [%s] at index [%s].", forward, index)
                     if not index == -1:
                         del dbag[source_ip][index]
 

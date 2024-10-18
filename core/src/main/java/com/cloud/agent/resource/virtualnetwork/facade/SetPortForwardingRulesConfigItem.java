@@ -41,7 +41,7 @@ public class SetPortForwardingRulesConfigItem extends AbstractConfigItemFacade {
 
         for (final PortForwardingRuleTO rule : command.getRules()) {
             final ForwardingRule fwdRule = new ForwardingRule(rule.revoked(), rule.getProtocol().toLowerCase(), rule.getSrcIp(), rule.getStringSrcPortRange(), rule.getDstIp(),
-                    rule.getStringDstPortRange(), rule.getStringCidrList());
+                    rule.getStringDstPortRange(), rule.getSourceCidrListAsString());
             rules.add(fwdRule);
         }
 

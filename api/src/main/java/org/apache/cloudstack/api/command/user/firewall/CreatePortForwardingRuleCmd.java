@@ -108,13 +108,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                 description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST,
+    @Parameter(name = ApiConstants.SOURCE_CIDR_LIST,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "the CIDR list to allow traffic, all other CIDRs will be blocked. " +
+            description = "the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
                     "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC's networks. By default, all CIDRs are allowed.")
-    private List<String> cidrList;
-
+    private List<String> sourceCidrList;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
         + "if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when PF"
@@ -163,7 +162,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public List<String> getSourceCidrList() {
-        return cidrList;
+        return sourceCidrList;
     }
 
     public Boolean getOpenFirewall() {
@@ -343,7 +342,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             }
         }
 
-        validateGivenCidrList();
+        validateSourceCidrList();
 
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall(), isDisplay());
@@ -444,14 +443,14 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return null;
     }
 
-    public void validateGivenCidrList() {
-        if (CollectionUtils.isEmpty(cidrList)) {
+    public void validateSourceCidrList() {
+        if (CollectionUtils.isEmpty(sourceCidrList)) {
             return;
         }
 
-        for (String cidr : cidrList) {
+        for (String cidr : sourceCidrList) {
             if (!NetUtils.isValidCidrList(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
-                throw new InvalidParameterValueException(String.format("The given CIDR [%s] is invalid.", cidr));
+                throw new InvalidParameterValueException(String.format("The given source CIDR [%s] is invalid.", cidr));
             }
         }
     }

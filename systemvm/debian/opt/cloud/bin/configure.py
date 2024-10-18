@@ -1217,10 +1217,10 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
-        cidr_list = rule['source_cidr_list']
-        if cidr_list:
-            cidr_list = "-s " + cidr_list
-        fw_prerout_rule = "-A PREROUTING %s -d %s/32 " % (cidr_list, rule["public_ip"])
+        source_cidr_list = rule['source_cidr_list']
+        if source_cidr_list:
+            source_cidr_list = "-s " + source_cidr_list
+        fw_prerout_rule = "-A PREROUTING %s -d %s/32 " % (source_cidr_list, rule["public_ip"])
         if not rule["protocol"] == "any":
             fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
