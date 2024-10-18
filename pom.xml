@@ -187,7 +187,7 @@
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.20</cs.xstream.version>
-        <org.springframework.version>5.3.26</org.springframework.version>
+        <org.springframework.version>6.1.14</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
     </properties>
