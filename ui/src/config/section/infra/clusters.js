@@ -24,8 +24,8 @@ export default {
   icon: 'cluster-outlined',
   permission: ['listClustersMetrics'],
   columns: () => {
-    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const fields = ['name', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
+    const metricsFields = ['state', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }

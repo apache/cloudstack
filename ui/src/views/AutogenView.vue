@@ -785,6 +785,11 @@ export default {
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
         this.apiName = this.$route.meta.permission[0]
+        if (!store.getters.metrics && !this.dataView &&
+            this.apiName && this.apiName.endsWith('Metrics') &&
+            store.getters.apis[this.apiName.replace(/Metrics$/, '')]) {
+          this.apiName = this.apiName.replace(/Metrics$/, '')
+        }
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
