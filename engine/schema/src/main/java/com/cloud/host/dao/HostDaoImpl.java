@@ -111,7 +111,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     protected SearchBuilder<HostVO> GuidSearch;
     protected SearchBuilder<HostVO> DcSearch;
-    protected GenericSearchBuilder<HostVO, Long> IdsDcSearch;
     protected SearchBuilder<HostVO> PodSearch;
     protected SearchBuilder<HostVO> ClusterSearch;
     protected SearchBuilder<HostVO> TypeSearch;
@@ -138,8 +137,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ManagedRoutingServersSearch;
     protected SearchBuilder<HostVO> SecondaryStorageVMSearch;
 
-    protected GenericSearchBuilder<HostVO, Long> HostIdSearch;
-    protected GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
+    protected GenericSearchBuilder<HostVO, Long> HostsInStatusesSearch;
     protected GenericSearchBuilder<HostVO, Long> CountRoutingByDc;
     protected SearchBuilder<HostTransferMapVO> HostTransferSearch;
     protected SearchBuilder<ClusterVO> ClusterManagedSearch;
@@ -289,13 +287,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         DcSearch.and("resourceState", DcSearch.entity().getResourceState(), Op.EQ);
         DcSearch.done();
 
-        IdsDcSearch = createSearchBuilder(Long.class);
-        IdsDcSearch.and("zoneId", IdsDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        IdsDcSearch.and("resourceState", IdsDcSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-        IdsDcSearch.and("status", IdsDcSearch.entity().getStatus(), Op.EQ);
-        IdsDcSearch.and("type", IdsDcSearch.entity().getType(), SearchCriteria.Op.EQ);
-        IdsDcSearch.done();
-
         ClusterStatusSearch = createSearchBuilder();
         ClusterStatusSearch.and("cluster", ClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         ClusterStatusSearch.and("status", ClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
@@ -396,14 +387,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         AvailHypevisorInZone.groupBy(AvailHypevisorInZone.entity().getHypervisorType());
         AvailHypevisorInZone.done();
 
-        HostsInStatusSearch = createSearchBuilder(Long.class);
-        HostsInStatusSearch.selectFields(HostsInStatusSearch.entity().getId());
-        HostsInStatusSearch.and("dc", HostsInStatusSearch.entity().getDataCenterId(), Op.EQ);
-        HostsInStatusSearch.and("pod", HostsInStatusSearch.entity().getPodId(), Op.EQ);
-        HostsInStatusSearch.and("cluster", HostsInStatusSearch.entity().getClusterId(), Op.EQ);
-        HostsInStatusSearch.and("type", HostsInStatusSearch.entity().getType(), Op.EQ);
-        HostsInStatusSearch.and("statuses", HostsInStatusSearch.entity().getStatus(), Op.IN);
-        HostsInStatusSearch.done();
+        HostsInStatusesSearch = createSearchBuilder(Long.class);
+        HostsInStatusesSearch.selectFields(HostsInStatusesSearch.entity().getId());
+        HostsInStatusesSearch.and("dc", HostsInStatusesSearch.entity().getDataCenterId(), Op.EQ);
+        HostsInStatusesSearch.and("pod", HostsInStatusesSearch.entity().getPodId(), Op.EQ);
+        HostsInStatusesSearch.and("cluster", HostsInStatusesSearch.entity().getClusterId(), Op.EQ);
+        HostsInStatusesSearch.and("type", HostsInStatusesSearch.entity().getType(), Op.EQ);
+        HostsInStatusesSearch.and("statuses", HostsInStatusesSearch.entity().getStatus(), Op.IN);
+        HostsInStatusesSearch.done();
 
         CountRoutingByDc = createSearchBuilder(Long.class);
         CountRoutingByDc.select(null, Func.COUNT, null);
@@ -466,12 +457,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostsInClusterSearch.and("server", HostsInClusterSearch.entity().getManagementServerId(), SearchCriteria.Op.NNULL);
         HostsInClusterSearch.done();
 
-        HostIdSearch = createSearchBuilder(Long.class);
-        HostIdSearch.selectFields(HostIdSearch.entity().getId());
-        HostIdSearch.and("dataCenterId", HostIdSearch.entity().getDataCenterId(), Op.EQ);
-        HostIdSearch.and("clusterId", HostIdSearch.entity().getClusterId(), Op.EQ);
-        HostIdSearch.done();
-
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
         _pingTimeAttr = _allAttributes.get("lastPinged");
@@ -531,38 +516,26 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public Integer countAllCPUSockets() {
-        final String sql = "SELECT SUM(host.cpu_sockets) FROM host WHERE host.type = 'Routing' AND host.removed IS NULL";
-        int cpuSockets = 0;
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    cpuSockets = rs.getInt(1);
-                }
-            }
-        } catch (SQLException e) {
-            s_logger.debug("SQLException caught", e);
-        }
-        return cpuSockets;
+        GenericSearchBuilder<HostVO, Integer> sb = createSearchBuilder(Integer.class);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.select(null, Func.SUM, sb.entity().getCpuSockets());
+        sb.done();
+        SearchCriteria<Integer> sc = sb.create();
+        return customSearch(sc, null).get(0);
     }
 
-    private List<Long> listIdsByDataCenterIdAndResourceState(long id, ResourceState state) {
-        SearchCriteria<Long> sc = IdsDcSearch.create();
-        sc.setParameters("zoneId", id);
-        sc.setParameters("resourceState", state);
-        sc.setParameters("status", Status.Up);
-        sc.setParameters("type", Type.Routing);
-        return customSearch(sc, null);
+    private List<Long> listIdsForRoutingByZoneIdAndResourceState(long zoneId, ResourceState state) {
+        return listIdsBy(Type.Routing, Status.Up, state, null, zoneId, null, null);
     }
 
     @Override
     public List<Long> listEnabledIdsByDataCenterId(long id) {
-        return listIdsByDataCenterIdAndResourceState(id, ResourceState.Enabled);
+        return listIdsForRoutingByZoneIdAndResourceState(id, ResourceState.Enabled);
     }
 
     @Override
     public List<Long> listDisabledIdsByDataCenterId(long id) {
-        return listIdsByDataCenterIdAndResourceState(id, ResourceState.Disabled);
+        return listIdsForRoutingByZoneIdAndResourceState(id, ResourceState.Disabled);
     }
 
     @Override
@@ -1199,10 +1172,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<Long> listIdsByDataCenterId(Long zoneId) {
-        SearchCriteria<Long> sc = IdsDcSearch.create();
-        sc.setParameters("dc", zoneId);
-        sc.setParameters("type", Type.Routing);
-        return customSearch(sc, null);
+        return listIdsBy(Type.Routing, null, null, null, zoneId, null, null);
     }
 
     @Override
@@ -1214,12 +1184,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<Long> listIdsByPodId(Long podId) {
-        GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.done();
-        SearchCriteria<Long> sc = sb.create();
-        sc.setParameters("podId", podId);
-        return customSearch(sc, null);
+        return listIdsBy(null, null, null, null, null, podId, null);
     }
 
     @Override
@@ -1229,14 +1194,56 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    @Override
-    public List<Long> listIdsByClusterId(Long clusterId) {
+    private List<Long> listIdsBy(Host.Type type, Status status, ResourceState resourceState,
+             HypervisorType hypervisorType, Long zoneId, Long podId, Long clusterId) {
         GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
+        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<Long> sc = sb.create();
-        sc.setParameters("clusterId", clusterId);
+        if (type != null) {
+            sc.setParameters("type", type);
+        }
+        if (status != null) {
+            sc.setParameters("status", status);
+        }
+        if (resourceState != null) {
+            sc.setParameters("resourceState", resourceState);
+        }
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType);
+        }
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        if (podId != null) {
+            sc.setParameters("podId", podId);
+        }
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> listIdsByClusterId(Long clusterId) {
+        return listIdsBy(null, null, null, null, null, null, clusterId);
+    }
+
+    @Override
+    public List<Long> listIdsForUpRouting(Long zoneId, Long podId, Long clusterId) {
+        return listIdsBy(Type.Routing, Status.Up, null, null, zoneId, podId, clusterId);
+    }
+
+    @Override
+    public List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType) {
+        return listIdsBy(null, Status.Up, ResourceState.Enabled, hypervisorType, zoneId, null, null);
     }
 
     @Override
@@ -1319,9 +1326,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<Long> listAllHosts(long zoneId) {
-        SearchCriteria<Long> sc = HostIdSearch.create();
-        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-        return customSearch(sc, null);
+        return listIdsBy(null, null, null, null, zoneId, null, null);
     }
 
     @Override
@@ -1443,15 +1448,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             s_logger.error("Error trying to obtain hypervisor version on datacenter", e);
         }
         return result;
-    }
-
-    @Override
-    public List<HostVO> listAllHostsByType(Host.Type type) {
-        SearchCriteria<HostVO> sc = TypeSearch.create();
-        sc.setParameters("type", type);
-        sc.setParameters("resourceState", ResourceState.Enabled);
-
-        return listBy(sc);
     }
 
     @Override
@@ -1602,7 +1598,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<Long> listAllIds() {
-        return customSearch(HostIdSearch.create(), null);
+        return listIdsBy(null, null, null, null, null, null, null);
     }
 
     @Override

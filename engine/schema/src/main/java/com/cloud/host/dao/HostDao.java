@@ -99,15 +99,19 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> listIdsByClusterId(Long clusterId);
 
+    List<Long> listIdsForUpRouting(Long zoneId, Long podId, Long clusterId);
+
+    List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType);
+
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
 
     /**
-     * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
+     * Returns host Ids that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
     List<Long> listEnabledIdsByDataCenterId(long id);
 
     /**
-     * Returns hosts that are 'Up' and 'Disabled' from the given Data Center/Zone
+     * Returns host Ids that are 'Up' and 'Disabled' from the given Data Center/Zone
      */
     List<Long> listDisabledIdsByDataCenterId(long id);
 
@@ -116,8 +120,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listAllHosts(long zoneId);
 
     List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType);
-
-    List<HostVO> listAllHostsByType(Host.Type type);
 
     HostVO findByPublicIp(String publicIp);
 

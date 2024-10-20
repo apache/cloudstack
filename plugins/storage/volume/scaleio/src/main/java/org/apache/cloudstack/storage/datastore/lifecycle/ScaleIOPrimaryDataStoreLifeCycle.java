@@ -24,17 +24,12 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -44,9 +39,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParame
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -57,8 +56,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage;
@@ -79,6 +77,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
 
     @Inject
     private ClusterDao clusterDao;
+    @Inject
+    private HostDao hostDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
     @Inject
@@ -259,28 +259,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         }
 
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) dataStore;
-        List<HostVO> hostsInCluster = resourceManager.listAllUpAndEnabledHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
-                primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
-        if (hostsInCluster.isEmpty()) {
+        List<Long> hostIds = hostDao.listIdsForUpRouting(primaryDataStoreInfo.getDataCenterId(),
+                primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getClusterId());
+        if (hostIds.isEmpty()) {
             primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
             throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + primaryDataStoreInfo.getClusterId());
         }
 
         LOGGER.debug("Attaching the pool to each of the hosts in the cluster: " + primaryDataStoreInfo.getClusterId());
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
-        for (HostVO host : hostsInCluster) {
-            try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId())) {
-                    poolHosts.add(host);
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "on the cluster: " + primaryDataStoreInfo.getClusterId(), e);
-            }
-        }
-
-        if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
-        }
+        storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachCluster(dataStore);
         return true;
@@ -298,20 +285,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         }
 
         LOGGER.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
-        List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
-        for (HostVO host : hosts) {
-            try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId())) {
-                    poolHosts.add(host);
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "in the zone: " + scope.getScopeId(), e);
-            }
-        }
-        if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool " + dataStore + " in the zone: " + scope.getScopeId());
-        }
+        List<Long> hostIds = hostDao.listIdsForUpRouting(null, null, scope.getScopeId());
+        storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachZone(dataStore);
         return true;

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -42,6 +43,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
@@ -211,6 +213,10 @@ public interface StorageManager extends StorageService {
                     "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
             true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> PrimaryStorageHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
+            "primary.storage.host.connect.workers", "3",
+            "Number of worker threads to be used to connect primary a storage to hosts", false);
+
     /**
      * should we execute in sequence not involving any storages?
      * @return tru if commands should execute in sequence
@@ -357,6 +363,9 @@ public interface StorageManager extends StorageService {
     boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
+
+    void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+            boolean handleStorageConflictException, boolean errorOnNoUpHost) throws CloudRuntimeException;
 
     boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
