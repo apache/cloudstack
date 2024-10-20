@@ -27,6 +27,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -45,7 +46,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     Integer countUpAndEnabledHostsInZone(long zoneId);
 
-    Integer countAllCPUSockets();
+    Pair<Integer, Integer> countAllHostsAndCPUSocketsByType(Type type);
 
     /**
      * Mark all hosts associated with a certain management server

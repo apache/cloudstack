@@ -555,14 +555,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setZones(dataCenterDao.countAll());
         response.setPods(podDao.countAll());
         response.setClusters(clusterDao.countAll());
-        response.setHosts(hostDao.countAllByType(Host.Type.Routing));
+        Pair<Integer, Integer> hostCountAndCpuSockets = hostDao.countAllHostsAndCPUSocketsByType(Host.Type.Routing);
+        response.setHosts(hostCountAndCpuSockets.first());
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
         response.setSystemvms(vmInstanceDao.countByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
         response.setAlerts(alertDao.countAll());
-        response.setCpuSockets(hostDao.countAllCPUSockets());
+        response.setCpuSockets(hostCountAndCpuSockets.second());
         response.setManagementServers(managementServerHostDao.countAll());
         return response;
     }

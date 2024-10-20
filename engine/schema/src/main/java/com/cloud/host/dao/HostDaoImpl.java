@@ -58,6 +58,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -515,13 +516,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public Integer countAllCPUSockets() {
-        GenericSearchBuilder<HostVO, Integer> sb = createSearchBuilder(Integer.class);
+    public Pair<Integer, Integer> countAllHostsAndCPUSocketsByType(Type type) {
+        GenericSearchBuilder<HostVO, SumCount> sb = createSearchBuilder(SumCount.class);
+        sb.select("sum", Func.SUM, sb.entity().getCpuSockets());
+        sb.select("count", Func.COUNT, null);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.select(null, Func.SUM, sb.entity().getCpuSockets());
         sb.done();
-        SearchCriteria<Integer> sc = sb.create();
-        return customSearch(sc, null).get(0);
+        SearchCriteria<SumCount> sc = sb.create();
+        sc.setParameters("type", type);
+        SumCount result = customSearch(sc, null).get(0);
+        return new Pair<>((int)result.count, (int)result.sum);
     }
 
     private List<Long> listIdsForRoutingByZoneIdAndResourceState(long zoneId, ResourceState state) {
