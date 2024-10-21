@@ -1809,7 +1809,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         selectedHost.getName());
             } else if (destinationCluster.getId() != selectedHost.getClusterId()) {
                 err = String.format(
-                        "Cannot import the converted instance on the host %s as it is not in the same zone as the destination cluster",
+                        "Cannot import the converted instance on the host %s as it is not in the same cluster as the destination cluster",
                         selectedHost.getName());
             }
 
