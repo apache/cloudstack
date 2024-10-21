@@ -898,7 +898,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
 
-        for (PortForwardingRuleVO rule: rules){
+        for (PortForwardingRuleVO rule : rules) {
             rule.setSourceCidrList(firewallCidrsDao.getSourceCidrs(rule.getId()));
         }
 
@@ -953,6 +953,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, true, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        }
+
+        for (PortForwardingRuleVO rule: rules) {
+            rule.setSourceCidrList(firewallCidrsDao.getSourceCidrs(rule.getId()));
         }
 
         try {

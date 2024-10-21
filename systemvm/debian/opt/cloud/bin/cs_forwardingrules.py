@@ -35,7 +35,8 @@ def merge(dbag, rules):
             newrule["public_ports"] = rule["source_port_range"]
             newrule["internal_ports"] = rule["destination_port_range"]
             newrule["protocol"] = rule["protocol"]
-            newrule["source_cidr_list"] = rule["source_cidr_list"]
+            if "source_cidr_list" in rule:
+                newrule["source_cidr_list"] = rule["source_cidr_list"]
 
         if not revoke:
             if rules["type"] == "staticnatrules":
