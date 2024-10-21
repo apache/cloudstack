@@ -622,7 +622,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     @Override
     public List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId, List<State> states,
-                                                                                List<Long> offeringIds, List<Long> templateIds) {
+                    List<Long> offeringIds, List<Long> templateIds) {
         SearchBuilder<UserVmJoinVO> userVmSearch = createSearchBuilder();
         userVmSearch.selectFields(userVmSearch.entity().getId(), userVmSearch.entity().getCpu(),
                 userVmSearch.entity().getRamSize());

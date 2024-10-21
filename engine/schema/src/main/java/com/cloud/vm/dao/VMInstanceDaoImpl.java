@@ -939,7 +939,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return customSearch(sc, null);
     }
 
-    protected Integer getPowerUpdateCount(final VMInstanceVO instance, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
+    protected Integer getPowerUpdateCount(final VMInstanceVO instance, final long powerHostId,
+              final VirtualMachine.PowerState powerState, Date wisdomEra) {
         if (instance.getPowerStateUpdateTime() == null || instance.getPowerStateUpdateTime().before(wisdomEra)) {
             Long savedPowerHostId = instance.getPowerHostId();
             boolean isStateMismatch = instance.getPowerState() != powerState
@@ -956,7 +957,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updatePowerState(final long instanceId, final long powerHostId, final VirtualMachine.PowerState powerState, Date wisdomEra) {
+    public boolean updatePowerState(final long instanceId, final long powerHostId,
+            final VirtualMachine.PowerState powerState, Date wisdomEra) {
         return Transaction.execute((TransactionCallback<Boolean>) status -> {
             VMInstanceVO instance = findById(instanceId);
             if (instance == null) {
@@ -989,7 +991,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public Map<Long, VirtualMachine.PowerState> updatePowerState(Map<Long, VirtualMachine.PowerState> instancePowerStates, long powerHostId, Date wisdomEra) {
+    public Map<Long, VirtualMachine.PowerState> updatePowerState(
+            final Map<Long, VirtualMachine.PowerState> instancePowerStates, long powerHostId, Date wisdomEra) {
         Map<Long, VirtualMachine.PowerState> notUpdated = new HashMap<>();
         List<VMInstanceVO> instances = listSelectPowerStateByIds(new ArrayList<>(instancePowerStates.keySet()));
         Map<Long, Integer> updateCounts = new HashMap<>();

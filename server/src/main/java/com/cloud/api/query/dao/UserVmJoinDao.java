@@ -42,7 +42,6 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listActiveByIsoId(Long isoId);
 
-    // TODO - We only need id, cpu and ram_size here. This could be done using JOIN on fly
     List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId,
              List<VirtualMachine.State> states, List<Long> offeringIds, List<Long> templateIds);
 }
