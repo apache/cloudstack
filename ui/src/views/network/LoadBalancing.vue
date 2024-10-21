@@ -37,7 +37,7 @@
       </div>
       <div class="form">
         <div class="form__item" ref="newCidrList">
-          <tooltip-label :title="$t('label.cidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
+          <tooltip-label :title="$t('label.sourcecidrlist')" bold :tooltip="createLoadBalancerRuleParams.cidrlist.description" :tooltip-placement="'right'"/>
           <a-input v-model:value="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
@@ -808,7 +808,7 @@ export default {
         },
         {
           key: 'cidrlist',
-          title: this.$t('label.cidrlist')
+          title: this.$t('label.sourcecidrlist')
         },
         {
           key: 'protocol',

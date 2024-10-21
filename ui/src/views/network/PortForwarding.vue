@@ -72,6 +72,12 @@
             <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
+        <div v-if="isVPC()">
+          <div class="form__item" ref="newCidrList">
+            <tooltip-label :title="$t('label.sourcecidrlist')" bold :tooltip="apiParams.cidrlist.description" :tooltip-placement="'right'"/>
+            <a-input v-model:value="newRule.cidrlist"></a-input>
+          </div>
+        </div>
         <div class="form__item" style="margin-left: auto;">
           <div class="form__label">{{ $t('label.add.vm') }}</div>
           <a-button :disabled="!('createPortForwardingRule' in $store.getters.apis)" type="primary" @click="openAddVMModal">{{ $t('label.add') }}</a-button>
@@ -107,6 +113,9 @@
         </template>
         <template v-if="column.key === 'protocol'">
           {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'cidrlist'">
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
         </template>
         <template v-if="column.key === 'vm'">
           <div><desktop-outlined/>
@@ -334,9 +343,11 @@ import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
 export default {
   components: {
+    TooltipLabel,
     Status,
     TooltipButton,
     BulkActionView
@@ -400,6 +411,11 @@ export default {
           title: this.$t('label.protocol')
         },
         {
+          key: 'cidrlist',
+          title: this.$t('label.sourcecidrlist'),
+          hidden: !this.isVPC()
+        },
+        {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
@@ -411,7 +427,7 @@ export default {
           key: 'actions',
           title: this.$t('label.actions')
         }
-      ],
+      ].filter(item => !item.hidden),
       tiers: {
         loading: false,
         data: []
@@ -450,13 +466,17 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      cidrlist: ''
     }
   },
   computed: {
     hasSelected () {
       return this.selectedRowKeys.length > 0
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createPortForwardingRule')
   },
   created () {
     console.log(this.resource)
@@ -830,6 +850,9 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
+    },
+    isVPC () {
+      return 'vpcid' in this.resource
     }
   }
 }
