@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.joda.time.DateTime;
 
@@ -203,10 +205,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
-            if (backupDao.persist(backup) == null) {// TODO is null a failure ?
-                throw new Exception("Failed to persist backup.");
-            }
-            ;
+            assert backupDao.persist(backup) != null;
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to take a backup of VM %s.", vm.getName()), e);
         }
@@ -360,31 +359,33 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         logger.info("backroll delete backup id: {}", backup.getExternalId());
         if (backup.getStatus().equals(Backup.Status.BackingUp)) {
             throw new CloudRuntimeException("You can't delete a backup while it still backing up.");
+        } else {
+            logger.debug("backroll - try delete backup");
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+
+            if (backup.getStatus().equals(Backup.Status.Removed) || backup.getStatus().equals(Backup.Status.Failed)) {
+                return deleteBackupInDb(backup);
+            }
+
+            try {
+                getClient(backup.getZoneId()).deleteBackup(vm.getUuid(), getBackupName(backup));
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format("Failed to delete backup %s", backup.getName()));
+            }
+
+            logger.debug("Backup deletion for backup {} complete on backroll side.", backup.getUuid());
+            return deleteBackupInDb(backup);
         }
-
-        logger.debug("backroll - try delete backup");
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-
-        if (backup.getStatus().equals(Backup.Status.Removed) || backup.getStatus().equals(Backup.Status.Failed)) {
-            deleteBackupInDb(backup);
-            return true;
-        }
-
-        try {
-            getClient(backup.getZoneId()).deleteBackup(vm.getUuid(), getBackupName(backup));
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to delete backup %s", backup.getName()));
-        }
-
-        logger.debug("Backup deletion for backup {} complete on backroll side.", backup.getUuid());
-        deleteBackupInDb(backup);
-        return true;
     }
 
-    private void deleteBackupInDb(Backup backup) {
+    private boolean deleteBackupInDb(Backup backup) {
         BackupVO backupToUpdate = ((BackupVO) backup);
         backupToUpdate.setStatus(Backup.Status.Removed);
-        backupDao.persist(backupToUpdate); // TODO is null a failure ?
+        if (backupDao.persist(backupToUpdate) != null) {
+            logger.debug("Backroll backup {} deleted in database.", backup.getUuid());
+            return true;
+        }
+        return false;
     }
 
     protected BackrollClient getClient(final Long zoneId) throws ClientProtocolException, IOException {
