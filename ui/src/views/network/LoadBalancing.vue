@@ -126,7 +126,7 @@
       :rowKey="record => record.id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'cidrlist'">
-          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(",", "\n") }}</span>
         </template>
         <template v-if="column.key === 'algorithm'">
           {{ returnAlgorithmName(record.algorithm) }}
