@@ -214,8 +214,8 @@ public interface StorageManager extends StorageService {
             true, ConfigKey.Scope.Zone);
 
     ConfigKey<Integer> PrimaryStorageHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
-            "primary.storage.host.connect.workers", "3",
-            "Number of worker threads to be used to connect primary a storage to hosts", false);
+            "primary.storage.host.connect.workers", "1",
+            "Number of worker threads to be used to connect hosts to a primary storage", true);
 
     /**
      * should we execute in sequence not involving any storages?

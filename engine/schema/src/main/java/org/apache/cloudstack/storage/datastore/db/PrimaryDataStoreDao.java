@@ -142,4 +142,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
             String keyword, Filter searchFilter);
 
     List<StoragePoolVO> listByIds(List<Long> ids);
+
+    List<Long> listAllIds();
 }

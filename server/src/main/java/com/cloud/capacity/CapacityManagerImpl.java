@@ -40,7 +40,6 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.cloudstack.utils.cache.SingleCache;
-import org.apache.cloudstack.utils.executor.QueuedExecutor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
@@ -150,7 +149,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     private LazyCache<Long, Pair<String, String>> clusterValuesCache;
     private SingleCache<Map<Long, ServiceOfferingVO>> serviceOfferingsCache;
-    private QueuedExecutor<Host> hostCapacityUpdateExecutor;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -159,9 +157,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         VirtualMachine.State.getStateMachine().registerListener(this);
         _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
-
-        hostCapacityUpdateExecutor = new QueuedExecutor<>("HostCapacityUpdateExecutor", 10, 10,
-                1, s_logger, this::updateCapacityForHostInternal);
 
         return true;
     }
@@ -172,13 +167,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         _resourceMgr.registerResourceEvent(ResourceListener.EVENT_CANCEL_MAINTENANCE_AFTER, this);
         clusterValuesCache = new LazyCache<>(128, 60, this::getClusterValues);
         serviceOfferingsCache = new SingleCache<>(60, this::getServiceOfferingsMap);
-        hostCapacityUpdateExecutor.startProcessing();
         return true;
     }
 
     @Override
     public boolean stop() {
-        hostCapacityUpdateExecutor.shutdown();
         return true;
     }
 
@@ -646,12 +639,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         return totalAllocatedSize;
     }
 
-    @DB
-    @Override
-    public void updateCapacityForHost(final Host host) {
-        hostCapacityUpdateExecutor.queueRequest(host);
-    }
-
     protected Pair<String, String> getClusterValues(long clusterId) {
         Map<String, String> map = _clusterDetailsDao.findDetails(clusterId,
                 List.of(VmDetailConstants.CPU_OVER_COMMIT_RATIO, VmDetailConstants.CPU_OVER_COMMIT_RATIO));
@@ -694,7 +681,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @DB
-    protected void updateCapacityForHostInternal(final Host host) {
+    @Override
+    public void updateCapacityForHost(final Host host) {
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -1324,6 +1312,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
                 StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold,
-                StorageAllocatedCapacityDisableThresholdForVolumeSize };
+                StorageAllocatedCapacityDisableThresholdForVolumeSize, CapacityCalculateWorkers };
     }
 }

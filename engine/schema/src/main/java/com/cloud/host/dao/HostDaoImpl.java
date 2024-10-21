@@ -1246,6 +1246,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<Long> listIdsByType(Type type) {
+        return listIdsBy(type, null, null, null, null, null, null);
+    }
+
+    @Override
     public List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType) {
         return listIdsBy(null, Status.Up, ResourceState.Enabled, hypervisorType, zoneId, null, null);
     }

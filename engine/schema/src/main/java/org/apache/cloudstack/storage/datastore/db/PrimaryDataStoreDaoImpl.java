@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.host.Status;
@@ -41,7 +39,9 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -713,5 +713,13 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         }
         sc.setParameters("parent", 0);
         return sc;
+    }
+
+    @Override
+    public List<Long> listAllIds() {
+        GenericSearchBuilder<StoragePoolVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.done();
+        return customSearch(sb.create(), null);
     }
 }

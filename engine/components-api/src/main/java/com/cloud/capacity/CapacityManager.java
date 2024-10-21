@@ -127,6 +127,10 @@ public interface CapacityManager {
                     true,
                     ConfigKey.Scope.Zone);
 
+    ConfigKey<Integer> CapacityCalculateWorkers = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "capacity.calculate.workers", "1",
+            "Number of worker threads to be used for capacities calculation", true);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);

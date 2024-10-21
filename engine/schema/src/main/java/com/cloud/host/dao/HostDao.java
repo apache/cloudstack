@@ -102,6 +102,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<Long> listIdsForUpRouting(Long zoneId, Long podId, Long clusterId);
 
+    List<Long> listIdsByType(Type type);
+
     List<Long> listIdsForUpEnabledByZoneAndHypervisor(Long zoneId, HypervisorType hypervisorType);
 
     List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
