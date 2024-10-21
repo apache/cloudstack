@@ -216,11 +216,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
                     // Usually, there will only be 1 credential that we manage, but an error persisting
                     // credentials might leave an un-managed credential which we can just delete. It is better
                     // to delete as otherwise, we may hit a max credential limit for this IAM user.
-                    DeleteAccessKeyRequest deleteAccessKeyRequest = new DeleteAccessKeyRequest();
-                    deleteAccessKeyRequest.setUserName(iamUser);
-                    deleteAccessKeyRequest.setAccessKeyId(accessKeyMetadata.getAccessKeyId());
-                    logger.info("Deleting un-managed IAM AccessKeyId {} for IAM User {}", accessKeyMetadata.getAccessKeyId(), iamUser);
-                    iamClient.deleteAccessKey(deleteAccessKeyRequest);
+                    deleteIAMCredential(iamClient, iamUser, accessKeyMetadata.getAccessKeyId());
                 }
             } catch (NoSuchEntityException e) {
                 // No IAM User. Ignore and fix this below.
@@ -246,11 +242,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.debug("Looking for any un-managed IAM credentials for IAM User {}", iamUser);
             ListAccessKeysResult listRes = iamClient.listAccessKeys(new ListAccessKeysRequest().withUserName(iamUser));
             for (AccessKeyMetadata accessKeyMetadata : listRes.getAccessKeyMetadata()) {
-                DeleteAccessKeyRequest deleteAccessKeyRequest = new DeleteAccessKeyRequest();
-                deleteAccessKeyRequest.setUserName(iamUser);
-                deleteAccessKeyRequest.setAccessKeyId(accessKeyMetadata.getAccessKeyId());
-                logger.info("Deleting un-managed IAM AccessKeyId {} for IAM User {}", accessKeyMetadata.getAccessKeyId(), iamUser);
-                iamClient.deleteAccessKey(deleteAccessKeyRequest);
+                deleteIAMCredential(iamClient, iamUser, accessKeyMetadata.getAccessKeyId());
             }
         }
 
@@ -258,6 +250,21 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         AccessKey iamAccessKey = iamClient.createAccessKey(new CreateAccessKeyRequest(iamUser)).getAccessKey();
         logger.info("Created IAM Credential {} for IAM User {}", iamAccessKey.getAccessKeyId(), iamUser);
         return iamAccessKey;
+    }
+
+    /**
+     * Delete an IAM Credential.
+     *
+     * @param iamClient a valid iam connection
+     * @param iamUser the IAM user that owns the credential to delete.
+     * @param accessKeyId The IAM credential to delete
+     */
+    protected void deleteIAMCredential(AmazonIdentityManagement iamClient, String iamUser, String accessKeyId) {
+        DeleteAccessKeyRequest deleteAccessKeyRequest = new DeleteAccessKeyRequest();
+        deleteAccessKeyRequest.setUserName(iamUser);
+        deleteAccessKeyRequest.setAccessKeyId(accessKeyId);
+        logger.info("Deleting un-managed IAM AccessKeyId {} for IAM User {}", accessKeyId, iamUser);
+        iamClient.deleteAccessKey(deleteAccessKeyRequest);
     }
 
     /**
