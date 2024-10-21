@@ -82,4 +82,8 @@ public interface ServerResource extends Manager {
         return true;
     }
 
+    default boolean isAppendAgentNameToLogs() {
+        return false;
+    }
+
 }

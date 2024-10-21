@@ -287,10 +287,13 @@ public abstract class NioConnection implements Callable<Boolean> {
         }
     }
 
-    protected void terminate(final SelectionKey key) {
+    protected void terminate(final SelectionKey key, String msg) {
         final Link link = (Link)key.attachment();
         closeConnection(key);
         if (link != null) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.warn("Will terminate connection due to: " + msg);
+            }
             link.terminated();
             final Task task = _factory.create(Task.Type.DISCONNECT, link, null);
             unregisterLink(link.getSocketAddress());
@@ -326,7 +329,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             }
         } catch (final Exception e) {
             logDebug(e, key, 1);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 
@@ -455,7 +458,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             }
         } catch (final IOException e) {
             logTrace(e, key, 2);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 
@@ -482,7 +485,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             }
         } catch (final Exception e) {
             logDebug(e, key, 3);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 

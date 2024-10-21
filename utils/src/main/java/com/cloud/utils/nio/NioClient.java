@@ -44,22 +44,13 @@ public class NioClient extends NioConnection {
         this.host = host;
     }
 
-    protected void closeChannelAndSelector() {
+    protected void closeChannel() {
         try {
             if (clientConnection != null && clientConnection.isOpen()) {
                 clientConnection.close();
-                clientConnection = null;
             }
         } catch (IOException e) {
             s_logger.error("Failed to close SocketChannel", e);
-        }
-        try {
-            if (_selector != null && _selector.isOpen()) {
-                _selector.close();
-                _selector = null;
-            }
-        } catch (IOException e) {
-            s_logger.error("Failed to close Selector", e);
         }
     }
 
@@ -95,10 +86,10 @@ public class NioClient extends NioConnection {
             // remaining task done
             task = _factory.create(Task.Type.CONNECT, link, null);
         } catch (final GeneralSecurityException e) {
-            closeChannelAndSelector();
+            closeChannel();
             throw new IOException("Failed to initialise security", e);
         } catch (final IOException e) {
-            closeChannelAndSelector();
+            closeChannel();
             s_logger.error(String.format("IOException while connecting to %s", hostLog), e);
             throw e;
         }
@@ -122,7 +113,6 @@ public class NioClient extends NioConnection {
         super.cleanUp();
         if (clientConnection != null && clientConnection.isOpen()) {
             clientConnection.close();
-            clientConnection = null;
         }
         s_logger.info("NioClient connection closed");
     }
