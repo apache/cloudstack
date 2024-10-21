@@ -283,7 +283,7 @@ public class SnapshotVO implements Snapshot {
 
     @Override
     public String toString() {
-        return String.format("Snapshot %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
+        return String.format("Snapshot %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("id", getId()).append("uuid", getUuid()).append("name", getName())
                 .append("volumeId", getVolumeId()).toString());
     }
 }

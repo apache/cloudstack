@@ -469,7 +469,7 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this,
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(pdsv,
                 "id", "name", "uuid");
     }
 }

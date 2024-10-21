@@ -944,4 +944,12 @@ public class VolumeObject implements VolumeInfo {
     public boolean isFollowRedirects() {
         return followRedirects;
     }
+
+    @Override
+    public String toString() {
+        return "VolumeObject{" +
+                "volumeVO=" + volumeVO +
+                ", dataStore=" + dataStore +
+                '}';
+    }
 }

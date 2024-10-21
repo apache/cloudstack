@@ -335,7 +335,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
                 if (answer != null) {
                     throw new InvalidParameterValueException("Provided vCenter server details does not match with the existing vCenter in zone id: " + zoneId);
                 } else {
-                    String msg = "Can not validate vCenter through host " + h.getId() + " due to ValidateVcenterDetailsCommand returns null";
+                    String msg = "Can not validate vCenter through host " + h + " due to ValidateVcenterDetailsCommand returns null";
                     logger.warn(msg);
                 }
             }
@@ -343,8 +343,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         throw new CloudRuntimeException("Could not validate vCenter details through any of the hosts with in zone: " + zoneId + ", pod: " + podId + ", cluster: " + clusterId);
     }
 
-    protected boolean createStoragePool(long hostId, StoragePool pool) {
-        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+    protected boolean createStoragePool(HostVO host, StoragePool pool) {
+        long hostId = host.getId();
+        logger.debug("creating pool {} on  host {}", pool.getName(), host);
 
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem &&
                 pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS &&
@@ -363,10 +364,10 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
             primaryDataStoreDao.expunge(pool.getId());
             String msg = "";
             if (answer != null) {
-                msg = "Can not create storage pool through host " + hostId + " due to " + answer.getDetails();
+                msg = "Can not create storage pool through host " + host + " due to " + answer.getDetails();
                 logger.warn(msg);
             } else {
-                msg = "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                msg = "Can not create storage pool through host " + host + " due to CreateStoragePoolCommand returns null";
                 logger.warn(msg);
             }
             throw new CloudRuntimeException(msg);
@@ -392,7 +393,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
         boolean success = false;
         for (HostVO h : allHosts) {
-            success = createStoragePool(h.getId(), primarystore);
+            success = createStoragePool(h, primarystore);
             if (success) {
                 break;
             }
