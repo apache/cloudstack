@@ -1171,7 +1171,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
               boolean handleStorageConflictException, boolean errorOnNoUpHost) throws CloudRuntimeException {
         CopyOnWriteArrayList<Long> poolHostIds = new CopyOnWriteArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, Math.min(hostIds.size(),
-                PrimaryStorageHostConnectWorkers.value())));
+                StoragePoolHostConnectWorkers.value())));
         List<Future<Void>> futures = new ArrayList<>();
         AtomicBoolean conflictSeen = new AtomicBoolean(false);
         for (Long hostId : hostIds) {
@@ -3610,7 +3610,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
-                PrimaryStorageHostConnectWorkers
+                StoragePoolHostConnectWorkers
         };
     }
 

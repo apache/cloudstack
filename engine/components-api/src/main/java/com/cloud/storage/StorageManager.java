@@ -213,8 +213,8 @@ public interface StorageManager extends StorageService {
                     "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
             true, ConfigKey.Scope.Zone);
 
-    ConfigKey<Integer> PrimaryStorageHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
-            "primary.storage.host.connect.workers", "1",
+    ConfigKey<Integer> StoragePoolHostConnectWorkers = new ConfigKey<>("Storage", Integer.class,
+            "storage.pool.host.connect.workers", "1",
             "Number of worker threads to be used to connect hosts to a primary storage", true);
 
     /**
