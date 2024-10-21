@@ -108,10 +108,10 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                 description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.SOURCE_CIDR_LIST,
+    @Parameter(name = ApiConstants.CIDR_LIST,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
+            description = " the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
                     "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC's networks. By default, all CIDRs are allowed.")
     private List<String> sourceCidrList;
 
