@@ -422,6 +422,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             }
         }
         if (checkInterval > 0L) {
+            s_logger.info(String.format("Scheduling preferred host task with host.lb.interval=%dms", checkInterval));
             hostLbCheckExecutor = Executors.newSingleThreadScheduledExecutor((new NamedThreadFactory(name)));
             hostLbCheckExecutor.scheduleAtFixedRate(new PreferredHostCheckerTask(), checkInterval, checkInterval,
                     TimeUnit.MILLISECONDS);
