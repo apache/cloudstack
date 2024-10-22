@@ -29,6 +29,10 @@ public class NetrisProviderResponse extends BaseResponse {
     @Param(description = "Netris Provider name")
     private String name;
 
+    @SerializedName(ApiConstants.UUID)
+    @Param(description = "Netris provider uuid")
+    private String uuid;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "Zone ID to which the Netris Provider is associated with")
     private String zoneId;
@@ -45,9 +49,13 @@ public class NetrisProviderResponse extends BaseResponse {
     @Param(description = "Netris Provider port")
     private String port;
 
-    @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "Netris Provider username")
-    private String username;
+    @SerializedName(ApiConstants.SITE_NAME)
+    @Param(description = "Netris Provider site")
+    private String siteName;
+
+    @SerializedName(ApiConstants.TENANT_NAME)
+    @Param(description = "Netris Admin tenant name")
+    private String tenantName;
 
     public String getName() {
         return name;
@@ -55,6 +63,14 @@ public class NetrisProviderResponse extends BaseResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getZoneId() {
@@ -89,11 +105,19 @@ public class NetrisProviderResponse extends BaseResponse {
         this.port = port;
     }
 
-    public String getUsername() {
-        return username;
+    public String getSiteName() {
+        return siteName;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setSiteName(String siteName) {
+        this.siteName = siteName;
+    }
+
+    public String getTenantName() {
+        return tenantName;
+    }
+
+    public void setTenantName(String tenantName) {
+        this.tenantName = tenantName;
     }
 }

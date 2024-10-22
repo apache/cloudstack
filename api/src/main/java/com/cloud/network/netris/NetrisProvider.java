@@ -25,4 +25,6 @@ public interface NetrisProvider extends InternalIdentity, Identity {
     String getHostname();
     String getPort();
     String getUsername();
+    String getSiteName();
+    String getTenantName();
 }

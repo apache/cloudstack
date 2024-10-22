@@ -57,8 +57,6 @@ public interface VpcOffering extends InternalIdentity, Identity {
      */
     boolean isDefault();
 
-    boolean isForNsx();
-
     NetworkOffering.NetworkMode getNetworkMode();
 
     /**

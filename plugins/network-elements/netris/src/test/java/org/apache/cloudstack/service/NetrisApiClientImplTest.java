@@ -30,8 +30,10 @@ public class NetrisApiClientImplTest {
     private static final String endpointUrl = "https://my-netris-controller.localdomain";
     private static final String username = "user";
     private static final String password = "password";
+    private static final String siteName = "Datacenter-1";
+    private static final String adminTenantName = "Admin";
 
-    private static final NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password);
+    private static final NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password, siteName, adminTenantName);
 
     @Test
     public void testNetrisAuthStatus() {

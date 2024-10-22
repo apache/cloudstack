@@ -129,7 +129,7 @@
     </div>
     <div v-else>
       <advanced-guest-traffic-form
-        v-if="steps && steps[currentStep].formKey === 'guestTraffic' && !isNsxZone && !isNetrisZone"
+        v-if="steps && steps[currentStep].formKey === 'guestTraffic' && !isNsxZone"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -290,7 +290,7 @@ export default {
         title: 'label.pod',
         formKey: 'pod'
       })
-      if (!this.isTungstenZone && !this.isNsxZone && !this.isNetrisZone) {
+      if (!this.isTungstenZone && !this.isNsxZone) {
         steps.push({
           title: 'label.guest.traffic',
           formKey: 'guestTraffic',
@@ -485,7 +485,7 @@ export default {
         },
         {
           title: 'label.netris.provider.hostname',
-          key: 'netrisHostname',
+          key: 'hostname',
           placeHolder: 'message.installwizard.tooltip.netris.provider.hostname',
           required: true
         },
@@ -507,6 +507,18 @@ export default {
           placeHolder: 'message.installwizard.tooltip.netris.provider.password',
           required: true,
           password: true
+        },
+        {
+          title: 'label.netris.provider.site',
+          key: 'siteName',
+          placeHolder: 'message.installwizard.tooltip.netris.provider.site',
+          required: true
+        },
+        {
+          title: 'label.netris.provider.tenant.name',
+          key: 'tenantName',
+          placeHolder: 'message.installwizard.tooltip.netris.provider.tenant.name',
+          required: true
         }
       ]
       return fields
@@ -631,7 +643,7 @@ export default {
     }
     this.scrollToStepActive()
     if (this.zoneType === 'Basic' ||
-      (this.zoneType === 'Advanced' && (this.sgEnabled || this.isNsxZone || this.isNetrisZone))) {
+      (this.zoneType === 'Advanced' && (this.sgEnabled || this.isNsxZone))) {
       this.skipGuestTrafficStep = false
     } else {
       this.fetchConfiguration()

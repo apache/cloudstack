@@ -43,6 +43,7 @@ import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -354,6 +355,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     List<NetworkGuru> networkGurus;
     @Inject
     private NsxProviderDao nsxProviderDao;
+    @Inject
+    private NetrisProviderDao netrisProviderDao;
     @Inject
     private ASNumberDao asNumberDao;
     @Inject
@@ -1082,8 +1085,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 return null;
             }
 
-            if (isNicAllocatedForNsxPublicNetworkOnVR(network, profile, vm)) {
+            if (isNicAllocatedForProviderPublicNetworkOnVR(network, profile, vm, Provider.Nsx)) {
                 String guruName = "NsxPublicNetworkGuru";
+                NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
+                nsxGuru.allocate(network, profile, vm);
+            } else if (isNicAllocatedForProviderPublicNetworkOnVR(network, profile, vm, Provider.Netris)) {
+                String guruName = "NetrisPublicNetworkGuru";
                 NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
                 nsxGuru.allocate(network, profile, vm);
             }
@@ -1148,7 +1155,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
     }
 
-    private boolean isNicAllocatedForNsxPublicNetworkOnVR(Network network, NicProfile requested, VirtualMachineProfile vm) {
+    private boolean isNicAllocatedForProviderPublicNetworkOnVR(Network network, NicProfile requested, VirtualMachineProfile vm, Provider provider) {
         if (ObjectUtils.anyNull(network, requested, vm)) {
             return false;
         }
@@ -1158,7 +1165,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return false;
         }
         long dataCenterId = vm.getVirtualMachine().getDataCenterId();
-        if (nsxProviderDao.findByZoneId(dataCenterId) == null) {
+        if (Provider.Nsx == provider && nsxProviderDao.findByZoneId(dataCenterId) == null) {
+            return false;
+        } else if (Provider.Netris == provider && netrisProviderDao.findByZoneId(dataCenterId) == null) {
             return false;
         }
 
@@ -1168,14 +1177,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (CollectionUtils.isEmpty(ips)) {
             return false;
         }
+
         ips = ips.stream().filter(x -> !x.getAddress().addr().equals(requested.getIPv4Address())).collect(Collectors.toList());
         IPAddressVO ip = ips.get(0);
-        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
+        String detailKey = Provider.Nsx == provider ? ApiConstants.NSX_DETAIL_KEY : ApiConstants.NETRIS_DETAIL_KEY;
+        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), detailKey);
         if (vlanDetail == null) {
             return false;
         }
-        boolean isForNsx = vlanDetail.getValue().equalsIgnoreCase("true");
-        return isForNsx && !ip.isForSystemVms();
+        boolean isForProvider = vlanDetail.getValue().equalsIgnoreCase("true");
+        return isForProvider && !ip.isForSystemVms();
     }
 
     private void setMtuDetailsInVRNic(final Pair<NetworkVO, VpcVO> networks, Network network, NicVO vo) {

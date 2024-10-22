@@ -1055,8 +1055,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 NetworkOfferingVO defaultTungstenSharedSGNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE, "Offering for Tungsten Shared Security group enabled networks",
                                 TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false, false);
-
-                defaultTungstenSharedSGNetworkOffering.setForTungsten(true);
                 defaultTungstenSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultTungstenSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultTungstenSharedSGNetworkOffering);
 
@@ -1234,7 +1232,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         false, false, false, false, forVpc);
         defaultNatProviderNetworkOffering.setPublicLb(publicLB);
         defaultNatProviderNetworkOffering.setInternalLb(!publicLB);
-        defaultNatProviderNetworkOffering.setForNsx(Provider.Nsx.equals(provider));
         defaultNatProviderNetworkOffering.setNetworkMode(networkMode);
         defaultNatProviderNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultNatProviderNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatProviderNetworkOffering);

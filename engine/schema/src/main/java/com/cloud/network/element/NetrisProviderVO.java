@@ -24,6 +24,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -58,6 +59,18 @@ public class NetrisProviderVO implements NetrisProvider {
 
     @Column(name = "password")
     private String password;
+
+    @Column(name = "site_name")
+    private String siteName;
+
+    @Column(name = "tenant_name")
+    private String tenantName;
+
+    @Column(name = "created")
+    private Date created;
+
+    @Column(name = "removed")
+    private Date removed;
 
     public NetrisProviderVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -140,5 +153,113 @@ public class NetrisProviderVO implements NetrisProvider {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSiteName() {
+        return siteName;
+    }
+
+    public void setSiteName(String siteName) {
+        this.siteName = siteName;
+    }
+
+    public String getTenantName() {
+        return tenantName;
+    }
+
+    public void setTenantName(String tenantName) {
+        this.tenantName = tenantName;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
+    public static final class Builder {
+        private long zoneId;
+        private long hostId;
+        private String name;
+        private String hostname;
+        private String port;
+        private String username;
+        private String password;
+        private String siteName;
+        private String tenantName;
+
+        public Builder() {
+            // Default constructor
+        }
+
+        public Builder setZoneId(long zoneId) {
+            this.zoneId = zoneId;
+            return this;
+        }
+
+        public Builder setHostId(long hostId) {
+            this.hostId = hostId;
+            return this;
+        }
+
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder setHostname(String hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
+        public Builder setPort(String port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder setUsername(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder setPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder setSiteName(String siteName) {
+            this.siteName = siteName;
+            return this;
+        }
+
+        public Builder setTenantName(String tenantName) {
+            this.tenantName = tenantName;
+            return this;
+        }
+        public NetrisProviderVO build() {
+            NetrisProviderVO provider = new NetrisProviderVO();
+            provider.setZoneId(this.zoneId);
+            provider.setHostId(this.hostId);
+            provider.setUuid(UUID.randomUUID().toString());
+            provider.setName(this.name);
+            provider.setHostname(this.hostname);
+            provider.setPort(this.port);
+            provider.setUsername(this.username);
+            provider.setPassword(this.password);
+            provider.setSiteName(this.siteName);
+            provider.setTenantName(this.tenantName);
+            provider.setCreated(new Date());
+            return provider;
+        }
     }
 }

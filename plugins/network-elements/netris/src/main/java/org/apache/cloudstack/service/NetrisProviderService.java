@@ -18,8 +18,15 @@ package org.apache.cloudstack.service;
 
 import com.cloud.network.netris.NetrisProvider;
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNetrisProviderCmd;
+import org.apache.cloudstack.api.response.NetrisProviderResponse;
+
+import java.util.List;
 
 public interface NetrisProviderService extends PluggableService {
     NetrisProvider addProvider(AddNetrisProviderCmd cmd);
+    List<BaseResponse> listNetrisProviders(Long zoneId);
+    boolean deleteNetrisProvider(Long providerId);
+    NetrisProviderResponse createNetrisProviderResponse(NetrisProvider provider);
 }

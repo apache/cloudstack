@@ -16,17 +16,184 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.amazonaws.util.CollectionUtils;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisProvider;
+import com.cloud.resource.ResourceManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNetrisProviderCmd;
+import org.apache.cloudstack.api.command.DeleteNetrisProviderCmd;
+import org.apache.cloudstack.api.command.ListNetrisProvidersCmd;
+import org.apache.cloudstack.api.response.NetrisProviderResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.resource.NetrisResource;
 
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public class NetrisProviderServiceImpl implements NetrisProviderService {
+
+    @Inject
+    DataCenterDao dataCenterDao;
+    @Inject
+    ResourceManager resourceManager;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    HostDetailsDao hostDetailsDao;
+    @Inject
+    PhysicalNetworkDao physicalNetworkDao;
+    @Inject
+    NetworkDao networkDao;
+
     @Override
     public NetrisProvider addProvider(AddNetrisProviderCmd cmd) {
-        return null;
+        final Long zoneId = cmd.getZoneId();
+        final String name = cmd.getName();
+        final String hostname = cmd.getHostname();
+        final String port = cmd.getPort();
+        final String username = cmd.getUsername();
+        final String password = cmd.getPassword();
+        final String tenantName = cmd.getTenantName();
+        final String siteName = cmd.getSiteName();
+
+        Map<String, String> params = new HashMap<>();
+        params.put("guid", UUID.randomUUID().toString());
+        params.put("zoneId", zoneId.toString());
+        params.put("name", name);
+        params.put("hostname", hostname);
+        params.put("port", port);
+        params.put("username", username);
+        params.put("password", password);
+        params.put("siteName", siteName);
+        params.put("tenantName", tenantName);
+
+        Map<String, Object> hostdetails = new HashMap<>(params);
+        NetrisProvider netrisProvider;
+
+        NetrisResource netrisResource = new NetrisResource();
+        try {
+            netrisResource.configure(hostname, hostdetails);
+            final Host host = resourceManager.addHost(zoneId, netrisResource, netrisResource.getType(), params);
+            if (host != null) {
+                netrisProvider = Transaction.execute((TransactionCallback<NetrisProviderVO>) status -> {
+                    NetrisProviderVO netrisProviderVO = new NetrisProviderVO.Builder()
+                            .setZoneId(zoneId)
+                            .setHostId(host.getId())
+                            .setName(name)
+                            .setPort(port)
+                            .setHostname(hostname)
+                            .setUsername(username)
+                            .setPassword(password)
+                            .setSiteName(siteName)
+                            .setTenantName(tenantName)
+                            .build();
+
+                    netrisProviderDao.persist(netrisProviderVO);
+
+                    DetailVO detail = new DetailVO(host.getId(), "netriscontrollerid",
+                            String.valueOf(netrisProviderVO.getId()));
+                    hostDetailsDao.persist(detail);
+
+                    return netrisProviderVO;
+                });
+            } else {
+                throw new CloudRuntimeException("Failed to add Netris controller due to internal error.");
+            }
+        } catch (ConfigurationException e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
+        return  netrisProvider;
+    }
+
+    @Override
+    public List<BaseResponse> listNetrisProviders(Long zoneId) {
+        List<BaseResponse> netrisControllersResponseList = new ArrayList<>();
+        if (zoneId != null) {
+            NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+            if (Objects.nonNull(netrisProviderVO)) {
+                netrisControllersResponseList.add(createNetrisProviderResponse(netrisProviderVO));
+            }
+        } else {
+            List<NetrisProviderVO> netrisProviderVOList = netrisProviderDao.listAll();
+            for (NetrisProviderVO nsxProviderVO : netrisProviderVOList) {
+                netrisControllersResponseList.add(createNetrisProviderResponse(nsxProviderVO));
+            }
+        }
+
+        return netrisControllersResponseList;
+    }
+
+    @Override
+    public boolean deleteNetrisProvider(Long providerId) {
+        NetrisProviderVO netrisProvider = netrisProviderDao.findById(providerId);
+        if (Objects.isNull(netrisProvider)) {
+            throw new InvalidParameterValueException(String.format("Failed to find Netris provider with id: %s", providerId));
+        }
+        Long zoneId = netrisProvider.getZoneId();
+        // Find the physical network we work for
+        List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZone(zoneId);
+        for (PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            List<NetworkVO> networkList = networkDao.listByPhysicalNetwork(physicalNetwork.getId());
+            if (!CollectionUtils.isNullOrEmpty(networkList)) {
+                validateNetworkState(networkList);
+            }
+        }
+        netrisProviderDao.remove(providerId);
+        return true;
+    }
+
+    @Override
+    public NetrisProviderResponse createNetrisProviderResponse(NetrisProvider provider) {
+        DataCenterVO zone  = dataCenterDao.findById(provider.getZoneId());
+        if (Objects.isNull(zone)) {
+            throw new CloudRuntimeException(String.format("Failed to find zone with id %s", provider.getZoneId()));
+        }
+
+        NetrisProviderResponse response = new NetrisProviderResponse();
+        response.setName(provider.getName());
+        response.setUuid(provider.getUuid());
+        response.setHostname(provider.getHostname());
+        response.setPort(provider.getPort());
+        response.setZoneId(zone.getUuid());
+        response.setZoneName(zone.getName());
+        response.setSiteName(provider.getSiteName());
+        response.setTenantName(provider.getTenantName());
+        response.setObjectName("netrisProvider");
+        return response;
+    }
+
+    @VisibleForTesting
+    void validateNetworkState(List<NetworkVO> networkList) {
+        for (NetworkVO network : networkList) {
+            if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.Netris &&
+                    ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy))) {
+                throw new CloudRuntimeException("This Netris provider cannot be deleted as there are one or more logical networks provisioned by CloudStack on it.");
+            }
+        }
     }
 
     @Override
@@ -34,6 +201,8 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         List<Class<?>> cmdList = new ArrayList<>();
         if (Boolean.TRUE.equals(NetworkOrchestrationService.NETRIS_ENABLED.value())) {
             cmdList.add(AddNetrisProviderCmd.class);
+            cmdList.add(ListNetrisProvidersCmd.class);
+            cmdList.add(DeleteNetrisProviderCmd.class);
         }
         return cmdList;
     }
