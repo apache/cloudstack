@@ -400,8 +400,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (value < 0) { // return unlimit if value is set to negative
                     return max;
                 }
-                // convert the value from GiB to bytes in case of primary or secondary storage.
-                if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                // convert the value from GiB to bytes in case of storage type resource.
+                if (ResourceType.isStorageType(type)) {
                     value = value * ResourceType.bytesToGiB;
                 }
                 return value;
@@ -441,7 +441,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (value < 0) { // return unlimit if value is set to negative
                     return max;
                 }
-                if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                if (ResourceType.isStorageType(type)) {
                     value = value * ResourceType.bytesToGiB;
                 }
                 return value;
@@ -488,7 +488,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     if (value < 0) { // return unlimit if value is set to negative
                         return max;
                     }
-                    if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
+                    if (ResourceType.isStorageType(type)) {
                         value = value * ResourceType.bytesToGiB;
                     }
                     return value;
@@ -522,7 +522,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 String convCurrentResourceReservation = String.valueOf(currentResourceReservation);
                 String convNumResources = String.valueOf(numResources);
 
-                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                if (ResourceType.isStorageType(type)) {
                     convDomainResourceLimit = toHumanReadableSize(domainResourceLimit);
                     convCurrentDomainResourceCount = toHumanReadableSize(currentDomainResourceCount);
                     convCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
@@ -567,7 +567,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         String convertedCurrentResourceReservation = String.valueOf(currentResourceReservation);
         String convertedNumResources = String.valueOf(numResources);
 
-        if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+        if (ResourceType.isStorageType(type)) {
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
             convertedCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
@@ -604,7 +604,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public long findDefaultResourceLimitForDomain(ResourceType resourceType) {
         Long resourceLimit = null;
         resourceLimit = domainResourceLimitMap.get(resourceType.getName());
-        if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
+        if (resourceLimit != null && ResourceType.isStorageType(resourceType)) {
             if (! Long.valueOf(Resource.RESOURCE_UNLIMITED).equals(resourceLimit)) {
                 resourceLimit = resourceLimit * ResourceType.bytesToGiB;
             }
@@ -918,7 +918,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         //Convert max storage size from GiB to bytes
-        if ((resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage) && max >= 0) {
+        if (ResourceType.isStorageType(resourceType) && max >= 0) {
             max *= ResourceType.bytesToGiB;
         }
 
@@ -1146,7 +1146,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         if (logger.isDebugEnabled()) {
             String convertedDelta = String.valueOf(delta);
-            if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+            if (ResourceType.isStorageType(type)) {
                 convertedDelta = toHumanReadableSize(delta);
             }
             String typeStr = StringUtils.isNotEmpty(tag) ? String.format("%s (tag: %s)", type, tag) : type.getName();
@@ -1250,7 +1250,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else if (type == Resource.ResourceType.backup) {
             newCount = backupDao.countBackupsForAccount(accountId);
         } else if (type == Resource.ResourceType.backup_storage) {
-            newCount = backupDao.countBackupStorageForAccount(accountId);
+            newCount = backupDao.calculateBackupStorageForAccount(accountId);
         } else if (type == Resource.ResourceType.public_ip) {
             newCount = calculatePublicIpForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
@@ -1285,10 +1285,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             _resourceCountDao.persist(new ResourceCountVO(type, newCount, accountId, ResourceOwnerType.Account, tag));
         }
 
-        // No need to log message for primary and secondary storage because both are recalculating the
+        // No need to log message for storage type resources because both are recalculating the
         // resource count which will not lead to any discrepancy.
-        if (newCount != null && !newCount.equals(oldCount) &&
-                type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage) {
+        if (newCount != null && !newCount.equals(oldCount) && !ResourceType.isStorageType(type)) {
             logger.warn("Discrepancy in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                     " for account ID " + accountId + " is fixed during resource count recalculation.");
         }

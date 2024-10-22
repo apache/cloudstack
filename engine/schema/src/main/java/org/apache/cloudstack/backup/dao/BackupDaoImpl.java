@@ -24,6 +24,7 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
@@ -62,7 +63,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
-    private GenericSearchBuilder<BackupVO, Long> CountBackupStorageByAccount;
+    private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
 
     public BackupDaoImpl() {
     }
@@ -82,6 +83,13 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         CountBackupsByAccount.and("status", CountBackupsByAccount.entity().getStatus(), SearchCriteria.Op.NIN);
         CountBackupsByAccount.and("removed", CountBackupsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CountBackupsByAccount.done();
+
+        CalculateBackupStorageByAccount = createSearchBuilder(SumCount.class);
+        CalculateBackupStorageByAccount.select("sum", SearchCriteria.Func.SUM, CalculateBackupStorageByAccount.entity().getSize());
+        CalculateBackupStorageByAccount.and("account", CalculateBackupStorageByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CalculateBackupStorageByAccount.and("status", CalculateBackupStorageByAccount.entity().getStatus(), SearchCriteria.Op.NIN);
+        CalculateBackupStorageByAccount.and("removed", CalculateBackupStorageByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CalculateBackupStorageByAccount.done();
     }
 
     @Override
@@ -161,9 +169,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public Long countBackupStorageForAccount(long accountId) {
-        // TODO
-        return 0L;
+    public Long calculateBackupStorageForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = CalculateBackupStorageByAccount.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        return customSearch(sc, null).get(0).sum;
     }
 
     @Override

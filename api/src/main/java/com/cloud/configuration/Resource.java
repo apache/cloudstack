@@ -64,6 +64,10 @@ public interface Resource {
             }
             return null;
         }
+
+        public static Boolean isStorageType(ResourceType type) {
+            return (type == primary_storage || type == secondary_storage || type == backup_storage);
+        }
     }
 
     public static class ResourceOwnerType {
