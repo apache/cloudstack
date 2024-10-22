@@ -110,6 +110,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     // _msid is the unique persistent identifier that peer name is based upon
     //
     private Long _mshostId = null;
+    private ManagementServerHostVO _mshost = null;
     protected long _msId = ManagementServerNode.getManagementServerId();
     protected long _runId = System.currentTimeMillis();
 
@@ -1072,9 +1073,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             }
         });
 
+        _mshost = mshost;
         _mshostId = mshost.getId();
         if (logger.isInfoEnabled()) {
-            logger.info("Management server (host id : " + _mshostId + ") is being started at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
+            logger.info("Management server (host id : {}) is being started at {}:{}", _mshost, _clusterNodeIP, _currentServiceAdapter.getServicePort());
         }
 
         _mshostPeerDao.clearPeerInfo(_mshostId);
@@ -1094,7 +1096,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @DB
     public boolean stop() {
         if (logger.isInfoEnabled()) {
-            logger.info("Stopping Cluster manager, msid : " + _msId);
+            logger.info("Stopping Cluster manager, msid : {}, runId : {}, host : {}",_msId, _runId, _mshost);
         }
 
         if (_mshostId != null) {

@@ -594,7 +594,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             return;
         }
 
-        logger.info("Process agent startup answer, agent id = {}", startup.getHostId());
+        logger.info("Process agent startup answer, agent [id: {}, name: {}] connected to the server",
+                startup.getHostId(), startup.getHostName());
 
         setId(startup.getHostId());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
@@ -604,7 +605,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         _ugentTaskPool.setKeepAliveTime(2 * _pingInterval, TimeUnit.MILLISECONDS);
 
-        logger.info("Startup Response Received: agent id = {}", getId());
+        logger.info("Startup Response Received: agent [id: {}, name: {}]",
+                getId(), startup.getHostName());
     }
 
     protected void processRequest(final Request request, final Link link) {

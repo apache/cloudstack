@@ -37,9 +37,9 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         try {
             req = Request.parse(data);
         } catch (ClassNotFoundException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent ", e);
         } catch (UnsupportedVersionException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent ", e);
         }
 
         if (req instanceof Response) {

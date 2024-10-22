@@ -115,7 +115,9 @@ public class DirectAgentAttache extends AgentAttache {
         if (answers != null && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
-            logger.info("StartupAnswer received {} Interval = {}", startup.getHostId(), interval);
+            logger.info(
+                    "StartupAnswer received [id: {} name: {} Interval: {}]",
+                    startup.getHostId(), startup.getHostName(), interval);
             _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
     }
@@ -140,7 +142,8 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     private synchronized void scheduleFromQueue() {
-        logger.trace("Agent attache={}, task queue size={}, outstanding tasks={}", _id, tasks.size(), _outstandingTaskCount.get());
+        logger.trace("Agent attache [id: {}, name: {}], task queue size={}, outstanding tasks={}",
+                _id, _name, tasks.size(), _outstandingTaskCount.get());
         while (!tasks.isEmpty() && _outstandingTaskCount.get() < _agentMgr.getDirectAgentThreadCap()) {
             _outstandingTaskCount.incrementAndGet();
             _agentMgr.getDirectAgentPool().execute(tasks.remove());
@@ -152,7 +155,9 @@ public class DirectAgentAttache extends AgentAttache {
         protected synchronized void runInContext() {
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("PingTask execution for direct attache({}) has reached maximum outstanding limit({}), bailing out", _id, _agentMgr.getDirectAgentThreadCap());
+                    logger.warn(
+                            "PingTask execution for direct attache [id: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _name, _agentMgr.getDirectAgentThreadCap());
                     return;
                 }
 
@@ -219,7 +224,9 @@ public class DirectAgentAttache extends AgentAttache {
             long seq = _req.getSequence();
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("CronTask execution for direct attache({}) has reached maximum outstanding limit({}), bailing out", _id, _agentMgr.getDirectAgentThreadCap());
+                    logger.warn(
+                            "CronTask execution for direct attache [id: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _name, _agentMgr.getDirectAgentThreadCap());
                     bailout();
                     return;
                 }
