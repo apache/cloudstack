@@ -361,17 +361,17 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
 
     @Override
     public void setBackupStorageLimit(String backupStorageLimit) {
-        this.backupStorageLimit = backupLimit;
+        this.backupStorageLimit = backupStorageLimit;
     }
 
     @Override
     public void setBackupStorageTotal(Long backupStorageTotal) {
-        this.backupStorageTotal = backupTotal;
+        this.backupStorageTotal = backupStorageTotal;
     }
 
     @Override
     public void setBackupStorageAvailable(String backupStorageAvailable) {
-        this.backupStorageAvailable = backupAvailable;
+        this.backupStorageAvailable = backupStorageAvailable;
     }
 
     @Override

@@ -81,7 +81,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
         if (scheduleId != null) {
             return scheduleId;
         } else {
-        return Snapshot.MANUAL_POLICY_ID;
+            return Snapshot.MANUAL_POLICY_ID;
         }
     }
 

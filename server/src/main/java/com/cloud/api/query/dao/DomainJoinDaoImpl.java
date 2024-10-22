@@ -223,7 +223,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setBackupAvailable(backupAvail);
 
         //get resource limits for backup storage space and convert it from Bytes to GiB
-        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(domain.getBackupStorageLimit(), domain.getId(), ResourceType.backup);
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupStorageLimit(), ResourceType.backup_storage, domain.getId());
         String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
         long backupStorageTotal = (domain.getBackupStorageTotal() == null) ? 0 : (domain.getBackupStorageTotal() / ResourceType.bytesToGiB);
         String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);

@@ -343,6 +343,10 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         return backupStorageLimit;
     }
 
+    public void setBackupStorageLimit(Long backupStorageLimit) {
+        this.backupStorageLimit = backupStorageLimit;
+    }
+
     public Long getTemplateTotal() {
         return templateTotal;
     }

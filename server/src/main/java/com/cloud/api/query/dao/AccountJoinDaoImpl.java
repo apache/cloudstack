@@ -248,7 +248,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         response.setBackupAvailable(backupAvail);
 
         //get resource limits for backup storage space and convert it from Bytes to GiB
-        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupStorageLimit(), account.getId(), ResourceType.backup);
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupStorageLimit(), account.getId(), ResourceType.backup_storage);
         String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
         long backupStorageTotal = (account.getBackupStorageTotal() == null) ? 0 : (account.getBackupStorageTotal() / ResourceType.bytesToGiB);
         String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
