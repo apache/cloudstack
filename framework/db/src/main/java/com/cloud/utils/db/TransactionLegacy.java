@@ -1288,27 +1288,6 @@ public class TransactionLegacy implements Closeable {
         return config;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static DataSource getDefaultDataSource(final String database) {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:mysql://localhost:3306/" + database + "?" + CONNECTION_PARAMS);
-        config.setUsername("cloud");
-        config.setPassword("cloud");
-        config.setPoolName(database);
-        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        config.setMaximumPoolSize(250);
-        config.setConnectionTimeout(1000);
-        config.setIdleTimeout(1000);
-        config.setKeepaliveTime(1000);
-        config.setMaxLifetime(1000);
-        config.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
-        config.setInitializationFailTimeout(-1L);
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        return new HikariDataSource(config);
-    }
-
     private static DataSource getDefaultDataSource(final String connectionPoolLib, final String database) {
         s_logger.debug(String.format("Creating default datasource for database: %s with connection pool lib: %s",
                 database, connectionPoolLib));
