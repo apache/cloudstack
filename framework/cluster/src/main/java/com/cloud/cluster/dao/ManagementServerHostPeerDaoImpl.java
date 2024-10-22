@@ -96,7 +96,6 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
         sc.setParameters("peerRunid", runid);
         sc.setParameters("peerState", state);
 
-        List<ManagementServerHostPeerVO> l = listBy(sc);
-        return l.size();
+        return getCount(sc);
     }
 }

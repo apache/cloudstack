@@ -14,25 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
 
-import java.util.Collection;
-import java.util.Map;
+package org.apache.cloudstack.utils.cache;
 
-import com.cloud.utils.db.GenericDao;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
-    Map<String, String> findDetails(long clusterId);
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
-    void persist(long clusterId, Map<String, String> details);
+public class SingleCache<V> {
 
-    void persist(long clusterId, String name, String value);
+    private final LoadingCache<Integer, V> cache;
 
-    ClusterDetailsVO findDetail(long clusterId, String name);
+    public SingleCache(long expireAfterWriteSeconds, Supplier<V> loader) {
+        this.cache = Caffeine.newBuilder()
+                .maximumSize(1)
+                .expireAfterWrite(expireAfterWriteSeconds, TimeUnit.SECONDS)
+                .build(key -> loader.get());
+    }
 
-    Map<String, String> findDetails(long clusterId, Collection<String> names);
+    public V get() {
+        return cache.get(0);
+    }
 
-    void deleteDetails(long clusterId);
+    public void invalidate() {
+        cache.invalidate(0);
+    }
 
-    String getVmwareDcName(Long clusterId);
+    public void clear() {
+        cache.invalidateAll();
+    }
 }

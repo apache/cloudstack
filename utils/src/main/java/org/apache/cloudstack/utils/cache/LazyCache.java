@@ -14,25 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
 
-import java.util.Collection;
-import java.util.Map;
+package org.apache.cloudstack.utils.cache;
 
-import com.cloud.utils.db.GenericDao;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
-public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
-    Map<String, String> findDetails(long clusterId);
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
-    void persist(long clusterId, Map<String, String> details);
+public class LazyCache<K, V> {
 
-    void persist(long clusterId, String name, String value);
+    private final LoadingCache<K, V> cache;
 
-    ClusterDetailsVO findDetail(long clusterId, String name);
+    public LazyCache(long maximumSize, long expireAfterWriteSeconds, Function<K, V> loader) {
+        this.cache = Caffeine.newBuilder()
+                .maximumSize(maximumSize)
+                .expireAfterWrite(expireAfterWriteSeconds, TimeUnit.SECONDS)
+                .build(loader::apply);
+    }
 
-    Map<String, String> findDetails(long clusterId, Collection<String> names);
+    public V get(K key) {
+        return cache.get(key);
+    }
 
-    void deleteDetails(long clusterId);
+    public void invalidate(K key) {
+        cache.invalidate(key);
+    }
 
-    String getVmwareDcName(Long clusterId);
+    public void clear() {
+        cache.invalidateAll();
+    }
 }

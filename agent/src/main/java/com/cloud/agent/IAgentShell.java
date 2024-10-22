@@ -70,4 +70,6 @@ public interface IAgentShell {
     String getConnectedHost();
 
     void launchNewAgent(ServerResource resource) throws ConfigurationException;
+
+    Integer getSslHandshakeTimeout();
 }

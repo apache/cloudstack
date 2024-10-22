@@ -113,7 +113,7 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
         String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
         if (!Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
             vo = findDetail(id, key);
-            return vo == null ? null : getActualValue(vo);
+            return vo == null ? null : vo.getValue();
         }
         DomainVO domain = _domainDao.findById(id);
         // if value is not configured in domain then check its parent domain till ROOT

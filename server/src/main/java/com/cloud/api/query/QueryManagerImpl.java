@@ -2332,7 +2332,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // ids
         hostSearchBuilder.and("id", hostSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("name", hostSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
-        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("status", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("dataCenterId", hostSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("podId", hostSearchBuilder.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -2384,7 +2384,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("name", name);
         }
         if (type != null) {
-            sc.setParameters("type", "%" + type);
+            sc.setParameters("type", type);
         }
         if (state != null) {
             sc.setParameters("status", state);
@@ -4521,7 +4521,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
         if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            hypers = _resourceMgr.listAvailHypervisorInZone(null);
             if (hypers == null || hypers.isEmpty()) {
                 return new Pair<List<TemplateJoinVO>, Integer>(new ArrayList<TemplateJoinVO>(), 0);
             }
