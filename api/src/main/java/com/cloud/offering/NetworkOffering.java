@@ -103,10 +103,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     boolean isForVpc();
 
-    boolean isForTungsten();
-
-    boolean isForNsx();
-
     NetworkMode getNetworkMode();
 
     TrafficType getTrafficType();

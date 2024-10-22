@@ -437,9 +437,18 @@ CREATE TABLE `cloud`.`netris_providers` (
     `port` varchar(255),
     `username` varchar(255) NOT NULL,
     `password` varchar(255) NOT NULL,
-    `created` datetime NOT NULL COMMENT 'date created',
-    `removed` datetime COMMENT 'date removed if not null',
+    `site_name` varchar(255) NOT NULL,
+    `tenant_name` varchar(255) NOT NULL,
+    `created` datetime NOT NULL COMMENT 'created date',
+    `removed` datetime COMMENT 'removed date if not null',
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_netris_providers__zone_id` FOREIGN KEY `fk_netris_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
     INDEX `i_netris_providers__zone_id`(`zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Drop the Tungsten and NSX columns from the network offerings (replaced by checking the provider on the ntwk_offering_service_map table)
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_tungsten`;
+ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
+
+-- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
+ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;

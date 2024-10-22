@@ -30,8 +30,10 @@ public class NetrisApiClientImplTest {
     private static final String endpointUrl = "https://shapeblue-ctl.netris.dev";
     private static final String username = "netris";
     private static final String password = "qHHa$CZ2oJv*@!7mwoSR";
+    private static final String siteName = "Datacenter-1";
+    private static final String adminTenantName = "Admin";
 
-    private static final NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password);
+    private static final NetrisApiClientImpl client = new NetrisApiClientImpl(endpointUrl, username, password, siteName, adminTenantName);
 
     @Test
     public void testNetrisAuthStatus() {

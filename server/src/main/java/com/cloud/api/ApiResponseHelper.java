@@ -41,6 +41,7 @@ import javax.inject.Inject;
 
 import com.cloud.bgp.ASNumber;
 import com.cloud.bgp.ASNumberRange;
+import com.cloud.configuration.ConfigurationService;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;
@@ -997,8 +998,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
-            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY);
-            vlanResponse.setForNsx(Objects.nonNull(vlanDetail) && vlanDetail.getValue().equals("true"));
+            vlanResponse.setProvider(getProviderFromVlanDetailKey(vlan));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
@@ -1006,6 +1006,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
     }
 
+    private String getProviderFromVlanDetailKey(Vlan vlan) {
+        for (Map.Entry<String, String> entry : ConfigurationService.ProviderDetailKeyMap.entrySet()) {
+            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), entry.getValue());
+            if (Objects.nonNull(vlanDetail) && "true".equals(vlanDetail.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
     /**
      * Return true if vlan IP range is dedicated for system vms (SSVM and CPVM), false if not
      * @param vlanId vlan id
@@ -2414,8 +2423,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
-        response.setForTungsten(offering.isForTungsten());
-        response.setForNsx(offering.isForNsx());
+        response.setForTungsten(_ntwkModel.isProviderForNetworkOffering(Provider.Tungsten, offering.getId()));
+        response.setForNsx(_ntwkModel.isProviderForNetworkOffering(Provider.Nsx, offering.getId()));
         if (offering.getNetworkMode() != null) {
             response.setNetworkMode(offering.getNetworkMode().name());
         }

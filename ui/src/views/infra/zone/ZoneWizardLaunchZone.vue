@@ -472,7 +472,6 @@ export default {
           if (physicalNetwork.tags) {
             params.tags = physicalNetwork.tags
           }
-
           try {
             if (!this.stepData.stepMove.includes('createPhysicalNetwork' + index)) {
               const physicalNetworkResult = await this.createPhysicalNetwork(params)
@@ -490,7 +489,7 @@ export default {
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
                 this.stepData.isNsxZone = true
               }
-              if (physicalNetwork.isolationMethod === 'NETRIS' &&
+              if (physicalNetwork.isolationMethod.toLowerCase() === 'netris' &&
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
                 this.stepData.isNetrisZone = true
               }
@@ -921,7 +920,7 @@ export default {
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
         let publicIpRanges = this.prefillContent['public-ipranges']
-        publicIpRanges = publicIpRanges.filter(item => item.fornsx === (idx === 1))
+        publicIpRanges = publicIpRanges.filter(item => (item.fornsx || item.fornetris) === (idx === 1))
         for (let index = 0; index < publicIpRanges.length; index++) {
           const publicVlanIpRange = publicIpRanges[index]
           let isExisting = false
@@ -944,16 +943,22 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
-          } else if (publicVlanIpRange.fornsx) { // TODO: should this be the same for Netris?
+          } else if (publicVlanIpRange.fornsx || publicVlanIpRange.fornetris) { // TODO: should this be the same for Netris?
             params.vlan = null
           } else {
             params.vlan = 'untagged'
+          }
+          let provider = null
+          if (publicVlanIpRange.fornsx) {
+            provider = 'Nsx'
+          } else if (publicVlanIpRange.fornetris) {
+            provider = 'Netris'
           }
           params.gateway = publicVlanIpRange.gateway
           params.netmask = publicVlanIpRange.netmask
           params.startip = publicVlanIpRange.startIp
           params.endip = publicVlanIpRange.endIp
-          params.fornsx = publicVlanIpRange.fornsx
+          params.provider = provider
           params.forsystemvms = publicVlanIpRange.forsystemvms
 
           if (this.isBasicZone) {
@@ -986,16 +991,20 @@ export default {
         if (stopNow) {
           return
         }
-
         if (idx === 0) {
-          await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
+          const isolationMethods = Object.values(this.stepData.physicalNetworkItem).map(network => network.isolationmethods.toLowerCase())
+          if (isolationMethods.includes('nsx')) {
+            await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
+          } else if (isolationMethods.includes('netris')) {
+            await this.stepConfigurePublicTraffic('message.configuring.netris.public.traffic', 'netrisPublicTraffic', 1)
+          }
         } else {
           if (this.stepData.isTungstenZone) {
             await this.stepCreateTungstenFabricPublicNetwork()
           } else if (this.stepData.isNsxZone) {
             await this.stepAddNsxController()
           } else if (this.stepData.isNetrisZone) {
-            await this.stepAddNetrisController()
+            await this.stepAddNetrisProvider()
           } else {
             await this.stepConfigureStorageTraffic()
           }
@@ -1099,7 +1108,7 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
-    async stepAddNetrisController () {
+    async stepAddNetrisProvider () {
       this.setStepStatus(STATUS_FINISH)
       this.currentStep++
       this.addStep('message.add.netris.controller', 'netris')
@@ -1111,14 +1120,16 @@ export default {
         if (!this.stepData.stepMove.includes('addNetrisProvider')) {
           const providerParams = {}
           providerParams.name = this.prefillContent?.netrisName || ''
-          providerParams.netrisproviderhostname = this.prefillContent?.netrisHostname || ''
-          providerParams.netrisproviderport = this.prefillContent?.netrisPort || ''
+          providerParams.hostname = this.prefillContent?.hostname || ''
+          providerParams.port = this.prefillContent?.netrisPort || ''
           providerParams.username = this.prefillContent?.username || ''
           providerParams.password = this.prefillContent?.password || ''
           providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.sitename = this.prefillContent?.siteName || ''
+          providerParams.tenantname = this.prefillContent?.tenantName || ''
 
           await this.addNetrisProvider(providerParams)
-          this.stepData.stepMove.push('addNetrisController')
+          this.stepData.stepMove.push('addNetrisProvider')
         }
         this.stepData.stepMove.push('netris')
         await this.stepConfigureStorageTraffic()
@@ -2285,7 +2296,7 @@ export default {
         })
       })
     },
-    addNetrisPovider (args) {
+    addNetrisProvider (args) {
       return new Promise((resolve, reject) => {
         api('addNetrisProvider', {}, 'POST', args).then(json => {
           resolve()
