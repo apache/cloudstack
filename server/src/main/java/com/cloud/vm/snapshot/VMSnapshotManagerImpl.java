@@ -381,7 +381,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (snapshotStrategy == null) {
                 String message;
                 if (!SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
-                    message = "KVM does not support instance snapshot without snapshot memory";
+                    message = "KVM does not support instance snapshot without snapshot memory on a running instance";
                 } else {
                     message = "KVM does not support the type of snapshot requested";
                 }
