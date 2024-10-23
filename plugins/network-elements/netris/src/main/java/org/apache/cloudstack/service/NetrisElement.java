@@ -23,7 +23,11 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,8 +39,11 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.netris.NetrisService;
@@ -45,12 +52,17 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -64,11 +76,12 @@ import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Component
-public class NetrisElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, ResourceStateAdapter,
-        Listener, VpcProvider {
+public class NetrisElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
+        NetworkACLServiceProvider, ResourceStateAdapter, Listener {
 
     @Inject
     NetworkModel networkModel;
@@ -78,6 +91,16 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     ResourceManager resourceManager;
     @Inject
     private NetrisService netrisService;
+    @Inject
+    private AccountManager accountManager;
+    @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private VpcDao vpcDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -268,6 +291,24 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+        Account account = accountManager.getAccount(network.getAccountId());
+        NetworkVO networkVO = networkDao.findById(network.getId());
+        DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(zone)) {
+            String msg = String.format("Cannot find zone with ID %s", network.getDataCenterId());
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        String vpcName = null;
+        Long vpcId = network.getVpcId();
+        if (Objects.nonNull(vpcId)) {
+            VpcVO vpc = vpcDao.findById(vpcId);
+            if (Objects.nonNull(vpc)) {
+                vpcName = vpc.getName();
+            }
+        }
+        netrisService.deleteVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId, networkVO.getName(), network.getId(), network.getCidr());
         return true;
     }
 
@@ -346,5 +387,15 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     @Override
     public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
         return true;
+    }
+
+    @Override
+    public boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
+    public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
+        return false;
     }
 }

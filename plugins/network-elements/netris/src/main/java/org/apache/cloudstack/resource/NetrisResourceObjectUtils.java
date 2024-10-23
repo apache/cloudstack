@@ -46,8 +46,10 @@ public class NetrisResourceObjectUtils {
                 }
                 break;
             case IPAM_ALLOCATION:
-            case IPAM_SUBNET:
                 stringBuilder.append(String.format("%s%s", prefix, objectId));
+                break;
+            case IPAM_SUBNET:
+                stringBuilder.append(String.format("-N%s", objectId));
                 break;
             case VNET:
                break;

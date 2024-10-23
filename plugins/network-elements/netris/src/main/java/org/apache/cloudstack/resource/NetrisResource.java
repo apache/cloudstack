@@ -30,6 +30,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
@@ -91,6 +92,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((DeleteNetrisVpcCommand) cmd);
         } else if (cmd instanceof CreateNetrisVnetCommand) {
             return executeRequest((CreateNetrisVnetCommand) cmd);
+        } else if (cmd instanceof DeleteNetrisVnetCommand) {
+          return executeRequest((DeleteNetrisVnetCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -219,6 +222,21 @@ public class NetrisResource implements ServerResource {
             return new NetrisAnswer(cmd, true, "OK");
         } catch (CloudRuntimeException e) {
             String msg = String.format("Error creating Netris VPC: %s", e.getMessage());
+            logger.error(msg, e);
+            return new NetrisAnswer(cmd, new CloudRuntimeException(msg));
+        }
+    }
+
+    private Answer executeRequest(DeleteNetrisVnetCommand cmd) {
+        try {
+            String networkName = cmd.getName();
+            boolean result = netrisApiClient.deleteVnet(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Netris vNet: %s deletion failed", networkName));
+            }
+            return new NetrisAnswer(cmd, true, "OK");
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Error deleting Netris vNet: %s", e.getMessage());
             logger.error(msg, e);
             return new NetrisAnswer(cmd, new CloudRuntimeException(msg));
         }

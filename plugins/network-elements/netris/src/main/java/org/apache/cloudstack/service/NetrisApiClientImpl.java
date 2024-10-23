@@ -29,12 +29,16 @@ import io.netris.api.v2.VNetApi;
 import io.netris.api.v2.VpcApi;
 import io.netris.model.AllocationBody;
 import io.netris.model.AllocationBodyVpc;
+import io.netris.model.FilterBySites;
+import io.netris.model.FilterByVpc;
 import io.netris.model.GetSiteBody;
 import io.netris.model.InlineResponse2004;
 import io.netris.model.IpTreeAllocationTenant;
+import io.netris.model.IpTreeSubnet;
 import io.netris.model.IpTreeSubnetSites;
 import io.netris.model.SitesResponseOK;
 import io.netris.model.SubnetBody;
+import io.netris.model.SubnetResBody;
 import io.netris.model.VPCAdminTenant;
 import io.netris.model.VPCCreate;
 import io.netris.model.VPCListing;
@@ -49,11 +53,15 @@ import io.netris.model.VnetAddBodyDhcpOptionSet;
 import io.netris.model.VnetAddBodyGateways;
 import io.netris.model.VnetAddBodyVpc;
 import io.netris.model.VnetResAddBody;
+import io.netris.model.VnetResDeleteBody;
+import io.netris.model.VnetResListBody;
+import io.netris.model.VnetsBody;
 import io.netris.model.response.AuthResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -63,6 +71,7 @@ import org.apache.logging.log4j.Logger;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class NetrisApiClientImpl implements NetrisApiClient {
@@ -238,6 +247,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             VpcApi vpcApi = apiClient.getApiStubForMethod(VpcApi.class);
             VPCResponseResourceOK vpcResourcesResponse = vpcApi.apiV2VpcVpcIdResourcesGet(vpcResource.getId());
             VPCResourceIpam vpcAllocationResource = getVpcAllocationResource(vpcResourcesResponse);
+            if (Objects.isNull(vpcAllocationResource)) {
+                logger.info("No VPC IPAM Allocation found for VPC {}", vpcCidr);
+                return;
+            }
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             logger.debug("Removing the IPAM allocation {} with ID {}", vpcAllocationResource.getName(), vpcAllocationResource.getId());
             ipamApi.apiV2IpamTypeIdDelete("allocation", vpcAllocationResource.getId());
@@ -304,11 +317,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String vnetCidr = cmd.getCidr();
         boolean isVpc = cmd.isVpc();
 
-        String suffix = String.format("%s-%s", vpcId, vpcName);
+        String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
         VPCListing associatedVpc = getVpcByNameAndTenant(netrisVpcName);
         if (associatedVpc == null) {
-            logger.error(String.format("Failed to find Netris VPC with name: %s, to create the corresponding vNet for network %s", vpcName, networkName));
+            logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
             return false;
         }
 
@@ -324,18 +337,100 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         InlineResponse2004 subnetResponse = createVpcSubnetInternal(associatedVpc, vNetName, vnetCidr, netrisSubnetName);
         if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
             String reason = subnetResponse == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The Netris Subnet {} for VPC {} for network {} creation failed: {}", vnetCidr, vpcName, networkName, reason);
+            logger.debug("The Netris Subnet {} for network {} creation failed: {}", vnetCidr, networkName, reason);
             return false;
         }
-        logger.debug("Successfully created VPC {} and its IPAM Subnet {} on Netris", vpcName, vnetCidr);
+        logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
         VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, vnetCidr);
         if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
             String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The Netris vNet creation {} for VPC {} failed: {}", vNetName, vpcName, reason);
+            logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean deleteVnet(DeleteNetrisVnetCommand cmd) {
+        String vpcName = cmd.getVpcName();
+        Long vpcId = cmd.getVpcId();
+        String networkName = cmd.getName();
+        Long networkId = cmd.getId();
+        boolean isVpc = cmd.isVpc();
+        String vnetCidr = cmd.getVNetCidr();
+        try {
+            String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
+            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            VPCListing associatedVpc = getVpcByNameAndTenant(netrisVpcName);
+            if (associatedVpc == null) {
+                logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
+                return false;
+            }
+
+            String vNetName;
+            if (isVpc) {
+                vNetName = String.format("V%s-N%s-%s", vpcId, networkId, networkName);
+            } else {
+                vNetName = String.format("N%s-%s", networkId, networkName);
+            }
+
+            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(associatedVpc.getId());
+            FilterBySites siteFilter = new FilterBySites();
+            siteFilter.add(siteId);
+            deleteVnetInternal(associatedVpc, siteFilter, vpcFilter, netrisVnetName, vNetName);
+
+            logger.debug("Successfully deleted vNet {}", vNetName);
+            deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
+
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to delete Netris vNet %s", networkName), e);
+        }
+        return true;
+    }
+
+    private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
+        try {
+            VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
+            VnetResListBody vnetList = vNetApi.apiV2VnetGet(siteFilter, vpcFilter);
+            if (vnetList == null || !vnetList.isIsSuccess()) {
+                throw new CloudRuntimeException(String.format("Failed to list vNets for the given VPC: %s and site: %s", associatedVpc.getName(), siteName));
+            }
+            List<VnetsBody> vnetsList = vnetList.getData().stream().filter(vnet -> vnet.getName().equals(netrisVnetName)).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(vnetsList)) {
+                logger.debug("vNet: {} for the given VPC: {} appears to already be deleted on Netris", vNetName, associatedVpc.getName());
+                return;
+            }
+            VnetsBody vnetsBody = vnetsList.get(0);
+
+            VnetResDeleteBody deleteVnetResponse = vNetApi.apiV2VnetIdDelete(vnetsBody.getId().intValue());
+            if (deleteVnetResponse == null || !deleteVnetResponse.isIsSuccess()) {
+                throw new CloudRuntimeException(String.format("Failed to delete vNet: %s", vNetName));
+            }
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to delete vNet: %s", netrisVnetName), e);
+        }
+    }
+
+    private void deleteSubnetInternal(FilterByVpc vpcFilter, String netrisVnetName, String netrisSubnetName) {
+        try {
+            logger.debug("Deleting Netris VPC IPAM Subnet {} for vNet: {}", netrisSubnetName, netrisVnetName);
+            IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+            SubnetResBody subnetsResponse = ipamApi.apiV2IpamSubnetsGet(vpcFilter);
+            List<IpTreeSubnet> subnets = subnetsResponse.getData();
+            List<IpTreeSubnet> matchedSubnets = subnets.stream().filter(subnet -> subnet.getName().equals(netrisSubnetName)).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(matchedSubnets)) {
+                logger.debug("IPAM subnet: {} for the given vNet: {} appears to already be deleted on Netris", netrisSubnetName, netrisVnetName);
+                return;
+            }
+
+            ipamApi.apiV2IpamTypeIdDelete("subnet", matchedSubnets.get(0).getId().intValue());
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to delete vNet: %s", netrisVnetName), e);
+        }
     }
 
     private InlineResponse2004 createVpcSubnetInternal(VPCListing associatedVpc, String vNetName, String vNetCidr, String netrisSubnetName) {
@@ -425,6 +520,15 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         } catch (ApiException e) {
             logAndThrowException(String.format("Error creating Netris vNet %s for VPC %s", netrisVnetName, associatedVpc.getName()), e);
             return null;
+        }
+    }
+
+    private String getNetrisVpcNameSuffix(Long vpcId, String vpcName, Long networkId, String networkName, boolean isVpc) {
+        String suffix = null;
+        if (isVpc) {
+            suffix = String.format("%s-%s", vpcId, vpcName);
+        } else {
+            suffix = String.format("%s-%s", networkId, networkName);
         }
     }
 }

@@ -14,13 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.netris;
+package org.apache.cloudstack.agent.api;
 
-import com.cloud.network.vpc.Vpc;
+public class DeleteNetrisVnetCommand extends NetrisCommand {
+    private String vpcName;
+    private Long vpcId;
+    private final String vNetCidr;
 
-public interface NetrisService {
-    boolean createVpcResource(long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled, String cidr, boolean isVpcNetwork);
-    boolean deleteVpcResource(long zoneId, long accountId, long domainId, Vpc vpc);
-    boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
-    boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
+    public DeleteNetrisVnetCommand(long zoneId, long accountId, long domainId, String name, long id, String vpcName, Long vpcId, String vNetCidr, boolean isVpc) {
+        super(zoneId, accountId, domainId, name, id, isVpc);
+        this.vpcName = vpcName;
+        this.vpcId = vpcId;
+        this.vNetCidr = vNetCidr;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+    public String getVNetCidr() {
+        return vNetCidr;
+    }
 }
