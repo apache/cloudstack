@@ -65,12 +65,16 @@ import com.cloud.org.Grouping;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class RollingMaintenanceManagerImpl extends ManagerBase implements RollingMaintenanceManager {
@@ -85,6 +89,8 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     private CapacityManager capacityManager;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    protected UserVmDetailsDao userVmDetailsDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -622,9 +628,35 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         for (VMInstanceVO runningVM : vmsRunning) {
             boolean canMigrateVm = false;
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
+            Integer cpu = serviceOffering.getCpu();
+            Integer speed = serviceOffering.getSpeed();
+            Integer ramSize = serviceOffering.getRamSize();
+            if (serviceOffering.isDynamic()) {
+                List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
+                if (CollectionUtils.isNotEmpty(vmDetails)) {
+                    for (UserVmDetailVO vmDetail : vmDetails) {
+                        if (vmDetail.getName() != null &&vmDetail.getValue() != null) {
+                            if (cpu == null && VmDetailConstants.CPU_NUMBER.equals(vmDetail.getName())) {
+                                cpu = Integer.valueOf(vmDetail.getValue());
+                            }
+                            if (speed == null && VmDetailConstants.CPU_SPEED.equals(vmDetail.getName())) {
+                                speed = Integer.valueOf(vmDetail.getValue());
+                            }
+                            if (ramSize == null && VmDetailConstants.MEMORY.equals(vmDetail.getName())) {
+                                ramSize = Integer.valueOf(vmDetail.getValue());
+                            }
+                        }
+                    }
+                }
+            }
+            if (cpu == null || speed == null || ramSize == null) {
+                s_logger.warn(String.format("Cannot fetch compute resources for the VM %s, skipping it from the capacity check", runningVM));
+                continue;
+            }
+
             for (Host hostInCluster : hostsInCluster) {
                 if (!checkHostTags(hostTags, hostTagsDao.getHostTags(hostInCluster.getId()), serviceOffering.getHostTag())) {
-                    s_logger.debug(String.format("Host tags mismatch between %s and %s Skipping it from the capacity check", host, hostInCluster));
+                    s_logger.warn(String.format("Host tags mismatch between %s and %s, skipping it from the capacity check", host, hostInCluster));
                     continue;
                 }
                 DeployDestination deployDestination = new DeployDestination(null, null, null, host);
@@ -634,13 +666,13 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     affinityChecks = affinityChecks && affinityProcessor.check(vmProfile, deployDestination);
                 }
                 if (!affinityChecks) {
-                    s_logger.debug(String.format("Affinity check failed between %s and %s Skipping it from the capacity check", host, hostInCluster));
+                    s_logger.warn(String.format("Affinity check failed between %s and %s, skipping it from the capacity check", host, hostInCluster));
                     continue;
                 }
                 boolean maxGuestLimit = capacityManager.checkIfHostReachMaxGuestLimit(host);
-                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster.getId(), serviceOffering.getCpu(), serviceOffering.getSpeed());
-                int cpuRequested = serviceOffering.getCpu() * serviceOffering.getSpeed();
-                long ramRequested = serviceOffering.getRamSize() * 1024L * 1024L;
+                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster.getId(), cpu, speed);
+                int cpuRequested = cpu * speed;
+                long ramRequested = ramSize * 1024L * 1024L;
                 ClusterDetailsVO clusterDetailsCpuOvercommit = clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");
                 ClusterDetailsVO clusterDetailsRamOvercommmt = clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
@@ -670,7 +702,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
      * Check hosts tags
      */
     private boolean checkHostTags(List<HostTagVO> hostTags, List<HostTagVO> hostInClusterTags, String offeringTag) {
-        if (CollectionUtils.isEmpty(hostTags) && CollectionUtils.isEmpty(hostInClusterTags)) {
+        if ((CollectionUtils.isEmpty(hostTags) && CollectionUtils.isEmpty(hostInClusterTags)) || StringUtils.isBlank(offeringTag)) {
             return true;
         } else if ((CollectionUtils.isNotEmpty(hostTags) && CollectionUtils.isEmpty(hostInClusterTags)) ||
                 (CollectionUtils.isEmpty(hostTags) && CollectionUtils.isNotEmpty(hostInClusterTags))) {
