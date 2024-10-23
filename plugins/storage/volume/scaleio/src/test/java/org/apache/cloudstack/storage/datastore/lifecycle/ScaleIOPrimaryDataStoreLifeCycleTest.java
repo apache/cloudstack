@@ -137,17 +137,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         final ZoneScope scope = new ZoneScope(1L);
 
-        List<HostVO> hostList = new ArrayList<HostVO>();
-        HostVO host1 = new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-        HostVO host2 = new HostVO(2L, "host02", Host.Type.Routing, "192.168.1.2", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-
-        host1.setResourceState(ResourceState.Enabled);
-        host2.setResourceState(ResourceState.Enabled);
-        hostList.add(host1);
-        hostList.add(host2);
-        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(hostList);
+        when(hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), Hypervisor.HypervisorType.KVM)).thenReturn(List.of(1L, 2L));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getId()).thenReturn(1L);

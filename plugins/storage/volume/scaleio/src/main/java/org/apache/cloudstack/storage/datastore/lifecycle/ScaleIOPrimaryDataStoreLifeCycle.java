@@ -285,7 +285,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         }
 
         LOGGER.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
-        List<Long> hostIds = hostDao.listIdsForUpRouting(null, null, scope.getScopeId());
+        List<Long> hostIds = hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), hypervisorType);
         storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachZone(dataStore);
