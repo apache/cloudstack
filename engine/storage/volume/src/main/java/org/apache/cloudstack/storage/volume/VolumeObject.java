@@ -948,8 +948,8 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public String toString() {
         return "VolumeObject{" +
-                "volumeVO=" + volumeVO +
-                ", dataStore=" + dataStore +
+                "volumeVO=" + getVolume() +
+                ", dataStore=" + getDataStore() +
                 '}';
     }
 }

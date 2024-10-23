@@ -386,7 +386,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug(String.format("Failed to take snapshot: %s", snapshot), e);
+            logger.debug("Failed to take snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -421,7 +421,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug(String.format("Unable to revert snapshot %s", snapshot), ex);
+            logger.debug("Unable to revert snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);

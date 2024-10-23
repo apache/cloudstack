@@ -341,7 +341,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 // don't process disconnect if the disconnect came for the host via delayed cluster notification,
                 // but the host has already reconnected to the current management server
                 if (!attache.forForward()) {
-                    logger.debug("Not processing {} event for the host id={} as the host is directly connected to the current management server {}", Event.AgentDisconnected, hostId, _nodeId);
+                    logger.debug(
+                            "Not processing {} event for the host [id: {}, name: {}] as the host is directly connected to the current management server {}",
+                            Event.AgentDisconnected, hostId, attache.getName(), _nodeId);
                     return true;
                 }
 
@@ -715,12 +717,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     public void onManagementNodeLeft(final List<? extends ManagementServerHost> nodeList, final long selfNodeId) {
         for (final ManagementServerHost vo : nodeList) {
-            logger.info("Marking hosts as disconnected on Management server {}",  vo.getMsid());
+            logger.info("Marking hosts as disconnected on Management server {}",  vo);
             final long lastPing = (System.currentTimeMillis() >> 10) - mgmtServiceConf.getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             outOfBandManagementDao.expireServerOwnership(vo.getMsid());
             haConfigDao.expireServerOwnership(vo.getMsid());
-            logger.info("Deleting entries from op_host_transfer table for Management server {}",  vo.getMsid());
+            logger.info("Deleting entries from op_host_transfer table for Management server {}",  vo);
             cleanupTransferMap(vo.getMsid());
         }
     }
@@ -827,7 +829,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
 
                 if (hostsToRebalance != null && !hostsToRebalance.isEmpty()) {
-                    logger.debug("Found {} hosts to rebalance from management server {}", hostsToRebalance.size(), node.getMsid());
+                    logger.debug("Found {} hosts to rebalance from management server {}", hostsToRebalance.size(), node);
                     for (final HostVO host : hostsToRebalance) {
                         final long hostId = host.getId();
                         logger.debug("Asking management server {} to give away host id={}", node, host);
@@ -1032,7 +1034,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         } else if (futureOwnerId == _nodeId) {
             final HostVO host = _hostDao.findById(hostId);
             try {
-                logger.debug("Disconnecting host {}({}) as a part of rebalance process without notification", host.getId(), host.getName());
+                logger.debug("Disconnecting host {} as a part of rebalance process without notification", host);
 
                 final AgentAttache attache = findAttache(hostId);
                 if (attache != null) {
@@ -1040,21 +1042,21 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
 
                 if (result) {
-                    logger.debug("Loading directly connected host {}({}) to the management server {} as a part of rebalance process", host.getId(), host.getName(), _nodeId);
+                    logger.debug("Loading directly connected host {} to the management server {} as a part of rebalance process", host, _nodeId);
                     result = loadDirectlyConnectedHost(host, true);
                 } else {
-                    logger.warn("Failed to disconnect {}({}) as a part of rebalance process without notification" + host.getId(), host.getName());
+                    logger.warn("Failed to disconnect {} as a part of rebalance process without notification", host);
                 }
 
             } catch (final Exception ex) {
-                logger.warn("Failed to load directly connected host {}({}) to the management server {} a part of rebalance process without notification", host.getId(), host.getName(), _nodeId, ex);
+                logger.warn("Failed to load directly connected host {} to the management server {} a part of rebalance process without notification", host, _nodeId, ex);
                 result = false;
             }
 
             if (result) {
-                logger.debug("Successfully loaded directly connected host {}({}) to the management server {} a part of rebalance process without notification", host.getId(), host.getName(), _nodeId);
+                logger.debug("Successfully loaded directly connected host {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             } else {
-                logger.warn("Failed to load directly connected host {}({}) to the management server {} a part of rebalance process without notification", host.getId(), host.getName(), _nodeId);
+                logger.warn("Failed to load directly connected host {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             }
         }
 
@@ -1126,18 +1128,18 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 handleDisconnectWithoutInvestigation(attache, Event.StartAgentRebalance, true, true);
                 final ClusteredAgentAttache forwardAttache = (ClusteredAgentAttache)createAttache(host);
                 if (forwardAttache == null) {
-                    logger.warn("Unable to create a forward attache for the host {} as a part of rebalance process", hostId);
+                    logger.warn("Unable to create a forward attache for the host {} as a part of rebalance process", host);
                     return false;
                 }
-                logger.debug("Putting agent id={} to transfer mode", hostId);
+                logger.debug("Putting agent {} to transfer mode", host);
                 forwardAttache.setTransferMode(true);
                 _agents.put(hostId, forwardAttache);
             } else {
                 if (attache == null) {
-                    logger.warn("Attache for the agent {} no longer exists on management server, can't start host rebalancing", hostId, _nodeId);
+                    logger.warn("Attache for the agent {} no longer exists on management server, can't start host rebalancing", host, _nodeId);
                 } else {
                     logger.warn("Attache for the agent {} has request queue size= {} and listener queue size {}, can't start host rebalancing",
-                            hostId, attache.getQueueSize(), attache.getNonRecurringListenersSize());
+                            host, attache.getQueueSize(), attache.getNonRecurringListenersSize());
                 }
                 return false;
             }

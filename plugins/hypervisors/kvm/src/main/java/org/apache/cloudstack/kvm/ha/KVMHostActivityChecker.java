@@ -67,7 +67,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     @Override
     public boolean isActive(Host r, DateTime suspectTime) throws HACheckerException {
         try {
-            return isVMActivtyOnHost(r, suspectTime);
+            return isVMActivityOnHost(r, suspectTime);
         } catch (HACheckerException e) {
             //Re-throwing the exception to avoid poluting the 'HACheckerException' already thrown
             throw e;
@@ -146,7 +146,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         return hostStatus == Status.Up;
     }
 
-    private boolean isVMActivtyOnHost(Host agent, DateTime suspectTime) throws HACheckerException {
+    private boolean isVMActivityOnHost(Host agent, DateTime suspectTime) throws HACheckerException {
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             throw new IllegalStateException(String.format("Calling KVM investigator for non KVM Host of type [%s].", agent.getHypervisorType()));
         }

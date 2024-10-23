@@ -596,4 +596,12 @@ public class TemplateObject implements TemplateInfo {
     public boolean isFollowRedirects() {
         return followRedirects;
     }
+
+    @Override
+    public String toString() {
+        return "VolumeObject{" +
+                "templateVO=" + getImage() +
+                ", dataStore=" + getDataStore() +
+                '}';
+    }
 }

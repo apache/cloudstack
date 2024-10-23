@@ -214,19 +214,19 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         try {
             prepareStorageClientAnswer = (PrepareStorageClientAnswer) agentManager.send(host.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Failed to prepare SDC on the host %s, due to: %s", host.getName(), e.getMessage());
+            String err = String.format("Failed to prepare SDC on the host %s, due to: %s", host, e.getMessage());
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
         if (prepareStorageClientAnswer == null) {
-            String err = String.format("Unable to prepare SDC on the host %s", host.getName());
+            String err = String.format("Unable to prepare SDC on the host %s", host);
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
         if (!prepareStorageClientAnswer.getResult()) {
-            String err = String.format("Unable to prepare SDC on the host %s, due to: %s", host.getName(), prepareStorageClientAnswer.getDetails());
+            String err = String.format("Unable to prepare SDC on the host %s, due to: %s", host, prepareStorageClientAnswer.getDetails());
             logger.error(err);
             throw new CloudRuntimeException(err);
         }
@@ -306,14 +306,12 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         try {
             unprepareStorageClientAnswer = agentManager.send(host.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            String err = String.format("Failed to unprepare SDC on the host %s due to: %s", host.getName(), e.getMessage());
-            logger.error(err);
+            logger.error("Failed to unprepare SDC on the host {} due to: {}", host, e.getMessage());
             return false;
         }
 
         if (!unprepareStorageClientAnswer.getResult()) {
-            String err = String.format("Unable to unprepare SDC on the the host %s due to: %s", host.getName(), unprepareStorageClientAnswer.getDetails());
-            logger.error(err);
+            logger.error("Unable to unprepare SDC on the the host {} due to: {}", host, unprepareStorageClientAnswer.getDetails());
             return false;
         }
         return true;

@@ -109,7 +109,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
         Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
-            String msg = "PowerFlex storage SDC details not found on the host: " + hostId + ", (re)install SDC and restart agent";
+            String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not found on host: " + host.getUuid(), msg);
             return null;
@@ -124,7 +124,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         if (StringUtils.isBlank(sdcId)) {
-            String msg = "Couldn't retrieve PowerFlex storage SDC details from the host: " + hostId + ", (re)install SDC and restart agent";
+            String msg = String.format("Couldn't retrieve PowerFlex storage SDC details from the host: %s, (re)install SDC and restart agent", host);
             logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
             return null;

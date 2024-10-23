@@ -454,8 +454,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             result = new CreateCmdResult(null, createObjectAnswer);
             result.setResult(null);
         } catch (Exception e) {
-            String errMsg = "Unable to take PowerFlex volume snapshot for volume: " + volumeInfo.getId() + " due to " + e.getMessage();
-            logger.warn(errMsg);
+            logger.warn("Unable to take PowerFlex volume snapshot for volume: {} due to {}", volumeInfo, e.getMessage());
             result = new CreateCmdResult(null, new CreateObjectAnswer(e.toString()));
             result.setResult(e.toString());
         }
@@ -788,26 +787,26 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
          * Data stores of file type happen automatically, but block device types have to handle it. Unfortunately for ScaleIO this means we add a whole 8GB to
          * the original size, but only if we are close to an 8GB boundary.
          */
-        logger.debug(String.format("Copying template %s to volume %s", srcData.getId(), destData.getId()));
+        logger.debug("Copying template {} to volume {}", srcData, destData);
         VolumeInfo destInfo = (VolumeInfo) destData;
         boolean encryptionRequired = anyVolumeRequiresEncryption(destData);
         if (encryptionRequired) {
             if (needsExpansionForEncryptionHeader(srcData.getSize(), destData.getSize())) {
                 long newSize = destData.getSize() + (1<<30);
-                logger.debug(String.format("Destination volume %s(%s) is configured for encryption. Resizing to fit headers, new size %s will be rounded up to nearest 8Gi", destInfo.getId(), destData.getSize(), newSize));
+                logger.debug("Destination volume {} ({}) is configured for encryption. Resizing to fit headers, new size {} will be rounded up to nearest 8Gi", destInfo, destData.getSize(), newSize);
                 ResizeVolumePayload p = new ResizeVolumePayload(newSize, destInfo.getMinIops(), destInfo.getMaxIops(),
                     destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
                 destInfo.addPayload(p);
                 resizeVolume(destInfo);
             } else {
-                logger.debug(String.format("Template %s has size %s, ok for volume %s with size %s", srcData.getId(), srcData.getSize(), destData.getId(), destData.getSize()));
+                logger.debug("Template {} has size {}, ok for volume {} with size {}", srcData, srcData.getSize(), destData, destData.getSize());
             }
         } else {
-            logger.debug(String.format("Destination volume is not configured for encryption, skipping encryption prep. Volume: %s", destData.getId()));
+            logger.debug("Destination volume is not configured for encryption, skipping encryption prep. Volume: {}", destData);
         }
 
         // Copy PowerFlex/ScaleIO template to volume
-        logger.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
+        logger.debug("Initiating copy from PowerFlex template volume on host {}", destHost != null ? destHost : "<not specified>");
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -834,7 +833,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     protected Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
-        logger.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
+        logger.debug("Initiating copy from PowerFlex template volume on host {}", destHost != null ? destHost : "<not specified>");
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
@@ -876,7 +875,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             GetVolumeStatCommand statCmd = new GetVolumeStatCommand(srcVolumeInfo.getPath(), srcVolumeInfo.getStoragePoolType(), srcStore.getUuid());
             GetVolumeStatAnswer statAnswer = (GetVolumeStatAnswer) ep.sendMessage(statCmd);
             if (!statAnswer.getResult() ) {
-                logger.warn(String.format("Unable to get volume %s stats", srcVolumeInfo.getId()));
+                logger.warn(String.format("Unable to get volume %s stats", srcVolumeInfo));
             } else if (statAnswer.getVirtualSize() > 0) {
                 srcVolumeUsableSize = statAnswer.getVirtualSize();
             }
@@ -897,15 +896,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 updateVolumeAfterCopyVolume(srcData, destData);
                 updateSnapshotsAfterCopyVolume(srcData, destData);
                 deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
-                logger.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
+                logger.debug("Successfully migrated migrate PowerFlex volume {} to storage pool {}", srcData,  destStore);
                 answer = new Answer(null, true, null);
             } else {
-                String errorMsg = "Failed to migrate PowerFlex volume: " + srcVolumeId + " to storage pool " + destPoolId;
+                String errorMsg = String.format("Failed to migrate PowerFlex volume: %s to storage pool %s", srcData, destStore);
                 logger.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            logger.error("Failed to migrate PowerFlex volume: " + srcVolumeId + " due to: " + e.getMessage());
+            logger.error("Failed to migrate PowerFlex volume: {} due to: {}", srcData, e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
@@ -1158,12 +1157,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 answer = new Answer(null, true, null);
             } else {
-                String errorMsg = "Failed to migrate PowerFlex volume: " + srcData.getId() + " to storage pool " + destPoolId;
+                String errorMsg = String.format("Failed to migrate PowerFlex volume: %s to storage pool %d", srcData, destPoolId);
                 logger.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            logger.error("Failed to migrate PowerFlex volume: " + srcData.getId() + " due to: " + e.getMessage());
+            logger.error("Failed to migrate PowerFlex volume: {} due to: {}", srcData, e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
@@ -1395,8 +1394,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             int connectedSdcsCount = client.getConnectedSdcsCount();
             customStats.put(ScaleIOUtil.CONNECTED_SDC_COUNT_STAT, String.valueOf(connectedSdcsCount));
         } catch (Exception e) {
-            String errMsg = "Unable to get custom storage stats for the pool: " + pool.getId() + " due to " + e.getMessage();
-            logger.error(errMsg);
+            logger.error("Unable to get custom storage stats for the pool: {} due to {}", pool, e.getMessage());
         }
 
         return customStats;
@@ -1484,8 +1482,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return;
         }
 
-        logger.warn("SDC not connected on the host: " + host.getId());
-        String msg = "SDC not connected on the host: " + host.getId() + ", reconnect the SDC to MDM";
+        logger.warn("SDC not connected on the host: {}", host);
+        String msg = String.format("SDC not connected on the host: %s, reconnect the SDC to MDM", host);
         alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host.getUuid(), msg);
     }
 
