@@ -216,7 +216,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="loading" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-storage">
         <template #title>
           <div class="center">
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
@@ -224,7 +224,7 @@
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <div
-          v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage']"
+          v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage', 'backup', 'backupstorage']"
           :key="usageType">
           <div>
             <div>
@@ -580,6 +580,10 @@ export default {
           return 'label.primary.storage'
         case 'secondarystorage':
           return 'label.secondary.storage'
+        case 'backup':
+          return 'label.backup'
+        case 'backupstorage':
+          return 'label.backup.storage'
         case 'ip':
           return 'label.public.ips'
       }
@@ -592,6 +596,8 @@ export default {
         case 'primarystorage':
           return parseFloat(value).toFixed(2) + ' GiB'
         case 'secondarystorage':
+          return parseFloat(value).toFixed(2) + ' GiB'
+        case 'backupstorage':
           return parseFloat(value).toFixed(2) + ' GiB'
       }
       return value
@@ -637,6 +643,13 @@ export default {
   .dashboard-card {
     width: 100%;
     min-height: 420px;
+  }
+
+  .dashboard-storage {
+    width: 100%;
+    overflow-x:hidden;
+    overflow-y: scroll;
+    max-height: 420px;
   }
 
   .dashboard-event {

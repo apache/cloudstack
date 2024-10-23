@@ -431,6 +431,7 @@
 "label.backup.repository.add": "Add backup repository",
 "label.backup.repository.remove": "Remove backup repository",
 "label.backuplimit": "Backup Limits",
+"label.backup.storage": "Backup Storage",
 "label.backupstoragelimit": "Backup Storage Limits (GiB)",
 "label.balance": "Balance",
 "label.bandwidth": "Bandwidth",
