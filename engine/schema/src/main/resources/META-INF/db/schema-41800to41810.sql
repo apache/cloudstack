@@ -591,44 +591,6 @@ ALTER TABLE `cloud`.`vpc_offerings` MODIFY `display_text` VARCHAR(255) CHARACTER
 
 -- Scalability and DB optimisations
 
--- Host additions and listing
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__mgmt_server_id` (`mgmt_server_id`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource` (`resource`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__resource_state` (`resource_state`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__type` (`type`);
-
--- IP address and VM view listing speed ups
-ALTER TABLE `cloud`.`user_ip_address` RENAME INDEX `public_ip_address` TO `uk_public_ip_address`;
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__public_ip_address` (`public_ip_address`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__data_center_id` (`data_center_id`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__vlan_db_id` (`vlan_db_id`);
-ALTER TABLE `cloud`.`user_ip_address` ADD INDEX `i_user_ip_address__removed` (`removed`);
-
-ALTER TABLE `cloud`.`vlan` ADD INDEX `i_vlan__vlan_type` (`vlan_type`);
-ALTER TABLE `cloud`.`vlan` ADD INDEX `i_vlan__data_center_id` (`data_center_id`);
-ALTER TABLE `cloud`.`vlan` ADD INDEX `i_vlan__removed` (`removed`);
-
-ALTER TABLE `cloud`.`network_offering_details` ADD INDEX `i_network_offering_details__name` (`name`);
-
-ALTER TABLE `cloud`.`resource_tags` ADD INDEX `i_resource_tags__resource_id__resource_type` (`resource_id`, `resource_type`);
-
-ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__cpu` (`cpu`);
-ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__speed` (`speed`);
-ALTER TABLE `cloud`.`service_offering` ADD INDEX `i_service_offering__ram_size` (`ram_size`);
-
-ALTER TABLE `cloud`.`op_host_planner_reservation` ADD INDEX `i_op_host_planner_reservation__resource_usage`(`resource_usage`);
-
-ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pool_type` (`pool_type`);
-ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__data_center_id_status_scope_hypervisor` (`data_center_id`, `status`, `scope`, `hypervisor`);
-
-ALTER TABLE `cloud`.`router_network_ref` ADD INDEX `i_router_network_ref__guest_type` (`guest_type`);
-
-ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__role` (`role`);
-
-ALTER TABLE `cloud`.`async_job` ADD INDEX `i_async_job__instance_type_job_status` (`instance_type`, `job_status`);
-
-ALTER TABLE `cloud`.`cluster` ADD INDEX `i_cluster__managed_state` (`managed_state`);
-
 -- speeds up user_vm_view (listVM) queries by forcing index on user_ip_address table
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE VIEW `user_vm_view` AS

@@ -113,6 +113,17 @@ public class DatabaseAccessObject {
         }
     }
 
+    public void renameIndex(Connection conn, String tableName, String oldName, String newName) {
+        String stmt = String.format("ALTER TABLE %s RENAME INDEX %s TO %s", tableName, oldName, newName);
+        s_logger.debug(String.format("Statement: %s", stmt));
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            s_logger.debug(String.format("Renamed index %s to %s", oldName, newName));
+        } catch (SQLException e) {
+            s_logger.warn(String.format("Unable to rename index %s to %s", oldName, newName), e);
+        }
+    }
+
     protected static void closePreparedStatement(PreparedStatement pstmt, String errorMessage) {
         try {
             if (pstmt != null) {
