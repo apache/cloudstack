@@ -119,8 +119,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setExternalId("dummy-external-id");
         backup.setType("FULL");
         backup.setDate(new Date());
-        backup.setSize(1024L);
-        backup.setProtectedSize(1024000L);
+        backup.setSize(1024000L);
+        backup.setProtectedSize(1024000000L);
         backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());

@@ -568,9 +568,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw e;
         }
 
+        Long backupSize = 0L;
+        for (final Volume volume: volumeDao.findByInstance(vmId)) {
+            if (Volume.State.Ready.equals(volume.getState())) {
+                backupSize += volume.getSize();
+            }
+        }
         try {
-            // TODO : put requrested size as the last argument
-            resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup_storage);
+            resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup_storage, backupSize);
         } catch (ResourceAllocationException e) {
             if (type != Backup.Type.MANUAL) {
                 String msg = "Backup storage space resource limit exceeded for account id : " + owner.getId() + ". Failed to create backup";
@@ -597,8 +602,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             vmBackup.setBackupIntervalType((short)type.ordinal());
             backupDao.update(vmBackup.getId(), vmBackup);
             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            // TODO : put delta as the last argument
-            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage);
+            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, vmBackup.getProtectedSize());
             return true;
         }
         throw new CloudRuntimeException("Failed to create VM backup");
@@ -973,8 +977,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            // TODO : put delta as the last argument
-            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage);
+            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
             return backupDao.remove(backup.getId());
         }
         throw new CloudRuntimeException("Failed to delete the backup");
