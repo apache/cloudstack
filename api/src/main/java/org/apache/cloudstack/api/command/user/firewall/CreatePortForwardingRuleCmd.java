@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -112,7 +111,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
             description = " the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
-                    "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC's networks. By default, all CIDRs are allowed.")
+                    "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC tiers. By default, all CIDRs are allowed.")
     private List<String> sourceCidrList;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
@@ -342,7 +341,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             }
         }
 
-        validateSourceCidrList();
+        _rulesService.validatePortForwardingSourceCidrList(sourceCidrList);
 
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall(), isDisplay());
@@ -441,18 +440,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public String getName() {
         return null;
-    }
-
-    public void validateSourceCidrList() {
-        if (CollectionUtils.isEmpty(sourceCidrList)) {
-            return;
-        }
-
-        for (String cidr : sourceCidrList) {
-            if (!NetUtils.isValidCidrList(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
-                throw new InvalidParameterValueException(String.format("The given source CIDR [%s] is invalid.", cidr));
-            }
-        }
     }
 
 }

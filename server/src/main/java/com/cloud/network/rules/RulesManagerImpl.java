@@ -33,6 +33,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
+import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
@@ -103,6 +104,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.commons.collections.CollectionUtils;
 
 public class RulesManagerImpl extends ManagerBase implements RulesManager, RulesService {
     private static final Logger s_logger = Logger.getLogger(RulesManagerImpl.class);
@@ -1578,12 +1580,22 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Integer privateEndPort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
-        Account caller = CallContext.current().getCallingAccount();
+    public PortForwardingRule updatePortForwardingRule(UpdatePortForwardingRuleCmd cmd) {
+        long id = cmd.getId();
+        Integer privatePort = cmd.getPrivatePort();
+        Integer privateEndPort = cmd.getPrivateEndPort();
+        Long virtualMachineId = cmd.getVirtualMachineId();
+        Ip vmGuestIp = cmd.getVmGuestIp();
+        String customId = cmd.getCustomId();
+        Boolean forDisplay = cmd.getDisplay();
+        List<String> sourceCidrList = cmd.getSourceCidrList();
+
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
             throw new InvalidParameterValueException("Unable to find " + id);
         }
+
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, rule);
 
         if (customId != null) {
@@ -1671,6 +1683,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setVirtualMachineId(virtualMachineId);
             rule.setDestinationIpAddress(dstIp);
         }
+
+        if (CollectionUtils.isNotEmpty(sourceCidrList)) {
+            rule.setSourceCidrList(sourceCidrList);
+        }
+
         _portForwardingDao.update(id, rule);
 
         //apply new rules
@@ -1679,5 +1696,18 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         }
 
         return _portForwardingDao.findById(id);
+    }
+
+    @Override
+    public void validatePortForwardingSourceCidrList(List<String> sourceCidrList) {
+        if (CollectionUtils.isEmpty(sourceCidrList)) {
+            return;
+        }
+
+        for (String cidr : sourceCidrList) {
+            if (!NetUtils.isValidCidrList(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
+                throw new InvalidParameterValueException(String.format("The given source CIDR [%s] is invalid.", cidr));
+            }
+        }
     }
 }
