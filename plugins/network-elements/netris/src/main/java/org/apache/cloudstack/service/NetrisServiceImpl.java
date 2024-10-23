@@ -25,6 +25,7 @@ import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.Vpc;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.agent.api.NetrisCommand;
@@ -91,6 +92,13 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     @Override
     public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, !Objects.isNull(vpcId));
+        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+        return answer.getResult();
+    }
+
+    @Override
+    public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
+        DeleteNetrisVnetCommand cmd = new DeleteNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, vpcName, vpcId, cidr, Objects.nonNull(vpcName));
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }

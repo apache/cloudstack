@@ -22,6 +22,7 @@ import io.netris.model.VPCListing;
 import io.netris.model.response.TenantResponse;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 
 import java.util.List;
@@ -47,4 +48,6 @@ public interface NetrisApiClient {
     boolean deleteVpc(DeleteNetrisVpcCommand cmd);
 
     boolean createVnet(CreateNetrisVnetCommand cmd);
+
+    boolean deleteVnet(DeleteNetrisVnetCommand cmd);
 }
