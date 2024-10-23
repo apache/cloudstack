@@ -33,6 +33,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -123,6 +124,8 @@ public class ConfigurationManagerImplTest {
     UpdateDiskOfferingCmd updateDiskOfferingCmdMock;
     @Mock
     NsxProviderDao nsxProviderDao;
+    @Mock
+    NetrisProviderDao netrisProviderDao;
     @Mock
     DataCenterDao zoneDao;
     @Mock
@@ -402,6 +405,7 @@ public class ConfigurationManagerImplTest {
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
 
         when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(nsxProviderVO);
+        when(netrisProviderDao.findByZoneId(anyLong())).thenReturn(null);
         when(zoneDao.findById(anyLong())).thenReturn(dataCenterVO);
         lenient().when(hostDao.findByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
         when(podDao.listByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
