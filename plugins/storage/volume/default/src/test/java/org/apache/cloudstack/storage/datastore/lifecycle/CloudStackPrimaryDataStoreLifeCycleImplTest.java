@@ -27,6 +27,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
@@ -34,6 +35,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import junit.framework.TestCase;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -57,6 +59,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,8 +82,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
     @InjectMocks
     PrimaryDataStoreLifeCycle _cloudStackPrimaryDataStoreLifeCycle = new CloudStackPrimaryDataStoreLifeCycleImpl();
 
-    @Mock
-    StorageManager storageMgr;
+    @InjectMocks
+    StorageManager storageMgr = new StorageManagerImpl();
 
     @Mock
     ResourceManager _resourceMgr;
@@ -127,10 +130,14 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
 
     @Before
     public void initMocks() {
-
         MockitoAnnotations.initMocks(this);
 
-        List<HostVO> hostList = new ArrayList<HostVO>();
+        ReflectionTestUtils.setField(storageMgr, "_storagePoolDao", primaryStoreDao);
+        ReflectionTestUtils.setField(storageMgr, "_dataStoreProviderMgr", _dataStoreProviderMgr);
+        ReflectionTestUtils.setField(storageMgr, "_dataStoreMgr", _dataStoreMgr);
+        ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageMgr);
+
+        List<HostVO> hostList = new ArrayList<>();
         HostVO host1 = new HostVO(1L, "aa01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
                 UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.NetworkFilesystem);
         HostVO host2 = new HostVO(2L, "aa02", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
@@ -145,10 +152,15 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(store.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(store.isShared()).thenReturn(true);
         when(store.getName()).thenReturn("newPool");
+        when(store.getStorageProviderName()).thenReturn("default");
 
         when(_dataStoreProviderMgr.getDataStoreProvider(anyString())).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn("default");
-        ((StorageManagerImpl)storageMgr).registerHostListener("default", hostListener);
+
+        ReflectionTestUtils.setField(hostListener, "storageService", Mockito.mock(StorageService.class));
+        ReflectionTestUtils.setField(hostListener, "networkDao", Mockito.mock(NetworkDao.class));
+
+        storageMgr.registerHostListener("default", hostListener);
 
         when(hostDao.listIdsForUpRouting(anyLong(), anyLong(), anyLong()))
                 .thenReturn(hostList.stream().map(HostVO::getId).collect(Collectors.toList()));
