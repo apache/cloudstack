@@ -51,8 +51,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private List<PluggableService> services;
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
 
-    final private LazyCache<Long, Account> accountCache;
-    final private LazyCache<Long, Pair<Role, List<RolePermission>>> rolePermissionsCache;
+    private LazyCache<Long, Account> accountCache;
+    private LazyCache<Long, Pair<Role, List<RolePermission>>> rolePermissionsCache;
+    private int cachePeriod;
 
     private static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
 
@@ -61,10 +62,6 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         for (RoleType roleType : RoleType.values()) {
             annotationRoleBasedApisMap.put(roleType, new HashSet<String>());
         }
-        accountCache = new LazyCache<>(32, 60,
-                this::getAccountFromId);
-        rolePermissionsCache = new LazyCache<>(32, 60,
-                this::getRolePermissions);
     }
 
     @Override
@@ -127,16 +124,30 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         return new Pair<>(accountRole, roleService.findAllPermissionsBy(accountRole.getId()));
     }
 
+    protected Pair<Role, List<RolePermission>> getRolePermissionsUsingCache(long roleId) {
+        if (cachePeriod > 0) {
+            return rolePermissionsCache.get(roleId);
+        }
+        return getRolePermissions(roleId);
+    }
+
+    protected Account getAccountFromIdUsingCache(long accountId) {
+        if (cachePeriod > 0) {
+            return accountCache.get(accountId);
+        }
+        return getAccountFromId(accountId);
+    }
+
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
-        Account account = accountCache.get(user.getAccountId());
+        Account account = getAccountFromIdUsingCache(user.getAccountId());
         if (account == null) {
             throw new PermissionDeniedException(String.format("Account for user id [%s] cannot be found", user.getUuid()));
         }
-        Pair<Role, List<RolePermission>> roleAndPermissions = rolePermissionsCache.get(account.getRoleId());
+        Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
         final Role accountRole = roleAndPermissions.first();
         if (accountRole == null) {
             throw new PermissionDeniedException(String.format("Account role for user id [%s] cannot be found.", user.getUuid()));
@@ -153,7 +164,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     public boolean checkAccess(Account account, String commandName) {
-        Pair<Role, List<RolePermission>> roleAndPermissions = rolePermissionsCache.get(account.getRoleId());
+        Pair<Role, List<RolePermission>> roleAndPermissions = getRolePermissionsUsingCache(account.getRoleId());
         final Role accountRole = roleAndPermissions.first();
         if (accountRole == null) {
             throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.", account));
@@ -198,6 +209,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+        cachePeriod = Math.max(0, RoleService.DynamicApiCheckerCachePeriod.value());
+        accountCache = new LazyCache<>(32, cachePeriod, this::getAccountFromId);
+        rolePermissionsCache = new LazyCache<>(32, cachePeriod, this::getRolePermissions);
         return true;
     }
 
