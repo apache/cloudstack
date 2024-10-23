@@ -132,16 +132,13 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         long zoneId = cmd.getZoneId();
 
         DataCenterVO zone = _dcDao.findById(zoneId);
-        String zoneName;
         if (zone == null) {
             throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
-        } else {
-            zoneName = zone.getName();
         }
 
         List<HostVO> trafficMonitorsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
         if (trafficMonitorsInZone.size() != 0) {
-            throw new InvalidParameterValueException("Already added an traffic monitor in zone: " + zoneName);
+            throw new InvalidParameterValueException(String.format("Already added an traffic monitor in zone: %s", zone));
         }
 
         URI uri;
@@ -274,7 +271,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             HostVO host = _hostDao.findById(agentId);
             if (host != null) {
                 if ((host.getManagementServerId() == null) || (mgmtSrvrId != host.getManagementServerId())) {
-                    logger.warn("Not the owner. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
+                    logger.warn("Not the owner. Not collecting Direct Network usage from TrafficMonitor : {}", host);
                     return false;
                 }
             } else {
@@ -303,7 +300,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
             final long zoneId = host.getDataCenterId();
             final DetailVO lastCollectDetail = _detailsDao.findDetail(host.getId(), "last_collection");
             if (lastCollectDetail == null) {
-                logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: " + host.getId());
+                logger.warn("Last collection time not available. Skipping direct usage collection for Traffic Monitor: {}", host);
                 return false;
             }
             Date lastCollection = new Date(Long.parseLong(lastCollectDetail.getValue()));
@@ -377,7 +374,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 DirectNetworkUsageAnswer answer = (DirectNetworkUsageAnswer)_agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
-                    String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
+                    String msg = String.format("Unable to get network usage stats from %s due to: %s.", host, details);
                     logger.error(msg);
                     return false;
                 } else {
@@ -410,7 +407,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                 DirectNetworkUsageAnswer answer = (DirectNetworkUsageAnswer)_agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
-                    String msg = "Unable to get network usage stats from " + host.getId() + " due to: " + details + ".";
+                    String msg = String.format("Unable to get network usage stats from %s due to: %s.", host, details);
                     logger.error(msg);
                     return false;
                 } else {
@@ -488,13 +485,12 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         @Override
         public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
             if (cmd instanceof StartupTrafficMonitorCommand) {
-                long agentId = agent.getId();
-                logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
+                logger.debug("Sending RecurringNetworkUsageCommand to {}", agent);
                 RecurringNetworkUsageCommand watch = new RecurringNetworkUsageCommand(_interval);
                 try {
-                    _agentMgr.send(agentId, new Commands(watch), this);
+                    _agentMgr.send(agent.getId(), new Commands(watch), this);
                 } catch (AgentUnavailableException e) {
-                    logger.debug("Can not process connect for host " + agentId, e);
+                    logger.debug("Can not process connect for host {}", agent, e);
                 }
             }
             return;

@@ -201,7 +201,8 @@ public class HostPodVO implements Pod {
 
     @Override
     public String toString() {
-        return String.format("HostPod %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "name", "uuid"));
+        return String.format("HostPod %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "name", "uuid"));
     }
 }

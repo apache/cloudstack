@@ -172,7 +172,7 @@ public class SecurityGroupListener implements Listener {
                     logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
             } catch (AgentUnavailableException e) {
                 //usually hypervisors that do not understand sec group rules.
-                logger.debug("Unable to schedule network rules cleanup for host " + host.getId(), e);
+                logger.debug("Unable to schedule network rules cleanup for host {}", host, e);
             }
             if (_workTracker != null) {
                 _workTracker.processConnect(host.getId());

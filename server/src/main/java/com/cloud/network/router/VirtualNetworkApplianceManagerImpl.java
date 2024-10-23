@@ -394,7 +394,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         _accountMgr.checkAccess(caller, null, true, router);
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
-            logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
+            logger.debug("Router: {} already has service offering: {}", router, serviceOfferingId);
             return _routerDao.findById(routerId);
         }
 
@@ -410,7 +410,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // check if it is a system service offering, if yes return with error as
         // it cannot be used for user vms
         if (!newServiceOffering.isSystemUse()) {
-            throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
+            throw new InvalidParameterValueException(String.format("Cannot upgrade router vm to a non system service offering %s", newServiceOffering));
         }
 
         // Check that the router is stopped
@@ -426,15 +426,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // storage pool preference as the VM's current service
         // offering
         if (_itMgr.isRootVolumeOnLocalStorage(routerId) != newDiskOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newDiskOffering.isUseLocalStorage() + " is different from "
-                    + "current local storage status of router " +  routerId);
+            throw new InvalidParameterValueException(String.format(
+                    "Can't upgrade, due to new local storage status : %s is different from current local storage status of router %s",
+                    newDiskOffering.isUseLocalStorage(), router));
         }
 
         router.setServiceOfferingId(serviceOfferingId);
         if (_routerDao.update(routerId, router)) {
             return _routerDao.findById(routerId);
         } else {
-            throw new CloudRuntimeException("Unable to upgrade router " + routerId);
+            throw new CloudRuntimeException("Unable to upgrade router " + router);
         }
 
     }
@@ -457,7 +458,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final VirtualRouter virtualRouter = stop(router, forced, user, account);
         if (virtualRouter == null) {
-            throw new CloudRuntimeException("Failed to stop router with id " + routerId);
+            throw new CloudRuntimeException("Failed to stop router " + router);
         }
 
         // Clear stop pending flag after stopped successfully
@@ -844,7 +845,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     final Site2SiteVpnConnectionVO lock = _s2sVpnConnectionDao.acquireInLockTable(conn.getId());
                     if (lock == null) {
-                        throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
+                        throw new CloudRuntimeException(String.format("Unable to acquire lock for site to site vpn connection %s", conn));
                     }
                     try {
                         if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
@@ -862,9 +863,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             _s2sVpnConnectionDao.persist(conn);
                             if (oldState != conn.getState()) {
                                 final String title = "Site-to-site Vpn Connection to " + gw.getName() + " just switched from " + oldState + " to " + conn.getState();
-                                final String context =
-                                        "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() + "(id: " + router.getId() + ") " +
-                                                " just switched from " + oldState + " to " + conn.getState();
+                                final String context = String.format(
+                                        "Site-to-site Vpn Connection to %s on router %s(%s)  just switched from %s to %s",
+                                        gw.getName(), router.getHostName(), router, oldState, conn.getState());
                                 logger.info(context);
                                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             }
@@ -924,8 +925,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final RedundantState currState = router.getRedundantState();
             if (prevState != currState) {
                 final String title = "Redundant virtual router " + router.getInstanceName() + " just switch from " + prevState + " to " + currState;
-                final String context = "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " + " just switch from " + prevState + " to "
-                        + currState;
+                final String context = String.format(
+                        "Redundant virtual router [%s] with hostname: %s just switch from %s to %s",
+                        router, router.getHostName(), prevState, currState);
                 logger.info(context);
                 if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
@@ -1032,8 +1034,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             final DomainRouterVO dupRouter = networkRouterMaps.get(routerGuestNtwkId);
                             final String title = "More than one redundant virtual router is in PRIMARY state! Router " + router.getHostName() + " and router "
                                     + dupRouter.getHostName();
-                            final String context = "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: " + dupRouter.getHostName()
-                                    + ", id: " + router.getId() + ") are both in PRIMARY state! If the problem persist, restart both of routers. ";
+                            final String context = String.format(
+                                    "Virtual router %s with hostname: %s and router %s " +
+                                            "with hostname %s are both in PRIMARY state! " +
+                                            "If the problem persist, restart both of routers. ",
+                                    router, router.getHostName(), dupRouter, dupRouter.getHostName());
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             logger.warn(context);
                         } else {
@@ -2667,7 +2672,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             rules.add(rule);
         } else {
-            logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the rule to Allow. ");
+            logger.debug("Egress policy for the Network {} is already defined as Deny. So, no need to default the rule to Allow. ", network);
         }
     }
 
@@ -2942,7 +2947,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     public boolean removeDhcpSupportForSubnet(final Network network, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             logger.warn("Failed to add/remove VPN users: no router found for account and zone");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException(String.format("Unable to assign ip addresses, domR doesn't exist for network %s", network), DataCenter.class, network.getDataCenterId());
         }
 
         for (final DomainRouterVO router : routers) {
@@ -3044,7 +3049,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
         final VirtualRouter virtualRouter = _nwHelper.startVirtualRouter(router, user, caller, params);
         if (virtualRouter == null) {
-            throw new CloudRuntimeException("Failed to start router with id " + routerId);
+            throw new CloudRuntimeException(String.format("Failed to start router %s", router));
         }
         return virtualRouter;
     }
@@ -3334,7 +3339,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
             if (!_nwHelper.checkRouterTemplateVersion(router)) {
-                logger.debug("Upgrading template for router: " + router.getId());
+                logger.debug("Upgrading template for router: {}", router);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "" + router.getAccountId());
@@ -3349,7 +3354,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final long jobId = _asyncMgr.submitAsyncJob(job);
                 jobIds.add(jobId);
             } else {
-                logger.debug("Router: " + router.getId() + " is already at the latest version. No upgrade required");
+                logger.debug("Router: {} is already at the latest version. No upgrade required", router);
             }
         }
         return jobIds;

@@ -219,7 +219,7 @@ public class ImageStoreVO implements ImageStore {
 
     @Override
     public String toString() {
-        return String.format("ImageStoreVO %s",
+        return String.format("ImageStore %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "name", "uuid"));
     }
