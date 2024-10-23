@@ -114,7 +114,7 @@
         </div>
 
         <div class="form__item" name="useDefaultVMwareCred">
-          <div class="form__label">{{ $t('label.autofill.vcenter.credentials.from.zone') }}</div>
+          <div class="form__label">{{ $t('label.use.existing.vcenter.credentials.from.zone') }}</div>
           <a-switch v-model="useDefaultVMwareCred" :checked="useDefaultVMwareCred" @change="onChangeUseDefaultVMwareCred()" />
         </div>
 
