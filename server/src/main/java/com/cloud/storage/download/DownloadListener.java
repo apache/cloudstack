@@ -203,11 +203,13 @@ public class DownloadListener implements Listener {
     }
 
     public void logDisconnect() {
-        logger.warn("Unable to monitor download progress of " + object.getType() + ": " + object.getId() + " at host " + _ssAgent.getId());
+        logger.warn("Unable to monitor download progress of {} : uuid: {}({}) at host {}",
+                object.getType(), object.getId(), object, _ssAgent.getId());
     }
 
     public void log(String message, Level level) {
-        logger.log(level, message + ", " + object.getType() + ": " + object.getId() + " at host " + _ssAgent.getId());
+        logger.log(level, "{}, {}: {}({}) at host {}",
+                message, object.getType(), object.getId(), object, _ssAgent.getId());
     }
 
     public DownloadListener(DownloadMonitorImpl monitor) {

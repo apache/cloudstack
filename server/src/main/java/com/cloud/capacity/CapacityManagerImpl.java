@@ -280,7 +280,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
 
-        final long vmId = vm.getId();
         final long hostId = vm.getHostId();
         final HostVO host = _hostDao.findById(hostId);
         final long clusterId = host.getClusterId();
@@ -389,7 +388,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     }
 
                     if (!hostHasCapacity || !hostHasCpuCapability) {
-                        throw new CloudRuntimeException("Host does not have enough capacity for vm " + vmId);
+                        throw new CloudRuntimeException("Host does not have enough capacity for vm " + vm);
                     }
 
                     _capacityDao.update(capacityCpu.getId(), capacityCpu);
