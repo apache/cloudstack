@@ -29,7 +29,6 @@ public class CheckNetworkCommand extends Command {
 
     public CheckNetworkCommand(List<PhysicalNetworkSetupInfo> networkInfoList) {
         this.networkInfoList = networkInfoList;
-        setWait(120);
     }
 
     public List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfoList() {
