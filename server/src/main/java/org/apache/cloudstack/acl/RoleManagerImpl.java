@@ -92,7 +92,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public boolean isEnabled() {
-        // FIXME: hotspot, could be cached?
         return RoleService.EnableDynamicApiChecker.value();
     }
 
