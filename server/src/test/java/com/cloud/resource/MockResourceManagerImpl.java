@@ -46,9 +46,9 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -79,7 +79,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#cancelMaintenance(com.cloud.api.commands.CancelMaintenanceCmd)
      */
     @Override
-    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelHostMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -142,7 +142,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#maintain(com.cloud.api.commands.PrepareForMaintenanceCmd)
      */
     @Override
-    public Host maintain(final PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

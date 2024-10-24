@@ -57,9 +57,9 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -1284,7 +1284,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
         // verify input parameters
@@ -1501,7 +1501,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host maintain(final PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
 

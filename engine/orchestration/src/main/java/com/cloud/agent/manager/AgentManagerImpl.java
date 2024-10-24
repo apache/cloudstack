@@ -38,6 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.org.Cluster;
 import com.cloud.utils.NumbersUtil;
@@ -50,7 +52,10 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
+import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.MapUtils;
@@ -130,7 +135,7 @@ import org.apache.logging.log4j.ThreadContext;
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
-public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, Configurable {
+public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, ManagementServerMaintenanceListener, Configurable {
 
     /**
      * _agents is a ConcurrentHashMap, but it is used from within a synchronized block. This will be reported by findbugs as JLM_JSR166_UTILCONCURRENT_MONITORENTER. Maybe a
@@ -154,6 +159,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     protected HostDao _hostDao = null;
     @Inject
+    private ManagementServerHostDao _mshostDao;
+    @Inject
     protected OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     protected DataCenterDao _dcDao = null;
@@ -175,6 +182,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     protected IndirectAgentLB indirectAgentLB;
 
+    @Inject
+    private ManagementServerMaintenanceManager managementServerMaintenanceManager;
+
     protected int _retry = 2;
 
     protected long _nodeId = -1;
@@ -186,6 +196,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected ScheduledExecutorService _monitorExecutor;
 
     private int _directAgentThreadCap;
+
+    private List<String> lastAgents = null;
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
@@ -225,6 +237,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         registerForHostEvents(new BehindOnPingListener(), true, true, false);
 
         registerForHostEvents(new SetHostParamsListener(), true, true, false);
+
+        managementServerMaintenanceManager.registerListener(this);
 
         _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
@@ -296,6 +310,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _hostMonitors.remove(id);
     }
 
+    @Override
+    public void onManagementServerMaintenance() {
+        _monitorExecutor.shutdownNow();
+    }
+
+    @Override
+    public void onManagementServerCancelMaintenance() {
+        if (_monitorExecutor.isShutdown()) {
+            _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+        }
+    }
+
     private AgentControlAnswer handleControlCommand(final AgentAttache attache, final AgentControlCommand cmd) {
         AgentControlAnswer answer = null;
 
@@ -330,6 +356,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             attache = _agents.get(hostId);
         }
         return attache;
+    }
+
+    @Override
+    public List<String> getLastAgents() {
+        return lastAgents;
+    }
+
+    @Override
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
     }
 
     @Override
@@ -616,10 +652,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         final long hostId = attache.getId();
         final HostVO host = _hostDao.findById(hostId);
         for (final Pair<Integer, Listener> monitor : _hostMonitors) {
-            logger.debug("Sending Connect to listener: {}", monitor.second().getClass().getSimpleName());
+            logger.debug("Sending Connect to listener: {}, for rebalance: {}", monitor.second().getClass().getSimpleName(), forRebalance);
             for (int i = 0; i < cmd.length; i++) {
                 try {
-                    logger.debug("process connection to issue {} forRebalance == {}", ReflectionToStringBuilderUtils.reflectCollection(cmd[i]), forRebalance);
+                    logger.debug("process connection to issue: {} for host: {}, forRebalance: {}, connection transferred: {}", ReflectionToStringBuilderUtils.reflectCollection(cmd[i]), hostId, forRebalance, cmd[i].isConnectionTransferred());
                     monitor.second().processConnect(host, cmd[i], forRebalance);
                 } catch (final ConnectionException ce) {
                     if (ce.isSetupError()) {
@@ -675,6 +711,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean start() {
+        ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
+        if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
+            return true;
+        }
+
         startDirectlyConnectedHosts();
 
         if (_connection != null) {
@@ -1918,12 +1959,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         @Override
         public void processConnect(final Host host, final StartupCommand cmd, final boolean forRebalance) {
-            if (cmd instanceof StartupRoutingCommand) {
-                if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
-                    params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
-                    params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
+            if (!(cmd instanceof StartupRoutingCommand) || cmd.isConnectionTransferred()) {
+                return;
+            }
+
+            if (((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.KVM || ((StartupRoutingCommand)cmd).getHypervisorType() == HypervisorType.LXC) {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
+                params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);
@@ -1934,8 +1978,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                 }
             }
-
-        }
 
         @Override
         public boolean processDisconnect(final long agentId, final Status state) {
@@ -2002,6 +2044,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
         }
+    }
+
+    @Override
+    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs) {
+        return true;
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

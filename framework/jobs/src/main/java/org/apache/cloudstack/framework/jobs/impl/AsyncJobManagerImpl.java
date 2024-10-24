@@ -218,16 +218,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return submitAsyncJob(job, false);
     }
 
-    private void checkShutdown() {
+    private void checkAsyncJobsAllowed() {
         if (!isAsyncJobsEnabled()) {
-            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+            throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs");
         }
     }
 
     @SuppressWarnings("unchecked")
     @DB
     public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
-        checkShutdown();
+        checkAsyncJobsAllowed();
 
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -248,7 +248,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
-        checkShutdown();
+        checkAsyncJobsAllowed();
 
         try {
             @SuppressWarnings("rawtypes")
@@ -860,7 +860,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             protected void reallyRun() {
                 try {
                     if (!isAsyncJobsEnabled()) {
-                        logger.info("A shutdown has been triggered. Not executing any async job");
+                        logger.info("Maintenance or Shutdown has been initiated on this management server. Not executing any async jobs");
                         return;
                     }
 

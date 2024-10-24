@@ -47,14 +47,17 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
+import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
+import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
+import org.apache.cloudstack.maintenance.command.BaseShutdownManagementServerHostCommand;
+import org.apache.cloudstack.maintenance.command.CancelMaintenanceManagementServerHostCommand;
+import org.apache.cloudstack.maintenance.command.CancelShutdownManagementServerHostCommand;
+import org.apache.cloudstack.maintenance.command.PrepareForMaintenanceManagementServerHostCommand;
+import org.apache.cloudstack.maintenance.command.PrepareForShutdownManagementServerHostCommand;
+import org.apache.cloudstack.maintenance.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.cloudstack.shutdown.ShutdownManager;
-import org.apache.cloudstack.shutdown.command.CancelShutdownManagementServerHostCommand;
-import org.apache.cloudstack.shutdown.command.PrepareForShutdownManagementServerHostCommand;
-import org.apache.cloudstack.shutdown.command.BaseShutdownManagementServerHostCommand;
-import org.apache.cloudstack.shutdown.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
 
@@ -74,12 +77,17 @@ import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.HostTransferMapVO.HostTransferState;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostPeerDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
@@ -100,7 +108,7 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
 import com.google.gson.Gson;
 
-public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
+public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ManagementServerMaintenanceListener, ClusteredAgentRebalanceService {
     private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
     private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
@@ -113,11 +121,14 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected HashMap<String, SSLEngine> _sslEngines;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
     boolean _agentLbHappened = false;
+    private int _mshostCounter = 0;
 
     @Inject
     protected ClusterManager _clusterMgr = null;
     @Inject
     protected ManagementServerHostDao _mshostDao;
+    @Inject
+    protected ManagementServerHostPeerDao _mshostPeerDao;
     @Inject
     protected HostTransferMapDao _hostTransferDao;
     @Inject
@@ -133,7 +144,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Inject
     private CAManager caService;
     @Inject
-    private ShutdownManager shutdownManager;
+    private ManagementServerMaintenanceManager managementServerMaintenanceManager;
+    @Inject
+    private DataCenterDao dcDao;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -158,6 +171,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         _clusterMgr.registerListener(this);
         _clusterMgr.registerDispatcher(new ClusterDispatcher());
+
+        managementServerMaintenanceManager.registerListener(this);
 
         _gson = GsonHelper.getGson();
 
@@ -1320,10 +1335,28 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         private String handleShutdownManagementServerHostCommand(BaseShutdownManagementServerHostCommand cmd) {
-            if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
-                logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
+            if (cmd instanceof PrepareForMaintenanceManagementServerHostCommand) {
+                logger.debug("Received PrepareForMaintenanceManagementServerHostCommand - preparing for maintenance");
                 try {
-                    shutdownManager.prepareForShutdown();
+                    managementServerMaintenanceManager.prepareForMaintenance(((PrepareForMaintenanceManagementServerHostCommand) cmd).getLbAlgorithm());
+                    return "Successfully prepared for maintenance";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof CancelMaintenanceManagementServerHostCommand) {
+                logger.debug("Received CancelMaintenanceManagementServerHostCommand - cancelling maintenance");
+                try {
+                    managementServerMaintenanceManager.cancelMaintenance();
+                    return "Successfully cancelled maintenance";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
+                logger.debug("Received PrepareForShutdownManagementServerHostCommand - preparing to shut down");
+                try {
+                    managementServerMaintenanceManager.prepareForShutdown();
                     return "Successfully prepared for shutdown";
                 } catch(CloudRuntimeException e) {
                     return e.getMessage();
@@ -1332,7 +1365,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             if (cmd instanceof TriggerShutdownManagementServerHostCommand) {
                 logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
                 try {
-                    shutdownManager.triggerShutdown();
+                    managementServerMaintenanceManager.triggerShutdown();
                     return "Successfully triggered shutdown";
                 } catch(CloudRuntimeException e) {
                     return e.getMessage();
@@ -1341,13 +1374,133 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             if (cmd instanceof CancelShutdownManagementServerHostCommand) {
                 logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
                 try {
-                    shutdownManager.cancelShutdown();
-                    return "Successfully prepared for shutdown";
+                    managementServerMaintenanceManager.cancelShutdown();
+                    return "Successfully cancelled shutdown";
                 } catch(CloudRuntimeException e) {
                     return e.getMessage();
                 }
             }
             throw new CloudRuntimeException("Unknown BaseShutdownManagementServerHostCommand command received : " + cmd);
+        }
+    }
+
+    @Override
+    public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs) {
+        if (timeoutDurationInMs <= 0) {
+            logger.debug(String.format("Not transferring direct agents from management server node %d (id: %s) to other nodes, invalid timeout duration", fromMsId, fromMsUuid));
+            return false;
+        }
+
+        long transferStartTime = System.currentTimeMillis();
+        if (CollectionUtils.isEmpty(getDirectAgentHosts(fromMsId))) {
+            logger.info(String.format("No direct agent hosts available on management server node %d (id: %s), to transfer", fromMsId, fromMsUuid));
+            return true;
+        }
+
+        List<ManagementServerHostVO> msHosts = getUpMsHostsExcludingMs(fromMsId);
+        if (msHosts.isEmpty()) {
+            logger.warn(String.format("No management server nodes available to transfer agents from management server node %d (id: %s)", fromMsId, fromMsUuid));
+            return false;
+        }
+
+        logger.debug(String.format("Transferring direct agents from management server node %d (id: %s) to other nodes", fromMsId, fromMsUuid));
+        int agentTransferFailedCount = 0;
+        List<DataCenterVO> dataCenterList = dcDao.listAll();
+        for (DataCenterVO dc : dataCenterList) {
+            List<HostVO> directAgentHostsInDc = getDirectAgentHostsInDc(fromMsId, dc.getId());
+            if (CollectionUtils.isEmpty(directAgentHostsInDc)) {
+                continue;
+            }
+            logger.debug(String.format("Transferring %d direct agents from management server node %d (id: %s) of zone %s", directAgentHostsInDc.size(), fromMsId, fromMsUuid, dc.toString()));
+            for (HostVO host : directAgentHostsInDc) {
+                long transferElapsedTimeInMs = System.currentTimeMillis() - transferStartTime;
+                if (transferElapsedTimeInMs >= timeoutDurationInMs) {
+                    logger.debug(String.format("Stop transferring remaining direct agents from management server node %d (id: %s), timed out", fromMsId, fromMsUuid));
+                    return false;
+                }
+
+                try {
+                    if (_mshostCounter >= msHosts.size()) {
+                        _mshostCounter = 0;
+                    }
+                    ManagementServerHostVO msHost = msHosts.get(_mshostCounter % msHosts.size());
+                    _mshostCounter++;
+
+                    if (rebalanceAgent(host.getId(), Event.StartAgentRebalance, fromMsId, msHost.getMsid())) {
+                        agentTransferFailedCount++;
+                    } else {
+                        updateLastManagementServer(host.getId(), fromMsId);
+                    }
+                } catch (Exception e) {
+                    logger.warn(String.format("Failed to transfer direct agent of the host %s from management server node %d (id: %s), due to %s", host, fromMsId, fromMsUuid, e.getMessage()));
+                }
+            }
+        }
+
+        return (agentTransferFailedCount == 0);
+    }
+
+    private List<HostVO> getDirectAgentHosts(long msId) {
+        List<HostVO> directAgentHosts = new ArrayList<>();
+        List<HostVO> hosts = _hostDao.listHostsByMs(msId);
+        for (HostVO host : hosts) {
+            AgentAttache agent = findAttache(host.getId());
+            if (agent != null && agent instanceof DirectAgentAttache) {
+                directAgentHosts.add(host);
+            }
+        }
+
+        return directAgentHosts;
+    }
+
+    private List<HostVO> getDirectAgentHostsInDc(long msId, long dcId) {
+        List<HostVO> directAgentHosts = new ArrayList<>();
+        List<HostVO> hosts = _hostDao.listHostsByMsAndDc(msId, dcId);
+        for (HostVO host : hosts) {
+            AgentAttache agent = findAttache(host.getId());
+            if (agent != null && agent instanceof DirectAgentAttache) {
+                directAgentHosts.add(host);
+            }
+        }
+
+        return directAgentHosts;
+    }
+
+    private List<ManagementServerHostVO> getUpMsHostsExcludingMs(long avoidMsId) {
+        final List<ManagementServerHostVO> msHosts = _mshostDao.listBy(ManagementServerHost.State.Up);
+        Iterator<ManagementServerHostVO> iterator = msHosts.iterator();
+        while (iterator.hasNext()) {
+            ManagementServerHostVO ms = iterator.next();
+            if (ms.getMsid() == avoidMsId || _mshostPeerDao.findByPeerMsAndState(ms.getId(), ManagementServerHost.State.Up) == null) {
+                iterator.remove();
+            }
+        }
+
+        return msHosts;
+    }
+
+    private void updateLastManagementServer(long hostId, long msId) {
+        HostVO hostVO = _hostDao.findById(hostId);
+        if (hostVO != null) {
+            hostVO.setLastManagementServerId(msId);
+            _hostDao.update(hostId, hostVO);
+        }
+    }
+
+    @Override
+    public void onManagementServerMaintenance() {
+        s_transferExecutor.shutdownNow();
+        cleanupTransferMap(_nodeId);
+    }
+
+    @Override
+    public void onManagementServerCancelMaintenance() {
+        if (isAgentRebalanceEnabled()) {
+            cleanupTransferMap(_nodeId);
+            if (s_transferExecutor.isShutdown()) {
+                s_transferExecutor.scheduleAtFixedRate(getAgentRebalanceScanTask(), 60000, 60000, TimeUnit.MILLISECONDS);
+                s_transferExecutor.scheduleAtFixedRate(getTransferScanTask(), 60000, ClusteredAgentRebalanceService.DEFAULT_TRANSFER_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
+            }
         }
     }
 

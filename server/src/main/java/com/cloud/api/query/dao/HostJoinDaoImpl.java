@@ -58,6 +58,8 @@ import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
@@ -72,6 +74,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private VMInstanceDao virtualMachineDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -126,12 +130,19 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setHypervisor(hypervisorType);
         }
         hostResponse.setHostType(host.getType());
+        if (host.getType().equals(Host.Type.ConsoleProxy) || host.getType().equals(Host.Type.SecondaryStorageVM)) {
+            VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(host.getName());
+            if (vm != null) {
+                hostResponse.setVirtualMachineId(vm.getUuid());
+            }
+        }
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         Long mshostId = host.getManagementServerId();
         if (mshostId != null) {
             ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
             if (managementServer != null) {
                 hostResponse.setManagementServerId(managementServer.getUuid());
+                hostResponse.setManagementServerName(managementServer.getName());
             }
         }
         hostResponse.setName(host.getName());

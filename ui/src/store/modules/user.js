@@ -68,6 +68,8 @@ const user = {
     loginFlag: false,
     logoutFlag: false,
     customColumns: {},
+    msId: '',
+    maintenanceInitiated: false,
     shutdownTriggered: false,
     twoFaEnabled: false,
     twoFaProvider: '',
@@ -146,6 +148,12 @@ const user = {
     SET_CUSTOM_COLUMNS: (state, customColumns) => {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
+    },
+    SET_MS_ID: (state, msId) => {
+      state.msId = msId
+    },
+    SET_MAINTENANCE_INITIATED: (state, maintenanceInitiated) => {
+      state.maintenanceInitiated = maintenanceInitiated
     },
     SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
       state.shutdownTriggered = shutdownTriggered
@@ -227,6 +235,9 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          if (result && result.managementserverid) {
+            commit('SET_MS_ID', result.managementserverid)
+          }
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
@@ -276,6 +287,9 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          if (result && result.managementserverid) {
+            commit('SET_MS_ID', result.managementserverid)
+          }
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
@@ -458,6 +472,7 @@ const user = {
         commit('SET_2FA_PROVIDER', '')
         commit('SET_2FA_ISSUER', '')
         commit('SET_LOGIN_FLAG', false)
+        commit('SET_MS_ID', '')
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
