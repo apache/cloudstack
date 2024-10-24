@@ -78,4 +78,18 @@ def ruleCompare(ruleA, ruleB):
         return ruleA["public_ip"] == ruleB["public_ip"]
     elif ruleA["type"] == "forward":
         return ruleA["public_ip"] == ruleB["public_ip"] and ruleA["public_ports"] == ruleB["public_ports"] \
-            and ruleA["protocol"] == ruleB["protocol"]
+            and ruleA["protocol"] == ruleB["protocol"] and cidrsConflict(ruleA.get("source_cidr_list"), ruleB.get("source_cidr_list"))
+
+# Same validation as in com.cloud.network.firewall.FirewallManagerImpl.detectConflictingCidrs
+def cidrsConflict(cidrListA, cidrListB):
+    if not cidrListA and not cidrListB:
+        return True
+    if not cidrListA:
+        return False
+    if not cidrListB:
+        return False
+
+    cidrListA = set(cidrListA.split(","))
+    cidrListB = set(cidrListB.split(","))
+
+    return len(cidrListA.intersection(cidrListB)) > 0

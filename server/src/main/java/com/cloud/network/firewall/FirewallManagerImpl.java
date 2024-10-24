@@ -391,9 +391,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol()
                             .equalsIgnoreCase(rule.getProtocol()))));
 
-            // if both rules are firewall and their cidrs are different, we can skip port ranges verification
-            boolean bothRulesFirewall = (rule.getPurpose() == newRule.getPurpose() && rule.getPurpose() == Purpose.Firewall);
+            // if both rules are firewall/port forwarding and their cidrs are different, we can skip port ranges verification
             boolean duplicatedCidrs = false;
+
+            boolean bothRulesFirewall = (rule.getPurpose() == newRule.getPurpose() && rule.getPurpose() == Purpose.Firewall);
             if (bothRulesFirewall) {
                 _firewallDao.loadSourceCidrs(rule);
                 _firewallDao.loadSourceCidrs((FirewallRuleVO)newRule);
@@ -405,6 +406,18 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     continue;
                 }
                 duplicatedCidrs = (detectConflictingCidrs(rule.getSourceCidrList(), newRule.getSourceCidrList()) && detectConflictingCidrs(rule.getDestinationCidrList(), newRule.getDestinationCidrList()));
+            }
+
+            boolean bothRulesPortForwarding = rule.getPurpose() == newRule.getPurpose() && rule.getPurpose() == Purpose.PortForwarding;
+            if (bothRulesPortForwarding) {
+                _firewallDao.loadSourceCidrs(rule);
+                _firewallDao.loadSourceCidrs((FirewallRuleVO) newRule);
+
+                if (rule.getSourceCidrList() == null || newRule.getSourceCidrList() == null) {
+                    continue;
+                }
+
+                duplicatedCidrs = detectConflictingCidrs(rule.getSourceCidrList(), newRule.getSourceCidrList());
             }
 
             if (!oneOfRulesIsFirewall) {
@@ -441,7 +454,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             if (!notNullPorts) {
                 continue;
             } else if (!oneOfRulesIsFirewall &&
-                !(bothRulesFirewall && !duplicatedCidrs) &&
+                !((bothRulesFirewall || bothRulesPortForwarding) && !duplicatedCidrs) &&
                 ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() &&
                     rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue()) ||
                     (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() &&
