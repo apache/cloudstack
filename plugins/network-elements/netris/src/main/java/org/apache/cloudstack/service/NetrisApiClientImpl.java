@@ -530,5 +530,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         } else {
             suffix = String.format("%s-%s", networkId, networkName);
         }
+        return suffix;
     }
 }
