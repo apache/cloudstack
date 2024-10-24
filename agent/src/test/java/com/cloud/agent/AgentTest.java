@@ -76,8 +76,7 @@ public class AgentTest {
     @Test
     public void testGetLinkLogLinkWithTraceEnabledReturnsLinkLogWithHashCode() {
         Link link = mock(Link.class);
-        InetSocketAddress socketAddress = mock(InetSocketAddress.class);
-        when(socketAddress.toString()).thenReturn("192.168.1.100");
+        InetSocketAddress socketAddress = new InetSocketAddress("192.168.1.100", 1111);
         when(link.getSocketAddress()).thenReturn(socketAddress);
         when(logger.isTraceEnabled()).thenReturn(true);
 
