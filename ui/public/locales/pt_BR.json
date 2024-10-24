@@ -349,7 +349,7 @@
 "label.choose.saml.identity": "Escolha um provedor de identidade SAML",
 "label.cidr": "CIDR",
 "label.cidr.destination.network": "CIDR da rede de destino",
-"label.cidrlist": "Lista de CIDR",
+"label.cidrlist": "Lista de CIDRs",
 "label.cisco.nexus1000v.ip.address": "Endere\u00e7o IP do Nexus 1000v",
 "label.cisco.nexus1000v.password": "Senha do Nexus 1000v",
 "label.cisco.nexus1000v.username": "Usu\u00e1rio do Nexus 1000v",
