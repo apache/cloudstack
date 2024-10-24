@@ -127,7 +127,7 @@ public class CapacityManagerImplTest {
         Float cpuOvercommit = 2.0f;
         Float memoryOvercommit = 1.5f;
         Pair<String, String> clusterDetails = new Pair<>(String.valueOf(cpuOvercommit), String.valueOf(memoryOvercommit));
-        when(capacityManager.getClusterValues(CLUSTER_ID)).thenReturn(clusterDetails);
+        doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
         doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
@@ -147,7 +147,7 @@ public class CapacityManagerImplTest {
         Float cpuOvercommit = 1.5f;
         Float memoryOvercommit = 1.2f;
         Pair<String, String> clusterDetails = new Pair<>(String.valueOf(cpuOvercommit), String.valueOf(memoryOvercommit));
-        when(capacityManager.getClusterValues(CLUSTER_ID)).thenReturn(clusterDetails);
+        doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(false).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
         doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
@@ -167,7 +167,7 @@ public class CapacityManagerImplTest {
         Float cpuOvercommit = 2.0f;
         Float memoryOvercommit = 1.5f;
         Pair<String, String> clusterDetails = new Pair<>(String.valueOf(cpuOvercommit), String.valueOf(memoryOvercommit));
-        when(capacityManager.getClusterValues(CLUSTER_ID)).thenReturn(clusterDetails);
+        doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
         doReturn(false).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
