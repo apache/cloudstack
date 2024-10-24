@@ -26,10 +26,11 @@ under the License.
 
 
       <!-- A regular appender -->
-      <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%d{yyyy-MM-dd}.gz">
+      <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%i.gz">
          <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+         <DefaultRolloverStrategy max="@LOGMAXINDEX@"/>
          <Policies>
-            <TimeBasedTriggeringPolicy/>
+            <SizeBasedTriggeringPolicy size="@LOGMAXFILESIZE@"/>
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
@@ -44,10 +45,11 @@ under the License.
       </RollingFile>
 
 
-      <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
+      <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%i.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+         <DefaultRolloverStrategy max="@LOGMAXINDEX@"/>
          <Policies>
-            <TimeBasedTriggeringPolicy/>
+            <SizeBasedTriggeringPolicy size="@LOGMAXFILESIZE@"/>
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>

@@ -25,10 +25,11 @@ under the License.
       <!-- ================================= -->
 
       <!-- A time/date based rolling appender -->
-      <RollingFile name="FILE" append="true" fileName="@AGENTLOG@" filePattern="@AGENTLOG@.%d{yyyy-MM-dd}.gz">
+      <RollingFile name="FILE" append="true" fileName="@AGENTLOG@" filePattern="@AGENTLOG@.%i.gz">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+         <DefaultRolloverStrategy max="@LOGMAXINDEX@"/>
          <Policies>
-            <TimeBasedTriggeringPolicy/>
+            <SizeBasedTriggeringPolicy size="@LOGMAXFILESIZE@"/>
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) %m%ex%n"/>
       </RollingFile>

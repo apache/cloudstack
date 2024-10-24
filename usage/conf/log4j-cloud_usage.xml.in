@@ -34,10 +34,11 @@ under the License.
        <!-- Append messages to the usage log -->
        <!-- ================================ -->
 
-      <RollingFile name="USAGE" append="true" fileName="@USAGELOG@" filePattern="@USAGELOG@.%d{yyyy-MM-dd}{GMT}.gz">
+      <RollingFile name="USAGE" append="true" fileName="@USAGELOG@" filePattern="@USAGELOG@.%i.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+         <DefaultRolloverStrategy max="@LOGMAXINDEX@"/>
          <Policies>
-            <TimeBasedTriggeringPolicy/>
+            <SizeBasedTriggeringPolicy size="@LOGMAXFILESIZE@"/>
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
