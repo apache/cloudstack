@@ -1140,7 +1140,6 @@ public class ApiConstants {
     public static final String MTU = "mtu";
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
-    public static final String OBJECT_STORAGE_ID = "objectstorageid";
     public static final String VERSIONING = "versioning";
     public static final String OBJECT_LOCKING = "objectlocking";
     public static final String ENCRYPTION = "encryption";
@@ -1154,7 +1153,6 @@ public class ApiConstants {
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
-    public static final String OBJECT_STORAGE = "objectstore";
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
     public static final String MANAGEMENT = "management";
@@ -1186,6 +1184,16 @@ public class ApiConstants {
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
             "value will be applied.";
+
+    // Object Storage related
+    public static final String BUCKET_AVAILABLE = "bucketavaialable";
+    public static final String BUCKET_LIMIT = "bucketlimit";
+    public static final String BUCKET_TOTAL = "buckettotal";
+    public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String OBJECT_STORAGE = "objectstore";
+    public static final String OBJECT_STORAGE_AVAILABLE = "objectstorageavailable";
+    public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
+    public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

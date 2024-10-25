@@ -249,12 +249,30 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
 
         //get resource limits for backup storage space and convert it from Bytes to GiB
         long backupStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getBackupStorageLimit(), account.getId(), ResourceType.backup_storage);
-        String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        String backupStorageLimitDisplay = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
         long backupStorageTotal = (account.getBackupStorageTotal() == null) ? 0 : (account.getBackupStorageTotal() / ResourceType.bytesToGiB);
         String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
         response.setBackupStorageLimit(backupStorageLimitDisplay);
         response.setBackupStorageTotal(backupStorageTotal);
         response.setBackupStorageAvailable(backupStorageAvail);
+
+        //get resource limits for buckets
+        long bucketLimit = ApiDBUtils.findCorrectResourceLimit(account.getBucketLimit(), account.getId(), ResourceType.bucket);
+        String bucketLimitDisplay = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit);
+        long bucketTotal = (account.getBucketTotal() == null) ? 0 : account.getBucketTotal();
+        String bucketAvail = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit - bucketTotal);
+        response.setBucketLimit(bucketLimitDisplay);
+        response.setBucketTotal(bucketTotal);
+        response.setBucketAvailable(bucketAvail);
+
+        //get resource limits for object storage space and convert it from Bytes to GiB
+        long objectStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getObjectStorageLimit(), account.getId(), ResourceType.object_storage);
+        String objectStorageLimitDisplay = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(objectStorageLimit / ResourceType.bytesToGiB);
+        long objectStorageTotal = (account.getObjectStorageTotal() == null) ? 0 : (account.getObjectStorageTotal() / ResourceType.bytesToGiB);
+        String objectStorageAvail = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((objectStorageLimit / ResourceType.bytesToGiB) - objectStorageTotal);
+        response.setObjectStorageLimit(objectStorageLimitDisplay);
+        response.setObjectStorageTotal(objectStorageTotal);
+        response.setObjectStorageAvailable(objectStorageAvail);
     }
 
     @Override

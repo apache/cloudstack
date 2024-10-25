@@ -189,6 +189,18 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "secondaryStorageTotal")
     private Long secondaryStorageTotal;
 
+    @Column(name = "bucketLimit")
+    private Long bucketLimit;
+
+    @Column(name = "bucketTotal")
+    private Long bucketTotal;
+
+    @Column(name = "objectStorageLimit")
+    private Long objectStorageLimit;
+
+    @Column(name = "objectStorageTotal")
+    private Long objectStorageTotal;
+
     @Column(name = "job_id")
     private Long jobId;
 
@@ -350,6 +362,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return secondaryStorageTotal;
     }
 
+    public Long getBucketTotal() {
+        return bucketTotal;
+    }
+
+    public Long getObjectStorageTotal() {
+        return objectStorageTotal;
+    }
+
     public Long getVmLimit() {
         return vmLimit;
     }
@@ -404,6 +424,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public Long getSecondaryStorageLimit() {
         return secondaryStorageLimit;
+    }
+
+    public Long getBucketLimit() {
+        return bucketLimit;
+    }
+
+    public Long getObjectStorageLimit() {
+        return objectStorageLimit;
     }
 
     public Long getJobId() {

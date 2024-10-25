@@ -224,7 +224,7 @@
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <div
-          v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage', 'backup', 'backupstorage']"
+          v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage', 'backup', 'backupstorage', 'bucket', 'objectstorage']"
           :key="usageType">
           <div>
             <div>
@@ -584,6 +584,10 @@ export default {
           return 'label.backup'
         case 'backupstorage':
           return 'label.backup.storage'
+        case 'bucket':
+          return 'label.buckets'
+        case 'objectstorage':
+          return 'label.object.storage'
         case 'ip':
           return 'label.public.ips'
       }
@@ -598,6 +602,8 @@ export default {
         case 'secondarystorage':
           return parseFloat(value).toFixed(2) + ' GiB'
         case 'backupstorage':
+          return parseFloat(value).toFixed(2) + ' GiB'
+        case 'objectstorage':
           return parseFloat(value).toFixed(2) + ' GiB'
       }
       return value

@@ -1382,7 +1382,7 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
-DefaultMaxAccountProjects(
+    DefaultMaxAccountProjects(
                 "Account Defaults",
                 ManagementServer.class,
                 Long.class,
@@ -1390,6 +1390,22 @@ DefaultMaxAccountProjects(
                 "10",
                 "The default maximum number of projects that can be created for an account",
                 null),
+    DefaultMaxAccountBuckets(
+            "Account Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.account.buckets",
+            "20",
+            "The default maximum number of buckets that can be created for an account",
+            null),
+    DefaultMaxAccountObjectStorage(
+            "Account Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.account.object.storage",
+            "400",
+            "The default maximum object storage space (in GiB) that can be used for an account",
+            null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1442,6 +1458,9 @@ DefaultMaxAccountProjects(
     DefaultMaxDomainPrimaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.primary.storage", "400", "The default maximum primary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainSecondaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.secondary.storage", "800", "The default maximum secondary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainProjects("Domain Defaults",ManagementServer.class,Long.class,"max.domain.projects","50","The default maximum number of projects that can be created for a domain",null),
+    // Move to configkey?
+    DefaultMaxDomainBuckets("Domain Defaults", ManagementServer.class, Long.class, "max.domain.buckets", "-1", "The default maximum number of buckets that can be created for a domain", null),
+    DefaultMaxDomainObjectStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.object.storage", "-1", "The default maximum object storage space (in GiB) that can be used for a domain", null),
 
     DefaultMaxProjectUserVms(
             "Project Defaults",
@@ -1539,6 +1558,22 @@ DefaultMaxAccountProjects(
             "max.project.primary.storage",
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an project",
+            null),
+    DefaultMaxProjectBuckets(
+            "Project Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.project.buckets",
+            "20",
+            "The default maximum number of buckets that can be created for a project",
+            null),
+    DefaultMaxProjectObjectStorage(
+            "Project Defaults",
+            ManagementServer.class,
+            Long.class,
+            "max.project.object.storage",
+            "400",
+            "The default maximum object storage space (in GiB) that can be used for a project",
             null),
 
     ProjectInviteRequired(

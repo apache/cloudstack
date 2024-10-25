@@ -102,6 +102,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -197,6 +198,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     ServiceOfferingDao serviceOfferingDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    BucketDao bucketDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -291,9 +294,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
             projectResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
             projectResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectBackups.key())));
             projectResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectBackupStorage.key())));
-            projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
+            projectResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectBuckets.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectObjectStorage.key())));
 
             accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
             accountResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountSnapshots.key())));
@@ -305,10 +310,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
             accountResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBackups.key())));
-            accountResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBackupStorage.key())));
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
+            accountResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBackups.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBackupStorage.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBuckets.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountObjectStorage.key())));
 
             domainResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPublicIPs.key())));
             domainResourceLimitMap.put(Resource.ResourceType.snapshot.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSnapshots.key())));
@@ -321,9 +328,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainMemory.key())));
             domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
             domainResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainBackups.key())));
             domainResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainBackupStorage.key())));
-            domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
+            domainResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainBuckets.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.object_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainObjectStorage.key())));
         } catch (NumberFormatException e) {
             logger.error("NumberFormatException during configuration", e);
             throw new ConfigurationException("Configuration failed due to NumberFormatException, see log for the stacktrace");
@@ -1269,6 +1278,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = calculatePrimaryStorageForAccount(accountId, tag);
         } else if (type == Resource.ResourceType.secondary_storage) {
             newCount = calculateSecondaryStorageForAccount(accountId);
+        } else if (type == Resource.ResourceType.bucket) {
+            newCount = bucketDao.countBucketsForAccount(accountId);
+        } else if (type == ResourceType.object_storage) {
+            newCount = bucketDao.calculateObjectStorageAllocationForAccount(accountId);
         } else {
             throw new InvalidParameterValueException("Unsupported resource type " + type);
         }

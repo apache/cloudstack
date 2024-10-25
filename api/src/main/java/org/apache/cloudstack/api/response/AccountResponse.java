@@ -255,6 +255,30 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total secondary storage space (in GiB) available to be used for this account", since = "4.2.0")
     private String secondaryStorageAvailable;
 
+    @SerializedName(ApiConstants.BUCKET_LIMIT)
+    @Param(description = "the total number of buckets which can be stored by this account", since = "4.21.0")
+    private String bucketLimit;
+
+    @SerializedName(ApiConstants.BUCKET_TOTAL)
+    @Param(description = "the total number of buckets stored by this account", since = "4.21.0")
+    private Long bucketTotal;
+
+    @SerializedName(ApiConstants.BUCKET_AVAILABLE)
+    @Param(description = "the total number of buckets available to this account", since = "4.21.0")
+    private String bucketAvailable;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_LIMIT)
+    @Param(description = "the total object storage space (in GiB) the account can own", since = "4.21.0")
+    private String objectStorageLimit;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_TOTAL)
+    @Param(description = "the total object storage space (in GiB) owned by the account", since = "4.21.0")
+    private Long objectStorageTotal;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_AVAILABLE)
+    @Param(description = "the total object storage space (in GiB) available to the account", since = "4.21.0")
+    private String objectStorageAvailable;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the account")
     private String state;
@@ -585,6 +609,36 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
+    }
+
+    @Override
+    public void setBucketLimit(String bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    @Override
+    public void setBucketTotal(Long bucketTotal) {
+        this.bucketTotal = bucketTotal;
+    }
+
+    @Override
+    public void setBucketAvailable(String bucketAvailable) {
+        this.bucketAvailable = bucketAvailable;
+    }
+
+    @Override
+    public void setObjectStorageLimit(String objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
+    }
+
+    @Override
+    public void setObjectStorageTotal(Long objectStorageTotal) {
+        this.objectStorageTotal = objectStorageTotal;
+    }
+
+    @Override
+    public void setObjectStorageAvailable(String objectStorageAvailable) {
+        this.objectStorageAvailable = objectStorageAvailable;
     }
 
     public void setDefaultZone(String defaultZoneId) {

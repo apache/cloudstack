@@ -71,6 +71,10 @@ select
     `backup_count`.`count` AS `backupTotal`,
     `backup_storage_limit`.`max` AS `backupStorageLimit`,
     `backup_storage_count`.`count` AS `backupStorageTotal`,
+    `bucket_limit`.`max` AS `bucketLimit`,
+    `bucket_count`.`count` AS `bucketTotal`,
+    `object_storage_limit`.`max` AS `objectStorageLimit`,
+    `object_storage_count`.`count` AS `objectStorageTotal`,
     `async_job`.`id` AS `job_id`,
     `async_job`.`uuid` AS `job_uuid`,
     `async_job`.`job_status` AS `job_status`,
@@ -174,6 +178,18 @@ from
         left join
     `cloud`.`resource_count` backup_storage_count ON account.id = backup_storage_count.account_id
         and backup_storage_count.type = 'backup_storage'
+        left join
+    `cloud`.`resource_limit` bucket_limit ON account.id = bucket_limit.account_id
+        and bucket_limit.type = 'bucket'
+        left join
+    `cloud`.`resource_count` bucket_count ON account.id = bucket_count.account_id
+        and bucket_count.type = 'bucket'
+        left join
+    `cloud`.`resource_limit` object_storage_limit ON account.id = object_storage_limit.account_id
+        and object_storage_limit.type = 'object_storage'
+        left join
+    `cloud`.`resource_count` object_storage_count ON account.id = object_storage_count.account_id
+        and object_storage_count.type = 'object_storage'
         left join
     `cloud`.`async_job` ON async_job.instance_id = account.id
         and async_job.instance_type = 'Account'

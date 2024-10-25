@@ -1573,7 +1573,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type.DAILY.setMax(SnapshotDailyMax.value());
         Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
         Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
-
         _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 

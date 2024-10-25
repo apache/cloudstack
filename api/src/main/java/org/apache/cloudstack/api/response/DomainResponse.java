@@ -201,6 +201,30 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
 
+    @SerializedName(ApiConstants.BUCKET_LIMIT)
+    @Param(description = "the total number of buckets which can be stored by this domain", since = "4.21.0")
+    private String bucketLimit;
+
+    @SerializedName(ApiConstants.BUCKET_TOTAL)
+    @Param(description = "the total number of buckets stored by this domain", since = "4.21.0")
+    private Long bucketTotal;
+
+    @SerializedName(ApiConstants.BUCKET_AVAILABLE)
+    @Param(description = "the total number of buckets available to this domain", since = "4.21.0")
+    private String bucketAvailable;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_LIMIT)
+    @Param(description = "the total object storage space (in GiB) the domain can own", since = "4.21.0")
+    private String objectStorageLimit;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_TOTAL)
+    @Param(description = "the total object storage space (in GiB) owned by the domain", since = "4.21.0")
+    private Long objectStorageTotal;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_AVAILABLE)
+    @Param(description = "the total object storage space (in GiB) available to the domain", since = "4.21.0")
+    private String objectStorageAvailable;
+
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
@@ -482,6 +506,36 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
+    }
+
+    @Override
+    public void setBucketLimit(String bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    @Override
+    public void setBucketTotal(Long bucketTotal) {
+        this.bucketTotal = bucketTotal;
+    }
+
+    @Override
+    public void setBucketAvailable(String bucketAvailable) {
+        this.bucketAvailable = bucketAvailable;
+    }
+
+    @Override
+    public void setObjectStorageLimit(String objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
+    }
+
+    @Override
+    public void setObjectStorageTotal(Long objectStorageTotal) {
+        this.objectStorageTotal = objectStorageTotal;
+    }
+
+    @Override
+    public void setObjectStorageAvailable(String objectStorageAvailable) {
+        this.objectStorageAvailable = objectStorageAvailable;
     }
 
     public void setState(String state) {

@@ -48,7 +48,6 @@ public interface SnapshotManager extends Configurable {
             "Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Integer> SnapshotMonthlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.monthly", "Snapshots", "8",
             "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
-
     static final ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
             "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ", false);
     public static final ConfigKey<Integer> BackupRetryAttempts = new ConfigKey<Integer>(Integer.class, "backup.retry", "Advanced", "3",

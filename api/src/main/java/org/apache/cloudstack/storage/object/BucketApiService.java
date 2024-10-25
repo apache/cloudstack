@@ -48,7 +48,7 @@ public interface BucketApiService {
 
     boolean deleteBucket(long bucketId, Account caller);
 
-    boolean updateBucket(UpdateBucketCmd cmd, Account caller);
+    boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException;
 
     void getBucketUsage();
 }

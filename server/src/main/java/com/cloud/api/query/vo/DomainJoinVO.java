@@ -166,6 +166,18 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
     @Column(name="secondaryStorageTotal")
     private Long secondaryStorageTotal;
 
+    @Column(name = "bucketLimit")
+    private Long bucketLimit;
+
+    @Column(name = "bucketTotal")
+    private Long bucketTotal;
+
+    @Column(name = "objectStorageLimit")
+    private Long objectStorageLimit;
+
+    @Column(name = "objectStorageTotal")
+    private Long objectStorageTotal;
+
     @Transient
     private String parentName;
 
@@ -327,24 +339,8 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         return backupTotal;
     }
 
-    public Long getBackupLimit() {
-        return backupLimit;
-    }
-
-    public void setBackupLimit(Long backupLimit) {
-        this.backupLimit = backupLimit;
-    }
-
     public Long getBackupStorageTotal() {
         return backupStorageTotal;
-    }
-
-    public Long getBackupStorageLimit() {
-        return backupStorageLimit;
-    }
-
-    public void setBackupStorageLimit(Long backupStorageLimit) {
-        this.backupStorageLimit = backupStorageLimit;
     }
 
     public Long getTemplateTotal() {
@@ -426,6 +422,13 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         this.secondaryStorageTotal = secondaryStorageTotal;
     }
 
+    public Long getBucketTotal() {
+        return bucketTotal;
+    }
+
+    public Long getObjectStorageTotal() {
+        return objectStorageTotal;
+    }
 
     public Long getVmLimit() {
         return vmLimit;
@@ -466,6 +469,21 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         this.snapshotLimit = snapshotLimit;
     }
 
+    public Long getBackupLimit() {
+        return backupLimit;
+    }
+
+    public void setBackupLimit(Long backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    public Long getBackupStorageLimit() {
+        return backupStorageLimit;
+    }
+
+    public void setBackupStorageLimit(Long backupStorageLimit) {
+        this.backupStorageLimit = backupStorageLimit;
+    }
 
     public Long getTemplateLimit() {
         return templateLimit;
@@ -544,6 +562,22 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
 
     public void setSecondaryStorageLimit(Long secondaryStorageLimit) {
         this.secondaryStorageLimit = secondaryStorageLimit;
+    }
+
+    public Long getBucketLimit() {
+        return bucketLimit;
+    }
+
+    public void setBucketLimit(Long bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    public Long getObjectStorageLimit() {
+        return objectStorageLimit;
+    }
+
+    public void setObjectStorageLimit(Long objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
     }
 
     public String getParentName() {
