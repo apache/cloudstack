@@ -115,11 +115,11 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 if (resp.getError() != null) {
                     final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
                     StorPoolUtil.spLog(err);
-                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp, resp.getError().getName().equals("objectDoesNotExist"));
+                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp.getError().getName().equals("objectDoesNotExist"));
                     throw new CloudRuntimeException(err);
                 } else {
                     res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
-                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp, true);
+                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId,true);
                     StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
                 }
             } catch (Exception e) {
@@ -136,14 +136,15 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         return res;
     }
 
-    private void markSnapshotAsDestroyedIfAlreadyRemoved(Long snapshotId, SpApiResponse resp, boolean isSnapshotDeleted) {
-        if (isSnapshotDeleted) {
-            List<SnapshotDataStoreVO> snapshotsOnStore = _snapshotStoreDao.listBySnapshotIdAndState(snapshotId, State.Ready);
-            for (SnapshotDataStoreVO snapshot : snapshotsOnStore) {
-                if (snapshot.getInstallPath() != null && snapshot.getInstallPath().contains(StorPoolUtil.SP_DEV_PATH)) {
-                    snapshot.setState(State.Destroyed);
-                    _snapshotStoreDao.update(snapshot.getId(), snapshot);
-                }
+    private void markSnapshotAsDestroyedIfAlreadyRemoved(Long snapshotId, boolean isSnapshotDeleted) {
+        if (!isSnapshotDeleted) {
+            return;
+        }
+        List<SnapshotDataStoreVO> snapshotsOnStore = _snapshotStoreDao.listBySnapshotIdAndState(snapshotId, State.Ready);
+        for (SnapshotDataStoreVO snapshot : snapshotsOnStore) {
+            if (snapshot.getInstallPath() != null && snapshot.getInstallPath().contains(StorPoolUtil.SP_DEV_PATH)) {
+                snapshot.setState(State.Destroyed);
+                _snapshotStoreDao.update(snapshot.getId(), snapshot);
             }
         }
     }
