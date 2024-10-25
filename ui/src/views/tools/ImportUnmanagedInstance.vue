@@ -941,6 +941,8 @@ export default {
           host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
           if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
             host.name = host.name + ' (' + this.$t('label.supported') + ')'
+          } else {
+            host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
           }
         })
       })
@@ -959,7 +961,7 @@ export default {
     fetchStoragePoolsForConversion () {
       if (this.selectedStorageOptionForConversion === 'primary') {
         const params = {
-          zoneid: this.cluster.zoneid,
+          clusterid: this.cluster.id,
           status: 'Up'
         }
         if (this.selectedKvmHostForConversion) {

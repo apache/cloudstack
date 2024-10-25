@@ -1456,6 +1456,7 @@
 "label.noselect": "No thanks",
 "label.not.found": "Not found",
 "label.not.suitable": "Not suitable",
+"label.not.supported": "Not supported",
 "label.notifications": "Notifications",
 "label.num.cpu.cores": "# of CPU cores",
 "label.number": "#Rule",
