@@ -35,8 +35,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
 public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerializer<T[]> {
 
     protected Gson _gson = null;
@@ -85,7 +83,7 @@ public class ArrayTypeAdaptor<T> implements JsonDeserializer<T[]>, JsonSerialize
             T[] ts = (T[])Array.newInstance(type, cmds.size());
             return cmds.toArray(ts);
         } catch (ClassNotFoundException e) {
-            throw new CloudRuntimeException("can't find " + typeOfT.getTypeName());
+            throw new JsonParseException("can't find " + typeOfT.getTypeName());
         }
     }
 }
