@@ -1447,6 +1447,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
+                    if (attachingPool.getType() == StoragePoolType.Linstor) {
+                        diskdef.setDiscard(DiscardType.UNMAP);
+                    }
                 }
 
                 if (encryptDetails != null) {
