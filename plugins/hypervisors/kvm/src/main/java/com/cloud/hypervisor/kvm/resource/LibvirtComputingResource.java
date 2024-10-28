@@ -2585,13 +2585,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Map<String, String> details = vmTO.getDetails();
 
             boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
-            int controllers = vmTO.getDisks().length / 7;
-            if (vmTO.getDisks().length % 7 != 0) {
-                controllers++;
-            }
-            for (int i = 0; i < controllers; i++) {
-                devices.addDevice(createSCSIDef((short)i, vcpus, isIothreadsEnabled));
-            }
+            addSCSIControllers(devices, vcpus, vmTO.getDisks().length, isIothreadsEnabled);
         }
         return devices;
     }
@@ -2631,6 +2625,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     protected SCSIDef createSCSIDef(short index, int vcpus, boolean isIothreadsEnabled) {
         return new SCSIDef(index, 0, 0, 9 + index, 0, vcpus, isIothreadsEnabled);
+    }
+
+
+    private void addSCSIControllers(DevicesDef devices, int vcpus, int diskCount, boolean isIothreadsEnabled) {
+        int controllers = diskCount / 7;
+        if (diskCount % 7 != 0) {
+            controllers++;
+        }
+        for (int i = 0; i < controllers; i++) {
+            devices.addDevice(createSCSIDef((short)i, vcpus, isIothreadsEnabled));
+        }
     }
 
     protected ConsoleDef createConsoleDef() {
