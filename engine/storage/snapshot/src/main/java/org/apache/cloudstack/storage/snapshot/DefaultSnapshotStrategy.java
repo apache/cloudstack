@@ -20,9 +20,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -100,6 +105,13 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     SnapshotZoneDao snapshotZoneDao;
 
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
+
+    private ConcurrentMap<Long, Lock> locks = new ConcurrentHashMap<>();
+
+    private Lock getLock(Long id) {
+        locks.putIfAbsent(id, new ReentrantLock());
+        return locks.get(id);
+    }
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
@@ -187,6 +199,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot, String storageToString) {
+        long rootSnapshotId = getRootSnapshotId(snapshot);
+        snapshotDao.acquireInLockTable(rootSnapshotId);
         DataTO snapshotTo = snapshot.getTO();
         logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
 
@@ -248,7 +262,15 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         } catch (Exception e) {
             logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
         }
+        snapshotDao.releaseFromLockTable(rootSnapshotId);
         return result;
+    }
+
+    private Long getRootSnapshotId(SnapshotInfo snapshotInfo) {
+        while (snapshotInfo.getParent() != null) {
+            snapshotInfo = snapshotInfo.getParent();
+        }
+        return snapshotInfo.getSnapshotId();
     }
 
     @Override
@@ -392,7 +414,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
             }
             verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
-            if (deleteSnapshotChain(snapshotInfo, storageToString)) {
+            if (Transaction.execute((TransactionCallback<Boolean>) status -> deleteSnapshotChain(snapshotInfo, storageToString))) {
                 logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
             } else {
                 logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as hidden for future garbage collecting.", snapshotVo,

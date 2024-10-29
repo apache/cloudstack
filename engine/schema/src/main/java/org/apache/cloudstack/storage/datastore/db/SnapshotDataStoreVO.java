@@ -234,7 +234,7 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "snapshotId", "dataStoreId", "installPath", "kvmCheckpointPath");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "snapshotId", "dataStoreId", "state", "installPath", "kvmCheckpointPath");
     }
 
     public long getUpdatedCount() {
