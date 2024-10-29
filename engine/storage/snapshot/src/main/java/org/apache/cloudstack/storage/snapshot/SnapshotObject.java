@@ -113,7 +113,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public SnapshotInfo getParent() {
-        logger.debug("Searching for parents of snapshot [{}], in store [{}] with role [{}].", snapshot.getSnapshotId(), store.getId(), store.getRole());
+        logger.trace("Searching for parents of snapshot [{}], in store [{}] with role [{}].", snapshot.getSnapshotId(), store.getId(), store.getRole());
         SnapshotDataStoreVO snapStoreVO = snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
         if (snapStoreVO != null) {
             long parentId = snapStoreVO.getParentSnapshotId();

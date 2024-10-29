@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.inject.Inject;
 
@@ -105,13 +101,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     SnapshotZoneDao snapshotZoneDao;
 
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
-
-    private ConcurrentMap<Long, Lock> locks = new ConcurrentHashMap<>();
-
-    private Lock getLock(Long id) {
-        locks.putIfAbsent(id, new ReentrantLock());
-        return locks.get(id);
-    }
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
