@@ -118,7 +118,7 @@
       </span>
       <a-form-item name="attachVolume" ref="attachVolume" v-if="!createVolumeFromVM">
         <template #label>
-          <tooltip-label :title="$t('label.action.attach.to.instance')" :tooltip="$t('label.attachdisk')" />
+          <tooltip-label :title="$t('label.action.attach.to.instance')" :tooltip="$t('label.attach.vol.to.instance')" />
         </template>
         <a-switch v-model:checked="form.attachVolume" :checked="attachVolume" @change="zone => onChangeAttachToVM(zone.id)" />
       </a-form-item>
