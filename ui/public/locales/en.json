@@ -399,6 +399,7 @@
 "label.associatednetworkid": "Associated Network ID",
 "label.associatednetworkname": "Network name",
 "label.asyncbackup": "Async backup",
+"label.attach.vol.to.instance": "Attach the created Volume to an existing Instance",
 "label.attaching": "Attaching",
 "label.authentication.method": "Authentication Method",
 "label.authentication.sshkey": "System SSH Key",
