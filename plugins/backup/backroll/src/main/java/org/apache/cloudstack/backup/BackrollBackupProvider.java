@@ -89,14 +89,24 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         logger.debug("Listing backup policies on backroll B&R Plugin");
+        logger.info("Listing backup policies on backroll B&R Plugin");
         BackrollClient client = getClient(zoneId);
         try{
             String urlToRequest = client.getBackupOfferingUrl();
+            logger.info("BackrollProvider: urlToRequest: " + urlToRequest);
             if (!StringUtils.isEmpty(urlToRequest)){
-                    return client.getBackupOfferings(urlToRequest);
-
+                List<BackupOffering> results = new ArrayList<BackupOffering>();
+                // return client.getBackupOfferings(urlToRequest);
+                results = client.getBackupOfferings(urlToRequest);
+                if(results.size()>0) {
+                    logger.info("BackrollProvider: results > 0");
+                } else {
+                    logger.info("BackrollProvider: results <= 0");
+                }
+                return results;
             }
         } catch (KeyManagementException | ParseException | NoSuchAlgorithmException | IOException e) {
+            logger.info("BackrollProvider: catch erreur!!!!!!!!!!!!!!!!!!!!!!!!");
             throw new CloudRuntimeException("Failed to load backup offerings");
         }
         return new ArrayList<BackupOffering>();
