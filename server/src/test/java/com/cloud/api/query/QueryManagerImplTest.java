@@ -39,7 +39,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.server.ResourceManagerUtil;
+import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.ScopeType;
@@ -70,6 +73,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
+import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -105,6 +109,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -136,6 +141,12 @@ public class QueryManagerImplTest {
 
     @Mock
     SearchCriteria searchCriteriaMock;
+
+    @Mock
+    ResourceManagerUtil resourceManagerUtil;
+
+    @Mock
+    ResourceMetaDataService _resourceMetaDataMgr;
 
     @Mock
     ObjectStoreDao objectStoreDao;
@@ -405,6 +416,32 @@ public class QueryManagerImplTest {
         when(bucketDao.createSearchBuilder()).thenReturn(sb);
         when(bucketDao.searchAndCount(any(), any())).thenReturn(new Pair<>(buckets, 2));
         queryManagerImplSpy.searchForBuckets(listBucketsCmd);
+    }
+
+    @Test
+    public void testListResourceDetailsObjectStoreNonRootAdminBadParam() {
+        ListResourceDetailsCmd cmd = mock(ListResourceDetailsCmd.class);
+        when(cmd.getResourceType()).thenReturn(ResourceObjectType.ObjectStore);
+
+        // Ensure we get a PermissionDenied exception if we are not RootAdmin.
+        // The setup currently sets isRootAdmin to false. Quick confirmation.
+        Assert.assertFalse(accountManager.isRootAdmin(ACCOUNT_ID));
+        PermissionDeniedException thrown = Assert.assertThrows(PermissionDeniedException.class, () -> queryManagerImplSpy.listResourceDetails(cmd));
+        Assert.assertNotNull(thrown);
+        Assert.assertTrue(thrown.getMessage().contains("is not authorized to list object store details"));
+    }
+
+    @Test
+    public void testListResourceDetailsObjectStoreAsRootAdminBadParam() {
+        ListResourceDetailsCmd cmd = mock(ListResourceDetailsCmd.class);
+        when(cmd.getResourceType()).thenReturn(ResourceObjectType.ObjectStore);
+        when(accountManager.isRootAdmin(account.getId())).thenReturn(true);
+
+        // This time, we are RootAdmin so we get passed the permission check but hit a bad parameter.
+        Assert.assertTrue(accountManager.isRootAdmin(ACCOUNT_ID));
+        InvalidParameterValueException thrown = Assert.assertThrows(InvalidParameterValueException.class, () -> queryManagerImplSpy.listResourceDetails(cmd));
+        Assert.assertNotNull(thrown);
+        Assert.assertTrue(thrown.getMessage().contains("Insufficient parameters"));
     }
 
     @Test

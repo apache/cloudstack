@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
 
@@ -117,6 +118,7 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
         s_typeMap.put(ResourceTag.ResourceObjectType.NetworkOffering, NetworkOfferingVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.VpcOffering, VpcOfferingVO.class);
         s_typeMap.put(ResourceTag.ResourceObjectType.Domain, DomainVO.class);
+        s_typeMap.put(ResourceTag.ResourceObjectType.ObjectStore, ObjectStoreVO.class);
     }
 
     @Inject

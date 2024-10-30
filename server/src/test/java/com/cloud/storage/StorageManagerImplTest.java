@@ -25,16 +25,22 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -105,6 +111,12 @@ public class StorageManagerImplTest {
     AccountManagerImpl accountMgr;
     @Mock
     StoragePoolDetailsDao storagePoolDetailsDao;
+    @Mock
+    DataStoreManager _dataStoreMgr;
+    @Mock
+    ObjectStoreDao _objectStoreDao;
+    @Mock
+    ObjectStoreDetailsDao _objectStoreDetailsDao;
 
     @Mock
     ClusterDao clusterDao;
@@ -893,5 +905,261 @@ public class StorageManagerImplTest {
         Assert.assertNotNull(result);
         Assert.assertEquals("Capacity IOPS should match pool's capacity IOPS", 1000L, result.first().longValue());
         Assert.assertNull("Used IOPS should be null when usedIops <= 0", result.second());
+    }
+
+    @Test
+    public void testUpdateObjectStoreNotFound() {
+        long storeId = 1L;
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(null);
+
+        IllegalArgumentException thrown = Assert.assertThrows(IllegalArgumentException.class, () -> storageManagerImpl.updateObjectStore(storeId, updateCmd));
+        Assert.assertNotNull(thrown);
+        Assert.assertTrue(thrown.getMessage().contains("Unable to find object store"));
+    }
+
+    @Test
+    public void testUpdateObjectStoreNotMe() {
+        long storeId = 1L;
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn("provider1");
+        Mockito.when(updateCmd.getProviderName()).thenReturn("other provider");
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        IllegalArgumentException thrown = Assert.assertThrows(IllegalArgumentException.class, () -> storageManagerImpl.updateObjectStore(storeId, updateCmd));
+        Assert.assertNotNull(thrown);
+        Assert.assertTrue(thrown.getMessage().contains("Unexpected providerName"));
+    }
+
+    @Test
+    public void testUpdateObjectStoreNothingChanged() {
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        final String provider = "provider1";
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn(provider);
+        Mockito.when(updateCmd.getProviderName()).thenReturn(provider);
+        long storeId = 1L;
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        // Same Name - no change.
+        final String name = "store name";
+        Mockito.when(updateCmd.getName()).thenReturn(name);
+        Mockito.when(objectStoreVO.getName()).thenReturn(name);
+
+        // Same URL - no change.
+        final String url = "http://object";
+        Mockito.when(updateCmd.getUrl()).thenReturn(url);
+        Mockito.when(objectStoreVO.getUrl()).thenReturn(url);
+
+        // 2 detail maps but same contents (as nothing updated)
+        Map<String, String> mapOld = new HashMap<>();
+        Map<String, String> mapNew = new HashMap<>();
+        mapOld.put("key1", "value1");
+        mapNew.put("key1", "value1");
+        Mockito.when(updateCmd.getDetails()).thenReturn(mapNew);
+        Mockito.when(_objectStoreDetailsDao.getDetails(Mockito.anyLong())).thenReturn(mapOld);
+
+        ObjectStoreEntity objectStoreEntity = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(_dataStoreMgr.getDataStore(storeId, DataStoreRole.Object)).thenReturn(objectStoreEntity);
+
+        // Test the update.
+        Assert.assertNotNull(storageManagerImpl.updateObjectStore(storeId, updateCmd));
+
+        // The object store should never get an update call as no change.
+        Mockito.verify(_objectStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(_objectStoreDetailsDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyMap());
+        // The Object Store connectivity should be confirmed
+        Mockito.verify(objectStoreEntity, Mockito.atLeastOnce()).verifyServiceConnectivity();
+    }
+
+    @Test
+    public void testUpdateObjectStoreNameChanged() {
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        final String provider = "provider1";
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn(provider);
+        Mockito.when(updateCmd.getProviderName()).thenReturn(provider);
+        long storeId = 1L;
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        // Name Changed
+        final String nameOld = "name old";
+        final String nameNew = "name new";
+        Mockito.when(updateCmd.getName()).thenReturn(nameNew);
+        Mockito.when(objectStoreVO.getName()).thenReturn(nameOld);
+
+        // Same URL - no change.
+        final String url = "http://object";
+        Mockito.when(updateCmd.getUrl()).thenReturn(url);
+        Mockito.when(objectStoreVO.getUrl()).thenReturn(url);
+
+        // 2 detail maps but same contents (as nothing updated)
+        Map<String, String> mapOld = new HashMap<>();
+        Map<String, String> mapNew = new HashMap<>();
+        mapOld.put("key1", "value1");
+        mapNew.put("key1", "value1");
+        Mockito.when(updateCmd.getDetails()).thenReturn(mapNew);
+        Mockito.when(_objectStoreDetailsDao.getDetails(Mockito.anyLong())).thenReturn(mapOld);
+
+        ObjectStoreEntity objectStoreEntity = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(_dataStoreMgr.getDataStore(storeId, DataStoreRole.Object)).thenReturn(objectStoreEntity);
+
+        // Test the update.
+        Assert.assertNotNull(storageManagerImpl.updateObjectStore(storeId, updateCmd));
+
+        // Only the name should be updated in the VO
+        Mockito.verify(objectStoreVO, Mockito.times(1)).setName(nameNew);
+        Mockito.verify(objectStoreVO, Mockito.never()).setUrl(Mockito.anyString());
+        // Only the Store should be updated in the Dao, not the details.
+        Mockito.verify(_objectStoreDao, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(_objectStoreDetailsDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyMap());
+        // The Object Store connectivity should be confirmed
+        Mockito.verify(objectStoreEntity, Mockito.atLeastOnce()).verifyServiceConnectivity();
+    }
+
+    @Test
+    public void testUpdateObjectStoreUrlChanged() {
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        final String provider = "provider1";
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn(provider);
+        Mockito.when(updateCmd.getProviderName()).thenReturn(provider);
+        long storeId = 1L;
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        // Name unchanged
+        final String name = "name";
+        Mockito.when(updateCmd.getName()).thenReturn(name);
+        Mockito.when(objectStoreVO.getName()).thenReturn(name);
+
+        // URL changed.
+        final String urlOld = "http://object";
+        final String urlNew = "http://10.10.10.10";
+        Mockito.when(updateCmd.getUrl()).thenReturn(urlNew);
+        Mockito.when(objectStoreVO.getUrl()).thenReturn(urlOld);
+
+        // 2 detail maps but same contents (as nothing updated)
+        Map<String, String> mapOld = new HashMap<>();
+        Map<String, String> mapNew = new HashMap<>();
+        mapOld.put("key1", "value1");
+        mapNew.put("key1", "value1");
+        Mockito.when(updateCmd.getDetails()).thenReturn(mapNew);
+        Mockito.when(_objectStoreDetailsDao.getDetails(Mockito.anyLong())).thenReturn(mapOld);
+
+        ObjectStoreEntity objectStoreEntity = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(_dataStoreMgr.getDataStore(storeId, DataStoreRole.Object)).thenReturn(objectStoreEntity);
+
+        // Test the update.
+        Assert.assertNotNull(storageManagerImpl.updateObjectStore(storeId, updateCmd));
+
+        // Only the url should be updated in the VO
+        Mockito.verify(objectStoreVO, Mockito.never()).setName(Mockito.anyString());
+        Mockito.verify(objectStoreVO, Mockito.times(1)).setUrl(urlNew);
+        // Only the Store should be updated in the Dao, not the details.
+        Mockito.verify(_objectStoreDao, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(_objectStoreDetailsDao, Mockito.never()).update(Mockito.anyLong(), Mockito.anyMap());
+        // The Object Store connectivity should be confirmed
+        Mockito.verify(objectStoreEntity, Mockito.atLeastOnce()).verifyServiceConnectivity();
+    }
+
+    @Test
+    public void testUpdateObjectStoreDetailsChanged() {
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        final String provider = "provider1";
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn(provider);
+        Mockito.when(updateCmd.getProviderName()).thenReturn(provider);
+        long storeId = 1L;
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        // Name unchanged
+        final String name = "name";
+        Mockito.when(updateCmd.getName()).thenReturn(name);
+        Mockito.when(objectStoreVO.getName()).thenReturn(name);
+
+        // Same URL - no change.
+        final String url = "http://object";
+        Mockito.when(updateCmd.getUrl()).thenReturn(url);
+        Mockito.when(objectStoreVO.getUrl()).thenReturn(url);
+
+        // details changed
+        Map<String, String> mapOld = new HashMap<>();
+        Map<String, String> mapNew = new HashMap<>();
+        mapOld.put("key1", "oldValue");
+        mapNew.put("key1", "newValue");
+        Mockito.when(updateCmd.getDetails()).thenReturn(mapNew);
+        Mockito.when(_objectStoreDetailsDao.getDetails(Mockito.anyLong())).thenReturn(mapOld);
+
+        ObjectStoreEntity objectStoreEntity = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(_dataStoreMgr.getDataStore(storeId, DataStoreRole.Object)).thenReturn(objectStoreEntity);
+
+        // Test the update.
+        Assert.assertNotNull(storageManagerImpl.updateObjectStore(storeId, updateCmd));
+
+        // Neither Url nor Name updated
+        Mockito.verify(objectStoreVO, Mockito.never()).setName(Mockito.anyString());
+        Mockito.verify(objectStoreVO, Mockito.never()).setUrl(Mockito.anyString());
+        // Store not updated, but details should be with the new map.
+        Mockito.verify(_objectStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(_objectStoreDetailsDao, Mockito.times(1)).update(storeId, mapNew);
+        // The Object Store connectivity should be confirmed
+        Mockito.verify(objectStoreEntity, Mockito.atLeastOnce()).verifyServiceConnectivity();
+    }
+
+    @Test
+    public void testUpdateObjectStoreRollback() {
+        UpdateObjectStoragePoolCmd updateCmd = Mockito.mock(UpdateObjectStoragePoolCmd.class);
+        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+
+        final String provider = "provider1";
+        Mockito.when(objectStoreVO.getProviderName()).thenReturn(provider);
+        Mockito.when(updateCmd.getProviderName()).thenReturn(provider);
+        long storeId = 1L;
+        Mockito.when(_objectStoreDao.findById(Mockito.anyLong())).thenReturn(objectStoreVO);
+
+        // Name Changed
+        final String nameOld = "name old";
+        final String nameNew = "name new";
+        Mockito.when(updateCmd.getName()).thenReturn(nameNew);
+        Mockito.when(objectStoreVO.getName()).thenReturn(nameOld);
+
+        // Same URL - no change.
+        final String url = "http://object";
+        Mockito.when(updateCmd.getUrl()).thenReturn(url);
+        Mockito.when(objectStoreVO.getUrl()).thenReturn(url);
+
+        // Details updated
+        Map<String, String> mapOld = new HashMap<>();
+        Map<String, String> mapNew = new HashMap<>();
+        mapOld.put("key1", "oldValue");
+        mapNew.put("key1", "newValue");
+        Mockito.when(updateCmd.getDetails()).thenReturn(mapNew);
+        Mockito.when(_objectStoreDetailsDao.getDetails(Mockito.anyLong())).thenReturn(mapOld);
+
+        ObjectStoreEntity objectStoreEntity = Mockito.mock(ObjectStoreEntity.class);
+        Mockito.when(_dataStoreMgr.getDataStore(storeId, DataStoreRole.Object)).thenReturn(objectStoreEntity);
+        // Simulate failure in connectivity to trigger rollback
+        Mockito.doThrow(new CloudRuntimeException("connectivity failure")).when(objectStoreEntity).verifyServiceConnectivity();
+
+        // Test the update which should fail
+        IllegalArgumentException thrown = Assert.assertThrows(IllegalArgumentException.class, () -> storageManagerImpl.updateObjectStore(storeId, updateCmd));
+        Assert.assertNotNull(thrown);
+        Assert.assertTrue(thrown.getMessage().contains("Unable to access Object Storage"));
+
+        // Name updated with nameNew, then nameOld on rollback.
+        // url updated only on rollback (as name was update).
+        Mockito.verify(objectStoreVO, Mockito.times(2)).setName(Mockito.anyString());
+        Mockito.verify(objectStoreVO, Mockito.times(1)).setUrl(url);
+        // Store updated and then updated again on rollback.
+        Mockito.verify(_objectStoreDao, Mockito.times(2)).update(Mockito.anyLong(), Mockito.any());
+        // details updated and then update again on rollback
+        Mockito.verify(_objectStoreDetailsDao, Mockito.times(1)).update(storeId, mapNew);
+        Mockito.verify(_objectStoreDetailsDao, Mockito.times(1)).update(storeId, mapOld);
     }
 }
