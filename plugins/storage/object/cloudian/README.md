@@ -10,9 +10,9 @@ Cloudian HyperStore is a fully AWS-S3 compatible Object Storage solution. The fo
 
 | Service | HTTP Port | HTTPS Port | Description            |
 |:-------:|----------:|-----------:|:-----------------------|
-| Admin   |           |      19443 | User Management etc.   |
-| S3      |        80 |        443 | AWS-S3 compatible API  |
-| IAM     |     16080 |      16443 | AWS-IAM compatible API |
+|  Admin  |           |      19443 | User Management etc.   |
+|   S3    |        80 |        443 | AWS-S3 compatible API  |
+|   IAM   |     16080 |      16443 | AWS-IAM compatible API |
 
 ## Configuration
 
@@ -40,9 +40,7 @@ Cloudian HyperStore is a fully AWS-S3 compatible Object Storage solution. The fo
 
 A new `Cloudian HyperStore` Object Store can be added by the CloudStack `admin` user via the UI -> Infrastructure -> Object Storage -> Add Object Storage button.
 
-![Add Cloudian HyperStore Object Storage](add_cloudian_hyperstore.png)
-
-These configuration parameters are delivered to the LifeCycle class as a map with the following keys and values.
+Once added, this passes various configuration parameters to the LifeCycle class as a map with the following keys and values.
 
 ```text
 DataStoreInfo MAP
@@ -93,16 +91,16 @@ When a CloudStack Account user creates a bucket under their account for the firs
 
 The following additional resources are also created for each HyperStore User.
 
-| Resource | Description |
-|-----------|--------------|
-| Root Credential Pair | These credentials have full access to the HyperStore User account. They are used to manage the IAM user resources listed below as well as to perform any top level bucket actions such as creating buckets, updating policies, enabling versioning etc. |
-| IAM User "CloudStack" | The "CloudStack" IAM user is created with an inline policy as-per below. The IAM user is used by the CloudStack Bucket Browser UI to manage bucket contents.|
-| IAM User Policy | This inline IAM user policy grants the "CloudStack" IAM user permission to any S3 action except `s3:createBucket` and `s3:deleteBucket`. This is mostly to ensure that all Buckets remain under CloudStack control as well as to restrict control over IAM actions.|
-| IAM User Credential Pair | The "CloudStack" IAM user credentials are also managed by the plugin and are made available to the user under the "Bucket Details" page. They are additionally used by the CloudStack Bucket Browser UI. They are restricted by the aforementioned user policy.|
+| Resource                 | Description                                                                                                                                                                                                                                                         |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Root Credential Pair     | These credentials have full access to the HyperStore User account. They are used to manage the IAM user resources listed below as well as to perform any top level bucket actions such as creating buckets, updating policies, enabling versioning etc.             |
+| IAM User "CloudStack"    | The "CloudStack" IAM user is created with an inline policy as-per below. The IAM user is used by the CloudStack Bucket Browser UI to manage bucket contents.                                                                                                        |
+| IAM User Policy          | This inline IAM user policy grants the "CloudStack" IAM user permission to any S3 action except `s3:createBucket` and `s3:deleteBucket`. This is mostly to ensure that all Buckets remain under CloudStack control as well as to restrict control over IAM actions. |
+| IAM User Credential Pair | The "CloudStack" IAM user credentials are also managed by the plugin and are made available to the user under the "Bucket Details" page. They are additionally used by the CloudStack Bucket Browser UI. They are restricted by the aforementioned user policy.     |
 
 ## Bucket Management
 
-The following are note worthy.
+The following are noteworthy.
 
 ### Bucket Quota is Unsupported
 
@@ -165,13 +163,13 @@ While a bucket is not visible to CloudStack, a 3rd party application using the s
 
 This plugin is mostly interoperable with the existing HyperStore Infrastructure plugin. However, it is recommended to use one or the other but __not both__ plugins.
 
-The purpose of the older HyperStore infrastructure plugin is to grant full access to the HyperStore User that is mapped to the CloudStack Account. As such it grants the logged in CloudStack Account Single-Sign-On (SSO) into the Cloudian Management Console (CMC) as the Root User of the HyperStore User. This would allow the CloudStack Account to create and delete HyperStore User resources (credentials/IAM users/federated logins/buckets/etc) outside of CloudStack control.
+The purpose of the older HyperStore infrastructure plugin is to grant full access to the HyperStore User that is mapped to the CloudStack Account. As such it grants the logged in CloudStack Account Single-Sign-On (SSO) into the Cloudian Management Console (CMC) as the Root User of the HyperStore User. This would allow the CloudStack Account to create and delete HyperStore User resources (credentials/IAM users/federated logins/buckets/etc) outside CloudStack control.
 
 In comparison, this plugin attempts to restrict HyperStore User level, IAM and Bucket level actions by providing CloudStack Account access via IAM credentials.
 
 ## Known Issues
 
-1. Currently there is no way to edit the Object Storage Configuration for any of the parameters configured in the "details" map. It seems that other Object Storage providers have the same issue.
+1. Currently, there is no way to edit the Object Storage Configuration for any of the parameters configured in the "details" map. It seems that other Object Storage providers have the same issue.
 2. The Bucket Browser UI feature may not work correctly on HyperStore versions older than 8.2 due to some bugs in the CORS implementation. However, everything else will still function correctly.
 3. Object metadata is not correctly displayed in the CloudStack Bucket Browser. This is due to the javascript client using a MinIO only (non-s3 compatible) extension call that collects the metadata as part of the bucket listing. To fix this for non-MinIO S3 Object Stores, Object Metadata should be collected using the S3 standard headObject operation.
 4. CloudStack does not yet have a deleteUser API for Object Stores so when a CloudStack Account is deleted, the mapped HyperStore User is not currently cleaned up.
