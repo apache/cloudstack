@@ -116,7 +116,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 if (resp.getError() != null) {
                     final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
                     StorPoolUtil.spLog(err);
-                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp.getError().getName().equals("objectDoesNotExist"));
+                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp.getError().getName().equals(StorPoolUtil.OBJECT_DOES_NOT_EXIST));
                     throw new CloudRuntimeException(err);
                 } else {
                     res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
