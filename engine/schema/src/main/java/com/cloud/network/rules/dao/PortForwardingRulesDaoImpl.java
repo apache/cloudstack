@@ -204,4 +204,14 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
 
         return true;
     }
+
+    @Override
+    public PortForwardingRuleVO findById(Long id) {
+        PortForwardingRuleVO rule = super.findById(id);
+
+        List<String> sourceCidrList = portForwardingRulesCidrsDao.getSourceCidrs(id);
+        rule.setSourceCidrList(sourceCidrList);
+
+        return rule;
+    }
 }
