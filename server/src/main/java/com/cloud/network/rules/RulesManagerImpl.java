@@ -1686,7 +1686,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setDestinationIpAddress(dstIp);
         }
 
-        if (CollectionUtils.isNotEmpty(sourceCidrList)) {
+        if (sourceCidrList != null) {
             rule.setSourceCidrList(sourceCidrList);
         }
 
