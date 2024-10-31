@@ -1656,6 +1656,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
 
+        validatePortForwardingSourceCidrList(sourceCidrList);
+
         // revoke old rules at first
         List<PortForwardingRuleVO> rules = new ArrayList<PortForwardingRuleVO>();
         rule.setState(State.Revoke);
