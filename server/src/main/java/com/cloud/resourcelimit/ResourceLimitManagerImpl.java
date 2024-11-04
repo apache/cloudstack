@@ -935,8 +935,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         ResourceOwnerType ownerType = null;
-        ApiCommandResourceType ownerResourceType = null;
         Long ownerId = null;
+        ApiCommandResourceType ownerResourceType = null;
+        Long ownerResourceId = null;
 
         if (accountId != null) {
             Account account = _entityMgr.findById(Account.class, accountId);
@@ -964,8 +965,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             ownerType = ResourceOwnerType.Account;
-            ownerResourceType = ApiCommandResourceType.Account;
             ownerId = accountId;
+
+            if (account.getType() == Account.Type.PROJECT) {
+                ownerResourceType = ApiCommandResourceType.Project;
+                Project project = _projectDao.findByProjectAccountId(accountId);
+                ownerResourceId = project.getId();
+            } else {
+                ownerResourceType = ApiCommandResourceType.Account;
+                ownerResourceId = ownerId;
+            }
+
             if (StringUtils.isNotEmpty(tag)) {
                 long untaggedLimit = findCorrectResourceLimitForAccount(account, resourceType, null);
                 if (untaggedLimit > 0 && max > untaggedLimit) {
@@ -1004,8 +1014,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
             ownerType = ResourceOwnerType.Domain;
-            ownerResourceType = ApiCommandResourceType.Domain;
             ownerId = domainId;
+            ownerResourceType = ApiCommandResourceType.Domain;
+            ownerResourceId = ownerId;
         }
 
         if (ownerId == null) {
@@ -1013,13 +1024,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndTypeAndTag(ownerId, ownerType, resourceType, tag);
-        if (limit != null && limit.getMax() == max.longValue()) {
-            return limit;
-        }
 
         ActionEventUtils.onActionEvent(caller.getId(), caller.getAccountId(),
                 caller.getDomainId(), EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
-                "Resource limit updated. Resource Type: " + resourceType.toString() + " New Value: " + max, ownerId, ownerResourceType.toString());
+                "Resource limit updated. Resource Type: " + resourceType.toString() + ", New Value: " + max,
+                ownerResourceId, ownerResourceType.toString());
 
         if (limit != null) {
             // Update the existing limit
