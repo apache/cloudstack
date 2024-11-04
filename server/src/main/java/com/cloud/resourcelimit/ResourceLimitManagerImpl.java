@@ -36,8 +36,11 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -932,6 +935,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         ResourceOwnerType ownerType = null;
+        ApiCommandResourceType ownerResourceType = null;
         Long ownerId = null;
 
         if (accountId != null) {
@@ -960,6 +964,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             }
 
             ownerType = ResourceOwnerType.Account;
+            ownerResourceType = ApiCommandResourceType.Account;
             ownerId = accountId;
             if (StringUtils.isNotEmpty(tag)) {
                 long untaggedLimit = findCorrectResourceLimitForAccount(account, resourceType, null);
@@ -999,6 +1004,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
             }
             ownerType = ResourceOwnerType.Domain;
+            ownerResourceType = ApiCommandResourceType.Domain;
             ownerId = domainId;
         }
 
@@ -1007,6 +1013,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndTypeAndTag(ownerId, ownerType, resourceType, tag);
+        if (limit != null && limit.getMax() == max.longValue()) {
+            return limit;
+        }
+
+        ActionEventUtils.onActionEvent(caller.getId(), caller.getAccountId(),
+                caller.getDomainId(), EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
+                "Resource limit updated. Resource Type: " + resourceType.toString() + " New Value: " + max, ownerId, ownerResourceType.toString());
+
         if (limit != null) {
             // Update the existing limit
             _resourceLimitDao.update(limit.getId(), max);
