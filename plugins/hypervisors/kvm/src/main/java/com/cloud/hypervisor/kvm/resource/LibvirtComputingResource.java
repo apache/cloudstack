@@ -4689,12 +4689,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (CollectionUtils.isEmpty(volume.getCheckpointPaths())) {
                 continue;
             }
-            volume.getCheckpointImageStoreUrls().forEach(uri -> getStoragePoolMgr().getStoragePoolByURI(uri));
+            connectToAllVolumeSnapshotSecondaryStorages(volume);
             recreateCheckpointsOfDisk(vmName, volume, mapDiskToDiskDef);
         }
         logger.debug("Successfully recreated all checkpoints on VM [{}].", vmName);
         return true;
     }
+
+    public void connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
+        volumeObjectTO.getCheckpointImageStoreUrls().forEach(uri -> getStoragePoolMgr().getStoragePoolByURI(uri));
+    }
+
 
     protected void recreateCheckpointsOfDisk(String vmName, VolumeObjectTO volume, Map<VolumeObjectTO, DiskDef> mapDiskToDiskDef) {
         for (String path : volume.getCheckpointPaths()) {

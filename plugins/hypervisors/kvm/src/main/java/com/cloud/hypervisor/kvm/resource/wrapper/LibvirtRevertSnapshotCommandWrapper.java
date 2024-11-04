@@ -129,7 +129,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                         return new Answer(command, false, result);
                     }
                 } else {
-                    revertVolumeToSnapshot(snapshotOnPrimaryStorage, snapshot, snapshotImageStore, primaryPool, secondaryStoragePool);
+                    revertVolumeToSnapshot(secondaryStoragePool, snapshotOnPrimaryStorage, snapshot, primaryPool, libvirtComputingResource);
                 }
             }
 
@@ -156,14 +156,18 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
     /**
      * Reverts the volume to the snapshot.
      */
-    protected void revertVolumeToSnapshot(SnapshotObjectTO snapshotOnPrimaryStorage, SnapshotObjectTO snapshotOnSecondaryStorage, DataStoreTO dataStoreTo,
-            KVMStoragePool kvmStoragePoolPrimary, KVMStoragePool kvmStoragePoolSecondary) {
+    protected void revertVolumeToSnapshot(KVMStoragePool kvmStoragePoolSecondary, SnapshotObjectTO snapshotOnPrimaryStorage, SnapshotObjectTO snapshotOnSecondaryStorage,
+                                          KVMStoragePool kvmStoragePoolPrimary, LibvirtComputingResource resource) {
         VolumeObjectTO volumeObjectTo = snapshotOnSecondaryStorage.getVolume();
         String volumePath = getFullPathAccordingToStorage(kvmStoragePoolPrimary, volumeObjectTo.getPath());
 
         Pair<String, SnapshotObjectTO> resultGetSnapshot = getSnapshot(snapshotOnPrimaryStorage, snapshotOnSecondaryStorage, kvmStoragePoolPrimary, kvmStoragePoolSecondary);
         String snapshotPath = resultGetSnapshot.first();
         SnapshotObjectTO snapshotToPrint = resultGetSnapshot.second();
+
+        if (kvmStoragePoolSecondary != null) {
+            resource.connectToAllVolumeSnapshotSecondaryStorages(volumeObjectTo);
+        }
 
         logger.debug(String.format("Reverting volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
 

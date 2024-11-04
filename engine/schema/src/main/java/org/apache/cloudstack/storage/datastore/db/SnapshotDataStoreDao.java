@@ -47,7 +47,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
-    SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
+    SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
 
     SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
 

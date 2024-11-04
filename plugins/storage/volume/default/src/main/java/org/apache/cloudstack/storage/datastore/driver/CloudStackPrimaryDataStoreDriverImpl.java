@@ -21,9 +21,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -58,7 +56,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -400,12 +397,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             snapshotTO.setQuiescevm(snapshotPayload.getQuiescevm());
             snapshotTO.setKvmIncrementalSnapshot(snapshotPayload.isKvmIncrementalSnapshot());
         }
-
-        VolumeObjectTO volumeObjectTO = snapshotTO.getVolume();
-
-        Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = volumeOrchestrationService.getVolumeCheckpointPathsAndImageStoreUrls(volumeObjectTO.getVolumeId(), volumeObjectTO.getHypervisorType());
-        volumeObjectTO.setCheckpointPaths(volumeCheckPointPathsAndImageStoreUrls.first());
-        volumeObjectTO.setCheckpointImageStoreUrls(volumeCheckPointPathsAndImageStoreUrls.second());
 
         if (snapshot.getImageStore() != null) {
             snapshotTO.setImageStore(snapshot.getImageStore().getTO());

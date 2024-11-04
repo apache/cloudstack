@@ -140,7 +140,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setPhysicalSize(snapshotInfo.getSize()); // this physical size will get updated with actual size once the snapshot backup is done.
                 Long clusterId = hostDao.findClusterIdByVolumeInfo(snapshotInfo.getBaseVolume());
                 boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId);
-                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
+                SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), null, snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
                 snapshotDataStoreVO = tryToGetSnapshotOnSecondaryIfNotOnPrimaryAndIsKVM(dataStore, snapshotInfo, snapshotDataStoreVO, kvmIncrementalSnapshot, snapshotInfo.getHypervisorType());
                 if (snapshotDataStoreVO != null) {
                     //Double check the snapshot is removed or not
@@ -193,7 +193,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     ss.setSize(snapshot.getSize());
                     ss.setVolumeId(snapshot.getVolumeId());
                     Long clusterId = hostDao.findClusterIdByVolumeInfo(snapshot.getBaseVolume());
-                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshot.getVolumeId(), SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId), snapshot.getHypervisorType());
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), null, snapshot.getVolumeId(), SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId), snapshot.getHypervisorType());
                     if (snapshotDataStoreVO != null && !snapshotDataStoreVO.isEndOfChain()) {
                         ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
                     } else {
@@ -220,7 +220,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     private SnapshotDataStoreVO tryToGetSnapshotOnSecondaryIfNotOnPrimaryAndIsKVM(DataStore dataStore, SnapshotInfo snapshotInfo, SnapshotDataStoreVO snapshotDataStoreVO,
                                                                                   boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
         if (snapshotDataStoreVO == null && Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && DataStoreRole.Primary.equals(dataStore.getRole())) {
-            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, snapshotInfo.getImageStore().getId(), snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
+            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, snapshotInfo.getImageStore().getId(), null, snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
         }
         return snapshotDataStoreVO;
     }

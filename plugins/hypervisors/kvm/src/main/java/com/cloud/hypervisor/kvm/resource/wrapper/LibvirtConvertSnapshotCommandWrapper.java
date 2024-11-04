@@ -59,6 +59,7 @@ public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<Convert
 
         try {
             KVMStoragePool secondaryStorage = serverResource.getStoragePoolMgr().getStoragePoolByURI(secondaryStoragePoolUrl);
+            serverResource.connectToAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
 
             String snapshotRelativePath = snapshotObjectTO.getPath();
             String snapshotPath = secondaryStorage.getLocalPathFor(snapshotRelativePath);

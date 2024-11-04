@@ -125,6 +125,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         this.passphrase = volume.getPassphrase();
         this.encryptFormat = volume.getEncryptFormat();
         this.followRedirects = volume.isFollowRedirects();
+        this.checkpointPaths = volume.getCheckpointPaths();
+        this.checkpointImageStoreUrls = volume.getCheckpointImageStoreUrls();
     }
 
     public String getUuid() {

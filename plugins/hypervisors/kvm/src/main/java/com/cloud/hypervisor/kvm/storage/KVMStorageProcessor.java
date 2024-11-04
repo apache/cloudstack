@@ -1960,7 +1960,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             throw ex;
         }
 
-        rebaseSnapshot(secondaryPool, fullSnapshotPath, snapshotName, parents, wait);
+        rebaseSnapshot(snapshotObjectTO, secondaryPool, fullSnapshotPath, snapshotName, parents, wait);
 
         try {
             Files.setPosixFilePermissions(Path.of(fullSnapshotPath), PosixFilePermissions.fromString("rw-r--r--"));
@@ -2037,7 +2037,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return Script.runSimpleBashScriptWithFullResult(String.format(DOMJOBINFO_COMPLETED_COMMAND, vmName), 10);
     }
 
-    protected void rebaseSnapshot(KVMStoragePool secondaryPool, String snapshotPath, String snapshotName, String[] parents, int wait) {
+    protected void rebaseSnapshot(SnapshotObjectTO snapshotObjectTO, KVMStoragePool secondaryPool, String snapshotPath, String snapshotName, String[] parents, int wait) {
         if (parents == null) {
             logger.debug("No need to rebase snapshot [{}], this snapshot has no parents, therefore it is the first on its backing chain.", snapshotName);
             return;
@@ -2053,6 +2053,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         QemuImgFile snapshotFile = new QemuImgFile(snapshotPath);
         QemuImgFile parentSnapshotFile = new QemuImgFile(parentSnapshotPath);
 
+        resource.connectToAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
+
         logger.debug("Rebasing snapshot [{}] with parent [{}].", snapshotName, parentSnapshotPath);
 
         try {
@@ -2065,7 +2067,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected String getParentCheckpointName(String[] parents) {
-        String immediateParentPath = parents[parents.length -1];
+        String immediateParentPath = parents[parents.length - 1];
         return immediateParentPath.substring(immediateParentPath.lastIndexOf(File.separator) + 1);
     }
 

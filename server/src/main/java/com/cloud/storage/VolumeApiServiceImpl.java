@@ -4490,9 +4490,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 DataTO volTO = volFactory.getVolume(volumeToAttach.getId()).getTO();
-                Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = _volumeMgr.getVolumeCheckpointPathsAndImageStoreUrls(volumeToAttach.getId(), vm.getHypervisorType());
-                ((VolumeObjectTO) volTO).setCheckpointPaths(volumeCheckPointPathsAndImageStoreUrls.first());
-                ((VolumeObjectTO) volTO).setCheckpointImageStoreUrls(volumeCheckPointPathsAndImageStoreUrls.second());
 
                 deviceId = getDeviceId(vm, deviceId);
 

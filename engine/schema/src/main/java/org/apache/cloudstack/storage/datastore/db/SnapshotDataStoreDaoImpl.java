@@ -307,12 +307,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
-        return findParent(role, storeId, volumeId, false, null);
+        return findParent(role, storeId, null, volumeId, false, null);
     }
 
     @Override
     @DB
-    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
+    public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
         if (!isSnapshotChainingRequired(volumeId, kvmIncrementalSnapshot)) {
             logger.trace(String.format("Snapshot chaining is not required for snapshots of volume [%s]. Returning null as parent.", volumeId));
             return null;
@@ -323,6 +323,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters(STORE_ROLE, role.toString());
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
         sc.setParametersIfNotNull(STORE_ID, storeId);
+        sc.setParametersIfNotNull();
 
         List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, CREATED, false, null, null));
         if (CollectionUtils.isEmpty(snapshotList)) {
@@ -336,7 +337,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         }
 
         return parent;
-
     }
 
     @Override

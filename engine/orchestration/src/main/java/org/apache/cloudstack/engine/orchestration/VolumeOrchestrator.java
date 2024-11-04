@@ -89,7 +89,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -1985,9 +1984,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
-            Pair<List<String>, Set<String>> volumeCheckPointPathsAndImageStoreUrls = getVolumeCheckpointPathsAndImageStoreUrls(volumeInfo.getId(), vm.getHypervisorType());
-            ((VolumeObjectTO) volTO).setCheckpointPaths(volumeCheckPointPathsAndImageStoreUrls.first());
-            ((VolumeObjectTO) volTO).setCheckpointImageStoreUrls(volumeCheckPointPathsAndImageStoreUrls.second());
         }
     }
 
