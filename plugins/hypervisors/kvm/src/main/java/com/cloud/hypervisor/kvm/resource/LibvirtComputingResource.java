@@ -375,6 +375,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected static final String DEFAULT_TUNGSTEN_VIF_DRIVER_CLASS_NAME = "com.cloud.hypervisor.kvm.resource.VRouterVifDriver";
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
+    private final static long HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED = 7000000;
 
     protected HypervisorType hypervisorType;
     protected String hypervisorURI;
@@ -3033,7 +3034,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             } else if (volume.getType() != Volume.Type.ISO) {
                 final PrimaryDataStoreTO store = (PrimaryDataStoreTO)data.getDataStore();
-                physicalDisk = storagePoolManager.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
+                physicalDisk = getStoragePoolMgr().getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
                 pool = physicalDisk.getPool();
             }
 
@@ -3128,7 +3129,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
-                    if (pool.getType() == StoragePoolType.Linstor) {
+                    if (pool.getType() == StoragePoolType.Linstor && isQemuDiscardBugFree(diskBusType)) {
                         disk.setDiscard(DiscardType.UNMAP);
                     }
                 } else {
@@ -3273,6 +3274,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return isUbuntuHost() || isIoUringSupportedByQemu();
+    }
+
+    /**
+     * Qemu has a bug with discard enabled on IDE bus devices if qemu version < 7.0.
+     * <a href="https://bugzilla.redhat.com/show_bug.cgi?id=2029980">redhat bug entry</a>
+     * @param diskBus used for the disk
+     * @return true if it is safe to enable discard, otherwise false.
+     */
+    public boolean isQemuDiscardBugFree(DiskDef.DiskBus diskBus) {
+        return diskBus != DiskDef.DiskBus.IDE || getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED;
     }
 
     public boolean isUbuntuHost() {
