@@ -95,6 +95,7 @@ import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.ManagementServerStatusVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.cluster.dao.ManagementServerStatusDao;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -345,6 +346,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ClusterManager clusterManager;
     @Inject
     private ManagementServerStatusDao managementServerStatusDao;
+    @Inject
+    private ManagementServerHostPeerDao managementServerHostPeerDao;
     @Inject
     VirtualMachineManager virtualMachineManager;
 
@@ -796,6 +799,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             logger.trace("Metrics collection start...");
             newEntry.setManagementServerHostId(mshost.getId());
             newEntry.setManagementServerHostUuid(mshost.getUuid());
+            newEntry.setManagementServerRunId(mshost.getRunid());
             newEntry.setDbLocal(isDbLocal());
             newEntry.setUsageLocal(isUsageLocal());
             retrieveSession(newEntry);
@@ -1153,6 +1157,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             try {
                 hostStatsEntry = gson.fromJson(pdu.getJsonPackage(),new TypeToken<ManagementServerHostStatsEntry>(){}.getType());
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
+
+                // Update peer state to Up in mshost_peer
+                if (msId != hostStatsEntry.getManagementServerHostId()) {
+                    managementServerHostPeerDao.updatePeerInfo(msId, hostStatsEntry.getManagementServerHostId(), hostStatsEntry.getManagementServerRunId(), ManagementServerHost.State.Up);
+                }
             } catch (JsonParseException e) {
                 logger.error("Exception in decoding of other MS hosts status from : " + pdu.getSourcePeer());
                 if (logger.isDebugEnabled()) {
