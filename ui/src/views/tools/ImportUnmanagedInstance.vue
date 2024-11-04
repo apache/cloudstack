@@ -1143,6 +1143,9 @@ export default {
           if (this.selectedKvmHostForConversion) {
             params.convertinstancehostid = this.selectedKvmHostForConversion
           }
+          if (this.selectedKvmHostForImporting) {
+            params.importinstancehostid = this.selectedKvmHostForImporting
+          }
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
