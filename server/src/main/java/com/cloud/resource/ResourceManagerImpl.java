@@ -2385,6 +2385,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (startup instanceof StartupRoutingCommand) {
             final StartupRoutingCommand ssCmd = (StartupRoutingCommand)startup;
+            _hostTagsDao.updateImplicitTags(host.getId(), ssCmd.getHostTags());
+
             updateSupportsClonedVolumes(host, ssCmd.getSupportsClonedVolumes());
         }
 
