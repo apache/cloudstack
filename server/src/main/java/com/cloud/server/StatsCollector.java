@@ -1159,8 +1159,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 managementServerHostStats.put(hostStatsEntry.getManagementServerHostUuid(), hostStatsEntry);
 
                 // Update peer state to Up in mshost_peer
-                if (msId != hostStatsEntry.getManagementServerHostId()) {
-                    managementServerHostPeerDao.updatePeerInfo(msId, hostStatsEntry.getManagementServerHostId(), hostStatsEntry.getManagementServerRunId(), ManagementServerHost.State.Up);
+                ManagementServerHostVO mgmtServerVo = managementServerHostDao.findByMsid(managementServerNodeId);
+                if (mgmtServerVo != null) {
+                    msId = mgmtServerVo.getId();
+                    if (msId != hostStatsEntry.getManagementServerHostId()) {
+                        managementServerHostPeerDao.updatePeerInfo(msId, hostStatsEntry.getManagementServerHostId(), hostStatsEntry.getManagementServerRunId(), ManagementServerHost.State.Up);
+                    }
+                } else {
+                    logger.warn(String.format("Cannot find management server with msid [%s]. Therefore, do not update peer info.", managementServerNodeId));
                 }
             } catch (JsonParseException e) {
                 logger.error("Exception in decoding of other MS hosts status from : " + pdu.getSourcePeer());
