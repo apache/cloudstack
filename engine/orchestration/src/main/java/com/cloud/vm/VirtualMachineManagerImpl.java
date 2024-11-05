@@ -5038,15 +5038,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     private List<Long> listStalledVMInTransitionStateOnDisconnectedHosts(final Date cutTime) {
-        final String sql = "SELECT i.*\n" +
-                "FROM vm_instance AS i\n" +
-                "INNER JOIN host AS h ON i.host_id = h.id\n" +
-                "WHERE h.status != 'UP' \n" +
-                "  AND i.power_state_update_time < ?\n" +
-                "  AND i.state IN ('Starting', 'Stopping', 'Migrating')\n" +
-                "  AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job AS w\n" +
-                "                    INNER JOIN async_job AS j ON w.id = j.id\n" +
-                "                    WHERE j.job_status = ?)\n" +
+        final String sql = "SELECT i.* " +
+                "FROM vm_instance AS i " +
+                "INNER JOIN host AS h ON i.host_id = h.id " +
+                "WHERE h.status != 'UP' " +
+                "  AND i.power_state_update_time < ? " +
+                "  AND i.state IN ('Starting', 'Stopping', 'Migrating') " +
+                "  AND i.id NOT IN (SELECT vm_instance_id FROM vm_work_job AS w " +
+                "                    INNER JOIN async_job AS j ON w.id = j.id " +
+                "                    WHERE j.job_status = ?) " +
                 "  AND i.removed IS NULL";
 
         final List<Long> l = new ArrayList<>();
