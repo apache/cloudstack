@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceC
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -627,33 +628,16 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         int successfullyCheckedVmMigrations = 0;
         for (VMInstanceVO runningVM : vmsRunning) {
             boolean canMigrateVm = false;
-            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
-            Integer cpu = serviceOffering.getCpu();
-            Integer speed = serviceOffering.getSpeed();
-            Integer ramSize = serviceOffering.getRamSize();
-            if (serviceOffering.isDynamic()) {
-                List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
-                if (CollectionUtils.isNotEmpty(vmDetails)) {
-                    for (UserVmDetailVO vmDetail : vmDetails) {
-                        if (vmDetail.getName() != null &&vmDetail.getValue() != null) {
-                            if (cpu == null && VmDetailConstants.CPU_NUMBER.equals(vmDetail.getName())) {
-                                cpu = Integer.valueOf(vmDetail.getValue());
-                            }
-                            if (speed == null && VmDetailConstants.CPU_SPEED.equals(vmDetail.getName())) {
-                                speed = Integer.valueOf(vmDetail.getValue());
-                            }
-                            if (ramSize == null && VmDetailConstants.MEMORY.equals(vmDetail.getName())) {
-                                ramSize = Integer.valueOf(vmDetail.getValue());
-                            }
-                        }
-                    }
-                }
-            }
-            if (cpu == null || speed == null || ramSize == null) {
+            Ternary<Integer, Integer, Integer> cpuSpeedAndRamSize = getComputeResourcesCpuSpeedAndRamSize(runningVM);
+            Integer cpu = cpuSpeedAndRamSize.first();
+            Integer speed = cpuSpeedAndRamSize.second();
+            Integer ramSize = cpuSpeedAndRamSize.third();
+            if (ObjectUtils.anyNull(cpu, speed,ramSize)) {
                 s_logger.warn(String.format("Cannot fetch compute resources for the VM %s, skipping it from the capacity check", runningVM));
                 continue;
             }
 
+            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
             for (Host hostInCluster : hostsInCluster) {
                 if (!checkHostTags(hostTags, hostTagsDao.getHostTags(hostInCluster.getId()), serviceOffering.getHostTag())) {
                     s_logger.warn(String.format("Host tags mismatch between %s and %s, skipping it from the capacity check", host, hostInCluster));
@@ -696,6 +680,31 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Pair<>(false, migrationCheckDetails);
         }
         return new Pair<>(true, "OK");
+    }
+
+    protected Ternary<Integer, Integer, Integer> getComputeResourcesCpuSpeedAndRamSize(VMInstanceVO runningVM) {
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
+        Integer cpu = serviceOffering.getCpu();
+        Integer speed = serviceOffering.getSpeed();
+        Integer ramSize = serviceOffering.getRamSize();
+        if (serviceOffering.isDynamic()) {
+            List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
+            if (CollectionUtils.isNotEmpty(vmDetails)) {
+                for (UserVmDetailVO vmDetail : vmDetails) {
+                    if (vmDetail.getName() != null && vmDetail.getValue() != null) {
+                        if (cpu == null && VmDetailConstants.CPU_NUMBER.equals(vmDetail.getName())) {
+                            cpu = Integer.valueOf(vmDetail.getValue());
+                        } else if (speed == null && VmDetailConstants.CPU_SPEED.equals(vmDetail.getName())) {
+                            speed = Integer.valueOf(vmDetail.getValue());
+                        } else if (ramSize == null && VmDetailConstants.MEMORY.equals(vmDetail.getName())) {
+                            ramSize = Integer.valueOf(vmDetail.getValue());
+                        }
+                    }
+                }
+            }
+        }
+
+        return new Ternary<>(cpu, speed, ramSize);
     }
 
     /**
