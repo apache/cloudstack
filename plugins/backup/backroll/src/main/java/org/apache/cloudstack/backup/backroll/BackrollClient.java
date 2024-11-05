@@ -149,7 +149,7 @@ public class BackrollClient {
         try {
             CloseableHttpResponse response = post(String.format("/tasks/singlebackup/%s", jobId), null);
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             backupJob = requestResponse.location.replace("/api/v1/status/", "");
         } catch (final Exception e) {
@@ -167,10 +167,14 @@ public class BackrollClient {
         try {
             CloseableHttpResponse response = get("/backup_policies");
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            logger.info("BackrollClient:getBackupOfferingUrl:result:  " + result);
+            //BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
+            logger.info("BackrollClient:getBackupOfferingUrl:Apres PArse:  " + requestResponse.location);
             response.close();
             url = requestResponse.location.replace("/api/v1", "");
         } catch (final Exception e) {
+            logger.info("Failed to list Backroll jobs due to: {}", e.getMessage());
             logger.error("Failed to list Backroll jobs due to: {}", e.getMessage());
         }
         return StringUtils.isEmpty(url) ? null : url;
@@ -183,7 +187,8 @@ public class BackrollClient {
         final List<BackupOffering> policies = new ArrayList<>();
 
         try {
-            BackupPoliciesResponse backupPoliciesResponse = waitGet(idTask);
+            String results = waitGet(idTask);
+            BackupPoliciesResponse backupPoliciesResponse = new ObjectMapper().readValue(results, BackupPoliciesResponse.class);
 
             for (final BackrollBackupPolicyResponse policy : backupPoliciesResponse.backupPolicies) {
                 policies.add(new BackrollOffering(policy.name, policy.id));
@@ -214,10 +219,11 @@ public class BackrollClient {
 
             CloseableHttpResponse response = post(String.format("/tasks/restore/%s", vmId), jsonBody);
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
-            TaskStateResponse taskResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            TaskStateResponse taskResponse = new ObjectMapper().readValue(result, TaskStateResponse.class);
             logger.debug("RESTORE {}", taskResponse.state);
             isRestoreOk = taskResponse.state.equals(TaskState.SUCCESS);
         } catch (final NotOkBodyException e) {
@@ -241,10 +247,10 @@ public class BackrollClient {
             String body = okBody(get("/status/" + taskId));
 
             if (body.contains(TaskState.FAILURE) || body.contains(TaskState.PENDING)) {
-                BackrollBackupStatusResponse backupStatusRequestResponse = parse(body);
+                BackrollBackupStatusResponse backupStatusRequestResponse = new ObjectMapper().readValue(body, BackrollBackupStatusResponse.class);
                 status.setState(backupStatusRequestResponse.state);
             } else {
-                BackrollBackupStatusSuccessResponse backupStatusSuccessRequestResponse = parse(body);
+                BackrollBackupStatusSuccessResponse backupStatusSuccessRequestResponse = new ObjectMapper().readValue(body, BackrollBackupStatusSuccessResponse.class);
                 status.setState(backupStatusSuccessRequestResponse.state);
                 status.setInfo(backupStatusSuccessRequestResponse.info);
             }
@@ -271,11 +277,12 @@ public class BackrollClient {
 
             CloseableHttpResponse response = delete(String.format("/virtualmachines/%s/backups/%s", vmId, backupName));
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
-            BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = new ObjectMapper().readValue(result, BackrollBackupsFromVMResponse.class);
             logger.debug(backrollBackupsFromVMResponse.state);
             isBackupDeleted = backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS);
         } catch (final NotOkBodyException e) {
@@ -298,11 +305,12 @@ public class BackrollClient {
 
             CloseableHttpResponse response = get(String.format("/virtualmachines/%s/repository", vmId));
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
-            BackrollVmMetricsResponse vmMetricsResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            BackrollVmMetricsResponse vmMetricsResponse =new ObjectMapper().readValue(result, BackrollVmMetricsResponse.class);
 
             if (vmMetricsResponse != null && vmMetricsResponse.state.equals(TaskState.SUCCESS)) {
                 logger.debug("SUCCESS ok");
@@ -334,13 +342,14 @@ public class BackrollClient {
 
             CloseableHttpResponse response = get(String.format("/virtualmachines/%s/backups/%s", vmId, backupId));
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
             logger.debug(urlToRequest);
 
-            BackrollBackupMetricsResponse metricsResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            BackrollBackupMetricsResponse metricsResponse = new ObjectMapper().readValue(result, BackrollBackupMetricsResponse.class);
             if (metricsResponse.info != null) {
                 metrics = new BackrollBackupMetrics(Long.parseLong(metricsResponse.info.originalSize),
                         Long.parseLong(metricsResponse.info.deduplicatedSize));
@@ -362,13 +371,14 @@ public class BackrollClient {
 
             CloseableHttpResponse response = get(String.format("/virtualmachines/%s/backups", vmId));
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
             logger.debug(urlToRequest);
 
-            VirtualMachineBackupsResponse virtualMachineBackupsResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            VirtualMachineBackupsResponse virtualMachineBackupsResponse = new ObjectMapper().readValue(result, VirtualMachineBackupsResponse.class);
 
             if (virtualMachineBackupsResponse.state.equals(TaskState.SUCCESS)) {
                 if (virtualMachineBackupsResponse.info.archives.size() > 0) {
@@ -473,7 +483,7 @@ public class BackrollClient {
         });
     }
 
-    private <T> T waitGet(String url)
+    private String waitGet(String url)
             throws IOException, InterruptedException, KeyManagementException, ParseException, NoSuchAlgorithmException {
         // int threshold = 30; // 5 minutes
         int maxAttempts = 12; // 2 minutes
@@ -482,7 +492,7 @@ public class BackrollClient {
             try {
                 String body = okBody(get(url));
                 if (!body.contains(TaskState.PENDING)) {
-                    return parse(body);
+                    return body;
                 }
             } catch (final NotOkBodyException e) {
                 throw new CloudRuntimeException("An error occured with Backroll");
@@ -627,12 +637,13 @@ public class BackrollClient {
 
             CloseableHttpResponse response = get("/virtualmachines/" + vmId + "/backups");
             String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
             logger.debug(urlToRequest);
-            BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = waitGet(urlToRequest);
+            result = waitGet(urlToRequest);
+            BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = new ObjectMapper().readValue(result, BackrollBackupsFromVMResponse.class);
 
             final List<BackrollBackup> backups = new ArrayList<>();
             for (final BackrollArchiveResponse archive : backrollBackupsFromVMResponse.archives.archives) {
