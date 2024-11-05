@@ -476,7 +476,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 s_apiNameCmdClassMap.put(apiName, apiCmdList);
             }
             apiCmdList.add(cmdClass);
-
         }
 
         setEncodeApiResponse(EncodeApiResponse.value());

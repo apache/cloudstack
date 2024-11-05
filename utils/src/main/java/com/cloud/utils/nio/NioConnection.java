@@ -68,6 +68,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected boolean _isRunning;
     protected boolean _isStartup;
     protected int _port;
+    protected int _workers;
     protected List<ChangeRequest> _todos;
     protected HandlerFactory _factory;
     protected String _name;
@@ -80,6 +81,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         _isRunning = false;
         _selector = null;
         _port = port;
+        _workers = workers;
         _factory = factory;
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(name + "-Handler"));
         _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(name + "-SSLHandshakeHandler"));
@@ -106,6 +108,9 @@ public abstract class NioConnection implements Callable<Boolean> {
         }
         _isStartup = true;
 
+        if (_executor.isShutdown()) {
+            _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(_name + "-Handler"));
+        }
         _threadExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(this._name + "-NioConnectionHandler"));
         _isRunning = true;
         _futureTask = _threadExecutor.submit(this);
