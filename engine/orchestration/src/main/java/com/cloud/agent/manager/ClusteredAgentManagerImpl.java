@@ -47,7 +47,6 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
-import org.apache.cloudstack.maintenance.ManagementServerMaintenanceListener;
 import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.maintenance.command.BaseShutdownManagementServerHostCommand;
 import org.apache.cloudstack.maintenance.command.CancelMaintenanceManagementServerHostCommand;
@@ -108,8 +107,8 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.Task;
 import com.google.gson.Gson;
 
-public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ManagementServerMaintenanceListener, ClusteredAgentRebalanceService {
-    private static final ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
+public class ClusteredAgentManagerImpl extends AgentManagerImpl implements ClusterManagerListener, ClusteredAgentRebalanceService {
+    private static ScheduledExecutorService s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
     private final long rebalanceTimeOut = 300000; // 5 mins - after this time remove the agent from the transfer list
 
     public final static long STARTUP_DELAY = 5000;
@@ -171,8 +170,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
         _clusterMgr.registerListener(this);
         _clusterMgr.registerDispatcher(new ClusterDispatcher());
-
-        managementServerMaintenanceManager.registerListener(this);
 
         _gson = GsonHelper.getGson();
 
@@ -600,7 +597,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public void startDirectlyConnectedHosts() {
+    public void startDirectlyConnectedHosts(final boolean forRebalance) {
         // override and let it be dummy for purpose, we will scan and load direct agents periodically.
         // We may also pickup agents that have been left over from other crashed management server
     }
@@ -1489,15 +1486,20 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     public void onManagementServerMaintenance() {
+        logger.debug("Management server maintenance enabled");
         s_transferExecutor.shutdownNow();
         cleanupTransferMap(_nodeId);
+        super.onManagementServerMaintenance();
     }
 
     @Override
     public void onManagementServerCancelMaintenance() {
+        logger.debug("Management server maintenance disabled");
+        super.onManagementServerCancelMaintenance();
         if (isAgentRebalanceEnabled()) {
             cleanupTransferMap(_nodeId);
             if (s_transferExecutor.isShutdown()) {
+                s_transferExecutor = Executors.newScheduledThreadPool(2, new NamedThreadFactory("Cluster-AgentRebalancingExecutor"));
                 s_transferExecutor.scheduleAtFixedRate(getAgentRebalanceScanTask(), 60000, 60000, TimeUnit.MILLISECONDS);
                 s_transferExecutor.scheduleAtFixedRate(getTransferScanTask(), 60000, ClusteredAgentRebalanceService.DEFAULT_TRANSFER_CHECK_INTERVAL, TimeUnit.MILLISECONDS);
             }

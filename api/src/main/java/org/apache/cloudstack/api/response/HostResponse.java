@@ -190,11 +190,11 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
     private String virtualMachineId;
 
-    @SerializedName("managementserverid")
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "the management server ID of the host")
     private String managementServerId;
 
-    @SerializedName("managementservername")
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
     @Param(description = "the management server name of the host", since = "4.21.0")
     private String managementServerName;
 

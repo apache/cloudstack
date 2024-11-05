@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
@@ -312,12 +313,39 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public void onManagementServerMaintenance() {
+        logger.debug("Management server maintenance enabled");
         _monitorExecutor.shutdownNow();
+        if (_connection != null) {
+            _connection.stop();
+
+            try {
+                _connection.cleanUp();
+            } catch (final IOException e) {
+                logger.warn("Fail to clean up old connection", e);
+            }
+        }
+        _connectExecutor.shutdownNow();
     }
 
     @Override
     public void onManagementServerCancelMaintenance() {
+        logger.debug("Management server maintenance disabled");
+        if (_connectExecutor.isShutdown()) {
+            _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
+            _connectExecutor.allowCoreThreadTimeOut(true);
+        }
+
+        startDirectlyConnectedHosts(true);
+        if (_connection != null) {
+            try {
+                _connection.start();
+            } catch (final NioConnectionException e) {
+                logger.error("Error when connecting to the NioServer!", e);
+            }
+        }
+
         if (_monitorExecutor.isShutdown()) {
+            _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
             _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
         }
     }
@@ -716,7 +744,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return true;
         }
 
-        startDirectlyConnectedHosts();
+        startDirectlyConnectedHosts(false);
 
         if (_connection != null) {
             try {
@@ -731,10 +759,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
-    public void startDirectlyConnectedHosts() {
+    public void startDirectlyConnectedHosts(final boolean forRebalance) {
         final List<HostVO> hosts = _resourceMgr.findDirectlyConnectedHosts();
         for (final HostVO host : hosts) {
-            loadDirectlyConnectedHost(host, false);
+            loadDirectlyConnectedHost(host, forRebalance);
         }
     }
 

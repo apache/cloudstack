@@ -548,13 +548,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected void reconnect(final Link link) {
-        reconnect(link, null);
+        reconnect(link, null, false);
     }
 
-    protected void reconnect(final Link link, String host) {
-        if (!_reconnectAllowed) {
+    protected void reconnect(final Link link, String host, boolean forTransfer) {
+        if (!(forTransfer || _reconnectAllowed)) {
             return;
         }
+
         synchronized (this) {
             if (_startup != null) {
                 _startup.cancel();
@@ -911,7 +912,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         _reconnectAllowed = true;
         _shell.resetHostCounter();
         _shell.setConnectionTransfer(true);
-        reconnect(_link, preferredHost);
+        reconnect(_link, preferredHost, true);
     }
 
     public void processResponse(final Response response, final Link link) {
