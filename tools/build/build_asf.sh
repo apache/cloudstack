@@ -55,7 +55,7 @@ do
 done
 shift `expr $OPTIND - 1`
 
-if [ $version == "TESTBUILD" ]; then
+if [ $version = "TESTBUILD" ]; then
     echo >&2 "A version must be specified with the -v option: build_asf.sh -v 4.0.0.RC1"
     exit 1
 fi
@@ -64,8 +64,8 @@ echo "Using version: $version"
 echo "Using source directory: $sourcedir"
 echo "Using output directory: $outputdir"
 echo "Using branch: $branch"
-if [ "$tag" == "yes" ]; then
-    if [ "$certid" == "X" ]; then
+if [ "$tag" = "yes" ]; then
+    if [ "$certid" = "X" ]; then
         echo "Tagging the branch with the version number, and signing the branch with your default certificate."
     else
         echo "Tagging the branch with the version number, and signing the branch with certificate ID $certid."
@@ -143,7 +143,7 @@ bzip2 $outputdir/apache-cloudstack-$version-src.tar
 
 cd $outputdir
 echo 'armor'
-if [ "$certid" == "X" ]; then
+if [ "$certid" = "X" ]; then
   gpg -v --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
 else
   gpg -v --default-key $certid --armor --output apache-cloudstack-$version-src.tar.bz2.asc --detach-sig apache-cloudstack-$version-src.tar.bz2
@@ -155,17 +155,17 @@ sha512sum apache-cloudstack-$version-src.tar.bz2 > apache-cloudstack-$version-sr
 echo 'verify'
 gpg -v --verify apache-cloudstack-$version-src.tar.bz2.asc apache-cloudstack-$version-src.tar.bz2
 
-if [ "$tag" == "yes" ]; then
+if [ "$tag" = "yes" ]; then
   echo 'tag'
   cd $sourcedir
-  if [ "$certid" == "X" ]; then
+  if [ "$certid" = "X" ]; then
       git tag -s $version -m "Tagging release $version on branch $branch."
   else
       git tag -u $certid -s $version -m "Tagging release $version on branch $branch."
   fi
 fi
 
-if [ "$committosvn" == "yes" ]; then
+if [ "$committosvn" = "yes" ]; then
   echo 'committing artifacts to svn'
   rm -Rf /tmp/cloudstack-dev-dist
   cd /tmp
