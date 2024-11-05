@@ -548,10 +548,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected void reconnect(final Link link) {
-        reconnect(link, null, false);
+        reconnect(link, null, null, false);
     }
 
-    protected void reconnect(final Link link, String host, boolean forTransfer) {
+    protected void reconnect(final Link link, String preferredHost, List<String> avoidHostList, boolean forTransfer) {
         if (!(forTransfer || _reconnectAllowed)) {
             return;
         }
@@ -587,24 +587,29 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
+        String host = preferredHost;
+        if (StringUtils.isEmpty(host)) {
+            host = _shell.getNextHost();
+        }
+
         do {
-            if (StringUtils.isEmpty(host)) {
-                host = _shell.getNextHost();
-            }
-            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
-            logger.info("Reconnecting to host:{}", host);
-            try {
-                _connection.start();
-            } catch (final NioConnectionException e) {
-                logger.info("Attempted to re-connect to the server, but received an unexpected exception, trying again...", e);
-                _connection.stop();
+            if (CollectionUtils.isEmpty(avoidHostList) || !avoidHostList.contains(host)) {
+                _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+                logger.info("Reconnecting to host:{}", host);
                 try {
-                    _connection.cleanUp();
-                } catch (final IOException ex) {
-                    logger.warn("Fail to clean up old connection. {}", ex);
+                    _connection.start();
+                } catch (final NioConnectionException e) {
+                    logger.info("Attempted to re-connect to the server, but received an unexpected exception, trying again...", e);
+                    _connection.stop();
+                    try {
+                        _connection.cleanUp();
+                    } catch (final IOException ex) {
+                        logger.warn("Fail to clean up old connection. {}", ex);
+                    }
                 }
             }
             _shell.getBackoffAlgorithm().waitBeforeRetry();
+            host = _shell.getNextHost();
         } while (!_connection.isStartup());
         _shell.updateConnectedHost();
         logger.info("Connected to the host: {}", _shell.getConnectedHost());
@@ -900,19 +905,25 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             throw new CloudRuntimeException("No other Management Server hosts to migrate");
         }
 
-        final String preferredHost  = msHostsList.get(0);
-
-        try (final Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(preferredHost, _shell.getPort()), 5000);
-        } catch (final IOException e) {
-            throw new CloudRuntimeException("Preferred management server host: " + preferredHost + " is not reachable, to migrate");
+        String preferredHost  = null;
+        for (String msHost : msHostsList) {
+            try (final Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(msHost, _shell.getPort()), 5000);
+                preferredHost = msHost;
+                break;
+            } catch (final IOException e) {
+                throw new CloudRuntimeException("Management server host: " + msHost + " is not reachable, to migrate connection");
+            }
         }
 
-        logger.debug("Preferred management server host " + preferredHost + " is found to be reachable, trying to reconnect");
-        _reconnectAllowed = true;
+        if (preferredHost == null) {
+            throw new CloudRuntimeException("Management server host(s) are not reachable, to migrate connection");
+        }
+
+        logger.debug("Management server host " + preferredHost + " is found to be reachable, trying to reconnect");
         _shell.resetHostCounter();
         _shell.setConnectionTransfer(true);
-        reconnect(_link, preferredHost, true);
+        reconnect(_link, preferredHost, avoidMsList, true);
     }
 
     public void processResponse(final Response response, final Link link) {
