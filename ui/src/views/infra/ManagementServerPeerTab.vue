@@ -81,7 +81,7 @@ export default {
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.lastupdated'),
+          title: this.$t('label.peerstate.lastupdated'),
           dataIndex: 'lastupdated',
           slots: { customRender: 'lastupdated' }
         }
