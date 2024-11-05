@@ -24,11 +24,6 @@
         :rules="rules"
         @finish="handleSubmit"
       >
-        <a-alert type="error">
-          <template #message>
-            <span v-html="$t(action.currentAction.message)" />
-          </template>
-        </a-alert>
         <a-form-item
           ref="algorithm"
           name="algorithm"
@@ -37,6 +32,7 @@
             <tooltip-label :title="$t('label.algorithm')" :tooltip="prepareForMaintenanceApiParams.algorithm.description"/>
           </template>
           <a-select
+            style="width: 500px"
             showSearch
             optionFilterProp="value"
             :filterOption="(input, option) => {
@@ -49,6 +45,12 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-divider/>
+        <a-alert type="error">
+          <template #message>
+            <span v-html="$t(action.currentAction.message)" />
+          </template>
+        </a-alert>
         <a-alert type="warning" style="margin-top: 10px">
           <template #message>
             <span>{{ $t('message.confirm.type') }} "{{ action.currentAction.confirmationText }}"</span>

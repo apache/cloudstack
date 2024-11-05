@@ -41,6 +41,7 @@ import {
   DOMAIN_STORE,
   DARK_MODE,
   CUSTOM_COLUMNS,
+  MS_ID,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
   LATEST_CS_VERSION
@@ -151,6 +152,7 @@ const user = {
     },
     SET_MS_ID: (state, msId) => {
       state.msId = msId
+      vueProps.$localStorage.set(MS_ID, msId)
     },
     SET_MAINTENANCE_INITIATED: (state, maintenanceInitiated) => {
       state.maintenanceInitiated = maintenanceInitiated
@@ -311,6 +313,7 @@ const user = {
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const cachedShowSecurityGroups = vueProps.$localStorage.get(SHOW_SECURTIY_GROUPS, false)
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const msId = vueProps.$localStorage.get(MS_ID, false)
         const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
         const hasAuth = Object.keys(cachedApis).length > 0
 
@@ -325,6 +328,7 @@ const user = {
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+          commit('SET_MS_ID', msId)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
           api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
