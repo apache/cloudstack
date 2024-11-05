@@ -59,6 +59,4 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<CPU.CPUArch> getClustersArchsByZone(long zoneId);
 
     List<ClusterVO> listClustersByArchAndZoneId(long zoneId, CPU.CPUArch arch);
-
-    List<Long> listAllIds();
 }

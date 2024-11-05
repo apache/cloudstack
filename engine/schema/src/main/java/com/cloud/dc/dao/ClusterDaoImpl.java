@@ -171,12 +171,10 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             sc.setParameters("zoneId", zoneId);
         }
         List<ClusterVO> clusters = listBy(sc);
-        List<HypervisorType> distinctHypervisors = new ArrayList<>(4);
-        for (ClusterVO cluster : clusters) {
-            distinctHypervisors.add(cluster.getHypervisorType());
-        }
-
-        return distinctHypervisors;
+        return clusters.stream()
+                .map(ClusterVO::getHypervisorType)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -345,13 +343,5 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setParameters("dataCenterId", zoneId);
         sc.setParameters("arch", arch);
         return listBy(sc);
-    }
-
-    @Override
-    public List<Long> listAllIds() {
-        GenericSearchBuilder<ClusterVO, Long> sb = createSearchBuilder(Long.class);
-        sb.selectFields(sb.entity().getId());
-        sb.done();
-        return customSearch(sb.create(), null);
     }
 }

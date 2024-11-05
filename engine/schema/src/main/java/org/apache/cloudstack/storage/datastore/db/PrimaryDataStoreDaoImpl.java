@@ -800,12 +800,4 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         sc.setParameters("parent", 0);
         return sc;
     }
-
-    @Override
-    public List<Long> listAllIds() {
-        GenericSearchBuilder<StoragePoolVO, Long> sb = createSearchBuilder(Long.class);
-        sb.selectFields(sb.entity().getId());
-        sb.done();
-        return customSearch(sb.create(), null);
-    }
 }

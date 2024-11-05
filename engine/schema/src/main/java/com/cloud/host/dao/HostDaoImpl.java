@@ -1744,11 +1744,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<Long> listAllIds() {
-        return listIdsBy(null, null, null, null, null, null, null);
-    }
-
-    @Override
     public List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId) {
         GenericSearchBuilder<HostVO, HypervisorType> sb = createSearchBuilder(HypervisorType.class);
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);

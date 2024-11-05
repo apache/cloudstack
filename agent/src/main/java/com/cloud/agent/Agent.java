@@ -526,7 +526,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     protected String retrieveHostname() {
         if (logger.isTraceEnabled()) {
-            logger.trace(" Retrieving hostname " + serverResource.getClass().getSimpleName());
+            logger.trace("Retrieving hostname with resource={}", serverResource.getClass().getSimpleName());
         }
         final String result = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("hostname"), 500);
         if (StringUtils.isNotBlank(result)) {

@@ -3803,7 +3803,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public boolean processCommands(final long agentId, final long seq, final Command[] cmds) {
         boolean processed = false;
         for (final Command cmd : cmds) {
-            // FIXME: PingRoutingCommand handler is DB & CPU hotspot
             if (cmd instanceof PingRoutingCommand) {
                 final PingRoutingCommand ping = (PingRoutingCommand)cmd;
                 if (ping.getHostVmStateReport() != null) {
