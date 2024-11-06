@@ -551,12 +551,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         for (final VirtualMachine vm : vms) {
             for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                vmBackupSize += (thisVMVol.getSize() / 1024L / 1024L);
+                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
             }
             final ArrayList<String> vmBackups = getClient(zoneId).getBackupsForVm(vm);
             for ( String vmBackup : vmBackups ) {
                 NetworkerBackup vmNwBackup = getClient(zoneId).getNetworkerBackupInfo(vmBackup);
-                vmBackupProtectedSize+= vmNwBackup.getSize().getValue() / 1024L;
+                vmBackupSize += vmNwBackup.getSize().getValue() / 1024L;
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
@@ -576,7 +576,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 final ArrayList<String> backupsInNetworker = getClient(zoneId).getBackupsForVm(vm);
                 final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
                 for (final String networkerBackupId : backupsInNetworker ) {
-                    Long vmBackupSize=0L;
+                    Long vmBackupProtectedSize=0L;
                     boolean backupExists = false;
                     for (final Backup backupInDb : backupsInDb) {
                         LOG.debug("Checking if Backup with external ID " + backupInDb.getName() + " for VM " + backupInDb.getVmId() + "is valid");
@@ -620,10 +620,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                         }
                         strayBackup.setStatus(Backup.Status.BackedUp);
                         for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                            vmBackupSize += (thisVMVol.getSize() / 1024L /1024L);
+                            vmBackupProtectedSize += (thisVMVol.getSize() / 1024L /1024L);
                         }
-                        strayBackup.setSize(vmBackupSize);
-                        strayBackup.setProtectedSize(strayNetworkerBackup.getSize().getValue() / 1024L );
+                        strayBackup.setSize(strayNetworkerBackup.getSize().getValue() / 1024L );
+                        strayBackup.setProtectedSize(vmBackupProtectedSize);
                         strayBackup.setBackupOfferingId(vm.getBackupOfferingId());
                         strayBackup.setAccountId(vm.getAccountId());
                         strayBackup.setDomainId(vm.getDomainId());
