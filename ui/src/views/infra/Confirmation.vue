@@ -121,7 +121,7 @@ export default {
       })
     },
     async checkConfirmation (rule, value) {
-      if (value && value === 'SHUTDOWN') {
+      if (value && value === this.action.currentAction.confirmationText) {
         return Promise.resolve()
       }
       return Promise.reject(rule.message)
