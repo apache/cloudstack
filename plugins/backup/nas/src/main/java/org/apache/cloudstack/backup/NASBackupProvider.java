@@ -142,7 +142,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public BackupVO takeBackup(final VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm) {
         final Host host = getVMHypervisorHost(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
@@ -181,14 +181,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setStatus(Backup.Status.BackedUp);
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             if (backupDao.update(backupVO.getId(), backupVO)) {
-                return backupVO;
+                return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
             }
         } else {
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.remove(backupVO.getId());
-            return null;
+            return new Pair<>(false, null);
         }
     }
 
@@ -390,6 +390,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        return List.of();
+    }
+
+    @Override
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+        return null;
+    }
+
+    @Override
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         return Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType());
     }
@@ -402,11 +412,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
         return false;
-    }
-
-    @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-        // TODO: check and sum/return backups metrics on per VM basis
     }
 
     @Override

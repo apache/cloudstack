@@ -44,6 +44,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderOfferingsCmd;
@@ -122,6 +123,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -594,15 +596,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider != null) {
-            Backup backup = backupProvider.takeBackup(vm);
-            if (backup == null) {
+            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm);
+            if (result.first() == false) {
                 throw new CloudRuntimeException("Failed to create VM backup");
             }
-            BackupVO vmBackup = backupDao.findById(backup.getId());
-            vmBackup.setBackupIntervalType((short)type.ordinal());
-            backupDao.update(vmBackup.getId(), vmBackup);
-            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, vmBackup.getProtectedSize());
+            if (result.second() != null) {
+                BackupVO vmBackup = backupDao.findById(result.second().getId());
+                vmBackup.setBackupIntervalType((short) type.ordinal());
+                backupDao.update(vmBackup.getId(), vmBackup);
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, vmBackup.getProtectedSize());
+            }
             return true;
         }
         throw new CloudRuntimeException("Failed to create VM backup");
@@ -1379,13 +1383,74 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
 
+        private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(Backup.RestorePoint restorePoint, List<Backup> backupsInDb, VirtualMachine vm, Backup.Metric metric) {
+            for (final Backup backup : backupsInDb) {
+                if (restorePoint.getId().equals(backup.getExternalId())) {
+                    if (metric != null) {
+                        logger.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
+
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                        ((BackupVO) backup).setSize(metric.getBackupSize());
+                        ((BackupVO) backup).setProtectedSize(metric.getDataSize());
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+
+                        backupDao.update(backup.getId(), ((BackupVO) backup));
+                    }
+                    return backup;
+                }
+            }
+            return null;
+        }
+
+        private void syncBackups(BackupProvider backupProvider, VirtualMachine vm, Backup.Metric metric) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    final List<Backup> backupsInDb = backupDao.listByVmId(null, vm.getId());
+
+                    List<Backup.RestorePoint> restorePoints = backupProvider.listRestorePoints(vm);
+                    if (restorePoints == null) {
+                        return;
+                    }
+
+                    final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
+                    for (final Backup.RestorePoint restorePoint : restorePoints) {
+                        if (!(restorePoint.getId() == null || restorePoint.getType() == null || restorePoint.getCreated() == null)) {
+                            Backup existingBackupEntry = checkAndUpdateIfBackupEntryExistsForRestorePoint(restorePoint, backupsInDb, vm, metric);
+                            if (existingBackupEntry != null) {
+                                removeList.remove(existingBackupEntry.getId());
+                                continue;
+                            }
+                        }
+
+                        Backup backup = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+
+                        logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                                        + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
+                                backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId()));
+
+                        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_CREATE,
+                                String.format("Created backup %s for VM ID: %s", backup.getUuid(), vm.getUuid()),
+                                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+                    }
+                    for (final Long backupIdToRemove : removeList) {
+                        logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+                        backupDao.remove(backupIdToRemove);
+                    }
+                }
+            });
+        }
+
         private void tryToSyncVMBackups(BackupProvider backupProvider, Map<VirtualMachine, Backup.Metric> metrics, VirtualMachine vm) {
             try {
                 final Backup.Metric metric = metrics.get(vm);
                 if (metric != null) {
                     logger.debug(String.format("Trying to sync backups of VM [%s] using backup provider [%s].", vm.getUuid(), backupProvider.getName()));
                     // Sync out-of-band backups
-                    backupProvider.syncBackups(vm, metric);
+                    syncBackups(backupProvider, vm, metric);
                     // Emit a usage event, update usage metric for the VM by the usage server
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC, vm.getAccountId(),
                             vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
