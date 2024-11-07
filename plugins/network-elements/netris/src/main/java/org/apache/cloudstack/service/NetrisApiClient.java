@@ -24,6 +24,7 @@ import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 
 import java.util.List;
 
@@ -50,4 +51,11 @@ public interface NetrisApiClient {
     boolean createVnet(CreateNetrisVnetCommand cmd);
 
     boolean deleteVnet(DeleteNetrisVnetCommand cmd);
+
+    /**
+     * Check and create zone level Netris Public range in the following manner:
+     * - Check the IPAM allocation for the zone super CIDR. In case it doesn't exist, create it
+     * - Check the IPAM subnet for NAT purpose for the range start-end. In case it doesn't exist, create it
+     */
+    boolean setupZoneLevelPublicRange(SetupNetrisPublicRangeCommand cmd);
 }

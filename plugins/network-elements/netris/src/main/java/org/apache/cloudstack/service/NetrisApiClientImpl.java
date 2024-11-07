@@ -33,6 +33,9 @@ import io.netris.model.FilterBySites;
 import io.netris.model.FilterByVpc;
 import io.netris.model.GetSiteBody;
 import io.netris.model.InlineResponse2004;
+import io.netris.model.InlineResponse2004Data;
+import io.netris.model.IpTree;
+import io.netris.model.IpTreeAllocation;
 import io.netris.model.IpTreeAllocationTenant;
 import io.netris.model.IpTreeSubnet;
 import io.netris.model.IpTreeSubnetSites;
@@ -63,6 +66,7 @@ import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -196,25 +200,31 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return response;
     }
 
-    private InlineResponse2004 createVpcAllocationInternal(VPCResponseObjectOK createdVpc, String cidr, int adminTenantId,
-                                                           String adminTenantName, String netrisIpamAllocationName) {
-        logger.debug(String.format("Creating Netris VPC Allocation %s for VPC %s", cidr, createdVpc.getData().getName()));
+    private InlineResponse2004Data createIpamAllocationInternal(String ipamName, String ipamPrefix, VPCListing vpc) {
+        logger.debug(String.format("Creating Netris IPAM Allocation %s for VPC %s", ipamPrefix, vpc.getName()));
         try {
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             AllocationBody body = new AllocationBody();
             AllocationBodyVpc allocationBodyVpc = new AllocationBodyVpc();
-            allocationBodyVpc.setId(createdVpc.getData().getId());
-            allocationBodyVpc.setName(createdVpc.getData().getName());
+            allocationBodyVpc.setId(vpc.getId());
+            allocationBodyVpc.setName(vpc.getName());
             body.setVpc(allocationBodyVpc);
-            body.setName(netrisIpamAllocationName);
-            body.setPrefix(cidr);
+            body.setName(ipamName);
+            body.setPrefix(ipamPrefix);
             IpTreeAllocationTenant allocationTenant = new IpTreeAllocationTenant();
-            allocationTenant.setId(new BigDecimal(adminTenantId));
-            allocationTenant.setName(adminTenantName);
+            allocationTenant.setId(new BigDecimal(tenantId));
+            allocationTenant.setName(tenantName);
             body.setTenant(allocationTenant);
-            return ipamApi.apiV2IpamAllocationPost(body);
+            InlineResponse2004 ipamResponse = ipamApi.apiV2IpamAllocationPost(body);
+            if (ipamResponse == null || !ipamResponse.isIsSuccess()) {
+                String reason = ipamResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris Allocation {} for VPC {} creation failed: {}", ipamPrefix, vpc.getName(), reason);
+                return null;
+            }
+            logger.debug(String.format("Successfully created VPC %s and its IPAM Allocation %s on Netris", vpc.getName(), ipamPrefix));
+            return ipamResponse.getData();
         } catch (ApiException e) {
-            logAndThrowException(String.format("Error creating Netris Allocation %s for VPC %s", cidr, createdVpc.getData().getName()), e);
+            logAndThrowException(String.format("Error creating Netris IPAM Allocation %s for VPC %s", ipamPrefix, vpc.getName()), e);
             return null;
         }
     }
@@ -231,14 +241,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
         String netrisIpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, cmd.getCidr());
         String vpcCidr = cmd.getCidr();
-        InlineResponse2004 ipamResponse = createVpcAllocationInternal(createdVpc, vpcCidr, tenantId, tenantName, netrisIpamAllocationName);
-        if (ipamResponse == null || !ipamResponse.isIsSuccess()) {
-            String reason = ipamResponse == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The Netris Allocation {} for VPC {} creation failed: {}", vpcCidr, cmd.getName(), reason);
-            return false;
-        }
-        logger.debug(String.format("Successfully created VPC %s and its IPAM Allocation %s on Netris", cmd.getName(), vpcCidr));
-        return true;
+        InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, createdVpc.getData());
+        return createdIpamAllocation != null;
     }
 
     private void deleteVpcIpamAllocationInternal(VPCListing vpcResource, String vpcCidr) {
@@ -334,12 +338,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
         String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
 
-        InlineResponse2004 subnetResponse = createVpcSubnetInternal(associatedVpc, vNetName, vnetCidr, netrisSubnetName);
-        if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
-            String reason = subnetResponse == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The Netris Subnet {} for network {} creation failed: {}", vnetCidr, networkName, reason);
-            return false;
-        }
+        createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
         VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, vnetCidr);
@@ -392,6 +391,71 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
+    protected VPCListing getSystemVpc() throws ApiException {
+        List<VPCListing> systemVpcList = listVPCs().stream().filter(VPCListing::isIsSystem).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(systemVpcList)) {
+            String msg = "Cannot find any system VPC";
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return systemVpcList.get(0);
+    }
+
+    private BigDecimal getIpamAllocationIdByPrefixAndVpc(String superCidrPrefix, VPCListing vpc) throws ApiException {
+        IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+        FilterBySites filterBySites = new FilterBySites();
+        filterBySites.add(siteId);
+        FilterByVpc filterByVpc = new FilterByVpc();
+        filterByVpc.add(vpc.getId());
+        IpTree ipamTree = ipamApi.apiV2IpamGet(filterBySites, filterByVpc);
+        List<IpTreeAllocation> superCidrList = ipamTree.getData().stream()
+                .filter(x -> x.getPrefix().equals(superCidrPrefix))
+                .collect(Collectors.toList());
+        return CollectionUtils.isEmpty(superCidrList) ? null : superCidrList.get(0).getId();
+    }
+
+    private IpTreeSubnet getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(BigDecimal ipamAllocationId, String exactCidr, IpTreeSubnet.PurposeEnum purpose, VPCListing vpc) throws ApiException {
+        IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+        FilterByVpc filterByVpc = new FilterByVpc();
+        filterByVpc.add(vpc.getId());
+        SubnetResBody subnetResBody = ipamApi.apiV2IpamSubnetsGet(filterByVpc);
+        List<IpTreeSubnet> exactSubnetList = subnetResBody.getData().stream()
+                .filter(x -> x.getAllocationID().equals(ipamAllocationId) && x.getPrefix().equals(exactCidr) && x.getPurpose() == purpose)
+                .collect(Collectors.toList());
+        return CollectionUtils.isEmpty(exactSubnetList) ? null : exactSubnetList.get(0);
+    }
+
+    @Override
+    public boolean setupZoneLevelPublicRange(SetupNetrisPublicRangeCommand cmd) {
+        String superCidr = cmd.getSuperCidr();
+        String exactCidr = cmd.getExactCidr();
+        try {
+            VPCListing systemVpc = getSystemVpc();
+            logger.debug("Checking if the Netris Public Super CIDR {} exists", superCidr);
+            BigDecimal ipamAllocationId = getIpamAllocationIdByPrefixAndVpc(superCidr, systemVpc);
+            if (ipamAllocationId == null) {
+                String ipamName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, superCidr);
+                InlineResponse2004Data ipamAllocation = createIpamAllocationInternal(ipamName, superCidr, systemVpc);
+                if (ipamAllocation == null) {
+                    String msg = String.format("Could not create the zone level super CIDR %s for the system VPC", superCidr);
+                    logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+                ipamAllocationId = new BigDecimal(ipamAllocation.getId());
+            }
+            IpTreeSubnet exactSubnet = getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(ipamAllocationId, exactCidr, IpTreeSubnet.PurposeEnum.NAT, systemVpc);
+            if (exactSubnet == null) {
+                String ipamSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, exactCidr);
+                createIpamSubnetInternal(ipamSubnetName, exactCidr, SubnetBody.PurposeEnum.NAT, systemVpc);
+            }
+        } catch (ApiException e) {
+            String msg = String.format("Error setting up the Netris Public Range %s on super CIDR %s", exactCidr, superCidr);
+            logAndThrowException(msg, e);
+            return false;
+        }
+        return true;
+    }
+
     private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
         try {
             VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
@@ -433,16 +497,16 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private InlineResponse2004 createVpcSubnetInternal(VPCListing associatedVpc, String vNetName, String vNetCidr, String netrisSubnetName) {
-        logger.debug("Creating Netris VPC Subnet {} for VPC {} for vNet {}", vNetCidr, associatedVpc.getName(), vNetName);
+    private InlineResponse2004Data createIpamSubnetInternal(String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc) {
+        logger.debug("Creating Netris IPAM Subnet {} for VPC {}", subnetPrefix, vpc.getName());
         try {
 
             SubnetBody subnetBody = new SubnetBody();
-            subnetBody.setName(netrisSubnetName);
+            subnetBody.setName(subnetName);
 
             AllocationBodyVpc vpcAllocationBody = new AllocationBodyVpc();
-            vpcAllocationBody.setName(associatedVpc.getName());
-            vpcAllocationBody.setId(associatedVpc.getId());
+            vpcAllocationBody.setName(vpc.getName());
+            vpcAllocationBody.setId(vpc.getId());
             subnetBody.setVpc(vpcAllocationBody);
 
             IpTreeAllocationTenant allocationTenant = new IpTreeAllocationTenant();
@@ -455,12 +519,18 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             subnetSites.setName(siteName);
             subnetBody.setSites(List.of(subnetSites));
 
-            subnetBody.setPurpose(SubnetBody.PurposeEnum.COMMON);
-            subnetBody.setPrefix(vNetCidr);
+            subnetBody.setPurpose(purpose);
+            subnetBody.setPrefix(subnetPrefix);
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
-            return ipamApi.apiV2IpamSubnetPost(subnetBody);
+            InlineResponse2004 subnetResponse = ipamApi.apiV2IpamSubnetPost(subnetBody);
+            if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
+                String reason = subnetResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris IPAM Subnet {} creation failed: {}", subnetName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+            return subnetResponse.getData();
         } catch (ApiException e) {
-            logAndThrowException(String.format("Error creating Netris Subnet %s for VPC %s", vNetCidr, associatedVpc.getName()), e);
+            logAndThrowException(String.format("Error creating Netris IPAM Subnet %s for VPC %s", subnetPrefix, vpc.getName()), e);
             return null;
         }
     }

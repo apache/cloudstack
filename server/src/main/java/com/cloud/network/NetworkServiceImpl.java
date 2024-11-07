@@ -4450,7 +4450,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (network.getIsolationMethods().contains("GRE")) {
                 minVnet = MIN_GRE_KEY;
                 maxVnet = MAX_GRE_KEY;
-            } else if (network.getIsolationMethods().contains("VXLAN")) {
+            } else if (network.getIsolationMethods().contains("VXLAN") || network.getIsolationMethods().contains("Netris")) {
                 minVnet = MIN_VXLAN_VNI;
                 maxVnet = MAX_VXLAN_VNI;
                 // fail if zone already contains VNI, need to be unique per zone.

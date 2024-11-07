@@ -34,6 +34,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
+import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.service.NetrisApiClient;
 import org.apache.cloudstack.service.NetrisApiClientImpl;
 import org.apache.logging.log4j.LogManager;
@@ -94,6 +95,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((CreateNetrisVnetCommand) cmd);
         } else if (cmd instanceof DeleteNetrisVnetCommand) {
           return executeRequest((DeleteNetrisVnetCommand) cmd);
+        } else if (cmd instanceof SetupNetrisPublicRangeCommand) {
+            return executeRequest((SetupNetrisPublicRangeCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -246,6 +249,14 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.deleteVpc(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Netris VPC %s deletion failed", cmd.getName()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(SetupNetrisPublicRangeCommand cmd) {
+        boolean result = netrisApiClient.setupZoneLevelPublicRange(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, "Netris Setup for Public Range failed");
         }
         return new NetrisAnswer(cmd, true, "OK");
     }

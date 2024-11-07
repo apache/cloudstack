@@ -27,14 +27,19 @@ public class NetrisResourceObjectUtils {
 
     public static String retrieveNetrisResourceObjectName(NetrisCommand cmd, NetrisObjectType netrisObjectType, String... suffixes) {
         long zoneId = cmd.getZoneId();
-        long accountId = cmd.getAccountId();
-        long domainId = cmd.getDomainId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
         long objectId = cmd.getId();
         String objectName = cmd.getName();
         boolean isVpc = cmd.isVpc();
+        boolean isZoneLevel = accountId == null && domainId == null;
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(String.format("D%s-A%s-Z%s", domainId, accountId, zoneId));
+        if (isZoneLevel) {
+            stringBuilder.append(String.format("Z%s", zoneId));
+        } else {
+            stringBuilder.append(String.format("D%s-A%s-Z%s", domainId, accountId, zoneId));
+        }
         String prefix = isVpc ? "-V" : "-N";
         switch (netrisObjectType) {
             case VPC:
@@ -46,10 +51,14 @@ public class NetrisResourceObjectUtils {
                 }
                 break;
             case IPAM_ALLOCATION:
-                stringBuilder.append(String.format("%s%s", prefix, objectId));
+                if (!isZoneLevel) {
+                    stringBuilder.append(String.format("%s%s", prefix, objectId));
+                }
                 break;
             case IPAM_SUBNET:
-                stringBuilder.append(String.format("-N%s", objectId));
+                if (!isZoneLevel) {
+                    stringBuilder.append(String.format("-N%s", objectId));
+                }
                 break;
             case VNET:
                break;
