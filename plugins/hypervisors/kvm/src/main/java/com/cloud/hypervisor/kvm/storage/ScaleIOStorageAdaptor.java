@@ -584,14 +584,24 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (!ScaleIOUtil.startSDCService()) {
                 return new Ternary<>(false, null, "Couldn't start SDC service on host");
             }
-        } else if (!ScaleIOUtil.restartSDCService()) {
-            return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        if (details != null && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            // Assuming SDC service is started, add mdms
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                ScaleIOUtil.addMdms(Arrays.asList(mdmAddresses));
+                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Ternary<>(false, null, "Failed to add MDMs");
+                }
+            }
         }
 
         return new Ternary<>( true, getSDCDetails(details), "Prepared client successfully");
     }
 
-    public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid) {
+    public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid, Map<String, String> details) {
         if (!ScaleIOUtil.isSDCServiceInstalled()) {
             logger.debug("SDC service not installed on host, no need to unprepare the SDC client");
             return new Pair<>(true, "SDC service not installed on host, no need to unprepare the SDC client");
@@ -602,8 +612,19 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return new Pair<>(true, "SDC service not enabled on host, no need to unprepare the SDC client");
         }
 
-        if (!ScaleIOUtil.stopSDCService()) {
-            return new Pair<>(false, "Couldn't stop SDC service on host");
+        if (details != null && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Pair<>(true, "MDM not added, no need to unprepare the SDC client");
+                }
+
+                ScaleIOUtil.removeMdms(Arrays.asList(mdmAddresses));
+                if (ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Pair<>(false, "Failed to remove MDMs, unable to unprepare the SDC client");
+                }
+            }
         }
 
         return new Pair<>(true, "Unprepared SDC client successfully");

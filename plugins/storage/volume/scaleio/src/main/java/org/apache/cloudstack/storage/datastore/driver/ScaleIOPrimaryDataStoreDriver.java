@@ -1067,7 +1067,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeDetails.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
         }
 
-        String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        String systemId = null;
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            systemId = systemIdDetail.getValue();
+        }
         volumeDetails.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         return volumeDetails;

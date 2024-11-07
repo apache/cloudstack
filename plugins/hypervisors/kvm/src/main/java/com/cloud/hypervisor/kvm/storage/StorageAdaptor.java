@@ -140,9 +140,10 @@ public interface StorageAdaptor {
      * Unprepares the storage client.
      * @param type type of the storage pool
      * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client unpreparation
      * @return status, & message in case failed
      */
-    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
     }
 }
