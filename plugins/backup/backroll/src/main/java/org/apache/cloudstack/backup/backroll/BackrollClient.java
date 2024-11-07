@@ -40,7 +40,6 @@ import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
 import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.response.BackrollTaskRequestResponse;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
-import org.apache.cloudstack.backup.backroll.model.response.TaskStateResponse;
 import org.apache.cloudstack.backup.backroll.model.response.api.LoginApiResponse;
 import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollArchiveResponse;
 import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollBackupsFromVMResponse;
@@ -223,9 +222,12 @@ public class BackrollClient {
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
             result = waitGet(urlToRequest);
-            TaskStateResponse taskResponse = new ObjectMapper().readValue(result, TaskStateResponse.class);
-            logger.debug("RESTORE {}", taskResponse.state);
-            isRestoreOk = taskResponse.state.equals(TaskState.SUCCESS);
+
+            if(result.contains("SUCCESS")) {
+                logger.debug("RESTORE SUCCESS");
+                isRestoreOk = true;
+            }
+
         } catch (final NotOkBodyException e) {
             return false;
         } catch (final IOException | InterruptedException e) {
