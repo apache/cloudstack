@@ -19,7 +19,10 @@ package org.apache.cloudstack.service;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.Vpc;
@@ -43,6 +46,8 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
 
     @Inject
     private NetrisProviderDao netrisProviderDao;
+    @Inject
+    private NetworkDao networkDao;
     @Inject
     private AgentManager agentMgr;
 
@@ -91,7 +96,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
 
     @Override
     public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
+        NetworkVO network = networkDao.findById(networkId);
+        String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, !Objects.isNull(vpcId));
+        cmd.setVxlanId(Integer.parseInt(vxlanId));
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }

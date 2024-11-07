@@ -281,7 +281,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             List<VPCListing> vpcs = vpcListings.stream()
                     .filter(x -> x.getName().equals(vpcName) && x.getAdminTenant().getId().equals(tenantId))
                     .collect(Collectors.toList());
-            return vpcs.get(0);
+            return vpcs.isEmpty() ? null : vpcs.get(0);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Error getting VPC %s information: %s", vpcName, e.getMessage()), e);
         }
@@ -319,6 +319,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String networkName = cmd.getName();
         Long networkId = cmd.getId();
         String vnetCidr = cmd.getCidr();
+        Integer vxlanId = cmd.getVxlanId();
         boolean isVpc = cmd.isVpc();
 
         String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
@@ -341,7 +342,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, vnetCidr);
+        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, vnetCidr, vxlanId);
         if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
             String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
             logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
@@ -535,7 +536,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String vNetCidr) {
+    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String vNetCidr, Integer vxlanId) {
         logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, vNetCidr);
         try {
             VnetAddBody vnetBody = new VnetAddBody();
@@ -558,6 +559,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             vnetBody.setL3vpn(false);
             vnetBody.setName(netrisVnetName);
             vnetBody.setNativeVlan(0);
+            vnetBody.setVxlanID(vxlanId);
             vnetBody.setPorts(new ArrayList<>());
 
             IpTreeSubnetSites subnetSites = new IpTreeSubnetSites();
