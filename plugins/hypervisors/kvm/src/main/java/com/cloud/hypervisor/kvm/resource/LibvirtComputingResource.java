@@ -4691,6 +4691,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
             connectToAllVolumeSnapshotSecondaryStorages(volume);
             recreateCheckpointsOfDisk(vmName, volume, mapDiskToDiskDef);
+            disconnectAllVolumeSnapshotSecondaryStorages(volume);
         }
         logger.debug("Successfully recreated all checkpoints on VM [{}].", vmName);
         return true;
@@ -4698,6 +4699,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public void connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
         volumeObjectTO.getCheckpointImageStoreUrls().forEach(uri -> getStoragePoolMgr().getStoragePoolByURI(uri));
+    }
+
+    public void disconnectAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
+        volumeObjectTO.getCheckpointImageStoreUrls().forEach(uri -> {
+            KVMStoragePool storage = getStoragePoolMgr().getStoragePoolByURI(uri);
+            getStoragePoolMgr().deleteStoragePool(storage.getType(), storage.getUuid());
+        });
     }
 
 

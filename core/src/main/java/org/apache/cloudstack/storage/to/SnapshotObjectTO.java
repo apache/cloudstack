@@ -43,6 +43,7 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
     private long id;
     private boolean quiescevm;
     private String[] parents;
+    private DataStoreTO parentStore;
     private String checkpointPath;
     private Long physicalSize = (long) 0;
     private long accountId;
@@ -209,6 +210,14 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    public DataStoreTO getParentStore() {
+        return parentStore;
+    }
+
+    public void setParentStore(DataStoreTO parentStore) {
+        this.parentStore = parentStore;
     }
 
     @Override

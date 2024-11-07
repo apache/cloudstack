@@ -401,6 +401,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (snapshot.getImageStore() != null) {
             snapshotTO.setImageStore(snapshot.getImageStore().getTO());
         }
+        if (snapshot.getParent() != null) {
+            snapshotTO.setParentStore(snapshot.getParent().getDataStore().getTO());
+        }
+
         return snapshotTO;
     }
 

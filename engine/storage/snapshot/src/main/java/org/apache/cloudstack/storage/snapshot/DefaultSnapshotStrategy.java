@@ -189,13 +189,13 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot, String storageToString) {
         long rootSnapshotId = getRootSnapshotId(snapshot);
-        snapshotDao.acquireInLockTable(rootSnapshotId);
         DataTO snapshotTo = snapshot.getTO();
         logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
 
         boolean result = false;
         boolean resultIsSet = false;
         try {
+            snapshotDao.acquireInLockTable(rootSnapshotId);
             do {
                 SnapshotInfo child = snapshot.getChild();
 
@@ -243,6 +243,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         }
                     } catch (Exception e) {
                         logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
+                        throw e;
                     }
                 }
 
@@ -250,8 +251,10 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             } while (snapshot != null && snapshotStatesAbleToDeleteSnapshot.contains(snapshot.getState()));
         } catch (Exception e) {
             logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
+            throw new CloudRuntimeException("Failed to delete snapshot chain.");
+        } finally {
+            snapshotDao.releaseFromLockTable(rootSnapshotId);
         }
-        snapshotDao.releaseFromLockTable(rootSnapshotId);
         return result;
     }
 

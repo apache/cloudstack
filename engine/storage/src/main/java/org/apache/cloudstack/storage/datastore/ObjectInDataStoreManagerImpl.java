@@ -20,7 +20,9 @@ import javax.inject.Inject;
 
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.ImageStore;
 import com.cloud.storage.snapshot.SnapshotManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -193,7 +195,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     ss.setSize(snapshot.getSize());
                     ss.setVolumeId(snapshot.getVolumeId());
                     Long clusterId = hostDao.findClusterIdByVolumeInfo(snapshot.getBaseVolume());
-                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), null, snapshot.getVolumeId(), SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId), snapshot.getHypervisorType());
+                    SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), null, ((ImageStore)dataStore).getDataCenterId(), snapshot.getVolumeId(), SnapshotManager.kvmIncrementalSnapshot.valueIn(clusterId), snapshot.getHypervisorType());
                     if (snapshotDataStoreVO != null && !snapshotDataStoreVO.isEndOfChain()) {
                         ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
                     } else {
@@ -220,7 +222,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
     private SnapshotDataStoreVO tryToGetSnapshotOnSecondaryIfNotOnPrimaryAndIsKVM(DataStore dataStore, SnapshotInfo snapshotInfo, SnapshotDataStoreVO snapshotDataStoreVO,
                                                                                   boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType) {
         if (snapshotDataStoreVO == null && Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType()) && DataStoreRole.Primary.equals(dataStore.getRole())) {
-            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, snapshotInfo.getImageStore().getId(), null, snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
+            snapshotDataStoreVO = snapshotDataStoreDao.findParent(DataStoreRole.Image, null, ((PrimaryDataStore)dataStore).getDataCenterId(), snapshotInfo.getVolumeId(), kvmIncrementalSnapshot, hypervisorType);
         }
         return snapshotDataStoreVO;
     }

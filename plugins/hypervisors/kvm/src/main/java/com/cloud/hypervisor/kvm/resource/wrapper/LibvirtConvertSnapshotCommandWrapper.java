@@ -91,6 +91,8 @@ public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<Convert
         } catch (LibvirtException | QemuImgException ex) {
             logger.error(String.format("Failed to convert snapshot [%s] due to %s.", snapshotObjectTO, ex.getMessage()), ex);
             return new Answer(command, ex);
+        } finally {
+            serverResource.disconnectAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
         }
     }
 }

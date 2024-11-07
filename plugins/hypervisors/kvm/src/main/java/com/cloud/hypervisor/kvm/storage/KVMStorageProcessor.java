@@ -1833,7 +1833,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state) && !primaryPool.isExternalSnapshot()) {
                 if (snapshotTO.isKvmIncrementalSnapshot()) {
-                    newSnapshot = takeIncrementalVolumeSnapshotOfRunningVm(snapshotTO, primaryPool, secondaryPool, snapshotName, volume, vm, conn, cmd.getWait());
+                    newSnapshot = takeIncrementalVolumeSnapshotOfRunningVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, vm, conn, cmd.getWait());
                 } else {
                     newSnapshot = takeFullVolumeSnapshotOfRunningVm(cmd, primaryPool, secondaryPool, disk, snapshotName, conn, vmName, diskPath, vm, volume, snapshotPath);
                 }
@@ -1847,11 +1847,15 @@ public class KVMStorageProcessor implements StorageProcessor {
                     newSnapshot.setPath(snapshotPath);
                 } else {
                     if (snapshotTO.isKvmIncrementalSnapshot()) {
-                        newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, snapshotName, volume, conn, cmd.getWait());
+                        newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, conn, cmd.getWait());
                     } else {
                         newSnapshot = takeFullVolumeSnapshotOfStoppedVm(cmd, primaryPool, secondaryPool, snapshotName, disk, volume);
                     }
                 }
+            }
+
+            if (secondaryPool != null) {
+                storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
             }
 
             return new CreateObjectAnswer(newSnapshot);
@@ -1881,7 +1885,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     private SnapshotObjectTO takeIncrementalVolumeSnapshotOfStoppedVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
-                                                                      String snapshotName, VolumeObjectTO volumeObjectTo, Connect conn, int wait) throws LibvirtException {
+                                                                      String secondaryPoolUrl, String snapshotName, VolumeObjectTO volumeObjectTo, Connect conn, int wait) throws LibvirtException {
         resource.validateLibvirtAndQemuVersionForIncrementalSnapshots();
         Domain vm = null;
         logger.debug("Taking incremental volume snapshot of volume [{}]. Snapshot will be copied to [{}].", volumeObjectTo,
@@ -1898,7 +1902,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             resource.recreateCheckpointsOnVm(List.of(volumeObjectTo), vmName, conn);
 
-            return takeIncrementalVolumeSnapshotOfRunningVm(snapshotObjectTO, primaryPool, secondaryPool, snapshotName, volumeObjectTo, vm, conn, wait);
+            return takeIncrementalVolumeSnapshotOfRunningVm(snapshotObjectTO, primaryPool, secondaryPool, secondaryPoolUrl, snapshotName, volumeObjectTo, vm, conn, wait);
         } catch (InternalErrorException | LibvirtException | CloudRuntimeException e) {
             logger.error("Failed to take incremental volume snapshot of volume [{}] due to {}.", volumeObjectTo, e.getMessage(), e);
             throw new CloudRuntimeException(e);
@@ -1917,7 +1921,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     private SnapshotObjectTO takeIncrementalVolumeSnapshotOfRunningVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
-                                                                      String snapshotName, VolumeObjectTO volumeObjectTo, Domain vm, Connect conn, int wait) {
+                                                                      String secondaryPoolUrl, String snapshotName, VolumeObjectTO volumeObjectTo, Domain vm, Connect conn, int wait) {
         logger.debug("Taking incremental volume snapshot of volume [{}] attached to running VM [{}]. Snapshot will be copied to [{}].", volumeObjectTo, volumeObjectTo.getVmName(),
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
         resource.validateLibvirtAndQemuVersionForIncrementalSnapshots();
@@ -1960,7 +1964,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             throw ex;
         }
 
-        rebaseSnapshot(snapshotObjectTO, secondaryPool, fullSnapshotPath, snapshotName, parents, wait);
+        rebaseSnapshot(snapshotObjectTO, secondaryPool, secondaryPoolUrl, fullSnapshotPath, snapshotName, parents, wait);
 
         try {
             Files.setPosixFilePermissions(Path.of(fullSnapshotPath), PosixFilePermissions.fromString("rw-r--r--"));
@@ -2037,7 +2041,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         return Script.runSimpleBashScriptWithFullResult(String.format(DOMJOBINFO_COMPLETED_COMMAND, vmName), 10);
     }
 
-    protected void rebaseSnapshot(SnapshotObjectTO snapshotObjectTO, KVMStoragePool secondaryPool, String snapshotPath, String snapshotName, String[] parents, int wait) {
+    protected void rebaseSnapshot(SnapshotObjectTO snapshotObjectTO, KVMStoragePool secondaryPool, String secondaryUrl, String snapshotPath, String snapshotName, String[] parents, int wait) {
         if (parents == null) {
             logger.debug("No need to rebase snapshot [{}], this snapshot has no parents, therefore it is the first on its backing chain.", snapshotName);
             return;
@@ -2046,14 +2050,16 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if (secondaryPool == null) {
             parentSnapshotPath = parents[parents.length - 1];
+        } else if (!secondaryUrl.equals(snapshotObjectTO.getParentStore().getUrl())) {
+            KVMStoragePool parentPool = storagePoolMgr.getStoragePoolByURI(snapshotObjectTO.getParentStore().getUrl());
+            parentSnapshotPath = parentPool.getLocalPath() + File.separator + parents[parents.length - 1];
+            storagePoolMgr.deleteStoragePool(parentPool.getType(), parentPool.getUuid());
         } else {
             parentSnapshotPath = secondaryPool.getLocalPath() + File.separator + parents[parents.length - 1];
         }
 
         QemuImgFile snapshotFile = new QemuImgFile(snapshotPath);
         QemuImgFile parentSnapshotFile = new QemuImgFile(parentSnapshotPath);
-
-        resource.connectToAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
 
         logger.debug("Rebasing snapshot [{}] with parent [{}].", snapshotName, parentSnapshotPath);
 
@@ -2090,7 +2096,11 @@ public class KVMStorageProcessor implements StorageProcessor {
     private String dumpCheckpoint(KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, VolumeObjectTO volumeObjectTo, String vmName, String[] snapshotParents) {
         String result = Script.runSimpleBashScriptWithFullResult(String.format(CHECKPOINT_DUMP_XML_COMMAND, vmName, snapshotName), 10);
 
-        String snapshotParent = snapshotParents == null ? null : snapshotParents[snapshotParents.length -1];
+        String snapshotParent = null;
+        if (snapshotParents != null) {
+            String snapshotParentPath = snapshotParents[snapshotParents.length - 1];
+            snapshotParent = snapshotParentPath.substring(snapshotParentPath.lastIndexOf(File.separator) + 1);
+        }
 
         return cleanupCheckpointXmlDumpCheckpointAndRedefine(result, primaryPool, secondaryPool, snapshotName, volumeObjectTo, snapshotParent, vmName);
     }
@@ -2183,7 +2193,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         Node parentNameNode = (Node) xPath.compile("/domaincheckpoint/parent/name").evaluate(checkpointXml, XPathConstants.NODE);
-        parentNameNode.setNodeValue(snapshotParent);
+        parentNameNode.setTextContent(snapshotParent);
     }
 
     /**

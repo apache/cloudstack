@@ -3412,6 +3412,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VolumeObjectTO volumeTo = new VolumeObjectTO();
             volumeTo.setCheckpointPaths(volumeCheckpointPathsAndImageStoreUrls.first());
             volumeTo.setCheckpointImageStoreUrls(volumeCheckpointPathsAndImageStoreUrls.second());
+            volumeTo.setPath(volume.getPath());
             volumes.add(volumeTo);
         }
         return volumes;
