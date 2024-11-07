@@ -1791,7 +1791,7 @@
 "label.public.ips": "Public IP addresses",
 "label.public.lb": "Public LB",
 "label.public.traffic": "Public traffic",
-"label.public.traffic.netris": "Netris Public traffic",
+"label.public.traffic.netris": "Netris Public IP Pool",
 "label.public.traffic.nsx": "NSX Public traffic",
 "label.publicinterface": "Public interface",
 "label.publicip": "IP address",

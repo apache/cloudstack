@@ -20,13 +20,13 @@ import com.cloud.agent.api.Command;
 
 public class NetrisCommand extends Command {
     private final long zoneId;
-    private final long accountId;
-    private final long domainId;
+    private final Long accountId;
+    private final Long domainId;
     private final String name;
     private final long id;
     private final boolean isVpc;
 
-    public NetrisCommand(long zoneId, long accountId, long domainId, String name, long id, boolean isVpc) {
+    public NetrisCommand(long zoneId, Long accountId, Long domainId, String name, long id, boolean isVpc) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -48,11 +48,11 @@ public class NetrisCommand extends Command {
         return zoneId;
     }
 
-    public long getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public long getDomainId() {
+    public Long getDomainId() {
         return domainId;
     }
 
