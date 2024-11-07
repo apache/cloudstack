@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.StoragePoolInfo;
@@ -112,6 +113,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
                     String systemId = client.getSystemId(pool.getProtectionDomainId());
                     pool.setSystemId(systemId);
+                    List<String> mdmAddresses = client.getMdmAddresses();
+                    pool.setMdmAddresses(mdmAddresses);
                     return pool;
                 }
             }
@@ -239,6 +242,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         details.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, DBEncryptionUtil.encrypt(gatewayPassword));
         details.put(ScaleIOGatewayClient.STORAGE_POOL_NAME, storagePoolName);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, scaleIOPool.getSystemId());
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, StringUtils.join(scaleIOPool.getMdmAddresses(), ","));
         parameters.setDetails(details);
 
         return dataStoreHelper.createPrimaryDataStore(parameters);

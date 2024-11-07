@@ -18,6 +18,7 @@
 package org.apache.cloudstack.storage.datastore.manager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
@@ -121,7 +123,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             return getConnectedSdc(host, dataStore);
         }
 
-        String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        String systemId = null;
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            systemId = systemIdDetail.getValue();
+        }
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to prepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore.getName());
         }
@@ -168,7 +174,19 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 throw new CloudRuntimeException(errorMsg);
             }
 
-            sdcId = prepareSDCOnHost(host, dataStore, systemId);
+            String mdms = null;
+            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            if (mdmsDetail != null) {
+                mdms = mdmsDetail.getValue();
+            }
+            if (StringUtils.isBlank(mdms)) {
+                List<String> mdmAddresses = getMdms(dataStore.getId());
+                mdms = StringUtils.join(mdmAddresses, ",");
+                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms, false);
+                storagePoolDetailsDao.persist(storagePoolDetailVO);
+            }
+
+            sdcId = prepareSDCOnHost(host, dataStore, systemId, mdms);
             StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
             if (StringUtils.isBlank(sdcId)) {
@@ -202,10 +220,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
     }
 
-    private String prepareSDCOnHost(Host host, DataStore dataStore, String systemId) {
+    private String prepareSDCOnHost(Host host, DataStore dataStore, String systemId, String mdms) {
         logger.debug("Preparing SDC on the host {}", host);
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
         PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
@@ -260,7 +279,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             return true;
         }
 
-        String systemId = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        String systemId = null;
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            systemId = systemIdDetail.getValue();
+        }
         if (systemId == null) {
             throw new CloudRuntimeException("Unable to unprepare SDC, failed to get the system id for PowerFlex storage pool: " + dataStore);
         }
@@ -287,7 +310,19 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 return true;
             }
 
-            return unprepareSDCOnHost(host, dataStore);
+            String mdms = null;
+            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            if (mdmsDetail != null) {
+                mdms = mdmsDetail.getValue();
+            }
+            if (StringUtils.isBlank(mdms)) {
+                List<String> mdmAddresses = getMdms(dataStore.getId());
+                mdms = StringUtils.join(mdmAddresses, ",");
+                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms, false);
+                storagePoolDetailsDao.persist(storagePoolDetailVO);
+            }
+
+            return unprepareSDCOnHost(host, dataStore, mdms);
         } finally {
             if (lock != null) {
                 lock.unlock();
@@ -296,9 +331,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
     }
 
-    private boolean unprepareSDCOnHost(Host host, DataStore dataStore) {
+    private boolean unprepareSDCOnHost(Host host, DataStore dataStore, String mdms) {
         logger.debug(String.format("Unpreparing SDC on the host %s (%s)", host.getId(), host.getName()));
-        UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid());
+        Map<String,String> details = new HashMap<>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
+        UnprepareStorageClientCommand cmd = new UnprepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
@@ -367,6 +404,16 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             }
         }
         return isHostSdcConnected(sdcId, poolId);
+    }
+
+    private List<String> getMdms(long poolId) {
+        try {
+            final ScaleIOGatewayClient client = getScaleIOClient(poolId);
+            return client.getMdmAddresses();
+        } catch (Exception e) {
+            logger.error("Failed to get MDMs", e);
+            throw new CloudRuntimeException("Failed to fetch PowerFlex MDM details");
+        }
     }
 
     private boolean isHostSdcConnected(String sdcId, long poolId) {

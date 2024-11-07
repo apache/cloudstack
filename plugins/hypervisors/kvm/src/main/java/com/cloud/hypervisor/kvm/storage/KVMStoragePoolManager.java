@@ -480,8 +480,8 @@ public class KVMStoragePoolManager {
         return adaptor.prepareStorageClient(type, uuid, details);
     }
 
-    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        return adaptor.unprepareStorageClient(type, uuid);
+        return adaptor.unprepareStorageClient(type, uuid, details);
     }
 }
