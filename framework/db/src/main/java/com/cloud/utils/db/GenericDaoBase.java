@@ -1244,13 +1244,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    // FIXME: Does not work for joins.
-    @Override
-    public int expunge(final SearchCriteria<T> sc, long limit) {
-        Filter filter = new Filter(limit);
-        return expunge(sc, filter);
-    }
-
     @Override
     public int expunge(final SearchCriteria<T> sc, final Filter filter) {
         if (sc == null) {
@@ -1400,22 +1393,39 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append("?");
                     joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
-                    onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
-                    .append(".")
-                    .append(join.getFirstAttributes()[i].columnName);
-                }
-                onClause.append("=");
-                if (join.getSecondAttribute()[i].getValue() != null) {
-                    onClause.append("?");
-                    joinAttrList.add(join.getSecondAttribute()[i]);
-                } else {
-                    if(!joinTableAlias.equals(joinTableName)) {
-                        onClause.append(joinTableAlias);
+                    if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                            (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                        onClause.append(joinedTableNames.getOrDefault(join.getSecondAttribute()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".");
+                        if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) {
+                            onClause.append(join.getSecondAttribute()[i].columnName);
+                        } else {
+                            onClause.append(join.getFirstAttributes()[i].columnName);
+                        }
+
                     } else {
-                        onClause.append(joinTableName);
+                        onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".")
+                                .append(join.getFirstAttributes()[i].columnName);
                     }
-                    onClause.append(".")
-                    .append(join.getSecondAttribute()[i].columnName);
+                }
+                if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                        (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                    onClause.append(" IS NULL");
+                } else {
+                    onClause.append("=");
+                    if (join.getSecondAttribute()[i].getValue() != null) {
+                        onClause.append("?");
+                        joinAttrList.add(join.getSecondAttribute()[i]);
+                    } else {
+                        if (!joinTableAlias.equals(joinTableName)) {
+                            onClause.append(joinTableAlias);
+                        } else {
+                            onClause.append(joinTableName);
+                        }
+                        onClause.append(".")
+                                .append(join.getSecondAttribute()[i].columnName);
+                    }
                 }
             }
             onClause.append(" ");
