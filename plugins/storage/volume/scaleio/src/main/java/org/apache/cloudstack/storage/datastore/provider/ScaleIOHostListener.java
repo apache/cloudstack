@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
@@ -98,7 +99,11 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     private String getSdcIdOfHost(HostVO host, StoragePool storagePool) {
         long hostId = host.getId();
         long poolId = storagePool.getId();
-        String systemId = _storagePoolDetailsDao.findDetail(poolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        String systemId = null;
+        StoragePoolDetailVO systemIdDetail = _storagePoolDetailsDao.findDetail(poolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            systemId = systemIdDetail.getValue();
+        }
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
