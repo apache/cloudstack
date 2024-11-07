@@ -20,6 +20,9 @@ import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -41,6 +44,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 import java.util.Objects;
@@ -132,6 +137,12 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             if (isNull(zone)) {
                 throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
             }
+            try {
+                allocateVnet(network, designedNetwork, network.getDataCenterId(), network.getPhysicalNetworkId(), network.getReservationId());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format("Failed to allocate VXLAN for Netris guest Network %s", network.getName()));
+            }
+            _networkDao.update(designedNetwork.getId(), designedNetwork);
             createNetrisVnet(designedNetwork, zone);
         } catch (Exception ex) {
             throw new CloudRuntimeException("unable to create Netris network " + network.getUuid() + "due to: " + ex.getMessage());
@@ -146,7 +157,7 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest,
-                             ReservationContext context) {
+                             ReservationContext context) throws InsufficientVirtualNetworkCapacityException {
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),
                 network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Implemented,
                 network.getDataCenterId(), network.getPhysicalNetworkId(), offering.isRedundantRouter());
@@ -167,8 +178,25 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         if (network.getName() != null) {
             implemented.setName(network.getName());
         }
-        implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri("netris"));
+        allocateVnet(network, implemented, network.getDataCenterId(), network.getPhysicalNetworkId(), network.getReservationId());
         return implemented;
+    }
+
+    @Override
+    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId)
+            throws InsufficientVirtualNetworkCapacityException {
+        if (network.getBroadcastUri() == null) {
+            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
+            if (vnet == null) {
+                throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
+                        dcId);
+            }
+            implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri(vnet));
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
+                    "Assigned Zone vNet: " + vnet + " Network Id: " + implemented.getId(), implemented.getId(), ApiCommandResourceType.Network.toString(), 0);
+        } else {
+            implemented.setBroadcastUri(network.getBroadcastUri());
+        }
     }
 
     @Override
