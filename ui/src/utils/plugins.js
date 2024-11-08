@@ -289,6 +289,13 @@ export const notifierPlugin = {
       close: (key) => notification.close(key),
       destroy: () => notification.destroy()
     }
+
+    app.config.globalProperties.$messageConfigSuccess = function (msg, configrecord) {
+      if (configrecord.isdynamic) {
+        msg += `. ${this.$t('message.setting.update.delay')}`
+      }
+      message.success(msg)
+    }
   }
 }
 
@@ -495,7 +502,7 @@ export const genericUtilPlugin = {
       if (isBase64(text)) {
         return text
       }
-      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
+      return encodeURI(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }

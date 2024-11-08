@@ -18,11 +18,19 @@
 .form {
   width: 80vw;
 
-  .full-width-input {
-    width: 100%;
-  }
-
   @media (min-width: 500px) {
-    width: 400px;
+    width: fit-content;
+    min-width: 20vw;
   }
+}
+
+.form textarea {
+  resize: both;
+  min-width: 20vw;
+  max-width: 80vw;
+}
+
+.ant-input-number,
+.ant-calendar-picker {
+  width: 100%;
 }

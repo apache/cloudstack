@@ -439,6 +439,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
@@ -486,5 +491,9 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public List<String> getApiNameList() {
         return null;
+    }
+
+    @Override
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
     }
 }

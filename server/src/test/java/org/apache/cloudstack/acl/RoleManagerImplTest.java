@@ -214,7 +214,7 @@ public class RoleManagerImplTest {
         String roleName = "roleName";
         List<Role> roles = new ArrayList<>();
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 0);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null, null, false);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByName(roleName, null, null, null, null, false);
 
         roleManagerImpl.findRolesByName(roleName);
         Mockito.verify(roleManagerImpl).removeRolesIfNeeded(roles);
@@ -345,7 +345,7 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 1);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.Admin, null, null, true);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.Admin, null, null, null, true);
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.Admin);
 
         Assert.assertEquals(1, returnedRoles.size());
@@ -360,7 +360,7 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
         Pair<ArrayList<RoleVO>, Integer> toBeReturned = new Pair(roles, 1);
-        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.User, null, null, true);
+        Mockito.doReturn(toBeReturned).when(roleDaoMock).findAllByRoleType(RoleType.User, null, null, null, true);
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.User);
 
         Assert.assertEquals(1, returnedRoles.size());

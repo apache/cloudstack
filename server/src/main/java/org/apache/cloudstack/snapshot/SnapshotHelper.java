@@ -104,15 +104,21 @@ public class SnapshotHelper {
             return;
         }
 
-        logger.debug(String.format("Expunging snapshot [%s] due to it is a temporary backup to create a volume from snapshot. It is occurring because the global setting [%s]"
-          + " has the value [%s].", snapInfo.getId(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot));
+        if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
+            logger.debug(String.format("Expunge template for Snapshot [%s] is called for primary storage role. Not expunging it, " +
+                    "but we will still expunge the database reference of the snapshot for image storage role if any", snapInfo.getId()));
+        } else {
+            logger.debug(String.format("Expunging snapshot [%s] due to it is a temporary backup to create a volume from snapshot. It is occurring because the global setting [%s]"
+                    + " has the value [%s].", snapInfo.getId(), SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), backupSnapshotAfterTakingSnapshot));
 
-        try {
-            snapshotService.deleteSnapshot(snapInfo);
-        } catch (CloudRuntimeException ex) {
-            logger.warn(String.format("Unable to delete the temporary snapshot [%s] on secondary storage due to [%s]. We still will expunge the database reference, consider"
-              + " manually deleting the file [%s].", snapInfo.getId(), ex.getMessage(), snapInfo.getPath()), ex);
+            try {
+                snapshotService.deleteSnapshot(snapInfo);
+            } catch (CloudRuntimeException ex) {
+                logger.warn(String.format("Unable to delete the temporary snapshot [%s] on secondary storage due to [%s]. We still will expunge the database reference, consider"
+                        + " manually deleting the file [%s].", snapInfo.getId(), ex.getMessage(), snapInfo.getPath()), ex);
+            }
         }
+
         long storeId = snapInfo.getDataStore().getId();
         if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
             long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
