@@ -26,6 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.junit.Assert;
@@ -87,6 +88,9 @@ public class DefaultSnapshotStrategyTest {
 
     @Mock
     DataStoreManager dataStoreManager;
+
+    @Mock
+    SnapshotService snapshotService;
 
     List<SnapshotInfo> mockSnapshotInfos = new ArrayList<>();
 
