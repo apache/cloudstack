@@ -478,7 +478,8 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
 
         private void cleanupOldDiagnosticFiles(DataStore store) {
             String mountPoint = null;
-            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(), null);
+            mountPoint = serviceImpl.mountManager.getMountPoint(store.getUri(),
+                    serviceImpl.imageStoreDetailsUtil.getNfsVersion(store.getId()));
             if (StringUtils.isNotBlank(mountPoint)) {
                 File directory = new File(mountPoint + File.separator + DIAGNOSTICS_DIRECTORY);
                 if (directory.isDirectory()) {

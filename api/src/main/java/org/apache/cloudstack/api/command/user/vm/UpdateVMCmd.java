@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.response.UserDataResponse;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -104,7 +106,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                description = "true if VM contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory. This can be updated only when dynamic scaling is enabled on template, service offering and the corresponding global setting")
     protected Boolean isDynamicallyScalable;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", since = "4.4")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new host name of the vm. The VM has to be stopped/started for this update to take affect", validations = {ApiArgValidator.RFCComplianceDomainName}, since = "4.4")
     private String name;
 
     @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "instance name of the user vm", since = "4.4", authorized = {RoleType.Admin})
@@ -141,8 +143,16 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", authorized = { RoleType.Admin }, length = 5120)
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
     private String extraConfig;
+
+    @Parameter(name = ApiConstants.DELETE_PROTECTION,
+            type = CommandType.BOOLEAN, since = "4.20.0",
+            description = "Set delete protection for the virtual machine. If " +
+                    "true, the instance will be protected from deletion. " +
+                    "Note: If the instance is managed by another service like" +
+                    " autoscaling groups or CKS, delete protection will be ignored.")
+    private Boolean deleteProtection;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -211,6 +221,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
 
     public boolean isCleanupDetails(){
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    }
+
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
     }
 
     public Map<String, Map<Integer, String>> getDhcpOptionsMap() {

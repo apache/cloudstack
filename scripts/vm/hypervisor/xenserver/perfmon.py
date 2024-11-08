@@ -179,7 +179,7 @@ class RRDUpdates:
         (cf, vm_or_host, uuid, param) = col_meta_data.split(':')
         if vm_or_host == 'vm':
             # Create a report for this VM if it doesn't exist
-            if not uuid in self.vm_reports:
+            if uuid not in self.vm_reports:
                 self.vm_reports[uuid] = VMReport(uuid)
                 # Update the VMReport with the col data and meta data
             vm_report = self.vm_reports[uuid]

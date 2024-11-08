@@ -70,17 +70,24 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     ConfigKey<Integer> SAMLTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "saml2.timeout", "1800",
             "SAML2 IDP Metadata refresh interval in seconds, minimum value is set to 300", true);
 
-    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "false",
-            "Whether SAML2 signature must be checked, when enforced and when the SAML response does not have a signature would lead to login exception", true);
+    ConfigKey<Boolean> SAMLCheckSignature = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.check.signature", "true",
+            "When enabled (default and recommended), SAML2 signature checks are enforced and lack of signature in the SAML SSO response will cause login exception. Disabling this is not advisable but provided for backward compatibility for users who are able to accept the risks.", false);
 
-    public SAMLProviderMetadata getSPMetadata();
-    public SAMLProviderMetadata getIdPMetadata(String entityId);
-    public Collection<SAMLProviderMetadata> getAllIdPMetadata();
+    ConfigKey<Boolean> SAMLForceAuthn = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.force.authn", "false",
+            "When enabled (default false), SAML2 will force a new authentication. This can be useful if multiple application use different saml logins from the same application (I.E. browser)", true);
 
-    public boolean isUserAuthorized(Long userId, String entityId);
-    public boolean authorizeUser(Long userId, String entityId, boolean enable);
+    ConfigKey<String> SAMLUserSessionKeyPathAttribute = new ConfigKey<String>("Advanced", String.class, "saml2.user.sessionkey.path", "",
+            "The Path attribute of sessionkey cookie when SAML users have logged in. If not set, it will be set to the path of SAML redirection URL (saml2.redirect.url).", true);
 
-    public void saveToken(String authnId, String domain, String entity);
-    public SAMLTokenVO getToken(String authnId);
-    public void expireTokens();
+    SAMLProviderMetadata getSPMetadata();
+    SAMLProviderMetadata getIdPMetadata(String entityId);
+    Collection<SAMLProviderMetadata> getAllIdPMetadata();
+
+    boolean isUserAuthorized(Long userId, String entityId);
+    boolean authorizeUser(Long userId, String entityId, boolean enable);
+
+    void saveToken(String authnId, String domain, String entity);
+    SAMLTokenVO getToken(String authnId);
+    void purgeToken(SAMLTokenVO token);
+    void expireTokens();
 }

@@ -37,8 +37,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -54,7 +54,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -87,7 +87,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachIso</name>
 		<usercommand>true</usercommand>
@@ -103,7 +103,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>869-2</testcase>
@@ -120,10 +120,10 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Test case 870 - verify that user2 can't attach iso to user2 vm - Negative case -->
-	
+
 		<command>
 		<name>createAccount</name>
 		<testcase>    [Create the Account and a User for the account]</testcase>
@@ -186,8 +186,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-<!-- 	
+
+<!--
 	<command>
 		<name>createUser</name>
 		<parameters>
@@ -230,7 +230,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
--->	
+-->
 	<command>
 		<name>registerUserKeys</name>
 		<parameters>
@@ -249,8 +249,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>		
-	
+	</command>
+
 	<command>
 		<name>attachIso</name>
 		<usercommand>true</usercommand>
@@ -267,8 +267,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 871 - try to attach iso to the vm in destroyed state - Negative case -->
 	<command>
 		<name>registerUserKeys</name>
@@ -288,8 +288,8 @@ under the License.
 				<param>secretkey</param>
 			</item>
 		</returnvalue>
-	</command>	
-		
+	</command>
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<parameters>
@@ -299,7 +299,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>attachIso</name>
 		<testcase>871</testcase>
@@ -315,8 +315,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 872 - try to attach iso to non-existing vm - Negative case -->
 	<command>
 		<name>attachIso</name>
@@ -333,7 +333,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 
 <!--  Test case 1073 - attach iso to the running vm and reboot -->
 	<command>
@@ -351,7 +351,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globaltemplateid</param>
@@ -384,7 +384,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>attachIso</name>
 		<usercommand>true</usercommand>
@@ -399,7 +399,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -411,7 +411,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>1073-2</testcase>
@@ -428,7 +428,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 1074 - attach iso to the running vm and stop/start -->
 	<command>
 		<name>stopVirtualMachine</name>
@@ -441,7 +441,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>1074-2</testcase>
@@ -458,7 +458,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -470,7 +470,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>1074-4</testcase>
@@ -487,8 +487,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Test case 1075 - try to attach iso to the domR - negative case -->
 	<command>
 		<name>listRouters</name>
@@ -515,8 +515,8 @@ under the License.
 				<param>routerid</param>
 			</item>
 		</returnvalue>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>attachIso</name>
 		<testcase>1075</testcase>
@@ -532,7 +532,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 <!--  Test case 1076 - detach iso from Running vm -->
 	<command>
 		<name>detachIso</name>
@@ -545,8 +545,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1077 - detach iso from Stopped vm -->
 	<command>
 		<name>attachIso</name>
@@ -562,7 +562,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -573,7 +573,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>detachIso</name>
 		<usercommand>true</usercommand>
@@ -585,8 +585,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 <!--  Test case 1078 - deploy vm from iso -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -598,7 +598,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -615,7 +615,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globalisoid</param>
@@ -652,7 +652,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 <!--  Test case 1079 - deploy vm from iso, detach iso and reboot the vm -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -664,7 +664,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -681,7 +681,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globalisoid</param>
@@ -718,7 +718,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachIso</name>
 		<usercommand>true</usercommand>
@@ -730,7 +730,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -742,7 +742,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>1079-4</testcase>
@@ -759,9 +759,9 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
-	
+
+
+
 <!--  Test case 1080 - deploy vm from iso, detach iso and stop/start the vm -->
 	<command>
 		<name>destroyVirtualMachine</name>
@@ -789,7 +789,7 @@ under the License.
 			<item getparam="true">
 			    <name>diskofferingid</name>
 				<param>globaldiskofferingid</param>
-			</item>	
+			</item>
 			<item getparam="true">
 				<name>templateid</name>
 				<param>globalisoid</param>
@@ -826,7 +826,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>detachIso</name>
 		<usercommand>true</usercommand>
@@ -838,7 +838,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -850,7 +850,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -862,7 +862,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listVirtualMachines</name>
 		<testcase>1080-4</testcase>
@@ -879,8 +879,8 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
-	
+
+
 <!--  Execute cleanup -->
 	<command>
 		<name>deleteUser</name>
@@ -892,7 +892,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<testcase>Destroying vm as a part of cleanup</testcase>
@@ -902,6 +902,6 @@ under the License.
 				<param>vmid</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 </isotest>

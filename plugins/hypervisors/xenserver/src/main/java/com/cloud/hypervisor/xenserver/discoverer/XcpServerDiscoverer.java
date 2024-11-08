@@ -346,7 +346,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 }
 
                 DataCenterVO zone = _dcDao.findById(dcId);
-                boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
+                boolean securityGroupEnabled = zone.isSecurityGroupEnabled() || _networkMgr.isSecurityGroupSupportedForZone(zone.getId());
                 params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
 
                 params.put("router.aggregation.command.each.timeout", _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
@@ -695,7 +695,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         HashMap<String, Object> params = super.buildConfigParams(host);
         DataCenterVO zone = _dcDao.findById(host.getDataCenterId());
         if (zone != null) {
-            boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
+            boolean securityGroupEnabled = zone.isSecurityGroupEnabled() || _networkMgr.isSecurityGroupSupportedForZone(zone.getId());
             params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
         }
         return params;

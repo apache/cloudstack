@@ -487,7 +487,7 @@ public class UserVmManagerImplTest {
         Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
 
         Mockito.verify(userVmManagerImpl).updateVirtualMachine(nullable(Long.class), nullable(String.class), nullable(String.class), nullable(Boolean.class),
-                nullable(Boolean.class), nullable(Long.class),
+                nullable(Boolean.class), nullable(Boolean.class), nullable(Long.class),
                 nullable(String.class), nullable(Long.class), nullable(String.class), nullable(Boolean.class), nullable(HTTPMethod.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(List.class),
                 nullable(Map.class));
 
@@ -498,7 +498,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
         Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
         Mockito.lenient().doReturn(Mockito.mock(UserVm.class)).when(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(),
-                Mockito.anyBoolean(), Mockito.anyLong(),
+                Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyLong(),
                 Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyList(),
                 Mockito.anyMap());
     }
@@ -1594,5 +1594,41 @@ public class UserVmManagerImplTest {
         Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
         Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
         Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
+    }
+
+    @Test
+    public void checkExpungeVMPermissionTestAccountIsNotAdminConfigFalseThrowsPermissionDeniedException () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(false).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueNoApiAccessThrowsPermissionDeniedException () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+        Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueHasApiAccessReturnNothing () {
+        Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
+
+        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsAdminNoApiAccessThrowsPermissionDeniedException () {
+        Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
+        Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+    }
+    @Test
+    public void checkExpungeVmPermissionTestAccountIsAdminHasApiAccessReturnNothing () {
+        Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
+
+        userVmManagerImpl.checkExpungeVmPermission(accountMock);
     }
 }
