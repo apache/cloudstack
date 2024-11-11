@@ -420,11 +420,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         boolean isCpuNumGood = host.getCpus().intValue() >= cpuNum;
         boolean isCpuSpeedGood = host.getSpeed().intValue() >= cpuSpeed;
         if (isCpuNumGood && isCpuSpeedGood) {
-            logger.debug("Host: {} has cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
-                    host.getId(), host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
+            logger.debug("{} has cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
+                    host, host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
             return true;
-        } else {logger.debug("Host: {} doesn't have cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
-                host.getId(), host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
+        } else {logger.debug("{} doesn't have cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
+                host, host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
             return false;
         }
     }
@@ -684,10 +684,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         final CapacityState capacityState = (host.getResourceState() == ResourceState.Enabled) ? CapacityState.Enabled : CapacityState.Disabled;
 
         List<VMInstanceVO> vms = _vmDao.listIdServiceOfferingForUpVmsByHostId(host.getId());
-        logger.debug("Found {} VMs on host {}", vms.size(), host.getId());
+        logger.debug("Found {} VMs on {}", vms.size(), host);
 
         final List<VMInstanceVO> vosMigrating = _vmDao.listIdServiceOfferingForVmsMigratingFromHost(host.getId());
-        logger.debug("Found {} VMs are Migrating from host {}", vosMigrating.size(), host.getId());
+        logger.debug("Found {} VMs are Migrating from {}", vosMigrating.size(), host);
         vms.addAll(vosMigrating);
 
         Pair<String, String> clusterValues =
@@ -729,7 +729,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
 
         List<VMInstanceVO> vmsByLastHostId = _vmDao.listIdServiceOfferingForVmsByLastHostId(host.getId());
-        logger.debug("Found {} VM, not running on host {}", vmsByLastHostId.size(), host.getId());
+        logger.debug("Found {} VM, not running on {}", vmsByLastHostId.size(), host);
 
         for (VMInstanceVO vm : vmsByLastHostId) {
             Float cpuOvercommitRatio = 1.0f;

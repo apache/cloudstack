@@ -3310,7 +3310,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (answer == null || !answer.getResult()) {
-            logger.warn("Unable to obtain host {} statistics.", host.getId());
+            logger.warn("Unable to obtain {} statistics.", host);
             return null;
         } else {
 

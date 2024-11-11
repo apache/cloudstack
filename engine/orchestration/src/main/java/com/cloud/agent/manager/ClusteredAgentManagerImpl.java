@@ -215,11 +215,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                 continue;
                             }
                         }
-
-                        logger.debug("Loading directly connected host {}({})", host.getId(), host.getName());
+                        logger.debug("Loading directly connected {}", host);
                         loadDirectlyConnectedHost(host, false);
                     } catch (final Throwable e) {
-                        logger.warn(" can not load directly connected host {}({}) due to ", host.getId(), host.getName(), e);
+                        logger.warn(" can not load directly connected {} due to ", host, e);
                     }
                 }
             }
@@ -245,7 +244,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
 
     protected AgentAttache createAttache(final Host host) {
-            logger.debug("create forwarding ClusteredAgentAttache for {}", host.getId());
+        logger.debug("create forwarding ClusteredAgentAttache for {}", host);
         final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getName());
         AgentAttache old = null;
         synchronized (_agents) {
@@ -261,7 +260,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     protected AgentAttache createAttacheForConnect(final HostVO host, final Link link) {
-        logger.debug("create ClusteredAgentAttache for {}",  host.getId());
+        logger.debug("create ClusteredAgentAttache for {}",  host);
         final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getName(), link, host.isInMaintenanceStates());
         link.attach(attache);
         AgentAttache old = null;
@@ -1027,7 +1026,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         } else if (futureOwnerId == _nodeId) {
             final HostVO host = _hostDao.findById(hostId);
             try {
-                logger.debug("Disconnecting host {}({}) as a part of rebalance process without notification", host.getId(), host.getName());
+                logger.debug("Disconnecting {} as a part of rebalance process without notification", host);
 
                 final AgentAttache attache = findAttache(hostId);
                 if (attache != null) {
@@ -1035,10 +1034,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
 
                 if (result) {
-                    logger.debug("Loading directly connected host {}({}) to the management server {} as a part of rebalance process", host.getId(), host.getName(), _nodeId);
+                    logger.debug("Loading directly connected {} to the management server {} as a part of rebalance process", host, _nodeId);
                     result = loadDirectlyConnectedHost(host, true);
                 } else {
-                    logger.warn("Failed to disconnect {}({}) as a part of rebalance process without notification" + host.getId(), host.getName());
+                    logger.warn("Failed to disconnect {} as a part of rebalance process without notification", host);
                 }
 
             } catch (final Exception ex) {
@@ -1047,9 +1046,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
 
             if (result) {
-                logger.debug("Successfully loaded directly connected host {}({}) to the management server {} a part of rebalance process without notification", host.getId(), host.getName(), _nodeId);
+                logger.debug("Successfully loaded directly connected {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             } else {
-                logger.warn("Failed to load directly connected host {}({}) to the management server {} a part of rebalance process without notification", host.getId(), host.getName(), _nodeId);
+                logger.warn("Failed to load directly connected {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             }
         }
 
