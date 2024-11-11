@@ -65,6 +65,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
@@ -598,6 +599,7 @@ public class UnmanagedVMsManagerImplTest {
 
         ClusterVO cluster = mock(ClusterVO.class);
         when(cluster.getId()).thenReturn(clusterId);
+        when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(cluster.getDataCenterId()).thenReturn(zoneId);
         when(clusterDao.findById(clusterId)).thenReturn(cluster);

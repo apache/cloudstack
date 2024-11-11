@@ -1306,6 +1306,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long clusterId = cmd.getClusterId();
         Cluster cluster = basicAccessChecks(clusterId);
 
+        if (!cluster.getAllocationState().equals(Cluster.AllocationState.Enabled)) {
+            throw new InvalidParameterValueException(String.format("Cluster [%s] is not enabled.", cluster));
+        }
+
         final Account caller = CallContext.current().getCallingAccount();
         final DataCenter zone = dataCenterDao.findById(cluster.getDataCenterId());
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
