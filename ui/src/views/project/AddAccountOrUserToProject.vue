@@ -31,27 +31,25 @@
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             </template>
-            <a-select
+            <a-auto-complete
                 show-search
                 v-model:value="form.account"
                 :placeholder="apiParams.addAccountToProject.account.description"
                 v-focus="true"
-                :filterOption="false"
-                @search="fetchAccounts"
-              >
-                <template v-if="load.accounts" #notFoundContent>
-                  <a-spin size="small" />
-                </template>
-                <template v-if="!load.accounts">
-                  <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
-                    <span v-if="account.icon">
-                      <resource-icon :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                    </span>
-                    <block-outlined v-else style="margin-right: 5px" />
-                    {{ account.name }}
-                  </a-select-option>
-                </template>
-              </a-select>
+                :filterOption="filterOption"
+                :options="accounts"
+            >
+              <template v-if="load.accounts" #notFoundContent>
+                <a-spin size="small" />
+              </template>
+              <template v-if="!load.accounts" #option="item">
+                <span v-if="item.icon">
+                  <resource-icon :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+                </span>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ item.value }}
+              </template>
+            </a-auto-complete>
           </a-form-item>
           <a-form-item name="email" ref="email">
             <template #label>
@@ -254,6 +252,11 @@ export default {
         this.fetchProjectRoles()
       }
     },
+    filterOption (input, option) {
+      return (
+        option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
+      )
+    },
     fetchUsers (keyword) {
       this.load.users = true
       const params = { listall: true, showicon: true }
@@ -276,6 +279,14 @@ export default {
       }
       api('listAccounts', params).then(response => {
         this.accounts = response.listaccountsresponse.account || []
+        if (this.accounts.length > 0) {
+          this.accounts = this.accounts.map(account => {
+            return {
+              value: account.name,
+              ...account
+            }
+          })
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
