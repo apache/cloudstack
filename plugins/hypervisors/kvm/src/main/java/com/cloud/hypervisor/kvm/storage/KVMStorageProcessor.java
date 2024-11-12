@@ -2330,7 +2330,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (!diskDefPath.contains(diskPath)) {
                 continue;
             }
-            logger.debug("Found disk label [{}] for volume with path [{}] on VM [{}].", disk.getDiskLabel(), diskPath, disk.getDiskLabel());
+            logger.debug("Found disk label [{}] for volume with path [{}] on VM [{}].", disk.getDiskLabel(), diskPath, vm.getName());
 
             return disk.getDiskLabel();
         }
