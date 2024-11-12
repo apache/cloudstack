@@ -758,16 +758,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         }
 
         switch (msg.getMessageType()) {
-        case nodeAdded: {
-            final List<ManagementServerHostVO> l = msg.getNodes();
-            if (l != null && l.size() > 0) {
-                for (final ManagementServerHostVO mshost : l) {
-                    if (mshost.getId() != _mshostId) {
-                        _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Up);
-                    }
-                }
-            }
-        }
+        case nodeAdded:
         break;
 
         case nodeRemoved: {
