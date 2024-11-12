@@ -102,6 +102,7 @@ public class TemplateObject implements TemplateInfo {
         imageVO.setSize(size);
     }
 
+    @Override
     public VMTemplateVO getImage() {
         if (imageVO == null) {
             String msg = String.format("Template Object is not properly initialised %s", this.toString());

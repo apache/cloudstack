@@ -258,7 +258,7 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
+        return String.format("volumeTO[id=%s|uuid=%s|name=%s|path=%s|datastore=%s]", id, uuid, name, path, dataStore);
     }
 
     public void setBytesReadRate(Long bytesReadRate) {

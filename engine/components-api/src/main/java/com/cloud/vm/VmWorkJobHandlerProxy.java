@@ -44,10 +44,8 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
     private Object _target;
     private Map<Class<?>, Method> _handlerMethodMap = new HashMap<Class<?>, Method>();
 
-    private Gson _gsonLogger;
 
     public VmWorkJobHandlerProxy(Object target) {
-        _gsonLogger = GsonHelper.getGsonLogger();
 
         buildLookupMap(target.getClass());
         _target = target;
@@ -123,10 +121,10 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
                 throw e;
             }
         } else {
-            logger.error("Unable to find handler for VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+            logger.error("Unable to find handler for VM work job: {} {}", work.getClass().getName(), work);
 
             RuntimeException ex = new RuntimeException("Unable to find handler for VM work job: " + work.getClass().getName());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
+            return new Pair<>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
         }
     }
 }
