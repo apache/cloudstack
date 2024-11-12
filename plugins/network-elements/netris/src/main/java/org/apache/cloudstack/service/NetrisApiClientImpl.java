@@ -444,10 +444,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 }
                 ipamAllocationId = new BigDecimal(ipamAllocation.getId());
             }
-            IpTreeSubnet exactSubnet = getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(ipamAllocationId, exactCidr, IpTreeSubnet.PurposeEnum.NAT, systemVpc);
+            IpTreeSubnet exactSubnet = getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(ipamAllocationId, exactCidr, IpTreeSubnet.PurposeEnum.COMMON, systemVpc);
             if (exactSubnet == null) {
                 String ipamSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, exactCidr);
-                createIpamSubnetInternal(ipamSubnetName, exactCidr, SubnetBody.PurposeEnum.NAT, systemVpc);
+                createIpamSubnetInternal(ipamSubnetName, exactCidr, SubnetBody.PurposeEnum.COMMON, systemVpc);
             }
         } catch (ApiException e) {
             String msg = String.format("Error setting up the Netris Public Range %s on super CIDR %s", exactCidr, superCidr);
