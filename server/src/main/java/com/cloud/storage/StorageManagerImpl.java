@@ -553,20 +553,29 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return answers[0];
     }
 
-    private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd) {
-        GetStorageStatsAnswer answer = null;
+    private Pair<Long, Long> getStoragePoolIopsStats(PrimaryDataStoreDriver primaryStoreDriver, StoragePool pool) {
+        Pair<Long, Long> result = primaryStoreDriver.getStorageIopsStats(pool);
+        if (result != null) {
+            return result;
+        }
+        Long usedIops = primaryStoreDriver.getUsedIops(pool);
+        if (usedIops <= 0) {
+            usedIops = null;
+        }
+        return new Pair<>(pool.getCapacityIops(), usedIops);
+    }
 
+    private GetStorageStatsAnswer getStoragePoolStats(StoragePool pool, GetStorageStatsCommand cmd) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
         PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver) storeDriver;
         Pair<Long, Long> storageStats = primaryStoreDriver.getStorageStats(pool);
         if (storageStats == null) {
-            answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, "Failed to get storage stats for pool: " + pool.getId());
-        } else {
-            answer = new GetStorageStatsAnswer((GetStorageStatsCommand) cmd, storageStats.first(), storageStats.second());
+            return new GetStorageStatsAnswer(cmd, "Failed to get storage stats for pool: " + pool.getId());
         }
-
-        return answer;
+        Pair<Long, Long> iopsStats = getStoragePoolIopsStats(primaryStoreDriver, pool);
+        return new GetStorageStatsAnswer(cmd, storageStats.first(), storageStats.second(),
+                iopsStats.first(), iopsStats.second());
     }
 
     @Override

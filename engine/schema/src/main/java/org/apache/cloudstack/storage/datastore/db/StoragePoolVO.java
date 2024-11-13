@@ -118,6 +118,9 @@ public class StoragePoolVO implements StoragePool {
     @Column(name = "capacity_iops", updatable = true, nullable = true)
     private Long capacityIops;
 
+    @Column(name = "used_iops", updatable = true, nullable = true)
+    private Long usedIops;
+
     @Column(name = "hypervisor")
     @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisor;
@@ -253,6 +256,14 @@ public class StoragePoolVO implements StoragePool {
     @Override
     public Long getCapacityIops() {
         return capacityIops;
+    }
+
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
     }
 
     @Override
