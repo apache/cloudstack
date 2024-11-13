@@ -40,12 +40,12 @@
               <template v-if="load.accounts" #notFoundContent>
                 <a-spin size="small" />
               </template>
-              <template v-if="!load.accounts" #option="item">
-                <span v-if="item.icon">
-                  <resource-icon :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <template v-if="!load.accounts" #option="account">
+                <span v-if="account.icon">
+                  <resource-icon :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
                 </span>
                 <block-outlined v-else style="margin-right: 5px" />
-                {{ item.value }}
+                {{ account.name }}
               </template>
             </a-auto-complete>
           </a-form-item>
@@ -126,12 +126,12 @@
                 <template v-if="load.users" #notFoundContent>
                   <a-spin size="small" />
                 </template>
-                <template v-if="!load.users" #option="item">
-                  <span v-if="item.icon">
-                    <resource-icon :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <template v-if="!load.users" #option="user">
+                  <span v-if="user.icon">
+                    <resource-icon :image="user.icon.base64image" size="1x" style="margin-right: 5px"/>
                   </span>
                   <block-outlined v-else style="margin-right: 5px" />
-                  {{ item.firstName + ' ' + item.lastName + " (" + item.value + ")" }}
+                  {{ user.firstName + ' ' + user.lastName + " (" + user.username + ")" }}
                 </template>
               </a-auto-complete>
           </a-form-item>
@@ -273,6 +273,7 @@ export default {
       return users.map(user => {
         return {
           value: user.username,
+          username: user.username,
           firstName: user.firstname,
           lastName: user.lastname,
           icon: user.icon
@@ -301,6 +302,7 @@ export default {
       return accounts.map(account => {
         return {
           value: account.name,
+          name: account.name,
           icon: account.icon
         }
       })
