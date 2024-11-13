@@ -32,10 +32,8 @@
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             </template>
             <a-auto-complete
-                show-search
                 v-model:value="form.account"
                 :placeholder="apiParams.addAccountToProject.account.description"
-                v-focus="true"
                 :filterOption="filterOption"
                 :options="accounts"
             >
@@ -278,19 +276,23 @@ export default {
         params.keyword = keyword
       }
       api('listAccounts', params).then(response => {
-        this.accounts = response.listaccountsresponse.account || []
-        if (this.accounts.length > 0) {
-          this.accounts = this.accounts.map(account => {
-            return {
-              value: account.name,
-              ...account
-            }
-          })
-        }
+        this.accounts = this.parseAccounts(response.listaccountsresponse.account)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.load.accounts = false
+      })
+    },
+    parseAccounts (accounts) {
+      if (!accounts) {
+        return []
+      }
+
+      return accounts.map(account => {
+        return {
+          value: account.name,
+          icon: account.icon
+        }
       })
     },
     fetchProjectRoles () {
