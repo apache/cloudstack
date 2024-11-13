@@ -117,27 +117,23 @@
             <template #label>
               <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addUserToProject.username.description"/>
             </template>
-              <a-select
-                show-search
+              <a-auto-complete
                 v-model:value="form.username"
                 :placeholder="apiParams.addUserToProject.username.description"
-                v-focus="true"
-                :filterOption="false"
-                @search="fetchUsers"
+                :filterOption="filterOption"
+                :options="users"
               >
                 <template v-if="load.users" #notFoundContent>
                   <a-spin size="small" />
                 </template>
-                <template v-if="!load.users">
-                  <a-select-option v-for="user in users" :key="user.username" :value="user.username">
-                    <span v-if="user.icon">
-                      <resource-icon :image="user.icon.base64image" size="1x" style="margin-right: 5px"/>
-                    </span>
-                    <block-outlined v-else style="margin-right: 5px" />
-                    {{ user.firstname + ' ' + user.lastname + " (" + user.username + ")" }}
-                  </a-select-option>
+                <template v-if="!load.users" #option="item">
+                  <span v-if="item.icon">
+                    <resource-icon :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  </span>
+                  <block-outlined v-else style="margin-right: 5px" />
+                  {{ item.firstName + ' ' + item.lastName + " (" + item.value + ")" }}
                 </template>
-              </a-select>
+              </a-auto-complete>
           </a-form-item>
           <a-form-item name="email" ref="email">
             <template #label>
@@ -262,11 +258,25 @@ export default {
         params.keyword = keyword
       }
       api('listUsers', params).then(response => {
-        this.users = response.listusersresponse.user ? response.listusersresponse.user : []
+        this.users = this.parseUsers(response?.listusersresponse?.user)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.load.users = false
+      })
+    },
+    parseUsers (users) {
+      if (!users) {
+        return []
+      }
+
+      return users.map(user => {
+        return {
+          value: user.username,
+          firstName: user.firstname,
+          lastName: user.lastname,
+          icon: user.icon
+        }
       })
     },
     fetchAccounts (keyword) {
