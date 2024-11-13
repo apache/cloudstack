@@ -22,6 +22,7 @@ import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.bgp.BGPService;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -76,9 +77,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.network.dao.BgpPeerDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -257,7 +257,7 @@ public class VirtualNetworkApplianceManagerImplTest {
     private VpcDao _vpcDao;
 
     @Mock
-    private BgpPeerDao bgpPeerDao;
+    private BGPService bgpService;
 
     //    @InjectMocks
     //    private VirtualNetworkApplianceManagerImpl virtualNetworkApplianceManagerImpl;
@@ -364,8 +364,8 @@ public class VirtualNetworkApplianceManagerImplTest {
         when(_networkDao.findById(guestNetworkId)).thenReturn(network);
         when(network.getVpcId()).thenReturn(null);
         when(routedIpv4Manager.isDynamicRoutedNetwork(network)).thenReturn(true);
-        List<BgpPeerVO> bgpPeers = Mockito.mock(List.class);
-        when(bgpPeerDao.listNonRevokeByNetworkId(guestNetworkId)).thenReturn(bgpPeers);
+        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+        doReturn(bgpPeers).when(bgpService).getBgpPeersForNetwork(network);
         virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
 
         Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
@@ -384,8 +384,8 @@ public class VirtualNetworkApplianceManagerImplTest {
         VpcVO vpc = Mockito.mock(VpcVO.class);
         when(_vpcDao.findById(vpcId)).thenReturn(vpc);
         when(routedIpv4Manager.isDynamicRoutedVpc(vpc)).thenReturn(true);
-        List<BgpPeerVO> bgpPeers = Mockito.mock(List.class);
-        when(bgpPeerDao.listNonRevokeByVpcId(vpcId)).thenReturn(bgpPeers);
+        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+        doReturn(bgpPeers).when(bgpService).getBgpPeersForVpc(vpc);
 
         virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
 

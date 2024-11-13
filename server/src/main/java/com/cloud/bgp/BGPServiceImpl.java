@@ -55,6 +55,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
@@ -395,19 +396,7 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers;
-                if (network.getVpcId() != null) {
-                    bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
-                } else {
-                    bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
-                }
-                if (CollectionUtils.isEmpty(bgpPeers)) {
-                    Account owner = accountDao.findByIdIncludingRemoved(network.getAccountId());
-                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, network.getDataCenterId());
-                    bgpPeers = bgpPeerIds.stream()
-                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
-                            .collect(Collectors.toList());
-                }
+                List<? extends BgpPeer> bgpPeers = getBgpPeersForNetwork(network);
                 LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(null, network, bgpPeers);
             }
@@ -424,19 +413,43 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
-                if (CollectionUtils.isEmpty(bgpPeers)) {
-                    Account owner = accountDao.findByIdIncludingRemoved(vpc.getAccountId());
-                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, vpc.getZoneId());
-                    bgpPeers = bgpPeerIds.stream()
-                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
-                            .collect(Collectors.toList());
-                }
+                List<? extends BgpPeer> bgpPeers = getBgpPeersForVpc(vpc);
                 LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(vpc, null, bgpPeers);
 
             }
         }
         return true;
+    }
+
+    @Override
+    public List<? extends BgpPeer> getBgpPeersForNetwork(Network network) {
+        List<BgpPeerVO> bgpPeers;
+        if (network.getVpcId() != null) {
+            bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
+        } else {
+            bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+        }
+        if (CollectionUtils.isEmpty(bgpPeers)) {
+            Account owner = accountDao.findByIdIncludingRemoved(network.getAccountId());
+            List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, network.getDataCenterId());
+            bgpPeers = bgpPeerIds.stream()
+                    .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                    .collect(Collectors.toList());
+        }
+        return bgpPeers;
+    }
+
+    @Override
+    public List<? extends BgpPeer> getBgpPeersForVpc(Vpc vpc) {
+        List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+        if (CollectionUtils.isEmpty(bgpPeers)) {
+            Account owner = accountDao.findByIdIncludingRemoved(vpc.getAccountId());
+            List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, vpc.getZoneId());
+            bgpPeers = bgpPeerIds.stream()
+                    .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                    .collect(Collectors.toList());
+        }
+        return bgpPeers;
     }
 }
