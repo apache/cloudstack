@@ -266,10 +266,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        logger.debug(
-                "Copying volume [id: {}, uuid: {}, type:{}] to [id: {} uuid: {}, type: {}]",
-                srcdata.getId(), srcdata.getUuid(), srcdata.getType(),
-                destData.getId(), destData.getUuid(), destData.getType());
+        logger.debug("Copying volume [{}] to [{}]", srcdata, destData);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcdata, destData);
         DataStore store = destData.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {

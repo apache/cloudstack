@@ -149,7 +149,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         }
 
         assert (answer instanceof ModifyStoragePoolAnswer) : String.format(
-                "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=%sHost=%d", pool, hostId);
+                "Well, now why won't you actually return the ModifyStoragePoolAnswer when it's ModifyStoragePoolCommand? Pool=%s Host=%d", pool, hostId);
         ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
         if (mspAnswer.getLocalDatastoreName() != null && pool.isShared()) {
             String datastoreName = mspAnswer.getLocalDatastoreName();
