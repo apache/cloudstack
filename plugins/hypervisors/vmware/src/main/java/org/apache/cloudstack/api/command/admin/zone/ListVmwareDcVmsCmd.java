@@ -70,6 +70,9 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
+    @Parameter(name = ApiConstants.MAX_NUMBER, type = CommandType.INTEGER, description = "The maximum number of results to return.")
+    private Integer maxNumber;
+
     public String getVcenter() {
         return vcenter;
     }
@@ -80,6 +83,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public Integer getMaxNumber() {
+        return maxNumber;
     }
 
     public String getDatacenterName() {
