@@ -39,6 +39,7 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
+import com.vmware.vim25.RetrieveOptions;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -161,9 +162,9 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter() throws Exception {
+    public List<UnmanagedInstanceTO> getVmsOnDatacenter(Integer maxObjects) throws Exception {
         List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
+        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects);
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
                 ManagedObjectReference vmMor = oc.getObj();
@@ -311,6 +312,10 @@ public class DatacenterMO extends BaseMO {
     }
 
     public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws Exception {
+        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null);
+    }
+
+    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects) throws Exception {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("VirtualMachine");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
@@ -338,10 +343,15 @@ public class DatacenterMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
-        return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+        RetrieveOptions ro = new RetrieveOptions();
+        if(maxObjects != null && maxObjects > 0) {
+            ro.setMaxObjects(maxObjects);
+        }
+
+        return _context.getService().retrievePropertiesEx(_context.getPropertyCollector(), pfSpecArr, ro).getObjects();
     }
 
     public static Pair<DatacenterMO, String> getOwnerDatacenter(VmwareContext context, ManagedObjectReference morEntity) throws Exception {
