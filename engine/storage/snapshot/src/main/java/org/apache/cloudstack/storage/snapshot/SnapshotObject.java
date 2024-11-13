@@ -469,7 +469,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String toString() {
-        return "VolumeObject{" +
+        return "SnapshotObject{" +
                 "snapshotVO=" + getSnapshotVO() +
                 ", dataStore=" + getDataStore() +
                 '}';

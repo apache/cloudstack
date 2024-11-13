@@ -155,7 +155,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         for (StoragePool pool : poolVolMap.keySet()) {
             activityStatus = verifyActivityOfStorageOnHost(poolVolMap, pool, agent, suspectTime, activityStatus);
             if (!activityStatus) {
-                logger.warn("It seems that the storage pool [{}] does not have activity on {}.", pool, agent.toString());
+                logger.warn("It seems that the storage pool [{}] does not have activity on {}.", pool, agent);
                 break;
             }
         }
@@ -180,7 +180,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
                 throw new IllegalStateException(message);
             }
         } catch (StorageUnavailableException e){
-            String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool, agent.toString());
+            String message = String.format("Storage [%s] is unavailable to do the check, probably the %s is not reachable.", pool, agent);
             logger.warn(message, e);
             throw new HACheckerException(message, e);
         }

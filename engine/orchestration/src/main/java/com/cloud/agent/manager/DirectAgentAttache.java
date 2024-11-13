@@ -116,7 +116,7 @@ public class DirectAgentAttache extends AgentAttache {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
             logger.info(
-                    "StartupAnswer received [id: {} name: {} Interval: {}]",
+                    "StartupAnswer received [id: {} name: {} interval: {}]",
                     startup.getHostId(), startup.getHostName(), interval);
             _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }

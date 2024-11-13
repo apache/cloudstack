@@ -599,7 +599,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String toString() {
-        return "VolumeObject{" +
+        return "TemplateObject{" +
                 "templateVO=" + getImage() +
                 ", dataStore=" + getDataStore() +
                 '}';

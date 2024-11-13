@@ -500,7 +500,6 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
 
         DataStore srcStore = Mockito.mock(DataStore.class);
-        when(srcStore.getId()).thenReturn(1L);
         DataTO volumeTO = Mockito.mock(DataTO.class);
         when(srcData.getDataStore()).thenReturn(srcStore);
         when(srcData.getTO()).thenReturn(volumeTO);
