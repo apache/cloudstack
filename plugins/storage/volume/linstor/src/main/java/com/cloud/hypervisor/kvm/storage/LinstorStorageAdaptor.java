@@ -407,7 +407,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 if (rsc.getFlags() != null &&
                         rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
                         !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
-                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName);
+                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName, true);
                     logLinstorAnswers(delAnswers);
                 }
             } catch (ApiException apiEx) {
