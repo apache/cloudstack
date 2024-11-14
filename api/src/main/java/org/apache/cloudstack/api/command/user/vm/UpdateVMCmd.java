@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.log4j.Logger;
@@ -151,6 +152,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     /////////////////////////////////////////////////////
 
     public String getDisplayName() {
+        if (StringUtils.isBlank(displayName)) {
+            displayName = name;
+        }
         return displayName;
     }
 
