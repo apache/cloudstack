@@ -21,11 +21,14 @@ import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
+import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.Snapshot;
@@ -34,6 +37,7 @@ import com.linbit.linstor.api.model.VolumeDefinition;
 import com.linbit.linstor.api.model.VolumeDefinitionModify;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.util.Arrays;
@@ -43,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -103,7 +108,10 @@ import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
+
+import java.nio.charset.StandardCharsets;
 
 public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(LinstorPrimaryDataStoreDriverImpl.class);
@@ -393,11 +401,56 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             storagePoolVO.getUserInfo() : "DfltRscGrp";
     }
 
+    /**
+     * Returns the layerlist of the resourceGroup with encryption(LUKS) added above STORAGE.
+     * If the resourceGroup layer list already contains LUKS this layer list will be returned.
+     * @param api Linstor developers API
+     * @param resourceGroup Resource group to get the encryption layer list
+     * @return layer list with LUKS added
+     */
+    public List<LayerType> getEncryptedLayerList(DevelopersApi api, String resourceGroup) {
+        try {
+            List<ResourceGroup> rscGrps = api.resourceGroupList(
+                    Collections.singletonList(resourceGroup), Collections.emptyList(), null, null);
+
+            if (CollectionUtils.isEmpty(rscGrps)) {
+                throw new CloudRuntimeException(
+                        String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+            }
+
+            final ResourceGroup rscGrp = rscGrps.get(0);
+            List<LayerType> layers = Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE);
+            List<String> curLayerStack = rscGrp.getSelectFilter() != null ?
+                    rscGrp.getSelectFilter().getLayerStack() : Collections.emptyList();
+            if (CollectionUtils.isNotEmpty(curLayerStack)) {
+                layers = curLayerStack.stream().map(LayerType::valueOf).collect(Collectors.toList());
+                if (!layers.contains(LayerType.LUKS)) {
+                    layers.add(layers.size() - 1, LayerType.LUKS); // lowest layer is STORAGE
+                }
+            }
+            return layers;
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(
+                    String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+        }
+    }
+
     private String createResourceBase(
-        String rscName, long sizeInBytes, String volName, String vmName, DevelopersApi api, String rscGrp) {
+            String rscName, long sizeInBytes, String volName, String vmName,
+            @Nullable Long passPhraseId, @Nullable byte[] passPhrase, DevelopersApi api, String rscGrp) {
         ResourceGroupSpawn rscGrpSpawn = new ResourceGroupSpawn();
         rscGrpSpawn.setResourceDefinitionName(rscName);
         rscGrpSpawn.addVolumeSizesItem(sizeInBytes / 1024);
+        if (passPhraseId != null) {
+            AutoSelectFilter asf = new AutoSelectFilter();
+            List<LayerType> luksLayers = getEncryptedLayerList(api, rscGrp);
+            asf.setLayerStack(luksLayers.stream().map(LayerType::toString).collect(Collectors.toList()));
+            rscGrpSpawn.setSelectFilter(asf);
+            if (passPhrase != null) {
+                String utf8Passphrase = new String(passPhrase, StandardCharsets.UTF_8);
+                rscGrpSpawn.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
+            }
+        }
 
         try
         {
@@ -422,7 +475,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         final String rscName = LinstorUtil.RSC_PREFIX + vol.getUuid();
         String deviceName = createResourceBase(
-            rscName, vol.getSize(), vol.getName(), vol.getAttachedVmName(), linstorApi, rscGrp);
+            rscName, vol.getSize(), vol.getName(), vol.getAttachedVmName(), vol.getPassphraseId(), vol.getPassphrase(),
+                linstorApi, rscGrp);
 
         try
         {
@@ -463,6 +517,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 s_logger.info("Clone resource definition " + cloneRes + " to " + rscName);
                 ResourceDefinitionCloneRequest cloneRequest = new ResourceDefinitionCloneRequest();
                 cloneRequest.setName(rscName);
+                if (volumeInfo.getPassphraseId() != null) {
+                    List<LayerType> encryptionLayer = getEncryptedLayerList(linstorApi, getRscGrp(storagePoolVO));
+                    cloneRequest.setLayerList(encryptionLayer);
+                    if (volumeInfo.getPassphrase() != null) {
+                        String utf8Passphrase = new String(volumeInfo.getPassphrase(), StandardCharsets.UTF_8);
+                        cloneRequest.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
+                    }
+                }
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
                     cloneRes, cloneRequest);
 
@@ -915,6 +977,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             tInfo.getSize(),
             tInfo.getName(),
             "",
+            null,
+            null,
             api,
             getRscGrp(pool));
 
