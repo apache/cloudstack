@@ -33,6 +33,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -75,6 +76,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected ExecutorService _executor;
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
+    protected Set<SocketChannel> socketChannels = new HashSet<>();
 
     public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
         _name = name;
@@ -230,6 +232,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                         link.setSSLEngine(sslEngine);
                         link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
                         final Task task = _factory.create(Task.Type.CONNECT, link, null);
+                        socketChannels.add(socketChannel);
                         registerLink(saddr, link);
                         _executor.submit(task);
                     } catch (IOException e) {
@@ -496,6 +499,16 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     /* Release the resource used by the instance */
     public void cleanUp() throws IOException {
+        for (SocketChannel channel : socketChannels) {
+            if (channel != null && channel.isOpen()) {
+                try {
+                    logger.info(String.format("Closing connection: %s", channel.getRemoteAddress()));
+                    channel.close();
+                } catch (IOException e) {
+                    logger.warn(String.format("Unable to close connection due to %s", e.getMessage()));
+                }
+            }
+        }
         if (_selector != null) {
             _selector.close();
         }
