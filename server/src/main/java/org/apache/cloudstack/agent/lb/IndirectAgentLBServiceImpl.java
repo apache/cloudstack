@@ -94,7 +94,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
     @Override
     public List<String> getManagementServerList(final Long hostId, final Long dcId, final List<Long> orderedHostIdList) {
-        return  getManagementServerList(hostId, dcId, orderedHostIdList, null);
+        return getManagementServerList(hostId, dcId, orderedHostIdList, null);
     }
 
     @Override
@@ -342,7 +342,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 Long lbCheckInterval = 0L;
                 if (lbAlgorithmChanged) {
                     // send new MS list when there is change in lb algorithm
-                    msList = getManagementServerList(host.getId(), dcId, orderedHostIdList);
+                    msList = getManagementServerList(host.getId(), dcId, orderedHostIdList, lbAlgorithm);
                     lbCheckInterval = getLBPreferredHostCheckInterval(host.getClusterId());
                 }
 
