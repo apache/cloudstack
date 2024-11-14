@@ -287,7 +287,7 @@ export default {
         params.keyword = keyword
       }
       api('listAccounts', params).then(response => {
-        this.accounts = this.parseAccounts(response.listaccountsresponse.account)
+        this.accounts = this.parseAccounts(response?.listaccountsresponse?.account)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
