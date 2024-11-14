@@ -1423,7 +1423,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     ManagementServerHostVO msHost = msHosts.get(_mshostCounter % msHosts.size());
                     _mshostCounter++;
 
-                    if (rebalanceAgent(host.getId(), Event.StartAgentRebalance, fromMsId, msHost.getMsid())) {
+                    _hostTransferDao.startAgentTransfering(host.getId(), fromMsId, msHost.getMsid());
+                    if (!rebalanceAgent(host.getId(), Event.StartAgentRebalance, fromMsId, msHost.getMsid())) {
                         agentTransferFailedCount++;
                     } else {
                         updateLastManagementServer(host.getId(), fromMsId);
@@ -1489,6 +1490,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         logger.debug("Management server maintenance enabled");
         s_transferExecutor.shutdownNow();
         cleanupTransferMap(_nodeId);
+        _agentLbHappened = false;
         super.onManagementServerMaintenance();
     }
 

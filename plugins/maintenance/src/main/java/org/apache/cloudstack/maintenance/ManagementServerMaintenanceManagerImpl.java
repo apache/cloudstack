@@ -84,7 +84,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     private long maintenanceStartTime = 0;
     private String lbAlgorithm;
 
-    private Timer timer = new Timer();
+    private Timer timer;
     private TimerTask pendingJobsTask;
 
     protected ManagementServerMaintenanceManagerImpl() {
@@ -261,10 +261,8 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     private void waitForPendingJobs() {
-        if (this.pendingJobsTask != null) {
-            this.pendingJobsTask.cancel();
-            this.pendingJobsTask = null;
-        }
+        cancelWaitForPendingJobs();
+        this.timer = new Timer();
         this.pendingJobsTask = new CheckPendingJobsTask(this);
         long pendingJobsCheckDelayInMs = 1000L; // 1 sec
         long pendingJobsCheckPeriodInMs = 3L * 1000; // every 3 secs, check more frequently for pending jobs
@@ -275,6 +273,10 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         if (this.pendingJobsTask != null) {
             this.pendingJobsTask.cancel();
             this.pendingJobsTask = null;
+        }
+        if (this.timer != null) {
+            this.timer.cancel();
+            this.timer = null;
         }
     }
 
@@ -534,13 +536,14 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
                 // No more pending jobs. Good to terminate
                 if (managementServerMaintenanceManager.isShutdownTriggered()) {
-                    logger.info("Shutting down now");
+                    logger.info("MS is Shutting Down Now");
                     // update state to down ?
                     System.exit(0);
                 }
                 if (managementServerMaintenanceManager.isPreparingForMaintenance()) {
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                     if (totalAgents == 0) {
+                        logger.info("MS is in Maintenance Mode");
                         msHostDao.updateState(msHost.getId(), State.Maintenance);
                         managementServerMaintenanceManager.onMaintenance();
                         this.cancel();
@@ -569,7 +572,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                         return;
                     }
                 } else if (managementServerMaintenanceManager.isPreparingForShutdown()) {
-                    logger.info("Ready to shutdown");
+                    logger.info("MS is Ready To Shutdown");
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                     msHostDao.updateState(msHost.getId(), State.ReadyToShutDown);
                     this.cancel();
