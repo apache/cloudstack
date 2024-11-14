@@ -188,14 +188,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot, String storageToString) {
-        long rootSnapshotId = getRootSnapshotId(snapshot);
         DataTO snapshotTo = snapshot.getTO();
         logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
 
         boolean result = false;
         boolean resultIsSet = false;
         try {
-            snapshotDao.acquireInLockTable(rootSnapshotId);
             do {
                 SnapshotInfo child = snapshot.getChild();
 
@@ -252,17 +250,23 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         } catch (Exception e) {
             logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
             throw new CloudRuntimeException("Failed to delete snapshot chain.");
-        } finally {
-            snapshotDao.releaseFromLockTable(rootSnapshotId);
         }
         return result;
     }
 
-    private Long getRootSnapshotId(SnapshotInfo snapshotInfo) {
-        while (snapshotInfo.getParent() != null) {
-            snapshotInfo = snapshotInfo.getParent();
+    private Long getRootSnapshotId(SnapshotVO snapshotVO) {
+        List<SnapshotDataStoreVO> snapshotDataStoreVOList = snapshotStoreDao.findBySnapshotId(snapshotVO.getSnapshotId());
+
+        long parentId = snapshotDataStoreVOList.stream().
+                map(SnapshotDataStoreVO::getParentSnapshotId).
+                filter(parentSnapshotId -> parentSnapshotId != 0).findFirst().orElse(0L);
+        while (parentId != 0) {
+            snapshotDataStoreVOList = snapshotStoreDao.findBySnapshotId(parentId);
+            parentId = snapshotDataStoreVOList.stream().
+                    map(SnapshotDataStoreVO::getParentSnapshotId).
+                    filter(parentSnapshotId -> parentSnapshotId != 0).findFirst().orElse(0L);
         }
-        return snapshotInfo.getSnapshotId();
+        return snapshotDataStoreVOList.get(0).getSnapshotId();
     }
 
     @Override
@@ -378,17 +382,22 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo, Long zoneId) {
-        List<SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), zoneId);
-        logger.debug("Found {} snapshot references to delete.", snapshotInfos);
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            long rootSnapshotId = getRootSnapshotId(snapshotVo);
+            snapshotDao.acquireInLockTable(rootSnapshotId);
 
-        boolean result = false;
-        for (var snapshotInfo : snapshotInfos) {
-            if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(snapshotInfo, snapshotVo), false)) {
-                result = true;
+            List<SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), zoneId);
+            logger.debug("Found {} snapshot references to delete.", snapshotInfos);
+
+            boolean result = false;
+            for (var snapshotInfo : snapshotInfos) {
+                if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(snapshotInfo, snapshotVo), false)) {
+                    result = true;
+                }
             }
-        }
-
-        return result;
+            snapshotDao.releaseFromLockTable(rootSnapshotId);
+            return result;
+        });
     }
 
     /**
@@ -406,7 +415,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
             }
             verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
-            if (Transaction.execute((TransactionCallback<Boolean>) status -> deleteSnapshotChain(snapshotInfo, storageToString))) {
+            if (deleteSnapshotChain(snapshotInfo, storageToString)) {
                 logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
             } else {
                 logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as hidden for future garbage collecting.", snapshotVo,

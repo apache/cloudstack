@@ -465,6 +465,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             case DELETESNAPSHOT:
             case TAKESNAPSHOT:
             case CONVERTSNAPSHOT:
+            case REMOVEBITMAP:
                 SnapshotInfo snapshotInfo = (SnapshotInfo) object;
                 if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
                     VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();

@@ -24,8 +24,11 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.ConvertSnapshotAnswer;
 import com.cloud.agent.api.ConvertSnapshotCommand;
+import com.cloud.agent.api.RemoveBitmapCommand;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -606,11 +609,15 @@ public class SnapshotServiceImpl implements SnapshotService {
     public boolean deleteSnapshot(SnapshotInfo snapInfo) {
         snapInfo.processEvent(ObjectInDataStoreStateMachine.Event.DestroyRequested);
 
-        if (Hypervisor.HypervisorType.KVM.equals(snapInfo.getHypervisorType())) {
+        if (Hypervisor.HypervisorType.KVM.equals(snapInfo.getHypervisorType()) &&
+                SnapshotManager.kvmIncrementalSnapshot.valueIn(hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()))) {
             SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findByStoreSnapshot(snapInfo.getDataStore().getRole(), snapInfo.getDataStore().getId(), snapInfo.getSnapshotId());
             String kvmCheckpointPath = snapshotDataStoreVo.getKvmCheckpointPath();
-            snapInfo.setCheckpointPath(kvmCheckpointPath);
-            snapInfo.setKvmIncrementalSnapshot(kvmCheckpointPath != null);
+            if (kvmCheckpointPath != null) {
+                snapInfo.setCheckpointPath(kvmCheckpointPath);
+                snapInfo.setKvmIncrementalSnapshot(true);
+                deleteBitmap(snapInfo);
+            }
         }
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
@@ -634,6 +641,21 @@ public class SnapshotServiceImpl implements SnapshotService {
         }
 
         return false;
+    }
+
+    protected void deleteBitmap (SnapshotInfo snapshotInfo) {
+        if (snapshotInfo.getBaseVolume() == null) {
+            return;
+        }
+        RemoveBitmapCommand cmd = new RemoveBitmapCommand((SnapshotObjectTO) snapshotInfo.getTO(),
+                snapshotInfo.getBaseVolume().getAttachedVM().getState().equals(VirtualMachine.State.Running));
+        EndPoint ep = epSelector.select(snapshotInfo, StorageAction.REMOVEBITMAP);
+
+        Answer answer = ep.sendMessage(cmd);
+        if (!answer.getResult()) {
+            logger.error("Unable to remove bitmap associated with snapshot {} due to {}.", answer.getDetails());
+            throw new CloudRuntimeException(String.format("Unable to remove bitmap associated with snapshot [%s].", snapshotInfo.getName()));
+        }
     }
 
     @Override

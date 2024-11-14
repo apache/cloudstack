@@ -110,6 +110,10 @@ public class QemuImg {
         }
     }
 
+    public enum BitmapOperation {
+        Add, Remove, Clear, Enable, Disable, Merge
+    }
+
     /**
      * Create a QemuImg object that supports skipping target zeroes
      * We detect this support via qemu-img help since support can
@@ -894,5 +898,40 @@ public class QemuImg {
         }
 
         return result;
+    }
+
+
+    /**
+     * Perform one or more modifications of the persistent bitmap in {@code srcFile}
+     * <br>
+     * This method is a facade for 'qemu-img bitmap'.
+     * <br>
+     * Currently only the {@link BitmapOperation#Remove} is implemented
+     *
+     * @param bitmapOperation
+     *         The operation to be performed
+     * @param srcfile
+     *         The src file where the operation will be performed
+     * @param bitmapName
+     *         The name of the bitmap
+     */
+    public void bitmap(BitmapOperation bitmapOperation, QemuImgFile srcfile, String bitmapName) throws QemuImgException {
+        if (bitmapOperation != BitmapOperation.Remove) {
+            throw new QemuImgException("Operation not implemented.");
+        }
+        removeBitmap(srcfile, bitmapName);
+    }
+
+    private void removeBitmap(QemuImgFile srcFile, String bitmapName) throws QemuImgException {
+        final Script script = new Script(_qemuImgPath);
+        script.add("bitmap");
+        script.add("--remove");
+        script.add(srcFile.getFileName());
+        script.add(bitmapName);
+
+        String result = script.execute();
+        if (result != null) {
+            throw new QemuImgException(String.format("Exception while removing bitmap [%s] from file [%s]. Result is [%s].", srcFile.getFileName(), bitmapName, result));
+        }
     }
 }

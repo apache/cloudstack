@@ -39,6 +39,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.libvirt.LibvirtException;
 
 import java.io.File;
+import java.util.Set;
 
 @ResourceWrapper(handles = ConvertSnapshotCommand.class)
 public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<ConvertSnapshotCommand, Answer, LibvirtComputingResource> {
@@ -57,9 +58,10 @@ public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<Convert
 
         String secondaryStoragePoolUrl = nfsImageStore.getUrl();
 
+        Set<KVMStoragePool> storagePoolSet = null;
         try {
             KVMStoragePool secondaryStorage = serverResource.getStoragePoolMgr().getStoragePoolByURI(secondaryStoragePoolUrl);
-            serverResource.connectToAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
+            storagePoolSet =  serverResource.connectToAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
 
             String snapshotRelativePath = snapshotObjectTO.getPath();
             String snapshotPath = secondaryStorage.getLocalPathFor(snapshotRelativePath);
@@ -92,7 +94,9 @@ public class LibvirtConvertSnapshotCommandWrapper extends CommandWrapper<Convert
             logger.error(String.format("Failed to convert snapshot [%s] due to %s.", snapshotObjectTO, ex.getMessage()), ex);
             return new Answer(command, ex);
         } finally {
-            serverResource.disconnectAllVolumeSnapshotSecondaryStorages(snapshotObjectTO.getVolume());
+            if (storagePoolSet != null) {
+                serverResource.disconnectAllVolumeSnapshotSecondaryStorages(storagePoolSet);
+            }
         }
     }
 }

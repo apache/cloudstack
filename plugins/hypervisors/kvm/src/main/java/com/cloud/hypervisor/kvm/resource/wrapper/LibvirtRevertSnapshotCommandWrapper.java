@@ -165,8 +165,9 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         String snapshotPath = resultGetSnapshot.first();
         SnapshotObjectTO snapshotToPrint = resultGetSnapshot.second();
 
+        Set<KVMStoragePool> storagePoolSet = null;
         if (kvmStoragePoolSecondary != null) {
-            resource.connectToAllVolumeSnapshotSecondaryStorages(volumeObjectTo);
+            storagePoolSet = resource.connectToAllVolumeSnapshotSecondaryStorages(volumeObjectTo);
         }
 
         logger.debug(String.format("Reverting volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
@@ -177,8 +178,8 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         } catch (LibvirtException | QemuImgException ex) {
             throw new CloudRuntimeException(String.format("Unable to revert volume [%s] to snapshot [%s] due to [%s].", volumeObjectTo, snapshotToPrint, ex.getMessage()), ex);
         } finally {
-            if (kvmStoragePoolSecondary != null) {
-                resource.disconnectAllVolumeSnapshotSecondaryStorages(volumeObjectTo);
+            if (storagePoolSet != null) {
+                resource.disconnectAllVolumeSnapshotSecondaryStorages(storagePoolSet);
             }
         }
     }

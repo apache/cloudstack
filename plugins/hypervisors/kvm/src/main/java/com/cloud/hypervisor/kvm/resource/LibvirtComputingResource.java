@@ -4700,23 +4700,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (CollectionUtils.isEmpty(volume.getCheckpointPaths())) {
                 continue;
             }
-            connectToAllVolumeSnapshotSecondaryStorages(volume);
+            Set<KVMStoragePool> storagePoolSet = connectToAllVolumeSnapshotSecondaryStorages(volume);
             recreateCheckpointsOfDisk(vmName, volume, mapDiskToDiskDef);
-            disconnectAllVolumeSnapshotSecondaryStorages(volume);
+            disconnectAllVolumeSnapshotSecondaryStorages(storagePoolSet);
         }
         logger.debug("Successfully recreated all checkpoints on VM [{}].", vmName);
         return true;
     }
 
-    public void connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
-        volumeObjectTO.getCheckpointImageStoreUrls().forEach(uri -> getStoragePoolMgr().getStoragePoolByURI(uri));
+    public Set<KVMStoragePool> connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
+        return volumeObjectTO.getCheckpointImageStoreUrls().stream().map(uri -> getStoragePoolMgr().getStoragePoolByURI(uri)).collect(Collectors.toSet());
     }
 
-    public void disconnectAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
-        volumeObjectTO.getCheckpointImageStoreUrls().forEach(uri -> {
-            KVMStoragePool storage = getStoragePoolMgr().getStoragePoolByURI(uri);
-            getStoragePoolMgr().deleteStoragePool(storage.getType(), storage.getUuid());
-        });
+    public void disconnectAllVolumeSnapshotSecondaryStorages(Set<KVMStoragePool> kvmStoragePools) {
+        kvmStoragePools.forEach(storage -> getStoragePoolMgr().deleteStoragePool(storage.getType(), storage.getUuid()));
     }
 
 
