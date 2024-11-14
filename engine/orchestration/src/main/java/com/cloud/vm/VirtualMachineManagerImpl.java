@@ -1321,7 +1321,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
                                 logger.error("Unable to transition to a new state. VM uuid: {}, VM oldstate: {}, Event: {}", vm, vm.getState(), Event.OperationSucceeded);
-                                throw new ConcurrentOperationException("Failed to deploy VM"+ vm);
+                                throw new ConcurrentOperationException(String.format("Failed to deploy VM %s", vm));
                             }
 
                             final GPUDeviceTO gpuDevice = startAnswer.getVirtualMachine().getGpuDevice();
@@ -2125,7 +2125,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             HostVO host = _hostDao.findById(hostId);
             if (!cleanUpEvenIfUnableToStop && vm.getState() == State.Running && host.getResourceState() == ResourceState.PrepareForMaintenance) {
                 logger.debug("Host is in PrepareForMaintenance state - Stop VM operation on the VM: {} is not allowed", vm);
-                throw new CloudRuntimeException(String.format("Stop VM operation on the VM id%s is not allowed as host is preparing for maintenance mode", vm));
+                throw new CloudRuntimeException(String.format("Stop VM operation on the VM %s is not allowed as host is preparing for maintenance mode", vm));
             }
         }
 
