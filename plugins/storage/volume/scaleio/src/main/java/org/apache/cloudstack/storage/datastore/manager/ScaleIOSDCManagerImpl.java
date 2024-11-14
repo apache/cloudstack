@@ -203,7 +203,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     }
 
     private String prepareSDCOnHost(Host host, DataStore dataStore, String systemId) {
-        logger.debug("Preparing SDC on the host {}", host.toString());
+        logger.debug("Preparing SDC on the host {}", host);
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
         PrepareStorageClientCommand cmd = new PrepareStorageClientCommand(((PrimaryDataStore) dataStore).getPoolType(), dataStore.getUuid(), details);
