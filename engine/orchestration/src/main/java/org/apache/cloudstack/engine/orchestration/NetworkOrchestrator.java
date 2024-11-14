@@ -1786,13 +1786,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // apply public load balancer rules
-        if (!_lbMgr.applyLoadBalancersForNetwork(networkId, Scheme.Public)) {
+        if (!_lbMgr.applyLoadBalancersForNetwork(network, Scheme.Public)) {
             logger.warn("Failed to reapply Public load balancer rules as a part of network {} restart", network);
             success = false;
         }
 
         // apply internal load balancer rules
-        if (!_lbMgr.applyLoadBalancersForNetwork(networkId, Scheme.Internal)) {
+        if (!_lbMgr.applyLoadBalancersForNetwork(network, Scheme.Internal)) {
             logger.warn("Failed to reapply internal load balancer rules as a part of network {} restart", network);
             success = false;
         }
@@ -1975,7 +1975,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (services.contains(Service.Firewall.getName())) {
             //revoke all firewall rules for the network
             try {
-                if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, userId, caller)) {
+                if (_firewallMgr.revokeAllFirewallRulesForNetwork(network, userId, caller)) {
                     logger.debug("Successfully cleaned up firewallRules rules for network {}", network);
                 } else {
                     logger.warn("Failed to cleanup Firewall rules as a part of network {} cleanup", network);
@@ -3260,7 +3260,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
             if (cleanupNeeded) {
-                cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());
+                cleanupResult = shutdownNetworkResources(network, context.getAccount(), context.getCaller().getId());
             }
         } catch (final Exception ex) {
             logger.warn("shutdownNetworkRules failed during the network {} shutdown due to", network, ex);
@@ -4017,7 +4017,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //revoke all firewall rules for the network
         try {
-            if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, callerUserId, caller)) {
+            if (_firewallMgr.revokeAllFirewallRulesForNetwork(network, callerUserId, caller)) {
                 logger.debug("Successfully cleaned up firewallRules rules for network {}", network);
             } else {
                 success = false;
@@ -4057,7 +4057,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     logger.debug("Portable IP address {} is no longer associated with any network", ipToRelease);
                 }
             } else {
-                _vpcMgr.unassignIPFromVpcNetwork(ipToRelease.getId(), network.getId());
+                _vpcMgr.unassignIPFromVpcNetwork(ipToRelease, network);
             }
         }
 
@@ -4075,13 +4075,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
-    private boolean shutdownNetworkResources(final long networkId, final Account caller, final long callerUserId) {
+    private boolean shutdownNetworkResources(final Network network, final Account caller, final long callerUserId) {
         // This method cleans up network rules on the backend w/o touching them in the DB
         boolean success = true;
-        final Network network = _networksDao.findById(networkId);
 
         // Mark all PF rules as revoked and apply them on the backend (not in the DB)
-        final List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(networkId);
+        final List<PortForwardingRuleVO> pfRules = _portForwardingRulesDao.listByNetwork(network.getId());
         logger.debug("Releasing {} port forwarding rules for network id={} as a part of shutdownNetworkRules.", pfRules.size(), network);
 
         for (final PortForwardingRuleVO pfRule : pfRules) {
@@ -4100,7 +4099,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // Mark all static rules as revoked and apply them on the backend (not in the DB)
-        final List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.StaticNat);
+        final List<FirewallRuleVO> firewallStaticNatRules = _firewallDao.listByNetworkAndPurpose(network.getId(), Purpose.StaticNat);
         final List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
         logger.debug("Releasing {} static nat rules for network {} as a part of shutdownNetworkRules", firewallStaticNatRules.size(), network);
 
@@ -4129,7 +4128,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         try {
-            if (!_lbMgr.revokeLoadBalancersForNetwork(networkId, Scheme.Public)) {
+            if (!_lbMgr.revokeLoadBalancersForNetwork(network, Scheme.Public)) {
                 logger.warn("Failed to cleanup public lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -4139,7 +4138,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         try {
-            if (!_lbMgr.revokeLoadBalancersForNetwork(networkId, Scheme.Internal)) {
+            if (!_lbMgr.revokeLoadBalancersForNetwork(network, Scheme.Internal)) {
                 logger.warn("Failed to cleanup internal lb rules as a part of shutdownNetworkRules");
                 success = false;
             }
@@ -4149,7 +4148,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         // revoke all firewall rules for the network w/o applying them on the DB
-        final List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+        final List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(network.getId(), Purpose.Firewall, FirewallRule.TrafficType.Ingress);
         logger.debug("Releasing firewall ingress rules for network {} as a part of shutdownNetworkRules", firewallRules.size(), network);
 
         for (final FirewallRuleVO firewallRule : firewallRules) {
@@ -4167,7 +4166,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             success = false;
         }
 
-        final List<FirewallRuleVO> firewallEgressRules = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        final List<FirewallRuleVO> firewallEgressRules = _firewallDao.listByNetworkPurposeTrafficType(network.getId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
         logger.debug("Releasing {} firewall egress rules for network {} as a part of shutdownNetworkRules", firewallEgressRules.size(), network);
 
         try {
@@ -4176,7 +4175,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
                     && (network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
                 // add default egress rule to accept the traffic
-                _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), _networkModel.getNetworkEgressDefaultPolicy(networkId), false);
+                _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), _networkModel.getNetworkEgressDefaultPolicy(network.getId()), false);
             }
 
         } catch (final ResourceUnavailableException ex) {
@@ -4204,7 +4203,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             try {
                 //revoke all Network ACLs for the network w/o applying them in the DB
-                if (!_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
+                if (!_networkACLMgr.revokeACLItemsForNetwork(network.getId())) {
                     logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
                     success = false;
                 }
@@ -4216,13 +4215,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //release all static nats for the network
-        if (!_rulesMgr.applyStaticNatForNetwork(networkId, false, caller, true)) {
+        if (!_rulesMgr.applyStaticNatForNetwork(network.getId(), false, caller, true)) {
             logger.warn("Failed to disable static nats as part of shutdownNetworkRules for network {}", network);
             success = false;
         }
 
         // Get all ip addresses, mark as releasing and release them on the backend
-        final List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
+        final List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
         final List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (final IPAddressVO userIp : userIps) {

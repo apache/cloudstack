@@ -314,7 +314,7 @@ public class LoadBalanceRuleHandler {
         final IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipvo.getId(), ipvo);
-        _ipAddrMgr.disassociatePublicIpAddress(ipId, userId, caller);
+        _ipAddrMgr.disassociatePublicIpAddress(ipvo, userId, caller);
         _ipAddressDao.unassignIpAddress(ipId);
     }
 

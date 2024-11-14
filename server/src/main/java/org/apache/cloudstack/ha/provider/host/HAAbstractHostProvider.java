@@ -72,7 +72,7 @@ public abstract class HAAbstractHostProvider extends AdapterBase implements HAPr
     public void fenceSubResources(final Host r) {
         if (r.getState() != Status.Down) {
             try {
-                logger.debug("Trying to disconnect the host without investigation and scheduling HA for the VMs on host id=" + r.getId());
+                logger.debug("Trying to disconnect the host without investigation and scheduling HA for the VMs on host {}", r);
                 agentManager.disconnectWithoutInvestigation(r.getId(), Event.HostDown);
                 oldHighAvailabilityManager.scheduleRestartForVmsOnHost((HostVO)r, true);
             } catch (Exception e) {

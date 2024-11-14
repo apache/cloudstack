@@ -577,7 +577,7 @@ public class NetworkServiceImplTest {
         if(ipv6 && Network.GuestType.Isolated.equals(guestType)) {
             Mockito.when(networkOfferingDao.isIpv6Supported(networkOfferingId)).thenReturn(true);
             try {
-                Mockito.when(ipv6Service.preAllocateIpv6SubnetForNetwork(Mockito.anyLong())).thenReturn(new Pair<>(IP6_GATEWAY, IP6_CIDR));
+                Mockito.when(ipv6Service.preAllocateIpv6SubnetForNetwork(Mockito.any())).thenReturn(new Pair<>(IP6_GATEWAY, IP6_CIDR));
             } catch (ResourceAllocationException e) {
                 Assert.fail(String.format("failure with exception: %s", e.getMessage()));
             }

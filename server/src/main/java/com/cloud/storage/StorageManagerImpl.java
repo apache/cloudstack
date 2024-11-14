@@ -1783,7 +1783,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
                             }
                         } catch (Exception e) {
-                            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshotDataStoreVO, e.getMessage());
+                            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage());
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Failed to delete snapshot [{}] from storage.", snapshot, e);
                             }

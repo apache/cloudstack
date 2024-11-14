@@ -546,7 +546,7 @@ public class UserVmManagerImplTest {
     private void configureValidateOrReplaceMacAddressTest(int times, String macAddress, String expectedMacAddress) throws InsufficientAddressCapacityException {
         Mockito.when(networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(expectedMacAddress);
 
-        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, 1l);
+        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, _networkMock);
 
         Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         assertEquals(expectedMacAddress, returnedMacAddress);

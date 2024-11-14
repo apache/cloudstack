@@ -772,7 +772,6 @@ public class UserVmManagerTest {
     @Test
     public void testApplyUserDataInNetworkWithoutUserDataSupport() throws Exception {
         UserVm userVm = mock(UserVm.class);
-        when(userVm.getId()).thenReturn(1L);
 
         when(_nicMock.getNetworkId()).thenReturn(2L);
         when(_networkMock.getNetworkOfferingId()).thenReturn(3L);

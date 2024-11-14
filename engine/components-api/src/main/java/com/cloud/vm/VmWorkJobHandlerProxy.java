@@ -26,9 +26,7 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
 
 /**
  * VmWorkJobHandlerProxy can not be used as standalone due to run-time

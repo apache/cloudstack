@@ -194,7 +194,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     HostDao _hostDao;
     @Inject
-    private PrimaryDataStoreDao storagePoolDao;
+    PrimaryDataStoreDao storagePoolDao;
     @Inject
     private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject

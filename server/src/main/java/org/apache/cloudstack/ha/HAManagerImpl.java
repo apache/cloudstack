@@ -294,7 +294,7 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
 
             if (!host.getHypervisorType().toString().equals(haProvider.resourceSubType().toString())) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getId(),host.getHypervisorType()));
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Incompatible haprovider provided [%s] for the resource [%s] of hypervisor type: [%s].", haProvider.resourceSubType().toString(), host.getUuid(), host.getHypervisorType()));
             }
         }
     }
@@ -307,10 +307,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                logger.debug(String.format("HA: Host [%s] is fenced.", host.getId()));
+                logger.debug("HA: Host [{}] is fenced.", host);
                 return false;
             }
-            logger.debug(String.format("HA: Host [%s] is alive.", host.getId()));
+            logger.debug("HA: Host [{}] is alive.", host);
             return true;
         }
         throw new Investigator.UnknownVM();
@@ -320,10 +320,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
         final HAConfig haConfig = haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host);
         if (haConfig != null) {
             if (haConfig.getState() == HAConfig.HAState.Fenced) {
-                logger.debug(String.format("HA: Agent [%s] is available/suspect/checking Up.", host.getId()));
+                logger.debug("HA: Agent [{}] is available/suspect/checking Up.", host);
                 return Status.Down;
             } else if (haConfig.getState() == HAConfig.HAState.Degraded || haConfig.getState() == HAConfig.HAState.Recovering || haConfig.getState() == HAConfig.HAState.Fencing) {
-                logger.debug(String.format("HA: Agent [%s] is disconnected. State: %s, %s.", host.getId(), haConfig.getState(), haConfig.getState().getDescription()));
+                logger.debug("HA: Agent [{}] is disconnected. State: {}, {}.", host, haConfig.getState(), haConfig.getState().getDescription());
                 return Status.Disconnected;
             }
             return Status.Up;
