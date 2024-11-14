@@ -183,8 +183,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> listIdServiceOfferingForVmsMigratingFromHost(Long hostId);
 
-    List<VMInstanceVO> listIdServiceOfferingForVmsByLastHostId(Long hostId);
-
     Map<String, Long> getNameIdMapForVmInstanceNames(Collection<String> names);
 
     Map<String, Long> getNameIdMapForVmIds(Collection<Long> ids);

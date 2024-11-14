@@ -1199,14 +1199,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listIdServiceOfferingForVmsByLastHostId(Long hostId) {
-        SearchCriteria<VMInstanceVO> sc = IdServiceOfferingIdSelectSearch.create();
-        sc.setParameters("lastHost", hostId);
-        sc.setParameters("state", State.Stopped);
-        return customSearch(sc, null);
-    }
-
-    @Override
     public Map<String, Long> getNameIdMapForVmInstanceNames(Collection<String> names) {
         SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
         sb.and("name", sb.entity().getInstanceName(), Op.IN);
