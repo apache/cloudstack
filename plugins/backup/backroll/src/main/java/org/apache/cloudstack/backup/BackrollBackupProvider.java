@@ -168,34 +168,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
-        logger.info("Removing VM ID {} from Backrool backup offering ", vm.getUuid());
-
-        boolean isAnyProblemWhileRemovingBackups = false;
-
-        List<Backup> backupsInCs = backupDao.listByVmId(null, vm.getId());
-
-        for (Backup backup : backupsInCs) {
-            logger.debug("Trying to remove backup with id {}", backup.getId());
-
-            try {
-                if (getClient(backup.getZoneId()).deleteBackup(vm.getUuid(), getBackupName(backup))) {
-                    logger.info("Backup {} deleted in Backroll for virtual machine {}", backup.getId(), vm.getName());
-                    if (!backupDao.remove(backup.getId())){
-                        isAnyProblemWhileRemovingBackups = true;
-                    }
-                    logger.info("Backup {} deleted in CS for virtual machine {}", backup.getId(), vm.getName());
-                } else {
-                    isAnyProblemWhileRemovingBackups = false;
-                }
-            } catch (KeyManagementException | NoSuchAlgorithmException | IOException e) {
-                throw new CloudRuntimeException("Failed to remove VM from backup offering");
-            }
-        }
-
-        if (isAnyProblemWhileRemovingBackups) {
-            logger.info("Problems occured while removing some backups for virtual machine {}", vm.getName());
-        }
-        return isAnyProblemWhileRemovingBackups;
+        return true;
     }
 
     @Override
