@@ -87,7 +87,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
+            :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"

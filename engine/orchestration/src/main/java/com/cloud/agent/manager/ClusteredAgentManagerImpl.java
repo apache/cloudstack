@@ -184,6 +184,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         _timer.schedule(new DirectAgentScanTimerTask(), STARTUP_DELAY, ScanInterval.value());
         logger.debug("Scheduled direct agent scan task to run at an interval of {} seconds", ScanInterval.value());
 
+        ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
+        if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
+            s_transferExecutor.shutdownNow();
+            cleanupTransferMap(_nodeId);
+            return true;
+        }
+
         // Schedule tasks for agent rebalancing
         if (isAgentRebalanceEnabled()) {
             cleanupTransferMap(_nodeId);
