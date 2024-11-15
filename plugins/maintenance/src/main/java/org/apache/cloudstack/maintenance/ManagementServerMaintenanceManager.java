@@ -86,6 +86,8 @@ public interface ManagementServerMaintenanceManager {
 
     void cancelPreparingForMaintenance(ManagementServerHostVO msHost);
 
+    void cancelWaitForPendingJobs();
+
     // Returns whether the any of the ms can be shut down and if a shutdown has been triggered on any running ms
     ManagementServerMaintenanceResponse readyForShutdown(ReadyForShutdownCmd cmd);
 

@@ -20,8 +20,9 @@ package org.apache.cloudstack.maintenance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -37,6 +38,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.maintenance.command.CancelMaintenanceManagementServerHostCommand;
 import org.apache.cloudstack.maintenance.command.CancelShutdownManagementServerHostCommand;
@@ -56,6 +58,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 
@@ -84,8 +87,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     private long maintenanceStartTime = 0;
     private String lbAlgorithm;
 
-    private Timer timer;
-    private TimerTask pendingJobsTask;
+    private ScheduledExecutorService pendingJobsCheckTask;
 
     protected ManagementServerMaintenanceManagerImpl() {
         super();
@@ -262,21 +264,17 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
     private void waitForPendingJobs() {
         cancelWaitForPendingJobs();
-        this.timer = new Timer();
-        this.pendingJobsTask = new CheckPendingJobsTask(this);
-        long pendingJobsCheckDelayInMs = 1000L; // 1 sec
-        long pendingJobsCheckPeriodInMs = 3L * 1000; // every 3 secs, check more frequently for pending jobs
-        timer.scheduleAtFixedRate(pendingJobsTask, pendingJobsCheckDelayInMs, pendingJobsCheckPeriodInMs);
+        pendingJobsCheckTask = Executors.newScheduledThreadPool(1, new NamedThreadFactory("PendingJobsCheck"));
+        long pendingJobsCheckDelayInSecs = 1L; // 1 sec
+        long pendingJobsCheckPeriodInSecs = 3L; // every 3 secs, check more frequently for pending jobs
+        pendingJobsCheckTask.scheduleAtFixedRate(new CheckPendingJobsTask(this), pendingJobsCheckDelayInSecs, pendingJobsCheckPeriodInSecs, TimeUnit.SECONDS);
     }
 
-    private void cancelWaitForPendingJobs() {
-        if (this.pendingJobsTask != null) {
-            this.pendingJobsTask.cancel();
-            this.pendingJobsTask = null;
-        }
-        if (this.timer != null) {
-            this.timer.cancel();
-            this.timer = null;
+    @Override
+    public void cancelWaitForPendingJobs() {
+        if (pendingJobsCheckTask != null) {
+            pendingJobsCheckTask.shutdown();
+            pendingJobsCheckTask = null;
         }
     }
 
@@ -497,7 +495,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         };
     }
 
-    private final class CheckPendingJobsTask extends TimerTask {
+    private final class CheckPendingJobsTask extends ManagedContextRunnable {
 
         private ManagementServerMaintenanceManager managementServerMaintenanceManager;
         private boolean agentsTransferTriggered = false;
@@ -507,19 +505,19 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         @Override
-        public void run() {
+        protected void runInContext() {
             try {
                 // If the maintenance or shutdown has been cancelled
                 if (!(managementServerMaintenanceManager.isPreparingForMaintenance() || managementServerMaintenanceManager.isPreparingForShutdown())) {
                     logger.info("Maintenance/Shutdown cancelled, terminating the pending jobs check timer task");
-                    this.cancel();
+                    managementServerMaintenanceManager.cancelWaitForPendingJobs();
                     return;
                 }
 
                 if (managementServerMaintenanceManager.isPreparingForMaintenance() && isMaintenanceWindowExpired()) {
                     logger.debug("Maintenance window timeout, terminating the pending jobs check timer task");
                     managementServerMaintenanceManager.cancelPreparingForMaintenance(null);
-                    this.cancel();
+                    managementServerMaintenanceManager.cancelWaitForPendingJobs();
                     return;
                 }
 
@@ -546,7 +544,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                         logger.info("MS is in Maintenance Mode");
                         msHostDao.updateState(msHost.getId(), State.Maintenance);
                         managementServerMaintenanceManager.onMaintenance();
-                        this.cancel();
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
                         return;
                     }
 
@@ -561,21 +559,21 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                     if (!agentsMigrated) {
                         logger.warn(String.format("Unable to prepare for maintenance, cannot migrate indirect agents on this management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
                         managementServerMaintenanceManager.cancelPreparingForMaintenance(msHost);
-                        this.cancel();
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
                         return;
                     }
 
                     if(!agentMgr.transferDirectAgentsFromMS(msHost.getUuid(), ManagementServerNode.getManagementServerId(), remainingMaintenanceWindowInMs())) {
                         logger.warn(String.format("Unable to prepare for maintenance, cannot transfer direct agents on this management server node %d (id: %s)", ManagementServerNode.getManagementServerId(), msHost.getUuid()));
                         managementServerMaintenanceManager.cancelPreparingForMaintenance(msHost);
-                        this.cancel();
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
                         return;
                     }
                 } else if (managementServerMaintenanceManager.isPreparingForShutdown()) {
                     logger.info("MS is Ready To Shutdown");
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                     msHostDao.updateState(msHost.getId(), State.ReadyToShutDown);
-                    this.cancel();
+                    managementServerMaintenanceManager.cancelWaitForPendingJobs();
                     return;
                 }
             } catch (final Exception e) {
