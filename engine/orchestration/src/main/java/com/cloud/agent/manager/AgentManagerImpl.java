@@ -741,6 +741,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public boolean start() {
         ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
         if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
+            _monitorExecutor.shutdownNow();
             return true;
         }
 
