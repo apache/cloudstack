@@ -96,7 +96,6 @@
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
                         </span>
-                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -313,7 +312,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'guestiptype'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -335,9 +334,9 @@ export default {
       return arrayField
     },
     fetchStaticFieldData (arrayField) {
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -982,7 +981,7 @@ export default {
     },
     fetchGuestNetworkTypes () {
       const types = []
-      if (this.apiName.indexOf('listNetworks') > -1) {
+      if (['listNetworks', 'listNetworkOfferings'].includes(this.apiName)) {
         types.push({
           id: 'Isolated',
           name: 'label.isolated'
