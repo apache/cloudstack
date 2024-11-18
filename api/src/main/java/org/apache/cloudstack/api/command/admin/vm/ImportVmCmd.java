@@ -158,7 +158,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private Long convertStoragePoolId;
 
     @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
-            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to import VM file(s) to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
     private Boolean forceMsToImportVmFiles;
 
     /////////////////////////////////////////////////////

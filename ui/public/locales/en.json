@@ -923,7 +923,7 @@
 "label.for": "for",
 "label.forbidden": "Forbidden",
 "label.forced": "Force",
-"label.force.ms.to.import.vm.files": "Force MS to import VM file(s) to temporary storage",
+"label.force.ms.to.import.vm.files": "Force MS to export OVF from VMware to temporary storage",
 "label.force.stop": "Force stop",
 "label.force.reboot": "Force reboot",
 "label.forceencap": "Force UDP encapsulation of ESP packets",
