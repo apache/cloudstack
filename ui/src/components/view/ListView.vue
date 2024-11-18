@@ -241,7 +241,7 @@
         <status :text="text ? text : ''" displayText />
       </template>
       <template v-if="column.key === 'cpunumber'">
-        <span>{{ record.serviceofferingdetails ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
+        <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
       </template>
       <template v-if="column.key === 'memory'">
         <span>{{ record.serviceofferingdetails ? `${record.serviceofferingdetails.minmemory} - ${record.serviceofferingdetails.maxmemory}` : record.memory }}</span>
