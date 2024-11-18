@@ -296,7 +296,7 @@ public class PresetVariableHelper {
         VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmId);
         validateIfObjectIsNull(vmVo, vmId, "VM");
 
-        Long hostId = vmVo.getHostId() == null ? vmVo.getLastHostId() : vmVo.getHostId();
+        Long hostId = ObjectUtils.defaultIfNull(vmVo.getHostId(), vmVo.getLastHostId());
 
         HostVO hostVo = hostDao.findByIdIncludingRemoved(hostId);
         validateIfObjectIsNull(hostVo, hostId, "host");
