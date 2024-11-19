@@ -80,7 +80,7 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account' || field.name.startsWith('associatednetwork'))">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
@@ -90,12 +90,6 @@
                           <status :text="opt.state" />
                         </span>
                         {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
-                        <span v-if="(field.name.startsWith('associatednetwork'))">
-                          <span v-if="opt.icon">
-                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                          </span>
-                          <block-outlined v-else style="margin-right: 5px" />
-                        </span>
                       </div>
                     </a-select-option>
                   </a-select>
