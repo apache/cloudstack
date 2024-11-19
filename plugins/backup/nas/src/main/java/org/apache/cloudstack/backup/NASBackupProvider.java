@@ -363,6 +363,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return backupDao.remove(backup.getId());
         }
 
+        logger.debug("There was an error removing the backup with id " + backup.getId());
         return false;
     }
 

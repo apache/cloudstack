@@ -64,6 +64,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
     private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
+    private SearchBuilder<BackupVO> ListBackupsByVMandIntervalType;
 
     public BackupDaoImpl() {
     }
@@ -90,6 +91,13 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         CalculateBackupStorageByAccount.and("status", CalculateBackupStorageByAccount.entity().getStatus(), SearchCriteria.Op.NIN);
         CalculateBackupStorageByAccount.and("removed", CalculateBackupStorageByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
         CalculateBackupStorageByAccount.done();
+
+        ListBackupsByVMandIntervalType = createSearchBuilder();
+        ListBackupsByVMandIntervalType.and("vmId", ListBackupsByVMandIntervalType.entity().getVmId(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("intervalType", ListBackupsByVMandIntervalType.entity().getBackupIntervalType(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("status", ListBackupsByVMandIntervalType.entity().getStatus(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("removed", ListBackupsByVMandIntervalType.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ListBackupsByVMandIntervalType.done();
     }
 
     @Override
@@ -174,6 +182,15 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         sc.setParameters("account", accountId);
         sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
         return customSearch(sc, null).get(0).sum;
+    }
+
+    @Override
+    public List<BackupVO> listBackupsByVMandIntervalType(Long vmId, Backup.Type backupType) {
+        SearchCriteria<BackupVO> sc = ListBackupsByVMandIntervalType.create();
+        sc.setParameters("vmId", vmId);
+        sc.setParameters("type", backupType.ordinal());
+        sc.setParameters("status", Backup.Status.BackedUp);
+        return listBy(sc, null);
     }
 
     @Override

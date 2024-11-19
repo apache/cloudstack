@@ -536,6 +536,24 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return success;
     }
 
+    private void postCreateScheduledBackup(Backup.Type backupType, Long vmId) {
+        DateUtil.IntervalType intervalType = DateUtil.IntervalType.valueOf(backupType.name());
+        final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);
+        if (schedule == null) {
+            return;
+        }
+        int maxBackups = schedule.getMaxBackups();
+        List<BackupVO> backups = backupDao.listBackupsByVMandIntervalType(vmId, backupType);
+        while (backups.size() > maxBackups) {
+            BackupVO oldestBackup = backups.get(0);
+            if (deleteBackup(oldestBackup.getId(), false)) {
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestBackup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_DELETE,
+                        "Successfully deleted oldest snapshot: " + oldestBackup.getId(), oldestBackup.getId(), ApiCommandResourceType.Backup.toString(), 0);
+            }
+            backups.remove(oldestBackup);
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CREATE, eventDescription = "creating VM backup", async = true)
     public boolean createBackup(final Long vmId, final Long scheduleId) throws ResourceAllocationException {
@@ -600,12 +618,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (result.first() == false) {
                 throw new CloudRuntimeException("Failed to create VM backup");
             }
-            if (result.second() != null) {
+            Backup backup = result.second();
+            if (backup != null) {
                 BackupVO vmBackup = backupDao.findById(result.second().getId());
                 vmBackup.setBackupIntervalType((short) type.ordinal());
                 backupDao.update(vmBackup.getId(), vmBackup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, vmBackup.getProtectedSize());
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+            }
+            if (type != Backup.Type.MANUAL) {
+                postCreateScheduledBackup(type, vm.getId());
             }
             return true;
         }

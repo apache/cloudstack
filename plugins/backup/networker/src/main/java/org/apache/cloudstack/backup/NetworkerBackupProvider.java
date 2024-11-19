@@ -528,7 +528,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             LOG.debug("EMC Networker successfully deleted backup with id " + externalBackupId);
             return true;
         } else {
-            LOG.debug("There was an error removing the backup with id " + externalBackupId + " from EMC NEtworker");
+            LOG.debug("There was an error removing the backup with id " + externalBackupId + " from EMC Networker");
         }
         return false;
     }
