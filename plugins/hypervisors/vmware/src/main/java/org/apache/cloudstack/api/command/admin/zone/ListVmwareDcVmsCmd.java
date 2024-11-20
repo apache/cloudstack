@@ -70,8 +70,14 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.MAX_NUMBER, type = CommandType.INTEGER, description = "The maximum number of results to return.")
-    private Integer maxNumber;
+    @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
+    private Integer pageSize;
+
+    @Parameter(name = ApiConstants.PAGE, type = CommandType.INTEGER,
+            description = "For listVmwareDcVms, the maximum number of results to return is either 0, 1 or more." +
+                    " When more than 1, the next page as returned by the vcenter will be propagated to the caller." +
+                    " If no previous call has been done, this is the same as the first page")
+    private Integer pageNumber;
 
     public String getVcenter() {
         return vcenter;
@@ -85,8 +91,12 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
         return password;
     }
 
-    public Integer getMaxNumber() {
-        return maxNumber;
+    public Integer getPageSize() {
+        return pageSize;
+    }
+
+    public Integer getPageNumber() {
+        return pageNumber;
     }
 
     public String getDatacenterName() {
