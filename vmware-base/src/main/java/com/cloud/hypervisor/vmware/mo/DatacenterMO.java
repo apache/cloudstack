@@ -162,9 +162,9 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<UnmanagedInstanceTO> getVmsOnDatacenter(Integer maxObjects) throws Exception {
+    public List<UnmanagedInstanceTO> getVmsOnDatacenter(Integer maxObjects, boolean nextPage) throws Exception {
         List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects);
+        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects, nextPage);
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
                 ManagedObjectReference vmMor = oc.getObj();
@@ -312,10 +312,18 @@ public class DatacenterMO extends BaseMO {
     }
 
     public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws Exception {
-        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null);
+        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null, false);
     }
 
-    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects) throws Exception {
+    /**
+     *
+     * @param propertyPaths Vmware side property names to query, for instance {"name"}
+     * @param maxObjects the number of objects to retrieve
+     * @param nextPage restart the query or continue a previous query
+     * @return The propertyPaths requested for the objects of type "VirtualMachine" in a list are found/returned by the DC
+     * @throws Exception generic {code}Exception{code} as thrown by Vmware.
+     */
+    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects, boolean nextPage) throws Exception {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("VirtualMachine");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
