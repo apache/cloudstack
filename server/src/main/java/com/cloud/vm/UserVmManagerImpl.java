@@ -5569,7 +5569,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm destroyVm(long vmId, boolean expunge) throws ResourceUnavailableException, ConcurrentOperationException {
         // Verify input parameters
-        UserVmVO vm = _vmDao.findById(vmId);
+        UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
         if (vm == null || vm.getRemoved() != null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId");
             throw ex;
@@ -5611,7 +5611,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 //Update Resource Count for the given account
                 resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
             }
-            return _vmDao.findById(vmId);
+            return _vmDao.findByIdIncludingRemoved(vmId);
         } else {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
             ex.addProxyObject(vm.getUuid(), "vmId");
