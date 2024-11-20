@@ -26,7 +26,6 @@ import com.cloud.user.UserAccount;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.component.AdapterBase;
@@ -34,7 +33,6 @@ import com.cloud.utils.component.AdapterBase;
 import java.security.SecureRandom;
 
 public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserTwoFactorAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(TotpUserTwoFactorAuthenticator.class);
 
     @Inject
     private UserAccountDao _userAccountDao;
@@ -53,7 +51,7 @@ public class TotpUserTwoFactorAuthenticator extends AdapterBase implements UserT
     public void check2FA(String code, UserAccount userAccount) throws CloudTwoFactorAuthenticationException {
         String expectedCode = get2FACode(get2FAKey(userAccount));
         if (expectedCode.equals(code)) {
-            s_logger.info("2FA matches user's input");
+            logger.info("2FA matches user's input");
             return;
         }
         throw new CloudTwoFactorAuthenticationException("two-factor authentication code provided is invalid");

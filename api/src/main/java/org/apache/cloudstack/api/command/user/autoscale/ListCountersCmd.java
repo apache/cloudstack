@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,6 @@ import com.cloud.user.Account;
 @APICommand(name = "listCounters", description = "List the counters for VM auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCountersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListCountersCmd.class.getName());
     private static final String s_name = "counterresponse";
 
     // ///////////////////////////////////////////////////

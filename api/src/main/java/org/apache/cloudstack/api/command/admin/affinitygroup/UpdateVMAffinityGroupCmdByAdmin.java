@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.affinitygroup;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -33,5 +32,4 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
 public class UpdateVMAffinityGroupCmdByAdmin extends UpdateVMAffinityGroupCmd implements AdminCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmdByAdmin.class.getName());
 }

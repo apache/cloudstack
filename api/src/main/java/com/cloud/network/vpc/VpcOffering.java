@@ -18,6 +18,7 @@ package com.cloud.network.vpc;
 
 import java.util.Date;
 
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -29,6 +30,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     public static final String defaultVPCOfferingName = "Default VPC offering";
     public static final String defaultVPCNSOfferingName = "Default VPC  offering with Netscaler";
     public static final String redundantVPCOfferingName = "Redundant VPC offering";
+    public static final String DEFAULT_VPC_NAT_NSX_OFFERING_NAME = "VPC offering with NSX - NAT Mode";
+    public static final String DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME = "VPC offering with NSX - Route Mode";
 
     /**
      *
@@ -53,6 +56,10 @@ public interface VpcOffering extends InternalIdentity, Identity {
      */
     boolean isDefault();
 
+    boolean isForNsx();
+
+    NetworkOffering.NetworkMode getNetworkMode();
+
     /**
      * @return service offering id used by VPC virtual router
      */
@@ -73,4 +80,8 @@ public interface VpcOffering extends InternalIdentity, Identity {
     Date getRemoved();
 
     Date getCreated();
+
+    NetworkOffering.RoutingMode getRoutingMode();
+
+    Boolean isSpecifyAsNumber();
 }

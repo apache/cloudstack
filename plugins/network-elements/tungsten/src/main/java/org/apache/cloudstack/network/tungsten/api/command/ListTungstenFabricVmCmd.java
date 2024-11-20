@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricVmResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +45,6 @@ import javax.inject.Inject;
 @APICommand(name = ListTungstenFabricVmCmd.APINAME, description = "list Tungsten-Fabric vm", responseObject =
     TungstenFabricVmResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricVmCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListTungstenFabricVmCmd.class.getName());
     public static final String APINAME = "listTungstenFabricVm";
 
     @Inject

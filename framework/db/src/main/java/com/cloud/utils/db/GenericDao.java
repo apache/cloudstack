@@ -230,12 +230,22 @@ public interface GenericDao<T, ID extends Serializable> {
     int expunge(final SearchCriteria<T> sc);
 
     /**
-     * Delete the entity beans specified by the search criteria with a given limit
-     * @param sc Search criteria
-     * @param limit Maximum number of rows that will be affected
-     * @return Number of rows deleted
+     * remove the entity bean specified by the search criteria and filter
+     * @param sc
+     * @param filter
+     * @return number of rows deleted
      */
-    int expunge(SearchCriteria<T> sc, long limit);
+    int expunge(final SearchCriteria<T> sc, final Filter filter);
+
+    /**
+     * remove the entity bean specified by the search criteria and batchSize
+     * @param sc
+     * @param batchSize
+     * @return number of rows deleted
+     */
+    int batchExpunge(final SearchCriteria<T> sc, final Long batchSize);
+
+    int expungeList(List<ID> ids);
 
     /**
      * expunge the removed rows.

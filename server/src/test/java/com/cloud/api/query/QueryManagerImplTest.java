@@ -36,8 +36,10 @@ import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.BucketVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.BucketDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -67,6 +69,7 @@ import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
@@ -141,6 +144,8 @@ public class QueryManagerImplTest {
 
     @Mock
     BucketDao bucketDao;
+    @Mock
+    VMTemplateDao templateDao;
 
     @Mock
     UserVmJoinDao userVmJoinDao;
@@ -384,6 +389,54 @@ public class QueryManagerImplTest {
     }
 
     @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingNoTemplateId() {
+        Assert.assertTrue(CollectionUtils.isEmpty(queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), null)));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingException() {
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(Mockito.mock(AccountVO.class), 1L);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testGetHostTagsForServiceOfferingsListingNoAccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+    }
+
+    @Test
+    public void testGetHostTagsFromTemplateForServiceOfferingsListingAdmin() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
+    }
+
+    @Test
+    public void testGetHostTagsForServiceOfferingsListingSuccess() {
+        long templateId = 1L;
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+        Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, false, template);
+        List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isEmpty(result));
+        Mockito.when(template.getTemplateTag()).thenReturn("tag");
+        result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
+    }
+
     public void testListAffectedVmsForScopeChange() {
         Long clusterId = 1L;
         Long poolId = 2L;

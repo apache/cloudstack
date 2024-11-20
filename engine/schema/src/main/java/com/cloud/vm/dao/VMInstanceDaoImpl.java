@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -43,6 +43,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -68,7 +69,6 @@ import com.cloud.vm.VirtualMachine.Type;
 @Component
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
-    public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
     static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;
@@ -522,8 +522,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public boolean updateState(State oldState, Event event, State newState, VirtualMachine vm, Object opaque) {
         if (newState == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
+            if (logger.isDebugEnabled()) {
+                logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
             }
             return false;
         }
@@ -565,7 +565,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         if (result == 0) {
             VMInstanceVO vo = findByIdIncludingRemoved(vm.getId());
 
-            if (s_logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 if (vo != null) {
                     StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
                     str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated())
@@ -574,16 +574,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                             .append("; time=").append(vo.getUpdateTime());
                     str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState).append("; updated=").append(oldUpdated).append("; time=")
                             .append(oldUpdateDate).append("}");
-                    s_logger.debug(str.toString());
+                    logger.debug(str.toString());
 
                 } else {
-                    s_logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
+                    logger.debug("Unable to update the vm id=" + vm.getId() + "; the vm either doesn't exist or already removed");
                 }
             }
 
             if (vo != null && vo.getState() == newState) {
                 // allow for concurrent update if target state has already been matched
-                s_logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
+                logger.debug("VM " + vo.getInstanceName() + " state has been already been updated to " + newState);
                 return true;
             }
         }
@@ -845,7 +845,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return rs.getLong(1);
             }
         } catch (Exception e) {
-            s_logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
+            logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
         }
         return 0L;
     }
@@ -954,7 +954,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         State instanceState = instance.getState();
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
                 || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
-            s_logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
+            logger.debug(String.format("VM id: %d on host id: %d and power host id: %d is in %s state, but power state is %s",
                     instance.getId(), instance.getHostId(), powerHostId, instanceState, powerState));
             return false;
         }
@@ -1039,6 +1039,27 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public List<VMInstanceVO> searchRemovedByRemoveDate(Date startDate, Date endDate, Long batchSize,
+                List<Long> skippedVmIds) {
+        SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
+        sb.and("removed", sb.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        sb.and("startDate", sb.entity().getRemoved(), SearchCriteria.Op.GTEQ);
+        sb.and("endDate", sb.entity().getRemoved(), SearchCriteria.Op.LTEQ);
+        sb.and("skippedVmIds", sb.entity().getId(), Op.NOTIN);
+        SearchCriteria<VMInstanceVO> sc = sb.create();
+        if (startDate != null) {
+            sc.setParameters("startDate", startDate);
+        }
+        if (endDate != null) {
+            sc.setParameters("endDate", endDate);
+        }
+        if (CollectionUtils.isNotEmpty(skippedVmIds)) {
+            sc.setParameters("skippedVmIds", skippedVmIds.toArray());
+        }
+        Filter filter = new Filter(VMInstanceVO.class, "id", true, 0L, batchSize);
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
+
     public Pair<List<VMInstanceVO>, Integer> listByVmsNotInClusterUsingPool(long clusterId, long poolId) {
         SearchCriteria<VMInstanceVO> sc = VmsNotInClusterUsingPool.create();
         sc.setParameters("vmStates", State.Starting, State.Running, State.Stopping, State.Migrating, State.Restoring);

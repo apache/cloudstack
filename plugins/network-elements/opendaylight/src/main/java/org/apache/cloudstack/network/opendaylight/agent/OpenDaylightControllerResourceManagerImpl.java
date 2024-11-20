@@ -28,7 +28,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.cloudstack.network.opendaylight.api.commands.AddOpenDaylightControllerCmd;
@@ -62,7 +63,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightControllerResourceManager {
-    private final static Logger s_logger = Logger.getLogger(OpenDaylightControllerResourceManagerImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     HostDao hostDao;

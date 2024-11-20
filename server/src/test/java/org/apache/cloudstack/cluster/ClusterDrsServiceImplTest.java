@@ -267,7 +267,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(clusterDrsService.getDrsPlan(cluster, 5)).thenThrow(new ConfigurationException("test"));
-        Mockito.when(cmd.getMaxMigrations()).thenReturn(1);
+        Mockito.when(cmd.getMaxMigrations()).thenReturn(5);
 
         clusterDrsService.generateDrsPlan(cmd);
     }

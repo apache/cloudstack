@@ -23,14 +23,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade430to440 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade430to440.class);
+public class Upgrade430to440 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -163,12 +161,12 @@ public class Upgrade430to440 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while Moving private zone information to dedicated resources", e);
         }
-        s_logger.debug("Done updating vm nic secondary ip  account and domain ids");
+        logger.debug("Done updating vm nic secondary ip  account and domain ids");
     }
 
 
     private void moveCidrsToTheirOwnTable(Connection conn) {
-        s_logger.debug("Moving network acl item cidrs to a row per cidr");
+        logger.debug("Moving network acl item cidrs to a row per cidr");
 
         String networkAclItemSql = "SELECT id, cidr FROM `cloud`.`network_acl_item`";
         String networkAclItemCidrSql = "INSERT INTO `cloud`.`network_acl_item_cidrs` (network_acl_item_id, cidr) VALUES (?,?)";
@@ -184,7 +182,7 @@ public class Upgrade430to440 implements DbUpgrade {
                 long itemId = rsItems.getLong(1);
                 // get the source cidr list
                 String cidrList = rsItems.getString(2);
-                s_logger.debug("Moving '" + cidrList +  "' to a row per cidr");
+                logger.debug("Moving '" + cidrList +  "' to a row per cidr");
                 // split it
                 String[] cidrArray = cidrList.split(",");
                 // insert a record per cidr
@@ -197,11 +195,11 @@ public class Upgrade430to440 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while Moving network acl item cidrs to a row per cidr", e);
         }
-        s_logger.debug("Done moving network acl item cidrs to a row per cidr");
+        logger.debug("Done moving network acl item cidrs to a row per cidr");
     }
 
     private void updateVlanUris(Connection conn) {
-        s_logger.debug("updating vlan URIs");
+        logger.debug("updating vlan URIs");
         try(PreparedStatement selectstatement = conn.prepareStatement("SELECT id, vlan_id FROM `cloud`.`vlan` where vlan_id not like '%:%'");
             ResultSet results = selectstatement.executeQuery()) {
 
@@ -224,7 +222,7 @@ public class Upgrade430to440 implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update vlan URIs ", e);
         }
-        s_logger.debug("Done updating vlan URIs");
+        logger.debug("Done updating vlan URIs");
     }
 
     @Override

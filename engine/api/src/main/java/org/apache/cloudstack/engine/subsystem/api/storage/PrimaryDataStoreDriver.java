@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -183,4 +184,25 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     default boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return false;
     }
+
+    /**
+     * This method returns the actual size required on the pool for a volume.
+     *
+     * @param volumeSize
+     *         Size of volume to be created on the store
+     * @param templateSize
+     *         Size of template, if any, which will be used to create the volume
+     * @param isEncryptionRequired
+     *         true if volume is encrypted
+     *
+     * @return the size required on the pool for the volume
+     */
+    default long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
+        return volumeSize;
+    }
+    default boolean informStorageForDiskOfferingChange() {
+        return false;
+    }
+
+    default void updateStorageWithTheNewDiskOffering(Volume volume, DiskOffering newDiskOffering) {}
 }

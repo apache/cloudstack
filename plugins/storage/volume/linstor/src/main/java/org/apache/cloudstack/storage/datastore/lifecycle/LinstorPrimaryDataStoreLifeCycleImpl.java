@@ -51,11 +51,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(LinstorPrimaryDataStoreLifeCycleImpl.class);
-
     @Inject
     private ClusterDao clusterDao;
     @Inject
@@ -111,7 +108,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
                 throw new CloudRuntimeException("The Zone ID must be specified.");
             }
             ClusterVO cluster = clusterDao.findById(clusterId);
-            s_logger.info("Linstor: Setting Linstor cluster-wide primary storage uuid to " + uuid);
+            logger.info("Linstor: Setting Linstor cluster-wide primary storage uuid to " + uuid);
             parameters.setPodId(podId);
             parameters.setClusterId(clusterId);
 
@@ -177,10 +174,10 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
     }
 
     protected boolean createStoragePool(long hostId, StoragePool pool) {
-        s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
 
         if (pool.getPoolType() != Storage.StoragePoolType.Linstor) {
-            s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
+            logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
@@ -192,7 +189,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
             String msg = answer != null ?
                 "Can not create storage pool through host " + hostId + " due to " + answer.getDetails() :
                 "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
-            s_logger.warn(msg);
+            logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -228,12 +225,12 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
 
                 poolHosts.add(host);
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            s_logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
+            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '"
                 + primaryDataStoreInfo.getClusterId() + "'.");
 
             _primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
@@ -259,7 +256,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
             try {
                 _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 

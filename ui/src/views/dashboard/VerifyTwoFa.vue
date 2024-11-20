@@ -71,6 +71,11 @@ export default {
   created () {
     this.initForm()
   },
+  mounted () {
+    this.$nextTick(() => {
+      this.focusInput()
+    })
+  },
   methods: {
     initForm () {
       this.formRef = ref()
@@ -78,6 +83,12 @@ export default {
       this.rules = reactive({
         code: [{ required: true, message: this.$t('message.error.authentication.code') }]
       })
+    },
+    focusInput () {
+      const inputElement = this.$refs.code.$el.querySelector('input[type=password]')
+      if (inputElement) {
+        inputElement.focus()
+      }
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {

@@ -30,7 +30,6 @@ import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -40,7 +39,6 @@ import java.util.List;
 @ResourceWrapper(handles =  PlugNicCommand.class)
 public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtPlugNicCommandWrapper.class);
 
     @Override
     public Answer execute(final PlugNicCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -57,7 +55,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             Integer nicnum = 0;
             for (final InterfaceDef pluggedNic : pluggedNics) {
                 if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
-                    s_logger.debug("found existing nic for mac " + pluggedNic.getMacAddress() + " at index " + nicnum);
+                    logger.debug("found existing nic for mac " + pluggedNic.getMacAddress() + " at index " + nicnum);
                     return new PlugNicAnswer(command, true, "success");
                 }
                 nicnum++;
@@ -82,18 +80,18 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             return new PlugNicAnswer(command, true, "success");
         } catch (final LibvirtException e) {
             final String msg = " Plug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new PlugNicAnswer(command, false, msg);
         } catch (final InternalErrorException e) {
             final String msg = " Plug Nic failed due to " + e.toString();
-            s_logger.warn(msg, e);
+            logger.warn(msg, e);
             return new PlugNicAnswer(command, false, msg);
         } finally {
             if (vm != null) {
                 try {
                     vm.free();
                 } catch (final LibvirtException l) {
-                    s_logger.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 }
             }
         }

@@ -29,7 +29,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
@@ -46,18 +47,20 @@ import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
 
-    private static final Logger LOGGER = Logger.getLogger(KVMHostInfo.class);
+    protected static Logger LOGGER = LogManager.getLogger(KVMHostInfo.class);
 
     private int totalCpus;
     private int allocatableCpus;
     private int cpusockets;
     private long cpuSpeed;
+    private String cpuArch;
     private long totalMemory;
     private long reservedMemory;
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
     private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
+    private static String cpuArchCommand = "/usr/bin/arch";
 
     public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
         this.cpuSpeed = manualSpeed;
@@ -102,6 +105,10 @@ public class KVMHostInfo {
 
     public List<String> getCapabilities() {
         return this.capabilities;
+    }
+
+    public String getCpuArch() {
+        return cpuArch;
     }
 
     protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
@@ -200,6 +207,7 @@ public class KVMHostInfo {
                 this.cpusockets = hosts.sockets * hosts.nodes;
             }
             this.totalCpus = hosts.cpus;
+            this.cpuArch = getCPUArchFromCommand();
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(capabilities);
@@ -225,5 +233,10 @@ public class KVMHostInfo {
         } catch (final LibvirtException e) {
             LOGGER.error("Caught libvirt exception while fetching host information", e);
         }
+    }
+
+    private String getCPUArchFromCommand() {
+        LOGGER.info("Fetching host CPU arch");
+        return Script.runSimpleBashScript(cpuArchCommand);
     }
 }

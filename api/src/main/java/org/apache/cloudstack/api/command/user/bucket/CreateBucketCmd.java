@@ -34,14 +34,12 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "createBucket", responseObject = BucketResponse.class,
         description = "Creates a bucket in the specified object storage pool. ", responseView = ResponseView.Restricted,
         entityType = {Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateBucketCmd.class.getName());
     private static final String s_name = "createbucketresponse";
 
     /////////////////////////////////////////////////////

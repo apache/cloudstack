@@ -211,11 +211,6 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
-    public int expunge(SearchCriteria<UsageEventVO> sc, long limit) {
-        return 0;
-    }
-
-    @Override
     public void expunge() {
 
     }
@@ -336,5 +331,20 @@ public class MockUsageEventDao implements UsageEventDao{
     @Override
     public Pair<List<UsageEventVO>, Integer> searchAndCount(SearchCriteria<UsageEventVO> sc, Filter filter, boolean includeRemoved) {
         return null;
+    }
+
+    @Override
+    public int expunge(SearchCriteria<UsageEventVO> sc, Filter filter) {
+        return 0;
+    }
+
+    @Override
+    public int batchExpunge(SearchCriteria<UsageEventVO> sc, Long batchSize) {
+        return 0;
+    }
+
+    @Override
+    public int expungeList(List<Long> longs) {
+        return 0;
     }
 }

@@ -59,7 +59,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.ini4j.Ini;
 
 import javax.inject.Inject;
@@ -85,7 +86,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
-    private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
+    protected static Logger LOGGER = LogManager.getLogger(SystemVmTemplateRegistration.class);
+    private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
     private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
@@ -457,7 +459,7 @@ public class SystemVmTemplateRegistration {
     private List<String> fetchAllHypervisors(Long zoneId) {
         List<String> hypervisorList = new ArrayList<>();
         List<Hypervisor.HypervisorType> hypervisorTypes = clusterDao.getAvailableHypervisorInZone(zoneId);
-        hypervisorList = hypervisorTypes.stream().distinct().map(Enum::name).collect(Collectors.toList());
+        hypervisorList = hypervisorTypes.stream().distinct().map(Hypervisor.HypervisorType::name).collect(Collectors.toList());
         return hypervisorList;
     }
 
@@ -731,8 +733,8 @@ public class SystemVmTemplateRegistration {
     }
 
     private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().map(Enum::name).
-                map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
+        Set<String> hypervisors = hypervisorsInUse.stream().
+                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
         List<String> templates = new ArrayList<>();
         for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
             templates.add(FileNames.get(hypervisorType));

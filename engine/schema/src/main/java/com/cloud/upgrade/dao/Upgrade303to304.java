@@ -24,13 +24,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade303to304.class);
+public class Upgrade303to304 extends Upgrade30xBase {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -171,9 +169,9 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                                     if (rsSameLabel.next()) {
                                         Long sameLabelcount = rsSameLabel.getLong(1);
                                         if (sameLabelcount > 0) {
-                                            s_logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: " +
+                                            logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: " +
                                                     xenGuestLabel);
-                                            s_logger.error("However already there are " + sameLabelcount + " physical networks setup with same traffic label, cannot upgrade");
+                                            logger.error("However already there are " + sameLabelcount + " physical networks setup with same traffic label, cannot upgrade");
                                             throw new CloudRuntimeException("Cannot upgrade this setup since a physical network with same traffic label: " + xenGuestLabel +
                                                     " already exists, Please check logs and contact Support.");
                                         }
@@ -188,9 +186,9 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
                             pstmt_network_id.setLong(1, zoneId);
                             try (ResultSet rsNet = pstmt_network_id.executeQuery();) {
-                                s_logger.debug("Adding PhysicalNetwork to VLAN");
-                                s_logger.debug("Adding PhysicalNetwork to user_ip_address");
-                                s_logger.debug("Adding PhysicalNetwork to networks");
+                                logger.debug("Adding PhysicalNetwork to VLAN");
+                                logger.debug("Adding PhysicalNetwork to user_ip_address");
+                                logger.debug("Adding PhysicalNetwork to networks");
                                 while (rsNet.next()) {
                                     Long networkId = rsNet.getLong(1);
                                     addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId, networkId);
@@ -207,7 +205,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                     if (rs.next()) {
                         Long count = rs.getLong(1);
                         if (count > 1) {
-                            s_logger.debug("There are " + count + " physical networks setup");
+                            logger.debug("There are " + count + " physical networks setup");
                             multiplePhysicalNetworks = true;
                         }
                     }
@@ -223,7 +221,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                             String networkId = rsVNet.getString(5);
                             String vpid = rsVNet.getString(4);
                             String npid = rsVNet.getString(6);
-                            s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet +
+                            logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet +
                                     " has physical network id: " + vpid + " ,but the guest network: " + networkId + " that uses it has physical network id: " + npid);
 
                             String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. "
@@ -242,7 +240,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                                     + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
                                     + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" + "7. Start all your VMs";
 
-                            s_logger.error(message);
+                            logger.error(message);
                             throw new CloudRuntimeException("Cannot upgrade this setup since Guest Vnet assignment to the multiple physical networks " +
                                     "is incorrect. Please check the logs for details on how to proceed");
 
@@ -383,7 +381,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
             try (PreparedStatement pstmt_drop_table = conn.prepareStatement("DROP TEMPORARY TABLE `cloud`.`network_offerings2`");) {
                 pstmt_drop_table.executeUpdate();
             } catch (SQLException e) {
-                s_logger.debug("drop of temp table 'network_offerings2' failed", e);
+                logger.debug("drop of temp table 'network_offerings2' failed", e);
             }
         }
     }

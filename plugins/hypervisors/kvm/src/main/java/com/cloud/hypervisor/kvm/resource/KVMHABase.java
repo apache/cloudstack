@@ -18,7 +18,8 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo;
@@ -32,7 +33,7 @@ import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class KVMHABase {
-    private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
     protected long _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
@@ -173,14 +174,14 @@ public class KVMHABase {
             }
 
         } catch (LibvirtException e) {
-            s_logger.debug("Ignoring libvirt error.", e);
+            logger.debug("Ignoring libvirt error.", e);
         } finally {
             try {
                 if (pool != null) {
                     pool.free();
                 }
             } catch (LibvirtException e) {
-                s_logger.debug("Ignoring libvirt error.", e);
+                logger.debug("Ignoring libvirt error.", e);
             }
         }
 

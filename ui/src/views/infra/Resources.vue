@@ -31,6 +31,34 @@
               :percent="parseFloat(item.percentused)"
               :format="p => parseFloat(item.percentused).toFixed(2) + '%'" />
           </div>
+          <a-collapse
+              v-if="item.tagged"
+              class="list-item__collapse"
+              @change="handleCollapseChange(item.type)">
+            <a-collapse-panel key="1" :header="$t('label.tagged') + ' ' + returnCapacityTitle(item.type) + (collpaseActive[item.type] ? ''  : ' - ' + item.tagsasstring)">
+              <a-list
+                size="small"
+                :dataSource="item.tagged" >
+                <template #renderItem="{ item }">
+                  <a-list-item class="sub-list-item">
+                    <div class="sub-list-item__container">
+                      <div class="list-item__data list-item__title">{{ '#' + item.tag }}</div>
+                      <div class="list-item__vals">
+                        <div class="list-item__data">
+                          Allocated:
+                          {{ convertByType(item.type, item.capacityused) }} / {{ convertByType(item.type, item.capacitytotal) }}
+                        </div>
+                        <a-progress
+                          status="normal"
+                          :percent="parseFloat(item.percentused)"
+                          :format="p => parseFloat(item.percentused).toFixed(2) + '%'" />
+                      </div>
+                    </div>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </a-collapse-panel>
+          </a-collapse>
         </div>
       </a-list-item>
     </a-list>
@@ -61,7 +89,8 @@ export default {
   data () {
     return {
       fetchLoading: false,
-      resourcesList: []
+      resourcesList: [],
+      collpaseActive: {}
     }
   },
   created () {
@@ -75,15 +104,35 @@ export default {
       this.fetchLoading = true
       api('listCapacity', params).then(response => {
         this.resourcesList = response.listcapacityresponse.capacity
-        this.animatePercentVals()
+        this.updateTaggedCapacities()
+        this.animatePercentVals(this.resourcesList)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })
     },
-    animatePercentVals () {
+    updateTaggedCapacities () {
+      var resourcesListCopy = [...this.resourcesList]
+      this.resourcesList = this.resourcesList.filter(x => !x.tag)
       this.resourcesList.forEach(resource => {
+        var tagged = []
+        var tags = []
+        for (var x of resourcesListCopy) {
+          if (resource.type === x.type && x.tag) {
+            tagged.push(x)
+            tags.push(x.tag)
+          }
+        }
+        if (tagged.length > 0) {
+          resource.tagged = tagged
+          resource.tags = tags
+          resource.tagsasstring = '#' + tags.join(', #')
+        }
+      })
+    },
+    animatePercentVals (resources) {
+      resources.forEach(resource => {
         const percent = resource.percentused
         resource.percentused = 0
         setTimeout(() => {
@@ -130,6 +179,17 @@ export default {
         case 90: return this.$t('label.num.cpu.cores')
         default: return ''
       }
+    },
+    handleCollapseChange (type) {
+      if (this.collpaseActive[type]) {
+        this.collpaseActive[type] = null
+        return
+      }
+      this.collpaseActive[type] = true
+      var typeItems = this.resourcesList.filter(x => x.type === type)
+      typeItems.forEach(resource => {
+        this.animatePercentVals(resource.tagged)
+      })
     }
   }
 }
@@ -157,6 +217,33 @@ export default {
     }
 
     &__vals {
+      @media (min-width: 760px) {
+        display: flex;
+      }
+    }
+  }
+  .sub-list-item {
+
+    &__container {
+      max-width: 90%;
+      width: 100%;
+
+      @media (min-width: 760px) {
+        max-width: 95%;
+      }
+    }
+
+    &__title {
+      font-weight: bold;
+    }
+
+    &__data {
+      margin-right: 20px;
+      white-space: nowrap;
+    }
+
+    &__vals {
+      margin-top: 10px;
       @media (min-width: 760px) {
         display: flex;
       }

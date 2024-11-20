@@ -27,10 +27,11 @@ import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class MockServer implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(MockServer.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private boolean shutdown = false;
     private ServerSocket serverSocket;
@@ -134,19 +135,19 @@ public class MockServer implements Runnable {
                 try {
                     is.close();
                 } catch (Throwable e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "in stream close failed: " + e.getLocalizedMessage());
                 }
                 try {
                     os.close();
                 } catch (Throwable e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "out stream close failed: " + e.getLocalizedMessage());
                 }
                 try {
                     serverSocket.close();
                 } catch (Throwable e) {
-                    s_logger.info("[ignored]"
+                    logger.info("[ignored]"
                             + "server socket close failed: " + e.getLocalizedMessage());
                 }
             }

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -29,7 +30,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.dc.dao.VlanDao;
@@ -53,7 +53,6 @@ import com.cloud.vm.NicProfile;
 
 public class VpcNetworkHelperImpl extends NetworkHelperImpl {
 
-    private static final Logger s_logger = Logger.getLogger(VpcNetworkHelperImpl.class);
 
     @Inject
     private VlanDao _vlanDao;
@@ -86,8 +85,11 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
 
         final TreeSet<String> publicVlans = new TreeSet<String>();
         if (vpcRouterDeploymentDefinition.isPublicNetwork()) {
-            publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP()
-                                                         .getVlanTag());
+            String vlanTag = "";
+            if (Objects.nonNull(vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag())) {
+                vlanTag = vpcRouterDeploymentDefinition.getSourceNatIP().getVlanTag();
+            }
+            publicVlans.add(vlanTag);
         }
 
         //1) allocate nic for control and source nat public ip
@@ -132,8 +134,9 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
                 final PublicIp publicIp = PublicIp.createFromAddrAndVlan(ip, _vlanDao.findById(ip.getVlanId()));
                 if ((ip.getState() == IpAddress.State.Allocated  || ip.getState() == IpAddress.State.Allocating)
                         && vpcMgr.isIpAllocatedToVpc(ip)
+                        && Objects.nonNull(publicIp.getVlanTag())
                         && !publicVlans.contains(publicIp.getVlanTag())) {
-                    s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
+                    logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                     final NicProfile publicNic = new NicProfile();
                     publicNic.setDefaultNic(false);
                     publicNic.setIPv4Address(publicIp.getAddress()

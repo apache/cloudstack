@@ -20,12 +20,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.HostTO;
 
 public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
-    private static final Logger s_logger = Logger.getLogger(KVMHAChecker.class);
     private List<HAStoragePool> storagePools;
     private HostTO host;
     private boolean reportFailureIfOneStorageIsDown;
@@ -46,7 +44,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
         String hostAndPools = String.format("host IP [%s] in pools [%s]", host.getPrivateNetwork().getIp(), storagePools.stream().map(pool -> pool.getPoolUUID()).collect(Collectors.joining(", ")));
 
-        s_logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
+        logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
 
         for (HAStoragePool pool : storagePools) {
             validResult = pool.getPool().checkingHeartBeat(pool, host);
@@ -56,7 +54,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
         }
 
         if (!validResult) {
-            s_logger.warn(String.format("All checks with KVMHAChecker for %s considered it as dead. It may cause a shutdown of the host.", hostAndPools));
+            logger.warn(String.format("All checks with KVMHAChecker for %s considered it as dead. It may cause a shutdown of the host.", hostAndPools));
         }
 
         return validResult;
@@ -64,7 +62,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 
     @Override
     public Boolean call() throws Exception {
-        // s_logger.addAppender(new org.apache.log4j.ConsoleAppender(new
+        // logger.addAppender(new org.apache.log4j.ConsoleAppender(new
         // org.apache.log4j.PatternLayout(), "System.out"));
         return checkingHeartBeat();
     }

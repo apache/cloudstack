@@ -23,13 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DriverLoader {
 
-    private static final Logger LOGGER = Logger.getLogger(DriverLoader.class.getName());
+    protected static Logger LOGGER = LogManager.getLogger(DriverLoader.class);
     private static final List<String> LOADED_DRIVERS;
     private static final Map<String, String> DRIVERS;
 

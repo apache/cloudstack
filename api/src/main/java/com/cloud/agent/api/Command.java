@@ -20,12 +20,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * implemented by classes that extends the Command class. Command specifies
  *
  */
 public abstract class Command {
+
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     public static enum OnError {
         Continue, Stop

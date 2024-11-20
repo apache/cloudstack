@@ -18,9 +18,12 @@ package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -33,6 +36,8 @@ import org.apache.cloudstack.api.command.admin.acl.CreateRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.CreateRolePermissionCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.DeleteRolePermissionCmd;
+import org.apache.cloudstack.api.command.admin.acl.DisableRoleCmd;
+import org.apache.cloudstack.api.command.admin.acl.EnableRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ImportRoleCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolePermissionsCmd;
 import org.apache.cloudstack.api.command.admin.acl.ListRolesCmd;
@@ -44,7 +49,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -62,8 +66,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
-
-    private Logger logger = Logger.getLogger(getClass());
 
     @Inject
     private AccountDao accountDao;
@@ -349,6 +351,36 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         throw new PermissionDeniedException("Found accounts that have role in use, won't allow to delete role");
     }
 
+    protected boolean updateRoleState(Role role, Role.State state) {
+        checkCallerAccess();
+        if (role == null) {
+            return false;
+        }
+        if (role.getState().equals(state)) {
+            throw new PermissionDeniedException(String.format("Role is already %s", state));
+        }
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                RoleVO roleVO = roleDao.findById(role.getId());
+                roleVO.setState(state);
+                return roleDao.update(role.getId(), roleVO);
+            }
+        });
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_ENABLE, eventDescription = "enabling Role")
+    public boolean enableRole(Role role) {
+        return updateRoleState(role, Role.State.ENABLED);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ROLE_DISABLE, eventDescription = "disabling Role")
+    public boolean disableRole(Role role) {
+        return updateRoleState(role, Role.State.DISABLED);
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_CREATE, eventDescription = "creating Role Permission")
     public RolePermission createRolePermission(final Role role, final Rule rule, final Permission permission, final String description) {
@@ -401,74 +433,132 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByName(String name) {
-        return findRolesByName(name, null, null, null).first();
+        return findRolesByName(name, null, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, Long startIndex, Long limit) {
+    public Pair<List<Role>, Integer> findRolesByName(String name, String keyword, String state, Long startIndex, Long limit) {
         if (StringUtils.isNotBlank(name) || StringUtils.isNotBlank(keyword)) {
-            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, startIndex, limit, isCallerRootAdmin());
-            int removed = removeRootAdminRolesIfNeeded(data.first());
+            Pair<List<RoleVO>, Integer> data = roleDao.findAllByName(name, keyword, state, startIndex, limit, isCallerRootAdmin());
+            int removed = removeRolesIfNeeded(data.first());
             return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
         }
         return new Pair<List<Role>, Integer>(new ArrayList<Role>(), 0);
     }
 
     /**
-     *  Removes roles of the given list that have the type '{@link RoleType#Admin}' if the user calling the method is not a 'root admin'.
-     *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
+     *  Removes roles from the given list if the role has different or more permissions than the user's calling the method role
      */
-    protected int removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
-        if (!isCallerRootAdmin()) {
-            return removeRootAdminRoles(roles);
+    protected int removeRolesIfNeeded(List<? extends Role> roles) {
+        if (roles.isEmpty()) {
+            return 0;
         }
-        return 0;
+
+        Long callerRoleId = getCurrentAccount().getRoleId();
+        Map<String, Permission> callerRolePermissions = getRoleRulesAndPermissions(callerRoleId);
+
+        int count = 0;
+        Iterator<? extends Role> rolesIterator = roles.iterator();
+        while (rolesIterator.hasNext()) {
+            Role role = rolesIterator.next();
+
+            if (role.getId() == callerRoleId || roleHasPermission(callerRolePermissions, role)) {
+                continue;
+            }
+
+            count++;
+            rolesIterator.remove();
+        }
+
+        return count;
     }
 
     /**
-     * Remove all roles that have the {@link RoleType#Admin}.
+     * Checks if the role of the caller account has compatible permissions of the specified role.
+     * For each permission of the role of the caller, the target role needs to contain the same permission.
+     *
+     * @param sourceRolePermissions the permissions of the caller role.
+     * @param targetRole the role that the caller role wants to access.
+     * @return True if the role can be accessed with the given permissions; false otherwise.
      */
-    protected int removeRootAdminRoles(List<? extends Role> roles) {
-        if (CollectionUtils.isEmpty(roles)) {
-            return 0;
-        }
-        Iterator<? extends Role> rolesIterator = roles.iterator();
-        int count = 0;
-        while (rolesIterator.hasNext()) {
-            Role role = rolesIterator.next();
-            if (RoleType.Admin == role.getRoleType()) {
-                count++;
-                rolesIterator.remove();
+    protected boolean roleHasPermission(Map<String, Permission> sourceRolePermissions, Role targetRole) {
+        Set<String> rulesAlreadyCompared = new HashSet<>();
+        for (RolePermission rolePermission : findAllPermissionsBy(targetRole.getId())) {
+            boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
+
+            for (String apiName : accountManager.getApiNameList()) {
+                if (!rolePermission.getRule().matches(apiName) || rulesAlreadyCompared.contains(apiName)) {
+                    continue;
+                }
+
+                if (rolePermission.getPermission() == Permission.ALLOW && (!sourceRolePermissions.containsKey(apiName) || sourceRolePermissions.get(apiName) == Permission.DENY)) {
+                    return false;
+                }
+
+                rulesAlreadyCompared.add(apiName);
+
+                if (!permissionIsRegex) {
+                    break;
+                }
             }
         }
-        return count;
+
+        return true;
+    }
+
+    /**
+     * Given a role ID, returns a {@link Map} containing the API name as the key and the {@link Permission} for the API as the value.
+     *
+     * @param roleId ID from role.
+     */
+    public Map<String, Permission> getRoleRulesAndPermissions(Long roleId) {
+        Map<String, Permission> roleRulesAndPermissions = new HashMap<>();
+
+        for (RolePermission rolePermission : findAllPermissionsBy(roleId)) {
+            boolean permissionIsRegex = rolePermission.getRule().getRuleString().contains("*");
+
+            for (String apiName : accountManager.getApiNameList()) {
+                if (!rolePermission.getRule().matches(apiName)) {
+                    continue;
+                }
+
+                if (!roleRulesAndPermissions.containsKey(apiName)) {
+                    roleRulesAndPermissions.put(apiName, rolePermission.getPermission());
+                }
+
+                if (!permissionIsRegex) {
+                    break;
+                }
+            }
+        }
+        return roleRulesAndPermissions;
     }
 
     @Override
     public List<Role> findRolesByType(RoleType roleType) {
-        return findRolesByType(roleType, null, null).first();
+        return findRolesByType(roleType, null, null, null).first();
     }
 
     @Override
-    public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, Long startIndex, Long limit) {
+    public Pair<List<Role>, Integer> findRolesByType(RoleType roleType, String state, Long startIndex, Long limit) {
         if (roleType == null || RoleType.Admin == roleType && !isCallerRootAdmin()) {
             return new Pair<List<Role>, Integer>(Collections.emptyList(), 0);
         }
-        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, startIndex, limit, isCallerRootAdmin());
+        Pair<List<RoleVO>, Integer> data = roleDao.findAllByRoleType(roleType, state, startIndex, limit, isCallerRootAdmin());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second()));
     }
 
     @Override
     public List<Role> listRoles() {
         List<? extends Role> roles = roleDao.listAll();
-        removeRootAdminRolesIfNeeded(roles);
+        removeRolesIfNeeded(roles);
         return ListUtils.toListOfInterface(roles);
     }
 
     @Override
-    public Pair<List<Role>, Integer> listRoles(Long startIndex, Long limit) {
-        Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(startIndex, limit, isCallerRootAdmin());
-        int removed = removeRootAdminRolesIfNeeded(data.first());
+    public Pair<List<Role>, Integer> listRoles(String state, Long startIndex, Long limit) {
+        Pair<List<RoleVO>, Integer> data = roleDao.listAllRoles(state, startIndex, limit, isCallerRootAdmin());
+        int removed = removeRolesIfNeeded(data.first());
         return new Pair<List<Role>,Integer>(ListUtils.toListOfInterface(data.first()), Integer.valueOf(data.second() - removed));
     }
 
@@ -519,6 +609,8 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         cmdList.add(ListRolePermissionsCmd.class);
         cmdList.add(UpdateRolePermissionCmd.class);
         cmdList.add(DeleteRolePermissionCmd.class);
+        cmdList.add(EnableRoleCmd.class);
+        cmdList.add(DisableRoleCmd.class);
         return cmdList;
     }
 }

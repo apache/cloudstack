@@ -25,13 +25,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41100to41110 implements DbUpgrade {
-    final static Logger LOG = Logger.getLogger(Upgrade41000to41100.class);
+public class Upgrade41100to41110 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -105,8 +103,8 @@ public class Upgrade41100to41110 implements DbUpgrade {
             try (
                     ResultSet resultSet = prepSelStmt.executeQuery();
             ) {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("updating setting '" + name + "'");
+                if (logger.isInfoEnabled()) {
+                    logger.info("updating setting '" + name + "'");
                 }
                 if (resultSet.next()) {
                     if ("Secure".equals(resultSet.getString(1))) {
@@ -118,10 +116,10 @@ public class Upgrade41100to41110 implements DbUpgrade {
                             prepUpdStmt.setString(2, name);
                             prepUpdStmt.execute();
                         } catch (SQLException e) {
-                            if (LOG.isInfoEnabled()) {
-                                LOG.info("failed to update configuration item '" + name + "' with value '" + value + "'");
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("no update because ", e);
+                            if (logger.isInfoEnabled()) {
+                                logger.info("failed to update configuration item '" + name + "' with value '" + value + "'");
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("no update because ", e);
                                 }
                             }
                         }

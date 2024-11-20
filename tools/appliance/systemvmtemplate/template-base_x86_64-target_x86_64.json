@@ -27,8 +27,8 @@
       "format": "qcow2",
       "headless": true,
       "http_directory": "http",
-      "iso_checksum": "sha512:7ef909042308510e42e2da38fa2815e4f39292b07026fc8cf1b12f3148e7329da7d24b01914fc7449895ee08a38f567f1e09c5f7a9bfaa65bb454ebfd0439f91",
-      "iso_url": "https://cdimage.debian.org/mirror/cdimage/archive/11.10.0/amd64/iso-cd/debian-11.10.0-amd64-netinst.iso",
+      "iso_checksum": "sha512:e0bd9ba03084a6fd42413b425a2d20e3731678a31fe5fb2cc84f79332129afca2ad4ec897b4224d6a833afaf28a5d938b0fe5d680983182944162c6825b135ce",
+      "iso_url": "https://cdimage.debian.org/mirror/cdimage/release/12.7.0/amd64/iso-cd/debian-12.7.0-amd64-netinst.iso",
       "net_device": "virtio-net",
       "output_directory": "../dist",
       "qemuargs": [

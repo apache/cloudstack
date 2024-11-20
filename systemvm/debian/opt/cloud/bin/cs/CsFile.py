@@ -70,7 +70,7 @@ class CsFile:
 
     def dump(self):
         for line in self.new_config:
-            print line
+            print(line)
 
     def addeq(self, string):
         """ Update a line in a file of the form token=something

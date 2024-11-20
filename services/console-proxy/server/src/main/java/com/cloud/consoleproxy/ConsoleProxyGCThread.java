@@ -22,7 +22,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  *
@@ -31,7 +32,7 @@ import org.apache.log4j.Logger;
  * management software
  */
 public class ConsoleProxyGCThread extends Thread {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyGCThread.class);
+    protected Logger logger = LogManager.getLogger(ConsoleProxyGCThread.class);
 
     private final static int MAX_SESSION_IDLE_SECONDS = 180;
 
@@ -58,7 +59,7 @@ public class ConsoleProxyGCThread extends Thread {
                     try {
                         file.delete();
                     } catch (Throwable e) {
-                        s_logger.info("[ignored]"
+                        logger.info("[ignored]"
                                 + "failed to delete file: " + e.getLocalizedMessage());
                     }
                 }
@@ -76,8 +77,8 @@ public class ConsoleProxyGCThread extends Thread {
             cleanupLogging();
             bReportLoad = false;
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
             }
             Set<String> e = connMap.keySet();
             Iterator<String> iterator = e.iterator();
@@ -101,7 +102,7 @@ public class ConsoleProxyGCThread extends Thread {
                 }
 
                 // close the server connection
-                s_logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
+                logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
                 client.closeClient();
             }
 
@@ -116,15 +117,15 @@ public class ConsoleProxyGCThread extends Thread {
                     removedSessionsSet.clear();
                 }
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Report load change : " + loadInfo);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Report load change : " + loadInfo);
                 }
             }
 
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] Console proxy was interrupted during GC.");
+                logger.debug("[ignored] Console proxy was interrupted during GC.");
             }
         }
     }

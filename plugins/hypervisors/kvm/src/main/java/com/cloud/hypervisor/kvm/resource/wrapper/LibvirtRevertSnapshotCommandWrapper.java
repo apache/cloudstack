@@ -32,7 +32,6 @@ import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
@@ -58,7 +57,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRevertSnapshotCommandWrapper.class);
     private static final String MON_HOST = "mon_host";
     private static final String KEY = "key";
     private static final String CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
@@ -103,7 +101,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                 IoCTX io = rados.ioCtxCreate(primaryPool.getSourceDir());
                 Rbd rbd = new Rbd(io);
 
-                s_logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(), volumePath, rbdSnapshotId));
+                logger.debug(String.format("Attempting to rollback RBD snapshot [name:%s], [volumeid:%s], [snapshotid:%s]", snapshot.getName(), volumePath, rbdSnapshotId));
 
                 RbdImage image = rbd.open(volumePath);
                 image.snapRollBack(rbdSnapshotId);
@@ -117,13 +115,13 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                 }
 
                 if (primaryPool.getType() == StoragePoolType.CLVM) {
-                    Script cmd = new Script(libvirtComputingResource.manageSnapshotPath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
+                    Script cmd = new Script(libvirtComputingResource.manageSnapshotPath(), libvirtComputingResource.getCmdsTimeout(), logger);
                     cmd.add("-v", getFullPathAccordingToStorage(secondaryStoragePool, snapshotRelPath));
                     cmd.add("-n", snapshotDisk.getName());
                     cmd.add("-p", snapshotDisk.getPath());
                     String result = cmd.execute();
                     if (result != null) {
-                        s_logger.debug("Failed to revert snaptshot: " + result);
+                        logger.debug("Failed to revert snaptshot: " + result);
                         return new Answer(command, false, result);
                     }
                 } else {
@@ -135,10 +133,10 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         } catch (CloudRuntimeException e) {
             return new Answer(command, false, e.toString());
         } catch (RadosException e) {
-            s_logger.error("Failed to connect to Rados pool while trying to revert snapshot. Exception: ", e);
+            logger.error("Failed to connect to Rados pool while trying to revert snapshot. Exception: ", e);
             return new Answer(command, false, e.toString());
         } catch (RbdException e) {
-            s_logger.error("Failed to connect to revert snapshot due to RBD exception: ", e);
+            logger.error("Failed to connect to revert snapshot due to RBD exception: ", e);
             return new Answer(command, false, e.toString());
         }
     }
@@ -163,11 +161,11 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         String snapshotPath = resultGetSnapshot.first();
         SnapshotObjectTO snapshotToPrint = resultGetSnapshot.second();
 
-        s_logger.debug(String.format("Reverting volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
+        logger.debug(String.format("Reverting volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
 
         try {
             replaceVolumeWithSnapshot(volumePath, snapshotPath);
-            s_logger.debug(String.format("Successfully reverted volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
+            logger.debug(String.format("Successfully reverted volume [%s] to snapshot [%s].", volumeObjectTo, snapshotToPrint));
         } catch (IOException ex) {
             throw new CloudRuntimeException(String.format("Unable to revert volume [%s] to snapshot [%s] due to [%s].", volumeObjectTo, snapshotToPrint, ex.getMessage()), ex);
         }
@@ -192,8 +190,8 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                     snapshotOnSecondaryStorage, snapshotOnSecondaryStorage.getVolume()));
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("Snapshot does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].",
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Snapshot does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].",
                     kvmStoragePoolPrimary, snapshotOnSecondaryStorage, kvmStoragePoolSecondary));
         }
 

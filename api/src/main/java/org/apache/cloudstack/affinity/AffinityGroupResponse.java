@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.dedicated.DedicatedResourceResponse;
 
 import com.cloud.serializer.Param;
 
@@ -75,6 +76,10 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @SerializedName("virtualmachineIds")
     @Param(description = "virtual machine IDs associated with this affinity group")
     private List<String> vmIdList;
+
+    @SerializedName("dedicatedresources")
+    @Param(description = "dedicated resources associated with this affinity group")
+    private List<DedicatedResourceResponse> dedicatedResources;
 
     public AffinityGroupResponse() {
     }
@@ -169,6 +174,14 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         }
 
         this.vmIdList.add(vmId);
+    }
+
+    public void addDedicatedResource(DedicatedResourceResponse dedicatedResourceResponse) {
+        if (this.dedicatedResources == null) {
+            this.dedicatedResources = new ArrayList<>();
+        }
+
+        this.dedicatedResources.add(dedicatedResourceResponse);
     }
 
 }

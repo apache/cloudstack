@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.guest;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -43,7 +42,6 @@ import java.util.Map;
 @APICommand(name = "addGuestOs", description = "Add a new guest OS type", responseObject = GuestOSResponse.class,
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddGuestOsCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddGuestOsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

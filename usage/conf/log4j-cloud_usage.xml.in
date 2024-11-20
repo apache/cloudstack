@@ -17,70 +17,53 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<Configuration monitorInterval="60">
+   <Appenders>
 
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+       <!-- ============================== -->
+       <!-- Append messages to the console -->
+       <!-- ============================== -->
 
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+       <Console name="CONSOLE" target="SYSTEM_OUT">
+          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
+          <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
+       </Console>
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-      <param name="Target" value="System.out"/>
-      <param name="Threshold" value="INFO"/>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
-      </layout>
-   </appender>
+       <!-- ================================ -->
+       <!-- Append messages to the usage log -->
+       <!-- ================================ -->
 
-   <!-- ================================ -->
-   <!-- Append messages to the usage log -->
-   <!-- ================================ -->
+      <RollingFile name="USAGE" append="true" fileName="@USAGELOG@" filePattern="@USAGELOG@.%d{yyyy-MM-dd}{GMT}.gz">
+         <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+      </RollingFile>
+   </Appenders>
 
-   <!-- A time/date based rolling appender -->
-   <appender name="USAGE" class="org.apache.log4j.rolling.RollingFileAppender">
-      <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@USAGELOG@.%d{yyyy-MM-dd}{GMT}.gz"/>
-        <param name="ActiveFileName" value="@USAGELOG@"/>
-      </rollingPolicy>
+   <Loggers>
+        <!-- ================ -->
+        <!-- Limit categories -->
+        <!-- ================ -->
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
-      </layout>
-   </appender>
+      <Logger name="com.cloud" level="DEBUG"/>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+      <Logger name="org.apache" level="INFO"/>
 
-   <category name="com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+      <Logger name="org" level="INFO"/>
 
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
-      <priority value="INFO"/>
-   </category>
+      <Logger name="net" level="INFO"/>
 
-   <category name="org">
-      <priority value="INFO"/>
-   </category>
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
 
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+      <Root level="INFO">
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="USAGE"/>
+      </Root>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
-
-   <root>
-      <level value="INFO"/>
-      <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="USAGE"/>
-   </root>
-
-</log4j:configuration>
+   </Loggers>
+</Configuration>

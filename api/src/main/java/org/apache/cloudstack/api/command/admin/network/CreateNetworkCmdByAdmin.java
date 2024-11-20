@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,14 +24,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 
 import com.cloud.network.Network;
 
+import java.util.List;
+
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkCmdByAdmin.class.getName());
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
@@ -50,6 +51,14 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
     @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to a router in a shared network", since = "4.16",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIpv6;
+
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            description = "Ids of the Bgp Peer for the network",
+            since = "4.20.0")
+    private List<Long> bgpPeerIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -79,5 +88,9 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCm
 
     public String getRouterIpv6() {
         return routerIpv6;
+    }
+
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
     }
 }

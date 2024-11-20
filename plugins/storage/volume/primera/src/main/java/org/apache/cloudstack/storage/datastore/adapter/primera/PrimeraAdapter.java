@@ -53,15 +53,16 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PrimeraAdapter implements ProviderAdapter {
 
-    static final Logger logger = Logger.getLogger(PrimeraAdapter.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String HOSTSET = "hostset";
     public static final String CPG = "cpg";

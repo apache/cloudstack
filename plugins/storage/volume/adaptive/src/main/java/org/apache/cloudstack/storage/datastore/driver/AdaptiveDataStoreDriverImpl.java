@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.datastore.driver;
 
 import java.util.Map;
 import javax.inject.Inject;
-import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -97,10 +96,12 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDriverImpl {
 
-    static final Logger s_logger = Logger.getLogger(AdaptiveDataStoreDriverImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String providerName = null;
 
@@ -209,7 +210,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            s_logger.info("Volume creation starting for data store [" + dataStore.getName() +
+            logger.info("Volume creation starting for data store [" + dataStore.getName() +
                     "] and data object [" + dataObject.getUuid() + "] of type [" + dataObject.getType() + "]");
 
             // quota size of the cloudbyte volume will be increased with the given
@@ -242,7 +243,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 volume = api.getVolume(context, dataIn);
                 if (volume != null) {
-                    s_logger.info("Template volume already exists [" + dataObject.getUuid() + "]");
+                    logger.info("Template volume already exists [" + dataObject.getUuid() + "]");
                 }
             }
 
@@ -260,7 +261,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                         throw e;
                     }
                 }
-                s_logger.info("New volume created on remote storage for [" + dataObject.getUuid() + "]");
+                logger.info("New volume created on remote storage for [" + dataObject.getUuid() + "]");
             }
 
             // set these from the discovered or created volume before proceeding
@@ -272,9 +273,9 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
             result = new CreateCmdResult(dataObject.getUuid(), new Answer(null));
             result.setSuccess(true);
-            s_logger.info("Volume creation complete for [" + dataObject.getUuid() + "]");
+            logger.info("Volume creation complete for [" + dataObject.getUuid() + "]");
         } catch (Throwable e) {
-            s_logger.error("Volume creation  failed for dataObject [" + dataObject.getUuid() + "]: " + e.toString(), e);
+            logger.error("Volume creation  failed for dataObject [" + dataObject.getUuid() + "]: " + e.toString(), e);
             result = new CreateCmdResult(null, new Answer(null));
             result.setResult(e.toString());
             result.setSuccess(false);
@@ -288,7 +289,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     @Override
     public void deleteAsync(DataStore dataStore, DataObject dataObject,
             AsyncCompletionCallback<CommandResult> callback) {
-        s_logger.debug("Delete volume started");
+        logger.debug("Delete volume started");
         CommandResult result = new CommandResult();
         try {
             StoragePoolVO storagePool = _storagePoolDao.findById(dataStore.getId());
@@ -304,7 +305,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             result.setResult("Successfully deleted volume");
             result.setSuccess(true);
         } catch (Throwable e) {
-            s_logger.error("Result to volume delete failed with exception", e);
+            logger.error("Result to volume delete failed with exception", e);
             result.setResult(e.toString());
         } finally {
             if (callback != null)
@@ -317,7 +318,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = null;
         try {
-            s_logger.info("Copying volume " + srcdata.getUuid() + " to " + destdata.getUuid() + "]");
+            logger.info("Copying volume " + srcdata.getUuid() + " to " + destdata.getUuid() + "]");
 
             if (!canCopy(srcdata, destdata)) {
                 throw new CloudRuntimeException(
@@ -329,7 +330,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
                 ProviderAdapter api = getAPI(storagePool, details);
 
-                s_logger.info("Copy volume " + srcdata.getUuid() + " to " + destdata.getUuid());
+                logger.info("Copy volume " + srcdata.getUuid() + " to " + destdata.getUuid());
 
                 ProviderVolume outVolume;
                 ProviderAdapterContext context = newManagedVolumeContext(destdata);
@@ -346,14 +347,14 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 // if we copied from one volume to another, the target volume's disk offering or user input may be of a larger size
                 // we won't, however, shrink a volume if its smaller.
                 if (outVolume.getAllocatedSizeInBytes() < destdata.getSize()) {
-                    s_logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
+                    logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
                     api.resize(context, destIn, destdata.getSize());
                 }
 
                 // initial volume info does not have connection map yet.  That is added when grantAccess is called later.
                 String finalPath = generatePathInfo(outVolume, null);
                 persistVolumeData(storagePool, details, destdata, outVolume, null);
-                s_logger.info("Copy completed from [" + srcdata.getUuid() + "] to [" + destdata.getUuid() + "]");
+                logger.info("Copy completed from [" + srcdata.getUuid() + "] to [" + destdata.getUuid() + "]");
 
                 VolumeObjectTO voto = new VolumeObjectTO();
                 voto.setPath(finalPath);
@@ -361,7 +362,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 result = new CopyCommandResult(finalPath, new CopyCmdAnswer(voto));
                 result.setSuccess(true);
             } catch (Throwable e) {
-                s_logger.error("Result to volume copy failed with exception", e);
+                logger.error("Result to volume copy failed with exception", e);
                 result = new CopyCommandResult(null, null);
                 result.setSuccess(false);
                 result.setResult(e.toString());
@@ -380,20 +381,20 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        s_logger.debug("canCopy: Checking srcData [" + srcData.getUuid() + ":" + srcData.getType() + ":"
+        logger.debug("canCopy: Checking srcData [" + srcData.getUuid() + ":" + srcData.getType() + ":"
                 + srcData.getDataStore().getId() + " AND destData ["
                 + destData.getUuid() + ":" + destData.getType() + ":" + destData.getDataStore().getId() + "]");
         try {
             if (!isSameProvider(srcData)) {
-                s_logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
+                logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
                 return false;
             }
 
             if (!isSameProvider(destData)) {
-                s_logger.debug("canCopy: No we can't -- the destination provider is NOT the correct type for this driver!");
+                logger.debug("canCopy: No we can't -- the destination provider is NOT the correct type for this driver!");
                 return false;
             }
-            s_logger.debug(
+            logger.debug(
                     "canCopy: Source and destination are the same so we can copy via storage endpoint, checking that the source actually exists");
             StoragePoolVO poolVO = _storagePoolDao.findById(srcData.getDataStore().getId());
             Map<String, String> details = _storagePoolDao.getDetails(srcData.getDataStore().getId());
@@ -421,14 +422,14 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 }
             }
         } catch (Throwable e) {
-            s_logger.warn("Problem checking if we canCopy", e);
+            logger.warn("Problem checking if we canCopy", e);
             return false;
         }
     }
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
-        s_logger.debug("Resize volume started");
+        logger.debug("Resize volume started");
         CreateCmdResult result = null;
         try {
 
@@ -457,12 +458,12 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
                 ProviderAdapterContext context = newManagedVolumeContext(data);
                 ProviderAdapterDataObject dataIn = newManagedDataObject(data, poolVO);
-                if (s_logger.isDebugEnabled()) s_logger.debug("Calling provider API to resize volume " + data.getUuid() + " to " + resizeParameter.newSize);
+                if (logger.isDebugEnabled()) logger.debug("Calling provider API to resize volume " + data.getUuid() + " to " + resizeParameter.newSize);
                 api.resize(context, dataIn, resizeParameter.newSize);
 
                 if (vol.isAttachedVM()) {
                     if (VirtualMachine.State.Running.equals(vol.getAttachedVM().getState())) {
-                        if (s_logger.isDebugEnabled()) s_logger.debug("Notify currently attached VM of volume resize for " + data.getUuid() + " to " + resizeParameter.newSize);
+                        if (logger.isDebugEnabled()) logger.debug("Notify currently attached VM of volume resize for " + data.getUuid() + " to " + resizeParameter.newSize);
                         _volumeService.resizeVolumeOnHypervisor(vol.getId(), resizeParameter.newSize, vol.getAttachedVM().getHostId(), vol.getAttachedVM().getInstanceName());
                     }
                 }
@@ -470,7 +471,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 result = new CreateCmdResult(data.getUuid(), new Answer(null));
                 result.setSuccess(true);
             } catch (Throwable e) {
-                s_logger.error("Resize volume failed, please contact cloud support.", e);
+                logger.error("Resize volume failed, please contact cloud support.", e);
                 result = new CreateCmdResult(null, new Answer(null));
                 result.setResult(e.toString());
                 result.setSuccess(false);
@@ -483,7 +484,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
-        s_logger.debug("Granting host " + host.getName() + " access to volume " + dataObject.getUuid());
+        logger.debug("Granting host " + host.getName() + " access to volume " + dataObject.getUuid());
 
         try {
             StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
@@ -501,11 +502,11 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
 
 
-            s_logger.info("Granted host " + host.getName() + " access to volume " + dataObject.getUuid());
+            logger.info("Granted host " + host.getName() + " access to volume " + dataObject.getUuid());
             return true;
         } catch (Throwable e) {
             String msg = "Error granting host " + host.getName() + " access to volume " + dataObject.getUuid() + ":" + e.getMessage();
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -516,7 +517,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             return;
         }
 
-        s_logger.debug("Revoking access for host " + host.getName() + " to volume " + dataObject.getUuid());
+        logger.debug("Revoking access for host " + host.getName() + " to volume " + dataObject.getUuid());
 
         try {
             StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
@@ -534,10 +535,10 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
             persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
 
-            s_logger.info("Revoked access for host " + host.getName() + " to volume " + dataObject.getUuid());
+            logger.info("Revoked access for host " + host.getName() + " to volume " + dataObject.getUuid());
         } catch (Throwable e) {
             String msg = "Error revoking access for host " + host.getName() + " to volume " + dataObject.getUuid() + ":" + e.getMessage();
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -545,7 +546,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo,
             QualityOfServiceState qualityOfServiceState) {
-        s_logger.info("handleQualityOfServiceVolumeMigration: " + volumeInfo.getUuid() + " " +
+        logger.info("handleQualityOfServiceVolumeMigration: " + volumeInfo.getUuid() + " " +
                 volumeInfo.getPath() + ": " + qualityOfServiceState.toString());
     }
 
@@ -575,7 +576,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            s_logger.debug("taking volume snapshot");
+            logger.debug("taking volume snapshot");
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
 
             VolumeInfo baseVolume = snapshot.getBaseVolume();
@@ -618,7 +619,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             result.setResult("Snapshot completed with new WWN " + finalAddress);
             result.setSuccess(true);
         } catch (Throwable e) {
-            s_logger.debug("Failed to take snapshot: " + e.getMessage());
+            logger.debug("Failed to take snapshot: " + e.getMessage());
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         } finally {
@@ -663,7 +664,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             // set command as success
             result.setSuccess(true);
         } catch (Throwable e) {
-            s_logger.warn("revertSnapshot failed", e);
+            logger.warn("revertSnapshot failed", e);
             result.setResult(e.toString());
             result.setSuccess(false);
         } finally {
@@ -705,7 +706,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             }
         }
 
-        s_logger.debug("Used/Allocated storage space (in bytes): " + String.valueOf(usedSpaceBytes));
+        logger.debug("Used/Allocated storage space (in bytes): " + String.valueOf(usedSpaceBytes));
 
         return usedSpaceBytes;
     }

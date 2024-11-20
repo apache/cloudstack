@@ -28,14 +28,12 @@ import java.util.List;
 import com.cloud.upgrade.RolePermissionChecker;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 
-public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41520to41600 extends DbUpgradeAbstractImpl implements DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41520to41600.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
     private RolePermissionChecker rolePermissionChecker = new RolePermissionChecker();
 
@@ -82,21 +80,21 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     private void checkAndPersistAnnotationPermissions(Connection conn, RoleType roleType, List<String> rules) {
-        LOG.debug("Checking the annotation permissions for the role: " + roleType.getId());
+        logger.debug("Checking the annotation permissions for the role: " + roleType.getId());
         for (String rule : rules) {
-            LOG.debug("Checking the annotation permissions for the role: " + roleType.getId() + " and rule: " + rule);
+            logger.debug("Checking the annotation permissions for the role: " + roleType.getId() + " and rule: " + rule);
             if (!rolePermissionChecker.existsRolePermissionByRoleIdAndRule(conn, roleType.getId(), rule)) {
-                LOG.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + rule);
+                logger.debug("Inserting role permission for role: " + roleType.getId() + " and rule: " + rule);
                 rolePermissionChecker.insertAnnotationRulePermission(conn, roleType.getId(), rule);
             } else {
-                LOG.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + rule +
+                logger.debug("Found existing role permission for role: " + roleType.getId() + " and rule: " + rule +
                         ", not updating it");
             }
         }
     }
 
     private void generateUuidForExistingSshKeyPairs(Connection conn) {
-        LOG.debug("Generating uuid for existing ssh key-pairs");
+        logger.debug("Generating uuid for existing ssh key-pairs");
         try {
             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`ssh_keypairs` WHERE uuid is null");
             ResultSet rs = pstmt.executeQuery();
@@ -112,10 +110,10 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
             if (!pstmt.isClosed())  {
                 pstmt.close();
             }
-            LOG.debug("Successfully generated uuid for existing ssh key-pairs");
+            logger.debug("Successfully generated uuid for existing ssh key-pairs");
         } catch (SQLException e) {
             String errMsg = "Exception while generating uuid for existing ssh key-pairs: " + e.getMessage();
-            LOG.error(errMsg, e);
+            logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
     }
@@ -127,7 +125,7 @@ public class Upgrade41520to41600 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        logger.debug("Updating System Vm template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);

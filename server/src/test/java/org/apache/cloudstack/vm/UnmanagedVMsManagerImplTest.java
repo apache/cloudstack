@@ -17,6 +17,58 @@
 
 package org.apache.cloudstack.vm;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckConvertInstanceAnswer;
@@ -49,6 +101,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -107,57 +160,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
-import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
@@ -296,48 +298,47 @@ public class UnmanagedVMsManagerImplTest {
 
         ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
         clusterVO.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
-        when(clusterDao.findById(Mockito.anyLong())).thenReturn(clusterVO);
+        when(clusterDao.findById(anyLong())).thenReturn(clusterVO);
         when(configurationDao.getValue(Mockito.anyString())).thenReturn(null);
-        doNothing().when(resourceLimitService).checkResourceLimit(Mockito.any(Account.class), Mockito.any(Resource.ResourceType.class), Mockito.anyLong());
+        doNothing().when(resourceLimitService).checkResourceLimit(any(Account.class), any(Resource.ResourceType.class), anyLong());
         List<HostVO> hosts = new ArrayList<>();
         HostVO hostVO = Mockito.mock(HostVO.class);
         when(hostVO.isInMaintenanceStates()).thenReturn(false);
         hosts.add(hostVO);
-        when(hostVO.checkHostServiceOfferingTags(Mockito.any())).thenReturn(true);
-        when(resourceManager.listHostsInClusterByStatus(Mockito.anyLong(), Mockito.any(Status.class))).thenReturn(hosts);
-        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(any(Hypervisor.HypervisorType.class), Mockito.anyLong())).thenReturn(hosts);
+        when(resourceManager.listHostsInClusterByStatus(anyLong(), any(Status.class))).thenReturn(hosts);
+        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(any(Hypervisor.HypervisorType.class), anyLong())).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
         when(templatePoolDao.listAll()).thenReturn(templates);
         List<VolumeVO> volumes = new ArrayList<>();
-        when(volumeDao.findIncludingRemovedByZone(Mockito.anyLong())).thenReturn(volumes);
+        when(volumeDao.findIncludingRemovedByZone(anyLong())).thenReturn(volumes);
         GetUnmanagedInstancesCommand cmd = Mockito.mock(GetUnmanagedInstancesCommand.class);
         HashMap<String, UnmanagedInstanceTO> map = new HashMap<>();
         map.put(instance.getName(), instance);
         Answer answer = new GetUnmanagedInstancesAnswer(cmd, "", map);
-        when(agentManager.easySend(Mockito.anyLong(), Mockito.any(GetUnmanagedInstancesCommand.class))).thenReturn(answer);
+        when(agentManager.easySend(anyLong(), any(GetUnmanagedInstancesCommand.class))).thenReturn(answer);
         GetRemoteVmsCommand remoteVmListcmd = Mockito.mock(GetRemoteVmsCommand.class);
         Answer remoteVmListAnswer = new GetRemoteVmsAnswer(remoteVmListcmd, "", map);
-        when(agentManager.easySend(Mockito.anyLong(), any(GetRemoteVmsCommand.class))).thenReturn(remoteVmListAnswer);
+        when(agentManager.easySend(anyLong(), any(GetRemoteVmsCommand.class))).thenReturn(remoteVmListAnswer);
         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
         when(zone.getId()).thenReturn(1L);
-        when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
-        when(accountService.getActiveAccountById(Mockito.anyLong())).thenReturn(Mockito.mock(Account.class));
+        when(dataCenterDao.findById(anyLong())).thenReturn(zone);
+        when(accountService.getActiveAccountById(anyLong())).thenReturn(Mockito.mock(Account.class));
         List<UserVO> users = new ArrayList<>();
         users.add(Mockito.mock(UserVO.class));
-        when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
+        when(userDao.listByAccount(anyLong())).thenReturn(users);
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(template.getName()).thenReturn("Template");
-        when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
+        when(templateDao.findById(anyLong())).thenReturn(template);
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getId()).thenReturn(1L);
         when(serviceOffering.isDynamic()).thenReturn(false);
         when(serviceOffering.getCpu()).thenReturn(instance.getCpuCores());
         when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
         when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
-        when(serviceOfferingDao.findById(Mockito.anyLong())).thenReturn(serviceOffering);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
         when(serviceOfferingDao.findById(anyLong(), anyLong())).thenReturn(Mockito.mock(ServiceOfferingVO.class));
         DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
-        when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskOfferingVO);
+        when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVO);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         when(userVm.getAccountId()).thenReturn(1L);
         when(userVm.getDataCenterId()).thenReturn(1L);
@@ -363,21 +364,21 @@ public class UnmanagedVMsManagerImplTest {
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
         when(networkVO.getBroadcastUri()).thenReturn(URI.create(String.format("vlan://%d", instanceNic.getVlan())));
         when(networkVO.getDataCenterId()).thenReturn(1L);
-        when(networkDao.findById(Mockito.anyLong())).thenReturn(networkVO);
+        when(networkDao.findById(anyLong())).thenReturn(networkVO);
         List<NetworkVO> networks = new ArrayList<>();
         networks.add(networkVO);
-        when(networkDao.listByZone(Mockito.anyLong())).thenReturn(networks);
-        doNothing().when(networkModel).checkNetworkPermissions(Mockito.any(Account.class), Mockito.any(Network.class));
+        when(networkDao.listByZone(anyLong())).thenReturn(networks);
+        doNothing().when(networkModel).checkNetworkPermissions(any(Account.class), any(Network.class));
         NicProfile profile = Mockito.mock(NicProfile.class);
         Integer deviceId = 100;
         Pair<NicProfile, Integer> pair = new Pair<NicProfile, Integer>(profile, deviceId);
-        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), nullable(DataCenter.class), Mockito.anyBoolean())).thenReturn(pair);
-        when(volumeDao.findByInstance(Mockito.anyLong())).thenReturn(volumes);
+        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), nullable(DataCenter.class), anyBoolean())).thenReturn(pair);
+        when(volumeDao.findByInstance(anyLong())).thenReturn(volumes);
         List<UserVmResponse> userVmResponses = new ArrayList<>();
         UserVmResponse userVmResponse = new UserVmResponse();
         userVmResponse.setInstanceName(instance.getName());
         userVmResponses.add(userVmResponse);
-        when(responseGenerator.createUserVmResponse(Mockito.any(ResponseObject.ResponseView.class), Mockito.anyString(), Mockito.any(UserVm.class))).thenReturn(userVmResponses);
+        when(responseGenerator.createUserVmResponse(any(ResponseObject.ResponseView.class), Mockito.anyString(), any(UserVm.class))).thenReturn(userVmResponses);
 
         when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
@@ -401,7 +402,7 @@ public class UnmanagedVMsManagerImplTest {
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
         cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
-        when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+        when(clusterDao.findById(anyLong())).thenReturn(cluster);
         unmanagedVMsManager.listUnmanagedInstances(cmd);
     }
 
@@ -558,7 +559,7 @@ public class UnmanagedVMsManagerImplTest {
     public void testBasicAccessChecksUnsupportedHypervisorType() {
         ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
         clusterVO.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
-        when(clusterDao.findById(Mockito.anyLong())).thenReturn(clusterVO);
+        when(clusterDao.findById(anyLong())).thenReturn(clusterVO);
         unmanagedVMsManager.basicAccessChecks(1L);
     }
 
@@ -854,5 +855,41 @@ public class UnmanagedVMsManagerImplTest {
         ClusterVO cluster = getClusterForTests();
         Mockito.when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
         unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null);
+    }
+
+    @Test
+    public void testCheckUnmanagedDiskLimits() {
+        Account owner = Mockito.mock(Account.class);
+        UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(disk.getDiskId()).thenReturn("disk1");
+        Mockito.when(disk.getCapacity()).thenReturn(100L);
+        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+        Mockito.when(serviceOffering.getDiskOfferingId()).thenReturn(1L);
+        UnmanagedInstanceTO.Disk dataDisk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(dataDisk.getDiskId()).thenReturn("disk2");
+        Mockito.when(dataDisk.getCapacity()).thenReturn(1000L);
+        Map<String, Long> dataDiskMap = new HashMap<>();
+        dataDiskMap.put("disk2", 2L);
+        DiskOfferingVO offering1 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(1L)).thenReturn(offering1);
+        String tag1 = "tag1";
+        Mockito.when(resourceLimitService.getResourceLimitStorageTags(offering1)).thenReturn(List.of(tag1));
+        DiskOfferingVO offering2 = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOfferingDao.findById(2L)).thenReturn(offering2);
+        String tag2 = "tag2";
+        Mockito.when(resourceLimitService.getResourceLimitStorageTags(offering2)).thenReturn(List.of(tag2));
+        try {
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(any(), any(), any());
+            Mockito.doNothing().when(resourceLimitService).checkResourceLimitWithTag(any(), any(), any(), any());
+            unmanagedVMsManager.checkUnmanagedDiskLimits(owner, disk, serviceOffering, List.of(dataDisk), dataDiskMap);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimit(owner, Resource.ResourceType.volume, 2);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimit(owner, Resource.ResourceType.primary_storage, 1100L);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.volume, tag1,1);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.volume, tag2,1);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.primary_storage, tag1,100L);
+            Mockito.verify(resourceLimitService, Mockito.times(1)).checkResourceLimitWithTag(owner, Resource.ResourceType.primary_storage, tag2,1000L);
+        } catch (ResourceAllocationException e) {
+            Assert.fail("Exception encountered: " + e.getMessage());
+        }
     }
 }

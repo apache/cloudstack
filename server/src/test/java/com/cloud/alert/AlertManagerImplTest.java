@@ -18,7 +18,7 @@ package com.cloud.alert;
 
 import com.cloud.alert.dao.AlertDao;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

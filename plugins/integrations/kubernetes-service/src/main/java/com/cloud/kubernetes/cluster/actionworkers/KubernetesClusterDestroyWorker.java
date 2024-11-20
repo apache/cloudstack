@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Level;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -56,6 +55,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -78,7 +78,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 || kubernetesCluster.getState().equals(KubernetesCluster.State.Destroying))) {
             String msg = String.format("Cannot perform delete operation on cluster : %s in state: %s",
                 kubernetesCluster.getName(), kubernetesCluster.getState());
-            LOGGER.warn(msg);
+            logger.warn(msg);
             throw new PermissionDeniedException(msg);
         }
     }
@@ -100,15 +100,15 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                 try {
                     UserVm vm = userVmService.destroyVm(vmID, true);
                     if (!userVmManager.expunge(userVM)) {
-                        LOGGER.warn(String.format("Unable to expunge VM %s : %s, destroying Kubernetes cluster will probably fail",
+                        logger.warn(String.format("Unable to expunge VM %s : %s, destroying Kubernetes cluster will probably fail",
                             vm.getInstanceName() , vm.getUuid()));
                     }
                     kubernetesClusterVmMapDao.expunge(clusterVM.getId());
-                    if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info(String.format("Destroyed VM : %s as part of Kubernetes cluster : %s cleanup", vm.getDisplayName(), kubernetesCluster.getName()));
+                    if (logger.isInfoEnabled()) {
+                        logger.info(String.format("Destroyed VM : %s as part of Kubernetes cluster : %s cleanup", vm.getDisplayName(), kubernetesCluster.getName()));
                     }
                 } catch (ResourceUnavailableException | ConcurrentOperationException e) {
-                    LOGGER.warn(String.format("Failed to destroy VM : %s part of the Kubernetes cluster : %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getDisplayName(), kubernetesCluster.getName()), e);
+                    logger.warn(String.format("Failed to destroy VM : %s part of the Kubernetes cluster : %s cleanup. Moving on with destroying remaining resources provisioned for the Kubernetes cluster", userVM.getDisplayName(), kubernetesCluster.getName()), e);
                     return false;
                 } finally {
                     CallContext.unregister();
@@ -133,11 +133,11 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             boolean networkDestroyed = networkMgr.destroyNetwork(kubernetesCluster.getNetworkId(), context, true);
             if (!networkDestroyed) {
                 String msg = String.format("Failed to destroy network : %s as part of Kubernetes cluster : %s cleanup", network.getName(), kubernetesCluster.getName());
-                LOGGER.warn(msg);
+                logger.warn(msg);
                 throw new ManagementServerException(msg);
             }
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Destroyed network : %s as part of Kubernetes cluster : %s cleanup",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Destroyed network : %s as part of Kubernetes cluster : %s cleanup",
                     network.getName(), kubernetesCluster.getName()));
             }
         }
@@ -223,7 +223,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
 
     private void checkForRulesToDelete() throws ManagementServerException {
         NetworkVO kubernetesClusterNetwork = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
+        if (kubernetesClusterNetwork != null && !manager.isDirectAccess(kubernetesClusterNetwork)) {
             deleteKubernetesClusterNetworkRules();
         }
     }
@@ -270,11 +270,11 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     }
                 }
             } else {
-                LOGGER.error(String.format("Failed to find network for Kubernetes cluster : %s", kubernetesCluster.getName()));
+                logger.error(String.format("Failed to find network for Kubernetes cluster : %s", kubernetesCluster.getName()));
             }
         }
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Destroying Kubernetes cluster : %s", kubernetesCluster.getName()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Destroying Kubernetes cluster : %s", kubernetesCluster.getName()));
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.DestroyRequested);
         boolean vmsDestroyed = destroyClusterVMs();
@@ -286,7 +286,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     destroyKubernetesClusterNetwork();
                 } catch (ManagementServerException e) {
                     String msg = String.format("Failed to destroy network of Kubernetes cluster : %s cleanup", kubernetesCluster.getName());
-                    LOGGER.warn(msg, e);
+                    logger.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
@@ -295,7 +295,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     checkForRulesToDelete();
                 } catch (ManagementServerException e) {
                     String msg = String.format("Failed to remove network rules of Kubernetes cluster : %s", kubernetesCluster.getName());
-                    LOGGER.warn(msg, e);
+                    logger.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
@@ -303,14 +303,14 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     releaseVpcTierPublicIpIfNeeded();
                 } catch (InsufficientAddressCapacityException e) {
                     String msg = String.format("Failed to release public IP for VPC tier used by Kubernetes cluster : %s", kubernetesCluster.getName());
-                    LOGGER.warn(msg, e);
+                    logger.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }
             }
         } else {
             String msg = String.format("Failed to destroy one or more VMs as part of Kubernetes cluster : %s cleanup", kubernetesCluster.getName());
-            LOGGER.warn(msg);
+            logger.warn(msg);
             updateKubernetesClusterEntryForGC();
             throw new CloudRuntimeException(msg);
         }
@@ -323,8 +323,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             updateKubernetesClusterEntryForGC();
             return false;
         }
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster : %s is successfully deleted", kubernetesCluster.getName()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Kubernetes cluster : %s is successfully deleted", kubernetesCluster.getName()));
         }
         return true;
     }

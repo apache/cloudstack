@@ -18,6 +18,7 @@ package org.apache.cloudstack.service;
 
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.vm.VirtualMachine;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,12 +27,18 @@ import org.mockito.MockitoAnnotations;
 public class ServiceOfferingVOTest {
     ServiceOfferingVO offeringCustom;
     ServiceOfferingVO offering;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         offeringCustom = new ServiceOfferingVO("custom", null, null, 500, 10, 10, false, "custom", false, VirtualMachine.Type.User, false);
         offering = new ServiceOfferingVO("normal", 1, 1000, 500, 10, 10, false, "normal", false, VirtualMachine.Type.User, false);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     // Test restoreVm when VM state not in running/stopped case

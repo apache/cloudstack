@@ -31,7 +31,6 @@ import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLUtils;
-import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.LogoutRequest;
 import org.opensaml.saml2.core.Response;
@@ -54,7 +53,6 @@ import java.net.InetAddress;
 
 @APICommand(name = "samlSlo", description = "SAML Global Log Out API", responseObject = LogoutCmdResponse.class, entityType = {})
 public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(SAML2LogoutAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "logoutresponse";
 
     @Inject
@@ -94,7 +92,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
-                s_logger.info("[ignored] sending redirected failed.", ignored);
+                logger.info("[ignored] sending redirected failed.", ignored);
             }
             return responseString;
         }
@@ -102,7 +100,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
         try {
             DefaultBootstrap.bootstrap();
         } catch (ConfigurationException | FactoryConfigurationError e) {
-            s_logger.error("OpenSAML Bootstrapping error: " + e.getMessage());
+            logger.error("OpenSAML Bootstrapping error: " + e.getMessage());
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
                     "OpenSAML Bootstrapping error while creating SP MetaData",
                     params, responseType));
@@ -119,12 +117,12 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
                             params, responseType));
                 }
             } catch (ConfigurationException | FactoryConfigurationError | ParserConfigurationException | SAXException | IOException | UnmarshallingException e) {
-                s_logger.error("SAMLResponse processing error: " + e.getMessage());
+                logger.error("SAMLResponse processing error: " + e.getMessage());
             }
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
-                s_logger.info("[ignored] second redirected sending failed.", ignored);
+                logger.info("[ignored] second redirected sending failed.", ignored);
             }
             return responseString;
         }
@@ -136,7 +134,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             try {
                 resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
             } catch (IOException ignored) {
-                s_logger.info("[ignored] final redirected failed.", ignored);
+                logger.info("[ignored] final redirected failed.", ignored);
             }
             return responseString;
         }
@@ -146,7 +144,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             String redirectUrl = idpMetadata.getSloUrl() + "?SAMLRequest=" + SAMLUtils.encodeSAMLRequest(logoutRequest);
             resp.sendRedirect(redirectUrl);
         } catch (MarshallingException | IOException e) {
-            s_logger.error("SAML SLO error: " + e.getMessage());
+            logger.error("SAML SLO error: " + e.getMessage());
             throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.ACCOUNT_ERROR.getHttpCode(),
                     "SAML Single Logout Error",
                     params, responseType));
@@ -167,7 +165,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
+            logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
         }
     }
 }

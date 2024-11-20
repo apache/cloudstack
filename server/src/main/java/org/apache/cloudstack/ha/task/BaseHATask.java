@@ -30,11 +30,12 @@ import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HAFenceException;
 import org.apache.cloudstack.ha.provider.HAProvider;
 import org.apache.cloudstack.ha.provider.HARecoveryException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.joda.time.DateTime;
 
 public abstract class BaseHATask implements Callable<Boolean> {
-    public static final Logger LOG = Logger.getLogger(BaseHATask.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final HAResource resource;
     private final HAProvider<HAResource> haProvider;
@@ -96,10 +97,10 @@ public abstract class BaseHATask implements Callable<Boolean> {
                 result = future.get(timeout, TimeUnit.SECONDS);
             }
         } catch (InterruptedException | ExecutionException e) {
-            LOG.warn("Exception occurred while running " + getTaskType() + " on a resource: " + e.getMessage(), e.getCause());
+            logger.warn("Exception occurred while running " + getTaskType() + " on a resource: " + e.getMessage(), e.getCause());
             throwable = e.getCause();
         } catch (TimeoutException e) {
-            LOG.trace(getTaskType() + " operation timed out for resource id:" + resource.getId());
+            logger.trace(getTaskType() + " operation timed out for resource id:" + resource.getId());
         }
         processResult(result, throwable);
         return result;

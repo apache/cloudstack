@@ -25,8 +25,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -64,8 +62,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
 
 public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(SolidFirePrimaryDataStoreLifeCycle.class);
-
     @Inject private CapacityManager _capacityMgr;
     @Inject private ClusterDao _clusterDao;
     @Inject private DataCenterDao _zoneDao;
@@ -169,7 +165,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
                 lClusterDefaultMinIops = Long.parseLong(clusterDefaultMinIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS +
                           ", using default value: " + lClusterDefaultMinIops +
                           ". Exception: " + ex);
         }
@@ -181,7 +177,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
                 lClusterDefaultMaxIops = Long.parseLong(clusterDefaultMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS +
                           ", using default value: " + lClusterDefaultMaxIops +
                           ". Exception: " + ex);
         }
@@ -193,7 +189,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
                 fClusterDefaultBurstIopsPercentOfMaxIops = Float.parseFloat(clusterDefaultBurstIopsPercentOfMaxIops);
             }
         } catch (NumberFormatException ex) {
-            s_logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
+            logger.warn("Cannot parse the setting " + SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS +
                           ", using default value: " + fClusterDefaultBurstIopsPercentOfMaxIops +
                           ". Exception: " + ex);
         }
@@ -247,7 +243,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
             try {
                 _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 
@@ -271,7 +267,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
             try {
                 _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
             } catch (Exception e) {
-                s_logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }
         }
 
@@ -325,7 +321,7 @@ public class SolidFirePrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLife
                     SolidFireUtil.deleteVolume(sfConnection, sfTemplateVolumeId);
                 }
                 catch (Exception ex) {
-                    s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
+                    logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
                 }
 
                 _tmpltPoolDao.remove(templatePoolRef.getId());

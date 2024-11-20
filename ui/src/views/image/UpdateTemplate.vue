@@ -177,6 +177,34 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item ref="templatetag" name="templatetag" v-if="isAdmin">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetag')" :tooltip="apiParams.templatetag.description"/>
+          </template>
+          <a-input
+            v-model:value="form.templatetag"
+            :placeholder="apiParams.templatetag.description"
+            v-focus="currentForm !== 'Create'"/>
+        </a-form-item>
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -206,6 +234,7 @@ export default {
   data () {
     return {
       templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING', 'VNF'],
+      emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
       keyboardType: {},
@@ -215,7 +244,8 @@ export default {
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
-      userdatapolicylist: {}
+      userdatapolicylist: {},
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -244,9 +274,10 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
+      const resourceFields = ['name', 'displaytext', 'architecture', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
+        resourceFields.push('templatetag')
       }
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
@@ -279,6 +310,7 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
+      this.fetchArchitectureTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
       this.fetchNicAdapterTypes()
       this.fetchKeyboardTypes()
@@ -286,6 +318,9 @@ export default {
       this.fetchUserdataPolicy()
     },
     isValidValueForKey (obj, key) {
+      if (this.emptyAllowedFields.includes(key) && obj[key] === '') {
+        return true
+      }
       return key in obj && obj[key] != null && obj[key] !== undefined && obj[key] !== ''
     },
     fetchOsTypes () {
@@ -299,6 +334,19 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
     },
     fetchRootDiskControllerTypes (hyperVisor) {
       const controller = []

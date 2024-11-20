@@ -18,14 +18,15 @@ package com.cloud.utils.server;
 
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class ServerProperties {
-    private static final Logger LOG = Logger.getLogger(ServerProperties.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private static Properties properties = new Properties();
     private static boolean loaded = false;

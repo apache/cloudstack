@@ -19,11 +19,22 @@ package org.apache.cloudstack.quota.activationrule.presetvariables;
 
 public class PresetVariables {
 
+    @PresetVariableDefinition(description = "Account owner of the resource.")
     private Account account;
+
+    @PresetVariableDefinition(description = "Domain owner of the resource.")
     private Domain domain;
+
+    @PresetVariableDefinition(description = "Project owner of the resource. This field will not exist if the resource belongs to an account.")
     private GenericPresetVariable project;
+
+    @PresetVariableDefinition(description = "Type of the record used. Examples for this are: VirtualMachine, DomainRouter, SourceNat, KVM.")
     private String resourceType;
+
+    @PresetVariableDefinition(description = "Data related to the resource being processed.")
     private Value value;
+
+    @PresetVariableDefinition(description = "Zone where the resource is.")
     private GenericPresetVariable zone;
 
     public Account getAccount() {

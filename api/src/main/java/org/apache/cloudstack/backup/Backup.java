@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
@@ -141,5 +142,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Backup.Status getStatus();
     Long getSize();
     Long getProtectedSize();
+    List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
 }

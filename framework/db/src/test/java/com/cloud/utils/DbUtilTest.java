@@ -36,10 +36,10 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.db.DbUtil;
 import com.cloud.utils.db.TransactionLegacy;
@@ -152,15 +152,17 @@ public class DbUtilTest {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
+
         Assert.assertTrue(DbUtil.getGlobalLock("TEST", 600));
 
-        Mockito.verify(connection).prepareStatement(Matchers.anyString());
+        Mockito.verify(connection).prepareStatement(ArgumentMatchers.anyString());
         Mockito.verify(preparedStatement).close();
     }
 
     @Test
     public void getGlobalLockTimeout() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
+
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(0);
 
@@ -235,6 +237,7 @@ public class DbUtilTest {
     public void releaseGlobalLock() throws SQLException {
         Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
+
         connectionMap.put("testLock", connection);
         Assert.assertTrue(DbUtil.releaseGlobalLock("testLock"));
 

@@ -23,6 +23,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.response.VMScheduleResponse;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +31,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import java.security.InvalidParameterException;
 
 public class CreateVMScheduleCmdTest {
     @Mock
@@ -41,9 +40,16 @@ public class CreateVMScheduleCmdTest {
     @InjectMocks
     private CreateVMScheduleCmd createVMScheduleCmd = new CreateVMScheduleCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -62,11 +68,11 @@ public class CreateVMScheduleCmdTest {
     /**
      * given: "We have a VMScheduleManager and CreateVMScheduleCmd"
      * when: "CreateVMScheduleCmd is executed with an invalid parameter"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
-    @Test(expected = InvalidParameterException.class)
-    public void testInvalidParameterException() {
-        Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenThrow(InvalidParameterException.class);
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidParameterValueException() {
+        Mockito.when(vmScheduleManager.createSchedule(createVMScheduleCmd)).thenThrow(InvalidParameterValueException.class);
         createVMScheduleCmd.execute();
     }
 
@@ -86,7 +92,7 @@ public class CreateVMScheduleCmdTest {
     /**
      * given: "We have an EntityManager and CreateVMScheduleCmd"
      * when: "CreateVMScheduleCmd.getEntityOwnerId is executed for a VM which doesn't exist"
-     * then: "an InvalidParameterException is thrown"
+     * then: "an InvalidParameterValueException is thrown"
      */
     @Test(expected = InvalidParameterValueException.class)
     public void testFailureGetEntityOwnerId() {

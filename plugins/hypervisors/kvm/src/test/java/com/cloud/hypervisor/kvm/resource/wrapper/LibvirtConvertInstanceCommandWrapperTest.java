@@ -168,7 +168,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     @Test
     public void testMoveTemporaryDisksToDestination() {
         KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(sourceDisk.getPool()).thenReturn(temporaryPool);
         List<KVMPhysicalDisk> disks = List.of(sourceDisk);
         String destinationPoolUuid = UUID.randomUUID().toString();
         List<String> destinationPools = List.of(destinationPoolUuid);

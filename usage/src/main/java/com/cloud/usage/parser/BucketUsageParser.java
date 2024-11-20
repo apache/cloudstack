@@ -22,7 +22,8 @@ import com.cloud.usage.dao.BucketStatisticsDao;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.user.AccountVO;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -33,7 +34,7 @@ import java.util.List;
 
 @Component
 public class BucketUsageParser {
-    public static final Logger s_logger = Logger.getLogger(BucketUsageParser.class.getName());
+    public static final Logger LOGGER = LogManager.getLogger(BucketUsageParser.class);
 
     private static UsageDao s_usageDao;
     private static BucketStatisticsDao s_bucketStatisticsDao;
@@ -50,8 +51,8 @@ public class BucketUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Parsing all Bucket usage events for account: " + account.getId());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Parsing all Bucket usage events for account: " + account.getId());
         }
 
         if ((endDate == null) || endDate.after(new Date())) {

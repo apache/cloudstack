@@ -18,7 +18,8 @@
 //
 package com.cloud.utils.compression;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -31,7 +32,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class CompressionUtil {
 
-    private static final Logger s_logger = Logger.getLogger(CompressionUtil.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public byte[] compressString(String inputStr) throws IOException {
         ByteArrayOutputStream obj = new ByteArrayOutputStream();

@@ -44,7 +44,6 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.event.EventTypes;
@@ -79,7 +78,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
-    private static final Logger s_logger = Logger.getLogger(DefaultSnapshotStrategy.class);
 
     @Inject
     SnapshotService snapshotSvr;
@@ -138,12 +136,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
                 } catch (NoTransitionException e) {
-                    s_logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
+                    logger.debug("Failed to change state: " + snapshot.getId() + ": " + e.toString());
                     throw new CloudRuntimeException(e.toString());
                 }
                 return snapshotDataFactory.getSnapshot(snapObj.getId(), store);
             } else {
-                s_logger.debug("parent snapshot hasn't been backed up yet");
+                logger.debug("parent snapshot hasn't been backed up yet");
             }
         }
 
@@ -197,7 +195,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot, String storageToString) {
         DataTO snapshotTo = snapshot.getTO();
-        s_logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
+        logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
 
         boolean result = false;
         boolean resultIsSet = false;
@@ -206,11 +204,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 SnapshotInfo child = snapshot.getChild();
 
                 if (child != null) {
-                    s_logger.debug(String.format("Snapshot [%s] has child [%s], not deleting it on the storage [%s]", snapshotTo, child.getTO(), storageToString));
+                    logger.debug(String.format("Snapshot [%s] has child [%s], not deleting it on the storage [%s]", snapshotTo, child.getTO(), storageToString));
                     break;
                 }
 
-                s_logger.debug(String.format("Snapshot [%s] does not have children; therefore, we will delete it and its parents.", snapshotTo));
+                logger.debug(String.format("Snapshot [%s] does not have children; therefore, we will delete it and its parents.", snapshotTo));
 
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
@@ -218,7 +216,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     if (parent.getPath() != null && parent.getPath().equalsIgnoreCase(snapshot.getPath())) {
                         //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
                         //Instead, mark it as destroyed in the db.
-                        s_logger.debug(String.format("Snapshot [%s] is an empty delta snapshot; therefore, we will only mark it as destroyed in the database.", snapshotTo));
+                        logger.debug(String.format("Snapshot [%s] is an empty delta snapshot; therefore, we will only mark it as destroyed in the database.", snapshotTo));
                         deleted = true;
                         if (!resultIsSet) {
                             result = true;
@@ -233,7 +231,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         if (r) {
                             List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
                             for (SnapshotInfo cacheSnap : cacheSnaps) {
-                                s_logger.debug(String.format("Deleting snapshot %s from image cache [%s].", snapshotTo, cacheSnap.getDataStore().getName()));
+                                logger.debug(String.format("Deleting snapshot %s from image cache [%s].", snapshotTo, cacheSnap.getDataStore().getName()));
                                 cacheSnap.delete();
                             }
                         }
@@ -243,14 +241,14 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                             resultIsSet = true;
                         }
                     } catch (Exception e) {
-                        s_logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
+                        logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
                     }
                 }
 
                 snapshot = parent;
             } while (snapshot != null && snapshotStatesAbleToDeleteSnapshot.contains(snapshot.getState()));
         } catch (Exception e) {
-            s_logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
+            logger.error(String.format("Failed to delete snapshot [%s] on storage [%s] due to [%s].", snapshotTo, storageToString, e.getMessage()), e);
         }
         return result;
     }
@@ -363,9 +361,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             if (!DataStoreRole.Primary.equals(dataStore.getRole())) {
                 verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
                 if (deleteSnapshotChain(snapshotInfo, storageToString)) {
-                    s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                    logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
                 } else {
-                    s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
+                    logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
                 }
                 snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotVo.getId(), dataStore.getId(), dataStore.getRole(), false);
@@ -377,12 +375,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotVo.getId(), dataStore.getId(), dataStore.getRole(), false);
                 return true;
             }
-            s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
+            logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
             if (isLastSnapshotRef) {
                 snapshotObject.processEvent(Snapshot.Event.OperationFailed);
             }
         } catch (NoTransitionException ex) {
-            s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
+            logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
         return false;
     }
@@ -396,11 +394,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     msg = String.format("%s We will mark the snapshot as destroyed.", msg);
                     snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 }
-                s_logger.debug(msg);
+                logger.debug(msg);
                 return true;
             }
         } catch (CloudRuntimeException ex) {
-            s_logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
+            logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
                     snapshotVo, storageToString, ex.getMessage()), ex);
         }
         return false;
@@ -465,7 +463,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 result =  snapshotSvr.revertSnapshot(snapshot);
 
                 if (!result) {
-                    s_logger.debug("Failed to revert snapshot: " + snapshot.getId());
+                    logger.debug("Failed to revert snapshot: " + snapshot.getId());
 
                     throw new CloudRuntimeException("Failed to revert snapshot: " + snapshot.getId());
                 }
@@ -510,7 +508,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             try {
                 result = snapshotSvr.takeSnapshot(snapshot);
                 if (result.isFailed()) {
-                    s_logger.debug("Failed to take snapshot: " + result.getResult());
+                    logger.debug("Failed to take snapshot: " + result.getResult());
                     throw new CloudRuntimeException(result.getResult());
                 }
             } finally {
@@ -565,7 +563,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         }
                     }
                 } catch (Exception e) {
-                    s_logger.debug("Failed to clean up snapshots on primary storage", e);
+                    logger.debug("Failed to clean up snapshots on primary storage", e);
                 }
             }
         });
@@ -584,7 +582,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             return StrategyPriority.CANT_HANDLE;
         }
         if (zoneId != null && SnapshotOperation.DELETE.equals(op)) {
-            s_logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
+            logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
         }
         return StrategyPriority.DEFAULT;
     }

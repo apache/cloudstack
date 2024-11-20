@@ -84,7 +84,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmStatsEntryBase;
@@ -143,7 +142,6 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
 
 public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
-    private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
 
     @Inject
     private DataCenterDao dataCenterDao;
@@ -789,7 +787,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                 Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
                 metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
             } catch (ConfigurationException e) {
-                LOGGER.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
+                logger.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
@@ -848,19 +846,19 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     @Override
     public List<ManagementServerMetricsResponse> listManagementServerMetrics(List<ManagementServerResponse> managementServerResponses) {
         final List<ManagementServerMetricsResponse> metricsResponses = new ArrayList<>();
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
+        if(logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting metrics for %d MS hosts.", managementServerResponses.size()));
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
-            if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
+            if(logger.isDebugEnabled()) {
+                logger.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
             try {
                 BeanUtils.copyProperties(metricsResponse, managementServerResponse);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("Bean copy result %s.", new ReflectionToStringBuilder(metricsResponse, ToStringStyle.SIMPLE_STYLE).toString()));
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to generate zone metrics response.");
@@ -877,15 +875,15 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * Get the transient/in memory data.
      */
     private void updateManagementServerMetrics(ManagementServerMetricsResponse metricsResponse, ManagementServerResponse managementServerResponse) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Getting stats for %s[%s]", managementServerResponse.getName(), managementServerResponse.getId()));
         }
         ManagementServerHostStats status = ApiDBUtils.getManagementServerHostStatistics(managementServerResponse.getId());
         if (status == null ) {
-            LOGGER.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
+            logger.info(String.format("No status object found for MS %s - %s.", managementServerResponse.getName(), managementServerResponse.getId()));
         } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Status object found for MS %s - %s.", managementServerResponse.getName(), new ReflectionToStringBuilder(status)));
             }
             if (StatsCollector.MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL.value() > 0) {
                 copyManagementServerStatusToResponse(metricsResponse, status);
@@ -1020,8 +1018,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
         getQueryHistory(response);
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(new ReflectionToStringBuilder(response));
+        if (logger.isTraceEnabled()) {
+            logger.trace(new ReflectionToStringBuilder(response));
         }
 
         response.setObjectName("dbMetrics");
@@ -1079,8 +1077,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         boolean local = false;
         String usageStatus = Script.runSimpleBashScript("systemctl status cloudstack-usage | grep \"  Active:\"");
 
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("The current usage status is: %s.", usageStatus));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("The current usage status is: %s.", usageStatus));
         }
 
         if (StringUtils.isNotBlank(usageStatus)) {

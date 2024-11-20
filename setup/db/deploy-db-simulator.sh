@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 
- 
+
 
 # deploy-db.sh -- deploys the database configuration.
 # set -x
@@ -65,7 +65,7 @@ fi
 handle_error() {
     mysqlout=$?
     if [ $mysqlout -eq 1 ]; then
-        printf "Please enter root password for MySQL.\n" 
+        printf "Please enter root password for MySQL.\n"
         mysql --user=root --password < $1
         if [ $? -ne 0 ]; then
             printf "Error: Cannot execute $1\n"
@@ -139,7 +139,7 @@ if [ "$2" != "" ]; then
     exit 12
   fi
 fi
-  
+
 
 echo "Creating Indice and Foreign Keys"
 mysql --user=cloud --password=cloud cloud < create-index-fk.sql

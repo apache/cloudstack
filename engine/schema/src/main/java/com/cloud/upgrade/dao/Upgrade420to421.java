@@ -23,13 +23,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade420to421 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade420to421.class);
+public class Upgrade420to421 extends DbUpgradeAbstractImpl {
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -89,7 +87,7 @@ public class Upgrade420to421 implements DbUpgrade {
                 }
             }
             // Need to populate only when overprovisioning factor doesn't pre exist.
-            s_logger.debug("Starting updating user_vm_details with cpu/memory overprovisioning factors");
+            logger.debug("Starting updating user_vm_details with cpu/memory overprovisioning factors");
             try (
                     PreparedStatement pstmt2 = conn
                             .prepareStatement("select id, hypervisor_type from `cloud`.`vm_instance` where removed is null and id not in (select vm_id from  `cloud`.`user_vm_details` where name='cpuOvercommitRatio')");
@@ -123,14 +121,14 @@ public class Upgrade420to421 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("Done updating user_vm_details with cpu/memory overprovisioning factors");
+            logger.debug("Done updating user_vm_details with cpu/memory overprovisioning factors");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update cpu/memory overprovisioning factors", e);
         }
     }
 
     private void upgradeResourceCount(Connection conn) {
-        s_logger.debug("upgradeResourceCount start");
+        logger.debug("upgradeResourceCount start");
         String sqlSelectAccountIds = "select id, domain_id FROM `cloud`.`account` where removed is NULL ";
         String sqlSelectOfferingTotals = "SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)"
                 + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
@@ -236,7 +234,7 @@ public class Upgrade420to421 implements DbUpgrade {
                     }
                 }
             }
-            s_logger.debug("upgradeResourceCount finish");
+            logger.debug("upgradeResourceCount finish");
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to upgrade resource count (cpu,memory,primary_storage,secondary_storage) ", e);
         }

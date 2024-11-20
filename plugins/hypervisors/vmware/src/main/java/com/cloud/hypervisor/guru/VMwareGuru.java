@@ -30,6 +30,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
@@ -60,7 +61,6 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -173,7 +173,6 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
-    private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
     private static final Gson GSON = GsonHelper.getGson();
 
 
@@ -229,8 +228,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("Finding delegation for command of type %s to host %d.", cmd.getClass(), hostId));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Finding delegation for command of type %s to host %d.", cmd.getClass(), hostId));
         }
 
         boolean needDelegation = false;
@@ -286,9 +285,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("Command of type %s is going to be executed in sequence? %b", cmd.getClass(), cmd.executeInSequence()));
-            s_logger.trace(String.format("Command of type %s is going to need delegation? %b", cmd.getClass(), needDelegation));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Command of type %s is going to be executed in sequence? %b", cmd.getClass(), cmd.executeInSequence()));
+            logger.trace(String.format("Command of type %s is going to need delegation? %b", cmd.getClass(), needDelegation));
         }
 
         if (!needDelegation) {
@@ -355,13 +354,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return true;
     }
 
-    private static String resolveNameInGuid(String guid) {
+    private String resolveNameInGuid(String guid) {
         String tokens[] = guid.split("@");
         assert (tokens.length == 2);
 
         String vCenterIp = NetUtils.resolveToIp(tokens[1]);
         if (vCenterIp == null) {
-            s_logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
+            logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
             return guid;
         }
 
@@ -377,7 +376,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (NicVO nic : nicVOs) {
             NetworkVO network = networkDao.findById(nic.getNetworkId());
             if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
-                s_logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
+                logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
                 NetworkVO networkVO = networkDao.findById(nic.getNetworkId());
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
@@ -464,7 +463,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         ManagedObjectReference dcMor = dcMo.getMor();
         if (dcMor == null) {
             String msg = "Error while getting Vmware datacenter " + vmwareDatacenter.getVmwareDatacenterName();
-            s_logger.error(msg);
+            logger.error(msg);
             throw new InvalidParameterValueException(msg);
         }
         return dcMo;
@@ -538,7 +537,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private void checkBackingInfo(VirtualDeviceBackingInfo backingInfo) {
         if (!(backingInfo instanceof VirtualDiskFlatVer2BackingInfo)) {
             String errorMessage = String.format("Unsupported backing info. Expected: [%s], but received: [%s].", VirtualDiskFlatVer2BackingInfo.class.getSimpleName(), backingInfo.getClass().getSimpleName());
-            s_logger.error(errorMessage);
+            logger.error(errorMessage);
             throw new CloudRuntimeException(errorMessage);
         }
     }
@@ -550,18 +549,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         StoragePoolVO pool = null;
         try {
             String poolUuid = UuidUtils.normalize(datastoreUuid);
-            s_logger.info("Trying to find pool by UUID: " + poolUuid);
+            logger.info("Trying to find pool by UUID: " + poolUuid);
             pool = _storagePoolDao.findByUuid(poolUuid);
         } catch (CloudRuntimeException ex) {
-            s_logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
+            logger.warn("Unable to get pool by datastore UUID: " + ex.getMessage());
         }
         if (pool == null) {
-            s_logger.info("Trying to find pool by path: " + datastoreUuid);
+            logger.info("Trying to find pool by path: " + datastoreUuid);
             pool = _storagePoolDao.findPoolByZoneAndPath(zoneId, datastoreUuid);
         }
         if (pool == null && datastoreUuid.startsWith("-iqn") && datastoreUuid.endsWith("-0")) {
             String iScsiName = "/iqn" + datastoreUuid.substring(4, datastoreUuid.length() - 2) + "/0";
-            s_logger.info("Trying to find volume by iScsi name: " + iScsiName);
+            logger.info("Trying to find volume by iScsi name: " + iScsiName);
             VolumeVO volumeVO = _volumeDao.findOneByIScsiName(iScsiName);
             if (volumeVO != null) {
                 pool = _storagePoolDao.findById(volumeVO.getPoolId());
@@ -644,7 +643,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VMTemplateVO createVMTemplateRecord(String vmInternalName, long guestOsId, long accountId) {
         Long nextTemplateId = vmTemplateDao.getNextInSequence(Long.class, "id");
         VMTemplateVO templateVO = new VMTemplateVO(nextTemplateId, "Imported-from-" + vmInternalName, Storage.ImageFormat.OVA, false, false, false, Storage.TemplateType.USER, null,
-                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false);
+                false, 64, accountId, null, "Template imported from VM " + vmInternalName, false, guestOsId, false, HypervisorType.VMware, null, null, false, false, false, false, CPU.CPUArch.amd64);
         return vmTemplateDao.persist(templateVO);
     }
 
@@ -699,11 +698,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * If VM exists: update VM
      */
     private VMInstanceVO getVM(String vmInternalName, long templateId, long guestOsId, long serviceOfferingId, long zoneId, long accountId, long userId, long domainId) {
-        s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].", vmInternalName,
+        logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].", vmInternalName,
                 templateId, guestOsId, serviceOfferingId));
         VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
         if (vm != null) {
-            s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName: [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName));
+            logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName: [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName));
             vm.setState(VirtualMachine.State.Stopped);
             vm.setPowerState(VirtualMachine.PowerState.PowerOff);
             virtualMachineDao.update(vm.getId(), vm);
@@ -715,7 +714,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             return virtualMachineDao.findById(vm.getId());
         } else {
             long id = userVmDao.getNextInSequence(Long.class, "id");
-            s_logger.debug(String.format("Can't find an existing VM with internalName: [%s]. Creating a new VM with: [id: %s, name: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].",
+            logger.debug(String.format("Can't find an existing VM with internalName: [%s]. Creating a new VM with: [id: %s, name: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].",
                     vmInternalName, id, vmInternalName, templateId, guestOsId, serviceOfferingId));
 
             UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware, guestOsId, false, false, domainId, accountId, userId,
@@ -788,7 +787,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volume.setAttached(new Date());
         _volumeDao.update(volume.getId(), volume);
         if (volume.getRemoved() != null) {
-            s_logger.debug(String.format("Marking volume [uuid: %s] of restored VM [%s] as non removed.", volume.getUuid(),
+            logger.debug(String.format("Marking volume [uuid: %s] of restored VM [%s] as non removed.", volume.getUuid(),
                     ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
             _volumeDao.unremove(volume.getId());
             if (vm.getType() == Type.User) {
@@ -823,7 +822,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
                 operation = "created";
             }
-            s_logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
+            logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
         }
     }
 
@@ -868,9 +867,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
             if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
-                s_logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
+                logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
             } else {
-                s_logger.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
+                logger.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
             }
             throw e;
         }
@@ -921,11 +920,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String[] tagSplit = tag.split("-");
         tag = tagSplit[tagSplit.length - 1];
 
-        s_logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
+        logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
         NetworkVO networkVO = networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
-            s_logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
+            logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
                     networkVO.getUuid(), zoneId, tag, vlan, accountId, domainId));
         }
         return networkVO;
@@ -943,7 +942,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 continue;
             }
             String vlan = broadcastUri.getHost();
-            s_logger.debug(String.format("Mapping network vlan [%s] to networkVO [id: %s].", vlan, networkVO.getUuid()));
+            logger.debug(String.format("Mapping network vlan [%s] to networkVO [id: %s].", vlan, networkVO.getUuid()));
             mapping.put(vlan, networkVO);
         }
         return mapping;
@@ -1011,11 +1010,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 }
                 VMwareDVSPortSetting settings = (VMwareDVSPortSetting) dvPort.getConfig().getSetting();
                 VmwareDistributedVirtualSwitchVlanIdSpec vlanId = (VmwareDistributedVirtualSwitchVlanIdSpec) settings.getVlan();
-                s_logger.debug("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
+                logger.debug("Found port " + dvPort.getKey() + " with vlan " + vlanId.getVlanId());
                 return String.valueOf(vlanId.getVlanId());
             }
         } catch (Exception ex) {
-            s_logger.error("Got exception while get vlan from DVS port: " + ex.getMessage());
+            logger.error("Got exception while get vlan from DVS port: " + ex.getMessage());
         }
         return null;
     }
@@ -1028,17 +1027,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String vlanId = pair.second();
             if (vlanId == null) {
-                s_logger.warn(String.format("vlanId for MAC address [%s] is null", macAddress));
+                logger.warn(String.format("vlanId for MAC address [%s] is null", macAddress));
                 continue;
             }
             NetworkVO networkVO = networksMapping.get(vlanId);
             if (networkVO == null) {
-                s_logger.warn(String.format("Cannot find network for MAC address [%s] and vlanId [%s]", macAddress, vlanId));
+                logger.warn(String.format("Cannot find network for MAC address [%s] and vlanId [%s]", macAddress, vlanId));
                 continue;
             }
             NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
-                s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
+                logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
                         networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
 
@@ -1048,7 +1047,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         for (final NicVO unMappedNic : allNics) {
-            s_logger.debug(String.format("Removing NIC [%s] from backup restored %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(unMappedNic, "uuid", "macAddress"), vm));
+            logger.debug(String.format("Removing NIC [%s] from backup restored %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(unMappedNic, "uuid", "macAddress"), vm));
             vmManager.removeNicFromVm(vm, unMappedNic);
         }
     }
@@ -1066,7 +1065,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
             VolumeVO volumeExtra = _volumeDao.findByUuid(backedUpVol.getUuid());
             if (volumeExtra != null) {
-                s_logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
+                logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
                 _volumeDao.remove(volumeExtra.getId());
 
                 if (vm.getType() == Type.User) {
@@ -1083,7 +1082,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     VolumeVO vol = _volumeDao.findByUuidIncludingRemoved(volId);
                     usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
-                    s_logger.debug("VM restore mapping for disk " + disk.getBacking() + " (capacity: " + toHumanReadableSize(disk.getCapacityInBytes()) + ") with volume ID" + vol.getId());
+                    logger.debug("VM restore mapping for disk " + disk.getBacking() + " (capacity: " + toHumanReadableSize(disk.getCapacityInBytes()) + ") with volume ID" + vol.getId());
                 }
             }
         }
@@ -1148,7 +1147,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
-        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+        logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmToImport = dcMo.findVm(vmInternalName);
@@ -1184,7 +1183,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
-        s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB() * Resource.ResourceType.bytesToKiB) + " path=" + diskPath);
+        logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB() * Resource.ResourceType.bytesToKiB) + " path=" + diskPath);
 
         // Detach restored VM disks
         vmRestored.detachDisk(String.format("%s/%s.vmdk", location, diskPath), false);
@@ -1195,27 +1194,27 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualDiskManagerMO virtualDiskManagerMO = new VirtualDiskManagerMO(dcMo.getContext());
 
         // Copy volume to the VM folder
-        s_logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
+        logger.debug(String.format("Moving volume from %s to %s", srcPath, destPath));
         virtualDiskManagerMO.moveVirtualDisk(srcPath, dcMo.getMor(), destPath, dcMo.getMor(), true);
 
         try {
             // Attach volume to VM
             vmMo.attachDisk(new String[] {destPath}, getDestStoreMor(vmMo));
         } catch (Exception e) {
-            s_logger.error("Failed to attach the restored volume: " + diskPath, e);
+            logger.error("Failed to attach the restored volume: " + diskPath, e);
             return false;
         } finally {
             // Destroy restored VM
             vmRestored.destroy();
         }
 
-        s_logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
+        logger.debug(String.format("Attaching disk %s to vm %s", destPath, vm.getId()));
         VirtualDisk attachedDisk = getAttachedDisk(vmMo, destPath);
         if (attachedDisk == null) {
-            s_logger.error("Failed to get the attached the (restored) volume " + destPath);
+            logger.error("Failed to get the attached the (restored) volume " + destPath);
             return false;
         }
-        s_logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
+        logger.debug(String.format("Creating volume entry for disk %s attached to vm %s", destPath, vm.getId()));
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
 
         if (vm.getBackupOfferingId() == null) {
@@ -1335,10 +1334,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private void relocateClonedVMToSourceHost(VirtualMachineMO clonedVM, HostMO sourceHost) throws Exception {
         if (!clonedVM.getRunningHost().getMor().equals(sourceHost.getMor())) {
-            s_logger.debug(String.format("Relocating VM to the same host as the source VM: %s", sourceHost.getHostName()));
+            logger.debug(String.format("Relocating VM to the same host as the source VM: %s", sourceHost.getHostName()));
             if (!clonedVM.relocate(sourceHost.getMor())) {
                 String err = String.format("Cannot relocate cloned VM %s to the source host %s", clonedVM.getVmName(), sourceHost.getHostName());
-                s_logger.error(err);
+                logger.error(err);
                 throw new CloudRuntimeException(err);
             }
         }
@@ -1351,7 +1350,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         List<DatastoreMO> vmDatastores = vmMo.getAllDatastores();
         if (CollectionUtils.isEmpty(vmDatastores)) {
             String err = String.format("Unable to fetch datastores, could not clone VM %s for migration from VMware", vmName);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         DatastoreMO datastoreMO = vmDatastores.get(0); //pick the first datastore
@@ -1360,7 +1359,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         VirtualMachineMO clonedVM = dataCenterMO.findVm(cloneName);
         if (!result || clonedVM == null) {
             String err = String.format("Could not clone VM %s before migration from VMware", vmName);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -1372,9 +1371,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String dataStoreUrl = getDataStoreUrlForTemplate(convertLocation);
         String vmOvfName = UUID.randomUUID().toString();
         String vmOvfCreationPath = createDirOnStorage(vmOvfName, dataStoreUrl, null);
-        s_logger.debug(String.format("Creating OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
+        logger.debug(String.format("Creating OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
         vmMO.exportVm(vmOvfCreationPath, vmOvfName, false, false, threadsCountToExportOvf);
-        s_logger.debug(String.format("Created OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
+        logger.debug(String.format("Created OVF %s for the VM %s at %s", vmOvfName, vmMO.getName(), vmOvfCreationPath));
         return vmOvfName;
     }
 
@@ -1391,11 +1390,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
             if (vmMo == null) {
                 String err = String.format("Cannot find VM with name %s on vCenter %s/%s", vmName, vcenter, datacenter);
-                s_logger.error(err);
+                logger.error(err);
                 throw new CloudRuntimeException(err);
             }
 
             VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
+
             if (sourceVmPowerState == VirtualMachinePowerState.POWERED_OFF) {
                 // Don't clone for powered off VMs, can export OVF from it
                 UnmanagedInstanceTO instanceTO = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
@@ -1406,21 +1406,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 if (isWindowsVm(vmMo)) {
                     String err = String.format("VM %s is a Windows VM and its Running, cannot be imported." +
                             " Please gracefully shut it down before attempting the import", vmName);
-                    s_logger.error(err);
+                    logger.error(err);
                     throw new CloudRuntimeException(err);
                 }
 
                 if (isVMOnStandaloneHost(vmMo)) { // or datacenter.equalsIgnoreCase("ha-datacenter")? [Note: default datacenter name on standalone host: ha-datacenter]
                     String err = String.format("VM %s might be on standalone host and is Running, cannot be imported." +
                             " Please shut it down before attempting the import", vmName);
-                    s_logger.error(err);
+                    logger.error(err);
                     throw new CloudRuntimeException(err);
                 }
             }
 
-            s_logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
+            logger.debug(String.format("Cloning VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
-            s_logger.debug(String.format("VM %s cloned successfully, to VM %s", vmName, clonedVM.getName()));
+            logger.debug(String.format("VM %s cloned successfully, to VM %s", vmName, clonedVM.getName()));
             UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
             setDisksFromSourceVM(clonedInstance, vmMo);
             clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
@@ -1429,7 +1429,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throw cre;
         } catch (Exception e) {
             String err = String.format("Error while finding or cloning VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
     }
@@ -1461,7 +1461,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
-        s_logger.debug(String.format("Creating template of the VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
+        logger.debug(String.format("Creating template of the VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1469,15 +1469,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
             if (vmMo == null) {
                 String err = String.format("Cannot find VM with name %s on vCenter %s/%s, to create template file", vmName, vcenter, datacenter);
-                s_logger.error(err);
+                logger.error(err);
                 throw new CloudRuntimeException(err);
             }
             String ovaTemplate = createOVFTemplateOfVM(vmMo, templateLocation, threadsCountToExportOvf);
-            s_logger.debug(String.format("OVF %s created successfully on the datastore", ovaTemplate));
+            logger.debug(String.format("OVF %s created successfully on the datastore", ovaTemplate));
             return ovaTemplate;
         } catch (Exception e) {
             String err = String.format("Error create template file of the VM: %s from vCenter %s: %s", vmName, vcenter, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
     }
@@ -1488,7 +1488,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
-        s_logger.debug(String.format("Removing cloned VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
+        logger.debug(String.format("Removing cloned VM %s at VMware host %s on vCenter %s", vmName, hostIp, vcenter));
 
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
@@ -1497,28 +1497,28 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (vmMo == null) {
                 String err = String.format("Cannot find VM %s on datacenter %s, not possible to remove VM out of band",
                         vmName, datacenter);
-                s_logger.error(err);
+                logger.error(err);
                 return false;
             }
 
             return vmMo.destroy();
         } catch (Exception e) {
             String err = String.format("Error destroying cloned VM %s: %s", vmName, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             return false;
         }
     }
 
     @Override
     public boolean removeVMTemplateOutOfBand(DataStoreTO templateLocation, String templateDir) {
-        s_logger.debug(String.format("Removing template %s", templateDir));
+        logger.debug(String.format("Removing template %s", templateDir));
 
         try {
             String dataStoreUrl = getDataStoreUrlForTemplate(templateLocation);
             return deleteDirOnStorage(templateDir, dataStoreUrl, null);
         } catch (Exception e) {
             String err = String.format("Error removing template file %s: %s", templateDir, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             return false;
         }
     }
@@ -1546,7 +1546,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private String createDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
         String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
-        s_logger.debug("Create dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+        logger.debug("Create dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
         String dirMountPath = mountPoint + File.separator + dirName;
         createDir(dirMountPath);
         return dirMountPath;
@@ -1554,13 +1554,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private void createDir(String dirName) throws Exception {
         synchronized (dirName.intern()) {
-            Script command = new Script("mkdir", s_logger);
+            Script command = new Script("mkdir", logger);
             command.add("-p");
             command.add(dirName);
             String cmdResult = command.execute();
             if (cmdResult != null) {
                 String msg = "Unable to create directory: " + dirName + ", error msg: " + cmdResult;
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new Exception(msg);
             }
         }
@@ -1569,26 +1569,26 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private boolean deleteDirOnStorage(String dirName, String nfsStorageUrl, String nfsVersion) throws Exception {
         try {
             String mountPoint = mountManager.getMountPoint(nfsStorageUrl, nfsVersion);
-            s_logger.debug("Delete dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
+            logger.debug("Delete dir storage location - url: " + nfsStorageUrl + ", mount point: " + mountPoint + ", dir: " + dirName);
             String dirMountPath = mountPoint + File.separator + dirName;
             deleteDir(dirMountPath);
             return true;
         } catch (Exception e) {
             String err = String.format("Unable to delete dir %s: %s", dirName, e.getMessage());
-            s_logger.error(err, e);
+            logger.error(err, e);
             return false;
         }
     }
 
     private void deleteDir(String dirName) throws Exception {
         synchronized (dirName.intern()) {
-            Script command = new Script("rm", s_logger);
+            Script command = new Script("rm", logger);
             command.add("-rf");
             command.add(dirName);
             String cmdResult = command.execute();
             if (cmdResult != null) {
                 String msg = "Unable to delete directory: " + dirName + ", error msg: " + cmdResult;
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new Exception(msg);
             }
         }

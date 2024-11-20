@@ -25,11 +25,9 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 public abstract class AbstractGetUploadParamsCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(AbstractGetUploadParamsCmd.class.getName());
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the volume/template/iso")
     private String name;

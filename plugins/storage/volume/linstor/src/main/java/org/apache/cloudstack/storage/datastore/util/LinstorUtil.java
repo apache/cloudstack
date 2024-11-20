@@ -40,10 +40,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class LinstorUtil {
-    private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(LinstorUtil.class);
 
     public final static String PROVIDER_NAME = "Linstor";
     public static final String RSC_PREFIX = "cs-";
@@ -161,7 +162,7 @@ public class LinstorUtil {
 
         if (rscGrps.isEmpty()) {
             final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-            s_logger.error(errMsg);
+            LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 
@@ -185,7 +186,7 @@ public class LinstorUtil {
                 .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
                 .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
     }
@@ -206,8 +207,8 @@ public class LinstorUtil {
                     .map(Resource::getNodeName)
                     .findFirst()
                     .orElse(null);
-       }
-        s_logger.error("isResourceInUse: null returned from resourceList");
+        }
+        LOGGER.error("isResourceInUse: null returned from resourceList");
         return null;
     }
 
@@ -255,14 +256,14 @@ public class LinstorUtil {
                 // CloudStack resource always only have 1 volume
                 String devicePath = rsc.getVolumes().get(0).getDevicePath();
                 if (devicePath != null && !devicePath.isEmpty()) {
-                    s_logger.debug(String.format("getDevicePath: %s -> %s", rscName, devicePath));
+                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
                     return devicePath;
                 }
             }
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
-        s_logger.error(errMsg);
+        LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
     }
 

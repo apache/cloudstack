@@ -27,8 +27,10 @@ import java.io.IOException;
 import java.util.List;
 
 import com.cloud.consoleproxy.util.ImageHelper;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.TileInfo;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A <code>BuffereImageCanvas</code> component represents frame buffer image on
@@ -36,7 +38,7 @@ import com.cloud.consoleproxy.util.TileInfo;
  */
 public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
     private static final long serialVersionUID = 1L;
-    private static final Logger s_logger = Logger.getLogger(BufferedImageCanvas.class);
+    protected Logger logger = LogManager.getLogger(BufferedImageCanvas.class);
 
     // Offline screen buffer
     private BufferedImage offlineImage;
@@ -123,7 +125,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image", e);
+            logger.info("[ignored] read error on image", e);
         }
         return imgBits;
     }
@@ -147,7 +149,7 @@ public class BufferedImageCanvas extends Canvas implements FrameBufferCanvas {
         try {
             imgBits = ImageHelper.jpegFromImage(bufferedImage);
         } catch (IOException e) {
-            s_logger.info("[ignored] read error on image tiles", e);
+            logger.info("[ignored] read error on image tiles", e);
         }
         return imgBits;
     }

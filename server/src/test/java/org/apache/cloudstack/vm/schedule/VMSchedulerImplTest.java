@@ -329,19 +329,10 @@ public class VMSchedulerImplTest {
         UserVm vm1 = Mockito.mock(UserVm.class);
         UserVm vm2 = Mockito.mock(UserVm.class);
 
-        Mockito.when(job1.getVmId()).thenReturn(1L);
-        Mockito.when(job1.getScheduledTime()).thenReturn(new Date());
-        Mockito.when(job1.getAction()).thenReturn(VMSchedule.Action.START);
-        Mockito.when(job1.getVmScheduleId()).thenReturn(1L);
         Mockito.when(job2.getVmId()).thenReturn(2L);
-        Mockito.when(job2.getScheduledTime()).thenReturn(new Date());
-        Mockito.when(job2.getAction()).thenReturn(VMSchedule.Action.STOP);
-        Mockito.when(job2.getVmScheduleId()).thenReturn(2L);
 
-        Mockito.when(userVmManager.getUserVm(1L)).thenReturn(vm1);
         Mockito.when(userVmManager.getUserVm(2L)).thenReturn(vm2);
 
-        Mockito.doReturn(1L).when(vmScheduler).processJob(job1, vm1);
         Mockito.doReturn(null).when(vmScheduler).processJob(job2, vm2);
 
         Mockito.when(vmScheduledJobDao.acquireInLockTable(job1.getId())).thenReturn(job1);

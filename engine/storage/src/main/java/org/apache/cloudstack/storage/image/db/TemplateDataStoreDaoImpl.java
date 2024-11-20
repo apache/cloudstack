@@ -28,7 +28,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -58,7 +57,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO, Long> implements TemplateDataStoreDao {
-    private static final Logger s_logger = Logger.getLogger(TemplateDataStoreDaoImpl.class);
     private SearchBuilder<TemplateDataStoreVO> updateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeSearch;
     private SearchBuilder<TemplateDataStoreVO> cacheSearch;
@@ -199,7 +197,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         }
 
         int rows = update(dataObj, sc);
-        if (rows == 0 && s_logger.isDebugEnabled()) {
+        if (rows == 0 && logger.isDebugEnabled()) {
             TemplateDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
@@ -232,7 +230,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
+                logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -494,7 +492,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         List<TemplateDataStoreVO> tmpls = listBy(sc);
         // create an entry for each template record, but with empty install path since the content is not yet on region-wide store yet
         if (tmpls != null) {
-            s_logger.info("Duplicate " + tmpls.size() + " template cache store records to region store");
+            logger.info("Duplicate " + tmpls.size() + " template cache store records to region store");
             for (TemplateDataStoreVO tmpl : tmpls) {
                 long templateId = tmpl.getTemplateId();
                 VMTemplateVO template = _tmpltDao.findById(templateId);
@@ -502,15 +500,15 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
                     throw new CloudRuntimeException("No template is found for template id: " + templateId);
                 }
                 if (template.getTemplateType() == TemplateType.SYSTEM) {
-                    s_logger.info("No need to duplicate system template since it will be automatically downloaded while adding region store");
+                    logger.info("No need to duplicate system template since it will be automatically downloaded while adding region store");
                     continue;
                 }
                 TemplateDataStoreVO tmpStore = findByStoreTemplate(storeId, tmpl.getTemplateId());
                 if (tmpStore != null) {
-                    s_logger.info("There is already entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
+                    logger.info("There is already entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
                     continue;
                 }
-                s_logger.info("Persisting an entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
+                logger.info("Persisting an entry for template " + tmpl.getTemplateId() + " on region store " + storeId);
                 TemplateDataStoreVO ts = new TemplateDataStoreVO();
                 ts.setTemplateId(tmpl.getTemplateId());
                 ts.setDataStoreId(storeId);
@@ -545,7 +543,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("destroyed", false);
         List<TemplateDataStoreVO> tmpls = listBy(sc);
         if (tmpls != null) {
-            s_logger.info("Update to cache store role for " + tmpls.size() + " entries in template_store_ref");
+            logger.info("Update to cache store role for " + tmpls.size() + " entries in template_store_ref");
             for (TemplateDataStoreVO tmpl : tmpls) {
                 tmpl.setDataStoreRole(DataStoreRole.ImageCache);
                 update(tmpl.getId(), tmpl);
@@ -605,7 +603,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            s_logger.warn("Failed expiring download urls for dcId: " + dcId, e);
+            logger.warn("Failed expiring download urls for dcId: " + dcId, e);
         }
 
     }

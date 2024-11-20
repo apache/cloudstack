@@ -937,10 +937,38 @@ export default {
             }
           ]
         },
-        // {
-        //   title: 'SecurityGroupProvider',
-        //   details: ['name', 'state', 'id', 'servicelist'],
-        // },
+        {
+          title: 'SecurityGroupProvider',
+          details: ['name', 'state', 'id', 'servicelist'],
+          actions: [
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'stop-outlined',
+              listView: true,
+              label: 'label.disable.provider',
+              confirm: 'message.confirm.disable.provider',
+              show: (record) => { return record && record.id && record.state === 'Enabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Disabled' }
+                }
+              }
+            },
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'play-circle-outlined',
+              listView: true,
+              label: 'label.enable.provider',
+              confirm: 'message.confirm.enable.provider',
+              show: (record) => { return record && record.id && record.state === 'Disabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Enabled' }
+                }
+              }
+            }
+          ]
+        },
         {
           title: 'VirtualRouter',
           actions: [
@@ -1056,6 +1084,50 @@ export default {
               columns: ['name', 'tungstenproviderhostname', 'tungstenproviderport', 'tungstengateway', 'tungstenprovidervrouterport', 'tungstenproviderintrospectport']
             }
           ]
+        },
+        {
+          title: 'Nsx',
+          details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+          actions: [
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'stop-outlined',
+              listView: true,
+              label: 'label.disable.provider',
+              confirm: 'message.confirm.disable.provider',
+              // show: (record) => { return record && record.id && record.state === 'Enabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Disabled' }
+                }
+              }
+            },
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'play-circle-outlined',
+              listView: true,
+              label: 'label.enable.provider',
+              confirm: 'message.confirm.enable.provider',
+              // show: (record) => { return record && record.id && record.state === 'Disabled' },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Enabled' }
+                }
+              }
+            }
+          ],
+          lists: [
+            {
+              title: 'label.nsx.controller',
+              api: 'listNsxControllers',
+              mapping: {
+                zoneid: {
+                  value: (record) => { return record.zoneid }
+                }
+              },
+              columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster', 'transportzone']
+            }
+          ]
         }
       ]
     }
@@ -1096,6 +1168,7 @@ export default {
       this.fetchLoading = true
       api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
         const sps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
+        console.log(sps)
         if (sps.length > 0) {
           for (const sp of sps) {
             this.nsps[sp.name] = sp

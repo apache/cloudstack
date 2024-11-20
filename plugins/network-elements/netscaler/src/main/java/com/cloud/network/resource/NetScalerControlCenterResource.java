@@ -50,7 +50,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -117,7 +118,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     private String _sessionid;
     public static final int DEFAULT_PORT = 443;
     private static final Gson s_gson = GsonHelper.getGson();
-    private static final Logger s_logger = Logger.getLogger(NetScalerControlCenterResource.class);
+    protected Logger logger = LogManager.getLogger(NetScalerControlCenterResource.class);
     protected Gson _gson;
     private final String _objectNamePathSep = "-";
     final String protocol="https";
@@ -188,7 +189,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         } catch (ConfigurationException e) {
             throw new ConfigurationException(e.getMessage());
         } catch (ExecutionException e) {
-            s_logger.debug("Execution Exception :" +  e.getMessage());
+            logger.debug("Execution Exception :" +  e.getMessage());
             throw new ConfigurationException("Failed to add the device. Please check the device is NCC and It is reachable from Management Server.");
         }
     }
@@ -204,10 +205,10 @@ public class NetScalerControlCenterResource implements ServerResource {
                 org.json.JSONObject jsonBody = new JSONObject();
                 org.json.JSONObject jsonCredentials = new JSONObject();
                 result = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
-                s_logger.debug("List of Service Packages in NCC:: " + result);
+                logger.debug("List of Service Packages in NCC:: " + result);
                 } catch (URISyntaxException e) {
                     String errMsg = "Could not generate URI for Hyper-V agent";
-                    s_logger.error(errMsg, e);
+                    logger.error(errMsg, e);
 
                 } catch (Exception e) {
                 throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
@@ -235,18 +236,18 @@ public class NetScalerControlCenterResource implements ServerResource {
                 jsonResponse = new JSONObject(result);
                 org.json.JSONArray loginResponse = jsonResponse.getJSONArray("login");
                 _sessionid = jsonResponse.getJSONArray("login").getJSONObject(0).getString("sessionid");
-                s_logger.debug("New Session id from NCC :" + _sessionid);
+                logger.debug("New Session id from NCC :" + _sessionid);
                 set_nccsession(_sessionid);
-                s_logger.debug("session on Static Session variable" + get_nccsession());
+                logger.debug("session on Static Session variable" + get_nccsession());
             }
-            s_logger.debug("Login to NCC Device response :: " + result);
+            logger.debug("Login to NCC Device response :: " + result);
             return result;
             } catch (URISyntaxException e) {
                 String errMsg = "Could not generate URI for Hyper-V agent";
-                s_logger.error(errMsg, e);
+                logger.error(errMsg, e);
 
             } catch (JSONException e) {
-                s_logger.debug("JSON Exception :" +  e.getMessage());
+                logger.debug("JSON Exception :" +  e.getMessage());
                 throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
             } catch (Exception e) {
             throw new ExecutionException("Failed to log in to NCC device at " + _ip + " due to " + e.getMessage());
@@ -315,7 +316,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                             "/cs/cca/v1/cloudstacks", null, null);
             org.json.JSONObject jsonBody = new JSONObject();
             getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
-            s_logger.debug("Keeping Session Alive");
+            logger.debug("Keeping Session Alive");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -336,10 +337,10 @@ public class NetScalerControlCenterResource implements ServerResource {
                 result = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
                 JSONObject response = new JSONObject(result);
                 if(response != null ) {
-                    s_logger.debug("Job Status result for ["+jobId + "]:: " + result + " Tick and currentTime :" +  System.currentTimeMillis() +" -" + startTick + "job cmd timeout :" +_nccCmdTimeout);
+                    logger.debug("Job Status result for ["+jobId + "]:: " + result + " Tick and currentTime :" +  System.currentTimeMillis() +" -" + startTick + "job cmd timeout :" +_nccCmdTimeout);
                     String status = response.getJSONObject("journalcontext").getString("status").toUpperCase();
                     String message = response.getJSONObject("journalcontext").getString("message");
-                    s_logger.debug("Job Status Progress Status ["+ jobId + "]:: " + status);
+                    logger.debug("Job Status Progress Status ["+ jobId + "]:: " + status);
                     switch(status) {
                     case "FINISHED":
                             return status;
@@ -357,7 +358,7 @@ public class NetScalerControlCenterResource implements ServerResource {
 
         } catch (URISyntaxException e) {
             String errMsg = "Could not generate URI for NetScaler ControlCenter";
-            s_logger.error(errMsg, e);
+            logger.error(errMsg, e);
           } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -371,25 +372,25 @@ public class NetScalerControlCenterResource implements ServerResource {
                     new URI("https", null, _ip, DEFAULT_PORT,
                             "/cs/adcaas/v1/networks", null, null);
             org.json.JSONObject jsonBody = new JSONObject(cmd.getDetails());
-            s_logger.debug("Sending Network Implement to NCC:: " + jsonBody);
+            logger.debug("Sending Network Implement to NCC:: " + jsonBody);
             result = postHttpRequest(jsonBody.toString(), agentUri, _sessionid);
-            s_logger.debug("Result of Network Implement to NCC:: " + result);
+            logger.debug("Result of Network Implement to NCC:: " + result);
             result = queryAsyncJob(result);
-            s_logger.debug("Done query async of network implement request :: " + result);
+            logger.debug("Done query async of network implement request :: " + result);
             return new Answer(cmd, true, "Successfully allocated device");
             } catch (URISyntaxException e) {
                 String errMsg = "Could not generate URI for NetScaler ControlCenter ";
-                s_logger.error(errMsg, e);
+                logger.error(errMsg, e);
             } catch (ExecutionException e) {
                 if(e.getMessage().equalsIgnoreCase(NccHttpCode.NOT_FOUND)) {
                     return new Answer(cmd, true, "Successfully unallocated the device");
                 }else if(e.getMessage().startsWith("ERROR, ROLLBACK") ) {
-                    s_logger.error(e.getMessage());
+                    logger.error(e.getMessage());
                     return new Answer(cmd, false, e.getMessage());
                 }
                 else {
                     if (shouldRetry(numRetries)) {
-                        s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
+                        logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
                         return retry(cmd, numRetries);
                     } else {
                         return new Answer(cmd, false, e.getMessage());
@@ -397,7 +398,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 }
             } catch (Exception e) {
                 if (shouldRetry(numRetries)) {
-                    s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
+                    logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
                     return retry(cmd, numRetries);
                 } else {
                     return new Answer(cmd, false, e.getMessage());
@@ -448,14 +449,14 @@ public class NetScalerControlCenterResource implements ServerResource {
                 hcLB.add(loadBalancer);
             }
         } catch (ExecutionException e) {
-            s_logger.error("Failed to execute HealthCheckLBConfigCommand due to ", e);
+            logger.error("Failed to execute HealthCheckLBConfigCommand due to ", e);
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
                 return new HealthCheckLBConfigAnswer(hcLB);
             }
         } catch (Exception e) {
-            s_logger.error("Failed to execute HealthCheckLBConfigCommand due to ", e);
+            logger.error("Failed to execute HealthCheckLBConfigCommand due to ", e);
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
@@ -474,7 +475,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                             "/cs/adcaas/v1/networks/"+ networkid +"/lbhealthstatus", null, null);
             org.json.JSONObject jsonBody = new JSONObject();
             response = getHttpRequest(jsonBody.toString(), agentUri, _sessionid);
-            s_logger.debug("LBHealthcheck Response :" + response);
+            logger.debug("LBHealthcheck Response :" + response);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -494,24 +495,24 @@ public class NetScalerControlCenterResource implements ServerResource {
                             "/cs/adcaas/v1/loadbalancerCmds", null, null);
             JSONObject lbConfigCmd = new JSONObject();
             JSONObject lbcmd = new JSONObject(gsonLBConfig);
-            s_logger.debug("LB config from gsonstring to JSONObject : " +  lbcmd.toString() + "\n" + "gson cmd is :: \t" + gsonLBConfig);
+            logger.debug("LB config from gsonstring to JSONObject : " +  lbcmd.toString() + "\n" + "gson cmd is :: \t" + gsonLBConfig);
             lbConfigCmd.put("LoadBalancerConfigCommand",  lbcmd.getJSONArray("loadBalancers"));
-            s_logger.debug("LB config paylod : " +  lbConfigCmd.toString());
+            logger.debug("LB config paylod : " +  lbConfigCmd.toString());
 
             String result = postHttpRequest(lbConfigCmd.toString(), agentUri, _sessionid);
-            s_logger.debug("Result of lbconfigcmg is "+ result);
+            logger.debug("Result of lbconfigcmg is "+ result);
             result = queryAsyncJob(result);
-            s_logger.debug("Done query async of LB ConfigCmd implement request and result:: " + result);
+            logger.debug("Done query async of LB ConfigCmd implement request and result:: " + result);
             return new Answer(cmd);
         } catch (ExecutionException e) {
-            s_logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
+            logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
             if(e.getMessage().equalsIgnoreCase(NccHttpCode.NOT_FOUND)) {
                 return new Answer(cmd, true, "LB Rule is not present in NS device. So returning as removed the LB Rule");
             } else  if(e.getMessage().startsWith("ERROR, ROLLBACK COMPLETED") || e.getMessage().startsWith("ERROR, ROLLBACK FAILED")) {
-                s_logger.error("Failed to execute LoadBalancerConfigCommand due to : " + e.getMessage());
+                logger.error("Failed to execute LoadBalancerConfigCommand due to : " + e.getMessage());
                 return new Answer(cmd, false, e.getMessage());
             } else if (e.getMessage().startsWith(NccHttpCode.INTERNAL_ERROR)) {
-                s_logger.error("Failed to execute LoadBalancerConfigCommand as Internal Error returning Internal error ::" + e.getMessage() );
+                logger.error("Failed to execute LoadBalancerConfigCommand as Internal Error returning Internal error ::" + e.getMessage() );
                 return new Answer(cmd, false, e.getMessage());
             }
             if (shouldRetry(numRetries)) {
@@ -520,7 +521,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 return new Answer(cmd, false, e.getMessage());
             }
         } catch (Exception e) {
-            s_logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
+            logger.error("Failed to execute LoadBalancerConfigCommand due to ", e);
             if (shouldRetry(numRetries)) {
                 return retry(cmd, numRetries);
             } else {
@@ -614,16 +615,16 @@ public class NetScalerControlCenterResource implements ServerResource {
                        }
                     }
                 }
-                s_logger.debug("IPStats Response :" + response);
+                logger.debug("IPStats Response :" + response);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
-                s_logger.debug("Seesion Alive" + e.getMessage());
+                logger.debug("Seesion Alive" + e.getMessage());
                 e.printStackTrace();
             }
 
         } catch (Exception e) {
-            s_logger.error("Failed to get bytes sent and received statistics due to " + e);
+            logger.error("Failed to get bytes sent and received statistics due to " + e);
             throw new ExecutionException(e.getMessage());
         }
 
@@ -632,7 +633,7 @@ public class NetScalerControlCenterResource implements ServerResource {
 
     private Answer retry(Command cmd, int numRetries) {
         int numRetriesRemaining = numRetries - 1;
-        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
+        logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
         return executeRequest(cmd, numRetriesRemaining);
     }
 
@@ -643,7 +644,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 return true;
             }
         } catch (Exception e) {
-            s_logger.error("Failed to log in to Netscaler ControlCenter device at " + _ip + " due to " + e.getMessage());
+            logger.error("Failed to log in to Netscaler ControlCenter device at " + _ip + " due to " + e.getMessage());
             return false;
         }
         return false;
@@ -661,7 +662,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             keepSessionAlive();
             return true;
         } catch (ExecutionException ex) {
-            s_logger.debug("Failed to keep up the session alive ", ex);
+            logger.debug("Failed to keep up the session alive ", ex);
         }
         return ret;
     }
@@ -748,7 +749,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         }
         return cleanLogString;
     }
-    public static HttpClient getHttpClient() {
+    public HttpClient getHttpClient() {
 
         HttpClient httpClient = null;
         TrustStrategy easyStrategy = new TrustStrategy() {
@@ -766,18 +767,18 @@ public class NetScalerControlCenterResource implements ServerResource {
             ClientConnectionManager ccm = new BasicClientConnectionManager(registry);
             httpClient = new DefaultHttpClient(ccm);
         } catch (KeyManagementException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (UnrecoverableKeyException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (KeyStoreException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         }
         return httpClient;
     }
 
-    public static String getHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
+    public String getHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
         // Using Apache's HttpClient for HTTP POST
         // Java-only approach discussed at on StackOverflow concludes with
         // comment to use Apache HttpClient
@@ -785,7 +786,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         // use Apache.
         String logMessage = StringEscapeUtils.unescapeJava(jsonCmd);
         logMessage = cleanPassword(logMessage);
-        s_logger.debug("GET request to " + agentUri.toString()
+        logger.debug("GET request to " + agentUri.toString()
                 + " with contents " + logMessage);
 
         // Create request
@@ -802,40 +803,40 @@ public class NetScalerControlCenterResource implements ServerResource {
             StringEntity cmdJson = new StringEntity(jsonCmd);
             request.addHeader("content-type", "application/json");
             request.addHeader("Cookie", "SessId=" + sessionID);
-            s_logger.debug("Sending cmd to " + agentUri.toString()
+            logger.debug("Sending cmd to " + agentUri.toString()
                     + " cmd data:" + logMessage);
             HttpResponse response = httpClient.execute(request);
 
             // Unsupported commands will not route.
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 String errMsg = "Failed to send : HTTP error code : " + response.getStatusLine().getStatusCode();
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 String unsupportMsg = "Unsupported command " + agentUri.getPath() + ".  Are you sure you got the right f of" + " server?";
                 Answer ans = new UnsupportedAnswer(null, unsupportMsg);
-                s_logger.error(ans);
+                logger.error(ans);
                 result = s_gson.toJson(new Answer[] {ans});
             } else if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 String errMsg = "Failed send to " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 throw new ExecutionException("UNAUTHORIZED");
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
-                s_logger.debug("Get response is " + logResult);
+                logger.debug("Get response is " + logResult);
             }
         } catch (ClientProtocolException protocolEx) {
             // Problem with HTTP message exchange
-            s_logger.error(protocolEx);
+            logger.error(protocolEx);
         } catch (IOException connEx) {
             // Problem with underlying communications
-            s_logger.error(connEx);
+            logger.error(connEx);
         } finally {
             httpClient.getConnectionManager().shutdown();
         }
         return result;
     }
 
-    public static String postHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
+    public String postHttpRequest(final String jsonCmd, final URI agentUri, String sessionID) throws ExecutionException {
         // Using Apache's HttpClient for HTTP POST
         // Java-only approach discussed at on StackOverflow concludes with
         // comment to use Apache HttpClient
@@ -843,7 +844,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         // use Apache.
         String logMessage = StringEscapeUtils.unescapeJava(jsonCmd);
         logMessage = cleanPassword(logMessage);
-        s_logger.debug("POST request to " + agentUri.toString()
+        logger.debug("POST request to " + agentUri.toString()
                 + " with contents " + logMessage);
 
         // Create request
@@ -863,13 +864,13 @@ public class NetScalerControlCenterResource implements ServerResource {
             ClientConnectionManager ccm = new BasicClientConnectionManager(registry);
             httpClient = new DefaultHttpClient(ccm);
         } catch (KeyManagementException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (UnrecoverableKeyException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (NoSuchAlgorithmException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         } catch (KeyStoreException e) {
-            s_logger.error("failed to initialize http client " + e.getMessage());
+            logger.error("failed to initialize http client " + e.getMessage());
         }
 
         String result = null;
@@ -885,7 +886,7 @@ public class NetScalerControlCenterResource implements ServerResource {
             request.addHeader("content-type", "application/json");
             request.addHeader("Cookie", "SessId=" + sessionID);
             request.setEntity(cmdJson);
-            s_logger.debug("Sending cmd to " + agentUri.toString()
+            logger.debug("Sending cmd to " + agentUri.toString()
                     + " cmd data:" + logMessage + "SEssion id: " + sessionID);
             HttpResponse response = httpClient.execute(request);
 
@@ -895,7 +896,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 throw new ExecutionException(NccHttpCode.NOT_FOUND);
             } else if ((response.getStatusLine().getStatusCode() != HttpStatus.SC_OK ) && (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED )) {
                 String errMsg = "Command Not Success " + agentUri.toString() + " : HTTP error code : " + response.getStatusLine().getStatusCode();
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 throw new ExecutionException(NccHttpCode.INTERNAL_ERROR + " " + errMsg);
             } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
                 //Successfully created the resource in the NCC, Now get the Job ID and send to the response
@@ -907,15 +908,15 @@ public class NetScalerControlCenterResource implements ServerResource {
             } else {
                 result = EntityUtils.toString(response.getEntity());
                 String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
-                s_logger.debug("POST response is " + logResult);
+                logger.debug("POST response is " + logResult);
             }
 
         } catch (ClientProtocolException protocolEx) {
             // Problem with HTTP message exchange
-            s_logger.error(protocolEx);
+            logger.error(protocolEx);
         } catch (IOException connEx) {
             // Problem with underlying communications
-            s_logger.error(connEx);
+            logger.error(connEx);
         } finally {
             httpClient.getConnectionManager().shutdown();
         }

@@ -29,7 +29,6 @@ import java.util.Properties;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -50,6 +49,8 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
@@ -61,7 +62,7 @@ import com.cloud.utils.server.ServerProperties;
  * Configuration parameters are read from server.properties file available on the classpath.
  */
 public class ServerDaemon implements Daemon {
-    private static final Logger LOG = Logger.getLogger(ServerDaemon.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final String WEB_XML = "META-INF/webapp/WEB-INF/web.xml";
 
     /////////////////////////////////////////////////////
@@ -115,12 +116,12 @@ public class ServerDaemon implements Daemon {
     public void init(final DaemonContext context) {
         final File confFile = PropertiesUtil.findConfigFile("server.properties");
         if (confFile == null) {
-            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+            logger.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                     bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
             return;
         }
 
-        LOG.info("Server configuration file found: " + confFile.getAbsolutePath());
+        logger.info("Server configuration file found: " + confFile.getAbsolutePath());
 
         try {
             InputStream is = new FileInputStream(confFile);
@@ -141,15 +142,15 @@ public class ServerDaemon implements Daemon {
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
             setMaxFormContentSize(Integer.valueOf(properties.getProperty(REQUEST_CONTENT_SIZE_KEY, String.valueOf(DEFAULT_REQUEST_CONTENT_SIZE))));
         } catch (final IOException e) {
-            LOG.warn("Failed to read configuration from server.properties file", e);
+            logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
             // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
             if (!httpEnable && !httpsEnable) {
                 setHttpEnable(true);
-                LOG.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
+                logger.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
             }
         }
-        LOG.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+        logger.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
                 bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
     }
 
@@ -253,7 +254,7 @@ public class ServerDaemon implements Daemon {
                 KeyStoreScanner scanner = new KeyStoreScanner(sslContextFactory);
                 server.addBean(scanner);
             } catch (Exception ex) {
-                LOG.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
+                logger.error("failed to set up keystore scanner, manual refresh of certificates will be required", ex);
             }
         }
     }

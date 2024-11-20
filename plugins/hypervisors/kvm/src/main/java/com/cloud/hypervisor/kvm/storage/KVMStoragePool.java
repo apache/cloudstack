@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.joda.time.Duration;
 
@@ -102,4 +103,15 @@ public interface KVMStoragePool {
     public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host);
 
     public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration);
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedLogicalBlockSize() {
+        return null;
+    }
+
+    default LibvirtVMDef.DiskDef.BlockIOSize getSupportedPhysicalBlockSize() {
+        return null;
+    }
+
+    default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
+    }
 }

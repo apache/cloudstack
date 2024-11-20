@@ -27,13 +27,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
 
 public class VRouterApiConnectorImpl implements VRouterApiConnector {
-    private static final Logger s_logger = Logger.getLogger(VRouterApiConnectorImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private final String vrouterUrl;
 
     public VRouterApiConnectorImpl(VRouter vRouter) {
@@ -51,7 +52,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPost)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to add vrouter port : " + ex.getMessage());
+            logger.error("Failed to add vrouter port : " + ex.getMessage());
             return false;
         }
     }
@@ -63,7 +64,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(httpDelete)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to delete vrouter port : " + ex.getMessage());
+            logger.error("Failed to delete vrouter port : " + ex.getMessage());
             return false;
         }
     }
@@ -75,7 +76,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to enable vrouter port : " + ex.getMessage());
+            logger.error("Failed to enable vrouter port : " + ex.getMessage());
             return false;
         }
     }
@@ -87,7 +88,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to disable vrouter port : " + ex.getMessage());
+            logger.error("Failed to disable vrouter port : " + ex.getMessage());
             return false;
         }
     }
@@ -103,7 +104,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPost)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to add route : " + ex.getMessage());
+            logger.error("Failed to add route : " + ex.getMessage());
             return false;
         }
     }
@@ -118,7 +119,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             CloseableHttpResponse httpResponse = httpClient.execute(customHttpDelete)) {
             return getResponse(httpResponse);
         } catch (IOException ex) {
-            s_logger.error("Failed to remove route : " + ex.getMessage());
+            logger.error("Failed to remove route : " + ex.getMessage());
             return false;
         }
     }
@@ -131,7 +132,7 @@ public class VRouterApiConnectorImpl implements VRouterApiConnector {
             return true;
         } else {
             String error = jsonObject.get("error").getAsString();
-            s_logger.error(error);
+            logger.error(error);
             return false;
         }
     }

@@ -470,6 +470,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
+    }
+    @Override
     public void checkAccess(User user, ControlledEntity entity)
         throws PermissionDeniedException {
 
@@ -484,4 +488,12 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
+    @Override
+    public List<String> getApiNameList() {
+        return null;
+    }
+
+    @Override
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
+    }
 }

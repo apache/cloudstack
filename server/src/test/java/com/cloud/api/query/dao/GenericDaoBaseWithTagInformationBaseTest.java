@@ -54,8 +54,10 @@ public abstract class GenericDaoBaseWithTagInformationBaseTest<T extends BaseVie
     }
 
     @After
-    public void tearDown(){
-        apiDBUtilsMocked.close();
+    public void tearDown() throws Exception {
+        if (apiDBUtilsMocked != null) {
+            apiDBUtilsMocked.close();
+        }
     }
 
     private ResourceTagResponse getResourceTagResponse(){

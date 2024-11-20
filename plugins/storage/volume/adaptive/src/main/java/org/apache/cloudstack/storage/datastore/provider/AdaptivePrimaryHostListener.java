@@ -19,14 +19,15 @@ package org.apache.cloudstack.storage.datastore.provider;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.StorageConflictException;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AdaptivePrimaryHostListener implements HypervisorHostListener {
-    static final Logger s_logger = Logger.getLogger(AdaptivePrimaryHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     StoragePoolHostDao storagePoolHostDao;
@@ -37,19 +38,19 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostAboutToBeRemoved(long hostId) {
-        s_logger.debug("hostAboutToBeRemoved called");
+        logger.debug("hostAboutToBeRemoved called");
         return true;
     }
 
     @Override
     public boolean hostAdded(long hostId) {
-        s_logger.debug("hostAdded called");
+        logger.debug("hostAdded called");
         return true;
     }
 
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
-        s_logger.debug("hostConnect called for hostid [" + hostId + "], poolId [" + poolId + "]");
+        logger.debug("hostConnect called for hostid [" + hostId + "], poolId [" + poolId + "]");
         StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
         if (storagePoolHost == null) {
             storagePoolHost = new StoragePoolHostVO(poolId, hostId, "");
@@ -62,7 +63,7 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        s_logger.debug("hostDisconnected called for hostid [" + hostId + "], poolId [" + poolId + "]");
+        logger.debug("hostDisconnected called for hostid [" + hostId + "], poolId [" + poolId + "]");
         StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
         if (storagePoolHost != null) {
@@ -73,13 +74,13 @@ public class AdaptivePrimaryHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostEnabled(long hostId) {
-        s_logger.debug("hostEnabled called");
+        logger.debug("hostEnabled called");
         return true;
     }
 
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
-        s_logger.debug("hostRemoved called");
+        logger.debug("hostRemoved called");
         return true;
     }
 }

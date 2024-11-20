@@ -27,12 +27,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.storage.command.CommandResult;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
 public abstract class BaseObjectStoreDriverImpl implements ObjectStoreDriver {
-    private static final Logger LOGGER = Logger.getLogger(BaseObjectStoreDriverImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Override
     public Map<String, String> getCapabilities() {

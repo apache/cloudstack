@@ -3,7 +3,7 @@ Contributing to Apache CloudStack (ACS)
 
 Summary
 -------
-This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions. 
+This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions.
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project and you will submit a Pull Request for your changes to be added.
 
 _Lets get started!!!_
@@ -11,17 +11,17 @@ _Lets get started!!!_
 Bug fixes
 ---------
 
-It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches. 
-Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch. 
-This can be either the "current release" or the "previous release", depending on which ones are maintained. 
+It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches.
+Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch.
+This can be either the "current release" or the "previous release", depending on which ones are maintained.
 Since the goal is a stable main, bug fixes should be "merged forward" to the next branch in order: "previous release" -> "current release" -> main (in other words: old to new)
 
 Developing new features
 -----------------------
 
-Development should be done in a feature branch, branched off of main. 
-Send a PR(steps below) to get it into main (2x LGTM applies). 
-PR will only be merged when main is open, will be held otherwise until main is open again. 
+Development should be done in a feature branch, branched off of main.
+Send a PR(steps below) to get it into main (2x LGTM applies).
+PR will only be merged when main is open, will be held otherwise until main is open again.
 No back porting / cherry-picking features to existing branches!
 
 PendingReleaseNotes file
@@ -33,7 +33,7 @@ When adding information to the PendingReleaseNotes file make sure that you write
 
 Updating the PendingReleaseNotes file is preferably a part of the original Pull Request, but that is up to the developers' discretion.
 
-Fork the code 
+Fork the code
 -------------
 
 In your browser, navigate to: [https://github.com/apache/cloudstack](https://github.com/apache/cloudstack)
@@ -136,4 +136,4 @@ $ git push origin :feature_x
 
 Release Principles
 ------------------
-Detailed information about ACS release principles is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Release+principles+for+Apache+CloudStack+4.6+and+up 
+Detailed information about ACS release principles is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Release+principles+for+Apache+CloudStack+4.6+and+up

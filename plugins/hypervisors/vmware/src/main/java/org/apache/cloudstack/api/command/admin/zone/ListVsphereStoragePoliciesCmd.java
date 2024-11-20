@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -48,7 +47,6 @@ import java.util.List;
         authorized = {RoleType.Admin})
 public class ListVsphereStoragePoliciesCmd extends BaseCmd {
 
-    public static final Logger LOGGER = Logger.getLogger(ListVsphereStoragePoliciesCmd.class.getName());
 
 
     @Inject

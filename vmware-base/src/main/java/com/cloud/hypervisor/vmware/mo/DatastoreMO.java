@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.vmware.vim25.FolderFileInfo;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -44,7 +43,6 @@ import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 
 public class DatastoreMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(DatastoreMO.class);
 
     private String _name;
     private Pair<DatacenterMO, String> _ownerDc;
@@ -182,7 +180,7 @@ public class DatastoreMO extends BaseMO {
 
             return true;
         } else {
-            s_logger.error("VMware deleteDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware deleteDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
         return false;
@@ -215,7 +213,7 @@ public class DatastoreMO extends BaseMO {
                 }
             }
         } catch (Exception e) {
-            s_logger.info("Unable to test file existence due to exception " + e.getClass().getName() + ", skip deleting of it");
+            logger.info("Unable to test file existence due to exception " + e.getClass().getName() + ", skip deleting of it");
             return true;
         }
 
@@ -226,7 +224,7 @@ public class DatastoreMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware deleteDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware deleteDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -254,7 +252,7 @@ public class DatastoreMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware copyDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware copyDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -278,11 +276,11 @@ public class DatastoreMO extends BaseMO {
         DatastoreMO srcDsMo = new DatastoreMO(_context, morDestDs);
         try {
             if (!srcDsMo.fileExists(srcFullPath)) {
-                s_logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
+                logger.error(String.format("Cannot move file to destination datastore due to file %s does not exists", srcFullPath));
                 return false;
             }
         } catch (Exception e) {
-            s_logger.error(String.format("Cannot move file to destination datastore due to file %s due to exception %s", srcFullPath, e.getMessage()));
+            logger.error(String.format("Cannot move file to destination datastore due to file %s due to exception %s", srcFullPath, e.getMessage()));
             return false;
         }
 
@@ -293,7 +291,7 @@ public class DatastoreMO extends BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            s_logger.error("VMware moveDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware moveDatastoreFile_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -318,17 +316,17 @@ public class DatastoreMO extends BaseMO {
 
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
 
-        s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
+        logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
         HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
         if (results != null) {
             List<FileInfo> info = results.getFile();
             if (info != null && info.size() == 1 && !(info.get(0) instanceof FolderFileInfo)) {
-                s_logger.info("File " + fileFullPath + " exists on datastore");
+                logger.info("File " + fileFullPath + " exists on datastore");
                 return true;
             }
         }
 
-        s_logger.info("File " + fileFullPath + " does not exist on datastore");
+        logger.info("File " + fileFullPath + " does not exist on datastore");
         return false;
     }
 
@@ -348,18 +346,18 @@ public class DatastoreMO extends BaseMO {
         searchSpec.setDetails(fqf);
         searchSpec.setSearchCaseInsensitive(false);
         searchSpec.getMatchPattern().add(file.getFileName());
-        s_logger.debug("Search file " + file.getFileName() + " on " + dirFile.getPath()); //ROOT-2.vmdk, [3ecf7a579d3b3793b86d9d019a97ae27] s-2-VM
+        logger.debug("Search file " + file.getFileName() + " on " + dirFile.getPath()); //ROOT-2.vmdk, [3ecf7a579d3b3793b86d9d019a97ae27] s-2-VM
         HostDatastoreBrowserSearchResults result = browserMo.searchDatastore(dirFile.getPath(), searchSpec);
         if (result != null) {
             List<FileInfo> info = result.getFile();
             for (FileInfo fi : info) {
                 if (file.getFileName().equals(fi.getPath())) {
-                    s_logger.debug("File found = " + fi.getPath() + ", size=" + toHumanReadableSize(fi.getFileSize()));
+                    logger.debug("File found = " + fi.getPath() + ", size=" + toHumanReadableSize(fi.getFileSize()));
                     return fi.getFileSize();
                 }
             }
         }
-        s_logger.debug("File " + fileFullPath + " does not exist on datastore");
+        logger.debug("File " + fileFullPath + " does not exist on datastore");
         return size;
     }
 
@@ -370,12 +368,12 @@ public class DatastoreMO extends BaseMO {
         if (results != null) {
             List<FileInfo> info = results.getFile();
             if (info != null && info.size() == 1 && info.get(0) instanceof FolderFileInfo) {
-                s_logger.info("Folder " + folderName + " exists on datastore");
+                logger.info("Folder " + folderName + " exists on datastore");
                 return true;
             }
         }
 
-        s_logger.info("Folder " + folderName + " does not exist on datastore");
+        logger.info("Folder " + folderName + " does not exist on datastore");
         return false;
     }
 
@@ -393,15 +391,15 @@ public class DatastoreMO extends BaseMO {
 
         String parentFolderPath;
         String absoluteFileName = null;
-        s_logger.info("Searching file " + fileName + " in " + datastorePath);
+        logger.info("Searching file " + fileName + " in " + datastorePath);
 
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
         ArrayList<HostDatastoreBrowserSearchResults> results = browserMo.searchDatastoreSubFolders("[" + getName() + "]", fileName, caseInsensitive);
         if (results != null && results.size() > 1) {
-            s_logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
+            logger.warn("Multiple files with name " + fileName + " exists in datastore " + datastorePath + ". Trying to choose first file found in search attempt.");
         } else if (results == null) {
             String msg = "No file found with name " + fileName + " found in datastore " + datastorePath;
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudException(msg);
         }
         for (HostDatastoreBrowserSearchResults result : results) {
@@ -409,7 +407,7 @@ public class DatastoreMO extends BaseMO {
             if (info != null && info.size() > 0) {
                 for (FileInfo fi : info) {
                     absoluteFileName = parentFolderPath = result.getFolderPath();
-                    s_logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
+                    logger.info("Found file " + fileName + " in datastore at " + absoluteFileName);
                     if (parentFolderPath.endsWith("]"))
                         absoluteFileName += " ";
                     else if (!parentFolderPath.endsWith("/"))

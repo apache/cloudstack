@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -32,16 +31,13 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 @APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -126,20 +122,8 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
         String uploadUrl = _volumeService.extractVolume(this);
         if (uploadUrl != null) {
-            ExtractResponse response = new ExtractResponse();
+            ExtractResponse response = _responseGenerator.createVolumeExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);
             response.setResponseName(getCommandName());
-            response.setObjectName("volume");
-            Volume vol = _entityMgr.findById(Volume.class, id);
-            response.setId(vol.getUuid());
-            response.setName(vol.getName());
-            DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-            response.setZoneId(zone.getUuid());
-            response.setZoneName(zone.getName());
-            response.setMode(mode);
-            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
-            Account account = _entityMgr.findById(Account.class, getEntityOwnerId());
-            response.setAccountId(account.getUuid());
-            response.setUrl(uploadUrl);
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to extract volume");

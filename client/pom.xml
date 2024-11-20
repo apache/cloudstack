@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.2.0-SNAPSHOT</version>
+        <version>4.20.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -424,6 +424,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-mom-webhook</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-agent-lb</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -609,6 +614,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-backup-nas</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -629,7 +639,17 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-ceph</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-object-simulator</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-sharedfs-provider-storagevm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -727,7 +747,7 @@
                     </webApp>
                     <systemProperties>
                         <systemProperty>
-                            <name>log4j.configuration</name>
+                            <name>log4j2.configurationFile</name>
                             <value>log4j-cloud.xml</value>
                         </systemProperty>
                     </systemProperties>
@@ -1070,6 +1090,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-cisco-vnmc</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-nsx</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

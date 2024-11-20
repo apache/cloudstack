@@ -29,6 +29,8 @@ import com.cloud.utils.Ternary;
 
 public interface StorageAdaptor {
 
+    StoragePoolType getStoragePoolType();
+
     public KVMStoragePool getStoragePool(String uuid);
 
     // Get the storage pool from libvirt, but control if libvirt should refresh the pool (can take a long time)
@@ -108,6 +110,13 @@ public interface StorageAdaptor {
      * @param timeout
      */
     KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout);
+
+    /**
+     * Returns true if storage adaptor supports physical disk copy functionality.
+     */
+    default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return StoragePoolType.PowerFlex == type;
+    }
 
     /**
      * Prepares the storage client.

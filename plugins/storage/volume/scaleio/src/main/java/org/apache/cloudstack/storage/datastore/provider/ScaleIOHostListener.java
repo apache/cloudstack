@@ -34,7 +34,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -50,7 +51,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(ScaleIOHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager _agentMgr;
     @Inject private AlertManager _alertMgr;
@@ -69,7 +70,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
     public boolean hostConnect(long hostId, long poolId) {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            s_logger.error("Failed to connect host by HostListener as host was not found with id : " + hostId);
+            logger.error("Failed to connect host by HostListener as host was not found with id : " + hostId);
             return false;
         }
 
@@ -88,7 +89,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
                 storagePoolHost.setLocalPath(sdcId);
                 _storagePoolHostDao.update(storagePoolHost.getId(), storagePoolHost);
             }
-            s_logger.info("Connection established between storage pool: " + storagePool + " and host: " + hostId);
+            logger.info("Connection established between storage pool: " + storagePool + " and host: " + hostId);
         }
         return true;
     }
@@ -108,7 +109,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = "PowerFlex storage SDC details not found on the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not found on host: " + host.getUuid(), msg);
             return null;
         }
@@ -123,7 +124,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
         if (StringUtils.isBlank(sdcId)) {
             String msg = "Couldn't retrieve PowerFlex storage SDC details from the host: " + hostId + ", (re)install SDC and restart agent";
-            s_logger.warn(msg);
+            logger.warn(msg);
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC details not found on host: " + host.getUuid(), msg);
             return null;
         }
@@ -133,11 +134,11 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
     private String getHostSdcId(String sdcGuid, long poolId) {
         try {
-            s_logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", poolId, sdcGuid));
+            logger.debug(String.format("Try to get host SDC Id for pool: %s, with SDC guid %s", poolId, sdcGuid));
             ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(poolId, _storagePoolDetailsDao);
             return client.getSdcIdByGuid(sdcGuid);
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            s_logger.error(String.format("Failed to get host SDC Id for pool: %s", poolId), e);
+            logger.error(String.format("Failed to get host SDC Id for pool: %s", poolId), e);
             throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to get host SDC Id for pool: %s", poolId));
         }
     }

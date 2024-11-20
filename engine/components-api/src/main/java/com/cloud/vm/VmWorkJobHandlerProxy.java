@@ -23,7 +23,8 @@ import java.util.Map;
 
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
@@ -38,7 +39,7 @@ import com.google.gson.Gson;
  */
 public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
-    private static final Logger s_logger = Logger.getLogger(VmWorkJobHandlerProxy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private Object _target;
     private Map<Class<?>, Method> _handlerMethodMap = new HashMap<Class<?>, Method>();
@@ -99,30 +100,30 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
         if (method != null) {
 
             try {
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Execute VM work job: " + work.getClass().getName() + work);
+                if (logger.isDebugEnabled())
+                    logger.debug("Execute VM work job: " + work.getClass().getName() + work);
 
                 Object obj = method.invoke(_target, work);
 
-                if (s_logger.isDebugEnabled())
-                    s_logger.debug("Done executing VM work job: " + work.getClass().getName() + work);
+                if (logger.isDebugEnabled())
+                    logger.debug("Done executing VM work job: " + work.getClass().getName() + work);
 
                 assert (obj instanceof Pair);
                 return (Pair<JobInfo.Status, String>)obj;
             } catch (InvocationTargetException e) {
-                s_logger.error("Invocation exception, caused by: " + e.getCause());
+                logger.error("Invocation exception, caused by: " + e.getCause());
 
                 // legacy CloudStack code relies on checked exception for error handling
                 // we need to re-throw the real exception here
                 if (e.getCause() != null && e.getCause() instanceof Exception) {
-                    s_logger.info("Rethrow exception " + e.getCause());
+                    logger.info("Rethrow exception " + e.getCause());
                     throw (Exception)e.getCause();
                 }
 
                 throw e;
             }
         } else {
-            s_logger.error("Unable to find handler for VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+            logger.error("Unable to find handler for VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
 
             RuntimeException ex = new RuntimeException("Unable to find handler for VM work job: " + work.getClass().getName());
             return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));

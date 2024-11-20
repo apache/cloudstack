@@ -21,6 +21,8 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.network.IpAddressManager;
@@ -118,7 +120,13 @@ public class NicProfileHelperImpl implements NicProfileHelper {
     public NicProfile createGuestNicProfileForVpcRouter(final RouterDeploymentDefinition vpcRouterDeploymentDefinition, final Network guestNetwork) {
         final NicProfile guestNic = new NicProfile();
 
-        if (vpcRouterDeploymentDefinition.isRedundant()) {
+        if (BroadcastDomainType.NSX == guestNetwork.getBroadcastDomainType()) {
+            NicVO vrNic = _nicDao.findByNetworkIdAndTypeIncludingRemoved(guestNetwork.getId(), VirtualMachine.Type.DomainRouter);
+            if (vrNic != null) {
+                guestNic.setIPv4Address(vrNic.getIPv4Address());
+                guestNic.setIPv4Gateway(vrNic.getIPv4Gateway());
+            }
+        } else if (vpcRouterDeploymentDefinition.isRedundant()) {
             guestNic.setIPv4Address(this.acquireGuestIpAddressForVrouterRedundant(guestNetwork));
         } else {
             guestNic.setIPv4Address(guestNetwork.getGateway());

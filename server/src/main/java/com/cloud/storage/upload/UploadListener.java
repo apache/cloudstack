@@ -25,8 +25,6 @@ import java.util.Timer;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
@@ -61,6 +59,9 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class UploadListener implements Listener {
 
@@ -93,7 +94,7 @@ public class UploadListener implements Listener {
         }
     }
 
-    public static final Logger s_logger = Logger.getLogger(UploadListener.class.getName());
+    protected Logger logger = LogManager.getLogger(getClass());
     public static final int SMALL_DELAY = 100;
     public static final long STATUS_POLL_INTERVAL = 10000L;
 
@@ -348,7 +349,7 @@ public class UploadListener implements Listener {
     }
 
     public void log(String message, Level level) {
-        s_logger.log(level, message + ", " + type.toString() + " = " + typeName + " at host " + sserver.getName());
+        logger.log(level, message + ", " + type.toString() + " = " + typeName + " at host " + sserver.getName());
     }
 
     public void setDisconnected() {
@@ -369,7 +370,7 @@ public class UploadListener implements Listener {
 
         timeoutTask = new TimeoutTask(this);
         timer.schedule(timeoutTask, delay);
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             log("Scheduling timeout at " + delay + " ms", Level.DEBUG);
         }
     }
@@ -438,19 +439,19 @@ public class UploadListener implements Listener {
 
     public void sendCommand(RequestType reqType) {
         if (getJobId() != null) {
-            if (s_logger.isTraceEnabled()) {
+            if (logger.isTraceEnabled()) {
                 log("Sending progress command ", Level.TRACE);
             }
             try {
                 EndPoint ep = _epSelector.select(sserver);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
-                    s_logger.error(errMsg);
+                    logger.error(errMsg);
                     return;
                 }
                 ep.sendMessageAsync(new UploadProgressCommand(getCommand(), getJobId(), reqType), new Callback(ep.getId(), this));
             } catch (Exception e) {
-                s_logger.debug("Send command failed", e);
+                logger.debug("Send command failed", e);
                 setDisconnected();
             }
         }
@@ -462,7 +463,7 @@ public class UploadListener implements Listener {
     }
 
     public void logDisconnect() {
-        s_logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
+        logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
     }
 
     public void scheduleImmediateStatusCheck(RequestType request) {

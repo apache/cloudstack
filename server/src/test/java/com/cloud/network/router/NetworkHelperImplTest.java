@@ -23,12 +23,17 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -51,6 +56,20 @@ public class NetworkHelperImplTest {
 
     @InjectMocks
     protected NetworkHelperImpl nwHelper = new NetworkHelperImpl();
+    @Mock
+    NetworkOrchestrationService networkOrchestrationService;
+    @Mock
+    NetworkDao networkDao;
+    @Mock
+    NetworkModel networkModel;
+    @Mock
+    NicDao nicDao;
+
+    @Before
+    public void setUp() {
+        nwHelper._networkDao = networkDao;
+        nwHelper._networkModel = networkModel;
+    }
 
     @Test(expected=ResourceUnavailableException.class)
     public void testSendCommandsToRouterWrongRouterVersion()
@@ -64,7 +83,7 @@ public class NetworkHelperImplTest {
         nwHelperUT.sendCommandsToRouter(vr, null);
 
         // Assert
-        verify(this.agentManager, times(0)).send((Long) Matchers.anyObject(), (Command) Matchers.anyObject());
+        verify(this.agentManager, times(0)).send((Long) ArgumentMatchers.any(), (Command) ArgumentMatchers.any());
     }
 
     @Test
@@ -168,5 +187,4 @@ public class NetworkHelperImplTest {
         verify(answer1, times(0)).getResult();
         assertFalse(result);
     }
-
 }

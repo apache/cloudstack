@@ -47,10 +47,13 @@ public class ResourceCountVO implements ResourceCount {
     @Column(name = "count")
     private long count;
 
+    @Column(name = "tag")
+    private String tag;
+
     public ResourceCountVO() {
     }
 
-    public ResourceCountVO(ResourceType type, long count, long ownerId, ResourceOwnerType ownerType) {
+    public ResourceCountVO(ResourceType type, long count, long ownerId, ResourceOwnerType ownerType, String tag) {
         this.type = type;
         this.count = count;
 
@@ -59,6 +62,11 @@ public class ResourceCountVO implements ResourceCount {
         } else if (ownerType == ResourceOwnerType.Domain) {
             this.domainId = ownerId;
         }
+        this.tag = tag;
+    }
+
+    public ResourceCountVO(ResourceType type, long count, long ownerId, ResourceOwnerType ownerType) {
+        this(type, count, ownerId, ownerType, null);
     }
 
     @Override
@@ -99,7 +107,7 @@ public class ResourceCountVO implements ResourceCount {
 
     @Override
     public String toString() {
-        return new StringBuilder("REsourceCount[").append("-")
+        return new StringBuilder("ResourceCount[").append("-")
             .append(id)
             .append("-")
             .append(type)
@@ -107,6 +115,8 @@ public class ResourceCountVO implements ResourceCount {
             .append(accountId)
             .append("-")
             .append(domainId)
+            .append("-")
+            .append(tag)
             .append("]")
             .toString();
     }
@@ -135,5 +145,14 @@ public class ResourceCountVO implements ResourceCount {
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
+    }
+
+    @Override
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 }

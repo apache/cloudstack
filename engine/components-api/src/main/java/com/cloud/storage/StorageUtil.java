@@ -33,7 +33,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 public class StorageUtil {
     @Inject private ClusterDao clusterDao;

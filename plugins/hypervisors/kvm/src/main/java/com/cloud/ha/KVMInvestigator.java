@@ -36,13 +36,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
     private HostDao _hostDao;
     @Inject
@@ -62,7 +60,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.isVMAliveOnHost(host);
         }
         Status status = isAgentAlive(host);
-        s_logger.debug("HA: HOST is ineligible legacy state " + status + " for host " + host.getId());
+        logger.debug("HA: HOST is ineligible legacy state " + status + " for host " + host.getId());
         if (status == null) {
             throw new UnknownVM();
         }
@@ -90,7 +88,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             storageSupportHA = storageSupportHa(zonePools);
         }
         if (!storageSupportHA) {
-            s_logger.warn(
+            logger.warn(
                     "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
             return Status.Disconnected;
         }
@@ -106,7 +104,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                 hostStatus = answer.getResult() ? Status.Down : Status.Up;
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to send command to host: " + agent.getId());
+            logger.debug("Failed to send command to host: " + agent.getId());
         }
         if (hostStatus == null) {
             hostStatus = Status.Disconnected;
@@ -118,18 +116,18 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
                     || (neighbor.getHypervisorType() != Hypervisor.HypervisorType.KVM && neighbor.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
             }
-            s_logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
+            logger.debug("Investigating host:" + agent.getId() + " via neighbouring host:" + neighbor.getId());
             try {
                 Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);
                 if (answer != null) {
                     neighbourStatus = answer.getResult() ? Status.Down : Status.Up;
-                    s_logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
+                    logger.debug("Neighbouring host:" + neighbor.getId() + " returned status:" + neighbourStatus + " for the investigated host:" + agent.getId());
                     if (neighbourStatus == Status.Up) {
                         break;
                     }
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to send command to host: " + neighbor.getId());
+                logger.debug("Failed to send command to host: " + neighbor.getId());
             }
         }
         if (neighbourStatus == Status.Up && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
@@ -138,7 +136,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
             hostStatus = Status.Down;
         }
-        s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
+        logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
         return hostStatus;
     }
 

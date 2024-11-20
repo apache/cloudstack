@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.info.ConsoleProxyLoadInfo;
@@ -40,7 +39,6 @@ import com.cloud.vm.VirtualMachine.State;
 
 @Component
 public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> implements ConsoleProxyDao {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyDaoImpl.class);
 
     //
     // query SQL for returning console proxy assignment info as following
@@ -215,7 +213,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-            s_logger.debug("Caught SQLException: ", e);
+            logger.debug("Caught SQLException: ", e);
         }
         return l;
     }
@@ -240,7 +238,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
             }
         } catch (SQLException e) {
-            s_logger.debug("Caught SQLException: ", e);
+            logger.debug("Caught SQLException: ", e);
         }
         return l;
     }
@@ -259,7 +257,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 return rs.getInt(1);
             }
         } catch (SQLException e) {
-            s_logger.debug("Caught SQLException: ", e);
+            logger.debug("Caught SQLException: ", e);
         }
         return 0;
     }
@@ -277,7 +275,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 return rs.getInt(1);
             }
         } catch (SQLException e) {
-            s_logger.debug("Caught SQLException: ", e);
+            logger.debug("Caught SQLException: ", e);
         }
         return 0;
     }
@@ -299,7 +297,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(info);
             }
         } catch (SQLException e) {
-            s_logger.debug("Exception: ", e);
+            logger.debug("Exception: ", e);
         }
         return l;
     }
@@ -321,7 +319,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
                 l.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-            s_logger.debug("Caught SQLException: ", e);
+            logger.debug("Caught SQLException: ", e);
         }
         return l;
     }

@@ -42,7 +42,8 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -64,7 +65,7 @@ import java.util.List;
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
 public class NetworkerClient {
-    private static final Logger LOG = Logger.getLogger(NetworkerClient.class);
+    private static final Logger LOG = LogManager.getLogger(NetworkerClient.class);
     private final URI apiURI;
     private final String apiName;
     private final String apiPassword;

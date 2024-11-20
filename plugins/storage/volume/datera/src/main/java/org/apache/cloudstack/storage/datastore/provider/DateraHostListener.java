@@ -33,7 +33,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.DateraObject;
 import org.apache.cloudstack.storage.datastore.util.DateraUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -60,7 +61,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class DateraHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(DateraHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager _agentMgr;
     @Inject private AlertManager _alertMgr;
@@ -85,7 +86,7 @@ public class DateraHostListener implements HypervisorHostListener {
         HostVO host = _hostDao.findById(hostId);
 
         if (host == null) {
-            s_logger.error("Failed to add host by HostListener as host was not found with id : " + hostId);
+            logger.error("Failed to add host by HostListener as host was not found with id : " + hostId);
             return false;
         }
         StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(storagePoolId, hostId);
@@ -142,7 +143,7 @@ public class DateraHostListener implements HypervisorHostListener {
         if (!lock.lock(s_lockTimeInSeconds)) {
             String errMsg = "Couldn't lock the DB on the following string: " + clusterVO.getUuid();
 
-            s_logger.debug(errMsg);
+            logger.debug(errMsg);
 
             throw new CloudRuntimeException(errMsg);
         }
@@ -169,7 +170,7 @@ public class DateraHostListener implements HypervisorHostListener {
             }
 
         } catch (DateraObject.DateraError | UnsupportedEncodingException e) {
-            s_logger.warn("Error while removing host from initiator groups ", e);
+            logger.warn("Error while removing host from initiator groups ", e);
         } finally {
             lock.unlock();
             lock.releaseRef();
@@ -307,7 +308,7 @@ public class DateraHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
 
-        s_logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        logger.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
     }
 
     private List<Map<String, String>> getTargets(long clusterId, long storagePoolId) {

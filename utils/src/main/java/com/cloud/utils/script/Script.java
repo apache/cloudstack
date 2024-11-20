@@ -43,7 +43,8 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
 import com.cloud.utils.Pair;
@@ -52,7 +53,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
-    private static final Logger s_logger = Logger.getLogger(Script.class);
+    protected static Logger LOGGER = LogManager.getLogger(Script.class);
 
     private final Logger _logger;
 
@@ -98,7 +99,7 @@ public class Script implements Callable<String> {
             _timeout = DEFAULT_TIMEOUT;
         }
         _process = null;
-        _logger = logger != null ? logger : s_logger;
+        _logger = logger != null ? logger : Script.LOGGER;
     }
 
     public Script(boolean runWithSudo, String command, Duration timeout, Logger logger) {
@@ -118,16 +119,16 @@ public class Script implements Callable<String> {
     }
 
     public Script(String command) {
-        this(command, 0, s_logger);
+        this(command, 0, LOGGER);
     }
 
     public Script(String command, Duration timeout) {
-        this(command, timeout.getMillis(), s_logger);
+        this(command, timeout.getMillis(), LOGGER);
     }
 
     @Deprecated
     public Script(String command, long timeout) {
-        this(command, timeout, s_logger);
+        this(command, timeout, LOGGER);
     }
 
     public void add(String... params) {
@@ -508,19 +509,19 @@ public class Script implements Callable<String> {
     }
 
     public static String findScript(String path, String script) {
-        s_logger.debug("Looking for " + script + " in the classpath");
+        LOGGER.debug("Looking for " + script + " in the classpath");
 
         URL url = ClassLoader.getSystemResource(script);
-        s_logger.debug("System resource: " + url);
+        LOGGER.debug("System resource: " + url);
         File file = null;
         if (url != null) {
             file = new File(url.getFile());
-            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+            LOGGER.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
 
         if (path == null) {
-            s_logger.warn("No search path specified, unable to look for " + script);
+            LOGGER.warn("No search path specified, unable to look for " + script);
             return null;
         }
         path = path.replace("/", File.separator);
@@ -534,14 +535,14 @@ public class Script implements Callable<String> {
         } else {
             url = Script.class.getClassLoader().getResource(path + File.separator + script);
         }
-        s_logger.debug("Classpath resource: " + url);
+        LOGGER.debug("Classpath resource: " + url);
         if (url != null) {
             try {
                 file = new File(new URI(url.toString()).getPath());
-                s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+                LOGGER.debug("Absolute path =  " + file.getAbsolutePath());
                 return file.getAbsolutePath();
             } catch (URISyntaxException e) {
-                s_logger.warn("Unable to convert " + url.toString() + " to a URI");
+                LOGGER.warn("Unable to convert " + url.toString() + " to a URI");
             }
         }
 
@@ -555,7 +556,7 @@ public class Script implements Callable<String> {
             return file.exists() ? file.getAbsolutePath() : null;
         }
 
-        s_logger.debug("Looking for " + script);
+        LOGGER.debug("Looking for " + script);
         String search = null;
         for (int i = 0; i < 3; i++) {
             if (i == 0) {
@@ -575,25 +576,25 @@ public class Script implements Callable<String> {
                 else
                     cp = cp.substring(begin, end);
 
-                s_logger.debug("Current binaries reside at " + cp);
+                LOGGER.debug("Current binaries reside at " + cp);
                 search = cp;
             } else if (i == 1) {
-                s_logger.debug("Searching in environment.properties");
+                LOGGER.debug("Searching in environment.properties");
                 try {
                     final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
                     if (propsFile == null) {
-                        s_logger.debug("environment.properties could not be opened");
+                        LOGGER.debug("environment.properties could not be opened");
                     } else {
                         final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {
-                    s_logger.debug("environment.properties could not be opened");
+                    LOGGER.debug("environment.properties could not be opened");
                     continue;
                 }
-                s_logger.debug("environment.properties says scripts should be in " + search);
+                LOGGER.debug("environment.properties says scripts should be in " + search);
             } else {
-                s_logger.debug("Searching in the current directory");
+                LOGGER.debug("Searching in the current directory");
                 search = ".";
             }
 
@@ -601,7 +602,7 @@ public class Script implements Callable<String> {
             do {
                 search = search.substring(0, search.lastIndexOf(File.separator));
                 file = new File(search + File.separator + script);
-                s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+                LOGGER.debug("Looking for " + script + " in " + file.getAbsolutePath());
             } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
             if (file.exists()) {
@@ -616,14 +617,14 @@ public class Script implements Callable<String> {
         do {
             search = search.substring(0, search.lastIndexOf(File.separator));
             file = new File(search + File.separator + script);
-            s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+            LOGGER.debug("Looking for " + script + " in " + file.getAbsolutePath());
         } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
         if (file.exists()) {
             return file.getAbsolutePath();
         }
 
-        s_logger.warn("Unable to find script " + script);
+        LOGGER.warn("Unable to find script " + script);
         return null;
     }
 
@@ -701,10 +702,10 @@ public class Script implements Callable<String> {
                     output.append(line).append(System.lineSeparator());
                 }
                 last.waitFor();
-                s_logger.debug("Piped commands executed successfully");
+                LOGGER.debug("Piped commands executed successfully");
                 return new Pair<>(last.exitValue(), output.toString());
             } catch (IOException | InterruptedException e) {
-                s_logger.error("Error executing piped commands", e);
+                LOGGER.error("Error executing piped commands", e);
                 return new Pair<>(-1, stackTraceAsString(e));
             }
         };
@@ -714,11 +715,11 @@ public class Script implements Callable<String> {
         try {
             result = future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            s_logger.error("Piped command execution timed out, attempting to terminate the processes.");
+            LOGGER.error("Piped command execution timed out, attempting to terminate the processes.");
             future.cancel(true);
             result.second(ERR_TIMEOUT);
         } catch (InterruptedException | ExecutionException e) {
-            s_logger.error("Error executing piped commands", e);
+            LOGGER.error("Error executing piped commands", e);
         }
         return result;
     }

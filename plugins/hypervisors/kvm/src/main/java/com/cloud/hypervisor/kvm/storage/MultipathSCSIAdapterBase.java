@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.joda.time.Duration;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -40,10 +39,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.joda.time.Duration;
 
 public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
-    static final Logger LOGGER = Logger.getLogger(MultipathSCSIAdapterBase.class);
+    protected static Logger LOGGER = LogManager.getLogger(MultipathSCSIAdapterBase.class);
     static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     /**
@@ -569,7 +570,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         synchronized(CLEANUP_LOCK) {
             long start = System.currentTimeMillis();
             ScriptResult result = runScript(cleanupScript, cleanupTimeoutSecs * 1000);
-            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result.getExitCode(), null);
+            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result.getExitCode());
         }
     }
 

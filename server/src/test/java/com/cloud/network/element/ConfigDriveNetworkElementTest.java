@@ -61,6 +61,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -83,6 +84,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -148,6 +150,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private AgentManager agentManager;
     @Mock private CallContext callContextMock;
     @Mock private DomainVO domainVO;
+    @Mock private NetworkOrchestrationService _networkOrchestrationService;
 
     @Spy @InjectMocks
     private ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
@@ -264,13 +267,9 @@ public class ConfigDriveNetworkElementTest {
         try (MockedStatic<ConfigDriveBuilder> ignored1 = Mockito.mockStatic(ConfigDriveBuilder.class); MockedStatic<CallContext> ignored2 = Mockito.mockStatic(CallContext.class)) {
             Mockito.when(CallContext.current()).thenReturn(callContextMock);
             Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
-            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap())).thenReturn("content");
 
             final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
             final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
-            when(agentManager.easySend(Mockito.anyLong(), Mockito.any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
-            when(answer.getResult()).thenReturn(true);
-            when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
             when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
             when(virtualMachine.getUuid()).thenReturn("vm-uuid");
             when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
@@ -288,6 +287,28 @@ public class ConfigDriveNetworkElementTest {
             profile.setConfigDriveLabel("testlabel");
             assertTrue(_configDrivesNetworkElement.addPasswordAndUserdata(
                     network, nicp, profile, deployDestination, null));
+        }
+    }
+
+    @Test
+    public void testCreateConfigDriveIso() throws Exception {
+        try (MockedStatic<ConfigDriveBuilder> ignored1 = Mockito.mockStatic(ConfigDriveBuilder.class); MockedStatic<CallContext> ignored2 = Mockito.mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.anyList(), Mockito.anyList(), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.anyMap())).thenReturn("content");
+
+            final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
+            when(agentManager.easySend(Mockito.anyLong(), Mockito.any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
+            when(answer.getResult()).thenReturn(true);
+            when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
+            when(virtualMachine.getUuid()).thenReturn("vm-uuid");
+
+            Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
+            parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
+            parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, parms);
+            profile.setConfigDriveLabel("testlabel");
+            profile.setVmData(Collections.emptyList());
+            assertTrue(_configDrivesNetworkElement.createConfigDriveIso(nicp, profile, deployDestination, null));
 
             ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
             verify(agentManager, times(1)).easySend(Mockito.anyLong(), commandCaptor.capture());

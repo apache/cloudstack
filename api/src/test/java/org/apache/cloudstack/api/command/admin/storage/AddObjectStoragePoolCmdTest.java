@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.object.ObjectStore;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,11 +38,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AddObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmdTest.class.getName());
 
     @Mock
     StorageService storageService;
@@ -65,9 +63,11 @@ public class AddObjectStoragePoolCmdTest {
 
     Map<String, String> details;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         details = new HashMap<>();
         addObjectStoragePoolCmdSpy = Mockito.spy(new AddObjectStoragePoolCmd());
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "name", name);
@@ -81,14 +81,15 @@ public class AddObjectStoragePoolCmdTest {
     @After
     public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     @Test
     public void testAddObjectStore() throws DiscoveryException {
         Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), anyObject());
+                Mockito.anyString(), Mockito.anyString(), any());
         ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
-        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(any());
         addObjectStoragePoolCmdSpy.execute();
 
         Mockito.verify(storageService, Mockito.times(1))

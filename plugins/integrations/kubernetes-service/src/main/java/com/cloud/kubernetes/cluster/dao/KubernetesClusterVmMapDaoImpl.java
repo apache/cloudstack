@@ -31,12 +31,17 @@ import com.cloud.utils.db.SearchCriteria;
 public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClusterVmMapVO, Long> implements KubernetesClusterVmMapDao {
 
     private final SearchBuilder<KubernetesClusterVmMapVO> clusterIdSearch;
+    private final SearchBuilder<KubernetesClusterVmMapVO> vmIdSearch;
 
     public KubernetesClusterVmMapDaoImpl() {
         clusterIdSearch = createSearchBuilder();
         clusterIdSearch.and("clusterId", clusterIdSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         clusterIdSearch.and("vmIdsIN", clusterIdSearch.entity().getVmId(), SearchCriteria.Op.IN);
         clusterIdSearch.done();
+
+        vmIdSearch = createSearchBuilder();
+        vmIdSearch.and("vmId", vmIdSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        vmIdSearch.done();
     }
 
     @Override
@@ -45,6 +50,13 @@ public class KubernetesClusterVmMapDaoImpl extends GenericDaoBase<KubernetesClus
         sc.setParameters("clusterId", clusterId);
         Filter filter = new Filter(KubernetesClusterVmMapVO.class, "id", Boolean.TRUE, null, null);
         return listBy(sc, filter);
+    }
+
+    @Override
+    public KubernetesClusterVmMapVO getClusterMapFromVmId(long vmId) {
+        SearchCriteria<KubernetesClusterVmMapVO> sc = vmIdSearch.create();
+        sc.setParameters("vmId", vmId);
+        return findOneBy(sc);
     }
 
     @Override

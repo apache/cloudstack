@@ -287,6 +287,8 @@ public interface StorageManager extends StorageService {
 
     CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId);
 
+    CapacityVO getStoragePoolUsedStats(Long zoneId, Long podId, Long clusterId, List<Long> poolIds);
+
     List<StoragePoolVO> ListByDataCenterHypervisor(long datacenterId, HypervisorType type);
 
     List<VMInstanceVO> listByStoragePool(long storagePoolId);
@@ -314,6 +316,9 @@ public interface StorageManager extends StorageService {
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
     boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
+
+    boolean storagePoolHasEnoughIops(Long requestedIops, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(Long size, StoragePool pool);
 
     boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
@@ -346,6 +351,8 @@ public interface StorageManager extends StorageService {
     boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
     boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
+
+    boolean isStoragePoolCompliantWithStoragePolicy(long diskOfferingId, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 

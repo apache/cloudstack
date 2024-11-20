@@ -26,14 +26,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
-    private static final Logger s_logger = Logger.getLogger(UserDataManagerImpl.class);
     private static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES; // 4KB
     private static final int NUM_OF_2K_BLOCKS = 512;
@@ -89,9 +87,9 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        s_logger.trace(String.format("Validating base64 encoded user data: [%s].", userData));
+        logger.trace(String.format("Validating base64 encoded user data: [%s].", userData));
         if (StringUtils.isBlank(userData)) {
-            s_logger.debug("Null/empty base64 encoded user data set");
+            logger.debug("Null/empty base64 encoded user data set");
             return null;
         }
 
@@ -126,17 +124,17 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
             throw new InvalidParameterValueException("User data is too short.");
         }
 
-        s_logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
+        logger.trace(String.format("Decoded user data: [%s].", decodedUserData));
         int userDataLength = userData.length();
         int decodedUserDataLength = decodedUserData.length;
-        s_logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));
+        logger.info(String.format("Configured base64 encoded user data size: %d bytes, actual user data size: %d bytes", userDataLength, decodedUserDataLength));
 
         if (userDataLength > maxHTTPLength) {
-            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
+            logger.warn(String.format("Base64 encoded user data (size: %d bytes) too long for http %s request (accepted size: %d bytes)", userDataLength, httpMethod.toString(), maxHTTPLength));
             throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
         }
         if (userDataLength > VM_USERDATA_MAX_LENGTH.value()) {
-            s_logger.warn(String.format("Base64 encoded user data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, VM_USERDATA_MAX_LENGTH.value()));
+            logger.warn(String.format("Base64 encoded user data (size: %d bytes) has exceeded configurable max length of %d bytes", userDataLength, VM_USERDATA_MAX_LENGTH.value()));
             throw new InvalidParameterValueException("User data has exceeded configurable max length: " + VM_USERDATA_MAX_LENGTH.value());
         }
 

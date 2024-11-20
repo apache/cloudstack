@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.storage.listener;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -28,7 +29,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 
 public class StorageSyncListener implements Listener {
-    private static final Logger s_logger = Logger.getLogger(StorageSyncListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public StorageSyncListener() {
     }
@@ -42,9 +43,9 @@ public class StorageSyncListener implements Listener {
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (Answer answer : answers) {
             if (answer.getResult() == false) {
-                s_logger.warn("Unable to execute sync command: " + answer.toString());
+                logger.warn("Unable to execute sync command: " + answer.toString());
             } else {
-                s_logger.debug("Sync command executed: " + answer.toString());
+                logger.debug("Sync command executed: " + answer.toString());
             }
         }
         return true;
@@ -60,7 +61,7 @@ public class StorageSyncListener implements Listener {
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-        s_logger.debug("Disconnecting");
+        logger.debug("Disconnecting");
         return true;
     }
 
