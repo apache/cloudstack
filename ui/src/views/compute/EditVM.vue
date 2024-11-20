@@ -84,7 +84,7 @@
           }"
           :options="groups.opts" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="userDataEnabled">
         <template #label>
           <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
         </template>
@@ -143,6 +143,7 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      userDataEnabled: false,
       securityGroupsEnabled: false,
       dynamicScalingVmConfig: false,
       loading: false,
@@ -177,7 +178,8 @@ export default {
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         group: this.resource.group,
         securitygroupids: this.resource.securitygroup.map(x => x.id),
-        userdata: ''
+        userdata: '',
+        haenable: this.resource.haenable
       })
       this.rules = reactive({})
     },
@@ -288,15 +290,37 @@ export default {
       return decodedData.toString('utf-8')
     },
     fetchUserData () {
-      const params = {
-        id: this.resource.id,
-        userdata: true
+      let networkId
+      this.resource.nic.forEach(nic => {
+        if (nic.isdefault) {
+          networkId = nic.networkid
+        }
+      })
+      if (!networkId) {
+        return
       }
+      const listNetworkParams = {
+        id: networkId,
+        listall: true
+      }
+      api(`listNetworks`, listNetworkParams).then(json => {
+        json.listnetworksresponse.network[0].service.forEach(service => {
+          if (service.name === 'UserData') {
+            this.userDataEnabled = true
 
-      api('listVirtualMachines', params).then(json => {
-        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            const listVmParams = {
+              id: this.resource.id,
+              userdata: true,
+              listall: true
+            }
+            api('listVirtualMachines', listVmParams).then(json => {
+              this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            })
+          }
+        })
       })
     },
+
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)

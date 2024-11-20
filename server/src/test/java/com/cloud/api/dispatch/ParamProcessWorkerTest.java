@@ -18,6 +18,29 @@
  */
 package com.cloud.api.dispatch;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
+
+import org.mockito.junit.MockitoJUnitRunner;
+
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -26,28 +49,33 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.HashMap;
+import com.cloud.vm.VMInstanceVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ParamProcessWorkerTest {
 
-    @Mock
-    protected AccountManager accountManager;
+    @Spy
+    @InjectMocks
+    private ParamProcessWorker paramProcessWorkerSpy;
 
-    protected ParamProcessWorker paramProcessWorker;
+    @Mock
+    private AccountManager accountManagerMock;
+
+    @Mock
+    private Account callingAccountMock;
+
+    @Mock
+    private User callingUserMock;
+
+    @Mock
+    private Account ownerAccountMock;
+
+    @Mock
+    BaseCmd baseCmdMock;
+
+    private Account[] owners = new Account[]{ownerAccountMock};
+
+    private Map<Object, SecurityChecker.AccessType> entities = new HashMap<>();
 
     public static class TestCmd extends BaseCmd {
 
@@ -65,7 +93,7 @@ public class ParamProcessWorkerTest {
 
         @Override
         public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException, NetworkRuleConflictException {
+                ResourceAllocationException, NetworkRuleConflictException {
             // well documented nothing
         }
 
@@ -83,9 +111,7 @@ public class ParamProcessWorkerTest {
 
     @Before
     public void setup() {
-        CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
-        paramProcessWorker = new ParamProcessWorker();
-        paramProcessWorker._accountMgr = accountManager;
+        CallContext.register(callingUserMock, callingAccountMock);
     }
 
     @After
@@ -101,10 +127,71 @@ public class ParamProcessWorkerTest {
         params.put("boolparam1", "true");
         params.put("doubleparam1", "11.89");
         final TestCmd cmd = new TestCmd();
-        paramProcessWorker.processParameters(cmd, params);
+        paramProcessWorkerSpy.processParameters(cmd, params);
         Assert.assertEquals("foo", cmd.strparam1);
         Assert.assertEquals(100, cmd.intparam1);
         Assert.assertTrue(Double.compare(cmd.doubleparam1, 11.89) == 0);
+        Mockito.verify(paramProcessWorkerSpy).doAccessChecks(Mockito.any(), Mockito.any());
     }
 
+    @Test
+    public void doAccessChecksTestChecksCallerAccessToOwnerWhenCmdExtendsBaseAsyncCreateCmd() {
+        Mockito.doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
+        Mockito.doNothing().when(paramProcessWorkerSpy).checkCallerAccessToEntities(Mockito.any(), Mockito.any(), Mockito.any());
+
+        paramProcessWorkerSpy.doAccessChecks(new AssociateIPAddrCmd(), entities);
+
+        Mockito.verify(accountManagerMock).checkAccess(callingAccountMock, null, false, owners);
+    }
+
+    @Test
+    public void doAccessChecksTestChecksCallerAccessToEntities() {
+        Mockito.doReturn(owners).when(paramProcessWorkerSpy).getEntityOwners(Mockito.any());
+        Mockito.doNothing().when(paramProcessWorkerSpy).checkCallerAccessToEntities(Mockito.any(), Mockito.any(), Mockito.any());
+
+        paramProcessWorkerSpy.doAccessChecks(new AssociateIPAddrCmd(), entities);
+
+        Mockito.verify(paramProcessWorkerSpy).checkCallerAccessToEntities(callingAccountMock, owners, entities);
+    }
+
+    @Test
+    public void getEntityOwnersTestReturnsAccountsWhenCmdHasMultipleEntityOwners() {
+        Mockito.when(baseCmdMock.getEntityOwnerIds()).thenReturn(List.of(1L, 2L));
+        Mockito.doReturn(callingAccountMock).when(accountManagerMock).getAccount(1L);
+        Mockito.doReturn(ownerAccountMock).when(accountManagerMock).getAccount(2L);
+
+        List<Account> result = List.of(paramProcessWorkerSpy.getEntityOwners(baseCmdMock));
+
+        Assert.assertEquals(List.of(callingAccountMock, ownerAccountMock), result);
+    }
+
+    @Test
+    public void getEntityOwnersTestReturnsAccountWhenCmdHasOneEntityOwner() {
+        Mockito.when(baseCmdMock.getEntityOwnerId()).thenReturn(1L);
+        Mockito.when(baseCmdMock.getEntityOwnerIds()).thenReturn(null);
+        Mockito.doReturn(ownerAccountMock).when(accountManagerMock).getAccount(1L);
+
+        List<Account> result = List.of(paramProcessWorkerSpy.getEntityOwners(baseCmdMock));
+
+        Assert.assertEquals(List.of(ownerAccountMock), result);
+    }
+
+    @Test
+    public void checkCallerAccessToEntitiesTestChecksCallerAccessToOwners() {
+        entities.put(ownerAccountMock, SecurityChecker.AccessType.UseEntry);
+
+        paramProcessWorkerSpy.checkCallerAccessToEntities(callingAccountMock, owners, entities);
+
+        Mockito.verify(accountManagerMock).checkAccess(callingAccountMock, null, false, owners);
+    }
+
+    @Test
+    public void checkCallerAccessToEntitiesTestChecksCallerAccessToResource() {
+        VMInstanceVO vmInstanceVo = new VMInstanceVO();
+        entities.put(vmInstanceVo, SecurityChecker.AccessType.UseEntry);
+
+        paramProcessWorkerSpy.checkCallerAccessToEntities(callingAccountMock, owners, entities);
+
+        Mockito.verify(accountManagerMock).validateAccountHasAccessToResource(callingAccountMock, SecurityChecker.AccessType.UseEntry, vmInstanceVo);
+    }
 }

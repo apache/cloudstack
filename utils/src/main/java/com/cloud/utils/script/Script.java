@@ -19,14 +19,6 @@
 
 package com.cloud.utils.script;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.Duration;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -40,10 +32,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
     private static final Logger s_logger = Logger.getLogger(Script.class);
@@ -52,7 +58,7 @@ public class Script implements Callable<String> {
 
     public static final String ERR_EXECUTE = "execute.error";
     public static final String ERR_TIMEOUT = "timeout";
-    private int _defaultTimeout = 3600 * 1000; /* 1 hour */
+    private static final int DEFAULT_TIMEOUT = 3600 * 1000; /* 1 hour */
     private volatile boolean _isTimeOut = false;
 
     private boolean _passwordCommand = false;
@@ -89,7 +95,7 @@ public class Script implements Callable<String> {
         _timeout = timeout;
         if (_timeout == 0) {
             /* always using default timeout 1 hour to avoid thread hang */
-            _timeout = _defaultTimeout;
+            _timeout = DEFAULT_TIMEOUT;
         }
         _process = null;
         _logger = logger != null ? logger : s_logger;
@@ -371,12 +377,19 @@ public class Script implements Callable<String> {
                         //process completed successfully
                         if (_process.exitValue() == 0 || _process.exitValue() == exitValue) {
                             _logger.debug("Execution is successful.");
+                            String result;
+                            String method;
                             if (interpreter != null) {
-                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                                _logger.debug("interpreting the result...");
+                                method = "result interpretation of execution: ";
+                                result= interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
                             } else {
                                 // null return exitValue apparently
-                                return String.valueOf(_process.exitValue());
+                                method = "return code of execution: ";
+                                result = String.valueOf(_process.exitValue());
                             }
+                            _logger.debug(method + result);
+                            return result;
                         } else { //process failed
                             break;
                         }
@@ -614,16 +627,7 @@ public class Script implements Callable<String> {
         return null;
     }
 
-    public static String runSimpleBashScript(String command) {
-        return Script.runSimpleBashScript(command, 0);
-    }
-
-    public static String runSimpleBashScript(String command, int timeout) {
-
-        Script s = new Script("/bin/bash", timeout);
-        s.add("-c");
-        s.add(command);
-
+    private static String runScript(Script s) {
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         if (s.execute(parser) != null)
             return null;
@@ -633,6 +637,103 @@ public class Script implements Callable<String> {
             return null;
         else
             return result.trim();
+    }
+
+    public static String runSimpleBashScript(String command, int timeout) {
+        Script s = new Script("/bin/bash", timeout);
+        s.add("-c");
+        s.add(command);
+        return runScript(s);
+    }
+
+    public static String runSimpleBashScript(String command) {
+        return Script.runSimpleBashScript(command, 0);
+    }
+
+    public static String getExecutableAbsolutePath(String executable) {
+        for (String dirName : System.getenv("PATH").split(File.pathSeparator)) {
+            File file = new File(dirName, executable);
+            if (file.isFile() && file.canExecute()) {
+                return file.getAbsolutePath();
+            }
+        }
+        return executable;
+    }
+
+    private static Script getScriptForCommandRun(long timeout, String... command) {
+        Script s = new Script(command[0], timeout);
+        if (command.length > 1) {
+            for (int i = 1; i < command.length; ++i) {
+                s.add(command[i]);
+            }
+        }
+        return s;
+    }
+
+    private static Script getScriptForCommandRun(String... command) {
+        return getScriptForCommandRun(0, command);
+    }
+
+    public static String executeCommand(String... command) {
+        return runScript(getScriptForCommandRun(command));
+    }
+
+    public static int executeCommandForExitValue(long timeout, String... command) {
+        return runScriptForExitValue(getScriptForCommandRun(timeout, command));
+    }
+
+    public static int executeCommandForExitValue(String... command) {
+        return executeCommandForExitValue(0, command);
+    }
+
+    public static Pair<Integer, String> executePipedCommands(List<String[]> commands, long timeout) {
+        if (timeout <= 0) {
+            timeout = DEFAULT_TIMEOUT;
+        }
+        Callable<Pair<Integer, String>> commandRunner = () -> {
+            List<ProcessBuilder> builders = commands.stream().map(ProcessBuilder::new).collect(Collectors.toList());
+            List<Process> processes = ProcessBuilder.startPipeline(builders);
+            Process last = processes.get(processes.size()-1);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(last.getInputStream()))) {
+                String line;
+                StringBuilder output = new StringBuilder();
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append(System.lineSeparator());
+                }
+                last.waitFor();
+                s_logger.debug("Piped commands executed successfully");
+                return new Pair<>(last.exitValue(), output.toString());
+            } catch (IOException | InterruptedException e) {
+                s_logger.error("Error executing piped commands", e);
+                return new Pair<>(-1, stackTraceAsString(e));
+            }
+        };
+
+        Future<Pair<Integer, String>> future = s_executors.submit(commandRunner);
+        Pair<Integer, String> result = new Pair<>(-1, ERR_EXECUTE);
+        try {
+            result = future.get(timeout, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            s_logger.error("Piped command execution timed out, attempting to terminate the processes.");
+            future.cancel(true);
+            result.second(ERR_TIMEOUT);
+        } catch (InterruptedException | ExecutionException e) {
+            s_logger.error("Error executing piped commands", e);
+        }
+        return result;
+    }
+
+    private static int runScriptForExitValue(Script s) {
+        String result = s.execute(null);
+        if (result == null || result.trim().isEmpty())
+            return -1;
+        else {
+            try {
+                return Integer.parseInt(result.trim());
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
     }
 
     public static int runSimpleBashScriptForExitValue(String command) {
@@ -662,17 +763,7 @@ public class Script implements Callable<String> {
         s.add("-c");
         s.add(command);
         s.setAvoidLoggingCommand(avoidLogging);
-
-        String result = s.execute(null);
-        if (result == null || result.trim().isEmpty())
-            return -1;
-        else {
-            try {
-                return Integer.parseInt(result.trim());
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
+        return runScriptForExitValue(s);
     }
 
     public static String runBashScriptIgnoreExitValue(String command, int exitValue) {

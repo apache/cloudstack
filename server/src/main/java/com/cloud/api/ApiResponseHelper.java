@@ -659,6 +659,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            snapshotResponse.setVolumeState(volume.getState().name());
             snapshotResponse.setVirtualSize(volume.getSize());
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
@@ -785,6 +786,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             vmSnapshotResponse.setDomainId(domain.getUuid());
             vmSnapshotResponse.setDomainName(domain.getName());
+            vmSnapshotResponse.setDomainPath(domain.getPath());
         }
 
         List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
@@ -992,6 +994,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (!isAdmin) {
             return;
         }
+        try {
+            nic.getInstanceId();
+        } catch (NullPointerException ex) {
+            return;
+        }
+
         VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
         if (vm == null) {
             return;
@@ -1433,7 +1441,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public StoragePoolResponse createStoragePoolResponse(StoragePool pool) {
         List<StoragePoolJoinVO> viewPools = ApiDBUtils.newStoragePoolView(pool);
-        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
+        List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolResponse(false, viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
     }
@@ -1505,7 +1513,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             // Do it for stats as well.
             capacityResponses.addAll(getStatsCapacityresponse(null, cluster.getId(), pod.getId(), pod.getDataCenterId()));
-            clusterResponse.setCapacitites(new ArrayList<CapacityResponse>(capacityResponses));
+            clusterResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
@@ -2213,6 +2221,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             response.setDomainId(securityGroup.getDomainUuid());
             response.setDomainName(securityGroup.getDomainName());
+            response.setDomainPath(securityGroup.getDomainPath());
 
             for (SecurityRule securityRule : securityRules) {
                 SecurityGroupRuleResponse securityGroupData = new SecurityGroupRuleResponse();
@@ -2615,6 +2624,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
+                response.setDomainPath(domain.getPath());
             }
 
         }
@@ -2863,6 +2873,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
@@ -2880,6 +2891,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
@@ -2893,6 +2905,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(object.getDomainUuid());
         response.setDomainName(object.getDomainName());
+        response.setDomainPath(object.getDomainPath());
     }
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
@@ -2919,6 +2932,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
     }
 
     @Override
@@ -3857,6 +3871,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             usageRecResponse.setDomainId(domain.getUuid());
             usageRecResponse.setDomainName(domain.getName());
+            usageRecResponse.setDomainPath(domain.getPath());
         }
 
         if (usageRecord.getZoneId() != null) {
@@ -4654,6 +4669,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (domain != null) {
             response.setDomainId(domain.getUuid());
             response.setDomainName(domain.getName());
+            response.setDomainPath(domain.getPath());
         }
 
         response.setObjectName("affinitygroup");
@@ -5121,7 +5137,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (instance.getHostName() != null) {
             response.setHostName(instance.getHostName());
         }
-        response.setPowerState(instance.getPowerState().toString());
+        response.setPowerState((instance.getPowerState() != null)? instance.getPowerState().toString() : UnmanagedInstanceTO.PowerState.PowerUnknown.toString());
         response.setCpuCores(instance.getCpuCores());
         response.setCpuSpeed(instance.getCpuSpeed());
         response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());

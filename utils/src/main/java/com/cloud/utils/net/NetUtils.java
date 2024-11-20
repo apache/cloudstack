@@ -30,6 +30,7 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +98,10 @@ public class NetUtils {
     // RFC4291 IPv6 EUI-64
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
+
+    public static String extractHost(String uri) throws URISyntaxException {
+        return (new URI(uri)).getHost();
+    }
 
     public enum InternetProtocol {
         IPv4, IPv6, DualStack;
@@ -619,6 +624,18 @@ public class NetUtils {
         final long firstPart = gateway & netmask;
         final long size = getCidrSize(netmaskStr);
         return long2Ip(firstPart) + "/" + size;
+    }
+
+    public static String getCleanIp4Cidr(final String cidr) {
+        if (!isValidIp4Cidr(cidr)) {
+            throw new CloudRuntimeException("Invalid CIDR: " + cidr);
+        }
+        String gateway = cidr.split("/")[0];
+        Long netmaskSize = Long.parseLong(cidr.split("/")[1]);
+        final long ip = ip2Long(gateway);
+        final long startNetMask = ip2Long(getCidrNetmask(netmaskSize));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), netmaskSize);
     }
 
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {

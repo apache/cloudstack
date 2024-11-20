@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -332,6 +333,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
+    private static final String OAUTH2_PROVIDER_NAME = "oauth2";
     private List<String> apiNameList;
 
     protected static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
@@ -719,6 +721,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check that resources belong to the same account
 
+    }
+
+    @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        Class<?> resourceClass = resource.getClass();
+        if (ControlledEntity.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, accessType, true, (ControlledEntity) resource);
+        } else if (Domain.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, (Domain) resource);
+        } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
+            s_logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+        }
+        s_logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
     }
 
     @Override
@@ -2650,7 +2665,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     continue;
                 }
             }
-            if (secretCode != null && !authenticator.getName().equals("oauth2")) {
+            if ((secretCode != null && !authenticator.getName().equals(OAUTH2_PROVIDER_NAME))
+                    || (secretCode == null && authenticator.getName().equals(OAUTH2_PROVIDER_NAME))) {
                 continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
@@ -2742,13 +2758,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Unable to find user by id");
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
-        checkAccess(CallContext.current().getCallingUser(), account);
+        User caller = CallContext.current().getCallingUser();
+        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
+        checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
+        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
+            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
+            s_logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+    }
+
+    protected boolean isDomainAdminForRootDomain(User callingUser) {
+        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
+        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override
@@ -2785,6 +2816,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
         // don't allow updating system user

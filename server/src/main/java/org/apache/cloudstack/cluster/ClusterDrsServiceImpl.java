@@ -467,7 +467,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
 
             for (Host destHost : compatibleDestinationHosts) {
-                if (!suitableDestinationHosts.contains(destHost)) {
+                if (!suitableDestinationHosts.contains(destHost) || cluster.getId() != destHost.getClusterId()) {
                     continue;
                 }
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), vm,

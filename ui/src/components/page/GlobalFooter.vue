@@ -23,7 +23,7 @@
     <div class="line" v-if="$store.getters.userInfo.roletype === 'Admin'">
       CloudStack {{ $store.getters.features.cloudstackversion }}
       <a-divider type="vertical" />
-      <a href="https://github.com/apache/cloudstack/issues/new" target="_blank">
+      <a href="https://github.com/apache/cloudstack/discussions" target="_blank">
         <github-outlined />
         {{ $t('label.report.bug') }}
       </a>

@@ -390,6 +390,10 @@ export const resourceTypePlugin = {
           return 'publicip'
         case 'NetworkAcl':
           return 'acllist'
+        case 'KubernetesCluster':
+          return 'kubernetes'
+        case 'KubernetesSupportedVersion':
+          return 'kubernetesiso'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -482,6 +486,15 @@ export const fileSizeUtilPlugin = {
   }
 }
 
+function isBase64 (str) {
+  try {
+    const decoded = new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0)))
+    return btoa(decoded) === str
+  } catch (err) {
+    return false
+  }
+}
+
 export const genericUtilPlugin = {
   install (app) {
     app.config.globalProperties.$isValidUuid = function (uuid) {
@@ -490,11 +503,10 @@ export const genericUtilPlugin = {
     }
 
     app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
-      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-      if (base64regex.test(text)) {
+      if (isBase64(text)) {
         return text
       }
-      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
+      return encodeURI(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }

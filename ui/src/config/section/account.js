@@ -24,11 +24,36 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
+  searchFilters: ['name', 'accounttype', 'domainid'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
   details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
+    param: 'account'
+  }, {
+    name: 'vm',
+    title: 'label.vms',
+    param: 'account'
+  }, {
+    name: 'volume',
+    title: 'label.volumes',
+    param: 'account'
+  }, {
+    name: 'guestnetwork',
+    title: 'label.networks',
+    param: 'account'
+  }, {
+    name: 'ssh',
+    title: 'label.sshkeypairs',
+    param: 'account'
+  }, {
+    name: 'userdata',
+    title: 'label.userdata',
+    param: 'account'
+  }, {
+    name: 'template',
+    title: 'label.templates',
     param: 'account'
   }],
   filters: () => {
@@ -91,7 +116,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain'],
+      args: ['newname', 'account', 'domainid', 'networkdomain', 'roleid'],
       mapping: {
         account: {
           value: (record) => { return record.name }

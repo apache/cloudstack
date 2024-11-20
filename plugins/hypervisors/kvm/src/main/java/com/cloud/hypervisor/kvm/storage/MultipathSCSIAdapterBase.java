@@ -21,20 +21,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -43,8 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
-import org.libvirt.LibvirtException;
-import org.joda.time.Duration;
+import org.apache.log4j.Logger;
 
 public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static final Logger LOGGER = Logger.getLogger(MultipathSCSIAdapterBase.class);
@@ -54,6 +50,14 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
      * A lock to avoid any possiblity of multiple requests for a scan
      */
     static byte[] CLEANUP_LOCK = new byte[0];
+
+    /**
+     * List of supported OUI's (needed for path-based cleanup logic on disconnects after live migrations)
+     */
+    static String[] SUPPORTED_OUI_LIST = {
+        "0002ac", // HPE Primera 3PAR
+        "24a937"  // Pure Flasharray
+    };
 
     /**
      * Property keys and defaults
@@ -82,6 +86,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
      * Initialize static program-wide configurations and background jobs
      */
     static {
+
         long cleanupFrequency = CLEANUP_FREQUENCY_SECS.getFinalValue() * 1000;
         boolean cleanupEnabled = CLEANUP_ENABLED.getFinalValue();
 
@@ -96,15 +101,12 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             throw new Error("Unable to find the disconnectVolume.sh script");
         }
 
-        resizeScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), resizeScript);
-        if (resizeScript == null) {
-            throw new Error("Unable to find the resizeVolume.sh script");
-        }
-
         copyScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), copyScript);
         if (copyScript == null) {
             throw new Error("Unable to find the copyVolume.sh script");
         }
+
+        resizeScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), resizeScript);
 
         if (cleanupEnabled) {
             cleanupScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), cleanupScript);
@@ -137,9 +139,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     public abstract boolean isStoragePoolTypeSupported(Storage.StoragePoolType type);
 
-    /**
-     * We expect WWN values in the volumePath so need to convert it to an actual physical path
-     */
     public abstract AddressInfo parseAndValidatePath(String path);
 
     @Override
@@ -151,6 +150,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             return null;
         }
 
+        // we expect WWN values in the volumePath so need to convert it to an actual physical path
         AddressInfo address = parseAndValidatePath(volumePath);
         return getPhysicalDisk(address, pool);
     }
@@ -168,7 +168,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         LOGGER.info(String.format("createStoragePool(uuid,host,port,path,type) called with args (%s, %s, %s, %s, %s)", uuid, host, ""+port, path, type));
         MultipathSCSIPool storagePool = new MultipathSCSIPool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);
@@ -186,15 +186,23 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         if (StringUtils.isEmpty(volumePath)) {
             LOGGER.error("Unable to connect physical disk due to insufficient data - volume path is undefined");
-            throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data - volume path is underfined");
+            return false;
         }
 
         if (pool == null) {
             LOGGER.error("Unable to connect physical disk due to insufficient data - pool is not set");
-            throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data - pool is not set");
+            return false;
         }
 
+        // we expect WWN values in the volumePath so need to convert it to an actual physical path
         AddressInfo address = this.parseAndValidatePath(volumePath);
+
+        // validate we have a connection id - we can't proceed without that
+        if (address.getConnectionId() == null) {
+            LOGGER.error("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid() + " - connection id is not set in provided path");
+            return false;
+        }
+
         int waitTimeInSec = diskWaitTimeSecs;
         if (details != null && details.containsKey(StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
             String waitTime = details.get(StorageManager.STORAGE_POOL_DISK_WAIT.toString());
@@ -207,31 +215,62 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
         AddressInfo address = this.parseAndValidatePath(volumePath);
+        if (address.getAddress() == null) {
+            if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) returning FALSE, volume path has no address field", volumePath, pool.getUuid()));
+            return false;
+        }
         ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));        return true;
+
+        if (result.getExitCode() != 0) {
+            LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", address.getAddress().toLowerCase(), result.getExitCode()));
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("multipath flush output: " + result.getResult());
+            LOGGER.debug(String.format("disconnectPhysicalDisk(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));
+        }
+
+        return (result.getExitCode() == 0);
     }
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
+        LOGGER.debug(String.format("disconnectPhysicalDisk(volumeToDisconnect) called with arg bag [not implemented]:") + " " + volumeToDisconnect);
         return false;
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) STARTED", localPath));
-        ScriptResult result = runScript(disconnectScript, 60000L, localPath.replace("/dev/mapper/3", ""));
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));       return true;
+        if (localPath == null) {
+            return false;
+        }
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) START", localPath));
+        if (localPath.startsWith("/dev/mapper/")) {
+            String multipathName = localPath.replace("/dev/mapper/3", "");
+            // this ensures we only disconnect multipath devices supported by this driver
+            for (String oui: SUPPORTED_OUI_LIST) {
+                if (multipathName.length() > 1 && multipathName.substring(2).startsWith(oui)) {
+                    ScriptResult result = runScript(disconnectScript, 60000L, multipathName);
+                    if (result.getExitCode() != 0) {
+                        LOGGER.warn(String.format("Disconnect failed for path [%s] with return code [%s]", multipathName, result.getExitCode()));
+                    }
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("multipath flush output: " + result.getResult());
+                        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));
+                    }
+                    return (result.getExitCode() == 0);
+                }
+            }
+        }
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) returning FALSE, volume path is not a multipath volume: %s", localPath));
+        return false;
     }
 
     @Override
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format) {
-        LOGGER.info(String.format("deletePhysicalDisk(uuid,pool,format) called with args (%s, %s, %s) [not implemented]", uuid, pool.getUuid(), format.toString()));
-        return true;
+        return false;
     }
 
     @Override
@@ -275,15 +314,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         return true;
     }
 
-    /**
-     * Validate inputs and return the source file for a template copy
-     * @param templateFilePath
-     * @param destTemplatePath
-     * @param destPool
-     * @param format
-     * @return
-     */
-    File createTemplateFromDirectDownloadFileValidate(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format) {
+
+    @Override
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         if (StringUtils.isAnyEmpty(templateFilePath, destTemplatePath) || destPool == null) {
             LOGGER.error("Unable to create template from direct download template file due to insufficient data");
             throw new CloudRuntimeException("Unable to create template from direct download template file due to insufficient data");
@@ -296,57 +329,18 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             throw new CloudRuntimeException("Direct download template file " + templateFilePath + " does not exist on this host");
         }
 
-        if (destTemplatePath == null || destTemplatePath.isEmpty()) {
-            LOGGER.error("Failed to create template, target template disk path not provided");
-            throw new CloudRuntimeException("Target template disk path not provided");
-        }
-
-        if (this.isStoragePoolTypeSupported(destPool.getType())) {
-            throw new CloudRuntimeException("Unsupported storage pool type: " + destPool.getType().toString());
-        }
-
-        if (Storage.ImageFormat.RAW.equals(format) && Storage.ImageFormat.QCOW2.equals(format)) {
-            LOGGER.error("Failed to create template, unsupported template format: " + format.toString());
-            throw new CloudRuntimeException("Unsupported template format: " + format.toString());
-        }
-        return sourceFile;
-    }
-
-    String extractSourceTemplateIfNeeded(File sourceFile, String templateFilePath) {
-        String srcTemplateFilePath = templateFilePath;
-        if (isTemplateExtractable(templateFilePath)) {
-            srcTemplateFilePath = sourceFile.getParent() + "/" + UUID.randomUUID().toString();
-            LOGGER.debug("Extract the downloaded template " + templateFilePath + " to " + srcTemplateFilePath);
-            String extractCommand = getExtractCommandForDownloadedFile(templateFilePath, srcTemplateFilePath);
-            Script.runSimpleBashScript(extractCommand);
-            Script.runSimpleBashScript("rm -f " + templateFilePath);
-        }
-        return srcTemplateFilePath;
-    }
-
-    QemuImg.PhysicalDiskFormat deriveImgFileFormat(Storage.ImageFormat format) {
-        if (format == Storage.ImageFormat.RAW) {
-            return QemuImg.PhysicalDiskFormat.RAW;
-        } else if (format == Storage.ImageFormat.QCOW2) {
-            return QemuImg.PhysicalDiskFormat.QCOW2;
-        } else {
-            return QemuImg.PhysicalDiskFormat.RAW;
-        }
-    }
-
-    @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
-        File sourceFile = createTemplateFromDirectDownloadFileValidate(templateFilePath, destTemplatePath, destPool, format);
-        LOGGER.debug("Create template from direct download template - file path: " + templateFilePath + ", dest path: " + destTemplatePath + ", format: " + format.toString());
-        KVMPhysicalDisk sourceDisk = destPool.getPhysicalDisk(sourceFile.getAbsolutePath());
+        KVMPhysicalDisk sourceDisk = destPool.getPhysicalDisk(templateFilePath);
         return copyPhysicalDisk(sourceDisk, destTemplatePath, destPool, timeout, null, null,  Storage.ProvisioningType.THIN);
     }
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout,
             byte[] srcPassphrase, byte[] dstPassphrase, Storage.ProvisioningType provisioningType) {
+        if (StringUtils.isEmpty(name) || disk == null || destPool == null) {
+            LOGGER.error("Unable to copy physical disk due to insufficient data");
+            throw new CloudRuntimeException("Unable to copy physical disk due to insufficient data");
+        }
 
-        validateForDiskCopy(disk, name, destPool);
         LOGGER.info("Copying FROM source physical disk " + disk.getPath() + ", size: " + disk.getSize() + ", virtualsize: " + disk.getVirtualSize()+ ", format: " + disk.getFormat());
 
         KVMPhysicalDisk destDisk = destPool.getPhysicalDisk(name);
@@ -366,60 +360,34 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         LOGGER.info("Copying TO destination physical disk " + destDisk.getPath() + ", size: " + destDisk.getSize() + ", virtualsize: " + destDisk.getVirtualSize()+ ", format: " + destDisk.getFormat());
         QemuImgFile srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
         QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
-        LOGGER.debug("Starting COPY from source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath());
+
+        LOGGER.debug("Starting COPY from source path " + srcFile.getFileName() + " to target volume path: " + destDisk.getPath());
+
         ScriptResult result = runScript(copyScript, timeout, destDisk.getFormat().toString().toLowerCase(), srcFile.getFileName(), destFile.getFileName());
         int rc = result.getExitCode();
         if (rc != 0) {
             throw new CloudRuntimeException("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + rc + " - " + result.getResult());
         }
-        LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath() + " " + result.getResult());
+        LOGGER.debug("Successfully converted source volume at " + srcFile.getFileName() + " to destination volume: " + destDisk.getPath() + " " + result.getResult());
 
         return destDisk;
     }
 
-    void validateForDiskCopy(KVMPhysicalDisk disk, String name, KVMStoragePool destPool) {
-        if (StringUtils.isEmpty(name) || disk == null || destPool == null) {
-            LOGGER.error("Unable to copy physical disk due to insufficient data");
-            throw new CloudRuntimeException("Unable to copy physical disk due to insufficient data");
+    private static final ScriptResult runScript(String script, long timeout, String...args) {
+        ScriptResult result = new ScriptResult();
+        Script cmd = new Script(script, Duration.millis(timeout), LOGGER);
+        cmd.add(args);
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String output = cmd.execute(parser);
+        // its possible the process never launches which causes an NPE on getExitValue below
+        if (output != null && output.contains("Unable to execute the command")) {
+            result.setResult(output);
+            result.setExitCode(-1);
+            return result;
         }
-    }
-
-    /**
-     * Copy a disk path to another disk path using QemuImg command
-     * @param disk
-     * @param destDisk
-     * @param name
-     * @param timeout
-     */
-    void qemuCopy(KVMPhysicalDisk disk, KVMPhysicalDisk destDisk, String name, int timeout) {
-        QemuImg qemu;
-        try {
-            qemu = new QemuImg(timeout);
-        } catch (LibvirtException | QemuImgException e) {
-            throw new CloudRuntimeException (e);
-        }
-        QemuImgFile srcFile = null;
-        QemuImgFile destFile = null;
-
-        try {
-            srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
-            destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
-
-            LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to volume: " + destDisk.getPath());
-            qemu.convert(srcFile, destFile, true);
-            LOGGER.debug("Successfully converted source disk image " + srcFile.getFileName() + " to volume: " + destDisk.getPath());
-        }  catch (QemuImgException | LibvirtException e) {
-            try {
-                Map<String, String> srcInfo = qemu.info(srcFile);
-                LOGGER.debug("Source disk info: " + Arrays.asList(srcInfo));
-            } catch (Exception ignored) {
-                LOGGER.warn("Unable to get info from source disk: " + disk.getName());
-            }
-
-            String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((StringUtils.isEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
-            LOGGER.error(errMsg);
-            throw new CloudRuntimeException(errMsg, e);
-        }
+        result.setResult(output);
+        result.setExitCode(cmd.getExitValue());
+        return result;
     }
 
     @Override
@@ -460,25 +428,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
     }
 
-    private static final ScriptResult runScript(String script, long timeout, String...args) {
-        ScriptResult result = new ScriptResult();
-        Script cmd = new Script(script, Duration.millis(timeout), LOGGER);
-        cmd.add(args);
-        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        String output = cmd.execute(parser);
-        // its possible the process never launches which causes an NPE on getExitValue below
-        if (output != null && output.contains("Unable to execute the command")) {
-            result.setResult(output);
-            result.setExitCode(-1);
-            return result;
-        }
-        result.setResult(output);
-        result.setExitCode(cmd.getExitValue());
-        return result;
-    }
-
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
         LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
+
         long scriptTimeoutSecs = 30; // how long to wait for each script execution to run
         long maxTries = 10; // how many max retries to attempt the script
         long waitTimeInMillis = waitTimeInSec * 1000; // how long overall to wait
@@ -554,40 +506,6 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
 
         LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
         return false;
-    }
-
-    void runConnectScript(String lun, AddressInfo address) {
-        try {
-            ProcessBuilder builder = new ProcessBuilder(connectScript, lun, address.getAddress());
-            Process p = builder.start();
-            int rc = p.waitFor();
-            StringBuffer output = new StringBuffer();
-            if (rc == 0) {
-                BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line = null;
-                while ((line = input.readLine()) != null) {
-                    output.append(line);
-                    output.append(" ");
-                }
-            } else {
-                LOGGER.warn("Failure discovering LUN via " + connectScript);
-                BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-                String line = null;
-                while ((line = error.readLine()) != null) {
-                    LOGGER.warn("error --> " + line);
-                }
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new CloudRuntimeException("Problem performing scan on SCSI hosts", e);
-        }
-    }
-
-    void sleep(long sleepTimeMs) {
-        try {
-            Thread.sleep(sleepTimeMs);
-        } catch (Exception ex) {
-            // don't do anything
-        }
     }
 
     long getPhysicalDiskSize(String diskPath) {

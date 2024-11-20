@@ -104,18 +104,6 @@
                   v-if="resource.id"
                 />
               </a-tooltip>
-              <a-tooltip placement="right" >
-                <template #title>
-                  <span>{{ $t('label.copy.consoleurl') }}</span>
-                </template>
-                <console
-                  copyUrlToClipboard
-                  style="margin-top: -5px;"
-                  :resource="resource"
-                  size="default"
-                  v-if="resource.id"
-                />
-              </a-tooltip>
             </div>
           </slot>
         </div>
@@ -454,7 +442,8 @@
           <div class="resource-detail-item__label">{{ $t('label.volume') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+            <router-link v-if="validLinks.volume" :to="{ path: '/volume/' + resource.volumeid }">{{ resource.volumename || resource.volume || resource.volumeid }} </router-link>
+            <span v-else>{{ resource.volumename || resource.volume || resource.volumeid }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.associatednetworkid">
@@ -479,11 +468,12 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.publicip">
-          <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.public.ip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
             <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
-            <copy-label :label="resource.publicip"/>
+            <copy-label v-if="resource.publicipid" :copyValue="resource.publicip" :showIcon=true />
+            <copy-label v-else :label="resource.publicip" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -520,15 +510,15 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ resource.templateformat === 'ISO'? $t('label.iso') : $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <SaveOutlined v-else />
-            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+            <router-link :to="{ path: (resource.templateformat === 'ISO' ? '/iso/' : '/template/') + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.isoid">
-          <div class="resource-detail-item__label">{{ $t('label.iso') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.isoname') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
             <UsbOutlined v-else />
@@ -794,6 +784,7 @@
 <script>
 import { api } from '@/api'
 import { createPathBasedOnVmType } from '@/utils/plugins'
+import { validateLinks } from '@/utils/links'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
@@ -859,7 +850,8 @@ export default {
         vpc: '',
         network: ''
       },
-      newResource: {}
+      newResource: {},
+      validLinks: {}
     }
   },
   watch: {
@@ -876,6 +868,7 @@ export default {
         this.newResource = newData
         this.showKeys = false
         this.setData()
+        this.validLinks = validateLinks(this.$router, this.isStatic, this.resource)
 
         if ('apikey' in this.resource) {
           this.getUserKeys()

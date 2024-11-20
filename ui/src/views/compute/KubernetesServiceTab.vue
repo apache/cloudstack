@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype === 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -149,6 +149,9 @@
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
         <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="resource" resourceType="KubernetesCluster" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="resource"
@@ -169,6 +172,7 @@ import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import EventsTab from '@/components/view/EventsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -178,7 +182,8 @@ export default {
     PortForwarding,
     LoadBalancing,
     Status,
-    AnnotationsTab
+    AnnotationsTab,
+    EventsTab
   },
   mixins: [mixinDevice],
   inject: ['parentFetchData'],
@@ -273,7 +278,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+    if (this.$store.getters.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),
@@ -397,6 +402,7 @@ export default {
           if (this.arrayHasItems(networks)) {
             this.network = networks[0]
           }
+          resolve(this.network)
         })
         this.networkLoading = false
       })

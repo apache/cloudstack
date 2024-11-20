@@ -47,5 +47,5 @@ public interface EndPointSelector {
 
     EndPoint select(DataStore store, String downloadUrl);
 
-    EndPoint findSsvm(long dcId);
+    EndPoint findSsvm(Long dcId);
 }

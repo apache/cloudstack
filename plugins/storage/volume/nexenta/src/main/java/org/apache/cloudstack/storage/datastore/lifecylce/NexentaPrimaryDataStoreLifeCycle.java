@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
@@ -45,6 +46,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 
 public class NexentaPrimaryDataStoreLifeCycle
+        extends BasePrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
     private static final Logger logger =
             Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
@@ -175,6 +177,15 @@ public class NexentaPrimaryDataStoreLifeCycle
     @Override
     public void disableStoragePool(DataStore dataStore) {
         dataStoreHelper.disable(dataStore);
+    }
+
+    @Override
+    public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, Hypervisor.HypervisorType hypervisorType) {
+        /*
+         * We need to attach all VMware, Xenserver and KVM hosts in the zone.
+         * So pass hypervisorType as null.
+         */
+        super.changeStoragePoolScopeToZone(store, clusterScope, null);
     }
 
     @Override

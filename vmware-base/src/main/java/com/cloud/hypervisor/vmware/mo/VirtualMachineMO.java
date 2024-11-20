@@ -32,9 +32,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -1798,6 +1801,10 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public void exportVm(String exportDir, String exportName, boolean packToOva, boolean leaveOvaFileOnly) throws Exception {
+        exportVm(exportDir, exportName, packToOva, leaveOvaFileOnly, -1);
+    }
+
+    public void exportVm(String exportDir, String exportName, boolean packToOva, boolean leaveOvaFileOnly, int threadsCountToExportOvf) throws Exception {
         ManagedObjectReference morOvf = _context.getServiceContent().getOvfManager();
 
         VirtualMachineRuntimeInfo runtimeInfo = getRuntimeInfo();
@@ -1827,18 +1834,31 @@ public class VirtualMachineMO extends BaseMO {
                 final HttpNfcLeaseMO.ProgressReporter progressReporter = leaseMo.createProgressReporter();
 
                 boolean success = false;
-                List<String> fileNames = new ArrayList<String>();
+                List<String> fileNames = new ArrayList<>();
                 try {
                     HttpNfcLeaseInfo leaseInfo = leaseMo.getLeaseInfo();
                     final long totalBytes = leaseInfo.getTotalDiskCapacityInKB() * 1024;
-                    long totalBytesDownloaded = 0;
+                    AtomicLong totalBytesDownloaded = new AtomicLong(0L);
 
                     List<HttpNfcLeaseDeviceUrl> deviceUrls = leaseInfo.getDeviceUrl();
                     s_logger.info("volss: copy vmdk and ovf file starts " + System.currentTimeMillis());
                     if (deviceUrls != null) {
-                        OvfFile[] ovfFiles = new OvfFile[deviceUrls.size()];
-                        for (int i = 0; i < deviceUrls.size(); i++) {
+                        int deviceUrlsCount = deviceUrls.size();
+                        boolean parallelDownload = false;
+                        if (threadsCountToExportOvf >= 0 && deviceUrlsCount > 1) {
+                            if (threadsCountToExportOvf == 0) {
+                                threadsCountToExportOvf = deviceUrlsCount;
+                                parallelDownload = true;
+                            } else if (threadsCountToExportOvf > 1) {
+                                parallelDownload = true;
+                            }
+                        }
+                        OvfFile[] ovfFiles = new OvfFile[deviceUrlsCount];
+                        List<CompletableFuture<Long>> futures = new ArrayList<>();
+                        ExecutorService executor = null;
+                        for (int i = 0; i < deviceUrlsCount; i++) {
                             String deviceId = deviceUrls.get(i).getKey();
+                            Long diskFileSize = deviceUrls.get(i).getFileSize();
                             String deviceUrlStr = deviceUrls.get(i).getUrl();
                             String orgDiskFileName = deviceUrlStr.substring(deviceUrlStr.lastIndexOf("/") + 1);
                             String diskFileName = String.format("%s-disk%d%s", exportName, i, VmwareHelper.getFileExtension(orgDiskFileName, ".vmdk"));
@@ -1847,25 +1867,77 @@ public class VirtualMachineMO extends BaseMO {
                             String diskLocalPath = exportDir + File.separator + diskFileName;
                             fileNames.add(diskLocalPath);
 
-                            if (s_logger.isInfoEnabled()) {
-                                s_logger.info("Download VMDK file for export. url: " + deviceUrlStr);
-                            }
-                            long lengthOfDiskFile = _context.downloadVmdkFile(diskUrlStr, diskLocalPath, totalBytesDownloaded, new ActionDelegate<Long>() {
-                                @Override
-                                public void action(Long param) {
-                                    if (s_logger.isTraceEnabled()) {
-                                        s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
-                                    }
-                                    progressReporter.reportProgress((int)(param * 100 / totalBytes));
+                            if (!parallelDownload) {
+                                if (s_logger.isInfoEnabled()) {
+                                    s_logger.info("Download VMDK file for export url: " + deviceUrlStr + ", size: " + diskFileSize);
                                 }
-                            });
-                            totalBytesDownloaded += lengthOfDiskFile;
+                                long lengthOfDiskFile = _context.downloadVmdkFile(diskUrlStr, diskLocalPath, totalBytesDownloaded, new ActionDelegate<Long>() {
+                                    @Override
+                                    public void action(Long param) {
+                                        if (s_logger.isTraceEnabled()) {
+                                            s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
+                                        }
+                                        progressReporter.reportProgress((int)(param * 100 / totalBytes));
+                                    }
+                                });
+                                totalBytesDownloaded.addAndGet(lengthOfDiskFile);
 
-                            OvfFile ovfFile = new OvfFile();
-                            ovfFile.setPath(diskFileName);
-                            ovfFile.setDeviceId(deviceId);
-                            ovfFile.setSize(lengthOfDiskFile);
-                            ovfFiles[i] = ovfFile;
+                                OvfFile ovfFile = new OvfFile();
+                                ovfFile.setPath(diskFileName);
+                                ovfFile.setDeviceId(deviceId);
+                                ovfFile.setSize(lengthOfDiskFile);
+                                ovfFiles[i] = ovfFile;
+                            } else {
+                                String diskUrl = diskUrlStr;
+                                executor = Executors.newFixedThreadPool(Math.min(threadsCountToExportOvf, deviceUrlsCount));
+                                if (s_logger.isInfoEnabled()) {
+                                    s_logger.info("Download VMDK file for export url: " + deviceUrlStr + ", size: " + diskFileSize);
+                                }
+                                CompletableFuture<Long> future = CompletableFuture.supplyAsync(() -> {
+                                    long lengthOfDiskFile = 0;
+                                    try {
+                                        lengthOfDiskFile = _context.downloadVmdkFile(diskUrl, diskLocalPath, totalBytesDownloaded, new ActionDelegate<Long>() {
+                                            @Override
+                                            public void action(Long param) {
+                                                if (s_logger.isTraceEnabled()) {
+                                                    s_logger.trace("Download progress " + param + "/" + toHumanReadableSize(totalBytes));
+                                                }
+                                                progressReporter.reportProgress((int)(param * 100 / totalBytes));
+                                            }
+                                        });
+                                    } catch (Exception e) {
+                                        s_logger.error("Error on downloading VMDK file for export url: " + diskUrl, e);
+                                    }
+                                    return lengthOfDiskFile;
+                                }, executor);
+                                futures.add(future);
+
+                                OvfFile ovfFile = new OvfFile();
+                                ovfFile.setPath(diskFileName);
+                                ovfFile.setDeviceId(deviceId);
+                                ovfFile.setSize(0L);
+                                ovfFiles[i] = ovfFile;
+                            }
+                        }
+
+                        if (parallelDownload) {
+                            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+                            List<Long> diskFileLengths = allFutures.exceptionally(e -> {
+                                        s_logger.error("Error on downloading VMDK files: " + e.getMessage());
+                                        return null;
+                                    }).thenApply(v -> futures.stream().map(CompletableFuture::join).collect(Collectors.toList())).join();
+                            executor.shutdown();
+
+                            if (CollectionUtils.isNotEmpty(diskFileLengths)) {
+                                int i = 0;
+                                for (Long diskFileLength : diskFileLengths) {
+                                    if (diskFileLength != null) {
+                                        totalBytesDownloaded.addAndGet(diskFileLength);
+                                        ovfFiles[i].setSize(diskFileLength);
+                                    }
+                                    i++;
+                                }
+                            }
                         }
 
                         // write OVF descriptor file
@@ -1892,7 +1964,9 @@ public class VirtualMachineMO extends BaseMO {
                             command.add("-cf", exportName + ".ova");
                             command.add(exportName + ".ovf");        // OVF file should be the first file in OVA archive
                             for (String name : fileNames) {
-                                command.add((new File(name).getName()));
+                                if (!name.endsWith(".ovf")) {
+                                    command.add((new File(name).getName()));
+                                }
                             }
 
                             s_logger.info("Package OVA with command: " + command.toString());
@@ -3127,6 +3201,14 @@ public class VirtualMachineMO extends BaseMO {
             }
         }
         return null;
+    }
+
+    public List<VirtualDevice> getIsoDevices() throws Exception {
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (CollectionUtils.isEmpty(devices)) {
+            return new ArrayList<>();
+        }
+        return devices.stream().filter(device -> device instanceof VirtualCdrom).collect(Collectors.toList());
     }
 
     public VirtualDevice getIsoDevice(int key) throws Exception {

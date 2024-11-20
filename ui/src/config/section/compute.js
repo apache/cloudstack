@@ -28,12 +28,13 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachinesMetrics'],
+      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
+      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'servoff,tmpl,iso,nics,backoff' }
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
         if (store.getters.metrics) {
-          params = { details: 'servoff,tmpl,iso,nics,backoff,stats' }
+          params = { details: 'all,stats' }
         }
         params.isvnf = false
         return params
@@ -119,7 +120,13 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
-          args: ['considerlasthost'],
+          args: (record, store) => {
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              return ['considerlasthost']
+            }
+
+            return []
+          },
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
@@ -520,6 +527,7 @@ export default {
       title: 'label.kubernetes',
       icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
+      searchFilters: ['name', 'domainid', 'account', 'state'],
       permission: ['listKubernetesClusters'],
       columns: (store) => {
         var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
@@ -529,7 +537,7 @@ export default {
         if (store.listAllProjects) {
           fields.push('project')
         }
-        if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
+        if (store.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
         }
         fields.push('zonename')
@@ -540,10 +548,12 @@ export default {
         return filters
       },
       details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
-      tabs: [{
-        name: 'k8s',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
-      }],
+      tabs: [
+        {
+          name: 'k8s',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
+        }
+      ],
       resourceType: 'KubernetesCluster',
       actions: [
         {
@@ -612,6 +622,9 @@ export default {
           groupAction: true,
           popup: true,
           args: (record, store, group) => {
+            if (record.clustertype === 'CloudManaged') {
+              return []
+            }
             return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
               ? ['cleanup', 'expunge'] : ['cleanup']
           },
@@ -623,9 +636,10 @@ export default {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
       icon: 'fullscreen-outlined',
-      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      docHelp: 'adminguide/autoscale_with_virtual_router.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account']
         if (store.listAllProjects) {
@@ -736,7 +750,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-
+      searchFilters: ['name', 'zoneid', 'domainid', 'account'],
       columns: (store) => {
         var fields = ['name', 'account']
         if (store.listAllProjects) {
@@ -794,6 +808,7 @@ export default {
       icon: 'key-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listSSHKeyPairs'],
+      searchFilters: ['name', 'domainid', 'account', 'fingerprint'],
       columns: () => {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
@@ -954,6 +969,7 @@ export default {
       icon: 'swap-outlined',
       docHelp: 'adminguide/virtual_machines.html#affinity-groups',
       permission: ['listAffinityGroups'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'type'],
       columns: () => {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {

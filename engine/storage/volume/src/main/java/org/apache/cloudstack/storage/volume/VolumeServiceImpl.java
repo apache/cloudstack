@@ -32,7 +32,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -212,6 +215,8 @@ public class VolumeServiceImpl implements VolumeService {
     private SnapshotApiService snapshotApiService;
     @Inject
     private PassphraseDao passphraseDao;
+    @Inject
+    protected DiskOfferingDao diskOfferingDao;
 
     public VolumeServiceImpl() {
     }
@@ -499,7 +504,9 @@ public class VolumeServiceImpl implements VolumeService {
                             _snapshotStoreDao.remove(snapStoreVo.getId());
                         }
                     } else {
-                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                        if (!StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
                     }
                 }
                 snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
@@ -1236,7 +1243,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         volumeInfo.processEvent(Event.DestroyRequested);
 
-        Volume newVol = _volumeMgr.allocateDuplicateVolume(volume, null);
+        Volume newVol = _volumeMgr.allocateDuplicateVolume(volume, null, null);
         VolumeVO newVolume = (VolumeVO) newVol;
         newVolume.set_iScsiName(null);
         volDao.update(newVolume.getId(), newVolume);
@@ -2791,6 +2798,16 @@ public class VolumeServiceImpl implements VolumeService {
                 volumeInfo.addPayload(payload);
                 checkAndRepairVolumeThroughHost(volumeInfo, host);
             }
+        }
+    }
+
+    @Override
+    public void validateChangeDiskOfferingEncryptionType(long existingDiskOfferingId, long newDiskOfferingId) {
+        DiskOfferingVO existingDiskOffering = diskOfferingDao.findByIdIncludingRemoved(existingDiskOfferingId);
+        DiskOfferingVO newDiskOffering = diskOfferingDao.findById(newDiskOfferingId);
+
+        if (existingDiskOffering.getEncrypt() != newDiskOffering.getEncrypt()) {
+            throw new InvalidParameterValueException("Cannot change the encryption type of a volume, please check the selected offering");
         }
     }
 

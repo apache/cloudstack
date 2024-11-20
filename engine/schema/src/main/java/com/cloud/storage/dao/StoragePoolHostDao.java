@@ -41,4 +41,6 @@ public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> 
     public void deleteStoragePoolHostDetails(long hostId, long poolId);
 
     List<StoragePoolHostVO> listByHostId(long hostId);
+
+    Pair<List<StoragePoolHostVO>, Integer> listByPoolIdNotInCluster(long clusterId, long poolId);
 }

@@ -86,7 +86,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                        "This binary data must be base64 encoded before adding it to the request. " +
                        "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                       "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                       "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                        "You also need to change vm.userdata.max.length value",
                length = 1048576,
                since = "4.16.0")
@@ -143,7 +143,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", authorized = { RoleType.Admin }, length = 5120)
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
     private String extraConfig;
 
     /////////////////////////////////////////////////////

@@ -16,13 +16,36 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.FiberChannel)
 public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
+
+    private Logger LOGGER = Logger.getLogger(getClass());
+
+    private String hostname = null;
+    private String hostnameFq = null;
+
     public FiberChannelAdapter() {
         LOGGER.info("Loaded FiberChannelAdapter for StorageLayer");
+        // get the hostname - we need this to compare to connid values
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            hostname = inetAddress.getHostName(); // basic hostname
+            if (hostname.indexOf(".") > 0) {
+                hostname = hostname.substring(0, hostname.indexOf(".")); // strip off domain
+            }
+            hostnameFq = inetAddress.getCanonicalHostName(); // fully qualified hostname
+            LOGGER.info("Loaded FiberChannelAdapter for StorageLayer on host [" + hostname + "]");
+        } catch (UnknownHostException e) {
+            LOGGER.error("Error getting hostname", e);
+        }
     }
 
     @Override
@@ -72,6 +95,11 @@ public class FiberChannelAdapter extends MultipathSCSIAdapterBase {
                             address = value;
                         } else if (key.equals("connid")) {
                             connectionId = value;
+                        } else if (key.startsWith("connid.")) {
+                            String inHostname = key.substring(7);
+                            if (inHostname != null && (inHostname.equals(this.hostname) || inHostname.equals(this.hostnameFq))) {
+                                connectionId = value;
+                            }
                         }
                     }
                 }

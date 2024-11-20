@@ -21,6 +21,7 @@ import {
   ApiOutlined,
   AppstoreOutlined,
   ArrowDownOutlined,
+  ArrowRightOutlined,
   ArrowUpOutlined,
   ArrowsAltOutlined,
   AuditOutlined,
@@ -167,6 +168,8 @@ import {
   UserOutlined,
   UserSwitchOutlined,
   UploadOutlined,
+  VerticalAlignBottomOutlined,
+  VerticalAlignTopOutlined,
   WarningOutlined,
   WifiOutlined,
   SolutionOutlined
@@ -180,6 +183,7 @@ export default {
     app.component('ApiOutlined', ApiOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
     app.component('ArrowDownOutlined', ArrowDownOutlined)
+    app.component('ArrowRightOutlined', ArrowRightOutlined)
     app.component('ArrowUpOutlined', ArrowUpOutlined)
     app.component('ArrowsAltOutlined', ArrowsAltOutlined)
     app.component('AuditOutlined', AuditOutlined)
@@ -326,6 +330,8 @@ export default {
     app.component('UserOutlined', UserOutlined)
     app.component('UserSwitchOutlined', UserSwitchOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('VerticalAlignBottomOutlined', VerticalAlignBottomOutlined)
+    app.component('VerticalAlignTopOutlined', VerticalAlignTopOutlined)
     app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
     app.component('renderIcon', renderIcon)

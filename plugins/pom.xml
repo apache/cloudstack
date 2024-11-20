@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.1.0-SNAPSHOT</version>
+        <version>4.19.2.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -111,7 +111,6 @@
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
-        <module>network-elements/tungsten</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
@@ -230,6 +229,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/juniper-contrail</module>
+                <module>network-elements/tungsten</module>
             </modules>
         </profile>
         <profile>

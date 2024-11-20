@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.hypervisor.xenserver;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
@@ -35,16 +35,22 @@ public class ExtraConfigurationUtility {
         Map<String, Object> recordMap = vmr.toMap();
         for (String key : extraConfig.keySet()) {
             String cfg = extraConfig.get(key);
-            Map<String, String> configParams = prepareKeyValuePair(cfg);
+            // cfg is either param=value or map-param:key=value
+            Pair<String, String> configParam = prepareKeyValuePair(cfg);
+            if (configParam == null) {
+                LOG.warn("Invalid extra config passed: " + cfg);
+                continue;
+            }
 
-            // paramKey is either param or param:key for map parameters
-            String paramKey = configParams.keySet().toString().replaceAll("[\\[\\]]", "");
-            String paramValue = configParams.get(paramKey);
+            // paramKey is either param or map-param:key for map parameters
+            String paramKey = configParam.first();
+            String paramValue = configParam.second();
 
-            //Map params
             if (paramKey.contains(":")) {
+                // Map params - paramKey is map-param:key
                 applyConfigWithNestedKeyValue(conn, vm, recordMap, paramKey, paramValue);
             } else {
+                // Params - paramKey is param
                 applyConfigWithKeyValue(conn, vm, recordMap, paramKey, paramValue);
             }
         }
@@ -58,6 +64,7 @@ public class ExtraConfigurationUtility {
      * Nested keys contain ":" between the paramKey and need to split into operation param and key
      * */
     private static void applyConfigWithNestedKeyValue(Connection conn, VM vm, Map<String, Object> recordMap, String paramKey, String paramValue) {
+        // paramKey is map-param:key
         int i = paramKey.indexOf(":");
         String actualParam = paramKey.substring(0, i);
         String keyName = paramKey.substring(i + 1);
@@ -68,12 +75,13 @@ public class ExtraConfigurationUtility {
         }
 
         try {
+            // map-param param with '_'
             switch (actualParam) {
                 case "VCPUs_params":
                     vm.addToVCPUsParams(conn, keyName, paramValue);
                     break;
                 case "platform":
-                    vm.addToOtherConfig(conn, keyName, paramValue);
+                    vm.addToPlatform(conn, keyName, paramValue);
                     break;
                 case "HVM_boot_params":
                     vm.addToHVMBootParams(conn, keyName, paramValue);
@@ -101,6 +109,7 @@ public class ExtraConfigurationUtility {
         }
 
         try {
+            // param with '_'
             switch (paramKey) {
                 case "HVM_boot_policy":
                     vm.setHVMBootPolicy(conn, paramValue);
@@ -144,7 +153,7 @@ public class ExtraConfigurationUtility {
                 case "VCPUs_at_startup":
                     vm.setVCPUsAtStartup(conn, Long.valueOf(paramValue));
                     break;
-                case "is-a-template":
+                case "is_a_template":
                     vm.setIsATemplate(conn, Boolean.valueOf(paramValue));
                     break;
                 case "memory_static_max":
@@ -169,12 +178,28 @@ public class ExtraConfigurationUtility {
         }
     }
 
-    private static Map<String, String> prepareKeyValuePair(String cfg) {
-        Map<String, String> configKeyPair = new HashMap<>();
+    protected static Pair<String, String> prepareKeyValuePair(String cfg) {
+        // cfg is either param=value or map-param:key=value
         int indexOfEqualSign = cfg.indexOf("=");
-        String key = cfg.substring(0, indexOfEqualSign).replace("-", "_");
+        if (indexOfEqualSign <= 0) {
+            return null;
+        }
+
+        String key;
+        // Replace '-' with '_' in param / map-param only
+        if (cfg.contains(":")) {
+            int indexOfColon = cfg.indexOf(":");
+            if (indexOfColon <= 0 || indexOfEqualSign < indexOfColon) {
+                return null;
+            }
+            String mapParam = cfg.substring(0, indexOfColon).replace("-", "_");
+            String paramKey = cfg.substring(indexOfColon + 1, indexOfEqualSign);
+            key = mapParam + ":" + paramKey;
+        } else {
+            key = cfg.substring(0, indexOfEqualSign).replace("-", "_");
+        }
+
         String value = cfg.substring(indexOfEqualSign + 1);
-        configKeyPair.put(key, value);
-        return configKeyPair;
+        return new Pair<>(key, value);
     }
 }

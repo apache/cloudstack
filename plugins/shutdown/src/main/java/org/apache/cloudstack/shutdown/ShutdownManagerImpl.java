@@ -107,7 +107,10 @@ public class ShutdownManagerImpl extends ManagerBase implements ShutdownManager,
             this.shutdownTask = null;
         }
         this.shutdownTask = new ShutdownTask(this);
-        timer.scheduleAtFixedRate(shutdownTask, 0, 30L * 1000);
+        long period = 30L * 1000;
+        long delay = period / 2;
+        logger.debug(String.format("Scheduling shutdown task with delay: %d and period: %d", delay, period));
+        timer.scheduleAtFixedRate(shutdownTask, delay, period);
     }
 
     @Override

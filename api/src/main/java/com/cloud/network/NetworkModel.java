@@ -149,7 +149,7 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+    Network getNetworkWithSGWithFreeIPs(Account account, Long zoneId);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
@@ -316,6 +316,8 @@ public interface NetworkModel {
     boolean isIP6AddressAvailableInVlan(long vlanId);
 
     void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
+
+    void checkIp6CidrSizeEqualTo64(String ip6Cidr) throws InvalidParameterValueException;
 
     void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException;
 

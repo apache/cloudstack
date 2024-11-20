@@ -31,6 +31,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> implements AffinityGroupDao {
+    private SearchBuilder<AffinityGroupVO> IdsSearch;
     private SearchBuilder<AffinityGroupVO> AccountIdSearch;
     private SearchBuilder<AffinityGroupVO> AccountIdNameSearch;
     private SearchBuilder<AffinityGroupVO> AccountIdNamesSearch;
@@ -47,6 +48,10 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
 
     @PostConstruct
     protected void init() {
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("idIn", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
+
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
@@ -157,5 +162,12 @@ public class AffinityGroupDaoImpl extends GenericDaoBase<AffinityGroupVO, Long> 
         sc.setParameters("type", type);
         sc.setJoinParameters("domainTypeSearch", "domainId", domainId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<AffinityGroupVO> listByIds(List<Long> ids, boolean exclusive) {
+        SearchCriteria<AffinityGroupVO> sc = IdsSearch.create();
+        sc.setParameters("idIn", ids.toArray());
+        return lockRows(sc, null, exclusive);
     }
 }

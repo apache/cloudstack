@@ -305,11 +305,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public Volume allocateDuplicateVolume(Volume oldVol, Long templateId) {
-        return allocateDuplicateVolumeVO(oldVol, templateId);
+    public Volume allocateDuplicateVolume(Volume oldVol, DiskOffering diskOffering, Long templateId) {
+        return allocateDuplicateVolumeVO(oldVol, diskOffering, templateId);
     }
 
-    public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, Long templateId) {
+    public VolumeVO allocateDuplicateVolumeVO(Volume oldVol, DiskOffering diskOffering, Long templateId) {
         VolumeVO newVol = new VolumeVO(oldVol.getVolumeType(), oldVol.getName(), oldVol.getDataCenterId(), oldVol.getDomainId(), oldVol.getAccountId(), oldVol.getDiskOfferingId(),
                 oldVol.getProvisioningType(), oldVol.getSize(), oldVol.getMinIops(), oldVol.getMaxIops(), oldVol.get_iScsiName());
         if (templateId != null) {
@@ -321,8 +321,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setInstanceId(oldVol.getInstanceId());
         newVol.setRecreatable(oldVol.isRecreatable());
         newVol.setFormat(oldVol.getFormat());
-
-        if (oldVol.getPassphraseId() != null) {
+        if ((diskOffering == null || diskOffering.getEncrypt()) && oldVol.getPassphraseId() != null) {
             PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
             newVol.setPassphraseId(passphrase.getId());
         }
@@ -1180,14 +1179,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, templateIdToUseFinal);
+                VolumeVO newVolume = allocateDuplicateVolumeVO(existingVolume, null, templateIdToUseFinal);
                 try {
                     stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
                 } catch (NoTransitionException e) {
                     s_logger.error(String.format("Unable to destroy existing volume [%s] due to [%s].", volumeToString, e.getMessage()));
                 }
                 // In case of VMware VM will continue to use the old root disk until expunged, so force expunge old root disk
-                if (vm.getHypervisorType() == HypervisorType.VMware) {
+                // For system VM we do not need volume entry in Destroy state
+                if (vm.getHypervisorType() == HypervisorType.VMware || vm.getType().isUsedBySystem()) {
                     s_logger.info(String.format("Trying to expunge volume [%s] from primary data storage.", volumeToString));
                     AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(existingVolume.getId()));
                     try {
@@ -1504,18 +1504,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         for (VolumeVO vol : vols) {
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
-            DataTO volTO = volumeInfo.getTO();
-            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);
-
-            disk.setDetails(getDetails(volumeInfo, dataStore));
 
             PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
             // This might impact other managed storages, enable requires access for migration in relevant datastore driver (currently enabled for PowerFlex storage pool only)
             if (primaryDataStore.isManaged() && volService.requiresAccessForMigration(volumeInfo, dataStore)) {
                 volService.grantAccess(volFactory.getVolume(vol.getId()), dest.getHost(), dataStore);
             }
-
+            // make sure this is done AFTER grantAccess, as grantAccess may change the volume's state
+            DataTO volTO = volumeInfo.getTO();
+            DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(), vm.getServiceOfferingId(), vol.getDiskOfferingId());
+            disk.setDetails(getDetails(volumeInfo, dataStore));
             vm.addDisk(disk);
         }
 

@@ -223,22 +223,55 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         return true;
     }
 
-    protected void configureGuestNetwork(final Network network, final List<DomainRouterVO> routers )
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    protected boolean configureGuestNetworkForRouter(final Network network,
+            final DomainRouterVO router) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
+            final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
+            if (network.getState() == State.Setup) {
+                paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+            }
+            if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, paramsForRouter)) {
+                s_logger.error("Failed to add VPC router " + router + " to guest network " + network);
+                return false;
+            } else {
+                s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+                return true;
+            }
+        }
+        return true;
+    }
 
+    protected void configureGuestNetwork(final Network network, final List<DomainRouterVO> routers)
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         s_logger.info("Adding VPC routers to Guest Network: " + routers.size() + " to be added!");
 
-        for (final DomainRouterVO router : routers) {
+        List<DomainRouterVO> backupRouters = new ArrayList<>();
+        List<DomainRouterVO> remainingRouters = new ArrayList<>();
+        for (DomainRouterVO router : routers) {
             if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
-                final Map<VirtualMachineProfile.Param, Object> paramsForRouter = new HashMap<VirtualMachineProfile.Param, Object>(1);
-                if (network.getState() == State.Setup) {
-                    paramsForRouter.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-                }
-                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, paramsForRouter)) {
-                    s_logger.error("Failed to add VPC router " + router + " to guest network " + network);
+                if (router.getRedundantState().equals(DomainRouterVO.RedundantState.BACKUP)) {
+                    backupRouters.add(router);
                 } else {
-                    s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+                    remainingRouters.add(router);
                 }
+            }
+        }
+
+        for (final DomainRouterVO router : backupRouters) {
+            if (network.getState() != State.Setup) {
+                if (!_vpcRouterMgr.stopKeepAlivedOnRouter(router, network)) {
+                    s_logger.error("Failed to stop keepalived on VPC router " + router + " to guest network " + network);
+                } else {
+                    s_logger.debug("Successfully stopped keepalived on VPC router " + router + " to guest network " + network);
+                }
+            }
+        }
+        for (final DomainRouterVO router : remainingRouters) {
+            configureGuestNetworkForRouter(network, router);
+        }
+        for (final DomainRouterVO router : backupRouters) {
+            if (!configureGuestNetworkForRouter(network, router) && !_vpcRouterMgr.startKeepAlivedOnRouter(router, network)) {
+                s_logger.error("Failed to start keepalived on VPC router " + router + " to guest network " + network);
             }
         }
     }
@@ -285,30 +318,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public boolean shutdown(final Network network, final ReservationContext context, final boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        final Long vpcId = network.getVpcId();
-        if (vpcId == null) {
-            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping unplug nic part");
-            return true;
-        }
-
-        boolean success = true;
-        final List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
-        for (final VirtualRouter router : routers) {
-            // 1) Check if router is already a part of the network
-            if (!_networkMdl.isVmPartOfNetwork(router.getId(), network.getId())) {
-                s_logger.debug("Router " + router + " is not a part the network " + network);
-                continue;
-            }
-            // 2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, network);
-            if (!success) {
-                s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
-            } else {
-                s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router " + router);
-            }
-        }
-
-        return success;
+        return destroy(network, context);
     }
 
     @Override

@@ -37,6 +37,7 @@ import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -80,6 +81,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain in which the virtual machine exists")
     private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the domain in which the virtual machine exists", since = "4.19.2.0")
+    private String domainPath;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
@@ -136,6 +141,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.TEMPLATE_TYPE)
     @Param(description = "the type of the template for the virtual machine", since = "4.19.0")
     private String templateType;
+
+    @SerializedName(ApiConstants.TEMPLATE_FORMAT)
+    @Param(description = "the format of the template for the virtual machine", since = "4.19.1")
+    private String templateFormat;
 
     @SerializedName("templatedisplaytext")
     @Param(description = " an alternate display text of the template for the virtual machine")
@@ -268,6 +277,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName("hypervisor")
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
+
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the VM's primary IP address")
+    private String ipAddress;
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "public IP address id associated with vm via Static nat rule")
@@ -623,6 +636,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return hypervisor;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public String getPublicIpId() {
         return publicIpId;
     }
@@ -690,6 +707,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.domainName = domainName;
     }
 
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
     public void setCreated(Date created) {
         this.created = created;
     }
@@ -859,6 +880,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setNics(Set<NicResponse> nics) {
         this.nics = nics;
+        setIpAddress(nics);
+    }
+
+    public void setIpAddress(final Set<NicResponse> nics) {
+        if (CollectionUtils.isNotEmpty(nics)) {
+            this.ipAddress = nics.iterator().next().getIpaddress();
+        }
     }
 
     public void addNic(NicResponse nic) {
@@ -1076,6 +1104,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.templateType = templateType;
     }
 
+    public String getTemplateFormat() {
+        return templateFormat;
+    }
+
+    public void setTemplateFormat(String templateFormat) {
+        this.templateFormat = templateFormat;
+    }
+
     public List<VnfNicResponse> getVnfNics() {
         return vnfNics;
     }
@@ -1104,5 +1140,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
             this.vnfDetails = new LinkedHashMap<>();
         }
         this.vnfDetails.put(key,value);
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }
