@@ -15,46 +15,45 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-parse_json() {
-    local json_string=$1
-    declare -A arguments
-    while IFS= read -r line; do
-        key=$(echo "$line" | awk '{print $1}')
-        value=$(echo "$line" | awk '{print $2}')
-        arguments["$key"]="$value"
-    done < <(echo "$json_string" | jq -r 'to_entries | .[] | "\(.key) \(.value)"')
-
-    echo "${arguments[@]}"
-}
-
-generate_random_mac() {
-    # This is just an example
-    hexchars="0123456789ABCDEF"
-    echo "52:54:00:$(for i in {1..3}; do echo -n ${hexchars:$(( $RANDOM % 16 )):1}${hexchars:$(( $RANDOM % 16 )):1}; [[ $i -lt 3 ]] && echo -n ':'; done)"
-}
+set +u
 
 prepare() {
-    parsed_arguments=$(parse_json "$1")
-    mac_address=$(generate_random_mac)
-    mac_json=$(jq -n --arg mac "$mac_address" '{"mac_address": $mac}')
-    echo "$mac_json"
-
+    parsed_arguments="$1"
     # Add code to handle preparation logic
 }
 
 create() {
-    parsed_arguments=$(parse_json "$1")
-    # Add code to handle creation logic
+    local vm_id=$((1000 + id))
+
+    sshpass_path=$(which sshpass)
+    ssh_path=$(which ssh)
+    local ssh_command="sudo $sshpass_path -p 'password' ssh -T root@$endpoint \
+    qm create $vm_id \
+    --ide2 local:iso/TinyCore-8.0.iso,media=cdrom \
+    --ostype l26 \
+    --scsihw virtio-scsi-single \
+    --scsi0 local-lvm:32,iothread=on \
+    --sockets 1 \
+    --cores 1 \
+    --numa 0 \
+    --cpu x86-64-v2-AES \
+    --memory 2048 \
+    --net0 virtio=$mac,bridge=vmbr0,tag=$vlan,firewall=1"
+
+    eval "$ssh_command"
+    local ssh_command2="sudo $sshpass_path -p 'password' $ssh_path root@$endpoint \
+    qm start $vm_id"
+
+    eval "$ssh_command2"
 }
 
 delete() {
-    parsed_arguments=$(parse_json "$1")
+    parsed_arguments="$1"
     # Add code to handle delete logic
 }
 
 action=$1
-parameters=$2
+parameters="$2"
 wait_time=$3
 
 if [[ -z $action || -z $parameters || -z $wait_time ]]; then
@@ -66,6 +65,17 @@ case $action in
         prepare "$parameters" "$wait_time"
         ;;
     create)
+        declare -A arguments
+        while IFS= read -r line; do
+            key=$(echo "$line" | awk '{print $1}')
+            value=$(echo "$line" | awk '{print $2}')
+            arguments["$key"]="$value"
+        done < <(echo "$parameters" | jq -r 'to_entries | .[] | "\(.key) \(.value)"')
+
+        endpoint=${arguments['endpoint.url']}
+        vlan=${arguments['cloudstack.vlan']}
+        id=${arguments['cloudstack.id']}
+        mac=${arguments['cloudstack.mac']}
         create "$parameters" "$wait_time"
         ;;
     delete)
@@ -75,5 +85,5 @@ case $action in
         exit 1
         ;;
 esac
-
+set -u
 exit 0
