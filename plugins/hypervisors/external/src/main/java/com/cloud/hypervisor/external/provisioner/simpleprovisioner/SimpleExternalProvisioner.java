@@ -38,7 +38,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.HumanReadableJson;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
@@ -60,6 +59,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
+import org.bouncycastle.util.Arrays;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -98,6 +98,32 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
     @Override
     public String getDescription() {
         return "Simple external provisioner";
+    }
+
+    private Map<String, String> loadAccessDetailsForVMstart(Map<String, String> accessDetails, Long clusterId, VirtualMachineTO vmTO) {
+        Map<String, String> modifiedDetails = new HashMap<>();
+        for (Map.Entry<String, String> entry : accessDetails.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
+                key = key.substring(VmDetailConstants.EXTERNAL_DETAIL_PREFIX.length());
+                modifiedDetails.put(key, entry.getValue());
+            } else {
+                modifiedDetails.put(key, entry.getValue());
+            }
+        }
+
+        if (modifiedDetails.get(ExternalProvisioningConfig) == null) {
+            modifiedDetails.put(ExternalProvisioningConfig, SampleExternalConfig.valueIn(clusterId));
+        }
+
+        modifiedDetails.put("cloudstack.id", String.valueOf(vmTO.getId()));
+        if (!Arrays.isNullOrEmpty(vmTO.getNics()) && StringUtils.isNotEmpty(vmTO.getNics()[0].getMac())) {
+            modifiedDetails.put("cloudstack.mac", vmTO.getNics()[0].getMac());
+        }
+
+        logger.debug(String.format("Using these access details for VM instance operation: %s", accessDetails));
+
+        return modifiedDetails;
     }
 
     private Map<String, String> loadAccessDetails(Map<String, String> accessDetails, Long clusterId, String vmTO) {
@@ -163,7 +189,7 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         UserVmVO uservm = _uservmDao.findById(virtualMachineTO.getId());
         HostVO host = _hostDao.findById(uservm.getHostId());
-        Map<String, String> accessDetails = loadAccessDetails(virtualMachineTO.getDetails(), host.getClusterId(), getVirtualMachineTOJsonString(virtualMachineTO));
+        Map<String, String> accessDetails = loadAccessDetailsForVMstart(virtualMachineTO.getDetails(), host.getClusterId(), virtualMachineTO);
         String vmUUID = virtualMachineTO.getUuid();
 
         logger.debug(String.format("Executing StartCommand in the external provisioner for VM %s", vmUUID));
@@ -404,7 +430,7 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
         StringBuilder content = new StringBuilder();
         Gson s_gogger = GsonHelper.getGsonLogger();
         s_gogger.toJson(vmTO, content);
-        return HumanReadableJson.getHumanReadableBytesJson(content.toString());
+        return content.toString();
     }
 
     @Override
