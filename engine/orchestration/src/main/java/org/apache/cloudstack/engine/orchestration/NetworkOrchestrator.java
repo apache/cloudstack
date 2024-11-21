@@ -72,6 +72,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -2283,12 +2284,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _nicDao.update(nicId, nic);
             }
 
-            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
-            _userVmDao.loadDetails(userVm);
-            Map<String, String> details = userVm.getDetails();
-            details.putAll(serverDetails);
-            userVm.setDetails(details);
-            _userVmDao.saveDetails(userVm);
+            if (MapUtils.isNotEmpty(serverDetails)) {
+                UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
+                _userVmDao.loadDetails(userVm);
+                Map<String, String> details = userVm.getDetails();
+                details.putAll(serverDetails);
+                userVm.setDetails(details);
+                _userVmDao.saveDetails(userVm);
+            }
         }
     }
 
