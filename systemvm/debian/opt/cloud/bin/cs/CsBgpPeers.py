@@ -54,7 +54,9 @@ class CsBgpPeers(CsDataBag):
         self.frr_conf = CsFile(FRR_CONFIG)
         self.frr_conf.repopulate()
         self._pre_set()
+        self._access_list_set()
         self._process_peers()
+        self._route_map_set()
         self._post_set()
         if self.frr_conf.commit():
             restart_frr = True
@@ -75,11 +77,33 @@ class CsBgpPeers(CsDataBag):
             self.peers[as_number]['ip6_peers'].append(item)
 
     def _pre_set(self):
-        self.frr_conf.add("frr version 6.0")
         self.frr_conf.add("frr defaults traditional")
         self.frr_conf.add("hostname {}".format(CsHelper.get_hostname()))
         self.frr_conf.add("service integrated-vtysh-config")
         self.frr_conf.add("ip nht resolve-via-default")
+        return
+
+    def _access_list_set(self):
+        self.frr_conf.add("ip prefix-list all-v4 seq 1 permit any")
+        self.frr_conf.add("ip prefix-list default-v4 seq 1 permit 0.0.0.0/0")
+        self.frr_conf.add("ipv6 prefix-list all-v6 seq 1 permit any")
+        self.frr_conf.add("ipv6 prefix-list default-v6 seq 1 permit ::/0")
+
+        for as_number in self.peers.keys():
+            if self.peers[as_number]['ip4_peers']:
+                seq = 1
+                ip4_cidrs = set({ip4_peer['guest_ip4_cidr'] for ip4_peer in self.peers[as_number]['ip4_peers']})
+                for ip4_cidr in ip4_cidrs:
+                    self.frr_conf.add("ip prefix-list local-v4 seq {} permit {}".format(seq, ip4_cidr))
+                    seq += 1
+
+            if self.peers[as_number]['ip6_peers']:
+                seq = 1
+                ip6_cidrs = set({ip6_peer['guest_ip6_cidr'] for ip6_peer in self.peers[as_number]['ip6_peers']})
+                for ip6_cidr in ip6_cidrs:
+                    self.frr_conf.add("ipv6 prefix-list local-v6 seq {} permit {}".format(seq, ip6_cidr))
+                    seq += 1
+
         return
 
     def _process_peers(self):
@@ -90,6 +114,8 @@ class CsBgpPeers(CsDataBag):
                 self.frr_conf.add(" bgp default ipv6-unicast")
             for ip4_peer in self.peers[as_number]['ip4_peers']:
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip4_peer['ip4_address'], ip4_peer['peer_as_number']))
+                self.frr_conf.add(" neighbor {} route-map upstream-v4-in in")
+                self.frr_conf.add(" neighbor {} route-map upstream-v4-out out")
                 if 'peer_password' in ip4_peer:
                     self.frr_conf.add(" neighbor {} password {}".format(ip4_peer['ip4_address'], ip4_peer['peer_password']))
                 if 'details' in ip4_peer:
@@ -97,6 +123,8 @@ class CsBgpPeers(CsDataBag):
                         self.frr_conf.add(" neighbor {} ebgp-multihop {}".format(ip4_peer['ip4_address'], ip4_peer['details']['EBGP_MultiHop']))
             for ip6_peer in self.peers[as_number]['ip6_peers']:
                 self.frr_conf.add(" neighbor {} remote-as {}".format(ip6_peer['ip6_address'], ip6_peer['peer_as_number']))
+                self.frr_conf.add(" neighbor {} route-map upstream-v6-in in")
+                self.frr_conf.add(" neighbor {} route-map upstream-v6-out out")
                 if 'peer_password' in ip6_peer:
                     self.frr_conf.add(" neighbor {} password {}".format(ip6_peer['ip6_address'], ip6_peer['peer_password']))
                 if 'details' in ip6_peer:
@@ -114,6 +142,28 @@ class CsBgpPeers(CsDataBag):
                 for ip6_cidr in ip6_cidrs:
                     self.frr_conf.add("  network {}".format(ip6_cidr))
                 self.frr_conf.add(" exit-address-family")
+
+    def _route_map_set(self):
+        self.frr_conf.add("route-map upstream-v4-in permit 10")
+        self.frr_conf.add("  match ip address prefix-list default-v4")
+        self.frr_conf.add("route-map upstream-v4-in deny 1000")
+        self.frr_conf.add("  match ip address prefix-list all-v4")
+
+        self.frr_conf.add("route-map upstream-v4-out permit 10")
+        self.frr_conf.add("  match ip address prefix-list local-v4")
+        self.frr_conf.add("route-map upstream-v4-out deny 1000")
+        self.frr_conf.add("  match ip address prefix-list all-v4")
+
+        self.frr_conf.add("route-map upstream-v6-in permit 10")
+        self.frr_conf.add("  match ipv6 address prefix-list default-v6")
+        self.frr_conf.add("route-map upstream-v6-in deny 1000")
+        self.frr_conf.add("  match ipv6 address prefix-list all-v6")
+
+        self.frr_conf.add("route-map upstream-v6-out permit 10")
+        self.frr_conf.add("  match ipv6 address prefix-list local-v6")
+        self.frr_conf.add("route-map upstream-v6-out deny 1000")
+        self.frr_conf.add("  match ipv6 address prefix-list all-v6")
+        return
 
     def _post_set(self):
         self.frr_conf.add("line vty")
