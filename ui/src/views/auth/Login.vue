@@ -289,7 +289,6 @@ export default {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
-            this.socialLogin = true
             if (item.provider === 'google') {
               this.googleprovider = item.enabled
               this.googleclientid = item.clientid
@@ -301,6 +300,7 @@ export default {
               this.githubredirecturi = item.redirecturi
             }
           })
+          this.socialLogin = this.googleprovider || this.githubprovider
         }
       })
     },
