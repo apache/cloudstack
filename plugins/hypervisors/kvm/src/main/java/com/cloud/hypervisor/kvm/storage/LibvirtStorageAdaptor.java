@@ -960,17 +960,55 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * Creates a physical disk depending on the {@link StoragePoolType}:
+     * <ul>
+     *     <li>
+     *         <b>{@link StoragePoolType#RBD}</b>
+     *         <ul>
+     *             <li>
+     *                 If it is an erasure code pool, utilizes QemuImg to create the physical disk through the method
+     *             {@link LibvirtStorageAdaptor#createPhysicalDiskByQemuImg(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long, byte[])}
+     *             </li>
+     *             <li>
+     *                 Otherwise, utilize Libvirt to create the physical disk through the method
+     *                 {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *             </li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         {@link StoragePoolType#NetworkFilesystem} and {@link StoragePoolType#Filesystem}
+     *         <ul>
+     *             <li>
+     *                 If the format is {@link PhysicalDiskFormat#QCOW2} or {@link PhysicalDiskFormat#RAW}, utilizes QemuImg to create the physical disk through the method
+     *             {@link LibvirtStorageAdaptor#createPhysicalDiskByQemuImg(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long, byte[])}
+     *             </li>
+     *             <li>
+     *                 If the format is {@link PhysicalDiskFormat#DIR} or {@link PhysicalDiskFormat#TAR}, utilize Libvirt to create the physical disk through the method
+     *                 {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *             </li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         For the rest of the {@link StoragePoolType} types, utilizes the Libvirt method
+     *         {@link LibvirtStorageAdaptor#createPhysicalDiskByLibVirt(String, KVMStoragePool, PhysicalDiskFormat, Storage.ProvisioningType, long)}
+     *     </li>
+     * </ul>
+     */
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
 
-        logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
-                + pool.getUuid() + " with size " + toHumanReadableSize(size));
+        logger.info("Attempting to create volume {} ({}) in pool {} with size {}", name, pool.getType().toString(), pool.getUuid(), toHumanReadableSize(size));
 
         StoragePoolType poolType = pool.getType();
-        if (poolType.equals(StoragePoolType.RBD)) {
-            return createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
-        } else if (poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.Filesystem)) {
+        if (StoragePoolType.RBD.equals(poolType)) {
+            Map<String, String> details = pool.getDetails();
+            String dataPool = (details == null) ? null : details.get(KVMPhysicalDisk.RBD_DEFAULT_DATA_POOL);
+
+            return (dataPool == null) ?  createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
+                    createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
+        } else if (StoragePoolType.NetworkFilesystem.equals(poolType) || StoragePoolType.Filesystem.equals(poolType)) {
             switch (format) {
                 case QCOW2:
                 case RAW:

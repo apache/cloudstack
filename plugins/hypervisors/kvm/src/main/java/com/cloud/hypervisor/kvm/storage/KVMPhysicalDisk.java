@@ -33,13 +33,15 @@ public class KVMPhysicalDisk {
     private String vmName;
     private boolean useAsTemplate;
 
+    public static final String RBD_DEFAULT_DATA_POOL = "rbd_default_data_pool";
+
     public static String RBDStringBuilder(KVMStoragePool storagePool, String image) {
         String monHost = storagePool.getSourceHost();
         int monPort = storagePool.getSourcePort();
         String authUserName = storagePool.getAuthUserName();
         String authSecret = storagePool.getAuthSecret();
         Map<String, String> details = storagePool.getDetails();
-        String dataPool = (details == null) ? null : details.get("rbd_default_data_pool");
+        String dataPool = (details == null) ? null : details.get(RBD_DEFAULT_DATA_POOL);
 
         String rbdOpts = "rbd:" + image;
         rbdOpts += ":mon_host=" + composeOptionForMonHosts(monHost, monPort);
