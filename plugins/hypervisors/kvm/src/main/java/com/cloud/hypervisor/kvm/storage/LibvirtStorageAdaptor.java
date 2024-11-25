@@ -1068,10 +1068,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         QemuImgFile destFile;
 
         if (StoragePoolType.RBD.equals(pool.getType())) {
-            volPath = pool.getSourceDir() + "/" + name;
+            volPath = pool.getSourceDir() + File.separator + name;
             destFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(pool, volPath));
         } else {
-            volPath = pool.getLocalPath() + "/" + name;
+            volPath = pool.getLocalPath() + File.separator + name;
             destFile = new QemuImgFile(volPath);
         }
 
