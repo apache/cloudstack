@@ -1477,6 +1477,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         User.Source userSource = user.getSource();
         if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+            s_logger.warn(String.format("Unable to update the password for user [%d], as its source is [%s].", user.getId(), user.getSource().toString()));
             throw new InvalidParameterValueException("CloudStack does not support updating passwords for SAML or LDAP users. Please contact your cloud administrator for assistance.");
         }
 
