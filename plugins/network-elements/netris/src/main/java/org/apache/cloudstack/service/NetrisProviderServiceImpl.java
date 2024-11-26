@@ -18,9 +18,11 @@ package org.apache.cloudstack.service;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -45,6 +47,7 @@ import com.google.common.annotations.VisibleForTesting;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNetrisProviderCmd;
 import org.apache.cloudstack.api.command.DeleteNetrisProviderCmd;
@@ -87,6 +90,8 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
     private IPAddressDao ipAddressDao;
     @Inject
     private VlanDao vlanDao;
+    @Inject
+    private VlanDetailsDao vlanDetailsDao;
 
     @Override
     public NetrisProvider addProvider(AddNetrisProviderCmd cmd) {
@@ -193,22 +198,26 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
-            if (vlanDbIds.size() > 1) {
-                logger.warn("Expected one Netris Public IP range but found {}. Using the first one to create the Netris IPAM allocation and NAT subnet", vlanDbIds.size());
-            }
-            VlanVO vlanRecord = vlanDao.findById(vlanDbIds.get(0));
-            if (vlanRecord == null) {
-                logger.error("Cannot set up the Netris Public IP range as it cannot find the public range on database");
-                return;
-            }
-            String gateway = vlanRecord.getVlanGateway();
-            String netmask = vlanRecord.getVlanNetmask();
-            String ipRange = vlanRecord.getIpRange();
-            SetupNetrisPublicRangeCommand cmd = createSetupPublicRangeCommand(zoneId, gateway, netmask, ipRange);
-            Answer answer = netrisResource.executeRequest(cmd);
-            boolean result = answer != null && answer.getResult();
-            if (!result) {
-                throw new CloudRuntimeException("Netris Public IP Range setup failed, please check the logs");
+            for (Long vlanDbId : vlanDbIds) {
+                VlanVO vlanRecord = vlanDao.findById(vlanDbId);
+                if (vlanRecord == null) {
+                    logger.error("Cannot set up the Netris Public IP range as it cannot find the public range on database");
+                    return;
+                }
+                VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlanDbId, ApiConstants.NETRIS_DETAIL_KEY);
+                if (vlanDetail == null) {
+                    logger.debug("Skipping the Public IP range {} creation on Netris as it does not belong to the Netris Public IP Pool", vlanRecord.getIpRange());
+                    continue;
+                }
+                String gateway = vlanRecord.getVlanGateway();
+                String netmask = vlanRecord.getVlanNetmask();
+                String ipRange = vlanRecord.getIpRange();
+                SetupNetrisPublicRangeCommand cmd = createSetupPublicRangeCommand(zoneId, gateway, netmask, ipRange);
+                Answer answer = netrisResource.executeRequest(cmd);
+                boolean result = answer != null && answer.getResult();
+                if (!result) {
+                    throw new CloudRuntimeException("Netris Public IP Range setup failed, please check the logs");
+                }
             }
         }
     }

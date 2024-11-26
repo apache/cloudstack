@@ -3364,7 +3364,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
             if (forNsx || forNetris) {
-                ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+                // Assign VR (helper VM) public NIC IP address from the separate provider Public IP range/pool
+                // NSX: VR uses Public IP from the system VM range
+                // Netris: VR uses Public IP from the non system VM range
+                ipToReturn = _ipAddrMgr.assignPublicIpAddress(dcId, podId, owner, Vlan.VlanType.VirtualNetwork, null, null, false, forNsx);
             } else {
                 ipToReturn = _ipAddrMgr.assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
             }
