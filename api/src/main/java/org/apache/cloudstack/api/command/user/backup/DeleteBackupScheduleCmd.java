@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -55,17 +54,9 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            required = true,
+            required = false,
             description = "ID of the VM")
     private Long vmId;
-
-    @Parameter(name = ApiConstants.ID,
-            type = CommandType.UUID,
-            entityType = BackupSchedule.class,
-            required = true,
-            description = "ID of the schedule",
-            since = "4.21.0")
-    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -75,8 +66,6 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
         return vmId;
     }
 
-    public Long getId() { return id; }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -84,7 +73,7 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackupSchedule(this);
+            boolean result = backupManager.deleteBackupSchedule(vmId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

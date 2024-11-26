@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -464,7 +463,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (owner.getType() == Account.Type.PROJECT) {
                 message = "domain/project";
             }
-            throw new InvalidParameterValueException("Max number of backups shouldn't exceed the " + message + " level snapshot limit");
+            throw new InvalidParameterValueException("Max number of backups shouldn't exceed the " + message + " level backup limit");
         }
 
         final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
@@ -509,22 +508,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
-    public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
-        Long vmId = cmd.getVmId();
-        Long id = cmd.getId();
-        if (Objects.nonNull(vmId)) {
-            final VMInstanceVO vm = findVmById(vmId);
-            validateForZone(vm.getDataCenterId());
-            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-            return deleteAllVMBackupSchedules(vm.getId());
-        } else {
-            // TODO : need to call checkAccess here?
-            final BackupSchedule schedule = backupScheduleDao.findById(id);
-            if (schedule == null) {
-                throw new CloudRuntimeException("Could not find the requested backup schedule.");
-            }
-            return backupScheduleDao.remove(schedule.getId());
+    public boolean deleteBackupSchedule(Long vmId) {
+        final VMInstanceVO vm = findVmById(vmId);
+        validateForZone(vm.getDataCenterId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
+        if (schedule == null) {
+            throw new CloudRuntimeException("VM has no backup schedule defined, no need to delete anything.");
         }
+        return backupScheduleDao.remove(schedule.getId());
     }
 
     private boolean deleteAllVMBackupSchedules(long vmId) {
