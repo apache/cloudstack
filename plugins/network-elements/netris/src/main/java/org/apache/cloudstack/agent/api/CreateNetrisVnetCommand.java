@@ -21,12 +21,14 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
     private Long vpcId;
     private String cidr;
     private Integer vxlanId;
+    private String gateway;
 
-    public CreateNetrisVnetCommand(Long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, String cidr, boolean isVpc) {
+    public CreateNetrisVnetCommand(Long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, String cidr, String gateway, boolean isVpc) {
         super(zoneId, accountId, domainId, vNetName, networkId, isVpc);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
         this.cidr = cidr;
+        this.gateway = gateway;
     }
 
 
@@ -48,5 +50,9 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
 
     public void setVxlanId(Integer vxlanId) {
         this.vxlanId = vxlanId;
+    }
+
+    public String getGateway() {
+        return gateway;
     }
 }
