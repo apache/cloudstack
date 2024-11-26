@@ -98,7 +98,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
         NetworkVO network = networkDao.findById(networkId);
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
-        CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, !Objects.isNull(vpcId));
+        CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
         cmd.setVxlanId(Integer.parseInt(vxlanId));
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();

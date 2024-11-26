@@ -320,6 +320,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         Long networkId = cmd.getId();
         String vnetCidr = cmd.getCidr();
         Integer vxlanId = cmd.getVxlanId();
+        String gateway = cmd.getGateway();
+        String netmask = vnetCidr.split("/")[1];
+        String netrisGateway = cmd.getGateway() + "/" + netmask;
         boolean isVpc = cmd.isVpc();
 
         String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
@@ -342,7 +345,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, vnetCidr, vxlanId);
+        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, vxlanId);
         if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
             String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
             logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
@@ -536,15 +539,15 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String vNetCidr, Integer vxlanId) {
-        logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, vNetCidr);
+    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, Integer vxlanId) {
+        logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, netrisGateway);
         try {
             VnetAddBody vnetBody = new VnetAddBody();
 
             vnetBody.setCustomAnycastMac("");
 
             VnetAddBodyGateways gateways = new VnetAddBodyGateways();
-            gateways.prefix(vNetCidr);
+            gateways.prefix(netrisGateway);
             gateways.setDhcpEnabled(false);
             VnetAddBodyDhcp dhcp = new VnetAddBodyDhcp();
             dhcp.setEnd("");
