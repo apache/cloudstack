@@ -26,9 +26,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -63,15 +65,19 @@ import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -80,6 +86,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -134,10 +141,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.utils.cryptsetup.KeyFile;
-import org.apache.cloudstack.utils.qemu.QemuImageOptions;
-import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
-import java.util.ArrayList;
+
 
 public class KVMStorageProcessor implements StorageProcessor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -1447,7 +1451,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
-                    if (attachingPool.getType() == StoragePoolType.Linstor) {
+                    if (attachingPool.getType() == StoragePoolType.Linstor && resource.isQemuDiscardBugFree(busT)) {
                         diskdef.setDiscard(DiscardType.UNMAP);
                     }
                 }
@@ -2451,6 +2455,22 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destTemplatePath, destPool, cmd.getFormat(), cmd.getWaitInMillSeconds());
+
+            String templatePath = template.getPath();
+            if (templatePath != null) {
+                try {
+                    Qcow2Inspector.validateQcow2File(templatePath);
+                } catch (RuntimeException e) {
+                    try {
+                        Files.deleteIfExists(Path.of(templatePath));
+                    } catch (IOException ioException) {
+                        logger.warn("Unable to remove file [{}]; consider removing it manually.", templatePath, ioException);
+                    }
+
+                    logger.error("The downloaded file [{}] is not a valid QCOW2.", templatePath, e);
+                    return new DirectDownloadAnswer(false, "The downloaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.", true);
+                }
+            }
 
             if (!storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), destTemplatePath)) {
                 logger.warn("Unable to disconnect physical disk at path: " + destTemplatePath + ", in storage pool id: " + pool.getUuid());

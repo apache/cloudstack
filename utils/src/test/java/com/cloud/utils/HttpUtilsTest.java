@@ -74,7 +74,7 @@ public class HttpUtilsTest {
         params = null;
         cookies = new Cookie[]{new Cookie(sessionKeyString, sessionKeyValue)};
         assertFalse(HttpUtils.validateSessionKey(session, params, cookies, "randomString", HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
         // param null, cookies not null test (JSESSIONID is not null and matches)
         cookies = new Cookie[2];
@@ -95,7 +95,7 @@ public class HttpUtilsTest {
         cookies = null;
         assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
         params.put(sessionKeyString, new String[]{sessionKeyValue});
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
         // both param and cookies not null test (JSESSIONID is null)
         params = new HashMap<String, Object[]>();
@@ -104,7 +104,7 @@ public class HttpUtilsTest {
         params.put(sessionKeyString, new String[]{"incorrectValue"});
         assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
         params.put(sessionKeyString, new String[]{sessionKeyValue});
-        assertFalse(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
+        assertTrue(HttpUtils.validateSessionKey(session, params, cookies, sessionKeyString, HttpUtils.ApiSessionKeyCheckOption.CookieOrParameter));
 
         // both param and cookies not null test (JSESSIONID is not null but mismatches)
         params = new HashMap<String, Object[]>();
