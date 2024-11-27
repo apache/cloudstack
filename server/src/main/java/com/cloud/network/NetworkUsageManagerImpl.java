@@ -263,8 +263,13 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
         }
 
         @Override
-        @DB
         public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+            return processAnswers(agentId, null, null, seq, answers);
+        }
+
+        @Override
+        @DB
+        public boolean processAnswers(long agentId, String uuid, String name, long seq, Answer[] answers) {
             /*
              * Do not collect Direct Network usage stats if the Traffic Monitor is not owned by this mgmt server
              */
@@ -275,7 +280,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
                     return false;
                 }
             } else {
-                logger.warn("Agent not found. Not collecting Direct Network usage from  TrafficMonitor : " + agentId);
+                logger.warn("Agent not found. Not collecting Direct Network usage from  TrafficMonitor [id: {}, uuid: {}, name: {}", agentId, uuid, name);
                 return false;
             }
 
@@ -472,8 +477,13 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         @Override
         public boolean processDisconnect(long agentId, Status state) {
+            return processDisconnect(agentId, null, null, state);
+        }
+
+        @Override
+        public boolean processDisconnect(long agentId, String uuid, String name, Status state) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Disconnected called on " + agentId + " with status " + state.toString());
+                logger.debug("Disconnected called on [id: {}, uuid: {}, name: {}] with status {}", agentId, uuid, name, state.toString());
             }
             return true;
         }

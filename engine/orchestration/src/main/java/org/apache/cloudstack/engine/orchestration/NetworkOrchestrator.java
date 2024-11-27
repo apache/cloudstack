@@ -1922,7 +1922,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         long userId = User.UID_SYSTEM;
         //remove all PF/Static Nat rules for the network
         logger.info("Services: {} are no longer supported in network: {} after applying new network offering: {} removing the related configuration",
-                services, network, network.getNetworkOfferingId());
+                services::toString, network::toString, () -> _networkOfferingDao.findById(network.getNetworkOfferingId()));
         if (services.contains(Service.StaticNat.getName()) || services.contains(Service.PortForwarding.getName())) {
             try {
                 if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, userId, caller)) {
@@ -2088,20 +2088,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @DB
-    protected void updateNic(final NicVO nic, final long networkId, final int count) {
+    protected void updateNic(final NicVO nic, final Network network, final int count) {
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 _nicDao.update(nic.getId(), nic);
 
                 if (nic.getVmType() == VirtualMachine.Type.User) {
-                    logger.debug("Changing active number of nics for network id={} on {}", networkId, count);
-                    _networksDao.changeActiveNicsBy(networkId, count);
+                    logger.debug(String.format("Changing active number of nics for network id=%s on %d", network, count));
+                    _networksDao.changeActiveNicsBy(network.getId(), count);
                 }
 
                 if (nic.getVmType() == VirtualMachine.Type.User
-                        || nic.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(networkId).getTrafficType() == TrafficType.Guest) {
-                    _networksDao.setCheckForGc(networkId);
+                        || nic.getVmType() == VirtualMachine.Type.DomainRouter && _networksDao.findById(network.getId()).getTrafficType() == TrafficType.Guest) {
+                    _networksDao.setCheckForGc(network.getId());
                 }
             }
         });
@@ -2128,8 +2128,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         for (final NicVO nic : nics) {
             final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
             if (implemented == null || implemented.first() == null) {
-                logger.warn("Failed to implement network id={} as a part of preparing nic {}", nic.getNetworkId(), nic);
-                throw new CloudRuntimeException(String.format("Failed to implement network id=%d as a part preparing nic %s", nic.getNetworkId(), nic));
+                NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                logger.warn("Failed to implement network: {} as a part of preparing nic {}", network, nic);
+                throw new CloudRuntimeException(String.format("Failed to implement network id=%s as a part preparing nic %s", network, nic));
             }
 
             final NetworkVO network = implemented.second();
@@ -2194,7 +2195,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmProfile.getId());
             setMtuDetailsInVRNic(networks, network, nic);
         }
-        updateNic(nic, network.getId(), 1);
+        updateNic(nic, network, 1);
 
         final List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (final NetworkElement element : networkElements) {
@@ -2299,7 +2300,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             for (final NetworkElement element : networkElements) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
-                        throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
+                        throw new CloudRuntimeException(String.format("Service provider %s either doesn't exist or is not enabled in physical network: %s", element.getProvider().getName(), _physicalNetworkDao.findById(network.getPhysicalNetworkId())));
                     }
                     if (element instanceof NetworkMigrationResponder) {
                         if (!((NetworkMigrationResponder) element).prepareMigration(profile, network, vm, dest, context)) {
@@ -2324,10 +2325,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (nic == null && !addedURIs.contains(broadcastUri.toString())) {
                     //Nic details are not available in DB
                     //Create nic profile for migration
-                    logger.debug("Creating nic profile for migration. BroadcastUri: {} NetworkId: {} VM: {}", broadcastUri.toString(), ntwkId, vm);
                     final NetworkVO network = _networksDao.findById(ntwkId);
                     final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                     final NicProfile profile = new NicProfile();
+                    logger.debug("Creating nic profile for migration. BroadcastUri: {} NetworkId: {} VM: {}", broadcastUri.toString(), network, vm);
                     profile.setDeviceId(255); //dummyId
                     profile.setIPv4Address(userIp.getAddress().toString());
                     profile.setIPv4Netmask(publicIp.getNetmask());
@@ -2467,7 +2468,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             applyProfileToNicForRelease(nic, profile);
                             nic.setState(Nic.State.Allocated);
                             if (originalState == Nic.State.Reserved) {
-                                updateNic(nic, network.getId(), -1);
+                                updateNic(nic, network, -1);
                             } else {
                                 _nicDao.update(nic.getId(), nic);
                             }
@@ -2476,7 +2477,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         return new Pair<>(network, profile);
                     } else {
                         nic.setState(Nic.State.Allocated);
-                        updateNic(nic, network.getId(), -1);
+                        updateNic(nic, network, -1);
                     }
                 }
 
@@ -3569,10 +3570,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                     final Long time = _lastNetworkIdsToFree.remove(networkId);
                     if (time == null) {
-                        logger.debug("We found network {} to be free for the first time. Adding it to the list: {}", networkId, currentTime);
+                        logger.debug("We found network {} to be free for the first time. Adding it to the list: {}", () -> _networksDao.findById(networkId), () -> currentTime);
                         stillFree.put(networkId, currentTime);
                     } else if (time > currentTime - netGcWait) {
-                        logger.debug("Network {} is still free but it's not time to shutdown yet: {}",networkId, time);
+                        logger.debug("Network {} is still free but it's not time to shutdown yet: {}", () -> _networksDao.findById(networkId), time::toString);
                         stillFree.put(networkId, time);
                     } else {
                         shutdownList.add(networkId);
@@ -3599,7 +3600,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                             shutdownNetwork(networkId, context, false);
                         } catch (final Exception e) {
-                            logger.warn("Unable to shutdown network: {}", networkId);
+                            logger.warn("Unable to shutdown network: {}", () -> _networksDao.findById(networkId));
                         }
                     }
                 }
@@ -4480,8 +4481,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (prepare) {
             final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
             if (implemented == null || implemented.first() == null) {
-                logger.warn("Failed to implement network id={} as a part of preparing nic {}", nic.getNetworkId(), nic);
-                throw new CloudRuntimeException(String.format("Failed to implement network id=%d as a part preparing nic %s", nic.getNetworkId(), nic));
+                logger.warn("Failed to implement network {} as a part of preparing nic {}", network, nic);
+                throw new CloudRuntimeException(String.format("Failed to implement network %s as a part preparing nic %s", network, nic));
             }
             nic = prepareNic(vmProfile, dest, context, nic.getId(), implemented.second());
             logger.debug("Nic is prepared successfully for vm {} in network {}", vm, network);
@@ -4702,7 +4703,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter dataCenter, final boolean forced)
             throws ConcurrentOperationException, InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-        logger.debug("Allocating nic for vm {} in network {} during import", vm.getUuid(), network);
+        logger.debug("Allocating nic for vm {} in network {} during import", vm, network);
         String selectedIp = null;
         if (ipAddresses != null && StringUtils.isNotEmpty(ipAddresses.getIp4Address())) {
             if (ipAddresses.getIp4Address().equals("auto")) {

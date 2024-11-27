@@ -321,8 +321,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         logger.debug("Trying to allocate a host and storage pools from datacenter [{}], " +
                 "pod [{}], cluster [{}], to deploy VM [{}] with requested CPU [{}] and requested RAM [{}].",
-                dc, _podDao.findById(plan.getPodId()), _clusterDao.findById(plan.getClusterId()),
-                vm, cpuRequested, toHumanReadableSize(ramRequested));
+                dc::toString, () -> _podDao.findById(plan.getPodId()), () -> _clusterDao.findById(plan.getClusterId()),
+                vm::toString, () -> cpuRequested, () -> toHumanReadableSize(ramRequested));
 
         logger.debug("ROOT volume [{}] {} to deploy VM [{}].",
                 getRootVolume(_volsDao.findByInstance(vm.getId())),
@@ -439,7 +439,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                             logger.debug("VM's volume encryption requirements are met by host {}", dest.getHost());
                         }
 
-                        if (checkIfHostFitsPlannerUsage(hostId, DeploymentPlanner.PlannerResourceUsage.Shared)) {
+                        if (checkIfHostFitsPlannerUsage(dest.getHost(), DeploymentPlanner.PlannerResourceUsage.Shared)) {
                             // found destination
                             return dest;
                         } else {
@@ -496,11 +496,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                 if (hostHasCpuCapability) {
                     // first check from reserved capacity
-                    hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                    hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host, cpuRequested, ramRequested, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
 
                     // if not reserved, check the free capacity
                     if (!hostHasCapacity)
-                        hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                        hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host, cpuRequested, ramRequested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
                     }
 
                 boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
@@ -992,14 +992,14 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     @DB
-    protected boolean checkIfHostFitsPlannerUsage(final long hostId, final PlannerResourceUsage resourceUsageRequired) {
+    protected boolean checkIfHostFitsPlannerUsage(final Host host, final PlannerResourceUsage resourceUsageRequired) {
         // TODO Auto-generated method stub
         // check if this host has been picked up by some other planner
         // exclusively
         // if planner can work with shared host, check if this host has
         // been marked as 'shared'
         // else if planner needs dedicated host,
-        PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
+        PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(host.getId());
         if (reservationEntry != null) {
             final long id = reservationEntry.getId();
             PlannerResourceUsage hostResourceType = reservationEntry.getResourceUsage();
@@ -1021,7 +1021,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     public Boolean doInTransaction(TransactionStatus status) {
                         final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
                         if (lockedEntry == null) {
-                            logger.error("Unable to lock the host entry for reservation, host: " + hostId);
+                            logger.error("Unable to lock the host entry for reservation, host: {}", host);
                             return false;
                         }
                         // check before updating
@@ -1050,22 +1050,22 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     }
 
     @DB
-    public boolean checkHostReservationRelease(final Long hostId) {
+    public boolean checkHostReservationRelease(final Host host) {
 
-        if (hostId != null) {
-            PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(hostId);
+        if (host != null) {
+            PlannerHostReservationVO reservationEntry = _plannerHostReserveDao.findByHostId(host.getId());
             if (reservationEntry != null && reservationEntry.getResourceUsage() != null) {
 
                 // check if any VMs are starting or running on this host
-                List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(hostId);
+                List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostId(host.getId());
                 if (vms.size() > 0) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Cannot release reservation, Found " + vms.size() + " VMs Running on host " + hostId);
+                        logger.debug("Cannot release reservation, Found {} VMs Running on host {}", vms.size(), host);
                     }
                     return false;
                 }
 
-                List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(hostId);
+                List<VMInstanceVO> vmsByLastHostId = _vmInstanceDao.listByLastHostId(host.getId());
                 if (vmsByLastHostId.size() > 0) {
                     // check if any VMs are within skip.counting.hours, if yes
                     // we
@@ -1074,7 +1074,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - stoppedVM.getUpdateTime().getTime()) / 1000;
                         if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                             if (logger.isDebugEnabled()) {
-                                logger.debug("Cannot release reservation, Found VM: " + stoppedVM + " Stopped but reserved on host " + hostId);
+                                logger.debug("Cannot release reservation, Found VM: {} Stopped but reserved on host {}", stoppedVM, host);
                             }
                             return false;
                         }
@@ -1082,10 +1082,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
 
                 // check if any VMs are stopping on or migrating to this host
-                List<VMInstanceVO> vmsStoppingMigratingByHostId = _vmInstanceDao.findByHostInStates(hostId, State.Stopping, State.Migrating, State.Starting);
+                List<VMInstanceVO> vmsStoppingMigratingByHostId = _vmInstanceDao.findByHostInStates(host.getId(), State.Stopping, State.Migrating, State.Starting);
                 if (vmsStoppingMigratingByHostId.size() > 0) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Cannot release reservation, Found " + vmsStoppingMigratingByHostId.size() + " VMs stopping/migrating/starting on host " + hostId);
+                        logger.debug("Cannot release reservation, Found {} VMs stopping/migrating/starting on host {}", vmsStoppingMigratingByHostId.size(), host);
                     }
                     return false;
                 }
@@ -1103,7 +1103,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Host has no VMs associated, releasing the planner reservation for host " + hostId);
+                    logger.debug("Host has no VMs associated, releasing the planner reservation for host {}", host);
                 }
 
                 final long id = reservationEntry.getId();
@@ -1113,7 +1113,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     public Boolean doInTransaction(TransactionStatus status) {
                         final PlannerHostReservationVO lockedEntry = _plannerHostReserveDao.lockRow(id, true);
                         if (lockedEntry == null) {
-                            logger.error("Unable to lock the host entry for reservation, host: " + hostId);
+                            logger.error("Unable to lock the host entry for reservation, host: {}", host);
                             return false;
                         }
                         // check before updating
@@ -1151,7 +1151,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         for (PlannerHostReservationVO hostReservation : reservedHosts) {
             HostVO host = _hostDao.findById(hostReservation.getHostId());
             if (host != null && host.getManagementServerId() != null && host.getManagementServerId() == _nodeId) {
-                checkHostReservationRelease(hostReservation.getHostId());
+                checkHostReservationRelease(host);
             }
         }
 
@@ -1234,10 +1234,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 VMInstanceVO vm = ((VMInstanceVO)obj);
-                logger.debug("MessageBus message: host reserved capacity released for VM: " + vm.getLastHostId() +
-                        ", checking if host reservation can be released for host:" + vm.getLastHostId());
-                Long hostId = vm.getLastHostId();
-                checkHostReservationRelease(hostId);
+                Host host = _hostDao.findById(vm.getLastHostId());
+                logger.debug("MessageBus message: host reserved capacity released for VM: {}, checking if host reservation can be released for host:{}", vm, host);
+                checkHostReservationRelease(host);
             }
         });
 
@@ -1614,7 +1613,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             boolean hostHasEncryption = Boolean.parseBoolean(potentialHostVO.getDetail(Host.HOST_VOLUME_ENCRYPTION));
             boolean hostMeetsEncryptionRequirements = !anyVolumeRequiresEncryption(new ArrayList<>(volumesOrderBySizeDesc)) || hostHasEncryption;
-            boolean hostFitsPlannerUsage = checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired);
+            boolean hostFitsPlannerUsage = checkIfHostFitsPlannerUsage(potentialHost, resourceUsageRequired);
 
             if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && hostMeetsEncryptionRequirements && hostFitsPlannerUsage) {
                 logger.debug("Found a potential host {} and associated storage pools for this VM", potentialHost);
@@ -1782,7 +1781,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 Boolean useLocalStorageForSystemVM = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(zone.getId());
                 if (useLocalStorageForSystemVM != null) {
                     useLocalStorage = useLocalStorageForSystemVM.booleanValue();
-                    logger.debug("System VMs will use " + (useLocalStorage ? "local" : "shared") + " storage for zone id=" + plan.getDataCenterId());
+                    logger.debug("System VMs will use {} storage for zone {}", useLocalStorage ? "local" : "shared", zone);
                 }
             } else {
                 useLocalStorage = diskOffering.isUseLocalStorage();
@@ -1846,7 +1845,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private boolean checkIfPoolCanBeReused(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid,
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools, List<Volume> readyAndReusedVolumes,
             VolumeVO toBeCreated) {
-        logger.debug("Volume [{}] of VM [{}] has pool [{}] already specified. Checking if this pool can be reused.", toBeCreated, vmProfile, toBeCreated.getPoolId());
         List<StoragePool> suitablePools = new ArrayList<>();
         StoragePool pool = null;
         if (toBeCreated.getPoolId() != null) {
@@ -1854,6 +1852,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         } else {
             pool = (StoragePool)dataStoreMgr.getPrimaryDataStore(plan.getPoolId());
         }
+
+        logger.debug("Volume [{}] of VM [{}] has pool [{}] already specified. Checking if this pool can be reused.", toBeCreated, vmProfile, pool);
 
         if (!pool.isInMaintenance()) {
             if (!avoid.shouldAvoid(pool)) {

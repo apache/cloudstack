@@ -269,7 +269,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hostsInCluster) {
             try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId())) {
+                if (storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
@@ -301,7 +301,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId())) {
+                if (storageMgr.connectHostToSharedPool(host, dataStore.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {

@@ -27,6 +27,7 @@ import com.cloud.agent.api.SetupPersistentNetworkCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -85,6 +86,8 @@ public class DefaultHostListener implements HypervisorHostListener {
     @Inject
     StorageService storageService;
     @Inject
+    DataCenterDao zoneDao;
+    @Inject
     NetworkOfferingDao networkOfferingDao;
     @Inject
     HostDao hostDao;
@@ -134,7 +137,8 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, nfsMountOpts.first());
         cmd.setWait(modifyStoragePoolCommandWait);
-        logger.debug("Sending modify storage pool command to agent: {} for storage pool: {} with timeout {} seconds", hostId, pool, cmd.getWait());
+        HostVO host = hostDao.findById(hostId);
+        logger.debug("Sending modify storage pool command to agent: {} for storage pool: {} with timeout {} seconds", host, pool, cmd.getWait());
         final Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
@@ -172,7 +176,7 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         storageService.updateStorageCapabilities(poolId, false);
 
-        logger.info("Connection established between storage pool " + pool + " and host " + hostId);
+        logger.info("Connection established between storage pool {} and host {}", pool, host);
 
         return createPersistentNetworkResourcesOnHost(hostId);
     }
@@ -260,7 +264,7 @@ public class DefaultHostListener implements HypervisorHostListener {
             }
             if (!answer.getResult()) {
                 logger.error("Unable to create persistent network resources for network {} on the host {} in zone {}",
-                        networkVO, host, networkVO.getDataCenterId());
+                        networkVO::toString, host::toString, () -> zoneDao.findById(networkVO.getDataCenterId()));
             }
         }
     }

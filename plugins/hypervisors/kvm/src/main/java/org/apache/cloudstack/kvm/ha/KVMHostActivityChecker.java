@@ -21,6 +21,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -51,6 +52,8 @@ import java.util.List;
 
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
 
+    @Inject
+    private ClusterDao clusterDao;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -215,7 +218,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
     public long[] getNeighbors(Host agent) {
         List<Long> neighbors = new ArrayList<Long>();
         List<HostVO> cluster_hosts = resourceManager.listHostsInClusterByStatus(agent.getClusterId(), Status.Up);
-        logger.debug("Retrieving all \"Up\" hosts from cluster [{}]...", agent.getClusterId());
+        logger.debug("Retrieving all \"Up\" hosts from cluster [{}]...", clusterDao.findById(agent.getClusterId()));
         for (HostVO host : cluster_hosts) {
             if (host.getId() == agent.getId() || (host.getHypervisorType() != Hypervisor.HypervisorType.KVM && host.getHypervisorType() != Hypervisor.HypervisorType.LXC)) {
                 continue;
