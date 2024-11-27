@@ -106,7 +106,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool, storagePool.getPath(), details);
-        ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
+        ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
         Map<String,String> poolDetails = answer.getPoolInfo().getDetails();
         if (MapUtils.isEmpty(poolDetails)) {
             String msg = String.format("PowerFlex storage SDC details not found on the host: %s, (re)install SDC and restart agent", host);
@@ -147,15 +147,15 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
     }
 
-    private ModifyStoragePoolAnswer sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, long hostId) {
-        Answer answer = _agentMgr.easySend(hostId, cmd);
+    private ModifyStoragePoolAnswer sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, HostVO host) {
+        Answer answer = _agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command (" + storagePool.getName() + ")");
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach  PowerFlex storage pool " + storagePool + " to host " + hostId;
+            String msg = "Unable to attach  PowerFlex storage pool " + storagePool + " to host " + host.getUuid();
 
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
@@ -163,7 +163,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
                     " (" + storagePool.getId() + ")");
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; PowerFlex Storage Pool = " + storagePool.getId() + " Host = " + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; PowerFlex Storage Pool = " + storagePool.getId() + " Host = " + host;
 
         return (ModifyStoragePoolAnswer) answer;
     }

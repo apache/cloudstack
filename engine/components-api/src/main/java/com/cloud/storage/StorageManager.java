@@ -365,7 +365,7 @@ public interface StorageManager extends StorageService {
 
     String getStoragePoolMountFailureReason(String error);
 
-    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 

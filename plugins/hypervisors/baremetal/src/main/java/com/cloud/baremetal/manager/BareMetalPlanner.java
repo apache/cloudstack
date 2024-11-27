@@ -135,7 +135,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-                if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                if (_capacityMgr.checkIfHostHasCapacity(h, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
                     logger.debug("Find host " + h.getId() + " has enough capacity");
                     DataCenter dc = _dcDao.findById(h.getDataCenterId());
                     Pod pod = _podDao.findById(h.getPodId());

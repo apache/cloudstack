@@ -596,7 +596,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         profilerHeartbeatUpdate.start();
                         txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                         if (logger.isTraceEnabled()) {
-                            logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
+                            logger.trace("Cluster manager heartbeat update, id: {}, mshost: {}", _mshostId, _mshost);
                         }
 
                         _mshostDao.update(_mshostId, _runId, DateUtil.currentGMTTime());
@@ -604,7 +604,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
                         profilerPeerScan.start();
                         if (logger.isTraceEnabled()) {
-                            logger.trace("Cluster manager peer-scan, id:" + _mshostId);
+                            logger.trace("Cluster manager peer-scan, id: {}, mshost: {}", _mshostId, _mshost);
                         }
 
                         if (!_peerScanInited) {
@@ -1034,7 +1034,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @DB
     public boolean start() {
         if (logger.isInfoEnabled()) {
-            logger.info("Starting Cluster manager, msid : " + _msId);
+            logger.info("Starting Cluster manager, msid: {}, mshost: {}", _msId, _mshost);
         }
 
         final ManagementServerHostVO mshost = Transaction.execute(new TransactionCallback<ManagementServerHostVO>() {

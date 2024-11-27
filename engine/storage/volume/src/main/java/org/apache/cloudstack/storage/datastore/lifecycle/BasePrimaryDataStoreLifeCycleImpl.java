@@ -76,7 +76,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
         if (hosts != null) {
             for (HostVO host : hosts) {
                 try {
-                    storageMgr.connectHostToSharedPool(host.getId(), store.getId());
+                    storageMgr.connectHostToSharedPool(host, store.getId());
                 } catch (Exception e) {
                     logger.warn("Unable to establish a connection between " + host + " and " + store, e);
                 }

@@ -47,7 +47,7 @@ public class AgentManagerImplTest {
         host = new HostVO("some-Uuid");
         host.setDataCenterId(1L);
         cmds = new StartupCommand[]{new StartupRoutingCommand()};
-        attache = new ConnectedAgentAttache(null, 1L, "kvm-attache", null, false);
+        attache = new ConnectedAgentAttache(null, 1L, "uuid", "kvm-attache", null, false);
 
         hostDao = Mockito.mock(HostDao.class);
         storagePoolMonitor = Mockito.mock(Listener.class);

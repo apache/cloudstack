@@ -133,7 +133,7 @@ public class StoragePoolMonitor implements Listener {
                         logger.debug("Host {} connected, connecting host to shared pool {} and sending storage pool information ...", host, pool);
                     }
                     try {
-                        _storageManager.connectHostToSharedPool(hostId, pool.getId());
+                        _storageManager.connectHostToSharedPool(host, pool.getId());
                         _storageManager.createCapacityEntry(pool.getId());
                     } catch (Exception e) {
                         throw new ConnectionException(true, String.format("Unable to connect host %s to storage pool %s due to %s", host, pool, e.toString()), e);
@@ -145,9 +145,14 @@ public class StoragePoolMonitor implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
+        return processDisconnect(agentId, null, null, state);
+    }
+
+    @Override
+    public synchronized boolean processDisconnect(long agentId, String uuid, String name, Status state) {
         Host host = _storageManager.getHost(agentId);
         if (host == null) {
-            logger.warn("Agent: " + agentId + " not found, not disconnecting pools");
+            logger.warn("Agent [id: {}, uuid: {}, name: {}] not found, not disconnecting pools", agentId, uuid, name);
             return false;
         }
 

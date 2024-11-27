@@ -493,7 +493,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         _userStatsDao.update(userStats.getId(), userStats);
                         logger.debug("Successfully updated user statistics as a part of domR " + router + " reboot/stop");
                     } else {
-                        logger.warn("User stats were not created for account " + router.getAccountId() + " and dc " + router.getDataCenterId());
+                        DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                        Account account = _accountMgr.getAccount(router.getAccountId());
+                        logger.warn("User stats for router {} were not created for account {} and dc {}", router, account, zone);
                     }
                 }
             }
@@ -1194,7 +1196,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         } else {
             resetRouterHealthChecksAndConnectivity(router.getId(), true, true, "Successfully fetched data");
-            updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
+            updateDbHealthChecksFromRouterResponse(router, answer.getMonitoringResults());
             return answer.getFailingChecks();
         }
     }
@@ -1238,7 +1240,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (recreateRouter) {
             logger.warn("Health Check Alert: Found failing checks in " +
                     RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
-            recreateRouter(router.getId());
+            recreateRouter(router);
         }
     }
 
@@ -1295,7 +1297,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
      * @param routerId - the id of the router to be recreated.
      * @return true if successfully restart is attempted else false.
      */
-    private boolean recreateRouter(long routerId) {
+    private boolean recreateRouter(DomainRouterVO router) {
+        long routerId = router.getId();
         User systemUser = _userDao.getUser(User.UID_SYSTEM);
 
         // Find any VPC containing router join VO, restart it and return
@@ -1310,7 +1313,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return restartGuestNetworkInDomainRouter(routerJoinToRestart, systemUser);
         }
 
-        logger.warn("Unable to find a valid guest network or VPC to restart for recreating router id " + routerId);
+        logger.warn("Unable to find a valid guest network or VPC to restart for recreating router {}", router);
         return false;
     }
 
@@ -1407,8 +1410,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
      * @return converts the above JSON into list of RouterHealthCheckResult.
      */
     private List<RouterHealthCheckResult> parseHealthCheckResults(
-            final Map<String, Map<String, Map<String, String>>> checksJson, final long routerId) {
-        final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(routerId);
+            final Map<String, Map<String, Map<String, String>>> checksJson, final DomainRouterVO router) {
+        final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(router.getId());
         List<RouterHealthCheckResult> healthChecks = new ArrayList<>();
         final String lastRunKey = "lastRun";
         for (String checkType : checksJson.keySet()) {
@@ -1425,28 +1428,27 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 try {
                     final RouterHealthCheckResultVO hcVo = parseHealthCheckVOFromJson(
-                            routerId, checkName, checkType, checksJson.get(checkType).get(checkName), checksInDb);
+                            router.getId(), checkName, checkType, checksJson.get(checkType).get(checkName), checksInDb);
                     healthChecks.add(hcVo);
                 } catch (Exception ex) {
-                    logger.error("Skipping health check: Exception while parsing check result data for router id " + routerId +
-                            ", check type: " + checkType + ", check name: " + checkName + ":" + ex.getLocalizedMessage(), ex);
+                    logger.error("Skipping health check: Exception while parsing check result data for router {}, check type: {}, check name: {}:{}", router, checkType, checkName, ex.getLocalizedMessage(), ex);
                 }
             }
         }
         return healthChecks;
     }
 
-    private List<RouterHealthCheckResult> updateDbHealthChecksFromRouterResponse(final long routerId, final String monitoringResult) {
+    private List<RouterHealthCheckResult> updateDbHealthChecksFromRouterResponse(final DomainRouterVO router, final String monitoringResult) {
         if (StringUtils.isBlank(monitoringResult)) {
-            logger.warn("Attempted parsing empty monitoring results string for router " + routerId);
+            logger.warn("Attempted parsing empty monitoring results string for router {}", router);
             return Collections.emptyList();
         }
 
         try {
-            logger.debug("Parsing and updating DB health check data for router: " + routerId + " with data: " + monitoringResult) ;
+            logger.debug("Parsing and updating DB health check data for router: {} with data: {}", router, monitoringResult);
             final Type t = new TypeToken<Map<String, Map<String, Map<String, String>>>>() {}.getType();
             final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(monitoringResult, t);
-            return parseHealthCheckResults(checks, routerId);
+            return parseHealthCheckResults(checks, router);
         } catch (JsonSyntaxException ex) {
             logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
         }
@@ -2882,23 +2884,24 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             Answer answer = cmds.getAnswer("users");
             if (answer == null) {
-                logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to null answer");
-                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to null answer", DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+                logger.error("Unable to start vpn {} : unable add users to vpn in zone {} for account {} on domR: {} due to null answer", vpn, zone, account, router.getInstanceName());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s in zone %s for account %s on domR: %s due to null answer", vpn, zone, account, router.getInstanceName()), DataCenter.class, router.getDataCenterId());
             }
             if (!answer.getResult()) {
-                logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to " + answer.getDetails());
-                throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account "
-                        + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+                logger.error("Unable to start vpn {} : unable add users to vpn in zone {} for account {} on domR: {} due to {}", vpn, zone, account, router.getInstanceName(), answer.getDetails());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s : Unable to add users to vpn in zone %s for account %s on domR: %s due to %s", vpn, zone, account, router.getInstanceName(), answer.getDetails()), DataCenter.class, router.getDataCenterId());
             }
             answer = cmds.getAnswer("startVpn");
             if (!answer.getResult()) {
-                logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
-                        + " due to " + answer.getDetails());
-                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+
+                logger.error("Unable to start vpn {}  in zone {} for account {} on domR: {} due to {}", vpn, zone, account, router.getInstanceName(), answer.getDetails());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s  in zone %s for account %s on domR: %s due to %s", vpn, zone, account, router.getInstanceName(), answer.getDetails()), DataCenter.class, router.getDataCenterId());
             }
 
         }
@@ -3029,8 +3032,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         for (final NicVO nic : nics) {
             if (!_networkMgr.startNetwork(nic.getNetworkId(), dest, context)) {
-                logger.warn("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
-                throw new CloudRuntimeException("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
+                NetworkVO network = _networkDao.findById(nic.getNetworkId());
+                logger.warn("Failed to start network {} as a part of domR start", network);
+                throw new CloudRuntimeException(String.format("Failed to start network %s as a part of domR start", network));
             }
         }
 
@@ -3196,14 +3200,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     try {
                         answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
                     } catch (final Exception e) {
-                        logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
+                        logger.warn("Error while collecting network stats from router: {} from host: {}", router, router.getHostId(), e);
                         continue;
                     }
 
                     if (answer != null) {
                         if (!answer.getResult()) {
-                            logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId() + "; details: "
-                                    + answer.getDetails());
+                            logger.warn("Error while collecting network stats from router: {} from host: {}; details: {}", router, router.getHostId(), answer.getDetails());
                             continue;
                         }
                         try {
@@ -3219,7 +3222,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     final UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), network.getId(),
                                             forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                                     if (stats == null) {
-                                        logger.warn("unable to find stats for account: " + router.getAccountId());
+                                        logger.warn("unable to find stats for account: {}", () -> _accountMgr.getAccount(router.getAccountId()));
                                         return;
                                     }
 
@@ -3256,8 +3259,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                 }
                             });
                         } catch (final Exception e) {
-                            logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
-                                    + toHumanReadableSize(answer.getBytesSent()));
+                            logger.warn("Unable to update user statistics for account: {} Rx: {}; Tx: {}",
+                                    _accountMgr.getAccount(router.getAccountId()), toHumanReadableSize(answer.getBytesReceived()), toHumanReadableSize(answer.getBytesSent()));
                         }
                     }
                 }

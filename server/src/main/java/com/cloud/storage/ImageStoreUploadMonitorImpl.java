@@ -239,7 +239,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                 answer = new UploadStatusAnswer(cmd, UploadStatus.UNKNOWN, e.getMessage());
                             }
                             if (answer == null || !(answer instanceof UploadStatusAnswer)) {
-                                logger.warn("No or invalid answer corresponding to UploadStatusCommand for volume " + volumeDataStore.getVolumeId());
+                                logger.warn("No or invalid answer corresponding to UploadStatusCommand for volume {}", volume);
                                 continue;
                             }
                             handleVolumeStatusResponse((UploadStatusAnswer)answer, volume, volumeDataStore);

@@ -286,7 +286,7 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
-                _storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
+                _storageMgr.connectHostToSharedPool(h, primarystore.getId());
                 poolHosts.add(h);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
@@ -316,7 +316,7 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
