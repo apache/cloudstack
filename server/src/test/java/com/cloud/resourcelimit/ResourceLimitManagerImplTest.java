@@ -23,9 +23,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.utils.db.EntityManager;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,6 +45,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -69,6 +76,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -81,6 +89,9 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vpc.MockResourceLimitManagerImpl;
 
 import junit.framework.TestCase;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceLimitManagerImplTest extends TestCase {
@@ -120,7 +131,10 @@ public class ResourceLimitManagerImplTest extends TestCase {
     VolumeDao volumeDao;
     @Mock
     UserVmDao userVmDao;
+    @Mock
+    EntityManager entityManager;
 
+    private CallContext callContext;
     private List<String> hostTags = List.of("htag1", "htag2", "htag3");
     private List<String> storageTags = List.of("stag1", "stag2");
 
@@ -138,10 +152,15 @@ public class ResourceLimitManagerImplTest extends TestCase {
         } catch (IllegalAccessException | NoSuchFieldException e) {
             logger.error("Failed to update configurations");
         }
+
+        Account account = mock(Account.class);
+        User user = mock(User.class);
+        CallContext.register(user, account);
     }
 
     @After
     public void tearDown() throws Exception {
+        CallContext.unregister();
     }
 
     @Test
@@ -415,6 +434,9 @@ public class ResourceLimitManagerImplTest extends TestCase {
         accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), defaultAccountCpuMax);
         resourceLimitManager.accountResourceLimitMap = accountResourceLimitMap;
         Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(1L, Resource.ResourceOwnerType.Account, Resource.ResourceType.cpu, hostTags.get(0))).thenReturn(null);
+        result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.cpu, hostTags.get(0));
+        Assert.assertEquals(defaultAccountCpuMax, result);
+
         result = resourceLimitManager.findCorrectResourceLimitForAccount(account, Resource.ResourceType.cpu, hostTags.get(0));
         Assert.assertEquals(defaultAccountCpuMax, result);
     }
@@ -1228,5 +1250,36 @@ public class ResourceLimitManagerImplTest extends TestCase {
                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
         Mockito.verify(resourceLimitManager, Mockito.times(1))
                 .decrementResourceCountWithTag(accountId, Resource.ResourceType.memory, tag, Long.valueOf(memory));
+    }
+
+    @Test
+    public void testUpdateResourceLimit() {
+        Long accountId = 1L;
+        Long domainId = 2L;
+        Long resourceLimitId = 3L;
+        Integer typeId = 13;
+        Long maxGB = 10L;
+        Long maxBytes = maxGB * Resource.ResourceType.bytesToGiB;
+
+        Account account = mock(Account.class);
+        when(entityManager.findById(Account.class, accountId)).thenReturn(account);
+        ResourceLimitVO resourceLimitVO = mock(ResourceLimitVO.class);
+        when(resourceLimitVO.getId()).thenReturn(resourceLimitId);
+        when(resourceLimitDao.findByOwnerIdAndTypeAndTag(accountId, Resource.ResourceOwnerType.Account, Resource.ResourceType.backup_storage, null)).thenReturn(resourceLimitVO);
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMockedStatic = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+
+            resourceLimitManager.updateResourceLimit(accountId, domainId, typeId, maxGB, null);
+
+            Mockito.verify(resourceLimitDao, Mockito.times(1)).update(resourceLimitId, maxBytes);
+            Mockito.verify(resourceLimitDao, Mockito.never()).persist(Mockito.any());
+            actionEventUtilsMockedStatic.verify(() -> ActionEventUtils.onActionEvent(0L, 0L, 0L, EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
+                    "Resource limit updated. Resource Type: " + Resource.ResourceType.backup_storage.toString() + ", New Value: " + maxBytes,
+                    accountId, ApiCommandResourceType.Account.toString()));
+        }
     }
 }
