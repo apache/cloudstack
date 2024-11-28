@@ -91,7 +91,7 @@
             :value="serverStats.lastheartbeat ? $toLocaleDate(serverStats.lastheartbeat) : $t('label.never')"
             valueStyle="font-size: medium"
           />
-          <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
+          <a-card-meta v-if="!!serverStats.lastheartbeat" :description="getTimeSince(serverStats.collectiontime)" />
         </a-card-grid>
         <a-card-grid style="width: 35%; text-align: center; font-size: small;">
           <a-statistic
