@@ -1946,6 +1946,7 @@
 "label.source": "Select Import-Export Source Hypervisor",
 "label.source.based": "SourceBased",
 "label.sourcecidr": "Source CIDR",
+"label.sourcecidrlist": "Source CIDR list",
 "label.sourcehost": "Source host",
 "label.sourceipaddress": "Source IP address",
 "label.sourceipaddressnetworkid": "Network ID of source IP address",
