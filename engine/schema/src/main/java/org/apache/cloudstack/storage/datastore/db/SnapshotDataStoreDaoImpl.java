@@ -341,7 +341,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters(STORE_ROLE, role.toString());
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
         if (storeId != null) {
-            sc.setParameters(STORE_ID, (Object) new Long[]{storeId});
+            sc.setParameters(STORE_ID, new Long[]{storeId});
         } else if (zoneId != null) {
             List<ImageStoreVO> imageStores = imageStoreDao.listStoresByZoneId(zoneId);
             Object[] imageStoreIds = imageStores.stream().map(ImageStoreVO::getId).toArray();

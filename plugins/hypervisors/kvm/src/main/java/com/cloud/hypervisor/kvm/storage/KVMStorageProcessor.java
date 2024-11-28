@@ -200,8 +200,6 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private static final String DOMJOBABORT_COMMAND = "virsh domjobabort --domain %s";
 
-    private static String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s";
-
     private static final String DUMMY_VM_XML = "<domain type='qemu'>\n" +
             "  <name>%s</name>\n" +
             "  <memory unit='MiB'>256</memory>\n" +
@@ -2782,6 +2780,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : volUuid, primaryPool, cmd.getWaitInMillSeconds());
 
         storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
+        secondaryPool.delete();
         return disk;
     }
 
@@ -2922,7 +2921,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
         String checkpointName = snapshotTO.getPath().substring(snapshotTO.getPath().lastIndexOf(File.separator) + 1);
 
-        Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, resource.getHypervisorPath(), checkpointName));
+        logger.debug("Deleting checkpoint [{}] of VM [{}].", checkpointName, vmName);
+        Script.runSimpleBashScript(String.format(LibvirtComputingResource.CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
     }
 
     /**

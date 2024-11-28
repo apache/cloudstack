@@ -27,6 +27,7 @@ import com.cloud.agent.api.ConvertSnapshotCommand;
 import com.cloud.agent.api.RemoveBitmapCommand;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -644,11 +645,15 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     protected void deleteBitmap (SnapshotInfo snapshotInfo) {
-        if (snapshotInfo.getBaseVolume() == null) {
+        Volume baseVol = snapshotInfo.getBaseVolume();
+        if (baseVol == null || !Volume.State.Ready.equals(baseVol.getState())) {
             return;
         }
+
+        VirtualMachine attachedVM = snapshotInfo.getBaseVolume().getAttachedVM();
+
         RemoveBitmapCommand cmd = new RemoveBitmapCommand((SnapshotObjectTO) snapshotInfo.getTO(),
-                snapshotInfo.getBaseVolume().getAttachedVM().getState().equals(VirtualMachine.State.Running));
+                attachedVM != null && attachedVM.getState().equals(VirtualMachine.State.Running));
         EndPoint ep = epSelector.select(snapshotInfo, StorageAction.REMOVEBITMAP);
 
         Answer answer = ep.sendMessage(cmd);

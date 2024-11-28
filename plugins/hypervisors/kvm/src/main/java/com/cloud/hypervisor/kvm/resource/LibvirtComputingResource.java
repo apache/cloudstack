@@ -335,7 +335,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_CREATE_COMMAND = "virsh checkpoint-create --domain %s --xmlfile %s --redefine";
 
-    public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s";
+    public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
     private String modifyVlanPath;
     private String versionStringPath;

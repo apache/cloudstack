@@ -84,7 +84,7 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
 
         String volumePath = volume.getPath();
         String snapshotRelPath = snapshot.getPath();
-
+        KVMStoragePool secondaryStoragePool = null;
         try {
             KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
@@ -113,7 +113,6 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                 rbd.close(image);
                 rados.ioCtxDestroy(io);
             } else {
-                KVMStoragePool secondaryStoragePool = null;
                 if (snapshotImageStore != null && DataStoreRole.Primary != snapshotImageStore.getRole()) {
                     secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(snapshotImageStore.getUrl());
                 }
@@ -142,7 +141,12 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
         } catch (RbdException e) {
             logger.error("Failed to connect to revert snapshot due to RBD exception: ", e);
             return new Answer(command, false, e.toString());
+        } finally {
+            if (secondaryStoragePool != null) {
+                libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStoragePool.getType(), secondaryStoragePool.getUuid());
+            }
         }
+
     }
 
     /**
