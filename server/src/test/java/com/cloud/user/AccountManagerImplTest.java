@@ -1046,4 +1046,14 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Assert.assertEquals(userAccountVOList.size(), userAccounts.size());
         Assert.assertEquals(userAccountVOList.get(0), userAccounts.get(0));
     }
+
+    @Test
+    public void deleteAndCleanupUserTestRemovesUserFromProjects() {
+        long userId = userVoMock.getId();
+        Mockito.doNothing().when(_projectAccountDao).removeUserFromProjects(userId);
+
+        accountManagerImpl.deleteAndCleanupUser(userVoMock);
+
+        Mockito.verify(_projectAccountDao).removeUserFromProjects(userId);
+    }
 }

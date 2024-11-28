@@ -195,6 +195,15 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
     }
 
     @Override
+    public void removeUserFromProjects(long userId) {
+        SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
+        sc.setParameters("userId", userId);
+
+        int count = remove(sc);
+        s_logger.debug(String.format("Removed user [%s] from %s project(s).", userId, count));
+    }
+
+    @Override
     public boolean canUserModifyProject(long projectId, long accountId, long userId) {
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("role",  ProjectAccount.Role.Admin);
