@@ -231,7 +231,16 @@
         <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <bulb-outlined />{{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+            <bulb-outlined />
+            <span>
+              {{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+              <a-tooltip placement="top">
+                <template #title>
+                  {{ (resource.memorytotal/(1024**2)).toFixed(3) }} MB
+                </template>
+                <QuestionCircleOutlined />
+              </a-tooltip>
+            </span>
           </div>
           <div>
             <span v-if="resource.memoryusedgb">
