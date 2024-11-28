@@ -7450,9 +7450,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm == null) {
             throw new InvalidParameterValueException(String.format("There is no VM by ID [%s].", vmId));
         } else if (vm.getState() == State.Running) {
-            String errMsg = String.format("Unable to move VM [%s] in [%s] state.", vm, vm.getState());
-            logger.warn(errMsg);
-            throw new InvalidParameterValueException(errMsg);
+            throw new InvalidParameterValueException(String.format("Unable to move VM [%s] in [%s] state.", vm, vm.getState()));
         } else if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
             throw new InvalidParameterValueException("Migration is not supported for Shared FileSystem Instances.");
         }
@@ -7527,13 +7525,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void validateIfNewOwnerHasAccessToTemplate(UserVmVO vm, Account newAccount, VirtualMachineTemplate template) {
-        logger.trace(String.format("Validating if new owner [%s] has access to the template specified for VM [%s].", newAccount, vm));
+        logger.trace("Validating if new owner [{}] has access to the template specified for VM [{}].", newAccount, vm);
 
         if (template == null) {
             throw new InvalidParameterValueException(String.format("Template for VM [%s] cannot be found.", vm.getUuid()));
         }
 
-        _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
+        logger.debug("Verifying if new owner [{}] has access to the template [{}].", newAccount, template.getUuid());
+        try {
+            _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
+        } catch (PermissionDeniedException e) {
+            String newMsg = String.format("New owner [%s] does not have access to the template specified for VM [%s].", newAccount, vm);
+            throw new PermissionDeniedException(newMsg, e);
+        }
     }
 
     /**
@@ -7673,6 +7677,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected void validateOldAndNewAccounts(Account oldAccount, Account newAccount, Long oldAccountId, String newAccountName, Long domainId)
             throws InvalidParameterValueException {
+
+        logger.trace("Validating old [{}] and new accounts [{}].", oldAccount, newAccount);
 
         if (oldAccount == null) {
             throw new InvalidParameterValueException(String.format("Invalid old account [%s] for VM in domain [%s].", oldAccountId, domainId));
