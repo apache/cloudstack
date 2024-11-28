@@ -127,10 +127,6 @@ public class RandomAllocator extends BaseAllocator {
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                  boolean considerReservedCapacity) {
-        if (CollectionUtils.isEmpty(hosts)) {
-            logger.debug("Random Allocator found 0 hosts as given host list is empty");
-            return new ArrayList<>();
-        }
         return findSuitableHosts(vmProfile, plan, type, avoid, hosts, returnUpTo, considerReservedCapacity);
     }
 }
