@@ -16,20 +16,25 @@
 // under the License.
 package com.cloud.agent.api;
 
-public class ConvertInstanceAnswer extends Answer {
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-    private String temporaryConvertUuid;
+public class ImportConvertedInstanceAnswer extends Answer {
 
-    public ConvertInstanceAnswer() {
+    public ImportConvertedInstanceAnswer() {
         super();
     }
+    private UnmanagedInstanceTO convertedInstance;
 
-    public ConvertInstanceAnswer(Command command, String temporaryConvertUuid) {
-        super(command, true, "");
-        this.temporaryConvertUuid = temporaryConvertUuid;
+    public ImportConvertedInstanceAnswer(Command command, boolean success, String details) {
+        super(command, success, details);
     }
 
-    public String getTemporaryConvertUuid() {
-        return temporaryConvertUuid;
+    public ImportConvertedInstanceAnswer(Command command, UnmanagedInstanceTO convertedInstance) {
+        super(command, true, "");
+        this.convertedInstance = convertedInstance;
+    }
+
+    public UnmanagedInstanceTO getConvertedInstance() {
+        return convertedInstance;
     }
 }
