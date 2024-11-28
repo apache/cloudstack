@@ -5611,7 +5611,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 //Update Resource Count for the given account
                 resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
             }
-            return _vmDao.findById(vmId);
+            return _vmDao.findByIdIncludingRemoved(vmId);
         } else {
             CloudRuntimeException ex = new CloudRuntimeException("Failed to destroy vm with specified vmId");
             ex.addProxyObject(vm.getUuid(), "vmId");
