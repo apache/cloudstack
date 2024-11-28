@@ -1523,6 +1523,7 @@
 "label.networkspeed": "Network speed",
 "label.networktype": "Network type",
 "label.networkwrite": "Network write",
+"label.never": "Never",
 "label.new": "New",
 "label.new.autoscale.vmgroup": "New AutoScaling Group",
 "label.new.instance.group": "New Instance group",

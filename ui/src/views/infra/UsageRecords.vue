@@ -88,7 +88,7 @@
         <a-card-grid style="width: 35%; text-align: center; font-size: small;">
           <a-statistic
             :title="$t('label.lastheartbeat')"
-            :value="$toLocaleDate(serverStats.lastheartbeat)"
+            :value="serverStats.lastheartbeat ? $toLocaleDate(serverStats.lastheartbeat) : $t('label.never')"
             valueStyle="font-size: medium"
           />
           <a-card-meta :description="getTimeSince(serverStats.collectiontime)" />
