@@ -503,6 +503,11 @@ export default {
       }
     },
     listUsageServerMetrics () {
+      if (!('listUsageServerMetrics' in this.$store.getters.apis)) {
+        this.serverMetricsLoading = false
+        return
+      }
+
       this.serverMetricsLoading = true
       api('listUsageServerMetrics').then(json => {
         this.stats = []
@@ -639,6 +644,10 @@ export default {
       })
     },
     getUsageTypes () {
+      if (!('listUsageTypes' in this.$store.getters.apis)) {
+        return
+      }
+
       api('listUsageTypes').then(json => {
         if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
           this.usageTypes = [{ id: null, value: '' }, ...json.listusagetypesresponse.usagetype.map(x => {
