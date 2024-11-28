@@ -225,8 +225,6 @@ for full help
             "CREATE USER cloud@`%` identified by 'cloud';",
             "GRANT ALL ON cloud.* to cloud@`localhost`;",
             "GRANT ALL ON cloud.* to cloud@`%`;",
-            "GRANT process ON *.* TO cloud@`localhost`;",
-            "GRANT process ON *.* TO cloud@`%`;",
             "GRANT ALL ON cloud_usage.* to cloud@`localhost`;",
             "GRANT ALL ON cloud_usage.* to cloud@`%`;",
             "GRANT process ON *.* TO cloud@`localhost`;",
