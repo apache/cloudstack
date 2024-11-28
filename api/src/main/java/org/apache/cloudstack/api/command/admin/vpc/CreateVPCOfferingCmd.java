@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.vpc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -112,11 +113,18 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.13")
     private List<Long> zoneIds;
 
+    @Deprecated
     @Parameter(name = ApiConstants.FOR_NSX,
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for NSX, false otherwise.",
             since = "4.20.0")
     private Boolean forNsx;
+
+    @Parameter(name = ApiConstants.PROVIDER,
+            type = CommandType.STRING,
+            description = "Name of the provider providing the service",
+            since = "4.20.0")
+    private String provider;
 
     @Parameter(name = ApiConstants.NSX_SUPPORT_LB,
             type = CommandType.BOOLEAN,
@@ -158,11 +166,16 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return StringUtils.isEmpty(displayText) ? vpcOfferingName : displayText;
     }
 
+    public boolean isExternalNetworkProvider() {
+        return Arrays.asList("NSX", "Netris").stream()
+                .anyMatch(s -> provider != null && s.equalsIgnoreCase(provider));
+    }
+
     public List<String> getSupportedServices() {
-        if (!isForNsx() && CollectionUtils.isEmpty(supportedServices)) {
+        if (!isExternalNetworkProvider() && CollectionUtils.isEmpty(supportedServices)) {
             throw new InvalidParameterValueException("Supported services needs to be provided");
         }
-        if (isForNsx()) {
+        if (isExternalNetworkProvider()) {
             supportedServices = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
@@ -179,8 +192,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return supportedServices;
     }
 
-    public boolean isForNsx() {
-        return BooleanUtils.isTrue(forNsx);
+    public String getProvider() {
+        return provider;
     }
 
     public String getNetworkMode() {
@@ -193,7 +206,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = new HashMap<>();
-        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isExternalNetworkProvider()) {
             Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -213,14 +226,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
-        } else if (Boolean.TRUE.equals(forNsx)) {
-            getServiceProviderMapForNsx(serviceProviderMap);
+        } else if (isExternalNetworkProvider()) {
+            getServiceProviderMapForExternalProvider(serviceProviderMap, Network.Provider.getProvider(provider).getName());
         }
 
         return serviceProviderMap;
     }
 
-    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+    private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
         List<String> unsupportedServices = List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity",
                 "Gateway", "Firewall");
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
@@ -231,7 +244,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
             else
-                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+                serviceProviderMap.put(service, List.of(provider));
         }
         if (!getNsxSupportsLbService()) {
             serviceProviderMap.remove(Lb.getName());

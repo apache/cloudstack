@@ -511,7 +511,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-        final Boolean forNsx = cmd.isForNsx();
+        final String provider = cmd.getProvider();
+        final Boolean forNsx = Objects.nonNull(provider) && provider.equalsIgnoreCase("NSX");
         final String networkModeStr = cmd.getNetworkMode();
         final boolean enable = cmd.getEnable();
 
