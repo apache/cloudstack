@@ -50,6 +50,7 @@
           <a-row justify="end">
             <a-col>
               <tooltip-button
+                v-if="'generateUsageRecords' in this.$store.getters.apis"
                 type="primary"
                 icon="hdd-outlined"
                 :tooltip="$t('label.usage.records.generate')"
@@ -58,6 +59,7 @@
             </a-col>&nbsp;&nbsp;
             <a-col>
               <tooltip-button
+                v-if="'removeRawUsageRecords' in this.$store.getters.apis"
                 type="danger"
                 icon="delete-outlined"
                 :tooltip="$t('label.usage.records.purge')"
@@ -70,7 +72,7 @@
     </a-card>
   </a-affix>
   <a-col>
-    <a-card size="small" :loading="serverMetricsLoading">
+    <a-card size="small" :loading="serverMetricsLoading" v-if="'listUsageServerMetrics' in this.$store.getters.apis">
       <a-row justify="space-around">
         <a-card-grid style="width: 30%; text-align: center; font-size: small;">
           <a-statistic
@@ -159,7 +161,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3">
+          <a-col :span="3" v-if="'listUsageTypes' in this.$store.getters.apis">
             <a-form-item
               ref="type"
               name="type"
@@ -173,7 +175,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3">
+          <a-col :span="3" v-if="'listUsageTypes' in this.$store.getters.apis">
             <a-form-item
               ref="id"
               name="id"
